@@ -239,25 +239,46 @@ export function useOpponents(): readonly ClientPlayer[] {
 }
 
 /**
+ * The living seat that holds the bottom half of the table for an eliminated spectator.
+ * A dead player has no board of their own to sit there, so the bottom side of the table
+ * belongs to a survivor: their explicit pick from the spectating banner, or — by default —
+ * a living teammate (team game) else the next living seat in turn order. Self-heals when
+ * that seat dies. Null outside the eliminated-spectator layout, or when nobody is left.
+ */
+export function useEliminatedBottomSeatId(): EntityId | null {
+  const eliminatedSpectating = useGameStore((state) => state.eliminatedSpectating)
+  const pickedSeatId = useGameStore((state) => state.eliminatedBottomSeatId)
+  const opponents = useOpponents()
+  const teamMap = useGameStore(selectTeamMap)
+  const viewerTeam = useViewerTeamIndex()
+  return useMemo(() => {
+    if (!eliminatedSpectating) return null
+    const living = opponents.filter((p) => !p.hasLost)
+    const picked = living.find((p) => p.playerId === pickedSeatId)
+    if (picked) return picked.playerId
+    const ally = viewerTeam != null ? living.find((p) => teamMap[p.playerId] === viewerTeam) : undefined
+    return (ally ?? living[0])?.playerId ?? null
+  }, [eliminatedSpectating, pickedSeatId, opponents, teamMap, viewerTeam])
+}
+
+/**
  * The opponent whose board occupies the viewed slot. Resolves the boardView
  * selection with fallbacks: an eliminated or unknown selection falls back to the
  * first opponent still in the game (or the first opponent, if all have lost).
- * The eliminated spectator's chosen bottom seat never occupies the viewed slot —
- * its board is already fully visible at the bottom of the screen.
+ * The eliminated spectator's bottom seat never occupies the viewed slot — its board
+ * is already fully visible on the bottom half of the screen.
  */
 export function useViewedOpponent(): ClientPlayer | null {
   const opponents = useOpponents()
   const viewedOpponentId = useGameStore((state) => state.viewedOpponentId)
-  const eliminatedSpectating = useGameStore((state) => state.eliminatedSpectating)
-  const eliminatedBottomSeatId = useGameStore((state) => state.eliminatedBottomSeatId)
+  const bottomSeatId = useEliminatedBottomSeatId()
   return useMemo(() => {
-    const bottomSeatId = eliminatedSpectating ? eliminatedBottomSeatId : null
     const candidates = bottomSeatId ? opponents.filter((p) => p.playerId !== bottomSeatId) : opponents
     if (candidates.length === 0) return null
     const selected = candidates.find((p) => p.playerId === viewedOpponentId)
     if (selected && !selected.hasLost) return selected
     return candidates.find((p) => !p.hasLost) ?? candidates[0] ?? null
-  }, [opponents, viewedOpponentId, eliminatedSpectating, eliminatedBottomSeatId])
+  }, [opponents, viewedOpponentId, bottomSeatId])
 }
 
 /**
