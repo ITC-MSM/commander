@@ -10,7 +10,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
-import com.wingedsheep.engine.state.components.identity.HexproofFromColorComponent
+import com.wingedsheep.engine.state.components.identity.HexproofFromComponent
 import com.wingedsheep.engine.state.components.identity.ProtectionComponent
 import com.wingedsheep.engine.state.components.identity.RingBearerComponent
 import com.wingedsheep.engine.state.components.identity.ToxicComponent
@@ -107,7 +107,8 @@ class StateProjector(
                         (container.get<ProtectionComponent>()?.colors?.map { "PROTECTION_FROM_${it.name}" } ?: emptyList()) +
                         (container.get<ProtectionComponent>()?.subtypes?.map { "PROTECTION_FROM_SUBTYPE_${it.uppercase()}" } ?: emptyList()) +
             (container.get<ProtectionComponent>()?.supertypes?.map { "PROTECTION_FROM_SUPERTYPE_${it.uppercase()}" } ?: emptyList()) +
-                        (container.get<HexproofFromColorComponent>()?.colors?.map { "HEXPROOF_FROM_${it.name}" } ?: emptyList()) +
+                        (container.get<HexproofFromComponent>()?.colors?.map { "HEXPROOF_FROM_${it.name}" } ?: emptyList()) +
+                        (container.get<HexproofFromComponent>()?.cardTypes?.map { "HEXPROOF_FROM_CARDTYPE_$it" } ?: emptyList()) +
                         (container.get<ToxicComponent>()?.let { listOf("TOXIC_${it.amount}") } ?: emptyList())).toMutableSet(),
                     colors = cardComponent.colors.map { it.name }.toMutableSet(),
                     types = extractTypes(cardComponent),

@@ -516,6 +516,13 @@ object ZoneTransitionService {
         if (entityId in newState.pendingSacrificeIds) {
             newState = newState.copy(pendingSacrificeIds = newState.pendingSacrificeIds - entityId)
         }
+        // Same one-shot lifetime for the discard-cause marker: the redirect check above has already
+        // read it, so drop it before any later move of the same card can see a stale cause.
+        if (entityId in newState.pendingDiscardCauseControllers) {
+            newState = newState.copy(
+                pendingDiscardCauseControllers = newState.pendingDiscardCauseControllers - entityId
+            )
+        }
         events.add(
             ZoneChangeEvent(
                 entityId = entityId,
@@ -737,19 +744,58 @@ object ZoneTransitionService {
      * Emits the standard `CardsDiscardedEvent` plus the `ZoneChangeEvent` produced by
      * `moveToZone`, so dies/discard triggers and animations both see the canonical pair.
      */
-    fun discardCard(state: GameState, playerId: EntityId, cardId: EntityId): ZoneTransitionResult =
-        discardCards(state, playerId, listOf(cardId))
+    fun discardCard(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId,
+        causedByControllerId: EntityId? = null
+    ): ZoneTransitionResult =
+        discardCards(state, playerId, listOf(cardId), causedByControllerId)
+
+    /**
+     * Central "these cards are being discarded because of a spell or ability" hook, mirroring
+     * [trackPermanentSacrifice]. Records the causing object's controller in
+     * [GameState.pendingDiscardCauseControllers] so the imminent `moveToZone` can offer the cause to
+     * zone-change replacements (Wilt-Leaf Liege) without every discard site threading an explicit
+     * parameter through the move.
+     *
+     * Pass null — or skip the call — for discards with no spell/ability cause: the CR 514.1
+     * hand-size discard, and discards made to pay a cost.
+     */
+    fun markDiscardCause(
+        state: GameState,
+        cardIds: List<EntityId>,
+        causedByControllerId: EntityId?
+    ): GameState {
+        if (causedByControllerId == null || cardIds.isEmpty()) return state
+        return state.copy(
+            pendingDiscardCauseControllers = state.pendingDiscardCauseControllers +
+                cardIds.associateWith { causedByControllerId }
+        )
+    }
 
     /**
      * Move multiple cards from a player's hand to their graveyard as a single discard.
      *
      * Emits one combined `CardsDiscardedEvent` (so the client renders "You discarded X, Y"
      * as a single log entry) plus one `ZoneChangeEvent` per card from `moveToZone`.
+     *
+     * The discard event fires whichever zone the cards actually end up in: a card whose own
+     * replacement diverts it (Wilt-Leaf Liege onto the battlefield) has still been discarded, and
+     * discard triggers still see it.
+     *
+     * @param causedByControllerId Controller of the spell or ability causing the discard, via
+     *   [markDiscardCause]. Null for the cleanup-step hand-size discard and for cost payments.
      */
-    fun discardCards(state: GameState, playerId: EntityId, cardIds: List<EntityId>): ZoneTransitionResult {
+    fun discardCards(
+        state: GameState,
+        playerId: EntityId,
+        cardIds: List<EntityId>,
+        causedByControllerId: EntityId? = null
+    ): ZoneTransitionResult {
         if (cardIds.isEmpty()) return ZoneTransitionResult(state, emptyList())
         val cardNames = cardIds.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
-        var newState = state
+        var newState = markDiscardCause(state, cardIds, causedByControllerId)
         val moveEvents = mutableListOf<EngineGameEvent>()
         for (cardId in cardIds) {
             val result = moveToZone(

@@ -2533,6 +2533,137 @@
     ]
 }
 
+// Elenda, Saint of Dusk
+{
+    "name": "Elenda, Saint of Dusk",
+    "manaCost": "{2}{W}{B}",
+    "typeLine": "Legendary Creature — Vampire Knight",
+    "oracleText": "Lifelink, hexproof from instants\nAs long as your life total is greater than your starting life total, Elenda gets +1/+1 and has menace. Elenda gets an additional +5/+5 as long as your life total is at least 10 greater than your starting life total.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Hexproof",
+            "scope": {
+                "type": "ProtectionScope.CardType",
+                "cardType": "Instant"
+            }
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "LifeTotal",
+                        "player": "You"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Add",
+                        "left": {
+                            "type": "StartingLifeTotal",
+                            "player": "You"
+                        },
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "MENACE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "LifeTotal",
+                        "player": "You"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Add",
+                        "left": {
+                            "type": "StartingLifeTotal",
+                            "player": "You"
+                        },
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 5,
+                    "toughnessBonus": 5,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "LifeTotal",
+                        "player": "You"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Add",
+                        "left": {
+                            "type": "StartingLifeTotal",
+                            "player": "You"
+                        },
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 10
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "rarity": "RARE",
+        "artist": "Chris Rahn",
+        "flavorText": "\"You have learned nothing in my absence.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/24955f5f-093c-4d33-b0c1-911cd36032ce.jpg?1783909092"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Elfsworn Giant
 {
     "name": "Elfsworn Giant",

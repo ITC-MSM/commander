@@ -1,5 +1,6 @@
 package com.wingedsheep.gameserver.scenario
 
+import com.wingedsheep.engine.core.CardEntityFactory
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -469,50 +470,10 @@ class ScenarioBuilderService(
                 ControllerComponent(ownerId)
             )
 
-            if (cardDef.script.cantBeCountered) {
-                container = container.with(CantBeCounteredComponent)
-            }
-
-            if (cardDef.keywordAbilities.any { it is KeywordAbility.Morph }) {
-                container = container.with(HasMorphAbilityComponent)
-            }
-
-            // Add ProtectionComponent for cards with protection from color/subtype
-            val protections = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Protection>()
-            val protectionColors = protections.flatMap { p ->
-                when (val s = p.scope) {
-                    is ProtectionScope.Color -> listOf(s.color)
-                    is ProtectionScope.Colors -> s.colors
-                    else -> emptyList()
-                }
-            }.toSet()
-            val protectionSubtypes = protections.mapNotNull {
-                (it.scope as? ProtectionScope.Subtype)?.subtype
-            }.toSet()
-            val protectionSupertypes = protections.mapNotNull {
-                (it.scope as? ProtectionScope.Supertype)?.supertype
-            }.toSet()
-            if (protectionColors.isNotEmpty() || protectionSubtypes.isNotEmpty() || protectionSupertypes.isNotEmpty()) {
-                container = container.with(ProtectionComponent(protectionColors, protectionSubtypes, protectionSupertypes))
-            }
-
-            // Add HexproofFromColorComponent for cards with hexproof from color
-            val hexproofFromColors = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.Hexproof>()
-                .mapNotNull { (it.scope as? ProtectionScope.Color)?.color }
-                .toSet()
-            if (hexproofFromColors.isNotEmpty()) {
-                container = container.with(HexproofFromColorComponent(hexproofFromColors))
-            }
-
-            // Add ToxicComponent for cards with printed Toxic N (sums per Rule 702.164b)
-            val toxicAmount = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.Numeric>()
-                .filter { it.keyword == Keyword.TOXIC }
-                .sumOf { it.n }
-            if (toxicAmount > 0) {
-                container = container.with(ToxicComponent(toxicAmount))
-            }
+            // Every component derived from the printed definition (can't-be-countered/copied,
+            // morph, protection, self-redirects, hexproof-from, Toxic) — shared with the real
+            // CardEntityFactory so scenario permanents never quietly lose one.
+            container = CardEntityFactory.applyDefinitionDecorations(container, cardDef)
 
             state = state.withEntity(cardId, container)
             return cardId

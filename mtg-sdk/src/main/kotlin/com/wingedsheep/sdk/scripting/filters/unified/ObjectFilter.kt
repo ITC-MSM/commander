@@ -670,6 +670,16 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.DealtCombatDamageToSourceControllerThisTurn
     )
 
+    /**
+     * Must be controlled — right now — by a player the effect's *source* dealt combat damage to
+     * this turn. Mirror of [dealtCombatDamageToSourceControllerThisTurn]; source-relative and
+     * cleared at end-of-turn cleanup. Used by "destroy each nonland permanent … whose controller
+     * was dealt combat damage by this creature this turn" (Steel Hellkite).
+     */
+    fun controllerDealtCombatDamageBySourceThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.ControllerDealtCombatDamageBySourceThisTurn
+    )
+
     /** Must be blocking */
     fun blocking() = copy(
         statePredicates = statePredicates + StatePredicate.IsBlocking

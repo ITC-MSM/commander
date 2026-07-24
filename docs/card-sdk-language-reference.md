@@ -2618,6 +2618,14 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   controller, so as an edict filter it means "...a creature that dealt combat damage to *you* this
   turn" (Witch-king of Angmar). Per-turn marker, cleared at end-of-turn cleanup; inert with no source
   context (group-static projection returns false).
+- `.controllerDealtCombatDamageBySourceThisTurn()` — the **mirror** of the above: the permanent is
+  controlled *right now* by a player the effect's **source** dealt combat damage to this turn; backed by
+  `StatePredicate.ControllerDealtCombatDamageBySourceThisTurn`. Reads the source's per-turn recipient
+  marker, so as a sweep filter it means "…each nonland permanent whose controller was dealt combat damage
+  by *this creature* this turn" (Steel Hellkite: `GameObjectFilter.NonlandPermanent.manaValueEqualsX()
+  .controllerDealtCombatDamageBySourceThisTurn()`). Controller is evaluated at resolution (CR 608.2), so it
+  doesn't matter who controlled the permanent when the damage landed, or whether it was on the battlefield
+  then. Same lifetime and source-relative caveats as its mirror.
 - `.saddled()` — permanent is saddled (CR 702.171b); backed by `StatePredicate.IsSaddled`.
 - `.crewedOrSaddledSourceThisTurn()` — source-relative: creature crewed (CR 702.122) or saddled
   (CR 702.171) the effect's source permanent this turn; backed by
@@ -4947,6 +4955,16 @@ composite abilities).
 - `Protection(color)` — protection from a single color.
 - `ProtectionFrom(set)` — protection from a set of colors/types.
 - `Protection(ProtectionScope.Supertype("Legendary"))` / `KeywordAbility.protectionFromSupertype("Legendary")` — protection from a supertype, e.g. "protection from legendary creatures" (Tsabo Tavoc). Enforced across targeting, blocking, and combat damage via projected `PROTECTION_FROM_SUPERTYPE_<X>` keywords.
+- `Hexproof(ProtectionScope.Color(Color.WHITE))` — "hexproof from white" (Knight of Malice). Projected as
+  `HEXPROOF_FROM_<COLOR>`.
+- `Hexproof(ProtectionScope.CardType("Instant"))` — "hexproof from instants" (Elenda, Saint of Dusk).
+  Projected as `HEXPROOF_FROM_CARDTYPE_<TYPE>`, mirroring the `PROTECTION_FROM_CARDTYPE_<TYPE>` idiom, and
+  enforced at all three targeting sites: legal-target enumeration (`TargetFinder`), cast/activation
+  validation (`TargetValidator`), and the resolution-time fizzle check (`StackResolver`). Like every
+  hexproof it only stops **opponents** — the permanent's controller can still target it — and it honours
+  hexproof-suppressing effects. The printed keyword rides on the card entity as `HexproofFromComponent`
+  (attached by `CardEntityFactory.applyDefinitionDecorations`); other `ProtectionScope`s format the oracle
+  text but have no targeting wiring yet and are deliberately not projected.
 - `Affinity(filter)` — cost reduction per matching permanent.
 - `Amplify(n)` — ETB reveal-creatures-for-counters.
 - `Devour(multiplier, sacrificeFilter, variant)` — "As this enters, you may sacrifice any number of [sacrificeFilter]. It enters with [multiplier] × that many +1/+1 counters." Plain Devour uses `sacrificeFilter = Creature` and `variant = ""`; the Edge of Eternities variant "Devour land N" uses `KeywordAbility.devourLand(n)` (`sacrificeFilter = Land`, `variant = "land"`). The keyword surfaces the rules text; pair with [`EntersWithDevour`](#15-replacement-effects) for the mechanical behavior.
@@ -5528,6 +5546,10 @@ answer it and would silently return `false`.
 
 - `LifeAtLeast(n, player?)` — player has ≥N life.
 - `LifeAtMost(n, player?)` — player has ≤N life.
+- `LifeAboveStartingBy(n)` — your life total is at least N greater than your **starting** life total,
+  reading the seat's real starting total (20 / 30 / 40 / 2HG) rather than a hardcoded 20. `n = 1` is the
+  plain "greater than your starting life total" reading. Elenda, Saint of Dusk gates her two stat tiers on
+  `LifeAboveStartingBy(1)` and `LifeAboveStartingBy(10)`.
 - `APlayerLifeAtMost(n)` — *some* player in the game has ≤N life (existential over `state.turnOrder`; distinct from `LifeAtMost`, which is `Player.You`). Used by enters-tapped-unless lands like Razortrap Gorge.
 - `YouLostLife` — you lost life this turn.
 - `OpponentLostLife` — an opponent lost life this turn.
@@ -6925,7 +6947,7 @@ replacementEffect {
   covered too: e.g. Dauntless Dismantler's "Artifacts your opponents control enter tapped" taps an
   opponent's Map/Treasure/Clue token, and Authority of the Consuls taps opponents' creature tokens (a token
   entering attacking keeps its tapped state and is not overridden).
-- `RedirectZoneChange(newDestination, appliesTo, linkToSource = false, selfOnly = false, shuffleIntoLibrary = false, reveal = false)`
+- `RedirectZoneChange(newDestination, appliesTo, linkToSource = false, selfOnly = false, shuffleIntoLibrary = false, reveal = false, requiredCause = ZoneChangeCause.Any)`
   — redirect a zone change to a different destination (Rest in Peace / Leyline of the Void: graveyard →
   exile). `appliesTo` is an `EventPattern.ZoneChangeEvent(filter, from?, to?)`; the `filter`'s
   `controllerPredicate` scopes it (e.g. `OwnedByOpponent` for Leyline). When `linkToSource = true` and
@@ -6948,6 +6970,18 @@ replacementEffect {
   is the flavor "reveal it and …" (informational — a public-zone card is already known). Darksteel
   Colossus / Progenitus: `RedirectZoneChange(newDestination = Zone.LIBRARY, appliesTo =
   ZoneChangeEvent(to = Zone.GRAVEYARD), selfOnly = true, shuffleIntoLibrary = true, reveal = true)`.
+  **Cause qualifier:** `requiredCause` narrows the replacement to a particular *reason* for the move, on
+  top of the from/to zones — the zones alone can't tell "hand → graveyard because you discarded to hand
+  size" from "…because an opponent's Mind Rot made you". `ZoneChangeCause.Any` (default) is unqualified;
+  `ZoneChangeCause.DiscardedByOpponentEffect` fires only when a spell or ability an **opponent** of the
+  discarding player controls caused the discard — excluding the cleanup-step hand-size discard (a
+  turn-based action) and discards paid as a cost of your own spell. Wilt-Leaf Liege / Loxodon Smiter:
+  `RedirectZoneChange(newDestination = Zone.BATTLEFIELD, appliesTo = ZoneChangeEvent(filter =
+  GameObjectFilter.Any, from = Zone.HAND, to = Zone.GRAVEYARD), selfOnly = true, requiredCause =
+  ZoneChangeCause.DiscardedByOpponentEffect)`. Engine-side, the discard sites record the causing
+  object's controller in the transient `GameState.pendingDiscardCauseControllers` marker (the same idiom
+  as `pendingSacrificeIds`), which the redirect path reads and `moveToZone` consumes. The card still
+  counts as discarded either way — `CardsDiscardedEvent` fires regardless of where it lands.
 - `RedirectZoneChangeWithEffect(newDestination, additionalEffect, selfOnly = false, linkToSource = false,
   appliesTo)` — like `RedirectZoneChange` but also runs `additionalEffect` when the replacement fires.
   The additional effect is applied through a small executor whitelist (not the full pipeline) —

@@ -211,7 +211,7 @@ class TargetFinder(
             if (projected.hasKeyword(entityId, Keyword.HEXPROOF) && entityController != controllerId) continue
             if (projected.hasKeyword(entityId, Keyword.SHROUD)) continue
             // Check hexproof from color
-            if (hasHexproofFromSourceColors(state, projected, entityId, entityController, controllerId, sourceId)) continue
+            if (hasHexproofFromSource(state, projected, entityId, entityController, controllerId, sourceId)) continue
             // Check can't-be-targeted-by-abilities
             if (hasCantBeTargetedRestriction(state, entityId, entityController, controllerId, targetingSourceType, sourceId)) continue
 
@@ -250,7 +250,7 @@ class TargetFinder(
             if (projected.hasKeyword(entityId, Keyword.HEXPROOF) && entityController != controllerId) continue
             if (projected.hasKeyword(entityId, Keyword.SHROUD)) continue
             // Check hexproof from color
-            if (hasHexproofFromSourceColors(state, projected, entityId, entityController, controllerId, sourceId)) continue
+            if (hasHexproofFromSource(state, projected, entityId, entityController, controllerId, sourceId)) continue
             // Check can't-be-targeted-by-abilities
             if (hasCantBeTargetedRestriction(state, entityId, entityController, controllerId, targetingSourceType, sourceId)) continue
 
@@ -298,7 +298,7 @@ class TargetFinder(
                     return@filter false
                 }
                 // Check hexproof from color
-                if (hasHexproofFromSourceColors(state, projected, entityId, entityController, controllerId, sourceId)) {
+                if (hasHexproofFromSource(state, projected, entityId, entityController, controllerId, sourceId)) {
                     return@filter false
                 }
                 // Check can't-be-targeted-by-abilities
@@ -348,7 +348,7 @@ class TargetFinder(
                 continue
             }
             // Check hexproof from color
-            if (hasHexproofFromSourceColors(state, projected, entityId, entityController, controllerId, sourceId)) {
+            if (hasHexproofFromSource(state, projected, entityId, entityController, controllerId, sourceId)) {
                 continue
             }
             // Check can't-be-targeted-by-abilities
@@ -410,7 +410,7 @@ class TargetFinder(
                 return@filter false
             }
             // Check hexproof from color
-            if (hasHexproofFromSourceColors(state, projected, entityId, entityController, controllerId, sourceId)) {
+            if (hasHexproofFromSource(state, projected, entityId, entityController, controllerId, sourceId)) {
                 return@filter false
             }
             // Check can't-be-targeted-by-abilities
@@ -546,7 +546,7 @@ class TargetFinder(
             if (projected.hasKeyword(entityId, Keyword.HEXPROOF) && entityController != controllerId) continue
             if (projected.hasKeyword(entityId, Keyword.SHROUD)) continue
             // Check hexproof from color
-            if (hasHexproofFromSourceColors(state, projected, entityId, entityController, controllerId, sourceId)) continue
+            if (hasHexproofFromSource(state, projected, entityId, entityController, controllerId, sourceId)) continue
             if (hasCantBeTargetedRestriction(state, entityId, entityController, controllerId, targetingSourceType, sourceId)) continue
 
             if (permanentFilter != null &&
@@ -608,15 +608,16 @@ class TargetFinder(
     }
 
     /**
-     * Check if a permanent has hexproof from a color that matches the targeting source's colors.
-     * "Hexproof from [color]" means opponents can't target it with spells/abilities of that color.
+     * Check if a permanent has "hexproof from [quality]" matching the targeting source — either one
+     * of its colors ("hexproof from white") or one of its card types ("hexproof from instants").
+     * Rule 702.11b: opponents can't target it with spells/abilities of that quality.
      *
-     * Gets source colors from projected state (for battlefield permanents) and falls back to
-     * the base CardComponent colors (for spells in hand/on the stack that aren't projected).
+     * Gets the source's colors/types from projected state (for battlefield permanents) and falls
+     * back to the base [CardComponent] (for spells in hand/on the stack, which aren't projected).
      *
-     * @return true if the entity is protected by hexproof-from-color against the source
+     * @return true if the entity is protected by hexproof-from against the source
      */
-    private fun hasHexproofFromSourceColors(
+    private fun hasHexproofFromSource(
         state: GameState,
         projected: ProjectedState,
         entityId: EntityId,
@@ -636,7 +637,12 @@ class TargetFinder(
             return true
         }
         // Hexproof from monocolored: a source with exactly one color can't target (CR 105.2).
-        return sourceColors.size == 1 && projected.hasKeyword(entityId, "HEXPROOF_FROM_MONOCOLORED")
+        if (sourceColors.size == 1 && projected.hasKeyword(entityId, "HEXPROOF_FROM_MONOCOLORED")) {
+            return true
+        }
+        return SourceTypeTargeting.sourceCardTypes(state, sourceId).any { cardType ->
+            projected.hasKeyword(entityId, "HEXPROOF_FROM_CARDTYPE_${cardType.uppercase()}")
+        }
     }
 
     /**

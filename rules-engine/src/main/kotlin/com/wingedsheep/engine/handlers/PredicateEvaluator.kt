@@ -1056,6 +1056,21 @@ class PredicateEvaluator {
                         ?.playerIds?.contains(sourceController) == true
             }
 
+            // Mirror of the above: the *source* is the damage dealer and the candidate is any
+            // permanent. Reads the source's per-turn recipient marker and asks whether the
+            // candidate's current controller is among them ("destroy each nonland permanent whose
+            // controller was dealt combat damage by this creature this turn" — Steel Hellkite).
+            // Controller is read from the projected state so control-changing effects count.
+            StatePredicate.ControllerDealtCombatDamageBySourceThisTurn -> {
+                val sourceId = context?.sourceId
+                val damagedPlayers = sourceId
+                    ?.let { state.getEntity(it)?.get<DealtCombatDamageToPlayersThisTurnComponent>() }
+                    ?.playerIds ?: emptySet()
+                val candidateController = state.projectedState.getController(entityId)
+                    ?: container.get<ControllerComponent>()?.playerId
+                candidateController != null && candidateController in damagedPlayers
+            }
+
             // Whether this creature has been declared as an attacker this turn — derived
             // from the controller's PlayerAttackersThisTurnComponent, the same set that
             // backs raid / "you attacked with N creatures this turn" tribal triggers.
