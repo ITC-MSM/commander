@@ -94,6 +94,28 @@ class NineLivesFamiliarScenarioTest : FunSpec({
         revivalCounters(driver, cat) shouldBe 7
     }
 
+    test("dying during the end step defers the return to the next turn's end step") {
+        val driver = newDriver()
+        val player = driver.player1
+
+        val cat = castFamiliar(driver, player)
+        driver.passPriorityUntil(Step.END)
+        bolt(driver, player, cat)
+
+        // The current end step's beginning has already passed, so nothing comes back now.
+        driver.state.getZone(ZoneKey(player, Zone.GRAVEYARD)).contains(cat) shouldBe true
+
+        // Leave this turn, then reach the *next* end step (the opponent's — the oracle says "the
+        // next end step", not "your next end step").
+        driver.passPriorityUntil(Step.UPKEEP)
+        driver.state.getZone(ZoneKey(player, Zone.GRAVEYARD)).contains(cat) shouldBe true
+        driver.passPriorityUntil(Step.END)
+        driver.bothPass()
+
+        driver.state.getZone(ZoneKey(player, Zone.BATTLEFIELD)).contains(cat) shouldBe true
+        revivalCounters(driver, cat) shouldBe 7
+    }
+
     test("a Familiar that entered without revival counters stays in the graveyard") {
         val driver = newDriver()
         val player = driver.player1
