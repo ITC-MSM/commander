@@ -682,9 +682,18 @@ class GamePlayHandler(
             // the input log and only earns its keep for games someone may still watch years later.
             val persistenceInfo = gameSession.getPlayerPersistenceInfo()
             val hasHumanSeat = gameSession.getPlayers().any { persistenceInfo[it.playerId]?.isAi != true }
-            replayService.save(replay, archive = hasHumanSeat)
-            replayCheckpointFlusher.forget(gameSessionId)
-            logger.info("Saved compact replay for game $gameSessionId ($frameCount frames, ${replay.actions.size} actions, archived=$hasHumanSeat)")
+            // Isolated: everything below still has to run. A replay is nice to have, but losing one
+            // to a database hiccup must not skip the match/ELO rows, the tournament callback or the
+            // session cleanup at the end of this method — that would leak the session and silently
+            // drop a player's stats over a failure in the least important write here.
+            runCatching {
+                replayService.save(replay, archive = hasHumanSeat)
+                replayCheckpointFlusher.forget(gameSessionId)
+            }.onFailure {
+                logger.error("Failed to save replay for game $gameSessionId: ${it.message}", it)
+            }.onSuccess {
+                logger.info("Saved compact replay for game $gameSessionId ($frameCount frames, ${replay.actions.size} actions, archived=$hasHumanSeat)")
+            }
         }
 
         // Record a durable match-history row for account stats. The sink is a no-op unless accounts

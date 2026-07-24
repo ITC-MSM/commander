@@ -100,6 +100,27 @@ data class ReplayCheckpoint(
     val fingerprint: String,
 )
 
+/**
+ * One consistent read of a live session's recording state, taken under the session's state lock.
+ *
+ * The pieces have to be sampled together or the resume gate is unsound: [fingerprint] is what a
+ * restart compares the recovered position against, so if it describes a position *later* than
+ * [actions] covers, a crash at exactly that position passes the gate and recording resumes with a
+ * hole in the log — the fictional replay the gate exists to prevent. Reading each getter separately
+ * makes that a live race, since the game thread advances between calls.
+ */
+data class ReplayRecordingSnapshot(
+    val setup: ReplaySetup,
+    val actions: List<com.wingedsheep.engine.core.GameAction>,
+    val yields: List<ReplayYieldEntry>,
+    val checkpoints: List<ReplayCheckpoint>,
+    /** [ReplayFingerprint] of the position [actions] produces — the resume gate's expected value. */
+    val fingerprint: String,
+    val startedAt: java.time.Instant?,
+    /** Sampled with the rest, so a game that ended mid-sweep isn't flushed as in-progress. */
+    val gameOver: Boolean,
+)
+
 /** Cadence knobs for the live recorder. */
 object ReplayRecordingPolicy {
     /**

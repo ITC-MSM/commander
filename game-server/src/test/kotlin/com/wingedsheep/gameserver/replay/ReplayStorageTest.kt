@@ -67,17 +67,21 @@ class ReplayStorageTest : ScenarioTestBase() {
         return session
     }
 
-    private fun GameSession.snapshotRecording() = CompactReplay(
-        gameId = sessionId,
-        players = getPlayers().map { ReplayPlayerInfo(it.playerId.value, it.playerName) },
-        startedAt = (replayStartedAt ?: Instant.now()).toString(),
-        endedAt = "",
-        winnerName = null,
-        setup = getReplaySetup().shouldNotBeNull(),
-        actions = getRecordedActions(),
-        yields = getReplayYields(),
-        checkpoints = getReplayCheckpoints(),
-    )
+    /** Exactly what the flusher stores: one atomic snapshot turned into a record + its gate value. */
+    private fun GameSession.flushRecord(): Pair<CompactReplay, String> {
+        val snapshot = replayRecordingSnapshot().shouldNotBeNull()
+        return CompactReplay(
+            gameId = sessionId,
+            players = getPlayers().map { ReplayPlayerInfo(it.playerId.value, it.playerName) },
+            startedAt = (snapshot.startedAt ?: Instant.now()).toString(),
+            endedAt = "",
+            winnerName = null,
+            setup = snapshot.setup,
+            actions = snapshot.actions,
+            yields = snapshot.yields,
+            checkpoints = snapshot.checkpoints,
+        ) to snapshot.fingerprint
+    }
 
     init {
         test("the in-memory store lists a player's finished games, newest first") {
@@ -164,10 +168,23 @@ class ReplayStorageTest : ScenarioTestBase() {
             store.findInProgress() shouldBe emptyList()
         }
 
+        test("a flush snapshot's fingerprint is the position its own action log produces") {
+            val session = playPartialGame()
+            val (record, fingerprint) = session.flushRecord()
+
+            // The resume gate compares this fingerprint against the state recovered after a restart,
+            // so it is only a valid gate if it describes the position the stored log itself
+            // reproduces. Sampling the log and the fingerprint separately breaks exactly this: the
+            // game thread advances between the two reads, and a crash at the position the fingerprint
+            // names then passes the gate over a hole in the log.
+            val replayed = ReplayReconstructor(cardRegistry, null)
+                .reconstructStateAt(record, record.actions.size).shouldNotBeNull()
+            ReplayFingerprint.of(replayed) shouldBe fingerprint
+        }
+
         test("a recording whose flush captured the live position resumes") {
             val session = playPartialGame()
-            val flushed = session.snapshotRecording()
-            val fingerprint = session.getReplayResumeFingerprint().shouldNotBeNull()
+            val (flushed, fingerprint) = session.flushRecord()
             val actionCount = flushed.actions.size
 
             // A restart: same recovered state, recording handed back from the store.
@@ -180,7 +197,7 @@ class ReplayStorageTest : ScenarioTestBase() {
 
         test("a recording that trails the recovered state stops rather than splicing onto a stale prefix") {
             val session = playPartialGame()
-            val stale = session.snapshotRecording()
+            val (stale, _) = session.flushRecord()
 
             // The flush landed, then a few more actions were played before the crash — so the
             // fingerprint stored with the flush describes an earlier position than the recovered one.

@@ -150,6 +150,7 @@ data class GameReplayRow(
 /** One seat of a [GameReplayRow], by engine player id. */
 @Table("game_replay_players")
 data class GameReplayPlayerRow(
+    @Id val id: Long? = null,
     val seat: Int,
     val playerId: String,
     val playerName: String,

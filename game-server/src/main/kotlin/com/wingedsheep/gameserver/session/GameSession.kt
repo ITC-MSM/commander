@@ -1312,24 +1312,39 @@ class GameSession(
      * Computed once, on first use (the first flush or game over) rather than at [startGame], so the
      * serialization cost lands off the game-start path and never at all for games that end before
      * they're worth recording.
+     *
+     * Serialization happens *outside* [stateLock]: it reads only the setup's decklists, which never
+     * change once the game has started, and it is tens of milliseconds of JSON per game — long
+     * enough that holding the game's lock for it would visibly stall play on the first flush. Two
+     * callers racing here both capture and one result is published; wasted work, never wrong.
      */
-    fun getPinnedCards(): List<String> = synchronized(stateLock) {
+    fun getPinnedCards(): List<String> {
         pinnedCards?.let { return it }
-        val setup = replaySetup ?: return emptyList()
-        com.wingedsheep.gameserver.replay.ReplayCardPin.capture(cardRegistry, setup)
-            .also { pinnedCards = it }
+        val setup = getReplaySetup() ?: return emptyList()
+        val captured = com.wingedsheep.gameserver.replay.ReplayCardPin.capture(cardRegistry, setup)
+        return synchronized(stateLock) { pinnedCards ?: captured.also { pinnedCards = it } }
     }
 
     /**
-     * Fingerprint of the live position right now, paired with the recorded action count it belongs
-     * to. Written alongside a flushed in-progress record so a restart can tell whether the flush
-     * captured everything (see [com.wingedsheep.gameserver.replay.StoredReplay.resumeFingerprint]).
-     * Null for sessions that aren't being recorded.
+     * One consistent read of everything the flusher needs, so the recording it stores and the
+     * fingerprint it stores describe the *same* position — see
+     * [com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot] for why sampling them separately
+     * is unsound. Null for sessions that aren't being recorded, or aren't started yet.
      */
-    fun getReplayResumeFingerprint(): String? = synchronized(stateLock) {
-        if (replaySetup == null) return null
-        gameState?.let { com.wingedsheep.gameserver.replay.ReplayFingerprint.of(it) }
-    }
+    internal fun replayRecordingSnapshot(): com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot? =
+        synchronized(stateLock) {
+            val setup = replaySetup ?: return null
+            val state = gameState ?: return null
+            com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot(
+                setup = setup,
+                actions = recordedActions.toList(),
+                yields = recordedYields.toList(),
+                checkpoints = recordedCheckpoints.toList(),
+                fingerprint = com.wingedsheep.gameserver.replay.ReplayFingerprint.of(state),
+                startedAt = replayStartedAt,
+                gameOver = state.gameOver,
+            )
+        }
 
     /**
      * Total number of replay frames: the initial state plus one per recorded action. Zero until the

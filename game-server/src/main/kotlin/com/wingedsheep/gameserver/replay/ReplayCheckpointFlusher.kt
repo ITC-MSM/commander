@@ -101,31 +101,34 @@ class ReplayCheckpointFlusher(
     }
 
     private fun flushSession(session: GameSession) {
-        val setup = session.getReplaySetup() ?: return
+        // One consistent read: the stored log and the stored fingerprint must describe the same
+        // position, or a crash at the position the fingerprint names lets the resume gate pass over a
+        // hole in the log. See [ReplayRecordingSnapshot].
+        val snapshot = session.replayRecordingSnapshot() ?: return
         // A finished game's final record is written on the game-over path while its session is still
         // live and still recorded; there is nothing left to checkpoint, and [ReplayService] would
         // refuse the write anyway. Skip before paying for the encode.
-        if (session.isGameOver()) return
-        val actions = session.getRecordedActions()
-        if (flushed[session.sessionId] == actions.size) return
+        if (snapshot.gameOver) return
+        if (flushed[session.sessionId] == snapshot.actions.size) return
 
         replayService.saveInProgress(
             replay = CompactReplay(
                 gameId = session.sessionId,
                 players = session.getPlayers().map { ReplayPlayerInfo(it.playerId.value, it.playerName) },
-                startedAt = (session.replayStartedAt ?: Instant.now()).toString(),
+                startedAt = (snapshot.startedAt ?: Instant.now()).toString(),
                 endedAt = "",
                 winnerName = null,
-                setup = setup,
-                actions = actions,
-                yields = session.getReplayYields(),
+                setup = snapshot.setup,
+                actions = snapshot.actions,
+                yields = snapshot.yields,
                 engineVersion = engineVersion.value,
+                // Independent of the action count — derived from the decklists, which never change.
                 pinnedCards = session.getPinnedCards(),
-                checkpoints = session.getReplayCheckpoints(),
+                checkpoints = snapshot.checkpoints,
             ),
-            resumeFingerprint = session.getReplayResumeFingerprint(),
+            resumeFingerprint = snapshot.fingerprint,
         )
-        flushed[session.sessionId] = actions.size
+        flushed[session.sessionId] = snapshot.actions.size
     }
 
     private companion object {
