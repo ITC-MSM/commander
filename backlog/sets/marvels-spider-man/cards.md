@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 96 / 190
+**Implemented:** 97 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -25,7 +25,7 @@
 - [ ] Costume Closet
 - [x] Daily Bugle Building
 - [x] Daily Bugle Reporters
-- [ ] Damage Control Crew
+- [x] Damage Control Crew
 - [x] Doc Ock's Henchmen
 - [x] Doc Ock's Tentacles
 - [x] Doc Ock, Sinister Scientist

@@ -838,6 +838,84 @@
     ]
 }
 
+// Damage Control Crew
+{
+    "name": "Damage Control Crew",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "When this creature enters, choose one —\n• Repair — Return target card with mana value 4 or greater from your graveyard to your hand.\n• Impound — Exile target artifact or enchantment.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Hand"
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "mv>=4 own:you",
+                                        "zone": "Graveyard"
+                                    }
+                                }
+                            ],
+                            "description": "Repair — Return target card with mana value 4 or greater from your graveyard to your hand."
+                        },
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Exile"
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "artifact|enchantment"
+                                    }
+                                }
+                            ],
+                            "description": "Impound — Exile target artifact or enchantment."
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, choose one — Repair — Return target card with mana value 4 or greater from your graveyard to your hand. • Impound — Exile target artifact or enchantment."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "rarity": "UNCOMMON",
+        "artist": "Borja Pindado",
+        "flavorText": "\"We got two hours until Spidey's webbing dissolves. I need engineers on-site now.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad2cab87-691d-44fe-ab2f-33760b1feb0f.jpg?1783905330"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Doc Ock's Henchmen
 {
     "name": "Doc Ock's Henchmen",
