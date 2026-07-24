@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 97 / 190
+**Implemented:** 98 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -114,7 +114,7 @@
 - [x] School Daze
 - [x] Scorpion's Sting
 - [x] Scorpion, Seething Striker
-- [ ] Scout the City
+- [x] Scout the City
 - [ ] Secret Identity
 - [x] Selfless Police Captain
 - [ ] Shadow of the Goblin
