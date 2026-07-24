@@ -68,6 +68,16 @@ enum class ChoiceSlot {
     WATERBEND_PAID,
 
     /**
+     * Whether the spell's **gift** additional cost was paid when cast (CR 702.174a, Bloomburrow —
+     * "as an additional cost to cast this spell, you may choose an opponent"). A present value
+     * means the gift was promised; the promised opponent rides along in [OPPONENT]. Read back
+     * through [com.wingedsheep.sdk.dsl.Conditions.GiftWasPromised] (and its negation for the
+     * "if the gift wasn't promised" riders). Pairs with
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.Gift].
+     */
+    GIFT_PROMISED,
+
+    /**
      * An opponent chosen as the object entered, stored as a [ChoiceValue.EntityChoice]
      * carrying the player entity id (e.g. Jihad "as this enchantment enters, choose
      * a color and an opponent"). Read back through the

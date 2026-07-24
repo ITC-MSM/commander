@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.actions.spell
 import com.wingedsheep.sdk.dsl.Patterns
+import com.wingedsheep.sdk.dsl.giftKeyword
 
 import com.wingedsheep.engine.core.AlternativeCostType
 import com.wingedsheep.engine.core.CastSpell
@@ -218,6 +219,19 @@ class CastSpellHandler(
             SneakWindow.graveyardSneakGrantCost(state, action.playerId, cardRegistry) != null
         if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast && !hasGraveyardSneak) {
             return "Card is not in your hand"
+        }
+
+        // Gift (CR 702.174a): the promise is an additional cost whose "payment" is choosing an
+        // opponent, so the recipient must be an opponent of the caster and the card must actually
+        // have gift.
+        action.giftRecipient?.let { recipient ->
+            val giftCard = cardRegistry.getCard(cardComponent.cardDefinitionId)
+            if (giftCard?.giftKeyword() == null) {
+                return "${cardComponent.name} has no gift cost to promise"
+            }
+            if (recipient !in state.getOpponents(action.playerId)) {
+                return "A gift can only be promised to an opponent"
+            }
         }
 
         // Memory Vessel: "they can't play cards from their hand" — hand-scoped, so casts from
@@ -2974,6 +2988,9 @@ class CastSpellHandler(
             // True when the spell's waterbend additional cost was paid (Avatar) — mandatory costs
             // always, optional "you may waterbend {N}" only when the player elected it.
             wasWaterbendPaid = cardDef?.script?.spellWaterbend?.let { !it.optional || action.wasWaterbendPaid } == true,
+            // Gift (CR 702.174a): the promised opponent, elected as part of casting. Only honored
+            // for a card that actually has gift — validate() rejects the flag otherwise.
+            giftRecipient = action.giftRecipient?.takeIf { cardDef?.giftKeyword() != null },
             wasWarped = wasWarped,
             wasEvoked = wasEvoked,
             wasImpending = wasImpending,

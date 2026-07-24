@@ -119,6 +119,12 @@ export interface CastSpellAction {
    * resolving effect can branch on `WaterbendWasPaid`.
    */
   readonly wasWaterbendPaid?: boolean
+  /**
+   * The opponent promised this spell's gift additional cost (Bloomburrow gift — CR 702.174a), or
+   * absent when the gift wasn't promised. The server emits a `CastWithGift` variant of the normal
+   * cast per opponent; the client just plays the variant the player picked.
+   */
+  readonly giftRecipient?: EntityId
   /** Pre-chosen damage distribution for DividedDamageEffect spells (target ID -> damage amount) */
   readonly damageDistribution?: Record<EntityId, number>
   /**

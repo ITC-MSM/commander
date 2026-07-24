@@ -23,6 +23,13 @@ data class SpellOnStackComponent(
     val wasKicked: Boolean = false,  // For kicker costs
     val wasBlightPaid: Boolean = false,  // For BlightOrPay additional cost — true if blight path was taken
     val wasWaterbendPaid: Boolean = false,  // For optional spell waterbend additional cost (Avatar) — true if "you may waterbend {N}" was paid; readable via WaterbendWasPaid
+    /**
+     * The opponent promised this spell's gift additional cost (CR 702.174a), or null when the gift
+     * wasn't promised. A resolving permanent carries the fact onward in its cast-choices bag
+     * (ChoiceSlot.GIFT_PROMISED + ChoiceSlot.OPPONENT) so its gift trigger and
+     * "if the gift was(n't) promised" riders can read it — see StackResolver.
+     */
+    val giftRecipient: EntityId? = null,
     val chosenModes: List<Int> = emptyList(),  // For modal spells (700.2). Ordered; same index may repeat when allowRepeat.
     val modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),  // Per-mode chosen targets, aligned 1:1 with chosenModes
     val modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),  // Per-mode TargetRequirements for 608.2b re-validation at resolution

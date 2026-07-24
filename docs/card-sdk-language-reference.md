@@ -1697,7 +1697,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   single opponent, so 2-player games see no extra decision. The source may be a spell on the stack
   (the choice lives on the spell entity for its resolution) or a permanent (recorded durably).
   `Patterns.Mechanic.giftSpell` prefixes its gift mode with this automatically — gift recipients
-  address `Player.ChosenOpponent`. The *as-enters* analogue is `EntersWithChoice(ChoiceType.OPPONENT)`,
+  address `Player.ChosenOpponent`. (Permanent gift cards don't need it: `gift(kind)` records the
+  promised opponent in the same slot as part of the cast — see § 11 "Gift".) The *as-enters* analogue
+  is `EntersWithChoice(ChoiceType.OPPONENT)`,
   which writes the same slot (Jihad, The Rack).
 - `GrantHexproofFromChosenColorEffect(target)` — hexproof from chosen color.
 - `GrantProtectionFromChosenColorEffect(target)` — protection from chosen color. Must run inside `ChooseColorThen`; wrap in `ForEachInGroup` for the group case (Akroma's Blessing: "Creatures you control gain protection from the chosen color").
@@ -4852,7 +4854,7 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > mechanics — `mayBeginGameOnBattlefield()`, `flurry { }`, `mobilize(…)`, `firebending(n)`, `sneak(cost)`, `decayed()`,
 > `vividEtb { }` / `vividCostReduction()`, `convergeEntersWithCounters(counterType?)`,
 > `impending(time, cost)`, `renew(cost) { }`, `enduring()`,
-> `craft(filter, cost)`, `station()`, `jobSelect()` — are `CardBuilder` **extension functions** in
+> `craft(filter, cost)`, `station()`, `jobSelect()`, `gift(kind)` — are `CardBuilder` **extension functions** in
 > `mtg-sdk/.../dsl/mechanics/` (one file per mechanic), not methods on the core `CardBuilder`. They
 > stay in package `com.wingedsheep.sdk.dsl`, so the call syntax is unchanged, but a card file that
 > uses one needs the matching import (e.g. `import com.wingedsheep.sdk.dsl.station`). Evergreen /
@@ -4883,6 +4885,30 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > SourceReturnedAsEnchantment)` so, while the marker is present, the permanent is an enchantment with no other
 > card types or subtypes. Author the printed dies-clause + reminder text into `oracleText`. The
 > `Keyword.ENDURING` display keyword carries no combat behavior.
+
+> **Gift** (CR 702.174, Bloomburrow). "Gift a \[something\]" is two abilities: an **additional cost**
+> — "as an additional cost to cast this spell, you may choose an opponent" — and, on a permanent, the
+> triggered ability "when this permanent enters, if its gift cost was paid, \[effect\]" whose effect the
+> \[something\] defines (CR 702.174d–i: a card → they draw, a Food/Treasure → they create that token, a
+> tapped Fish → tapped 1/1 blue Fish, an Octopus → 8/8 blue Octopus, an extra turn → they take one).
+>
+> *Permanents:* `card { gift(GiftKind.CARD) }` (import `com.wingedsheep.sdk.dsl.gift`) adds
+> `KeywordAbility.Gift(kind)` **and** the derived enters-ability (`giftEnterTrigger(kind)` — an
+> intervening-if trigger on `Conditions.GiftWasPromised`, closing with `Effects.GiftGiven()` so
+> "whenever you give a gift" fires per CR 702.174c). Because the promise is a *cast* choice, the
+> legal-action enumerator clones each normal cast into a `CastWithGift` variant per opponent
+> (`CastSpell.giftRecipient`), the cast handler records it on the stack object, and the resolving
+> permanent carries `ChoiceSlot.GIFT_PROMISED` + `ChoiceSlot.OPPONENT` durably — so the card's own
+> printed enters-abilities gate on `Conditions.GiftWasPromised` / `Conditions.Not(...)` instead of asking
+> the player anything at resolution. **Never model the promise as a resolution-time choice**: the gift is
+> promised as the spell is cast, so a mode picker on the enters-trigger asks after the permanent has
+> already entered.
+>
+> *Instants and sorceries* have no permanent to trigger off — their gift-paid branch is part of the
+> spell's own effect, so they keep `Patterns.Mechanic.giftSpell(noGiftMode, giftMode)`: a two-mode
+> `ModalEffect` (`countsAsModalSpell = false`) whose mode is chosen **at cast time** by the engine's
+> cast-time mode picker, which is what makes the choice legal there (Long River's Pull, Crumb and Get It).
+> The gift mode is prefixed with `Effects.ChooseOpponent(...)` and addresses `Player.ChosenOpponent`.
 
 > **Converge** (ability word, CR 207.2c — flavor only, no keyword, like Opus/Vivid). Scales an effect
 > by the number of distinct colors of mana spent to cast the spell. Three shapes:
@@ -5589,6 +5615,12 @@ answer it and would silently return `false`.
   extra +1/+1 counter", `WasCastFromZone(Zone.LIBRARY)`).
 - `WasKicked` — cast with kicker / multikicker / offspring (i.e. an `OptionalAdditionalCost` with `branchesEffect = true` whose extra cost was paid). FlashKicker payments are intentionally invisible to this condition.
 - `SneakCostWasPaid` — the source was cast for its `Sneak` cost (CR 702.190 — mana + returning an unblocked attacker). Reads the durable `ChoiceSlot.SNEAK` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. Backs riders like Leonardo, Leader in Blue and The Last Ronin's Technique.
+- `GiftWasPromised` — the spell's **gift** additional cost was paid, i.e. "if the gift was promised"
+  (CR 702.174a/b, Bloomburrow). A facade over `CastChoiceMade(ChoiceSlot.GIFT_PROMISED)` — the flag the
+  engine stamps (together with the promised opponent in `ChoiceSlot.OPPONENT`) on a permanent whose
+  gift was promised while casting. Gate a permanent's printed enters-abilities with it (Scrapshooter's
+  destroy, Starforged Sword's attach) and with `Conditions.Not(GiftWasPromised)` for the "if the gift
+  wasn't promised" riders (Kitnap's stun counters). See `gift(kind)` in § 11.
 - `WaterbendWasPaid` — the spell's optional spell-level **waterbend** additional cost (`waterbendCost(..., optional = true)`, Avatar: The Last Airbender) was paid. Reads the durable `ChoiceSlot.WATERBEND_PAID` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. The waterbend analogue of `BlightWasPaid`; backs "if this spell's additional cost was paid" on Ruinous Waterbending and Spirit Water Revival.
 - `NoManaSpentToCast` — "it wasn't cast or no mana was spent to cast it": the standard free-cast
   payoff clause (**Freestrider Commando**, **Satoru, the Infiltrator**). True when the *total* mana

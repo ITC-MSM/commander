@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.dsl.giftKeyword
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
@@ -1546,7 +1547,56 @@ class CastSpellEnumerator : ActionEnumerator {
         // --- Casualty ---
         enumerateCasualty(context, hand, result)
 
-        return applySpellWaterbendMetadata(context, expandChoiceAdditionalCosts(context, result))
+        return expandGiftPromise(
+            context,
+            applySpellWaterbendMetadata(context, expandChoiceAdditionalCosts(context, result))
+        )
+    }
+
+    /**
+     * Post-process: offer the **gift** additional cost (CR 702.174a, Bloomburrow) as its own cast
+     * variant — "as an additional cost to cast this spell, you may choose an opponent".
+     *
+     * The promise costs nothing and changes neither the mana cost nor the targets, so each normal
+     * cast is simply cloned into a `CastWithGift` twin carrying the promised opponent (one per
+     * opponent, so multiplayer picks the recipient as part of the cost). Keeping it a *cast* choice
+     * is the whole point: a gift permanent's gift is a "when this enters, if its gift cost was paid"
+     * trigger (CR 702.174b), so asking at resolution would ask after the permanent already entered.
+     *
+     * The unpromised cast is kept alongside — gift is optional (CR 702.174a "you *may* choose").
+     */
+    private fun expandGiftPromise(
+        context: EnumerationContext,
+        actions: List<LegalAction>
+    ): List<LegalAction> {
+        val state = context.state
+        val out = mutableListOf<LegalAction>()
+        for (la in actions) {
+            out.add(la)
+            val cs = la.action as? CastSpell
+            val gift = if (cs != null && la.actionType == "CastSpell") {
+                val name = state.getEntity(cs.cardId)?.get<CardComponent>()?.name
+                name?.let { context.cardRegistry.getCard(it) }?.giftKeyword()
+            } else null
+            if (cs == null || gift == null) continue
+
+            val opponents = state.getOpponents(cs.playerId)
+            for (opponentId in opponents) {
+                val suffix = if (opponents.size == 1) {
+                    "Gift ${gift.kind.label}"
+                } else {
+                    val opponentName = state.getEntity(opponentId)
+                        ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>()?.name
+                    "Gift ${gift.kind.label} to ${opponentName ?: "opponent"}"
+                }
+                out.add(la.copy(
+                    actionType = "CastWithGift",
+                    description = "${la.description} ($suffix)",
+                    action = cs.copy(giftRecipient = opponentId)
+                ))
+            }
+        }
+        return out
     }
 
     /**

@@ -362,6 +362,13 @@ object CardLinter {
             is JsonObject -> {
                 val type = element.typeName()
                 slotDeclarers[type]?.let { slots.declared.add(it) }
+                // Gift (CR 702.174a): the cast-time promise declares both the "was it promised"
+                // flag and the promised opponent, read back by Conditions.GiftWasPromised and
+                // Player.ChosenOpponent respectively.
+                if (type == "Gift") {
+                    slots.declared.add("GIFT_PROMISED")
+                    slots.declared.add("OPPONENT")
+                }
                 if (type == "EntersWithChoice") {
                     val choiceType = (element["choiceType"] as? JsonPrimitive)?.contentOrNull
                     choiceTypeToSlot[choiceType]?.let { slots.declared.add(it) }

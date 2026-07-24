@@ -77,6 +77,18 @@ data class CastSpell(
      * `Conditions.WaterbendWasPaid`.
      */
     val wasWaterbendPaid: Boolean = false,
+    /**
+     * The opponent promised this spell's **gift** (CR 702.174a, Bloomburrow — "as an additional
+     * cost to cast this spell, you may choose an opponent"), or `null` when the gift wasn't
+     * promised. Only meaningful for a card carrying [com.wingedsheep.sdk.scripting.KeywordAbility.Gift].
+     *
+     * The promise is elected here, while casting — never later: the enumerator emits a
+     * `CastWithGift` variant per opponent, and on resolution the handler stamps
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED] plus the recipient in
+     * `ChoiceSlot.OPPONENT` onto the permanent, where the gift trigger and the
+     * "if the gift was(n't) promised" riders read it via `Conditions.GiftWasPromised`.
+     */
+    val giftRecipient: EntityId? = null,
     val damageDistribution: Map<EntityId, Int>? = null,
     val useAlternativeCost: Boolean = false,
     val chosenModes: List<Int> = emptyList(),

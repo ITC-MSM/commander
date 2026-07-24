@@ -22,6 +22,14 @@ internal fun BridgeBuilder.keywords() {
     // only marks the capability covered — the emitter declines (SCAFFOLD) because picking the right
     // ProtectionScope from the IR's quality node is a per-card read.
     supported("HexproofFrom", "keyword ability: hexproof from [quality] -> KeywordAbility.Hexproof(ProtectionScope.…) (CR 702.11b)")
+    // Gift a [something] (CR 702.174, Bloomburrow) — a PARAMETERIZED keyword ability (the gifted thing
+    // rides in the rule), so `supported` rather than `keyword`: there is no Keyword.GIFT enum member.
+    // On a permanent the engine has the whole mechanic: `gift(GiftKind.…)` adds the cast-time additional
+    // cost (a `CastWithGift` legal action per opponent) plus the derived "when this enters, if its gift
+    // cost was paid, …" trigger; on an instant/sorcery it's `Patterns.Mechanic.giftSpell(…)`. The emitter
+    // declines (SCAFFOLD): which GiftKind is listed, and how the card's *other* text branches on
+    // `Conditions.GiftWasPromised`, is a per-card read.
+    supported("Gift", "keyword ability: Gift a [something] -> gift(GiftKind.…) on permanents / Patterns.Mechanic.giftSpell on instants & sorceries (CR 702.174)")
     // Saddle N (CR 702.171) — a PARAMETERIZED keyword ability (the N count rides in the rule's args),
     // NOT a bare card keyword. It must be `supported`, not `keyword`: a `keyword` entry would make
     // `keywordLines` stamp a bare `keywords(Keyword.SADDLE)` on the card and drop the N, exactly the

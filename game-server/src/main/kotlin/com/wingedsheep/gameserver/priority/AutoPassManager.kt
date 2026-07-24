@@ -82,6 +82,8 @@ class AutoPassManager(
             "CastWithHarmonize",
             "CastWithWarp",
             "CastWithKicker",
+            // Gift (CR 702.174a) — the "promise a gift" twin of a normal cast.
+            "CastWithGift",
             "CastWithConspire",
             "CastWithoutPayingManaCost",
             "CastFaceDown",
