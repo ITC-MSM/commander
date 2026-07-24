@@ -117,11 +117,16 @@ class DynamicAmountEvaluator(
 
             is DynamicAmount.XValue -> context.xValue ?: 0
 
-            // Counters the source had the moment its self-exile / self-sacrifice cost wiped them
-            // (CR 112.7a). Snapshotted into the resolution context at cost-payment time so the
-            // resolving effect reads the pre-cost count rather than zero (Lost Isle Calling).
+            // Counters the source had as it last existed on the battlefield (CR 112.7a / 608.2h).
+            // Two snapshots feed this, and they never both apply to one resolution: the cost-payment
+            // one, taken when a self-exile / self-sacrifice cost wiped the counters (Lost Isle
+            // Calling), and the leaves-the-battlefield one carried on a dies/leaves trigger
+            // (Nine-Lives Familiar's "if it had a revival counter on it"). Prefer the cost snapshot
+            // and fall back to the trigger's, so either path reads the pre-departure count rather
+            // than zero.
             is DynamicAmount.LastKnownSourceCounters -> {
                 val snapshot = context.lastKnownSourceCounters
+                    .ifEmpty { context.triggerLastKnownCounters ?: emptyMap() }
                 when (val filter = amount.counterType) {
                     is CounterTypeFilter.Any -> snapshot.values.sum()
                     else -> snapshot[counterTypeToString(resolveCounterType(filter))] ?: 0

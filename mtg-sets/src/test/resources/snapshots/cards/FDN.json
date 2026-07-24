@@ -5483,6 +5483,101 @@
     ]
 }
 
+// Nine-Lives Familiar
+{
+    "name": "Nine-Lives Familiar",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "This creature enters with eight revival counters on it if you cast it.\nWhen this creature dies, if it had a revival counter on it, return it to the battlefield with one fewer revival counter on it at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "END",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": "Self",
+                                "destination": "Battlefield",
+                                "fromZone": "Graveyard"
+                            },
+                            {
+                                "type": "AddDynamicCounters",
+                                "counterType": "revival",
+                                "amount": {
+                                    "type": "Subtract",
+                                    "left": {
+                                        "type": "LastKnownSourceCounters",
+                                        "counterType": {
+                                            "type": "Named",
+                                            "name": "revival"
+                                        }
+                                    },
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "LastKnownSourceCounters",
+                        "counterType": {
+                            "type": "Named",
+                            "name": "revival"
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "revival"
+                },
+                "count": 8,
+                "selfOnly": true,
+                "condition": "WasCast"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "RARE",
+        "artist": "Bram Sels",
+        "flavorText": "Her master gathered the bones to resurrect her, only to find her purring on the altar.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/988c23f6-59fe-49f9-a9ce-9881dccb7033.jpg?1783909109"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Niv-Mizzet, Visionary
 {
     "name": "Niv-Mizzet, Visionary",
