@@ -172,6 +172,13 @@ object Costs {
     val ExileSelf: AbilityCost = AbilityCost.ExileSelf
 
     /**
+     * Return this permanent to its owner's hand (for abilities that bounce themselves as cost —
+     * Maze's End). No player selection: the source is the only thing that moves. Contrast
+     * [ReturnToHand], the choose-a-permanent-you-control bounce cost, which excludes the source.
+     */
+    val ReturnSelfToHand: AbilityCost = AbilityCost.ReturnSelfToHand
+
+    /**
      * Exile the permanent that granted this activated ability (e.g., the equipment
      * granting the ability to its equipped creature, like The Dominion Bracelet).
      */

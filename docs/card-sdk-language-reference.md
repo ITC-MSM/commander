@@ -202,7 +202,7 @@ excluded.
 > (`PayCost.OwnManaCost` / `PayCost.Choice`; `AdditionalCost`'s Behold / Blight / Forage / ChooseEntity
 > / per-target life / variable exile; `AbilityCost`'s `Free`, `Tap`/`Untap`, the X-variable costs
 > (`PayXLife`, `ExileXFromGraveyard`, `TapXPermanents`), the self-referential `SacrificeSelf` /
-> `ExileSelf` / `ExileGrantingPermanent`, counter-removal, `Loyalty`, `Composite`, and named mechanics
+> `ExileSelf` / `ReturnSelfToHand` / `ExileGrantingPermanent`, counter-removal, `Loyalty`, `Composite`, and named mechanics
 > `Forage` / `Blight` / `Craft`). The `Costs.*` facades below are unchanged — they construct the right
 > `…Atom(CostAtom.X(…))` for you, so card authoring is identical. A *new* payable thing is one
 > `CostAtom` variant + one engine payment branch, available in every context.
@@ -239,6 +239,15 @@ excluded.
   since left their hand (matches the Scryfall ruling: "If you do not have the card still in your
   hand, you can't pay the cost").
 - `Costs.ExileSelf` — exile this permanent (or graveyard card, for graveyard-activated abilities).
+- `Costs.ReturnSelfToHand` — return this permanent to its owner's hand (Maze's End: "{3}, {T},
+  Return this land to its owner's hand: …"). The bounce-to-hand sibling of `Costs.SacrificeSelf` /
+  `Costs.ExileSelf`: deterministic, so there is no player selection and no `additionalCostInfo` is
+  surfaced to the client — the engine pays it during activation, before the ability goes on the
+  stack (CR 601.2h), and the ability still resolves with its source gone. Contrast
+  `Costs.ReturnToHand(filter, count)`, the choose-a-permanent-you-control bounce cost, which
+  deliberately excludes the source. Like the other self-removing costs it snapshots the source's
+  counters first, so the resolving effect can still read them via
+  `DynamicAmounts.lastKnownSourceCounters(...)`.
 - `Costs.ExileFromGraveyard(count, filter)` — exile N matching cards from your graveyard.
 - `Costs.ExileXFromGraveyard(filter)` — exile X cards from your graveyard (X = the ability's
   chosen X value).
@@ -864,6 +873,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   keep it out of `StateProjector.KEYWORD_COUNTER_MAP` since it grants no keyword. Recent examples:
   `Counters.LANDMARK` (Treasure Map — three flip it into Treasure Cove), `Counters.DREAD` (Grasping Shadows —
   three flip it into Shadows' Lair), `Counters.BORE` (Brass's Tunnel-Grinder — three flip it into Tecutlan),
+  `Counters.REVIVAL` (Nine-Lives Familiar — a "lives left" counter: it enters with eight if you cast it and its
+  dies trigger reads the last-known count to come back with one fewer),
   `Counters.NET`, `Counters.FIRE`, `Counters.CONQUEROR`, `Counters.POINT` (Contested Game Ball — its
   `{2}, {T}` ability adds one per activation and, when five or more are present, sacrifices the artifact and
   creates a Treasure), `Counters.WISH` (Wishclaw Talisman — see below).
@@ -6109,23 +6120,38 @@ Numbers computed at resolution time.
 ### Counters
 
 - `CountersOnSource(type)` — counters of `type` on the source permanent.
-- `LastKnownCountersOnSource(type)` — counters when source last existed (for dies-triggers).
+- `LastKnownSourceCounters(type)` — counters the source had as it last existed on the battlefield (dies/leaves
+  triggers, and self-exile/self-sacrifice costs) — see "Last-known source counters" below.
 - `CountersOnTarget(target, type)` — counters on a target permanent.
 - `CountersOnContext(path, type)` — counters stored in an `EffectContext` path.
 
-### Last-known source counters (self-exile / self-sacrifice cost)
+### Last-known source counters (self-exile / self-sacrifice cost, dies/leaves triggers)
 
-- `LastKnownSourceCounters(CounterTypeFilter)` — the number of matching counters the *source* had the moment its
-  self-exile / self-sacrifice cost wiped them (CR 112.7a / 122.2). When an activated ability's cost exiles or
-  sacrifices its own source, the counters are gone by resolution, so `ActivateAbilityHandler` snapshots them into the
-  resolution context at cost-payment time and this node reads them back. `CounterTypeFilter.Any` sums all counter
-  types; otherwise it reads the named/typed counter. Facade: `DynamicAmounts.lastKnownSourceCounters(filter)`.
-  Example — Lost Isle Calling: "{4}{U}{U}, Exile this enchantment: Draw a card for each verse counter on this
-  enchantment. If it had seven or more verse counters on it, take an extra turn." Both the draw amount
-  (`DrawCards(lastKnownSourceCounters(Named(Counters.VERSE)))`) and the seven-or-more gate
-  (`Compare(lastKnownSourceCounters(Named(Counters.VERSE)), GTE, Fixed(7))`) read this node. Contrast
-  `EntityProperty(Source, CounterCount(filter))`, which reads counters on the still-present source (zero after a
-  self-exile cost).
+- `LastKnownSourceCounters(CounterTypeFilter)` — the number of matching counters the *source* had as it last existed
+  on the battlefield (CR 112.7a / 608.2h). Counters cease to exist on a zone change (CR 122.2), so the value comes
+  from whichever snapshot the resolution context carries — the two never both apply to one resolution:
+  - the **cost-payment** snapshot, taken by `ActivateAbilityHandler` when an activated ability's cost exiles or
+    sacrifices its own source. Lost Isle Calling: "{4}{U}{U}, Exile this enchantment: Draw a card for each verse
+    counter on this enchantment. If it had seven or more verse counters on it, take an extra turn." Both the draw
+    amount (`DrawCards(lastKnownSourceCounters(Named(Counters.VERSE)))`) and the seven-or-more gate
+    (`Compare(lastKnownSourceCounters(Named(Counters.VERSE)), GTE, Fixed(7))`) read this node.
+  - the **leaves-the-battlefield** snapshot carried on a dies/leaves trigger (`TriggerContext.lastKnownCounters`),
+    available both to the intervening-`if` (`triggerCondition`) and to the resolving effect. Nine-Lives Familiar:
+    "When this creature dies, if it had a revival counter on it, return it to the battlefield with one fewer revival
+    counter on it at the beginning of the next end step."
+
+  `CounterTypeFilter.Any` sums all counter types; otherwise it reads the named/typed counter — naming the kind is
+  what stops an unrelated +1/+1 counter from satisfying "if it had a revival counter on it". This is the
+  parameterized sibling of `ContextPropertyKey.LAST_KNOWN_PLUS_ONE_COUNTER_COUNT` (fixed to +1/+1) and
+  `LAST_KNOWN_TOTAL_COUNTER_COUNT` (sums every kind). Facade: `DynamicAmounts.lastKnownSourceCounters(filter)`.
+  Contrast `EntityProperty(Source, CounterCount(filter))`, which reads counters on the still-present source (zero
+  once it has left the battlefield).
+
+  **Scheduling it into a delayed trigger:** a value read from the dies-trigger context is gone by the time a
+  `CreateDelayedTriggerEffect` fires, so `CreateDelayedTriggerExecutor` snapshots the `amount` of a nested
+  `AddDynamicCountersEffect` into a `Fixed` literal at scheduling time (the same treatment `AddManaEffect` gets).
+  That is how Nine-Lives Familiar's "with one fewer revival counter" —
+  `Subtract(lastKnownSourceCounters(Named(Counters.REVIVAL)), Fixed(1))` — survives to the end step.
 
 - **Last-known source P/T (self-exile / self-sacrifice cost)** — the P/T analogue of
   `LastKnownSourceCounters`, applied automatically to `EntityProperty(EntityReference.Source, Power|Toughness)`

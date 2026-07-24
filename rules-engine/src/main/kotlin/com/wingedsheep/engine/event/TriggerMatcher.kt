@@ -1622,6 +1622,10 @@ class TriggerMatcher(
                 triggerCounterCount = trigger.triggerContext.counterCount,
                 triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
                 triggerMinusOneMinusOneCounterCount = trigger.triggerContext.minusOneMinusOneCounterCount,
+                // Per-kind last-known counters, so an intervening "if" can name the counter it
+                // cares about ("if it had a revival counter on it" — Nine-Lives Familiar) instead
+                // of settling for the +1/+1-only or sum-of-all-kinds scalars above.
+                triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
                 triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
                 triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
                 triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness,
