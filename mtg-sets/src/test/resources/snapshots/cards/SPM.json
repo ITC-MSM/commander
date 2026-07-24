@@ -4467,6 +4467,140 @@
     ]
 }
 
+// Secret Identity
+{
+    "name": "Secret Identity",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Conceal — Until end of turn, target creature you control becomes a Citizen with base power and toughness 1/1 and gains hexproof.\n• Reveal — Until end of turn, target creature you control becomes a Hero with base power and toughness 3/4 and gains flying and vigilance.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetCreatureSubtypes",
+                                "subtypes": [
+                                    "Citizen"
+                                ],
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "duration": "EndOfTurn"
+                            },
+                            {
+                                "type": "SetBaseStats",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "power": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughness": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "duration": "EndOfTurn"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HEXPROOF",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        }
+                    ],
+                    "description": "Conceal — Until end of turn, target creature you control becomes a Citizen with base power and toughness 1/1 and gains hexproof."
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetCreatureSubtypes",
+                                "subtypes": [
+                                    "Hero"
+                                ],
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "duration": "EndOfTurn"
+                            },
+                            {
+                                "type": "SetBaseStats",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "power": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "toughness": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                },
+                                "duration": "EndOfTurn"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "FLYING",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "VIGILANCE",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        }
+                    ],
+                    "description": "Reveal — Until end of turn, target creature you control becomes a Hero with base power and toughness 3/4 and gains flying and vigilance."
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "43",
+        "rarity": "UNCOMMON",
+        "artist": "rk post",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/7/37a31d84-e87b-406e-9249-fae1b5e23e72.jpg?1783905350"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Selfless Police Captain
 {
     "name": "Selfless Police Captain",
