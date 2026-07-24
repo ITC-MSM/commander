@@ -281,7 +281,13 @@ are gated on `players.length > 2`).
   remaining boards split the freed width, and a collapsed seat's full board moves to
   the off-screen group so its anchors bundle back to the rail chip. Collapse state is
   overview-only — the focused camera and the combat split ignore it — and persists
-  across overview toggles until the game resets.
+  across overview toggles until the game resets. In a 3+ player game the overview is
+  **two rows**, not one strip: `GameBoard` partitions the living seats into a top row (the
+  opponent strip) and a bottom row (grid rows 4-5) around an *anchor* seat — a team game
+  splits by team (your team at the bottom), a free-for-all balances evenly with the anchor
+  at the bottom and the odd seat on top. The bottom row renders as a second strip of cells
+  (`bottomHalf` — lands toward the bottom edge, per-board collapse) whenever it holds more
+  than the anchor; a lone anchor keeps the classic single bottom board.
 - **Combat defender-focus split** (`useCombatDefenderFocus`): when the server's confirmed
   combat is between two *other* players, the attacker's and defenders' boards share the
   strip so the fight renders as real arrows between real boards instead of a bundled
@@ -290,15 +296,18 @@ are gated on `players.length > 2`).
   whole combat so boards don't shift mid-fight.
 - **Eliminated spectator** (`boardView.eliminatedSpectating`): a personal
   `PlayerEliminatedMessage` marks the defeat overlay `GameOverState.eliminated`, which
-  adds a "Keep Watching" button. It dismisses the overlay, forces the table overview, and
-  collapses the dead bottom half (grid rows 4-5 → 0, hand/pass/undo/concede hidden) with
-  a "spectating" banner + Leave Game button; the freed height flows to the opponent
-  strip. The banner also carries a **bottom-board picker**
-  (`boardView.eliminatedBottomSeatId`): choosing a living player anchors their board in
-  the empty bottom half the way spectating renders a bottom seat — read-only board +
-  face-down hand, their life on the right center-HUD orb (which takes over their
-  anchors from the rail chip), and their cell leaves the opponent strip. Clicking the
-  active seat again clears it; the choice self-heals to "collapsed" if that player dies.
+  adds a "Keep Watching" button. It dismisses the overlay, turns on the table overview,
+  and hides all action UI (hand/pass/undo/concede) behind a "spectating" banner + Leave
+  Game button. An eliminated player is just an observer without a board of their own
+  (`viewerIsObserver` = spectating ‖ eliminated), so they get the same two-row overview a
+  spectator gets: the survivors face each other across the table, with a survivor's board
+  holding their now-vacant bottom half — read-only board + face-down hand, that seat's
+  life on the right center-HUD orb (which takes over their anchors from the rail chip),
+  and their cell out of the opponent strip. `useEliminatedBottomSeatId` resolves which
+  survivor that is: the banner's **bottom-seat picker**
+  (`boardView.eliminatedBottomSeatId`), else a living teammate (team game), else the next
+  living seat in turn order — so it self-heals when that seat dies. Only when no survivor
+  is left do grid rows 4-5 collapse to 0 and the freed height flow to the opponent strip.
 - **Seat identity**: `styles/seatColors.ts` (Okabe-Ito, by seat index = turn-order index in
   `gameState.players`) colors rail chips, combat arrows and chevrons, stack item borders
   (caster), and log entry names.
