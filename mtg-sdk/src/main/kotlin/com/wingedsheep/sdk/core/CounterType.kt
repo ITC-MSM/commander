@@ -74,7 +74,8 @@ enum class CounterType {
     BAIT,
     BORE,
     POINT,
-    WISH;
+    WISH,
+    REVIVAL;
 
     companion object {
         /**
@@ -337,6 +338,16 @@ object Counters {
      * `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val WISH = "wish"
+
+    /**
+     * Revival counter (FDN — Nine-Lives Familiar). Passive "lives left" counter with no inherent
+     * rule of its own — the Familiar enters with eight if you cast it, and its dies trigger reads
+     * the last-known count (via
+     * `DynamicAmounts.lastKnownCountersOnSelf(CounterTypeFilter.Named(Counters.REVIVAL))`) to
+     * return itself with one fewer. NOT a keyword counter, so it is intentionally absent from
+     * `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val REVIVAL = "revival"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.

@@ -10,6 +10,7 @@ import com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimes
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
+import com.wingedsheep.sdk.scripting.effects.AddDynamicCountersEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
@@ -233,6 +234,17 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
             is AddCountersEffect -> {
                 val resolvedId = context.resolveTarget(effect.target)
                 if (resolvedId != null) effect.copy(target = EffectTarget.SpecificEntity(resolvedId)) else effect
+            }
+            // Same as AddCountersEffect, plus: the count is context-derived, and the context that
+            // can answer it is gone by the time the trigger fires. Nine-Lives Familiar schedules
+            // "return it with one fewer revival counter" from its *dies* trigger — the last-known
+            // counter snapshot lives on that trigger's context only — so snapshot the amount NOW.
+            is AddDynamicCountersEffect -> {
+                val resolvedId = context.resolveTarget(effect.target)
+                effect.copy(
+                    target = if (resolvedId != null) EffectTarget.SpecificEntity(resolvedId) else effect.target,
+                    amount = snapshotAmount(effect.amount, context, state)
+                )
             }
             // "At the beginning of the next end step, create a token that's a copy of that
             // <permanent>" — the copied permanent (e.g. a just-sacrificed artifact, bound here as

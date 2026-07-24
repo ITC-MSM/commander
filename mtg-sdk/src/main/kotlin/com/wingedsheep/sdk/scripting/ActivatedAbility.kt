@@ -284,6 +284,21 @@ sealed interface AbilityCost : TextReplaceable<AbilityCost> {
     }
 
     /**
+     * Return self to its owner's hand — "Return this land to its owner's hand" as part of an
+     * activation cost (Maze's End). The bounce-to-hand sibling of [SacrificeSelf] / [ExileSelf]:
+     * the source itself is the only thing that moves, so there is no player selection, and the
+     * cost is paid (and therefore uninterruptible, CR 601.2h) before the ability goes on the stack.
+     *
+     * Distinct from `CostAtom.ReturnToHand`, which is the *choose-a-permanent-you-control* bounce
+     * cost and deliberately excludes the source.
+     */
+    @SerialName("CostReturnSelfToHand")
+    @Serializable
+    data object ReturnSelfToHand : AbilityCost {
+        override val description: String = "Return this permanent to its owner's hand"
+    }
+
+    /**
      * Exile the permanent that granted this activated ability to the source.
      * Used by cards like The Dominion Bracelet whose static ability grants an
      * activated ability to the equipped creature with "exile [the equipment]"

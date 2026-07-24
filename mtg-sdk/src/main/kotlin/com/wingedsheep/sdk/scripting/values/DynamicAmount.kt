@@ -392,16 +392,25 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
-     * The number of counters matching [counterType] that the *source* of the current ability had
-     * the moment its self-exile / self-sacrifice cost was paid (CR 112.7a / 608.2h last-known
-     * information). When an activated ability's cost exiles or sacrifices its own source, the
-     * source's counters are gone by the time the effect resolves (CR 122.2 removes counters on a
-     * zone change), so the count is snapshotted into the resolution context at cost-payment time.
+     * The number of counters matching [counterType] the *source* of the current ability had as it
+     * last existed on the battlefield (CR 112.7a / 608.2h last-known information). Counters cease
+     * to exist on a zone change (CR 122.2), so the count comes from whichever snapshot the
+     * resolution context carries:
      *
-     * Example — Lost Isle Calling: "{4}{U}{U}, Exile this enchantment: Draw a card for each verse
-     * counter on this enchantment. If it had seven or more verse counters on it, take an extra turn
-     * after this one." Both the draw amount and the seven-or-more test read
-     * `LastKnownSourceCounters(CounterTypeFilter.Named(Counters.VERSE))`.
+     *  - the **cost-payment** snapshot, when an activated ability's cost exiles or sacrifices its
+     *    own source — Lost Isle Calling: "{4}{U}{U}, Exile this enchantment: Draw a card for each
+     *    verse counter on this enchantment. If it had seven or more verse counters on it, take an
+     *    extra turn after this one." Both the draw amount and the seven-or-more test read
+     *    `LastKnownSourceCounters(CounterTypeFilter.Named(Counters.VERSE))`.
+     *  - the **leaves-the-battlefield trigger** snapshot, for a dies/leaves ability reading the
+     *    counters its source had as it died — Nine-Lives Familiar: "When this creature dies, if it
+     *    had a revival counter on it, return it … with one fewer revival counter on it."
+     *
+     * The parameterized sibling of [ContextPropertyKey.LAST_KNOWN_PLUS_ONE_COUNTER_COUNT] (fixed to
+     * +1/+1) and [ContextPropertyKey.LAST_KNOWN_TOTAL_COUNTER_COUNT] (sums every kind): naming one
+     * kind means an unrelated +1/+1 counter can't satisfy "if it had a revival counter on it".
+     * Evaluates to `0` when neither snapshot is present; a permanent still on the battlefield
+     * should be read with [com.wingedsheep.sdk.dsl.DynamicAmounts.countersOnSelf] instead.
      */
     @SerialName("LastKnownSourceCounters")
     @Serializable

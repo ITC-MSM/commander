@@ -124,6 +124,10 @@ class CostHandler {
                 // Source must exist (can be on battlefield or in graveyard for graveyard abilities)
                 state.getEntity(sourceId) != null
             }
+            is AbilityCost.ReturnSelfToHand -> {
+                // Source must be on the battlefield to be bounced from it (Maze's End).
+                state.getZone(ZoneKey(controllerId, Zone.BATTLEFIELD)).contains(sourceId)
+            }
             is AbilityCost.ExileGrantingPermanent -> {
                 // Granter is resolved from the static-grant lookup at activation time.
                 // If the ability is enumerable, the granter is on the battlefield; if it has
@@ -345,6 +349,19 @@ class CostHandler {
                 // Delegate zone movement to ZoneTransitionService for full cleanup
                 val transitionResult = ZoneTransitionService.moveToZone(
                     state, sourceId, Zone.EXILE
+                )
+
+                CostPaymentResult.success(transitionResult.state, manaPool, transitionResult.events)
+            }
+            is AbilityCost.ReturnSelfToHand -> {
+                // Return the source permanent to its owner's hand (Maze's End). Paid as part of
+                // the activation cost, so it happens before the ability is on the stack — the
+                // ability still resolves even though its source has left the battlefield.
+                state.getEntity(sourceId)
+                    ?: return CostPaymentResult.failure("Source permanent not found")
+
+                val transitionResult = ZoneTransitionService.moveToZone(
+                    state, sourceId, Zone.HAND
                 )
 
                 CostPaymentResult.success(transitionResult.state, manaPool, transitionResult.events)

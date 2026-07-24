@@ -1904,12 +1904,12 @@ class ActivateAbilityHandler(
     }
 
     /**
-     * Whether [cost] removes the source from its current zone — a self-exile or self-sacrifice.
-     * Used to decide whether to snapshot the source's counters before payment so the resolving
-     * effect can read the pre-cost count (DynamicAmount.LastKnownSourceCounters).
+     * Whether [cost] removes the source from its current zone — a self-exile, self-sacrifice, or
+     * self-bounce. Used to decide whether to snapshot the source's counters before payment so the
+     * resolving effect can read the pre-cost count (DynamicAmount.LastKnownSourceCounters).
      */
     private fun costExilesOrSacrificesSelf(cost: AbilityCost): Boolean = when (cost) {
-        is AbilityCost.ExileSelf, is AbilityCost.SacrificeSelf -> true
+        is AbilityCost.ExileSelf, is AbilityCost.SacrificeSelf, is AbilityCost.ReturnSelfToHand -> true
         is AbilityCost.Composite -> cost.costs.any { costExilesOrSacrificesSelf(it) }
         else -> false
     }
