@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 93 / 190
+**Implemented:** 94 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -175,7 +175,7 @@
 - [x] Tombstone, Career Criminal
 - [ ] Ultimate Green Goblin
 - [x] University Campus
-- [ ] Unstable Experiment
+- [x] Unstable Experiment
 - [ ] Urban Retreat
 - [x] Venom's Hunger
 - [x] Venom, Evil Unleashed
