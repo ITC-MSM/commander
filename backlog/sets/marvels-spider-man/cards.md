@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 99 / 190
+**Implemented:** 100 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -31,7 +31,7 @@
 - [x] Doc Ock, Sinister Scientist
 - [ ] Doctor Octopus, Master Planner
 - [ ] Eddie Brock // Venom, Lethal Protector
-- [ ] Eerie Gravestone
+- [x] Eerie Gravestone
 - [ ] Electro's Bolt
 - [ ] Electro, Assaulting Battery
 - [x] Ezekiel Sims, Spider-Totem
