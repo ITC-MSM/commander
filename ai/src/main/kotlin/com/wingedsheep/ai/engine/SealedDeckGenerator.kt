@@ -63,9 +63,8 @@ class SealedDeckGenerator(
         val pool = boosterGenerator.generateSealedPool(setCode, boosterCount = 8)
         val deck = buildSealedDeck(pool, setCode)
 
-        // Distribute basic lands across art variants for visual variety
-        val variants = boosterGenerator.getAllBasicLandVariants(setCode)
-        return BoosterGenerator.distributeBasicLandVariants(deck, variants)
+        // Pin the basics to the set's standard art, exactly as a human's submitted deck is.
+        return BoosterGenerator.withBasicLandArt(deck, boosterGenerator.getBasicLands(setCode))
     }
 
     /**

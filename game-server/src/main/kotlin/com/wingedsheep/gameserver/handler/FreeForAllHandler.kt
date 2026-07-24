@@ -112,9 +112,9 @@ class FreeForAllHandler(
 
         for (playerState in playerStates) {
             val identity = playerState.identity
-            val baseDeck = BoosterGenerator.distributeBasicLandVariants(
+            val baseDeck = BoosterGenerator.withBasicLandArt(
                 lobby.getSubmittedDeck(identity.playerId) ?: return false,
-                lobby.allBasicLandVariants
+                lobby.basicLands
             )
             val deckWithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(identity.playerName, baseDeck)
             val commander = if (isCommanderShape) playerState.commander else null

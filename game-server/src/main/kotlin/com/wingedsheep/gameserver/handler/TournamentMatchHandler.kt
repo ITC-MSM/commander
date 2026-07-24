@@ -425,13 +425,13 @@ class TournamentMatchHandler(
         val player1State = lobby.players[match.player1Id] ?: return false
         val player2State = lobby.players[match.player2Id ?: return false] ?: return false
 
-        val baseDeck1 = BoosterGenerator.distributeBasicLandVariants(
+        val baseDeck1 = BoosterGenerator.withBasicLandArt(
             lobby.getSubmittedDeck(match.player1Id) ?: return false,
-            lobby.allBasicLandVariants
+            lobby.basicLands
         )
-        val baseDeck2 = BoosterGenerator.distributeBasicLandVariants(
+        val baseDeck2 = BoosterGenerator.withBasicLandArt(
             lobby.getSubmittedDeck(match.player2Id) ?: return false,
-            lobby.allBasicLandVariants
+            lobby.basicLands
         )
         val deck1WithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(
             player1State.identity.playerName, baseDeck1
