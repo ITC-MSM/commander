@@ -25,8 +25,13 @@ import { ManaCost, ManaSymbol } from '@/components/ui/ManaSymbols'
 import { HoverCardPreview } from '@/components/ui/HoverCardPreview'
 import { useDfcHoverFlip } from '@/components/ui/useDfcHoverFlip'
 import { SetIcon } from '@/components/ui/SetIcon'
-import { getCardImageUrl, getCdnArtCropUrl, getScryfallArtCropUrl, splitImageRotateDeg } from '@/utils/cardImages'
-import { rarityColor } from '@/components/draft/RarityBadge'
+import { getCardImageUrl, splitImageRotateDeg } from '@/utils/cardImages'
+import {
+  DeckTile,
+  DeckTileActionButton,
+  deckColors,
+  rarestCard,
+} from '@/components/deck/DeckTile'
 import {
   parseQuery,
   toggleToken,
@@ -1329,6 +1334,7 @@ export function DeckbuilderPage() {
       {examplesOpen && (
         <ExampleDecksModal
           examples={examples}
+          catalog={catalogIndex}
           onCancel={() => setExamplesOpen(false)}
           onLoad={handleLoadExample}
         />
@@ -1669,10 +1675,12 @@ function DeckCentricFooter({
 
 function ExampleDecksModal({
   examples,
+  catalog,
   onCancel,
   onLoad,
 }: {
   examples: ExampleDeck[]
+  catalog: Record<string, CardSummary>
   onCancel: () => void
   onLoad: (ex: ExampleDeck) => void
 }) {
@@ -1692,25 +1700,23 @@ function ExampleDecksModal({
         {examples.length === 0 ? (
           <p className={styles.importHint}>No examples available.</p>
         ) : (
-          <div className={styles.browserGrid}>
-            {examples.map((ex) => {
-              const total = Object.values(ex.cards).reduce((a, b) => a + b, 0)
-              return (
-                <button
+          <div className={styles.browserScroll}>
+            <div className={styles.browserGrid}>
+              {examples.map((ex) => (
+                <DeckTile
                   key={ex.id}
-                  className={styles.deckCard}
+                  name={ex.name}
+                  description={ex.description}
+                  total={Object.values(ex.cards).reduce((a, b) => a + b, 0)}
+                  colors={deckColors(ex.cards, catalog)}
+                  hero={rarestCard(ex.cards, catalog, ex.commander ?? null)}
+                  format={ex.format ?? null}
+                  formatTitle={ex.format ? `Built for ${labelForFormat(ex.format)}` : undefined}
+                  title={`Load ${ex.name} into the builder`}
                   onClick={() => onLoad(ex)}
-                  type="button"
-                >
-                  <div className={styles.deckCardBody}>
-                    <span className={styles.deckCardName}>{ex.name}</span>
-                    <span className={styles.deckCardMeta}>
-                      {total} card{total === 1 ? '' : 's'} · {ex.description}
-                    </span>
-                  </div>
-                </button>
-              )
-            })}
+                />
+              ))}
+            </div>
           </div>
         )}
         <div className={styles.importActions}>
@@ -2417,132 +2423,41 @@ function SavedDecksBrowser({
           </div>
         </div>
 
-        <div className={styles.browserGrid}>
-          {filtered.length === 0 ? (
-            <div className={styles.savedEmpty}>
-              {decks.length === 0
-                ? 'No saved decks yet. Build one and click Save.'
-                : 'No decks match the current filters.'}
-            </div>
-          ) : (
-            filtered.map(({ deck, total, colors, legalFormats, hero }) => (
-              <DeckCard
-                key={deck.id}
-                deck={deck}
-                total={total}
-                colors={colors}
-                legalFormats={legalFormats}
-                isActive={deck.id === activeDeckId}
-                hero={hero}
-                onLoad={onLoad}
-                onRename={onRename}
-                onDelete={onDelete}
-              />
-            ))
-          )}
+        <div className={styles.browserScroll}>
+          <div className={styles.browserGrid}>
+            {filtered.length === 0 ? (
+              <div className={styles.savedEmpty}>
+                {decks.length === 0
+                  ? 'No saved decks yet. Build one and click Save.'
+                  : 'No decks match the current filters.'}
+              </div>
+            ) : (
+              filtered.map(({ deck, total, colors, legalFormats, hero }) => (
+                <DeckCard
+                  key={deck.id}
+                  deck={deck}
+                  total={total}
+                  colors={colors}
+                  legalFormats={legalFormats}
+                  isActive={deck.id === activeDeckId}
+                  hero={hero}
+                  onLoad={onLoad}
+                  onRename={onRename}
+                  onDelete={onDelete}
+                />
+              ))
+            )}
+          </div>
         </div>
       </div>
     </>
   )
 }
 
-// Rarity ranking for choosing a deck's "hero" card — the splashiest spell whose art
-// represents the deck in the gallery. Higher wins.
-const RARITY_RANK: Record<string, number> = { MYTHIC: 3, RARE: 2, UNCOMMON: 1, COMMON: 0 }
-
 /**
- * The deck's rarest non-land card, used as the gallery tile's hero art. Lands (even rare
- * duals) and basics are skipped — they make for dull, repetitive tiles across a collection.
- * Ties break toward the commander (the deck's identity), then the highest mana value (the
- * marquee bomb), then name for stable ordering. Returns null only for an empty / all-land /
- * uncatalogued deck, in which case the tile falls back to a colour-identity gradient.
+ * Deckbuilder adapter over the shared {@link DeckTile}: click loads the deck into the editor,
+ * hover exposes rename/delete, and the active deck gets the "Editing" ribbon.
  */
-function rarestCard(
-  cards: Record<string, number>,
-  catalog: Record<string, CardSummary>,
-  commander: string | null,
-): CardSummary | null {
-  let best: CardSummary | null = null
-  let bestRank = -1
-  let bestIsCommander = false
-  for (const [rawName, n] of Object.entries(cards)) {
-    if (n <= 0) continue
-    const name = rawName.split('#')[0] ?? rawName
-    const c = catalog[name]
-    if (!c || c.basicLand) continue
-    if (c.cardTypes.some((t) => t.toUpperCase() === 'LAND')) continue
-    const rank = RARITY_RANK[(c.rarity ?? 'COMMON').toUpperCase()] ?? 0
-    const isCommander = commander != null && name === commander
-    if (best === null || rank > bestRank) {
-      best = c
-      bestRank = rank
-      bestIsCommander = isCommander
-      continue
-    }
-    if (rank === bestRank && !bestIsCommander) {
-      if (isCommander || c.cmc > best.cmc || (c.cmc === best.cmc && c.name < best.name)) {
-        best = c
-        bestIsCommander = isCommander
-      }
-    }
-  }
-  return best
-}
-
-// Deck-name tint by hero rarity — reuses the draft rarity palette so colours read
-// consistently across the app, but lifts COMMON off near-black so names stay legible
-// over the dark art scrim.
-function deckNameColor(rarity: string | undefined): string {
-  if (!rarity || rarity.toUpperCase() === 'COMMON') return '#eef1f6'
-  return rarityColor(rarity)
-}
-
-// Per-format accent for the single saved-format chip. Keyed by upper-case format name;
-// anything unmapped falls back to a neutral slate so new formats still render cleanly.
-const FORMAT_ACCENT: Record<string, string> = {
-  STANDARD: '#6aa3ff',
-  PIONEER: '#c47dff',
-  MODERN: '#8a7bff',
-  LEGACY: '#7bd0ff',
-  VINTAGE: '#ff9d57',
-  PAUPER: '#9aa6b8',
-  COMMANDER: '#e0b15a',
-  BRAWL: '#e0b15a',
-  STANDARD_BRAWL: '#e0b15a',
-  HISTORIC: '#ff8aa8',
-  CUSTOM_DECKS: '#7be0a8',
-}
-function formatAccent(format: string): string {
-  return FORMAT_ACCENT[format.toUpperCase()] ?? '#9aa6b8'
-}
-
-function CloudIcon({ size = 12 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4 7.5 7.5 0 0 0 5.35 8.04 5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
-    </svg>
-  )
-}
-
-function MonitorIcon({ size = 12 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="2" y="3" width="20" height="14" rx="2" />
-      <path d="M8 21h8M12 17v4" />
-    </svg>
-  )
-}
-
 function DeckCard({
   deck,
   total,
@@ -2564,126 +2479,48 @@ function DeckCard({
   onRename: (d: UnifiedDeck) => void
   onDelete: (d: UnifiedDeck) => void
 }) {
-  // Hero art = the deck's rarest card as a wide Scryfall art crop. Derive it straight
-  // from the card's CDN image URL (no rate-limited api.scryfall.com lookup) when we have
-  // one, falling back to the by-name API lookup otherwise. Falls back to a colour-identity
-  // gradient when the deck has no catalogued non-land card yet.
-  const artUrl = useMemo(
-    () => (hero ? (getCdnArtCropUrl(hero.imageUri) ?? getScryfallArtCropUrl(hero.name)) : null),
-    [hero]
-  )
-  const gradient = useMemo(() => deckBannerGradient(colors), [colors])
-  const nameColor = deckNameColor(hero?.rarity)
   // One chip only: the format the deck was saved as, else the first format it's legal in.
   const shownFormat = deck.format ?? legalFormats[0] ?? null
-
   return (
-    <div className={`${styles.deckCard} ${isActive ? styles.deckCardActive : ''}`}>
-      <button
-        type="button"
-        className={styles.deckCardLoad}
-        onClick={() => onLoad(deck)}
-        title={`Load ${deck.name}`}
-      >
-        <span
-          className={styles.deckCardArt}
-          // The URL is quoted inside url() because card names can contain apostrophes
-          // ("Barrin's Spite"), which encodeURIComponent leaves literal — an unquoted
-          // url() with a bare ' is invalid CSS and the browser silently drops the art.
-          style={artUrl ? { backgroundImage: `url("${artUrl}")` } : { background: gradient }}
-          aria-hidden="true"
-        />
-        <span className={styles.deckCardScrim} aria-hidden="true" />
-        <span className={styles.deckCardInfo}>
-          <span className={styles.deckCardName} style={{ color: nameColor }}>
-            {deck.name}
-          </span>
-          <span className={styles.deckCardMetaRow}>
-            {shownFormat && (
-              <span
-                className={styles.deckCardFormat}
-                style={{
-                  color: formatAccent(shownFormat),
-                  borderColor: `${formatAccent(shownFormat)}66`,
-                }}
-                title={
-                  deck.format
-                    ? `Saved as ${labelForFormat(shownFormat)}`
-                    : `Legal in ${labelForFormat(shownFormat)}`
-                }
-              >
-                {labelForFormat(shownFormat)}
-              </span>
-            )}
-            <span className={styles.deckCardPips}>
-              {colors.length > 0 ? (
-                colors.map((c) => {
-                  const tok = COLOR_TOKENS.find((t) => t.key === c)
-                  return <ManaSymbol key={c} symbol={tok ? tok.label : 'C'} size={15} />
-                })
-              ) : (
-                <ManaSymbol symbol="C" size={15} />
-              )}
-            </span>
-            <span className={styles.deckCardCount}>{total} cards</span>
-          </span>
-        </span>
-      </button>
-
-      {/* Storage status — cloud (synced to your account) vs. local (this browser only). */}
-      <span
-        className={`${styles.deckCardStorage} ${
-          deck.online ? styles.deckCardStorageOnline : styles.deckCardStorageLocal
-        }`}
-        title={
-          deck.online
-            ? 'Saved to your account — synced to the cloud and available on any device'
-            : 'Saved only in this browser — not backed up to your account'
-        }
-      >
-        {deck.online ? <CloudIcon /> : <MonitorIcon />}
-        {deck.online ? 'Cloud' : 'Local'}
-      </span>
-
-      <div className={styles.deckCardActions}>
-        <button
-          className={styles.savedIconButton}
-          onClick={() => onRename(deck)}
-          type="button"
-          title="Rename"
-          aria-label={`Rename ${deck.name}`}
-        >
-          ✎
-        </button>
-        <button
-          className={styles.savedIconButtonDanger}
-          onClick={() => onDelete(deck)}
-          type="button"
-          title="Delete"
-          aria-label={`Delete ${deck.name}`}
-        >
-          ✕
-        </button>
-      </div>
-
-      {isActive && <span className={styles.deckCardActiveBadge}>Editing</span>}
-    </div>
+    <DeckTile
+      name={deck.name}
+      total={total}
+      colors={colors}
+      hero={hero}
+      format={shownFormat}
+      formatTitle={
+        shownFormat
+          ? deck.format
+            ? `Saved as ${labelForFormat(shownFormat)}`
+            : `Legal in ${labelForFormat(shownFormat)}`
+          : undefined
+      }
+      selected={isActive}
+      badge={isActive ? 'Editing' : undefined}
+      storage={deck.online ? 'cloud' : 'local'}
+      title={`Load ${deck.name}`}
+      onClick={() => onLoad(deck)}
+      actions={
+        <>
+          <DeckTileActionButton
+            onClick={() => onRename(deck)}
+            title="Rename"
+            ariaLabel={`Rename ${deck.name}`}
+          >
+            ✎
+          </DeckTileActionButton>
+          <DeckTileActionButton
+            onClick={() => onDelete(deck)}
+            title="Delete"
+            ariaLabel={`Delete ${deck.name}`}
+            danger
+          >
+            ✕
+          </DeckTileActionButton>
+        </>
+      }
+    />
   )
-}
-
-function deckBannerGradient(colors: string[]): string {
-  if (colors.length === 0) {
-    return 'linear-gradient(135deg, rgba(120,120,140,0.5), rgba(60,60,80,0.6))'
-  }
-  if (colors.length === 1) {
-    const c = COLOR_DOT[colors[0]!] ?? '#888'
-    return `linear-gradient(135deg, ${c}aa, ${c}55)`
-  }
-  const stops = colors.map((c, i) => {
-    const hex = COLOR_DOT[c] ?? '#888'
-    return `${hex} ${Math.round((i / (colors.length - 1)) * 100)}%`
-  })
-  return `linear-gradient(135deg, ${stops.join(', ')})`
 }
 
 function colorBucketKey(colors: string[]): number {
@@ -2697,22 +2534,6 @@ function colorBucketKey(colors: string[]): number {
     case 'GREEN': return 4
     default: return 5
   }
-}
-
-function deckColors(
-  cards: Record<string, number>,
-  catalog: Record<string, CardSummary>
-): string[] {
-  const counts: Record<string, number> = {}
-  for (const [name, n] of Object.entries(cards)) {
-    if (n <= 0) continue
-    const c = catalog[name.split('#')[0] ?? name]
-    if (!c) continue
-    for (const col of c.colors) counts[col] = (counts[col] ?? 0) + n
-  }
-  return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([color]) => color)
 }
 
 function SearchBar({
