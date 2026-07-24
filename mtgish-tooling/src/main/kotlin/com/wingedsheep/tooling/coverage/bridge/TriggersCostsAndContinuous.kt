@@ -284,6 +284,17 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
         composes = listOf("GatherCards", "MoveCollection"),
     )
     effect("ReplaceWouldPutIntoGraveyard", "RedirectZoneChange")
+    // "If a spell or ability an opponent controls causes you to discard this card, put it onto the
+    // battlefield instead" (Wilt-Leaf Liege, Loxodon Smiter). Same RedirectZoneChange replacement,
+    // narrowed by `requiredCause = ZoneChangeCause.DiscardedByOpponentEffect` so it can tell an
+    // opponent-forced discard from the cleanup-step hand-size discard or a cost payment. Capability
+    // only — the emitter declines (SCAFFOLD) because the destination and the "an opponent controls"
+    // scoping ride in the IR's replacement action rather than in this tag.
+    effect(
+        "ReplaceWouldDiscard",
+        "RedirectZoneChange",
+        note = "discard redirect: RedirectZoneChange(requiredCause = ZoneChangeCause.DiscardedByOpponentEffect)",
+    )
     supported("WouldPutACardOrTokenInAPlayersGraveyardFromAnywhere", "replaceable event: any card/token to any graveyard from anywhere")
     supported("ExileItInstead", "replacement action: exile instead of going to the graveyard")
 
