@@ -3429,6 +3429,53 @@
     ]
 }
 
+// Selfless Police Captain
+{
+    "name": "Selfless Police Captain",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "This creature enters with a +1/+1 counter on it.\nWhen this creature leaves the battlefield, put its +1/+1 counters on target creature you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": "MoveAllLastKnownCounters",
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "descriptionOverride": "When this creature leaves the battlefield, put its +1/+1 counters on target creature you control."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 1,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "artist": "Aniekan Udofia",
+        "flavorText": "\"Peter always disappears when Spider-Man is around. How very odd.\"\n—Captain George Stacy",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb0fd7bd-10d0-4d29-af88-387d1e07f3b7.jpg?1783905362"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Silver Sable, Mercenary Leader
 {
     "name": "Silver Sable, Mercenary Leader",
