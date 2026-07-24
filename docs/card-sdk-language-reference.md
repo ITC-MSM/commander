@@ -24,6 +24,11 @@ section; do not let SDK additions land without a corresponding doc update.
   their color; `"Wastes"` is the colorless basic — type line `Basic Land` with no subtype, intrinsic `{T}: Add {C}`.
   Supports `collectorNumber`, `artist`, `flavorText`, `imageUri`, `rarity`, and `inBooster` (set `false` to keep an
   art variant defined but exclude it from the draft/sealed deck-building basic pool).
+  A set declares one `basicLand(...)` per art variant. Limited deck building hands out exactly **one** printing per
+  land type — the set's *standard* art, i.e. its lowest-numbered `inBooster` variant (`BasicLandArt.standardFirst`),
+  since paper numbers the plain booster arts inside the main set numbering and appends full-art / extended /
+  borderless treatments above the set's card count. So `collectorNumber` is what decides which art a drafted deck
+  is played with: give a special treatment a number below the regular art and limited will use the treatment.
 
 **Card builder properties**
 

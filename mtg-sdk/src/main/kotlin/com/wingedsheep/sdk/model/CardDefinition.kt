@@ -41,9 +41,10 @@ data class ScryfallMetadata(
     /**
      * Whether this printing is part of the set's draft/sealed product. Mirrors Scryfall's
      * `booster` field — false for Special Guests, The List, promos, and other non-draft slots.
-     * Drives [com.wingedsheep.engine.limited.BoosterGenerator]: gates both the booster pool and
-     * the basic-land variants offered during draft/sealed deck building (so a basic art variant
-     * marked `false` is still defined, just not selectable in limited).
+     * Drives [com.wingedsheep.engine.limited.BoosterGenerator]: gates both the booster pool and the
+     * basic-land variants a set can offer during draft/sealed deck building (so a basic art variant
+     * marked `false` is still defined, just never the printing limited hands out — of the remaining
+     * variants, the standard art wins; see [BasicLandArt]).
      */
     val inBooster: Boolean = true
 )
