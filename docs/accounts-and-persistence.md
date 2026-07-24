@@ -297,8 +297,9 @@ accept/unfriend.
   deck picker's Paste-tab save.
 - **Unified deck library (`useUnifiedDecks`):** merges account decks (fetched in full via `?full`) with
   browser-only decks, each tagged `online`. Feeds (a) the deckbuilder's saved-deck **browser** overlay,
-  which shows an **Online / Browser** badge per deck and routes load/rename/delete to the right store,
-  and (b) the lobby deck picker's "My Decks" tab, so signed-in users can pick their cloud decks to play.
+  which routes load/rename/delete to the right store, and (b) the lobby deck picker's "My Decks" tab,
+  so signed-in users can pick their cloud decks to play. Both render the same full-art gallery tile
+  (`components/deck/DeckTile`), whose **Cloud / Local** badge is where a deck's storage shows up.
 - **Display name:** editable on the profile page (`PUT /api/auth/me`); the email stays the identity.
 - Profile page at `/profile` shows the win/loss summary plus colors played (a Recharts bar chart),
   sets, game modes, head-to-head, most-played cards, tournament finishes, and a recent-games list — all

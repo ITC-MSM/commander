@@ -1,9 +1,9 @@
 /**
- * DeckPicker — tabbed deck selector for the quick-game flow.
+ * DeckPicker — tabbed deck selector for the quick-game and tournament lobby flows.
  *
  * Tabs:
- *   - My decks: localStorage-backed library (load / delete)
- *   - Examples: server-supplied starter lists
+ *   - My decks: the unified deck library (cloud + browser), as a full-art deck gallery
+ *   - Examples: server-supplied starter lists, same gallery tiles
  *   - Paste:    free-form deck list parser ("4 Lightning Bolt" / "Lightning Bolt x4")
  *   - Random:   defer to the server (empty deck list → random sealed pool)
  *
@@ -37,7 +37,14 @@ import {
   computeDeckStats,
   type DeckValidationResult,
 } from './DeckSummary'
+import {
+  DeckTile,
+  DeckTileActionButton,
+  deckColors,
+  rarestCard,
+} from '@/components/deck/DeckTile'
 import { parseArenaDeckList } from '../deckbuilder/parseArenaDeck'
+import type { CardSummary } from '../deckbuilder/cardFilter'
 import { SetIcon } from './SetIcon'
 import { SetPickerModal } from './SetPickerModal'
 import styles from './DeckPicker.module.css'
@@ -82,21 +89,6 @@ export interface DeckPickerProps {
    * Null/undefined = no restriction.
    */
   format?: string | null
-}
-
-interface CardSummary {
-  name: string
-  manaCost: string
-  cmc: number
-  colors: string[]
-  cardTypes: string[]
-  supertypes: string[]
-  subtypes: string[]
-  basicLand: boolean
-  rarity: string
-  setCode: string | null
-  collectorNumber: string | null
-  legalFormats?: string[]
 }
 
 interface ExampleDeck {
@@ -418,10 +410,12 @@ export function DeckPicker({
         {tab === 'saved' && (
           <SavedDecksPanel
             decks={visibleDecks}
+            catalog={cards}
             legalityMap={legalityMap}
             format={format}
             hiddenCount={decks.length - visibleDecks.length}
             selectedId={selectedSavedId}
+            disabled={disabled}
             onSelect={setSelectedSavedId}
             onDelete={(d) => {
               void removeDeck(d)
@@ -439,20 +433,13 @@ export function DeckPicker({
         )}
 
         {tab === 'examples' && (
-          <div className={styles.exampleGrid}>
-            {visibleExamples.map((ex) => (
-              <button key={ex.id} className={styles.exampleCard} onClick={() => handleLoadExample(ex)} disabled={disabled}>
-                <span className={styles.exampleName}>{ex.name}</span>
-                <span className={styles.exampleDesc}>{ex.description}</span>
-                <span className={styles.savedItemCount}>{Object.values(ex.cards).reduce((a, b) => a + b, 0)} cards</span>
-              </button>
-            ))}
-            {visibleExamples.length === 0 && (
-              <p className={styles.helperText}>
-                {examples.length === 0 ? 'Loading examples…' : 'No examples for this format.'}
-              </p>
-            )}
-          </div>
+          <ExampleDecksPanel
+            examples={visibleExamples}
+            catalog={cards}
+            loading={examples.length === 0}
+            disabled={disabled}
+            onLoad={handleLoadExample}
+          />
         )}
 
         {tab === 'paste' && (
@@ -564,18 +551,42 @@ function TabButton({
   )
 }
 
+/**
+ * "My Decks" gallery. Same full-art {@link DeckTile} the deckbuilder's saved-deck browser
+ * uses, so a deck looks identical wherever it's picked; clicking a tile selects it as the
+ * deck to play, and hover exposes Edit (opens it in the Paste tab) / Delete.
+ */
 function SavedDecksPanel({
-  decks, legalityMap, format, hiddenCount, selectedId, onSelect, onDelete, onEdit,
+  decks, catalog, legalityMap, format, hiddenCount, selectedId, disabled, onSelect, onDelete, onEdit,
 }: {
   decks: UnifiedDeck[]
+  catalog: Record<string, CardSummary>
   legalityMap: Record<string, string[]>
   format: string | null
   hiddenCount: number
   selectedId: string | null
+  disabled: boolean
   onSelect: (id: string) => void
   onDelete: (d: UnifiedDeck) => void
   onEdit: (d: UnifiedDeck) => void
 }) {
+  // Tile metadata per deck. The commander is folded back into the card map (saved decks keep
+  // it out of `cards` per `SavedDeck.commander`) so the count and pips match what actually
+  // gets played, and so a commander can win the hero-art tie-break.
+  const tiles = useMemo(
+    () =>
+      decks.map((d) => {
+        const fullCards = mergeCommanderIntoCards(d.cards, d.commander ?? null)
+        return {
+          deck: d,
+          total: Object.values(fullCards).reduce((a, b) => a + b, 0),
+          colors: deckColors(fullCards, catalog),
+          hero: rarestCard(fullCards, catalog, d.commander ?? null),
+        }
+      }),
+    [decks, catalog],
+  )
+
   if (decks.length === 0) {
     if (format && hiddenCount > 0) {
       return (
@@ -595,66 +606,110 @@ function SavedDecksPanel({
           hiding {hiddenCount} that {hiddenCount === 1 ? 'is not' : 'are not'} legal.
         </p>
       )}
-      <ul className={styles.savedList}>
-        {decks.map((d) => {
-          const fullCards = mergeCommanderIntoCards(d.cards, d.commander ?? null)
-          const total = Object.values(fullCards).reduce((a, b) => a + b, 0)
-          const legalIn = legalityMap[d.id] ?? []
-          return (
-            <li
-              key={d.id}
-              className={`${styles.savedItem} ${selectedId === d.id ? styles.savedItemSelected : ''}`}
-              onClick={() => onSelect(d.id)}
-            >
-              <div className={styles.savedItemMeta}>
-                <span className={styles.savedItemName}>
-                  {d.name}
-                  <span
-                    className={styles.savedItemFormatBadge}
-                    style={{
-                      marginLeft: 6,
-                      color: d.online ? '#9be8bd' : '#b8b8c4',
-                      borderColor: d.online ? 'rgba(62,207,122,0.35)' : undefined,
-                    }}
-                    title={d.online ? 'Backed up to your account' : 'Saved only in this browser'}
-                  >
-                    {d.online ? 'Online' : 'Browser'}
-                  </span>
-                </span>
-                <span className={styles.savedItemCount}>{total} cards</span>
-                {(d.format || legalIn.length > 0) && (
-                  <span className={styles.savedItemFormats}>
-                    {d.format && (
-                      <span
-                        className={styles.savedItemFormatBadgeSaved}
-                        title={`Saved as ${labelForFormat(d.format)}`}
-                      >
-                        {labelForFormat(d.format)}
-                      </span>
-                    )}
-                    {legalIn
-                      .filter((f) => f !== d.format)
-                      .map((f) => (
-                        <span
-                          key={f}
-                          className={styles.savedItemFormatBadge}
-                          title={`Legal in ${labelForFormat(f)}`}
-                        >
-                          {labelForFormat(f)}
-                        </span>
-                      ))}
-                  </span>
-                )}
-              </div>
-              <div className={styles.savedItemActions}>
-                <button className={styles.linkButton} onClick={(e) => { e.stopPropagation(); onEdit(d) }} type="button">Edit</button>
-                <button className={styles.dangerButton} onClick={(e) => { e.stopPropagation(); onDelete(d) }} type="button">Delete</button>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
+      <div className={styles.deckGridScroll}>
+        <div className={styles.deckGrid}>
+          {tiles.map(({ deck, total, colors, hero }) => {
+            // One chip only: the format the deck was saved as, else the first format it's legal in.
+            const shownFormat = deck.format ?? legalityMap[deck.id]?.[0] ?? null
+            return (
+              <DeckTile
+                key={deck.id}
+                name={deck.name}
+                total={total}
+                colors={colors}
+                hero={hero}
+                format={shownFormat}
+                formatTitle={
+                  shownFormat
+                    ? deck.format
+                      ? `Saved as ${labelForFormat(shownFormat)}`
+                      : `Legal in ${labelForFormat(shownFormat)}`
+                    : undefined
+                }
+                selected={deck.id === selectedId}
+                badge={deck.id === selectedId ? 'Selected' : undefined}
+                storage={deck.online ? 'cloud' : 'local'}
+                title={`Play with ${deck.name}`}
+                disabled={disabled}
+                onClick={() => onSelect(deck.id)}
+                actions={
+                  <>
+                    <DeckTileActionButton
+                      onClick={() => onEdit(deck)}
+                      title="Edit in the Paste tab"
+                      ariaLabel={`Edit ${deck.name}`}
+                    >
+                      ✎
+                    </DeckTileActionButton>
+                    <DeckTileActionButton
+                      onClick={() => onDelete(deck)}
+                      title="Delete"
+                      ariaLabel={`Delete ${deck.name}`}
+                      danger
+                    >
+                      ✕
+                    </DeckTileActionButton>
+                  </>
+                }
+              />
+            )
+          })}
+        </div>
+      </div>
     </>
   )
 }
 
+/**
+ * Server-supplied starter decks, shown as the same art tiles as "My Decks" so both halves of
+ * the picker read as one gallery. Clicking a tile loads the list into the Paste tab (where the
+ * user can tweak and save it) — matching the pre-gallery behaviour.
+ */
+function ExampleDecksPanel({
+  examples, catalog, loading, disabled, onLoad,
+}: {
+  examples: ExampleDeck[]
+  catalog: Record<string, CardSummary>
+  loading: boolean
+  disabled: boolean
+  onLoad: (ex: ExampleDeck) => void
+}) {
+  const tiles = useMemo(
+    () =>
+      examples.map((ex) => ({
+        example: ex,
+        total: Object.values(ex.cards).reduce((a, b) => a + b, 0),
+        colors: deckColors(ex.cards, catalog),
+        hero: rarestCard(ex.cards, catalog, ex.commander ?? null),
+      })),
+    [examples, catalog],
+  )
+  if (tiles.length === 0) {
+    return (
+      <p className={styles.helperText}>
+        {loading ? 'Loading examples…' : 'No examples for this format.'}
+      </p>
+    )
+  }
+  return (
+    <div className={styles.deckGridScroll}>
+      <div className={styles.deckGrid}>
+        {tiles.map(({ example, total, colors, hero }) => (
+          <DeckTile
+            key={example.id}
+            name={example.name}
+            description={example.description}
+            total={total}
+            colors={colors}
+            hero={hero}
+            format={example.format ?? null}
+            formatTitle={example.format ? `Built for ${labelForFormat(example.format)}` : undefined}
+            title={`Load ${example.name} into the Paste tab`}
+            disabled={disabled}
+            onClick={() => onLoad(example)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
