@@ -986,7 +986,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 life={effectiveOpponent.life}
                 playerId={effectiveOpponent.playerId}
                 playerName={effectiveOpponent.name}
-                spectatorMode={spectatorMode}
+                // An eliminated spectator has no opponents left to speak of — their orbs read
+                // spectator-shaped (no "OPPONENT" role tag, no targeting click), like the
+                // bottom-seat orb already does.
+                spectatorMode={viewerIsObserver}
                 poisonCounters={effectiveOpponent.poisonCounters}
                 commanderDamage={effectiveOpponent.commanderDamage ?? []}
                 handSize={effectiveOpponent.handSize}
