@@ -51,10 +51,9 @@ class PublicReplayController(
         // Manually composed: the frames are already-serialized JSON (freshly rendered, or read
         // straight out of the archive), so splicing beats decode-and-re-encode.
         val metadataJson = messageSender.json.encodeToString(response)
-        val frames = payload.body.removePrefix("{").removeSuffix("}")
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_JSON)
-            .body("""{"metadata":$metadataJson,$frames}""")
+            .body("""{"metadata":$metadataJson,${payload.bodyFields()}}""")
     }
 
     /**

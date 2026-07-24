@@ -1506,6 +1506,11 @@ class GameSession(
      * doesn't match it, actions were lost and we stop recording here, keeping the shorter but honest
      * replay that was already stored.
      *
+     * A null [expectedFingerprint] means the flush couldn't capture one, so there is nothing to
+     * check against and we resume unverified — the one path where a stale prefix could still be
+     * extended. The flusher always writes a fingerprint for a recorded session, so this should be
+     * unreachable; it is logged rather than assumed so it can't become reachable quietly.
+     *
      * Returns whether recording continues.
      */
     internal fun restoreReplayRecording(
@@ -1514,6 +1519,13 @@ class GameSession(
     ): Boolean = synchronized(stateLock) {
         val live = gameState
         val actual = live?.let { com.wingedsheep.gameserver.replay.ReplayFingerprint.of(it) }
+        if (expectedFingerprint == null) {
+            logger.warn(
+                "Replay recording for $sessionId has no stored fingerprint " +
+                    "(${record.actions.size} actions at $actual) — resuming without verifying that " +
+                    "the stored log matches the recovered state"
+            )
+        }
         if (expectedFingerprint != null && actual != expectedFingerprint) {
             logger.warn(
                 "Replay recording for $sessionId is behind the recovered state " +

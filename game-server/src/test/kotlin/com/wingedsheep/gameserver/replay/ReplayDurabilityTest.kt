@@ -9,12 +9,15 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.model.CharacteristicValue
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import org.springframework.web.socket.WebSocketSession
 import java.time.Instant
 
@@ -223,6 +226,23 @@ class ReplayDurabilityTest : ScenarioTestBase() {
             payload.degradedReason shouldBe null
             // The archive exists but is not what we served — the live fold wins while it is honest.
             payload.body shouldNotBe ARCHIVED_BODY
+        }
+
+        test("the viewer body splices into a well-formed response, and a malformed archive fails loudly") {
+            val payload = ReplayViewerPayload(
+                body = """{"initialSnapshot":{"seq":1},"deltas":[]}""",
+                frameCount = 1,
+                fidelity = ReplayFidelity.EXACT,
+            )
+
+            // What PublicReplayController builds: its own metadata key plus the frames verbatim.
+            val spliced = """{"metadata":{"gameId":"g"},${payload.bodyFields()}}"""
+            Json.parseToJsonElement(spliced).jsonObject.keys shouldBe
+                setOf("metadata", "initialSnapshot", "deltas")
+
+            // An archive row that isn't a JSON object would otherwise splice into corrupt JSON that
+            // only fails in the client. Fail here, where the cause is visible.
+            shouldThrow<IllegalArgumentException> { payload.copy(body = "not json").bodyFields() }
         }
 
         test("a v1 record (no checkpoints) still reconstructs, reported as unverified") {

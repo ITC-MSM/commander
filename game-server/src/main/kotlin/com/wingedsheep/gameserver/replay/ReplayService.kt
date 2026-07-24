@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
  * how much to trust it.
  */
 data class ReplayViewerPayload(
-    /** The composed JSON body, ready to splice into a response. */
+    /** The composed JSON object — `{"initialSnapshot":…,"deltas":[…]}` — ready to serve as-is. */
     val body: String,
     val frameCount: Int,
     val fidelity: ReplayFidelity,
@@ -24,7 +24,25 @@ data class ReplayViewerPayload(
      * scenario" will work. False when we are serving the archive because re-simulation diverged.
      */
     val stateReproducible: Boolean = true,
-)
+) {
+    /**
+     * [body]'s fields without the enclosing braces, for endpoints that splice the frames in
+     * alongside keys of their own (the public one prepends `metadata`).
+     *
+     * Splicing beats decode-and-re-encode — the frames are hundreds of KB of already-serialized
+     * JSON, freshly rendered or read straight out of the archive. But "body is a brace-wrapped
+     * object" is then an assumption, and one an archive row written by some other build could
+     * violate, so it is asserted here once instead of being taken positionally at each call site.
+     * Corrupt JSON that a client fails to parse is a much worse symptom than a loud failure.
+     */
+    fun bodyFields(): String {
+        val trimmed = body.trim()
+        require(trimmed.length >= 2 && trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            "Replay viewer body must be a JSON object, got: ${trimmed.take(40)}"
+        }
+        return trimmed.substring(1, trimmed.length - 1)
+    }
+}
 
 /**
  * The single entry point for reading and writing replays.

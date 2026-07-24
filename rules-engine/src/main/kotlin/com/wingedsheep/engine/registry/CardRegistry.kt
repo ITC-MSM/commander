@@ -141,8 +141,14 @@ class CardRegistry(private val parent: CardRegistry? = null) {
 
     /**
      * Get the total number of registered unique card names.
+     *
+     * O(1) on a root registry. An overlay has to discount the parent names it shadows, so it is
+     * O(parent names) and allocates — fine for the diagnostics this serves, not for a loop.
      */
-    val size: Int get() = if (parent == null) cardsByName.size else allCardNames().size
+    val size: Int get() {
+        val parent = this.parent ?: return cardsByName.size
+        return cardsByName.size + parent.allCardNames().count { it !in cardsByName }
+    }
 
     /**
      * Look up the front face of a DFC given its back face name.
