@@ -4043,6 +4043,84 @@
     ]
 }
 
+// Shocker, Unshakable
+{
+    "name": "Shocker, Unshakable",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Legendary Creature — Human Rogue Villain",
+    "oracleText": "During your turn, Shocker has first strike.\nVibro-Shock Gauntlets — When Shocker enters, he deals 2 damage to target creature and 2 damage to that creature's controller.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": "TargetController"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "rarity": "UNCOMMON",
+        "artist": "Kevin Glint",
+        "flavorText": "Mock him at your peril.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b2c0d9a-364a-4823-aa4c-fe473d4463f0.jpg?1783905333"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Silver Sable, Mercenary Leader
 {
     "name": "Silver Sable, Mercenary Leader",
