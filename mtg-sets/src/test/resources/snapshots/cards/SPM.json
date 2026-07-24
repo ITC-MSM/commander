@@ -502,6 +502,46 @@
     ]
 }
 
+// City Pigeon
+{
+    "name": "City Pigeon",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flying\nWhen this creature leaves the battlefield, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                },
+                "descriptionOverride": "When this creature leaves the battlefield, create a Food token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "artist": "David Szabo",
+        "flavorText": "\"Aw, that was my lunch!\"\n—Spider-Man, Peter Parker",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/56d67fb4-5b23-432c-9ffb-39545035c117.jpg?1783905365"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Common Crook
 {
     "name": "Common Crook",
