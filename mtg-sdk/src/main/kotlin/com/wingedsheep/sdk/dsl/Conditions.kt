@@ -583,6 +583,21 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.ControllerTurnsTakenAtMost(threshold)
 
     /**
+     * If your life total is at least [amount] greater than your *starting* life total — the
+     * "as long as your life total is greater than your starting life total" family. Reads the
+     * player's actual starting total (20 / 30 / 40 / 2HG), never a hardcoded 20.
+     *
+     * `LifeAboveStartingBy(1)` is the plain "greater than your starting life total" reading;
+     * Elenda, Saint of Dusk pairs it with `LifeAboveStartingBy(10)` for her second tier.
+     */
+    fun LifeAboveStartingBy(amount: Int): ConditionInterface =
+        Compare(
+            DynamicAmount.LifeTotal(Player.You),
+            ComparisonOperator.GTE,
+            DynamicAmount.Add(DynamicAmount.StartingLifeTotal(Player.You), DynamicAmount.Fixed(amount))
+        )
+
+    /**
      * If you have more life than an opponent.
      */
     val MoreLifeThanOpponent: ConditionInterface =

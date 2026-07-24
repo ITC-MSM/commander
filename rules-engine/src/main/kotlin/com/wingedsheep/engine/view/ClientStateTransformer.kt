@@ -755,8 +755,11 @@ class ClientStateTransformer(
         val protections = (projectedProtections.ifEmpty { staticProtections }).distinct()
 
         // Extract hexproof-from-color colors from projected keywords (HEXPROOF_FROM_*).
-        // Both intrinsic per-color hexproof (HexproofFromColorComponent) and dynamically granted
+        // Both intrinsic per-color hexproof (HexproofFromComponent) and dynamically granted
         // hexproof (Tam, Mindful First-Year) flow through the same projection keywords.
+        // Non-color scopes in that namespace (HEXPROOF_FROM_CARDTYPE_INSTANT, HEXPROOF_FROM_MONOCOLORED)
+        // fail Color.valueOf and drop out here — like protection-from-card-type they surface to the
+        // player through the card's oracle text rather than a per-color badge.
         val hexproofFromPrefix = "HEXPROOF_FROM_"
         val hexproofFromColors = projectedValues?.keywords
             ?.filter { it.startsWith(hexproofFromPrefix) }

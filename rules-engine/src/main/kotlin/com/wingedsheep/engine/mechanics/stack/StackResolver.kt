@@ -2888,6 +2888,19 @@ class StackResolver(
                                 return@filterIndexed false
                             }
                         }
+                        // ...and from the source's card types, e.g. "hexproof from instants"
+                        // (Elenda, Saint of Dusk). Same source-type resolution as protection.
+                        if (sourceId != null) {
+                            for (cardType in SourceTypeTargeting.sourceCardTypes(state, sourceId)) {
+                                if (projected.hasKeyword(
+                                        target.entityId,
+                                        "HEXPROOF_FROM_CARDTYPE_${cardType.uppercase()}"
+                                    )
+                                ) {
+                                    return@filterIndexed false
+                                }
+                            }
+                        }
                     }
 
                     // Check can't-be-targeted-by-abilities (Shanna, Sisay's Legacy)

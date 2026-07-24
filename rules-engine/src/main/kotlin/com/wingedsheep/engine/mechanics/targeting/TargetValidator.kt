@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.mechanics.targeting
 
+import com.wingedsheep.engine.handlers.SourceTypeTargeting
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
@@ -268,6 +269,11 @@ class TargetValidator {
         val hexproofError = checkHexproofFromColor(state, target, casterId, sourceColors)
         if (hexproofError != null) return hexproofError
 
+        // Check hexproof from card type, e.g. "hexproof from instants" (Rule 702.11b).
+        // Elenda, Saint of Dusk.
+        val hexproofCardTypeError = checkHexproofFromCardType(state, target, casterId, sourceId)
+        if (hexproofCardTypeError != null) return hexproofCardTypeError
+
         // Check protection from each opponent (Rule 702.16e)
         val protectionFromOpponentError = checkProtectionFromEachOpponent(state, target, casterId)
         if (protectionFromOpponentError != null) return protectionFromOpponentError
@@ -446,6 +452,44 @@ class TargetValidator {
             if (sourceColors.size == 1 && projected.hasKeyword(entityId, "HEXPROOF_FROM_MONOCOLORED")) {
                 val cardName = state.getEntity(entityId)?.get<CardComponent>()?.name ?: "target"
                 return "$cardName has hexproof from monocolored"
+            }
+        }
+        return null
+    }
+
+    /**
+     * Check if a target has hexproof from one of the source's card types — "hexproof from
+     * instants" (Rule 702.11b). Format: `HEXPROOF_FROM_CARDTYPE_<CARDTYPE>`.
+     *
+     * Like hexproof from a color this only blocks *opponents*: the permanent's controller can
+     * still target it with their own instants, and hexproof-suppressing effects (Glaring Spotlight
+     * and friends) turn it off for the caster. The source's card types are resolved the same way as
+     * for protection-from-card-type — projected types for a permanent source, falling back to the
+     * printed type line for a spell on the stack, which the layer projector doesn't cover.
+     */
+    private fun checkHexproofFromCardType(
+        state: GameState,
+        target: ChosenTarget,
+        casterId: EntityId,
+        sourceId: EntityId?
+    ): String? {
+        if (sourceId == null) return null
+        val entityId = when (target) {
+            is ChosenTarget.Permanent -> target.entityId
+            else -> return null
+        }
+        if (entityId !in state.getBattlefield()) return null
+
+        val entityController = state.getEntity(entityId)?.get<ControllerComponent>()?.playerId
+        if (entityController == casterId) return null
+
+        val projected = state.projectedState
+        if (HexproofSuppression.isSuppressedForCaster(state, projected, entityId, casterId)) return null
+
+        for (cardType in SourceTypeTargeting.sourceCardTypes(state, sourceId)) {
+            if (projected.hasKeyword(entityId, "HEXPROOF_FROM_CARDTYPE_${cardType.uppercase()}")) {
+                val cardName = state.getEntity(entityId)?.get<CardComponent>()?.name ?: "target"
+                return "$cardName has hexproof from ${cardType.lowercase()}s"
             }
         }
         return null

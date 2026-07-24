@@ -352,7 +352,7 @@ val engineSerializersModule = SerializersModule {
         subclass(ManifestedComponent::class)
         subclass(TextReplacementComponent::class)
         subclass(ProtectionComponent::class)
-        subclass(HexproofFromColorComponent::class)
+        subclass(HexproofFromComponent::class)
         subclass(SelfZoneRedirectComponent::class)
         subclass(ToxicComponent::class)
         subclass(CopyOfComponent::class)

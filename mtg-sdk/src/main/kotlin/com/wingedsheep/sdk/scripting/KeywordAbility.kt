@@ -126,11 +126,13 @@ sealed interface KeywordAbility {
     }
 
     /**
-     * Hexproof from a quality. Parameterized by [ProtectionScope]; today only
-     * `ProtectionScope.Color` is engine-supported (the other scopes format the
-     * oracle text but have no rules-engine wiring yet).
+     * Hexproof from a quality. Parameterized by [ProtectionScope]; `ProtectionScope.Color`,
+     * `ProtectionScope.Colors` and `ProtectionScope.CardType` are engine-supported (the remaining
+     * scopes format the oracle text but have no rules-engine wiring yet).
      *
-     * Example: `Hexproof(ProtectionScope.Color(Color.WHITE))` — "Hexproof from white".
+     * Examples:
+     * - `Hexproof(ProtectionScope.Color(Color.WHITE))`    — "Hexproof from white" (Knight of Malice)
+     * - `Hexproof(ProtectionScope.CardType("Instant"))`   — "Hexproof from instants" (Elenda, Saint of Dusk)
      */
     @SerialName("Hexproof")
     @Serializable
