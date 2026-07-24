@@ -5228,6 +5228,52 @@
     ]
 }
 
+// Spider-Man No More
+{
+    "name": "Spider-Man No More",
+    "manaCost": "{1}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature is a Citizen with base power and toughness 1/1. It has defender and loses all other abilities. (It also loses all other creature types.)",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "TransformPermanent",
+                "setCardTypes": [
+                    "CREATURE"
+                ],
+                "setSubtypes": [
+                    "Citizen"
+                ]
+            },
+            {
+                "type": "SetBasePowerToughnessStatic",
+                "power": 1,
+                "toughness": 1
+            },
+            "LoseAllAbilities",
+            {
+                "type": "GrantKeyword",
+                "keyword": "DEFENDER"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "Aniekan Udofia",
+        "flavorText": "\"Being Spider-Man has brought me nothing but unhappiness! And for what?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72dbab11-96ed-43db-8b59-ceca47c8cd22.jpg?1783905348"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Spider-Mobile
 {
     "name": "Spider-Mobile",
