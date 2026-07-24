@@ -2,7 +2,7 @@ import { ErrorCode, GameOverReason } from './enums'
 import { EntityId } from './entities'
 import { GameAction } from './actions'
 import { ClientEvent } from './events'
-import { ClientGameState, ClientCard, ClientZone, ClientPlayer, ClientCombatState, ClientCommanderDamage } from './gameState'
+import { ClientGameState, ClientCard, ClientZone, ClientPlayer, ClientCombatState, ClientCommanderDamage, ClientDeckCard } from './gameState'
 
 // ============================================================================
 // Server Messages (received from server)
@@ -250,6 +250,8 @@ export interface StateDelta {
   readonly youAreHijackedBy?: EntityId | null
   /** Hotseat indicator — always overwritten on apply */
   readonly hotseat?: boolean | null
+  /** The viewer's decklist, present only when a `remaining` count moved (draw, mill, tutor). */
+  readonly deck?: readonly ClientDeckCard[] | null
 }
 
 /**

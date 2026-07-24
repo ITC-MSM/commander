@@ -175,6 +175,25 @@ App
     └── DeathEffect
 ```
 
+## In-game deck tracker
+
+Clicking your own Deck pile (or pressing `D`) opens `board/DeckBrowser.tsx`, a two-tab overlay:
+
+- **Deck list** — your decklist with a `remaining/copies` count per card, fully-drawn rows dimmed,
+  next-draw odds, and the deckbuilder's mana curve and colour pips. It renders
+  `ClientGameState.deck` through `components/deck/GameDeckView.tsx`'s `DeckCardBody`, the same
+  component the profile and admin deck viewers use — a `DeckViewCard` is just a recorded
+  `GameDeckCard` plus an optional `remaining`, and supplying it is what switches rows into tracker
+  mode.
+- **Library order** — the pre-existing library view (top to bottom, card backs for anything not
+  revealed to you).
+
+Everything shown comes from the server: `deck` is populated only for `viewingPlayerId` and is empty
+for spectators, so an opponent's Deck pile has no deck-list tab at all and the client never has to
+decide what to hide. See `data-contracts.md` §B3 for the payload and its two masking rules — in
+particular that `remaining` means "copies you haven't seen", which is not always the same as
+"copies in your library".
+
 ## Battlefield card grouping (token quantity aggregation)
 
 Identical permanents on one player's board collapse into a single visual **stack**
@@ -310,9 +329,10 @@ are gated on `players.length > 2`).
   (hand `CardRow`, `CommandZone`, `Battlefield`, `ZonePile`, and everything inside
   `GameCard`) that is full-screen or positioned in viewport coordinates must go through
   `createPortal(..., document.body)`.** Current portals: the
-  graveyard/exile/library/plotted/paradigm browsers (`ZonePiles.tsx` — titles carry the
+  graveyard/exile/plotted/paradigm browsers (`ZonePiles.tsx` — titles carry the
   owner's name, "Carol's Graveyard", since "Opponent's" is ambiguous at a multiplayer
-  table), the attachments browser (`Battlefield.tsx`), the copy-of hover preview and the
+  table) and the deck browser (`DeckBrowser.tsx`), the attachments browser
+  (`Battlefield.tsx`), the copy-of hover preview and the
   active-effect badge tooltip (`GameCard.tsx` / `CardOverlays.tsx`). Overlays rendered
   from `GameBoard` itself (stack, action menu, decision modals, yield menu) sit outside
   the strip and don't need it.

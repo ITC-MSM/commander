@@ -153,6 +153,35 @@ wholeGame, autoAnswer }`. A triggered/activated ability on the stack carries its
 in its `ClientCard`, so the stack-item context menu can target it. When a yield auto-answers a
 may-question, the server emits an `abilityAutoAnswered` log event (shown only to the controller).
 
+### B3. Deck Tracker (`deck` on the client state)
+
+The state update carries the viewer's own decklist as `deck` — one entry per distinct card,
+`{ cardName, copies, remaining, cmc, cardTypes, colors, imageUri }`. It drives the in-game deck
+panel behind the Deck pile (also `D`), which renders it through the same `DeckCardBody` component
+as the recorded-deck viewer — hence the field names matching `GameDeckCard`.
+
+The server builds it in `ClientStateTransformer` from live *ownership* rather than a stored
+decklist, which is what keeps it honest: a permanent an opponent stole is still in its owner's deck
+(CR 108.3), a token copy of one never is, and a permanent copying something else counts as the card
+it was printed as. The sideboard is excluded as outside the game (CR 400.11a); the command zone is
+included so a commander doesn't flicker in and out as it's cast and returns.
+
+Two masking rules matter:
+
+- **`deck` describes only `viewingPlayerId`, and is empty for spectators.** No player, spectator or
+  replay viewer ever receives another player's decklist.
+- **`remaining` is "copies you can't currently see", not "copies in your library."** Those are the
+  same number in an ordinary game, but a card of yours hidden elsewhere — exiled face down, or a
+  face-down permanent an opponent controls — stays counted as `remaining`. Publishing an exact
+  library count would let the panel be read backwards to learn *which* card got exiled face down.
+
+Aggregate counts only: library *order* is never exposed here. (The Library-order tab in the same
+panel is the pre-existing view, and shows card backs for everything not revealed to the viewer.)
+
+`StateDelta.deck` is sent only when a count actually moved (a draw, a mill, a tutor), so the
+many updates that just shuffle the battlefield around don't re-send the list. Absent from a delta
+means unchanged — the client carries the previous value forward.
+
 ### C. Connection Liveness (Client <-> Server)
 
 `{"type": "ping"}` (client) is always answered with `{"type": "pong"}` (server), regardless of

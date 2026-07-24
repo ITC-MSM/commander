@@ -96,7 +96,47 @@ data class ClientGameState(
      * per-player: only the viewer's own yields are ever included. Drives the "Active yields" panel
      * (revoke / clear-all) and lets the client suppress re-prompting cues. Empty for spectators.
      */
-    val activeYields: List<ClientYield> = emptyList()
+    val activeYields: List<ClientYield> = emptyList(),
+
+    /**
+     * The viewing player's own decklist — one entry per distinct card they own, with how many
+     * copies they still haven't seen. Drives the in-game deck tracker. Strictly private: empty for
+     * spectators and never populated for anyone but [viewingPlayerId], so a player can review their
+     * own 60 without learning anything about an opponent's. Library *order* is never exposed —
+     * entries are aggregated counts, not positions. See [ClientDeckCard].
+     */
+    val deck: List<ClientDeckCard> = emptyList()
+)
+
+/**
+ * One distinct card in the viewing player's deck, aggregated across every zone.
+ *
+ * Field names mirror the recorded-deck DTO the profile/admin deck viewer already uses
+ * (`GameDeckCard`), so the client renders both through the same component.
+ *
+ * @property copies Total copies of this card the player owns that are in the game — the printed
+ *   count in their deck. Cards in the sideboard are excluded (CR 400.11a puts them outside the game);
+ *   a card wished in from the sideboard therefore *adds* to the deck when it enters.
+ * @property remaining Copies whose current location the viewer cannot identify — i.e. still in
+ *   their library, or hidden from them elsewhere (a card of theirs exiled face down, or a
+ *   face-down permanent an opponent controls). Lumping "hidden elsewhere" in with "in library"
+ *   is deliberate: reporting an exact library count would leak *which* card an opponent exiled
+ *   face down. In an ordinary game nothing is hidden outside the library, so `remaining` is
+ *   exactly "cards of this name left to draw".
+ */
+@Serializable
+data class ClientDeckCard(
+    val cardName: String,
+    val copies: Int,
+    val remaining: Int,
+    /** Mana value, for the curve histogram. */
+    val cmc: Int,
+    /** Card type enum names, e.g. `["CREATURE"]` — the client buckets rows by these. */
+    val cardTypes: List<String>,
+    /** The card's own colours as enum names; empty for colourless. */
+    val colors: List<String>,
+    /** Art URL for the hover preview; null falls back to a client-side name lookup. */
+    val imageUri: String? = null
 )
 
 /**

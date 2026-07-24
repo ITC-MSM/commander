@@ -1,11 +1,15 @@
 /**
- * Shared, polished renderer for a recorded/saved deck — the single deck UI reused by the player's
- * recent-games deck modal and the admin player view. It takes the registry-enriched card lines the
- * server sends ({@link GameDeckCard}: copies + cmc + types + colours) and renders them the way the
+ * Shared, polished renderer for a deck — the single deck UI reused by the player's recent-games
+ * deck modal, the admin player view, and the in-game deck tracker. It takes registry-enriched card
+ * lines ({@link GameDeckCard}: copies + cmc + types + colours) and renders them the way the
  * deckbuilder does: cards grouped by type with running counts, a stacked-by-colour mana curve and
  * colour pips (both from the deckbuilder's {@link DeckSummary} helpers), and a cursor-following card
- * image on hover ({@link HoverCardPreview}). Nothing here is admin- or profile-specific, so both
- * surfaces — and any future deck viewer — share exactly one look.
+ * image on hover ({@link HoverCardPreview}). Nothing here is admin- or profile-specific, so every
+ * surface shares exactly one look.
+ *
+ * Live games pass {@link DeckViewCard}s carrying a `remaining` count, which switches rows into
+ * tracker mode: `remaining/copies` instead of a bare copy count, fully-drawn rows dimmed, and — when
+ * `drawPoolSize` is given — the chance the next card drawn is that one.
  */
 import { useState } from 'react'
 import type React from 'react'
@@ -33,20 +37,27 @@ const TYPE_LABEL: Record<string, string> = {
   OTHER: 'Other',
 }
 
+/**
+ * A deck line, optionally annotated with how many copies are still unaccounted for. `remaining` is
+ * absent for a recorded deck (nothing to track) and present for a live game.
+ */
+export type DeckViewCard = GameDeckCard & { readonly remaining?: number }
+
 interface TypeGroup {
   key: string
   label: string
-  cards: GameDeckCard[]
+  cards: DeckViewCard[]
   count: number
+  remaining: number
 }
 
-function primaryType(card: GameDeckCard): string {
+function primaryType(card: DeckViewCard): string {
   for (const t of TYPE_ORDER) if (card.cardTypes.includes(t)) return t
   return 'OTHER'
 }
 
-function groupByType(cards: GameDeckCard[]): TypeGroup[] {
-  const buckets = new Map<string, GameDeckCard[]>()
+function groupByType(cards: readonly DeckViewCard[]): TypeGroup[] {
+  const buckets = new Map<string, DeckViewCard[]>()
   for (const card of cards) {
     const key = primaryType(card)
     const list = buckets.get(key)
@@ -66,6 +77,7 @@ function groupByType(cards: GameDeckCard[]): TypeGroup[] {
         label: TYPE_LABEL[k] ?? k,
         cards: groupCards,
         count: groupCards.reduce((sum, c) => sum + c.copies, 0),
+        remaining: groupCards.reduce((sum, c) => sum + (c.remaining ?? c.copies), 0),
       }
     })
 }
@@ -74,12 +86,28 @@ type HoverState = { name: string; imageUri: string | null; pos: { x: number; y: 
 
 /**
  * The body of a single deck: colour pips, mana curve, and the cards grouped by type. Used standalone
- * for a saved deck and inside {@link SeatDeckColumn} for a game seat. Manages its own hover preview.
+ * for a saved deck, inside {@link SeatDeckColumn} for a game seat, and by the in-game deck tracker.
+ * Manages its own hover preview.
+ *
+ * The curve and colour pips always describe the *whole* deck — that's the decklist you built, and
+ * it shouldn't reshape itself as you draw. Only the per-card rows track what's left.
+ *
+ * @param drawPoolSize Library size, when known. Turns on the per-row "chance your next draw is this
+ *   card" column. Omit for a recorded deck.
+ * @param emptyLabel What to show when there are no cards at all.
  */
-export function DeckCardBody({ cards }: { cards: GameDeckCard[] }) {
+export function DeckCardBody({
+  cards,
+  drawPoolSize,
+  emptyLabel = 'Deck not recorded.',
+}: {
+  cards: readonly DeckViewCard[]
+  drawPoolSize?: number
+  emptyLabel?: string
+}) {
   const [hover, setHover] = useState<HoverState>(null)
 
-  if (cards.length === 0) return <p style={styles.muted}>Deck not recorded.</p>
+  if (cards.length === 0) return <p style={styles.muted}>{emptyLabel}</p>
 
   // Reuse the deckbuilder's stats helper — GameDeckCard satisfies DeckStatsCard structurally.
   const deckRecord: Record<string, number> = {}
@@ -90,6 +118,7 @@ export function DeckCardBody({ cards }: { cards: GameDeckCard[] }) {
   }
   const stats = computeDeckStats(deckRecord, cardMeta)
   const groups = groupByType(cards)
+  const tracking = cards.some((c) => c.remaining !== undefined)
 
   return (
     <div style={styles.body}>
@@ -114,21 +143,36 @@ export function DeckCardBody({ cards }: { cards: GameDeckCard[] }) {
         {groups.map((g) => (
           <div key={g.key}>
             <div style={styles.groupTitle}>
-              {g.label} <span style={styles.groupCount}>{g.count}</span>
+              {g.label}{' '}
+              <span style={styles.groupCount}>{tracking ? `${g.remaining}/${g.count}` : g.count}</span>
             </div>
             <ul style={styles.cardList}>
-              {g.cards.map((c) => (
-                <li
-                  key={c.cardName}
-                  style={styles.cardRow}
-                  onMouseEnter={(e) => setHover({ name: c.cardName, imageUri: c.imageUri, pos: { x: e.clientX, y: e.clientY } })}
-                  onMouseMove={(e) => setHover({ name: c.cardName, imageUri: c.imageUri, pos: { x: e.clientX, y: e.clientY } })}
-                  onMouseLeave={() => setHover(null)}
-                >
-                  <span style={styles.copies}>{c.copies}</span>
-                  <span style={styles.cardName}>{c.cardName}</span>
-                </li>
-              ))}
+              {g.cards.map((c) => {
+                const remaining = c.remaining ?? c.copies
+                const drawn = tracking && remaining === 0
+                // Chance the very next card drawn is this one. Capped at 100% because a copy
+                // hidden outside the library (a face-down exile) still counts as "remaining".
+                const odds =
+                  drawPoolSize && drawPoolSize > 0 && remaining > 0
+                    ? Math.min(100, Math.round((remaining / drawPoolSize) * 100))
+                    : null
+                return (
+                  <li
+                    key={c.cardName}
+                    style={drawn ? { ...styles.cardRow, ...styles.cardRowDrawn } : styles.cardRow}
+                    onMouseEnter={(e) => setHover({ name: c.cardName, imageUri: c.imageUri, pos: { x: e.clientX, y: e.clientY } })}
+                    onMouseMove={(e) => setHover({ name: c.cardName, imageUri: c.imageUri, pos: { x: e.clientX, y: e.clientY } })}
+                    onMouseLeave={() => setHover(null)}
+                  >
+                    <span style={tracking ? { ...styles.copies, ...styles.copiesTracking } : styles.copies}>
+                      {tracking ? remaining : c.copies}
+                      {tracking && <span style={styles.ofCopies}>/{c.copies}</span>}
+                    </span>
+                    <span style={styles.cardName}>{c.cardName}</span>
+                    {odds !== null && <span style={styles.odds}>{odds}%</span>}
+                  </li>
+                )
+              })}
             </ul>
           </div>
         ))}
@@ -237,6 +281,10 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     cursor: 'default',
   },
+  cardRowDrawn: { opacity: 0.35 },
   copies: { color: '#8b9bff', fontVariantNumeric: 'tabular-nums', minWidth: 18, textAlign: 'right', fontWeight: 600 },
-  cardName: { color: '#d6d9e6' },
+  copiesTracking: { minWidth: 34 },
+  ofCopies: { color: '#5a6180', fontWeight: 500 },
+  cardName: { color: '#d6d9e6', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  odds: { color: '#6b7394', fontSize: 11, fontVariantNumeric: 'tabular-nums', flexShrink: 0 },
 }
