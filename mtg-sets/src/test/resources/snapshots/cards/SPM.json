@@ -6663,6 +6663,66 @@
     ]
 }
 
+// Whoosh!
+{
+    "name": "Whoosh!",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Kicker {1}{U} (You may pay an additional {1}{U} as you cast this spell.)\nReturn target nonland permanent to its owner's hand. If this spell was kicked, draw a card.",
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "manaCost": "{1}{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": "WasKicked"
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "nonland permanent"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Nathaniel Himawan",
+        "flavorText": "\"Sorry, I have no time for banter today.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/ccc05deb-ad8d-4fae-a7a4-2b2a118fc696.jpg?1783905348"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Wild Pack Squad
 {
     "name": "Wild Pack Squad",

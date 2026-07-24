@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 104 / 190
+**Implemented:** 105 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -188,7 +188,7 @@
 - [ ] Web of Life and Destiny
 - [x] Web-Shooters
 - [x] Web-Warriors
-- [ ] Whoosh!
+- [x] Whoosh!
 - [x] Wild Pack Squad
 - [x] Wisecrack
 - [ ] With Great Power . . .
