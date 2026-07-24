@@ -30,6 +30,7 @@ import com.wingedsheep.sdk.model.EntityId
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 private val logger = LoggerFactory.getLogger(GameSession::class.java)
@@ -137,7 +138,13 @@ class GameSession(
     private val sideboards = mutableMapOf<EntityId, List<String>>()
     /** Per-player commander card name for commander-shape formats. Null = no commander. */
     private val commanderCardNames = mutableMapOf<EntityId, String>()
-    private val spectators = mutableSetOf<PlayerSession>()
+    /**
+     * Active spectators, keyed by player id. Keyed by *identity* rather than held as a set of
+     * sessions because a reconnect (refresh, or leaving and coming back) arrives on a brand-new
+     * [PlayerSession]: a set would then hold both the dead and the live socket and the same person
+     * would show up twice in the players' "N watching" list.
+     */
+    private val spectators = ConcurrentHashMap<EntityId, PlayerSession>()
 
     /**
      * Format the engine should run this game under. Set by the lobby / quick-game / tournament
@@ -350,23 +357,49 @@ class GameSession(
     // =========================================================================
 
     /**
-     * Add a spectator to this game session.
+     * Add a spectator to this game session, replacing any earlier session that same spectator
+     * was watching on (see [spectators]).
      */
     fun addSpectator(spectator: PlayerSession) {
-        spectators.add(spectator)
+        spectators[spectator.playerId] = spectator
     }
 
     /**
-     * Remove a spectator from this game session.
+     * Remove a spectator from this game session. Only drops the entry while it still points at
+     * [spectator]'s socket, so a late cleanup for a socket the spectator has already replaced by
+     * reconnecting can't evict their live session.
      */
     fun removeSpectator(spectator: PlayerSession) {
-        spectators.remove(spectator)
+        spectators.remove(spectator.playerId, spectator)
     }
 
     /**
-     * Get all spectators.
+     * Get all spectators with a live socket. Closed sockets are filtered out rather than counted:
+     * a spectator who closed their tab is not watching, even before [pruneDisconnectedSpectators]
+     * gets around to dropping them.
      */
-    fun getSpectators(): Set<PlayerSession> = spectators.toSet()
+    fun getSpectators(): Set<PlayerSession> =
+        spectators.values.filterTo(mutableSetOf()) { it.isConnected }
+
+    /**
+     * Drop spectators whose socket has closed, returning true when anything was removed so the
+     * caller can refresh the players' spectator badge. Closing a tab produces no StopSpectating
+     * message, so without this sweep those entries would live as long as the game session.
+     */
+    fun pruneDisconnectedSpectators(): Boolean =
+        spectators.values.removeAll { !it.isConnected }
+
+    /**
+     * The spectator badge shown to the seated players: how many people are watching, and who.
+     */
+    fun spectatorCountMessage(): ServerMessage.SpectatorCountChanged {
+        val current = getSpectators()
+        return ServerMessage.SpectatorCountChanged(
+            gameSessionId = sessionId,
+            count = current.size,
+            spectatorNames = current.map { it.playerName }
+        )
+    }
 
     /**
      * Player names in seat order, for spectator display.

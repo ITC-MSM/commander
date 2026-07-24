@@ -30,7 +30,21 @@ class ZombieSessionSweeper(
         sweepFinishedGames()
         sweepEmptyLobbies()
         sweepDisconnectedIdentities()
+        sweepDisconnectedSpectators()
         sweepStaleTrackingEntries()
+    }
+
+    /**
+     * Drop spectators whose socket has closed. Leaving a game by closing the tab sends no
+     * StopSpectating, so the entry would otherwise sit in the session for the rest of the game;
+     * re-push the badge to the players whenever a game actually lost one.
+     */
+    private fun sweepDisconnectedSpectators() {
+        for (game in gameRepository.findAll()) {
+            if (game.pruneDisconnectedSpectators()) {
+                lobbySharedContext.broadcastSpectatorCount(game)
+            }
+        }
     }
 
     private fun sweepFinishedGames() {
