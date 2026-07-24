@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 92 / 190
+**Implemented:** 93 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -72,7 +72,7 @@
 - [x] Merciless Enforcers
 - [ ] Miles Morales // Ultimate Spider-Man
 - [ ] Mister Negative
-- [ ] Mob Lookout
+- [x] Mob Lookout
 - [ ] Molten Man, Inferno Incarnate
 - [x] Morbius the Living Vampire
 - [x] Morlun, Devourer of Spiders

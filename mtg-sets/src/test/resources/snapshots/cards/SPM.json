@@ -2245,6 +2245,104 @@
     ]
 }
 
+// Mob Lookout
+{
+    "name": "Mob Lookout",
+    "manaCost": "{1}{U/B}",
+    "typeLine": "Creature — Human Rogue Villain",
+    "oracleText": "When this creature enters, target creature you control connives. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on that creature.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "connive_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "connive_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "connive_discarded",
+                            "prompt": "Choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "connive_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "connive_discarded",
+                            "ifNotEmpty": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature you control"
+                                }
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Connive"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "descriptionOverride": "When this creature enters, target creature you control connives."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "artist": "David Palumbo",
+        "flavorText": "\"Hurry up before the bug gets here!\"\n—Hammerhead",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e0e3b660-d391-454b-ba57-bff4ddcf27b7.jpg?1783905315"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Morbius the Living Vampire
 {
     "name": "Morbius the Living Vampire",
