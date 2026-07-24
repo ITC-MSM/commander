@@ -1,9 +1,18 @@
 package com.wingedsheep.gameserver.persistence
 
+import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.registry.PrintingRegistry
+import com.wingedsheep.gameserver.stats.DeckProfiler
+import com.wingedsheep.gameserver.stats.GeoIpService
+import com.wingedsheep.gameserver.stats.StatsQueryService
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.flywaydb.core.Flyway
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
@@ -281,6 +290,54 @@ class FlywayMigrationTest : FunSpec({
                     st.executeQuery("SELECT count(*) FROM friendships").use { rs -> rs.next(); rs.getInt(1) shouldBe 0 }
                 }
             }
+        } finally {
+            postgres.stop()
+        }
+    }
+
+    test("databaseStats reports per-table row counts and sizes").config(enabled = dockerAvailable) {
+        val postgres = PostgreSQLContainer<Nothing>(DockerImageName.parse("postgres:16-alpine"))
+        postgres.start()
+        try {
+            migrateAll(postgres)
+
+            DriverManager.getConnection(postgres.jdbcUrl, postgres.username, postgres.password).use { conn ->
+                conn.createStatement().use { st ->
+                    st.execute("INSERT INTO users(id, email, display_name) VALUES ('$alice', 'a@test.com', 'Alice')")
+                    st.execute("INSERT INTO match_results(id, game_id) VALUES (10, 'g1'), (11, 'g2')")
+                    st.execute("INSERT INTO match_participants(match_id, user_id, player_name, won) VALUES (10, '$alice', 'Alice', true)")
+                }
+            }
+
+            val dataSource = DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
+            val stats = StatsQueryService(
+                jdbc = JdbcTemplate(dataSource),
+                deckProfiler = DeckProfiler(CardRegistry()),
+                cardRegistry = CardRegistry(),
+                printingRegistry = PrintingRegistry(),
+                geoIp = GeoIpService(),
+            ).databaseStats()
+
+            stats.databaseName shouldBe postgres.databaseName
+            stats.databaseSizeBytes shouldBeGreaterThan 0L
+
+            val byName = stats.tables.associateBy { it.tableName }
+            // Exact counts, including an empty table (which must report 0, not an estimate).
+            byName["users"]?.rows shouldBe 1L
+            byName["match_results"]?.rows shouldBe 2L
+            byName["match_participants"]?.rows shouldBe 1L
+            byName["decks"]?.rows shouldBe 0L
+            // Flyway's own bookkeeping table is a table too — it shows up like any other.
+            byName.keys shouldContain "flyway_schema_history"
+
+            // A populated, indexed table has a real footprint, and total = data + indexes.
+            val users = byName.getValue("users")
+            users.tableBytes shouldBeGreaterThan 0L
+            users.indexBytes shouldBeGreaterThan 0L
+            users.totalBytes shouldBe users.tableBytes + users.indexBytes
+
+            // Largest total footprint first.
+            stats.tables.map { it.totalBytes } shouldBe stats.tables.map { it.totalBytes }.sortedDescending()
         } finally {
             postgres.stop()
         }

@@ -244,6 +244,7 @@ Per-user endpoints take `Authorization: Bearer …`; admin endpoints take either
 | GET | `/api/stats/admin/cards` · `/cards/win-rates?minDecks` | most-played + per-card win rate |
 | GET | `/api/stats/admin/tournaments?limit` | recorded tournaments |
 | GET | `/api/stats/admin/geo` | IP → coarse location, aggregated by location (raw IPs never returned) |
+| GET | `/api/stats/admin/database` | storage: `{ databaseName, databaseSizeBytes, tables: [{ tableName, rows, tableBytes, indexBytes, totalBytes }] }`. Row counts are exact `count(*)`s (one scan per table) — fetch on demand, don't poll |
 
 ### Admin — players (`/api/admin/users`, either admin credential)
 
