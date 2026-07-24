@@ -5759,6 +5759,72 @@
     ]
 }
 
+// The Spot's Portal
+{
+    "name": "The Spot's Portal",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Put target creature on the bottom of its owner's library. You lose 2 life unless you control a Villain.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Library",
+                    "placement": "Bottom"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Not",
+                            "condition": {
+                                "type": "Exists",
+                                "player": "You",
+                                "zone": "Battlefield",
+                                "filter": "creature Villain"
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "Controller"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "rarity": "UNCOMMON",
+        "artist": "Carlos Dattoli",
+        "flavorText": "\"You've been working too hard, Spider-Man. I think you deserve a little vacation somewhere you won't be so...in the way.\"\n—The Spot, Johnathon Ohnn",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67a8bf52-7562-4cdd-b970-106717a0aad6.jpg?1783905340"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Thwip!
 {
     "name": "Thwip!",
