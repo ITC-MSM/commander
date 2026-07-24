@@ -1142,6 +1142,87 @@
     ]
 }
 
+// Doctor Octopus, Master Planner
+{
+    "name": "Doctor Octopus, Master Planner",
+    "manaCost": "{5}{U}{B}",
+    "typeLine": "Legendary Creature — Human Scientist Villain",
+    "oracleText": "Other Villains you control get +2/+2.\nYour maximum hand size is eight.\nAt the beginning of your end step, if you have fewer than eight cards in hand, draw cards equal to the difference.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 8
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Subtract",
+                        "left": {
+                            "type": "Fixed",
+                            "amount": 8
+                        },
+                        "right": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Hand"
+                        }
+                    }
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Hand"
+                    },
+                    "operator": "LTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2,
+                "filter": {
+                    "baseFilter": "creature Villain ctrl:you",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "SetMaximumHandSize",
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 8
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "rarity": "MYTHIC",
+        "artist": "Xabi Gaztelua",
+        "flavorText": "\"Soon all will cower before the superior intellect of Doctor Octopus!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/76e1d361-18a1-4dec-a203-f83bf0014e02.jpg?1783905317"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Eerie Gravestone
 {
     "name": "Eerie Gravestone",
