@@ -2400,6 +2400,86 @@
     "colorIdentityOverride": []
 }
 
+// Lizard, Connors's Curse
+{
+    "name": "Lizard, Connors's Curse",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Legendary Creature — Lizard Villain",
+    "oracleText": "Trample\nLizard Formula — When Lizard, Connors's Curse enters, up to one other target creature loses all abilities and becomes a green Lizard creature with base power and toughness 4/4.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "RemoveAllAbilities",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one other target creature"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "BecomeCreature",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one other target creature"
+                            },
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 4
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 4
+                            },
+                            "creatureTypes": [
+                                "Lizard"
+                            ],
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "duration": "Permanent"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "up to one other target creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "rarity": "RARE",
+        "artist": "Steve Prescott",
+        "flavorText": "Dr. Curt Connors used lizard DNA to regrow his missing arm, but it didn't stop there.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6add5d2a-950e-4bee-9850-e68f5f6d6142.jpg?1783905326"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Lurking Lizards
 {
     "name": "Lurking Lizards",
