@@ -600,7 +600,16 @@ class MoveCollectionExecutor(
     ): EffectResult {
         val destZone = destination.zone
         val events = mutableListOf<GameEvent>()
-        var newState = state
+        // Record the resolving spell/ability as the *cause* of a discard before anything moves, so
+        // a card's own zone-change replacement can key off it (Wilt-Leaf Liege: "if a spell or
+        // ability an opponent controls causes you to discard this card…"). Consumed per card by
+        // ZoneTransitionService.moveToZone.
+        var newState = if (moveType == MoveType.Discard) {
+            com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                .markDiscardCause(state, cards, context.controllerId)
+        } else {
+            state
+        }
 
         val movedIds = mutableListOf<EntityId>()
         // Track every library that received at least one card so per-card owner routing

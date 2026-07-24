@@ -168,6 +168,21 @@ data class GameState(
     val pendingSacrificeIds: Set<EntityId> = emptySet(),
 
     /**
+     * Cards currently being discarded *by a spell or ability*, mapped to that spell/ability's
+     * controller. Recorded by the discard sites (`ZoneTransitionService.discardCards` and the
+     * `MoveType.Discard` pipeline step) just before the cards move, and consumed by
+     * `ZoneMovementUtils.checkZoneChangeRedirect` so a replacement can key off *why* the card is
+     * going to the graveyard — Wilt-Leaf Liege's "if a spell or ability an opponent controls causes
+     * you to discard this card". `moveToZone` removes each id as it processes it.
+     *
+     * A discard with no entry here has no spell/ability cause: discarding down to hand size in the
+     * cleanup step (CR 514.1, a turn-based action) and discards made to pay a cost. Same transient
+     * lifetime and motivation as [pendingSacrificeIds] — it saves every discard call site from
+     * threading an explicit cause through the zone-move signature.
+     */
+    val pendingDiscardCauseControllers: Map<EntityId, EntityId> = emptyMap(),
+
+    /**
      * Players (by entity id) who have committed a crime this turn (CR 700-level Outlaws of Thunder
      * Junction rule). Populated wherever a [com.wingedsheep.engine.core.CommitCrimeEvent] is emitted
      * (spell cast, activated ability, triggered ability), and cleared at every turn boundary. Read by

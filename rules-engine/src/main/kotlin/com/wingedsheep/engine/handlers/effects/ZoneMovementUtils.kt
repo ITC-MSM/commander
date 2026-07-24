@@ -58,6 +58,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.RedirectZoneChange
 import com.wingedsheep.sdk.scripting.RedirectZoneChangeWithEffect
+import com.wingedsheep.sdk.scripting.ZoneChangeCause
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.predicates.evaluateWith
@@ -472,6 +473,31 @@ object ZoneMovementUtils {
      * @param toZone The intended destination zone
      * @return The redirect result with destination zone and any additional effects
      */
+    /**
+     * Whether the move currently in flight matches a replacement's [ZoneChangeCause] qualifier.
+     *
+     * [ZoneChangeCause.Any] is always satisfied. `DiscardedByOpponentEffect` reads the transient
+     * [GameState.pendingDiscardCauseControllers] marker stamped by the discard sites and requires
+     * both that a spell/ability caused this discard at all and that its controller is an opponent of
+     * the discarding player (the card's owner — you only ever discard from your own hand). That
+     * rules out the cleanup-step hand-size discard, cost payments, and your own Faithless Looting.
+     */
+    private fun causeSatisfied(
+        state: GameState,
+        entityId: EntityId,
+        container: ComponentContainer,
+        requiredCause: ZoneChangeCause
+    ): Boolean = when (requiredCause) {
+        ZoneChangeCause.Any -> true
+        ZoneChangeCause.DiscardedByOpponentEffect -> {
+            val causeControllerId = state.pendingDiscardCauseControllers[entityId]
+            val discardingPlayerId = container.get<CardComponent>()?.ownerId
+            causeControllerId != null &&
+                discardingPlayerId != null &&
+                causeControllerId != discardingPlayerId
+        }
+    }
+
     fun checkZoneChangeRedirect(
         state: GameState,
         entityId: EntityId,
@@ -494,6 +520,7 @@ object ZoneMovementUtils {
                 if (event !is com.wingedsheep.sdk.scripting.EventPattern.ZoneChangeEvent) continue
                 if (event.to != null && event.to != toZone) continue
                 if (event.from != null && event.from != fromZone) continue
+                if (!causeSatisfied(state, entityId, container, effect.requiredCause)) continue
                 return ZoneChangeRedirectResult(
                     effect.newDestination,
                     shuffleIntoLibrary = effect.shuffleIntoLibrary,
@@ -563,6 +590,10 @@ object ZoneMovementUtils {
                         // Check filter against the entity being moved
                         if (!matchesZoneChangeFilter(state, entityId, container, event.filter, sourceControllerId)) continue
 
+                        // Honour any cause qualifier (e.g. "only when discarded by an opponent's
+                        // spell or ability") the same way the self-replacement path above does.
+                        if (!causeSatisfied(state, entityId, container, effect.requiredCause)) continue
+
                         // Match found — redirect to new destination. When the replacement links
                         // its exiled cards to the source (Valgavoth), carry the source id so the
                         // mover can attach the card to its LinkedExileComponent after the move.
@@ -610,6 +641,7 @@ object ZoneMovementUtils {
             if (event.to != null && event.to != toZone) continue
             if (event.from != null && event.from != fromZone) continue
             if (!matchesZoneChangeFilter(state, entityId, container, event.filter, grant.controllerId)) continue
+            if (!causeSatisfied(state, entityId, container, effect.requiredCause)) continue
 
             return ZoneChangeRedirectResult(effect.newDestination)
         }
