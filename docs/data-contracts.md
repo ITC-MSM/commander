@@ -447,24 +447,59 @@ from a state-threaded counter (never a UUID), `ReplayReconstructor` rebuilds the
 deltas}` stream the viewer consumes. This is kilobytes per game instead of a masked snapshot + a
 per-frame delta + a full unmasked `GameState` per frame.
 
-The in-progress recording (setup + action log) is part of the persisted `GameSession` snapshot
-(`PersistentGameSession`), so a game interrupted by a server restart is still saved as a replay when
-it later finishes. Storage: an in-memory cache (`GameHistoryRepository`, last 100 games) for
-just-finished games, and a durable Postgres table (`game_replays`, gzip+base64 `CompactReplay`) when
-accounts are enabled.
-`ReplayService` resolves a game id cache-first, then the store; all replay endpoints reconstruct on
-demand. Decision ids are minted afresh each run (they are not part of the deterministic state), so a
+Decision ids are minted afresh each run (they are not part of the deterministic state), so a
 recorded `SubmitDecision` is re-bound to the freshly created decision's id during reconstruction;
 the choice payload (entity-id targets/cards) is unchanged, so the outcome is identical.
 
+#### One store
+
+Every replay — finished or still being recorded — is a row in `game_replays`, written by
+`ReplayService` and nobody else. `ReplayStore` has two implementations: `JdbcReplayStore` when
+accounts (and therefore a database) are enabled, and a bounded `InMemoryReplayStore` for a server
+running without one. In-progress recordings are flushed to the store every few seconds by
+`ReplayCheckpointFlusher` and picked back up on restart, which is what lets the Redis session blob
+carry no replay data at all.
+
+The flush is on a timer, not per action, so a crash can lose the tail of a recording. Splicing the
+rest of the game onto that short prefix would produce a record of a game nobody played, so each
+flush also writes a `resume_fingerprint` of the live position; on restore, `GameSession` compares it
+against the recovered state and stops recording if they disagree, keeping the shorter honest replay.
+
+#### Surviving deploys
+
+An input log only reproduces a game while the engine folding it behaves as it did on the day — and
+in this engine *cards are data the engine folds through*, so editing a card rewrites the past. Three
+things address that:
+
+| | What | Cost |
+|---|---|---|
+| `pinnedCards` | Compiled `CardDefinition` JSON for every card in the decks, overlaid on the live corpus during reconstruction (`ReplayCardPin` → a child `CardRegistry`). Card edits stop mattering; ability ids also stay stable, so recorded yields keep matching. | ~34 definitions ≈ 7 KB gzipped |
+| `checkpoints` | A cheap position fingerprint (`ReplayFingerprint`: entity counter, clock, turn/phase, zone sizes, life) every 20 actions. Catches *silent* drift — actions that still apply but no longer produce the board that was played — instead of rendering it. | ~30 bytes each |
+| `presentation` | The `{initialSnapshot, deltas}` stream, materialized just after game over (the last moment we're provably on the recording build, on a background thread so it stays off the game-over path) and stored gzipped in its own column. A result rather than a recipe, so it renders regardless of engine changes. | ~160 KB gzipped |
+
+`ReplayService.viewerPayload` picks between them: re-simulate first, and if that comes back faithful
+serve it (current view code, and "share frame as scenario" works because a real `GameState` exists);
+if it diverged, serve the archived frames instead, flagged `degraded`. `ReplayFidelity` (`EXACT` /
+`UNVERIFIED` / `DIVERGED`) and `stateReproducible` ride in the endpoint metadata, and the viewer
+shows a **From archive** badge and hides the scenario buttons when the position can't be rebuilt.
+
+`CompactReplay.version` is 2. All v2 fields default to empty and `persistenceJson` ignores unknown
+keys, so records round-trip in both directions across a rolling deploy. `engineVersion` (the git sha,
+passed to the backend image as `COMMIT_HASH`) is stamped on every record so a replay that stops
+re-simulating can be traced to the build that recorded it.
+
 **How big are they in practice?** `CompactReplaySizeBenchmark` (game-server, disabled by default)
-plays whole games with purely random actions through the real `GameSession` recording path, builds
-the `CompactReplay` each produces, and measures it. A full game's stored form (`ReplayCodec` →
-gzip+base64) lands around **4–10 KB** — roughly **3–4 bytes per recorded action** — which gzip
-shaves ~97% off the raw JSON (the action stream is highly repetitive `"type"` discriminators and
-`eN` entity ids). At that size ~170 games fit in 1 MB. Random play is action-heavy (it passes
-priority constantly and rarely closes out a game), so real AI/human games tend to be *smaller* per
-game. Run it with:
+plays whole games with purely random actions through the real `GameSession` recording path and
+measures both payloads. On POR, ~1650 actions over ~32 turns per game:
+
+| Payload | Raw JSON | Stored (gzip+base64) |
+|---|---|---|
+| Input log + pins + checkpoints (`data`) | ~237 KB | **~11 KB** (~7 B/action; ~7 KB of that is the 34 pinned card definitions) |
+| Archived frame stream (`presentation`) | ~8 MB | **~160 KB** — ~14× the input log |
+
+That asymmetry *is* the design: the recipe is 14× cheaper than the result, so the recipe is the
+record and the result is insurance. Random play is action-heavy (it passes priority constantly and
+rarely closes out a game), so real AI/human games tend to be smaller on both counts. Run it with:
 
 ```bash
 ./gradlew :game-server:test --tests "*.CompactReplaySizeBenchmark" -Dbenchmark=true -DbenchmarkGames=40 -DbenchmarkSet=BLB

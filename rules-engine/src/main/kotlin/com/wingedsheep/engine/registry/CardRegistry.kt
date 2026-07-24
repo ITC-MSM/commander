@@ -14,8 +14,15 @@ import com.wingedsheep.sdk.model.CardDefinition
  * registry.register(PortalSet.cards)
  * val lightningBolt = registry.getCard("Lightning Bolt")
  * ```
+ *
+ * ## Overlays
+ * Pass a [parent] to build a thin registry that resolves its own entries first and defers
+ * everything else — used by replay reconstruction to stack a recorded game's archived card
+ * definitions over the live corpus without copying it (see
+ * `com.wingedsheep.gameserver.replay.ReplayCardPin`). Registering into a child never mutates the
+ * parent.
  */
-class CardRegistry {
+class CardRegistry(private val parent: CardRegistry? = null) {
     private val cardsByName = mutableMapOf<String, CardDefinition>()
     // Secondary index: "CardName#CollectorNumber" -> CardDefinition (for variants like basic lands)
     private val cardsByNameAndNumber = mutableMapOf<String, CardDefinition>()
@@ -76,8 +83,8 @@ class CardRegistry {
     fun getCard(name: String): CardDefinition? {
         // First try exact match with collector number format
         cardsByNameAndNumber[name]?.let { return it }
-        // Fall back to name-only lookup
-        return cardsByName[name]
+        // Fall back to name-only lookup, then to the parent registry for an overlay.
+        return cardsByName[name] ?: parent?.getCard(name)
     }
 
     /**
@@ -100,14 +107,18 @@ class CardRegistry {
     /**
      * Get all registered card names (unique names only, not variants).
      */
-    fun allCardNames(): Set<String> = cardsByName.keys.toSet()
+    fun allCardNames(): Set<String> =
+        if (parent == null) cardsByName.keys.toSet() else parent.allCardNames() + cardsByName.keys
 
     /**
      * Get the names of every registered card whose type line includes Land (e.g. for
      * Petrified Hamlet's "choose a land card name"). Unique names only.
      */
-    fun landCardNames(): Set<String> =
-        cardsByName.values.filter { it.isLand }.map { it.name }.toSet()
+    fun landCardNames(): Set<String> {
+        val own = cardsByName.values.filter { it.isLand }.map { it.name }.toSet()
+        // An overlay only shadows definitions; a name is a land name if it is one in either layer.
+        return if (parent == null) own else own + parent.landCardNames().filter { it !in cardsByName }
+    }
 
     /**
      * Get all cards with a given name (useful for basic lands with multiple variants).
@@ -116,23 +127,30 @@ class CardRegistry {
      * @return All cards with that name, including variants
      */
     fun getCardsByName(name: String): List<CardDefinition> {
-        return cardsByNameAndNumber.entries
+        val own = cardsByNameAndNumber.entries
             .filter { (key, _) -> key.startsWith("$name#") }
             .map { it.value }
             .ifEmpty { listOfNotNull(cardsByName[name]) }
+        if (parent == null) return own
+        // Overlay entries shadow the parent's variant with the same identity, but the parent may
+        // hold printings this overlay never pinned — keep both, overlay first.
+        val ownNumbers = own.mapNotNullTo(mutableSetOf()) { it.metadata.collectorNumber }
+        return own + parent.getCardsByName(name)
+            .filter { it.metadata.collectorNumber !in ownNumbers }
     }
 
     /**
      * Get the total number of registered unique card names.
      */
-    val size: Int get() = cardsByName.size
+    val size: Int get() = if (parent == null) cardsByName.size else allCardNames().size
 
     /**
      * Look up the front face of a DFC given its back face name.
      * Returns null if the name is not a registered back face.
      */
     fun getFrontFace(backFaceName: String): CardDefinition? {
-        return backFaceToFrontFace[backFaceName]?.let { cardsByName[it] }
+        val frontName = backFaceToFrontFace[backFaceName] ?: return parent?.getFrontFace(backFaceName)
+        return getCard(frontName)
     }
 
     /**

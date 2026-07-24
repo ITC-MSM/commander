@@ -41,6 +41,8 @@ class GamePlayHandler(
     private val deckGenerator: SealedDeckGenerator,
     private val gameProperties: GameProperties,
     private val replayService: ReplayService,
+    private val replayCheckpointFlusher: com.wingedsheep.gameserver.replay.ReplayCheckpointFlusher,
+    private val engineVersion: com.wingedsheep.gameserver.replay.EngineVersion,
     private val aiGameManager: AiGameManager,
     private val matchResultSink: com.wingedsheep.gameserver.stats.MatchResultSink,
     private val rankedResultSink: com.wingedsheep.gameserver.ranking.RankedResultSink,
@@ -671,13 +673,18 @@ class GamePlayHandler(
                 setup = replaySetup,
                 actions = gameSession.getRecordedActions(),
                 yields = gameSession.getReplayYields(),
+                engineVersion = engineVersion.value,
+                pinnedCards = gameSession.getPinnedCards(),
+                checkpoints = gameSession.getReplayCheckpoints(),
             )
-            // AI-only games (e.g. the LLM tournament) stay in the in-memory cache for live viewing
-            // but aren't persisted — they never appear in any account's history.
+            // AI-only games (e.g. the LLM tournament) are stored — that page links straight at their
+            // replays — but skip the archived frame stream, which is orders of magnitude larger than
+            // the input log and only earns its keep for games someone may still watch years later.
             val persistenceInfo = gameSession.getPlayerPersistenceInfo()
             val hasHumanSeat = gameSession.getPlayers().any { persistenceInfo[it.playerId]?.isAi != true }
-            replayService.save(replay, durable = hasHumanSeat)
-            logger.info("Saved compact replay for game $gameSessionId ($frameCount frames, ${replay.actions.size} actions, durable=$hasHumanSeat)")
+            replayService.save(replay, archive = hasHumanSeat)
+            replayCheckpointFlusher.forget(gameSessionId)
+            logger.info("Saved compact replay for game $gameSessionId ($frameCount frames, ${replay.actions.size} actions, archived=$hasHumanSeat)")
         }
 
         // Record a durable match-history row for account stats. The sink is a no-op unless accounts

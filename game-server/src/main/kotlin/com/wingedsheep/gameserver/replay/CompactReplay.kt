@@ -49,14 +49,64 @@ data class CompactReplay(
      * yields (the overwhelming majority), and for replays recorded before this field existed.
      */
     val yields: List<ReplayYieldEntry> = emptyList(),
+    /**
+     * The build that recorded this game (git sha in production, `"dev"` locally). Purely
+     * diagnostic — we can't run old code — but it turns "this replay looks wrong" into "this replay
+     * was recorded four deploys ago", which is the first question anyone asks.
+     */
+    val engineVersion: String = UNKNOWN_VERSION,
+    /**
+     * The compiled definition of every card the decks reference, as compact JSON — see
+     * [ReplayCardPin]. Re-simulation overlays these on the live corpus so a card whose
+     * implementation changed since doesn't make this recording diverge. Empty for replays recorded
+     * before pinning existed (they fall back to the live corpus, as they always did).
+     */
+    val pinnedCards: List<String> = emptyList(),
+    /**
+     * Sparse position fingerprints taken while the game was live, every
+     * [ReplayRecordingPolicy.CHECKPOINT_EVERY_ACTIONS] actions — see [ReplayFingerprint]. Lets
+     * reconstruction *detect* silent drift (actions that still apply but no longer produce the same
+     * board) rather than rendering a game that never happened. Empty for older replays, which then
+     * reconstruct unverified exactly as before.
+     */
+    val checkpoints: List<ReplayCheckpoint> = emptyList(),
 ) {
     /** Number of reconstructable frames: the initial state plus one per applied action. */
     val frameCount: Int get() = 1 + actions.size
 
     companion object {
-        /** Bump when a setup/action shape change would break reconstruction of older records. */
-        const val CURRENT_VERSION = 1
+        /**
+         * Bump when a setup/action shape change would break reconstruction of older records.
+         *
+         * v1 → v2 added [engineVersion], [pinnedCards] and [checkpoints]. All three default to
+         * empty, so v1 records decode and reconstruct unchanged — the version is a diagnostic
+         * marker, not a decode gate. Decoding stays deliberately tolerant (`ignoreUnknownKeys`,
+         * defaults for every added field) so a record written by a newer build never becomes
+         * unreadable by an older one mid-deploy.
+         */
+        const val CURRENT_VERSION = 2
+
+        const val UNKNOWN_VERSION = "unknown"
     }
+}
+
+/**
+ * A position fingerprint taken after [afterActionCount] recorded actions had been applied to the
+ * live game. See [ReplayFingerprint] for what goes into it and why.
+ */
+@Serializable
+data class ReplayCheckpoint(
+    val afterActionCount: Int,
+    val fingerprint: String,
+)
+
+/** Cadence knobs for the live recorder. */
+object ReplayRecordingPolicy {
+    /**
+     * Actions between [ReplayFingerprint] stamps. Cheap enough to run in the game loop at this
+     * cadence, dense enough to pin a divergence to a handful of actions.
+     */
+    const val CHECKPOINT_EVERY_ACTIONS = 20
 }
 
 /** Which yield mutation a [ReplayYieldEntry] records. */

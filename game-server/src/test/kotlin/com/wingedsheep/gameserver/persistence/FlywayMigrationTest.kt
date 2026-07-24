@@ -326,4 +326,63 @@ class FlywayMigrationTest : FunSpec({
             postgres.stop()
         }
     }
+
+    test("V10 makes game_replays the only replay home, seat-indexed and status-aware").config(enabled = dockerAvailable) {
+        val postgres = PostgreSQLContainer<Nothing>(DockerImageName.parse("postgres:16-alpine"))
+        postgres.start()
+        try {
+            migrateAll(postgres)
+
+            DriverManager.getConnection(postgres.jdbcUrl, postgres.username, postgres.password).use { conn ->
+                conn.createStatement().use { st ->
+                    // Existing rows keep working: status defaults to FINISHED, both payloads optional
+                    // except the input log.
+                    st.execute("INSERT INTO game_replays(id, game_id, data, ended_at) VALUES (1, 'g-old', 'GZIPPED', now() - interval '2 days')")
+                    st.executeQuery("SELECT status, presentation FROM game_replays WHERE id = 1").use { rs ->
+                        rs.next(); rs.getString(1) shouldBe "FINISHED"; rs.getString(2) shouldBe null
+                    }
+
+                    // A finished game with an archived frame stream and a seat roster.
+                    st.execute(
+                        "INSERT INTO game_replays(id, game_id, data, presentation, engine_version, ended_at) " +
+                            "VALUES (2, 'g-new', 'GZIPPED', 'FRAMES', 'abc123', now())"
+                    )
+                    st.execute("INSERT INTO game_replay_players(replay_id, seat, player_id, player_name) VALUES (2, 0, 'alice-seat', 'Alice'), (2, 1, 'bob-seat', 'Bob')")
+
+                    // ...and one still being recorded, which must not show up in anyone's history.
+                    st.execute(
+                        "INSERT INTO game_replays(id, game_id, data, status, resume_fingerprint, ended_at) " +
+                            "VALUES (3, 'g-live', 'GZIPPED', 'IN_PROGRESS', 'deadbeefdeadbeef', now())"
+                    )
+                    st.execute("INSERT INTO game_replay_players(replay_id, seat, player_id, player_name) VALUES (3, 0, 'alice-seat', 'Alice')")
+
+                    // The seat join backing GameReplayRepository.findRecentForPlayer.
+                    st.executeQuery(
+                        """
+                        SELECT r.game_id FROM game_replays r
+                        JOIN game_replay_players p ON p.replay_id = r.id
+                        WHERE p.player_id = 'alice-seat' AND r.status = 'FINISHED'
+                        ORDER BY r.ended_at DESC
+                        """.trimIndent()
+                    ).use { rs ->
+                        rs.next(); rs.getString(1) shouldBe "g-new"
+                        rs.next() shouldBe false
+                    }
+
+                    // In-progress records are findable for resume, with their fingerprint.
+                    st.executeQuery("SELECT game_id, resume_fingerprint FROM game_replays WHERE status = 'IN_PROGRESS'").use { rs ->
+                        rs.next(); rs.getString(1) shouldBe "g-live"; rs.getString(2) shouldBe "deadbeefdeadbeef"
+                    }
+
+                    // Seats are owned by their replay and go with it.
+                    st.execute("DELETE FROM game_replays WHERE id = 2")
+                    st.executeQuery("SELECT count(*) FROM game_replay_players WHERE replay_id = 2").use { rs ->
+                        rs.next(); rs.getInt(1) shouldBe 0
+                    }
+                }
+            }
+        } finally {
+            postgres.stop()
+        }
+    }
 })

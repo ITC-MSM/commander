@@ -57,6 +57,24 @@ interface FriendshipRepository : CrudRepository<FriendshipRow, UUID> {
 
 interface GameReplayRepository : CrudRepository<GameReplayRow, Long> {
     fun findByGameId(gameId: String): GameReplayRow?
+
+    /** In-flight recordings to resume after a restart — a handful of rows at most. */
+    fun findByStatus(status: String): List<GameReplayRow>
+
+    /**
+     * Finished games this seat played in, newest first. Joins the seat index rather than scanning
+     * the (large, gzipped) payload column.
+     */
+    @Query(
+        """
+        SELECT r.* FROM game_replays r
+        JOIN game_replay_players p ON p.replay_id = r.id
+        WHERE p.player_id = :playerId AND r.status = 'FINISHED'
+        ORDER BY r.ended_at DESC
+        LIMIT :limit
+        """
+    )
+    fun findRecentForPlayer(@Param("playerId") playerId: String, @Param("limit") limit: Int): List<GameReplayRow>
 }
 
 interface UserRatingRepository : CrudRepository<UserRatingRow, Long> {

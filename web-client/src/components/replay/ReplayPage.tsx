@@ -226,6 +226,9 @@ export function ReplayPage() {
   const currentSnapshot = snapshots[currentStep]
   if (!currentSnapshot) return null
 
+  // Older replays predate the flag; they re-simulate, so treat a missing value as reproducible.
+  const stateReproducible = metadata?.stateReproducible !== false
+
   // The replay metadata only carries the first two seat names (legacy 2-player shape), so a
   // 3+ player game would misleadingly read "Alice vs Bob". The reconstructed snapshot's
   // gameState carries every seat in turn order — use it to list all players for multiplayer.
@@ -281,22 +284,37 @@ export function ReplayPage() {
               <span style={styles.winnerText}>Winner: {metadata.winnerName}</span>
             )}
           </div>
+          {/*
+            Archived replay: the recorded inputs no longer re-simulate on this build, so the server
+            served the frames it stored when the game was played. Everything on screen is the real
+            game — but there is no live game state behind it, so the scenario buttons are gone
+            rather than merely failing when clicked.
+          */}
+          {metadata?.degradedReason && (
+            <span style={styles.archivedBadge} title={metadata.degradedReason}>
+              From archive
+            </span>
+          )}
           {!isMobile && (
             <>
-              <button
-                onClick={() => void handleShareAsScenario(currentStep)}
-                style={styles.scenarioButton}
-                title="Copy a short link that drops you into this exact position — full board, hands, libraries, stack, targets and mana — to play it out yourself or against the AI."
-              >
-                {scenarioCopied ? 'Copied!' : 'Share as scenario'}
-              </button>
-              <button
-                onClick={() => void handleDownloadSnapshot(currentStep)}
-                style={styles.scenarioButton}
-                title="Download this exact position as a snapshot file you can reload later from the Scenario Builder ('Load file')."
-              >
-                {downloaded ? 'Saved!' : 'Save snapshot'}
-              </button>
+              {stateReproducible && (
+                <>
+                  <button
+                    onClick={() => void handleShareAsScenario(currentStep)}
+                    style={styles.scenarioButton}
+                    title="Copy a short link that drops you into this exact position — full board, hands, libraries, stack, targets and mana — to play it out yourself or against the AI."
+                  >
+                    {scenarioCopied ? 'Copied!' : 'Share as scenario'}
+                  </button>
+                  <button
+                    onClick={() => void handleDownloadSnapshot(currentStep)}
+                    style={styles.scenarioButton}
+                    title="Download this exact position as a snapshot file you can reload later from the Scenario Builder ('Load file')."
+                  >
+                    {downloaded ? 'Saved!' : 'Save snapshot'}
+                  </button>
+                </>
+              )}
               <button onClick={handleShare} style={styles.shareButton} title="Copy a link to this replay">
                 {copied ? 'Copied!' : 'Share replay'}
               </button>
@@ -435,6 +453,16 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'block',
     color: '#4fc3f7',
     fontSize: 11,
+  },
+  archivedBadge: {
+    padding: '4px 8px',
+    fontSize: 11,
+    color: '#fbbf24',
+    border: '1px solid #78550f',
+    borderRadius: 4,
+    backgroundColor: '#2a2008',
+    whiteSpace: 'nowrap',
+    cursor: 'help',
   },
   shareButton: {
     padding: '7px 10px',
