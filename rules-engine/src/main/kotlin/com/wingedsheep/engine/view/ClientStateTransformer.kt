@@ -293,6 +293,9 @@ class ClientStateTransformer(
         // Persistent yields are private to each player: only ever surface the viewer's own.
         val activeYields = if (isSpectator) emptyList() else buildClientYields(state.yieldsFor(viewingPlayerId))
 
+        // The deck tracker is the viewer's own decklist — never a spectator's or an opponent's.
+        val deck = if (isSpectator) emptyList() else buildDeckList(state, viewingPlayerId)
+
         return ClientGameState(
             viewingPlayerId = viewingPlayerId,
             cards = cards,
@@ -310,8 +313,97 @@ class ClientStateTransformer(
             youAreHijacking = youAreHijacking,
             youAreHijackedBy = youAreHijackedBy,
             hotseat = hotseat,
-            activeYields = activeYields
+            activeYields = activeYields,
+            deck = deck
         )
+    }
+
+    /**
+     * Build [viewingPlayerId]'s own decklist: every non-token card they *own*, wherever it now is,
+     * grouped by printed card.
+     *
+     * Deriving the list from live ownership rather than a stored decklist keeps it honest for free —
+     * a stolen creature is still in its owner's deck (ownership never changes, CR 108.3), a token
+     * copy of one never is, and a permanent copying something else counts as the card it was printed
+     * as (that's what [CopyOfComponent] remembers).
+     *
+     * Zones: the sideboard is excluded as outside the game (CR 400.11a); the command zone is included
+     * so a commander stays one stable row instead of appearing and vanishing as it's cast and
+     * returns. The stack lives outside [GameState.zones], so it is walked separately.
+     */
+    private fun buildDeckList(state: GameState, viewingPlayerId: EntityId): List<ClientDeckCard> {
+        class Tally {
+            var copies = 0
+            var remaining = 0
+            /** Art from a real (non-copy) printing of this card in the game, if we saw one. */
+            var printingImageUri: String? = null
+        }
+
+        val tallies = HashMap<String, Tally>()
+
+        fun record(entityId: EntityId, zoneType: Zone) {
+            val container = state.getEntity(entityId) ?: return
+            if (container.has<TokenComponent>()) return
+            val cardComponent = container.get<CardComponent>() ?: return
+            val ownerId = cardComponent.ownerId ?: container.get<OwnerComponent>()?.playerId
+            if (ownerId != viewingPlayerId) return
+
+            // A copy effect overwrites CardComponent with the copied card; CopyOfComponent holds
+            // what this card is actually printed as, which is what belongs in the decklist.
+            val copyOf = container.get<CopyOfComponent>()
+            val definitionId = copyOf?.originalCardDefinitionId ?: cardComponent.cardDefinitionId
+
+            val tally = tallies.getOrPut(definitionId) { Tally() }
+            tally.copies++
+            if (!ownerKnowsIdentity(state, entityId, zoneType, viewingPlayerId)) tally.remaining++
+            if (copyOf == null && tally.printingImageUri == null) {
+                tally.printingImageUri = cardComponent.imageUri
+            }
+        }
+
+        for ((zoneKey, entityIds) in state.zones) {
+            if (zoneKey.zoneType == Zone.SIDEBOARD) continue
+            for (entityId in entityIds) record(entityId, zoneKey.zoneType)
+        }
+        for (entityId in state.stack) record(entityId, Zone.STACK)
+
+        return tallies.mapNotNull { (definitionId, tally) ->
+            val definition = cardRegistry.getCard(definitionId) ?: return@mapNotNull null
+            ClientDeckCard(
+                cardName = definition.name,
+                copies = tally.copies,
+                remaining = tally.remaining,
+                cmc = definition.cmc,
+                cardTypes = definition.typeLine.cardTypes.map { it.name },
+                colors = definition.colors.map { it.name },
+                imageUri = tally.printingImageUri ?: definition.metadata.imageUri
+            )
+        }.sortedWith(compareBy({ it.cmc }, { it.cardName }))
+    }
+
+    /**
+     * Whether the owner of [entityId] can currently tell *which* of their cards this one is.
+     *
+     * False for anything in their library (that's the whole point — you know what's in your deck,
+     * not where), and for a card of theirs that is face down somewhere they can't look: exiled face
+     * down, or a face-down permanent an opponent controls. Mirrors the face-down masking in
+     * [transformCard] so the tracker never claims knowledge the client wasn't sent.
+     */
+    private fun ownerKnowsIdentity(
+        state: GameState,
+        entityId: EntityId,
+        zoneType: Zone,
+        viewingPlayerId: EntityId
+    ): Boolean {
+        if (zoneType == Zone.LIBRARY) return false
+        val container = state.getEntity(entityId) ?: return false
+        val isInFaceDownZone =
+            zoneType == Zone.BATTLEFIELD || zoneType == Zone.STACK || zoneType == Zone.EXILE
+        if (!isInFaceDownZone || !container.has<FaceDownComponent>()) return true
+        val controllerId = container.get<ControllerComponent>()?.playerId
+        return controllerId == viewingPlayerId ||
+            isCardRevealedTo(state, entityId, viewingPlayerId) ||
+            (zoneType == Zone.BATTLEFIELD && hasLookAtFaceDownCreatures(state, viewingPlayerId))
     }
 
     /**

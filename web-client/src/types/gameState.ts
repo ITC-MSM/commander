@@ -77,6 +77,37 @@ export interface ClientGameState {
    * Masked per-player: only your own yields appear. Drives the Active Yields panel.
    */
   readonly activeYields?: readonly ClientYield[]
+
+  /**
+   * The viewing player's own decklist — one row per distinct card, with how many copies they
+   * still haven't seen. Drives the in-game deck tracker. Always empty for spectators, and never
+   * describes anyone but the viewer, so opening it reveals nothing about an opponent's deck.
+   */
+  readonly deck?: readonly ClientDeckCard[]
+}
+
+/**
+ * One distinct card in the viewing player's deck. Structurally a superset of the recorded-deck
+ * `GameDeckCard` the profile/admin deck viewer uses, so both render through `DeckCardBody`.
+ */
+export interface ClientDeckCard {
+  readonly cardName: string
+  /** Total copies in the deck (all zones; the sideboard is not counted). */
+  readonly copies: number
+  /**
+   * Copies whose location the viewer can't identify — still in the library, or hidden from them
+   * elsewhere (e.g. a card of theirs exiled face down). In an ordinary game this is exactly
+   * "copies left to draw"; the fuzzier definition is what stops it leaking face-down exiles.
+   */
+  readonly remaining: number
+  /** Mana value, for the curve histogram. */
+  readonly cmc: number
+  /** Card type enum names, e.g. `["CREATURE"]`. */
+  readonly cardTypes: string[]
+  /** The card's own colours as enum names; empty for colourless. */
+  readonly colors: string[]
+  /** Art URL for the hover preview; null falls back to a name lookup. */
+  readonly imageUri: string | null
 }
 
 /** The stable (cardDefinitionId, abilityId) key an ability is yielded against. */

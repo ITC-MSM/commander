@@ -74,6 +74,9 @@ object StateDiffCalculator {
             null
         }
 
+        // --- Deck diff (whole list; changes only when a card's remaining count moves) ---
+        val deckDelta = if (current.deck != previous.deck) current.deck else null
+
         return StateDelta(
             addedCards = addedCards.ifEmpty { null },
             removedCardIds = removedCardIds.ifEmpty { null },
@@ -93,6 +96,7 @@ object StateDiffCalculator {
             youAreHijacking = current.youAreHijacking,
             youAreHijackedBy = current.youAreHijackedBy,
             hotseat = current.hotseat,
+            deck = deckDelta,
         )
     }
 }
