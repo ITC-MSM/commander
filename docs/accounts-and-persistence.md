@@ -101,6 +101,12 @@ Flyway migration `V2__match_stats.sql` extends the stats schema:
 | `tournaments` | tournaments + settings (format, mode, set codes, player count, rounds, winner) and a `status` (`IN_PROGRESS` / `COMPLETED` / `ABANDONED`); `ended_at` is null while in progress |
 | `tournament_participants` | a seat in a tournament with placement (0 until it finishes) + W/L/D |
 
+Participant and deck rows are written for **every** seat, however many there are: a Free-for-All pod or
+a team game records three to six decks the same way a duel records two. The decklist comes from
+`GameSession.getStartingDeckList()`, which prefers the seat's live submitted deck and falls back to the
+copy frozen into the replay setup at game start — so nothing that happens to a player's *socket* during
+a long multiplayer game (reconnects, a restart, giving up a seat) can leave their deck out of history.
+
 Flyway migration `V3__admin_role.sql` adds `users.is_admin` (boolean, default false) — the per-account
 admin flag (see **Admin access** below).
 
