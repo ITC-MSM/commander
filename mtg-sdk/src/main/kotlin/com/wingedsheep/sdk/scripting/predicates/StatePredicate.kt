@@ -190,6 +190,23 @@ sealed interface StatePredicate {
     }
 
     /**
+     * Controlled by a player the effect's *source* dealt combat damage to this turn — the mirror of
+     * [DealtCombatDamageToSourceControllerThisTurn]. Source-relative: reads the per-turn recipient
+     * marker off `context.sourceId` and asks whether this permanent's controller is among the
+     * players it connected with. Used for "…each nonland permanent whose controller was dealt combat
+     * damage by this creature this turn" (Steel Hellkite).
+     *
+     * Controller is evaluated *now*, not at damage time (CR 608.2 — the ability checks the current
+     * board): it doesn't matter who controlled the permanent when the damage was dealt, or whether
+     * it was even on the battlefield then. Inert with no source context.
+     */
+    @SerialName("ControllerDealtCombatDamageBySourceThisTurn")
+    @Serializable
+    data object ControllerDealtCombatDamageBySourceThisTurn : History {
+        override val description: String = "whose controller was dealt combat damage by this creature this turn"
+    }
+
+    /**
      * Was declared as an attacker at least once during the current turn (set during the
      * declare-attackers step, CR 508.1). Backed by the controller's
      * [com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent] (which

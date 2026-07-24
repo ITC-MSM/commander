@@ -1777,6 +1777,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasDealtDamage,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasDealtCombatDamageToPlayer,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.DealtCombatDamageToSourceControllerThisTurn,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.ControllerDealtCombatDamageBySourceThisTurn,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.AttackedThisTurn,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.AttackedThisCombat,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.BlockedThisCombat,
