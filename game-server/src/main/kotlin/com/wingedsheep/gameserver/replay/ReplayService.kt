@@ -101,8 +101,17 @@ class ReplayService(
         runCatching { archiver.awaitTermination(20, TimeUnit.SECONDS) }
     }
 
-    /** Persist an in-flight recording so a restart doesn't lose it. See [ReplayCheckpointFlusher]. */
+    /**
+     * Persist an in-flight recording so a restart doesn't lose it. See [ReplayCheckpointFlusher].
+     *
+     * `FINISHED` is terminal. A game over stores the final record while its session is still live and
+     * still carries a setup, so a flush sweep that overlaps the game-over path would otherwise write
+     * an `IN_PROGRESS` record straight over it — dropping the archive, the winner and `endedAt`, and
+     * hiding the game from its own players' history for good (nothing ever revisits a record no
+     * session is being flushed for). Refusing the downgrade here makes the ordering irrelevant.
+     */
     fun saveInProgress(replay: CompactReplay, resumeFingerprint: String?) {
+        if (store.find(replay.gameId)?.status == ReplayStatus.FINISHED) return
         store.save(
             StoredReplay(
                 replay = replay,

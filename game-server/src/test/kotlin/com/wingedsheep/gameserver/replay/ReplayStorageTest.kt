@@ -1,6 +1,7 @@
 package com.wingedsheep.gameserver.replay
 
 import com.wingedsheep.gameserver.ScenarioTestBase
+import com.wingedsheep.gameserver.repository.GameRepository
 import com.wingedsheep.gameserver.session.GameSession
 import com.wingedsheep.gameserver.session.PlayerSession
 import com.wingedsheep.sdk.core.AttackMode
@@ -123,6 +124,44 @@ class ReplayStorageTest : ScenarioTestBase() {
             // Finalizing twice is harmless — a finished record is left alone.
             service.finalizePartial("g-abandoned")
             store.find("g-abandoned").shouldNotBeNull().status shouldBe ReplayStatus.FINISHED
+        }
+
+        test("a flush that lands after game over cannot downgrade the finished record") {
+            val store = InMemoryReplayStore()
+            val finished = replay("g-done", listOf("alice" to "Alice", "bob" to "Bob"), "2026-01-01T00:00:00Z")
+                .copy(winnerName = "Alice")
+            store.save(StoredReplay(finished, ReplayStatus.FINISHED, presentation = "FRAMES"))
+            val service = ReplayService(store, mockk(relaxed = true), mockk(relaxed = true))
+
+            // The sweep read this session as live before the game-over path stored the final record.
+            service.saveInProgress(finished.copy(winnerName = null, endedAt = ""), resumeFingerprint = "abc")
+
+            val stored = store.find("g-done").shouldNotBeNull()
+            stored.status shouldBe ReplayStatus.FINISHED
+            stored.presentation shouldBe "FRAMES"
+            stored.replay.winnerName shouldBe "Alice"
+            // ...and it is still the player's to watch, which an IN_PROGRESS row would not be.
+            store.findRecentForPlayer("alice", 10).map { it.gameId } shouldContainExactly listOf("g-done")
+        }
+
+        test("an in-progress record stranded by a crash is finalized on the first sweep") {
+            val store = InMemoryReplayStore()
+            store.save(
+                StoredReplay(
+                    replay("g-stranded", listOf("alice" to "Alice", "bob" to "Bob"), ""),
+                    ReplayStatus.IN_PROGRESS,
+                    resumeFingerprint = "abc",
+                )
+            )
+            val service = ReplayService(store, mockk(relaxed = true), mockk(relaxed = true))
+            // No live session came back for it: recovery has already run, so nothing ever will.
+            val games = mockk<GameRepository>(relaxed = true) { every { findAll() } returns emptyList() }
+
+            ReplayCheckpointFlusher(games, service, EngineVersion("test")).flush()
+
+            store.find("g-stranded").shouldNotBeNull().status shouldBe ReplayStatus.FINISHED
+            store.findRecentForPlayer("alice", 10).map { it.gameId } shouldContainExactly listOf("g-stranded")
+            store.findInProgress() shouldBe emptyList()
         }
 
         test("a recording whose flush captured the live position resumes") {

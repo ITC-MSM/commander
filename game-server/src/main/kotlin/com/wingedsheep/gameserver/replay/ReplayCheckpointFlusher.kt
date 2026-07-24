@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Keeps in-flight recordings in the [ReplayStore] so a restart doesn't lose a game in progress.
@@ -35,9 +36,15 @@ class ReplayCheckpointFlusher(
     /** sessionId -> action count at last flush, so an idle game isn't rewritten every sweep. */
     private val flushed = ConcurrentHashMap<String, Int>()
 
+    /** Guards the one-time startup reconciliation in [adoptRecordsLeftByAPreviousRun]. */
+    private val reconciled = AtomicBoolean(false)
+
     @Scheduled(fixedDelay = FLUSH_INTERVAL_MS, initialDelay = FLUSH_INTERVAL_MS)
     fun flush() {
         val live = gameRepository.findAll()
+        val liveIds = live.mapTo(HashSet()) { it.sessionId }
+        adoptRecordsLeftByAPreviousRun(liveIds)
+
         for (session in live) {
             runCatching { flushSession(session) }
                 .onFailure { logger.warn("Failed to flush replay for ${session.sessionId}: ${it.message}") }
@@ -46,11 +53,39 @@ class ReplayCheckpointFlusher(
         // A game we were flushing that no longer has a session was abandoned (conceded away,
         // disconnected, swept as a zombie) — a game over would have called [forget] first. Close its
         // record out so the partial recording is watchable instead of stuck mid-write forever.
-        val liveIds = live.mapTo(HashSet()) { it.sessionId }
         for (sessionId in flushed.keys - liveIds) {
             flushed.remove(sessionId)
             runCatching { replayService.finalizePartial(sessionId) }
                 .onFailure { logger.warn("Failed to finalize abandoned replay $sessionId: ${it.message}") }
+        }
+    }
+
+    /**
+     * Once, on the first sweep: close out `IN_PROGRESS` records whose game didn't come back.
+     *
+     * The abandoned-record sweep above can only see games *this* process flushed, so a crash leaves
+     * every record it was mid-write on stranded: the session is gone from Redis (or was never
+     * recovered), no one flushes it again, and an `IN_PROGRESS` record is excluded from history — a
+     * silently unwatchable replay. Recovery has already run by the time the scheduler starts
+     * ([com.wingedsheep.gameserver.persistence.SessionRecoveryService] loads every persisted session
+     * on `@PostConstruct`), so a stored recording with no live session here has no live session
+     * anywhere and is safe to finalize; one that *was* recovered is adopted so its next flush
+     * continues the record instead of starting from a stale count.
+     */
+    private fun adoptRecordsLeftByAPreviousRun(liveIds: Set<String>) {
+        if (!reconciled.compareAndSet(false, true)) return
+        val stranded = runCatching { replayService.inProgress() }
+            .onFailure { logger.warn("Could not reconcile in-progress replays on startup: ${it.message}") }
+            .getOrNull() ?: return
+
+        for (record in stranded) {
+            val gameId = record.replay.gameId
+            if (gameId in liveIds) {
+                flushed[gameId] = record.replay.actions.size
+            } else {
+                runCatching { replayService.finalizePartial(gameId) }
+                    .onFailure { logger.warn("Failed to finalize stranded replay $gameId: ${it.message}") }
+            }
         }
     }
 
@@ -67,6 +102,10 @@ class ReplayCheckpointFlusher(
 
     private fun flushSession(session: GameSession) {
         val setup = session.getReplaySetup() ?: return
+        // A finished game's final record is written on the game-over path while its session is still
+        // live and still recorded; there is nothing left to checkpoint, and [ReplayService] would
+        // refuse the write anyway. Skip before paying for the encode.
+        if (session.isGameOver()) return
         val actions = session.getRecordedActions()
         if (flushed[session.sessionId] == actions.size) return
 
