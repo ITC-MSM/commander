@@ -715,6 +715,76 @@
     ]
 }
 
+// Cheering Crowd
+{
+    "name": "Cheering Crowd",
+    "manaCost": "{1}{R/G}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "At the beginning of each player's first main phase, that player may put a +1/+1 counter on this creature. If they do, they add {C} for each counter on it.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "PRECOMBAT_MAIN",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "TriggeringPlayer"
+                    },
+                    "body": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": "Self"
+                                },
+                                {
+                                    "type": "AddColorlessMana",
+                                    "amount": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": {
+                                            "type": "CounterCount",
+                                            "counterType": "CounterAny"
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        "descriptionOverride": "That player may put a +1/+1 counter on this creature. If they do, they add {C} for each counter on it."
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "126",
+        "rarity": "RARE",
+        "artist": "Kim Sokol",
+        "flavorText": "\"We love you, Spider-Man!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5fbce72f-e9a1-4d9f-b9b3-24dbafeef841.jpg?1783905320"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // City Pigeon
 {
     "name": "City Pigeon",
