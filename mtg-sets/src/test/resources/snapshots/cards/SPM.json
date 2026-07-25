@@ -6958,6 +6958,45 @@
     ]
 }
 
+// Supportive Parents
+{
+    "name": "Supportive Parents",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "Tap two untapped creatures you control: Add one mana of any color.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 2,
+                        "filter": "creature"
+                    }
+                },
+                "effect": "AddManaOfChoice",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "rarity": "UNCOMMON",
+        "artist": "Kim Sokol",
+        "flavorText": "\"Te amamos, mijo.\"\n—Rio Morales",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d3fe8a5b-4166-46cc-b910-71cd1a19ae1b.jpg?1783905321"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Taxi Driver
 {
     "name": "Taxi Driver",
