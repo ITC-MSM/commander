@@ -473,9 +473,9 @@ things address that:
 
 | | What | Cost |
 |---|---|---|
-| `pinnedCards` | Compiled `CardDefinition` JSON for every card in the decks, overlaid on the live corpus during reconstruction (`ReplayCardPin` → a child `CardRegistry`). Card edits stop mattering; ability ids also stay stable, so recorded yields keep matching. | ~34 definitions ≈ 7 KB gzipped |
+| `pinnedCards` | Compiled `CardDefinition` JSON for every card in the decks, overlaid on the live corpus during reconstruction (`ReplayCardPin` → a child `CardRegistry`). Card edits stop mattering; ability ids also stay stable, so recorded yields keep matching. | 7 KB gzipped on POR (34 definitions) up to ~30 KB on a modern set (113) — scales with deck variety, not game length; usually the largest part of `data` |
 | `checkpoints` | A cheap position fingerprint (`ReplayFingerprint`: entity counter, clock, turn/phase, zone sizes, life) every 20 actions. Catches *silent* drift — actions that still apply but no longer produce the board that was played — instead of rendering it. | ~30 bytes each |
-| `presentation` | The `{initialSnapshot, deltas}` stream, materialized just after game over (the last moment we're provably on the recording build, on a background thread so it stays off the game-over path) and stored gzipped in its own column. A result rather than a recipe, so it renders regardless of engine changes. | ~160 KB gzipped |
+| `presentation` | The `{initialSnapshot, deltas}` stream, materialized just after game over (the last moment we're provably on the recording build, on a background thread so it stays off the game-over path) and stored gzipped in its own column. A result rather than a recipe, so it renders regardless of engine changes. | ~45 KB gzipped for a 263-action game, ~160 KB for a 1650-action one — this one *does* scale with game length |
 
 `ReplayService.viewerPayload` picks between them: re-simulate first, and if that comes back faithful
 serve it (current view code, and "share frame as scenario" works because a real `GameState` exists);
@@ -497,9 +497,30 @@ measures both payloads. On POR, ~1650 actions over ~32 turns per game:
 | Input log + pins + checkpoints (`data`) | ~237 KB | **~11 KB** (~7 B/action; ~7 KB of that is the 34 pinned card definitions) |
 | Archived frame stream (`presentation`) | ~8 MB | **~160 KB** — ~14× the input log |
 
-That asymmetry *is* the design: the recipe is 14× cheaper than the result, so the recipe is the
-record and the result is insurance. Random play is action-heavy (it passes priority constantly and
-rarely closes out a game), so real AI/human games tend to be smaller on both counts. Run it with:
+**POR is the cheap end of the range, though — don't plan capacity from it.** Portal's cards are
+simple, so its definitions are small and there are few distinct ones. The pins scale with *deck
+variety and card complexity*, not with game length, and on a modern set they dominate. A real
+263-action ECL game (40-card decks, human vs AI) measured:
+
+| Payload | Stored (gzip+base64) |
+|---|---|
+| Input log + pins + checkpoints (`data`) | **~46 KB** — of which **~30 KB is 113 pinned definitions** (80% of the raw payload; median definition ~1.3 KB) |
+| Archived frame stream (`presentation`) | **~45 KB** — ~1× the input log |
+
+So the two payloads can be the same order of magnitude, and the input log's floor is set by the pins
+rather than by the actions. The recipe is still the record, but for a sharper reason than size: only
+it can rebuild a real `GameState`, which is what "share frame as scenario" needs. Treat ~11 KB as the
+Portal-shaped best case and tens of KB as normal.
+
+Two consequences worth knowing. Capacity: budget per *game* (pins) more than per *action*. Write
+volume: `ReplayCheckpointFlusher` re-encodes the whole blob on every flush, so ~80% of each in-flight
+write is byte-identical pin data — a 30-minute game is on the order of 360 flushes × ~46 KB. If that
+ever matters, store the pins once (their own column, written on the first flush) rather than folding
+them into every flush; they can't simply be deferred to game over, because a restart onto a new build
+mid-game would then pin the *new* definitions for a game that started on the old ones.
+
+Random play is action-heavy (it passes priority constantly and rarely closes out a game), so real
+AI/human games tend to have shorter action logs — but the same or larger pins. Run it with:
 
 ```bash
 ./gradlew :game-server:test --tests "*.CompactReplaySizeBenchmark" -Dbenchmark=true -DbenchmarkGames=40 -DbenchmarkSet=BLB
