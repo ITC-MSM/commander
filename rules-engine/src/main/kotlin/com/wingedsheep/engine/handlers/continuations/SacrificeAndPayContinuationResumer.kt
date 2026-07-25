@@ -82,22 +82,7 @@ class SacrificeAndPayContinuationResumer(
             events.addAll(transitionResult.events)
         }
 
-        // Inject snapshots into the underlying EffectContinuation (if any) so a sibling
-        // effect after this paused sacrifice can read `context.sacrificedPermanents`
-        // (Rise of the Witch-king "if you sacrificed a creature this way…" rider).
-        // Mirrors CreatureTypeChoiceContinuationResumer's "walk the stack and patch the
-        // captured effectContext" pattern.
-        newState = newState.copy(continuationStack = newState.continuationStack.map { frame ->
-            if (frame is EffectContinuation) {
-                frame.copy(
-                    effectContext = frame.effectContext.copy(
-                        sacrificedPermanents = frame.effectContext.sacrificedPermanents + snapshots
-                    )
-                )
-            } else {
-                frame
-            }
-        })
+        newState = withSacrificeSnapshots(newState, snapshots)
 
         // If there are remaining players (from "each opponent" effects), process them
         if (continuation.remainingPlayers.isNotEmpty() && continuation.filter != null) {
@@ -106,22 +91,8 @@ class SacrificeAndPayContinuationResumer(
                 newState, continuation.remainingPlayers, continuation.filter,
                 continuation.count, continuation.sourceId
             )
-            val resultStateWithSnaps = if (result.updatedSacrificedPermanents.isNotEmpty()) {
-                result.state.copy(continuationStack = result.state.continuationStack.map { frame ->
-                    if (frame is EffectContinuation) {
-                        frame.copy(
-                            effectContext = frame.effectContext.copy(
-                                sacrificedPermanents = frame.effectContext.sacrificedPermanents +
-                                    result.updatedSacrificedPermanents
-                            )
-                        )
-                    } else {
-                        frame
-                    }
-                })
-            } else {
-                result.state
-            }
+            val resultStateWithSnaps =
+                withSacrificeSnapshots(result.state, result.updatedSacrificedPermanents)
             val allEvents = events + result.events
             return if (result.isPaused) {
                 // Another player needs a decision — return paused with combined events
@@ -132,6 +103,31 @@ class SacrificeAndPayContinuationResumer(
         }
 
         return checkForMore(newState, events)
+    }
+
+    /**
+     * Publish [snapshots] of just-sacrificed permanents onto the enclosing [EffectContinuation]s so
+     * a sibling effect resolving after this paused sacrifice can read
+     * `context.sacrificedPermanents` (Rise of the Witch-king's "if you sacrificed a creature this
+     * way…" rider). Mirrors `CreatureTypeChoiceContinuationResumer`'s "walk the stack and patch the
+     * captured effectContext" pattern.
+     */
+    private fun withSacrificeSnapshots(
+        state: GameState,
+        snapshots: List<com.wingedsheep.engine.state.components.stack.EntitySnapshot>
+    ): GameState {
+        if (snapshots.isEmpty()) return state
+        return state.copy(continuationStack = state.continuationStack.map { frame ->
+            if (frame is EffectContinuation) {
+                frame.copy(
+                    effectContext = frame.effectContext.copy(
+                        sacrificedPermanents = frame.effectContext.sacrificedPermanents + snapshots
+                    )
+                )
+            } else {
+                frame
+            }
+        })
     }
 
     fun resumeExileMultiZone(

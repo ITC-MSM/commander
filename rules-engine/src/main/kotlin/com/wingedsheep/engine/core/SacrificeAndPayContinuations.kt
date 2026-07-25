@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.costs.PayCost
+import com.wingedsheep.sdk.scripting.effects.ChooseOnePerCategoryEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.SearchDestination
 import kotlinx.serialization.Serializable
@@ -29,6 +30,31 @@ data class SacrificeContinuation(
     val remainingPlayers: List<EntityId> = emptyList(),
     val filter: GameObjectFilter? = null,
     val count: Int = 1
+) : ContinuationFrame
+
+/**
+ * Resume after a player picked the one permanent they keep for a single category of a
+ * [ChooseOnePerCategoryEffect] — "chooses a permanent they control of each permanent type".
+ *
+ * The step publishes nothing until every chooser has answered every category (CR 101.4), so the
+ * frame carries the whole in-progress tally.
+ *
+ * @property storedCollections The resolving pipeline's collections, re-published on completion so
+ *   the downstream "…the rest" steps see both the pool and the picks.
+ * @property pendingPlayers The choosers that still have picks to make, the current one first.
+ * @property categoryIndex Index into `effect.categories` that the pending decision answers.
+ * @property picks Every pick made so far, across all choosers.
+ */
+@Serializable
+data class ChooseOnePerCategoryContinuation(
+    override val decisionId: String,
+    val effect: ChooseOnePerCategoryEffect,
+    val sourceId: EntityId?,
+    val sourceName: String?,
+    val storedCollections: Map<String, List<EntityId>>,
+    val pendingPlayers: List<EntityId>,
+    val categoryIndex: Int,
+    val picks: List<EntityId>
 ) : ContinuationFrame
 
 /**
