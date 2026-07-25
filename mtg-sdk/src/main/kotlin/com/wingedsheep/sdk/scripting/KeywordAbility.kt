@@ -264,31 +264,35 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
-    // Optional Additional Cost (Kicker, Multikicker, Offspring, FlashKicker)
+    // Optional Additional Cost (Kicker, Multikicker, Offspring, FlashKicker, Bargain)
     // =========================================================================
 
     /**
      * **Optional additional cost paid at cast time.** Generalises Kicker, Multikicker,
-     * Offspring, and the pre-kicker "pay {N} more to cast as though it had flash" pattern
-     * (Ghitu Fire et al.). The card script gates effect variations on the [WasKicked]
-     * condition (or on `wasKicked` in trigger filters) when [branchesEffect] is `true`.
+     * Offspring, Bargain, and the pre-kicker "pay {N} more to cast as though it had flash"
+     * pattern (Ghitu Fire et al.). The card script gates effect variations on the durable
+     * fact recorded in [declaredSlot] — read via [WasKicked] / `Conditions.WasBargained`,
+     * or `wasKicked` in trigger filters — when [branchesEffect] is `true`.
      *
      * Mechanically all variants share the same plumbing: the player optionally pays
-     * [manaCost] and/or [additionalCost] as an extra cost while casting, the spell is
-     * marked with the `wasKicked` flag on the stack, and the cost calculator folds the
-     * extra mana into the effective cost. The variants differ only in *what the payment
-     * unlocks*:
+     * [manaCost] and/or [additionalCost] as an extra cost while casting, the spell carries
+     * [declaredSlot] as its declared-cost slot on the stack (and durably, once it resolves
+     * into a permanent), and the cost calculator folds the extra mana into the effective
+     * cost. The variants differ only in *what the payment unlocks*:
      *
      * - **Kicker / Multikicker / Offspring** ([branchesEffect] = `true`) — the spell's
      *   effect branches on `WasKicked`. [multi] = `true` lets the cost be paid any
      *   number of times (Multikicker).
+     * - **Bargain** ([declaredSlot] = [ChoiceSlot.BARGAINED]) — same shape as
+     *   kicker-with-a-sacrifice-cost, but a *different* fact (CR 702.166b), so bargaining
+     *   never reads as kicking and vice versa.
      * - **FlashKicker** ([grantsFlashTiming] = `true`) — paying the cost lets the spell
      *   be cast as though it had flash. Effect is unchanged unless the card also opts
      *   into [branchesEffect] (rare — Ghitu Fire does not).
      *
      * [displayPrefix] customises the printed label ("Kicker", "Multikicker", "Offspring");
      * for FlashKicker it's ignored and the description is rephrased to match the printed
-     * oracle text.
+     * oracle text, and for Bargain the `bargain()` DSL supplies the printed reminder text.
      *
      * The serial name remains `Kicker` for wire compatibility with previously serialised
      * card scripts.
@@ -301,7 +305,8 @@ sealed interface KeywordAbility {
      * - `OptionalAdditionalCost(manaCost = "{2}", grantsFlashTiming = true, branchesEffect = false)` — Ghitu Fire's flash unlock
      *
      * Prefer the [kicker] / [kickerSacrifice] / [multikicker] / [offspring] / [flashKicker]
-     * companion factories.
+     * companion factories, or the `bargain()` DSL helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder].
      */
     @SerialName("Kicker")
     @Serializable
@@ -327,7 +332,16 @@ sealed interface KeywordAbility {
          * non-mana [additionalCost] such as Behold (Molten Exhale: "you may cast this
          * as though it had flash if you behold a Dragon as an additional cost").
          */
-        val grantsFlashTiming: Boolean = false
+        val grantsFlashTiming: Boolean = false,
+        /**
+         * Which durable cast-choice slot records "this optional cost was declared" — the
+         * *identity* of the mechanic riding this rail. Kicker/Multikicker/Offspring stamp
+         * [ChoiceSlot.KICKED] (the default); Bargain stamps [ChoiceSlot.BARGAINED]
+         * (CR 702.166b). The engine stamps this slot on the spell as it is cast and carries it
+         * onto the resolving permanent, and the payoff conditions and cast-trigger filters key
+         * off it — so two mechanics on the same rail never read each other's declaration.
+         */
+        val declaredSlot: ChoiceSlot = ChoiceSlot.KICKED
     ) : KeywordAbility {
         init {
             require(manaCost != null || additionalCost != null) {
@@ -335,6 +349,9 @@ sealed interface KeywordAbility {
             }
         }
         override val description: String = when {
+            // Bargain's cost is definitional (CR 702.166a), so the printed text is the bare
+            // keyword plus reminder text — never "Bargain—sacrifice …".
+            declaredSlot == ChoiceSlot.BARGAINED -> displayPrefix
             grantsFlashTiming && additionalCost != null ->
                 "You may cast this spell as though it had flash if you " +
                     "${additionalCost.description.replaceFirstChar { it.lowercase() }} as an additional cost to cast it."

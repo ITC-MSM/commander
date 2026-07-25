@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.core.ManaSymbol
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CharacteristicValue
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.core.Subtype
@@ -71,6 +72,7 @@ class CostCalculator(
         casterId: EntityId,
         chosenTargets: List<EntityId> = emptyList(),
         fromZone: Zone? = null,
+        declaredCostSlot: ChoiceSlot? = null,
     ): ManaCost {
         var totalReduction = 0
         var totalIncrease = 0
@@ -82,7 +84,7 @@ class CostCalculator(
         for (ability in cardDef.script.staticAbilities) {
             if (ability !is ModifySpellCost) continue
             if (ability.target != SpellCostTarget.SelfCast) continue
-            if (!gatingApplies(state, casterId, cardDef, ability)) continue
+            if (!gatingApplies(state, casterId, cardDef, ability, declaredCostSlot)) continue
             applyToSpellCast(
                 state, cardDef, casterId, ability.modification, chosenTargets,
                 addGenericReduction = { totalReduction += it },
@@ -115,7 +117,7 @@ class CostCalculator(
         // Battlefield-sourced ModifySpellCost abilities.
         for ((sourceId, ability) in scanBattlefieldModifySpellCost(state)) {
             if (!targetMatchesSpell(ability.target, cardDef, casterId, sourceId, state, chosenTargets, fromZone)) continue
-            if (!gatingApplies(state, casterId, cardDef, ability)) continue
+            if (!gatingApplies(state, casterId, cardDef, ability, declaredCostSlot)) continue
             applyToSpellCast(
                 state, cardDef, casterId, ability.modification, chosenTargets,
                 addGenericReduction = { totalReduction += it },
@@ -288,6 +290,7 @@ class CostCalculator(
         casterId: EntityId,
         cardDef: CardDefinition,
         ability: ModifySpellCost,
+        declaredCostSlot: ChoiceSlot? = null,
     ): Boolean {
         return when (val gating = ability.gating) {
             CostGating.None -> true
@@ -301,7 +304,15 @@ class CostCalculator(
                 // Player-scoped conditions ("during your turn", "you've cast another spell", ...)
                 // evaluate against the caster. The cost modifier's source is a non-spell permanent
                 // (or the spell card itself for SelfCast), neither of which the condition needs.
-                val ctx = EffectContext(sourceId = null, controllerId = casterId)
+                // The optional additional cost this cast declares is part of the branch being
+                // priced, not of the game state — a "costs {2} less to cast if it's bargained"
+                // reduction (CR 702.166, Hamlet Glutton) applies only to the bargained variant, and
+                // the spell has no durable choice bag yet, so the declaration rides the context.
+                val ctx = EffectContext(
+                    sourceId = null,
+                    controllerId = casterId,
+                    declaredCostSlot = declaredCostSlot,
+                )
                 conditionEvaluator.evaluate(state, gating.condition, ctx)
             }
         }

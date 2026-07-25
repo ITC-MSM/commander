@@ -460,11 +460,19 @@ class ConditionEvaluator(
             }
             is CastChoiceMade -> {
                 // Generic "was this choice made" guard over the durable cast-choices bag; works at
-                // both resolution and projection.
+                // both resolution and projection. An optional-additional-cost declaration
+                // (kicker/bargain) also answers from the context, so a still-on-the-stack spell's
+                // own rider ("If this spell was bargained, …") and a cost gate priced before the
+                // spell exists both read true — the bag only exists once it resolves.
                 val sourceId = ctx.sourceId
-                sourceId != null &&
-                    state.getEntity(sourceId)?.get<CastChoicesComponent>()
-                        ?.chosen?.containsKey(condition.slot) == true
+                val declaredThisCast = (ctx as? Resolution)?.effectContext?.declaredCostSlot
+                if (declaredThisCast == condition.slot) {
+                    true
+                } else {
+                    sourceId != null &&
+                        state.getEntity(sourceId)?.get<CastChoicesComponent>()
+                            ?.chosen?.containsKey(condition.slot) == true
+                }
             }
             is CastChoiceIs -> {
                 val sourceId = ctx.sourceId
@@ -1126,11 +1134,14 @@ class ConditionEvaluator(
     }
 
     private fun evaluateWasKicked(state: GameState, context: EffectContext): Boolean {
+        // Kicker specifically (ChoiceSlot.KICKED) — a spell that declared a *different*
+        // optional additional cost on the same rail (bargain) is not kicked.
+        val kicked = context.declaredCostSlot == ChoiceSlot.KICKED
         // Check the durable cast-choices bag on the permanent first (for triggered abilities)
-        val sourceId = context.sourceId ?: return context.wasKicked
+        val sourceId = context.sourceId ?: return kicked
         if (state.getEntity(sourceId)?.wasKickedChoice() == true) return true
         // Fall back to context (for spell resolution, e.g. kicker additional effects)
-        return context.wasKicked
+        return kicked
     }
 
     private fun evaluateSneakCostWasPaid(state: GameState, context: EffectContext): Boolean {

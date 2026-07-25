@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.components.stack.EntitySnapshot
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import kotlinx.serialization.Serializable
@@ -94,7 +95,15 @@ data class EffectContext(
      * Read by `DynamicAmount.ManaSpentOnX`. Empty when X was unrestricted.
      */
     val manaSpentOnXByColor: Map<Color, Int> = emptyMap(),
-    val wasKicked: Boolean = false,
+    /**
+     * The optional-additional-cost mechanic declared for the spell being cast or resolved
+     * ([com.wingedsheep.sdk.scripting.ChoiceSlot.KICKED] for kicker, `BARGAINED` for bargain), or
+     * null when none was. Read by `WasKicked` and by `CastChoiceMade(slot)` — the latter is how a
+     * spell's own "if this spell was bargained" rider resolves while the spell is still on the
+     * stack, before any durable cast-choices bag exists, and how a `CostGating.OnlyIf` cost
+     * reduction is priced against the branch being enumerated.
+     */
+    val declaredCostSlot: ChoiceSlot? = null,
     /** True if the spell's optional Blight additional cost was paid (BlightOrPay path chosen). */
     val wasBlightPaid: Boolean = false,
     /**

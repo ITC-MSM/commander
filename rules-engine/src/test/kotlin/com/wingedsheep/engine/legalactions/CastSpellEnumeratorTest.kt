@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.legalactions
 
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.support.EnumerationFixtures
 import com.wingedsheep.engine.legalactions.support.setupP1
@@ -314,7 +315,7 @@ class CastSpellEnumeratorTest : FunSpec({
         kicked.affordable shouldBe true
         // Kicker adds {3} to the base {B} cost.
         kicked.manaCostString shouldBe "{3}{B}"
-        (kicked.action as CastSpell).wasKicked shouldBe true
+        (kicked.action as CastSpell).declaredCostSlot shouldBe ChoiceSlot.KICKED
     }
 
     test("Kicker action is emitted as unaffordable when the kicked cost can't be paid") {

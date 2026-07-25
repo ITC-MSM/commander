@@ -248,9 +248,10 @@ function buildActionOptions(
   if (kickerAction) {
     options.push({
       key: 'castWithKicker',
-      // Server picks the suffix — "(Kicked)", "(Offspring)", or "(with Flash)" for
-      // flash-timing kickers like Ghitu Fire / Molten Exhale. Fall back if absent.
-      label: kickerAction.description || `Cast ${cardInfo.name} (Kicked)`,
+      // Server picks the suffix — "(Kicked)", "(Offspring)", "(Bargained)", or "(with Flash)" for
+      // flash-timing kickers like Ghitu Fire / Molten Exhale. Fall back to an unlabelled cast if
+      // absent rather than guessing a mechanic.
+      label: kickerAction.description || `Cast ${cardInfo.name}`,
       manaCost: kickerAction.manaCostString || null,
       isAvailable: kickerAction.isAffordable !== false,
       action: kickerAction,
@@ -726,7 +727,9 @@ function ActionButton({
       case 'CastFaceDown':
         return 'Cast Face-Down ({3})'
       case 'CastWithKicker':
-        return `Cast (Kicked) (${action.manaCostString ?? ''})`
+        // The server's description already names the mechanic ("… (Bargained)"); only fall back to
+        // a bare cast label when it's missing.
+        return action.description || `Cast (${action.manaCostString ?? ''})`
       case 'TurnFaceUp':
         return `Turn Face-Up (${action.manaCostString ?? ''})`
       default:

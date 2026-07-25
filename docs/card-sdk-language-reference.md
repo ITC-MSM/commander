@@ -3410,7 +3410,7 @@ matcher branch — `SpellCastEvent` does not grow a new field per axis.
   spell from anywhere other than your hand" (`CastFromZoneOtherThan(Zone.HAND)`): casts from
   exile (Adventure / plotted), graveyard (flashback), or the top of library all match; hand casts
   don't.
-- `SpellCastPredicate.WasKicked` — spell was cast with kicker (CR 702.32). Used for
+- `SpellCastPredicate.WasKicked` — spell was cast with kicker (CR 702.32) — specifically the kicker family (`ChoiceSlot.KICKED`); a spell that declared a *different* optional additional cost on the same rail, such as bargain, does not match. Used for
   Hallar / Bloodstone Goblin.
 - `SpellCastPredicate.PaidWithManaFromSubtype(subtype)` — mana produced by a permanent of this
   subtype was spent on the cast (Treasure — Rain of Riches, Alchemist's Talent; Cave; …). The
@@ -4996,6 +4996,40 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > card types or subtypes. Author the printed dies-clause + reminder text into `oracleText`. The
 > `Keyword.ENDURING` display keyword carries no combat behavior.
 
+> **Bargain** (CR 702.166, Wilds of Eldraine). "Bargain (You may sacrifice an artifact, enchantment, or
+> token as you cast this spell.)" — a static ability functioning on the stack that grants one **optional
+> additional cost** (702.166a): sacrificing an artifact, an enchantment, or a token you control. A spell
+> whose controller declared that intention has been *bargained* (702.166b), and the card's other
+> "if it was bargained" abilities are linked to that bargain ability (702.166c).
+>
+> `card { bargain() }` (import `com.wingedsheep.sdk.dsl.bargain`) is the whole wiring: it adds
+> `KeywordAbility.OptionalAdditionalCost(additionalCost = Costs.additional.SacrificePermanent(BargainSacrificeFilter),
+> displayPrefix = "Bargain", keyword = Keyword.BARGAIN, declaredSlot = ChoiceSlot.BARGAINED)`. Bargain
+> therefore rides the **same rail as kicker** — the enumerator offers a `CastWithKicker` variant labelled
+> "(Bargained)" whenever the caster controls something sacrificeable, the ordinary additional-cost
+> payment flow collects the sacrifice, and the engine stamps the declared slot on the stack object and
+> durably onto the permanent it becomes. Because that rail carries a `ChoiceSlot`, not a boolean,
+> "bargained" and "kicked" never read as each other: a bargained spell doesn't satisfy
+> `SpellCastPredicate.WasKicked` ("whenever you cast a kicked spell") or `Conditions.WasKicked`, and a
+> kicked one doesn't satisfy `Conditions.WasBargained`.
+>
+> Bargain derives no payoff — the card supplies it, in one of four shapes:
+> - **Spell rider** — `ConditionalEffect(Conditions.WasBargained, extra)` inside the spell's own effect
+>   (Archon's Glory, Torch the Tower). Reads the declaration off the spell on the stack; no permanent needed.
+> - **Permanent** — an enters-the-battlefield trigger with `triggerCondition = Conditions.WasBargained`
+>   (Agatha's Champion, High Fae Negotiator). CR 603.4 keeps it off the stack entirely when unbargained.
+> - **Cheaper when bargained** — `ModifySpellCost(SelfCast, CostModification.ReduceGeneric(2),
+>   gating = CostGating.OnlyIf(Conditions.WasBargained))` (Hamlet Glutton, Ice Out, Johann's Stopgap).
+>   The gate is evaluated against the cast branch being priced, so only the bargained variant is discounted.
+> - **Bargain-only clause with its own target** (CR 702.166d — Brave the Wilds) — declare it with
+>   `kickerTarget(...)` / `kickerEffect` in the `spell { }` block (the optional-cost branch of the rail):
+>   the plain cast is announced as though the clause weren't there, and only the bargained cast asks for
+>   the target.
+>
+> "Token" is not a card type, so the sacrifice filter is `GameObjectFilter.ArtifactEnchantmentOrToken`
+> (`IsArtifact or IsEnchantment or IsToken`) — a Food token, an Aura and a plain 1/1 creature token all
+> qualify; a nontoken creature does not.
+
 > **Gift** (CR 702.174, Bloomburrow). "Gift a \[something\]" is two abilities: an **additional cost**
 > — "as an additional cost to cast this spell, you may choose an opponent" — and, on a permanent, the
 > triggered ability "when this permanent enters, if its gift cost was paid, \[effect\]" whose effect the
@@ -5355,7 +5389,7 @@ composite abilities).
 - `Harmonize(cost)` — `KeywordAbility.harmonize(cost)` (Tarkir: Dragonstorm). An alternative cost to cast an instant/sorcery **from your graveyard**, like Flashback, then exile it as it resolves. As you cast it you may tap **a single** untapped creature you control to reduce the **generic** portion of the harmonize cost by that creature's (projected) power — a Convoke-style reduction, but one creature paying generic-equal-to-power instead of one mana per creature. No card-side wiring: declare the keyword ability and the engine handles graveyard-cast enumeration (`CastWithHarmonize`), the per-creature reduction (routed through `AlternativePaymentChoice.harmonizeCreature`), and the exile-on-resolution. The chosen creature and its power are surfaced to the client via `LegalAction.harmonizeCreatures` / `hasHarmonize`; the client offers an on-battlefield single-creature tap step (the `harmonize` pipeline phase + `HarmonizeSelector` HUD, mirroring Convoke). **Harmonize {X}** (e.g. Nature's Rhythm `{X}{G}{G}{G}{G}`): the `CastWithHarmonize` action surfaces `hasXCost`/`maxAffordableX` (max X folds in the best single-creature tap reduction) so the client prompts for X. {X} is generic mana, so the tap reduces the mana paid *for X* — `CastSpellHandler.harmonizePaymentXValue` lowers the X mana once `reduceGeneric` has consumed any printed generic — while the chosen X stamped onto `SpellOnStackComponent.xValue` (and read by the effect, e.g. "mana value X or less") is unchanged. Colored pips are never reduced. **Granting harmonize at runtime:** harmonize can also be granted to a graveyard card that doesn't print it via `Effects.GrantHarmonize(target, cost?, duration)` (Songcrafter Mage). The grant is a `GrantedKeywordAbility` record keyed to the card entity; every harmonize read site consults printed-**or**-granted harmonize through the `HarmonizeGrants.effectiveHarmonize` resolver, so a granted harmonize is castable, reducible, and exiled exactly like a printed one. The grant survives the graveyard → stack move (so exile-on-resolution still fires) and is cleared in the cleanup step.
 - **Waterbend** (Avatar: The Last Airbender) — *not a keyword ability*; a cost flag on an activated ability. Set `hasWaterbend = true` in the `activatedAbility { }` block (alongside a `cost = Costs.Mana("{N}")`). It means "Waterbend {N}: pay {N}, but for each generic mana in that cost you may tap an untapped **artifact or creature** you control instead." It is Convoke widened to artifacts and restricted to generic-only payment — a tapped permanent never covers a colored pip, and the number of taps is bounded by the generic mana in the cost (CR; you can tap a permanent that just came under your control, no summoning-sickness gate). Routed through `AlternativePaymentChoice.waterbendPermanents` (a `Set<EntityId>`), mirroring `hasConvoke`: the activated-ability handler applies it via `AlternativePaymentHandler.applyWaterbendForAbility`, the enumerator surfaces `LegalAction.hasWaterbend` / `waterbendPermanents` (via `CostEnumerationUtils.findWaterbendPermanents` + `canAffordWithWaterbend`), and the client offers an on-battlefield tap step (the `waterbend` pipeline phase + `WaterbendSelector` HUD, generic-only). The ability's `description` auto-prefixes "Waterbend " before the cost.
 - **Spell-level waterbend additional cost** (Avatar: The Last Airbender) — *"As an additional cost to cast this spell, [you may] waterbend {N}."* Declared in the card builder with `waterbendCost(amount, optional = false, isX = false)`, which sets `CardScript.spellWaterbend: SpellWaterbendCost`. It adds {N} generic to the spell's cost; the same `AlternativePaymentChoice.waterbendPermanents` taps pay it, **bounded by N** so taps never cover the spell's own generic. `optional = true` models "you may waterbend {N}" — the enumerator offers a second, *paid* cast variant, and paying it sets `ChoiceSlot.WATERBEND_PAID` so the effect branches via `Conditions.WaterbendWasPaid` (the waterbend analogue of `BlightWasPaid`, e.g. `ConditionalEffect(Conditions.WaterbendWasPaid, paidEffect, elseEffect = baseEffect)`); a mandatory cost always adds {N}. Wiring: `CastSpellHandler` adds {N} and applies `AlternativePaymentHandler.applyWaterbendForSpell` (capped at N); `CastSpellEnumerator` surfaces `hasWaterbend`/`waterbendPermanents` on the cast action, reusing the same client `waterbend` pipeline phase + `WaterbendSelector`. Cards: Benevolent River Spirit (mandatory {5}), Ruinous Waterbending (optional {4}), Spirit Water Revival (optional {6}). The **`isX` "waterbend {X}" shape** (`waterbendCost(isX = true)`) is fully wired: the enumerator folds a literal `{X}` into the cost so the spell reads as X-carrying (`maxAffordableX` bounded by available mana **plus** tappable permanents), the client prompts for X then runs the waterbend tap step (capped at the chosen X), and the resolver charges X as the waterbend generic — so X also feeds the effect via `DynamicAmount.XValue`. *(The two `isX` cards Crashing Wave and Foggy Swamp Visions each still need a card-specific effect beyond the cost — "distribute N counters among a filtered group chosen at resolution", and "token copy of each exiled card" + delayed sacrifice — before they can ship.)* The **in-resolution "unless you waterbend {N}" shape** (Waterbending Lesson) is wired separately as `Effects.UnlessYouWaterbend(amount, otherwise)` — a `Gate.MayPay` over a waterbend-flagged `PayManaCostEffect`, resolved during the spell's resolution rather than as a cast-time cost (see the gated-effects section).
-- `OptionalAdditionalCost(manaCost?, additionalCost?, multi, displayPrefix, branchesEffect, grantsFlashTiming)` — generalised "pay an optional extra cost while casting" primitive. Backs printed Kicker / Multikicker / Offspring **and** the pre-kicker "pay {N} more to cast as though it had flash" pattern (Ghitu Fire). When `branchesEffect = true` (default) paying the cost marks the spell so `WasKicked` fires for the card's own effect/triggers; when `false` the payment is invisible to `WasKicked` (used by `flashKicker`). When `grantsFlashTiming = true` paying the cost unlocks instant-speed casting in addition to whatever else it does — the optional cost may be mana (Ghitu Fire: `KeywordAbility.flashKicker("{2}")`) **or** a non-mana `additionalCost` such as Behold (Molten Exhale: "you may cast this as though it had flash if you behold a Dragon", `KeywordAbility.flashKicker(Costs.additional.Behold(filter = Filters.WithSubtype("Dragon")))`). Prefer the factories: `KeywordAbility.kicker(cost)`, `KeywordAbility.kicker(additionalCost)`, `KeywordAbility.multikicker(cost)`, `KeywordAbility.offspring(cost)`, `KeywordAbility.flashKicker(cost)`, `KeywordAbility.flashKicker(additionalCost)`. Serial name is `Kicker` for wire compatibility. **Kicker {X}** (variable kicker, e.g. `KeywordAbility.kicker("{X}")` on Verdeloth the Ancient): the kicked cast surfaces `hasXCost`/`maxAffordableX` so the client prompts for X exactly like a base-cost X spell; the chosen X is paid as part of the kicker and stamped onto `SpellOnStackComponent.xValue`, so the card's ETB trigger reads it via `DynamicAmount.XValue` ("create X tokens").
+- `OptionalAdditionalCost(manaCost?, additionalCost?, multi, displayPrefix, branchesEffect, grantsFlashTiming, declaredSlot)` — generalised "pay an optional extra cost while casting" primitive. `declaredSlot` (default `ChoiceSlot.KICKED`) is the durable slot the declaration stamps — i.e. *which mechanic* is riding the rail, so `ChoiceSlot.BARGAINED` makes the same machinery Bargain (CR 702.166) without bargained spells reading as kicked. Backs printed Kicker / Multikicker / Offspring / Bargain **and** the pre-kicker "pay {N} more to cast as though it had flash" pattern (Ghitu Fire). When `branchesEffect = true` (default) paying the cost marks the spell so `WasKicked` fires for the card's own effect/triggers; when `false` the payment is invisible to `WasKicked` (used by `flashKicker`). When `grantsFlashTiming = true` paying the cost unlocks instant-speed casting in addition to whatever else it does — the optional cost may be mana (Ghitu Fire: `KeywordAbility.flashKicker("{2}")`) **or** a non-mana `additionalCost` such as Behold (Molten Exhale: "you may cast this as though it had flash if you behold a Dragon", `KeywordAbility.flashKicker(Costs.additional.Behold(filter = Filters.WithSubtype("Dragon")))`). Prefer the factories: `KeywordAbility.kicker(cost)`, `KeywordAbility.kicker(additionalCost)`, `KeywordAbility.multikicker(cost)`, `KeywordAbility.offspring(cost)`, `KeywordAbility.flashKicker(cost)`, `KeywordAbility.flashKicker(additionalCost)`. Serial name is `Kicker` for wire compatibility. **Kicker {X}** (variable kicker, e.g. `KeywordAbility.kicker("{X}")` on Verdeloth the Ancient): the kicked cast surfaces `hasXCost`/`maxAffordableX` so the client prompts for X exactly like a base-cost X spell; the chosen X is paid as part of the kicker and stamped onto `SpellOnStackComponent.xValue`, so the card's ETB trigger reads it via `DynamicAmount.XValue` ("create X tokens").
 - `Impending(time, cost)` — `card { impending(n, cost) }` builder helper (CR 702.176, Duskmourn). A self-alternative
   cost: pay [cost] instead of the mana cost and the permanent enters with N **time counters**, isn't a creature until
   the last is removed, and loses one at the beginning of your end step. The helper wires everything from one call — the
@@ -5729,6 +5763,7 @@ answer it and would silently return `false`.
   finality counter") and Mikey & Don ("creatures you cast from the top of your library enter with an
   extra +1/+1 counter", `WasCastFromZone(Zone.LIBRARY)`).
 - `WasKicked` — cast with kicker / multikicker / offspring (i.e. an `OptionalAdditionalCost` with `branchesEffect = true` whose extra cost was paid). FlashKicker payments are intentionally invisible to this condition.
+- `WasBargained` — the spell's **bargain** additional cost was declared as it was cast (CR 702.166b, Wilds of Eldraine). A facade over `CastChoiceMade(ChoiceSlot.BARGAINED)`, so bargain needs no condition type of its own. Reads the durable flag on a resolved permanent (an "if it was bargained" enters trigger) *and* the declaration carried on a still-on-the-stack spell (an "if this spell was bargained" rider), and is also the condition a `CostGating.OnlyIf` cost reduction gates on. Never true for a merely kicked spell.
 - `SneakCostWasPaid` — the source was cast for its `Sneak` cost (CR 702.190 — mana + returning an unblocked attacker). Reads the durable `ChoiceSlot.SNEAK` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. Backs riders like Leonardo, Leader in Blue and The Last Ronin's Technique.
 - `GiftWasPromised` — the spell's **gift** additional cost was paid, i.e. "if the gift was promised"
   (CR 702.174a/b, Bloomburrow). A facade over `CastChoiceMade(ChoiceSlot.GIFT_PROMISED)` — the flag the
@@ -6056,7 +6091,9 @@ Other gates available in both contexts:
   resolution and projection.
 - `CastChoiceMade(slot)` — generic "was a value locked into this `ChoiceSlot`" guard over the durable
   cast-choices bag (mtgish's `AColorWasChosen`): `CastChoiceMade(ChoiceSlot.COLOR)`,
-  `CastChoiceMade(ChoiceSlot.KICKED)`. Works at resolution and projection.
+  `CastChoiceMade(ChoiceSlot.KICKED)`, `CastChoiceMade(ChoiceSlot.BARGAINED)`. Works at resolution and
+  projection; for the optional-additional-cost slots it also answers from the declaration a spell carries
+  while it is still on the stack (and from the branch a cost gate is pricing), before any durable bag exists.
 - `CastChoiceIs(slot, "value")` — the slot's value equals `value` (text compare; color compares against
   the enum name): `CastChoiceIs(ChoiceSlot.MODE, "Khans")`, `CastChoiceIs(ChoiceSlot.COLOR, "RED")`. The
   generic slot reader new cards should prefer over per-slot conditions; the §8 emitter target for
@@ -6082,8 +6119,8 @@ Other gates available in both contexts:
   ```
 
 **Cast-choice slots (`ChoiceSlot`).** The choices an object locks in *as it is cast / as it enters*
-(CR 601.2b) — color, creature type, land type, mode, chosen creature, kicked-ness, blight amount,
-`CHOSEN_NUMBER` — all ride one durable `CastChoicesComponent` on the stable entity (the immutable-ECS
+(CR 601.2b) — color, creature type, land type, mode, chosen creature, kicked-ness, bargained-ness,
+blight amount, `CHOSEN_NUMBER` — all ride one durable `CastChoicesComponent` on the stable entity (the immutable-ECS
 analogue of Forge's SVar bag). `{X}` has its own dedicated reader (`DynamicAmount.CastX`); the other
 slots are read generically via `DynamicAmount.CastChoice(slot)` (numeric), `CastChoiceMade(slot)` /
 `CastChoiceIs(slot, value)` (conditions), or consumed directly by effects (e.g.

@@ -111,8 +111,12 @@ export interface CastSpellAction {
    * "SELF_ALTERNATIVE", "MIRACLE"). Used by the action menu to identify the impending cast option.
    */
   readonly alternativeCostType?: string
-  /** Whether to cast this spell with kicker */
-  readonly wasKicked?: boolean
+  /**
+   * Which optional additional cost this cast declares (the server's `ChoiceSlot` name — "KICKED"
+   * for kicker/multikicker/offspring, "BARGAINED" for bargain), or absent when none. The server
+   * stamps it on the cast variant it offers; the client only echoes it back.
+   */
+  readonly declaredCostSlot?: string
   /**
    * Whether the spell's optional waterbend additional cost was elected (Avatar: The Last
    * Airbender). Set by the server on the paid cast variant; preserved through the pipeline so the

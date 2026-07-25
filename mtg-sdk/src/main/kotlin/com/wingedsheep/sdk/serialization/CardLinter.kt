@@ -300,7 +300,6 @@ object CardLinter {
 
     /** Node types that declare one or more slots just by being present. */
     private val slotDeclarers: Map<String, List<String>> = mapOf(
-        "Kicker" to listOf("KICKED"),
         "Sneak" to listOf("SNEAK"),
         "Ninjutsu" to listOf("SNEAK"),
         "BlightVariable" to listOf("BLIGHT_AMOUNT"),
@@ -383,6 +382,13 @@ object CardLinter {
                 if (type in slotFieldDeclarers) {
                     (element["slot"] as? JsonPrimitive)?.contentOrNull
                         ?.let { slots.declared.add(it) }
+                }
+                // The optional-additional-cost keyword (serial name "Kicker") declares whichever
+                // slot its own mechanic uses: KICKED for kicker/multikicker/offspring, BARGAINED
+                // for bargain (CR 702.166b).
+                if (type == "Kicker") {
+                    val declaredSlot = (element["declaredSlot"] as? JsonPrimitive)?.contentOrNull
+                    slots.declared.add(declaredSlot ?: "KICKED")
                 }
                 if (type == "SourceChosenModeIs") {
                     (element["modeId"] as? JsonPrimitive)?.contentOrNull
