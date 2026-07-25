@@ -806,6 +806,27 @@ object Conditions {
         WaterbendWasPaidCondition
 
     /**
+     * If this spell's **gift** additional cost was paid — "if the gift was promised"
+     * (CR 702.174a/b, Bloomburrow). The promise is elected as the spell is cast and stamped
+     * durably on the resulting permanent, so a gift permanent's enters-the-battlefield abilities
+     * branch on it: `Conditions.GiftWasPromised` for the gift itself and the riders that need it,
+     * `Conditions.Not(Conditions.GiftWasPromised)` for "if the gift wasn't promised" (Kitnap's
+     * stun counters).
+     *
+     * A facade over the durable choice-slot read — gift needs no condition type of its own.
+     * Pairs with [com.wingedsheep.sdk.scripting.KeywordAbility.Gift] and the `gift(kind)` DSL
+     * helper.
+     *
+     * **Permanents only.** Unlike `SneakCostWasPaid` / `WaterbendWasPaid` this has no resolution-time
+     * fallback for a spell's own effect: the flag is written as the permanent enters, so a read from
+     * a still-on-the-stack instant or sorcery is always false. Instants and sorceries branch on the
+     * promise through `Patterns.Mechanic.giftSpell`'s mode instead (CR 702.174b gives them
+     * "if this spell's gift cost was paid, [effect]" rather than an enters trigger).
+     */
+    val GiftWasPromised: ConditionInterface =
+        CastChoiceMadeCondition(com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED)
+
+    /**
      * If a value was locked in for [slot] when the source was cast / as it entered
      * ("a color was chosen", "this spell was kicked"). Reads the durable cast-choices bag.
      */

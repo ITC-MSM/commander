@@ -296,21 +296,24 @@ object CardLinter {
     // Choice slots
     // =========================================================================================
 
-    /** Node types that declare a slot just by being present. */
-    private val slotDeclarers: Map<String, String> = mapOf(
-        "Kicker" to "KICKED",
-        "Sneak" to "SNEAK",
-        "Ninjutsu" to "SNEAK",
-        "BlightVariable" to "BLIGHT_AMOUNT",
-        "BlightOrPay" to "BLIGHT_AMOUNT",
+    /** Node types that declare one or more slots just by being present. */
+    private val slotDeclarers: Map<String, List<String>> = mapOf(
+        "Kicker" to listOf("KICKED"),
+        "Sneak" to listOf("SNEAK"),
+        "Ninjutsu" to listOf("SNEAK"),
+        "BlightVariable" to listOf("BLIGHT_AMOUNT"),
+        "BlightOrPay" to listOf("BLIGHT_AMOUNT"),
         // Resolution-time color choices: ChooseColorThen sets EffectContext.chosenColor for its
         // wrapped effect; ChooseColorForTarget stamps a ChosenColorComponent on the permanent.
         // Both are what HasChosenColor / GrantChosenColor-style readers consume.
-        "ChooseColorThen" to "COLOR",
-        "ChooseColorForTarget" to "COLOR",
+        "ChooseColorThen" to listOf("COLOR"),
+        "ChooseColorForTarget" to listOf("COLOR"),
         // Resolution-time opponent choice: writes ChoiceSlot.OPPONENT on the source entity,
         // read back by Player.ChosenOpponent (gift recipient).
-        "ChooseOpponentForSource" to "OPPONENT",
+        "ChooseOpponentForSource" to listOf("OPPONENT"),
+        // Gift (CR 702.174a): the cast-time promise declares both the "was it promised" flag and
+        // the promised opponent, read back by Conditions.GiftWasPromised and Player.ChosenOpponent.
+        "Gift" to listOf("GIFT_PROMISED", "OPPONENT"),
     )
 
     /** [com.wingedsheep.sdk.scripting.ReplacementEffect] `EntersWithChoice.choiceType` → slot. */
@@ -361,7 +364,7 @@ object CardLinter {
         when (element) {
             is JsonObject -> {
                 val type = element.typeName()
-                slotDeclarers[type]?.let { slots.declared.add(it) }
+                slotDeclarers[type]?.let { slots.declared.addAll(it) }
                 if (type == "EntersWithChoice") {
                     val choiceType = (element["choiceType"] as? JsonPrimitive)?.contentOrNull
                     choiceTypeToSlot[choiceType]?.let { slots.declared.add(it) }

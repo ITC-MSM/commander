@@ -116,6 +116,7 @@ class StackResolver(
         wasKicked: Boolean = false,
         wasBlightPaid: Boolean = false,
         wasWaterbendPaid: Boolean = false,
+        giftRecipient: EntityId? = null,
         wasWarped: Boolean = false,
         wasEvoked: Boolean = false,
         wasImpending: Boolean = false,
@@ -179,6 +180,7 @@ class StackResolver(
                 wasKicked = wasKicked,
                 wasBlightPaid = wasBlightPaid,
                 wasWaterbendPaid = wasWaterbendPaid,
+                giftRecipient = giftRecipient,
                 chosenModes = chosenModes,
                 modeTargetsOrdered = modeTargetsOrdered,
                 modeTargetRequirements = modeTargetRequirements,
@@ -1197,6 +1199,20 @@ class StackResolver(
                     bag = bag.withChoice(
                         com.wingedsheep.sdk.scripting.ChoiceSlot.WATERBEND_PAID,
                         com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
+                    )
+                }
+                // Gift (CR 702.174a–b): the promise was elected as an additional cost while casting,
+                // so the permanent carries both the flag and the promised opponent durably. Its gift
+                // trigger ("when this permanent enters, if its gift cost was paid, …") and any
+                // "if the gift was(n't) promised" rider read them back through
+                // Conditions.GiftWasPromised / Player.ChosenOpponent — no resolution-time question.
+                spellComponent.giftRecipient?.let { recipient ->
+                    bag = bag.withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
+                    ).withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.OPPONENT,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.EntityChoice(recipient)
                     )
                 }
                 if (spellComponent.additionalCostBlightAmount > 0) {

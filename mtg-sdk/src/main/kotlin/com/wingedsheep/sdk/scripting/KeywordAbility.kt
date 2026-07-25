@@ -586,6 +586,31 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Gift
+    // =========================================================================
+
+    /**
+     * Gift a [kind] (CR 702.174, Bloomburrow).
+     *
+     * Two abilities in one keyword (CR 702.174a): the additional cost "as an additional cost to
+     * cast this spell, you may choose an opponent" — elected **as the spell is cast**, carried on
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED] + [ChoiceSlot.OPPONENT] and readable
+     * via [com.wingedsheep.sdk.dsl.Conditions.GiftWasPromised] — and, on a permanent, the triggered
+     * ability "when this permanent enters, if its gift cost was paid, [effect]" (CR 702.174b),
+     * whose effect [kind] defines.
+     *
+     * Attach via the `gift(kind)` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder], which adds
+     * this keyword *and* the derived enters-the-battlefield ability. Instants and sorceries fold
+     * their gift-paid branch into the spell's own effect instead — see
+     * [com.wingedsheep.sdk.dsl.MechanicPatterns.giftSpell].
+     */
+    @SerialName("Gift")
+    @Serializable
+    data class Gift(val kind: GiftKind) : KeywordAbility {
+        override val description: String = "Gift ${kind.label}"
+    }
+
+    // =========================================================================
     // Sneak
     // =========================================================================
 
