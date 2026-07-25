@@ -5545,6 +5545,68 @@
     ]
 }
 
+// Spider-Girl, Legacy Hero
+{
+    "name": "Spider-Girl, Legacy Hero",
+    "manaCost": "{G}{W}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "During your turn, Spider-Girl has flying.\nWhen Spider-Girl leaves the battlefield, create a 1/1 green and white Human Citizen creature token.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN",
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Human",
+                        "Citizen"
+                    ]
+                },
+                "descriptionOverride": "When Spider-Girl leaves the battlefield, create a 1/1 green and white Human Citizen creature token."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "149",
+        "rarity": "UNCOMMON",
+        "artist": "Lixin Yin",
+        "flavorText": "On Earth-982, May \"Mayday\" Parker, the first child of Peter and Mary Jane, continues her father's legacy.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1f3196a-fe48-446f-ab07-00c66b7816c8.jpg?1783905311"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Spider-Gwen, Free Spirit
 {
     "name": "Spider-Gwen, Free Spirit",
