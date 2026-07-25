@@ -1816,6 +1816,12 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
     node keeps the per-card snapshot goldens one line and stops them churning when the shared
     pipeline internals change. Any effect-tree walker that needs the inner nodes expands through the
     single `LibraryPatterns.expandMacro(effect)` helper.
+  - **Dynamic count.** `surveil(count: DynamicAmount)` / `Effects.Surveil(amount: DynamicAmount)` —
+    "surveil X" where X is only known at resolution (e.g. Spider-Man Noir: "surveil X, where X is the
+    number of counters on it", `DynamicAmounts.countersOnTriggering()`). There is no compact macro for
+    a dynamic surveil (the marker only carries a literal), so this expands straight to
+    `surveilPipeline(count)` and always emits `SurveiledEvent` (the real gathered size drives the event,
+    handling library-smaller-than-X and X = 0). Twin of the dynamic `lookAtTopAndReorder(count)`.
 - `mill(count)` — top N cards into graveyard.
 - `exileTop(count, target = Controller)` — top N cards of a player's library into exile (Malboro's
   "exiles the top three cards of their library"). Same Gather → Move pipeline as `mill`, destination
@@ -6492,8 +6498,11 @@ For triggered abilities whose effect reads a property of the entity that caused 
   "it deals damage equal to its power").
 - `DynamicAmounts.triggeringToughness()` — toughness of the triggering entity.
 - `DynamicAmounts.triggeringManaValue()` — mana value of the triggering entity.
+- `DynamicAmounts.countersOnTriggering(type = CounterTypeFilter.Any)` — number of counters (of `type`,
+  default every kind) on the triggering permanent (e.g. Spider-Man Noir: "surveil X, where X is the
+  number of counters on it").
 
-All three desugar to `EntityProperty(EntityReference.Triggering, …)`.
+All desugar to `EntityProperty(EntityReference.Triggering, …)`.
 
 ### Death-batch total-power shortcut (`DynamicAmounts.*` facade)
 

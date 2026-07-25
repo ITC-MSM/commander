@@ -5785,6 +5785,115 @@
     ]
 }
 
+// Spider-Man Noir
+{
+    "name": "Spider-Man Noir",
+    "manaCost": "{4}{B}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "Menace\nWhenever a creature you control attacks alone, put a +1/+1 counter on it. Then surveil X, where X is the number of counters on it.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "filter": "creature ctrl:you",
+                    "requires": [
+                        "AttacksAlone"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "TriggeringEntity"
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "EntityProperty",
+                                            "entity": "Triggering",
+                                            "numericProperty": {
+                                                "type": "CounterCount",
+                                                "counterType": "CounterAny"
+                                            }
+                                        }
+                                    },
+                                    "storeAs": "surveiled"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "surveiled",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "EntityProperty",
+                                            "entity": "Triggering",
+                                            "numericProperty": {
+                                                "type": "CounterCount",
+                                                "counterType": "CounterAny"
+                                            }
+                                        }
+                                    },
+                                    "storeSelected": "toGraveyard",
+                                    "storeRemainder": "toTop",
+                                    "selectedLabel": "Put in graveyard",
+                                    "remainderLabel": "Put on top"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "toGraveyard",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    }
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "toTop",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Library",
+                                        "placement": "Top"
+                                    },
+                                    "order": "ControllerChooses"
+                                },
+                                "EmitSurveiledEvent"
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a creature you control attacks alone, put a +1/+1 counter on it. Then surveil X, where X is the number of counters on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "rarity": "UNCOMMON",
+        "artist": "Xabi Gaztelua",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc64366c-2691-48cd-bb4b-a4b088c6f16b.jpg?1783905339"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Spider-Mobile
 {
     "name": "Spider-Mobile",

@@ -328,6 +328,16 @@ object LibraryPatterns {
     fun surveil(count: Int): SurveilEffect = SurveilEffect(count)
 
     /**
+     * "Surveil X" with a dynamic count (CR 701.42) — e.g. Spider-Man Noir's "surveil X, where X is
+     * the number of counters on it." There is no compact macro node for a dynamic surveil (the
+     * [SurveilEffect] macro only carries a literal), so this expands straight to the same
+     * Gather → Select → Move graveyard/top → emit `SurveiledEvent` pipeline as [surveilPipeline],
+     * with the look/select amounts driven by [count]. Mirrors the dynamic [lookAtTopAndReorder]
+     * overload.
+     */
+    fun surveil(count: DynamicAmount): CompositeEffect = surveilPipeline(count)
+
+    /**
      * Expand a library *macro effect* ([ScryEffect] / [SurveilEffect]) to its underlying
      * Gather → Select → Move pipeline, or return `null` if [effect] is not a library macro.
      *
@@ -420,6 +430,40 @@ object LibraryPatterns {
             // were looked at, so the tail emits unconditionally — it is only omitted for a literal
             // "surveil 0" (CR 701.42c: no surveil event occurs).
             if (count > 0) EmitSurveiledEventEffect() else null
+        )
+    )
+
+    /**
+     * The expanded surveil pipeline with a *dynamic* look count (Gather → Select → Move
+     * graveyard/top → emit `SurveiledEvent`). Twin of the literal [surveilPipeline]; the gather and
+     * the "put in graveyard" selection both use [count]. The `SurveiledEvent` is always emitted
+     * because the actual number of cards looked at is only known at resolution time — the event
+     * carries the real gathered size (which handles a library smaller than X, and X resolving to 0).
+     */
+    fun surveilPipeline(count: DynamicAmount): CompositeEffect = CompositeEffect(
+        listOf(
+            GatherCardsEffect(
+                source = CardSource.TopOfLibrary(count),
+                storeAs = "surveiled"
+            ),
+            SelectFromCollectionEffect(
+                from = "surveiled",
+                selection = SelectionMode.ChooseUpTo(count),
+                storeSelected = "toGraveyard",
+                storeRemainder = "toTop",
+                selectedLabel = "Put in graveyard",
+                remainderLabel = "Put on top"
+            ),
+            MoveCollectionEffect(
+                from = "toGraveyard",
+                destination = CardDestination.ToZone(Zone.GRAVEYARD)
+            ),
+            MoveCollectionEffect(
+                from = "toTop",
+                destination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Top),
+                order = CardOrder.ControllerChooses
+            ),
+            EmitSurveiledEventEffect()
         )
     )
 
