@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 141 / 190
+**Implemented:** 142 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -97,7 +97,7 @@
 - [x] Radioactive Spider
 - [ ] Raging Goblinoids
 - [x] Rent Is Due
-- [ ] Rhino's Rampage
+- [x] Rhino's Rampage
 - [x] Rhino, Barreling Brute
 - [x] Risky Research
 - [x] Robotics Mastery

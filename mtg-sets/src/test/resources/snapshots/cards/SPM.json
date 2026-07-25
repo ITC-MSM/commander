@@ -5081,6 +5081,135 @@
     ]
 }
 
+// Rhino's Rampage
+{
+    "name": "Rhino's Rampage",
+    "manaCost": "{R/G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target creature you control gets +1/+0 until end of turn. It fights target creature an opponent controls. When excess damage is dealt to the creature an opponent controls this way, destroy up to one target noncreature artifact with mana value 3 or less.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                {
+                    "type": "Fight",
+                    "target1": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    },
+                    "target2": {
+                        "type": "BoundVariable",
+                        "name": "target creature an opponent controls"
+                    },
+                    "excessDamageVariable": "excess"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "VariableReference",
+                                "variableName": "excess"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "SelectTarget",
+                                    "requirement": {
+                                        "type": "TargetObject",
+                                        "filter": {
+                                            "baseFilter": {
+                                                "cardPredicates": [
+                                                    "IsArtifact",
+                                                    {
+                                                        "type": "Not",
+                                                        "predicate": "IsCreature"
+                                                    },
+                                                    {
+                                                        "type": "ManaValueAtMost",
+                                                        "max": 3
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "storeAs": "rampageArtifact"
+                                },
+                                {
+                                    "type": "MoveToZone",
+                                    "target": {
+                                        "type": "PipelineTarget",
+                                        "collectionName": "rampageArtifact"
+                                    },
+                                    "destination": "Graveyard",
+                                    "byDestruction": true
+                                }
+                            ]
+                        },
+                        "descriptionOverride": "destroy up to one target noncreature artifact with mana value 3 or less"
+                    },
+                    "descriptionOverride": "When excess damage is dealt to the creature an opponent controls this way, destroy up to one target noncreature artifact with mana value 3 or less."
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "target creature an opponent controls"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "141",
+        "rarity": "UNCOMMON",
+        "artist": "Nino Is",
+        "flavorText": "Spider-Man wasn't looking to fight, but that was all Rhino wanted.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f668817c-1cab-44c5-b6a8-95113e480d5e.jpg?1783905314"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Rhino, Barreling Brute
 {
     "name": "Rhino, Barreling Brute",
