@@ -168,6 +168,15 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // OTJ crime (CR Outlaws of Thunder Junction) — "you've committed a crime this turn" ->
     // Conditions.YouCommittedCrimeThisTurn, gating a cost reduction or a resolution-time effect.
     supported("CommitedACrimeThisTurn", "predicate: player has committed a crime this turn (YouCommittedCrimeThisTurn)")
+    // Celebration (WOE ability word, CR 207.2c) — "if two or more nonland permanents entered the
+    // battlefield under your control this turn". Backed by the per-player permanent-entry log
+    // (TurnTracker.NONLAND_PERMANENTS_ENTERED) behind Conditions.Celebration, which is dual-mode, so
+    // it serves both the intervening-'if' triggers and the "as long as" conditional statics. The
+    // emitter renders the bare nonland-permanent + You shape; a narrower permanent filter scaffolds.
+    supported(
+        "NumberPermanentsEnteredTheBattlefieldUnderPlayersControlThisTurn",
+        "condition: N or more [nonland] permanents entered the battlefield under your control this turn (Conditions.Celebration)"
+    )
     // Delirium (ability word) — "there are four or more card types among cards in your graveyard."
     // Both the static "as long as …" gate (NumCardTypesInGraveyardIs) and the activated-ability
     // "Activate only if …" gate (ThereAreNumberCardTypesInPlayersGraveyard) map to Conditions.Delirium(N)

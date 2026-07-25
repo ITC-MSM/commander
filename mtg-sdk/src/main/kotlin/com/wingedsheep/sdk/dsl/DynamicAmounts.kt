@@ -419,11 +419,20 @@ object DynamicAmounts {
      * "The number of lands that entered the battlefield under [player]'s control this turn"
      * (Bioengineered Future). Counts every land ETB under the player — land drops, Lander
      * search, Cultivate-style "put a land onto the battlefield" effects — not just land
-     * drops. Reads the per-player [LandsEnteredUnderControlThisTurnComponent] populated by
+     * drops. Reads the per-player permanent-entry log populated by
      * `PermanentEntryTracker`.
      */
     fun landsEnteredUnderControlThisTurn(player: Player = Player.You): DynamicAmount =
         DynamicAmount.TurnTracking(player, TurnTracker.LANDS_ENTERED_UNDER_CONTROL)
+
+    /**
+     * "The number of nonland permanents that entered the battlefield under [player]'s control this
+     * turn" — the complement of [landsEnteredUnderControlThisTurn] over the same per-player entry
+     * log. Tokens count; a land creature does not. The threshold form is the Celebration ability
+     * word (`Conditions.Celebration`); this is the raw count for "for each …" scaling.
+     */
+    fun nonlandPermanentsEnteredUnderControlThisTurn(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.TurnTracking(player, TurnTracker.NONLAND_PERMANENTS_ENTERED)
 
     /**
      * "The number of [other] [subtype]s that entered the battlefield under [player]'s control
