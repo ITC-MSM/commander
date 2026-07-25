@@ -6569,6 +6569,89 @@
     ]
 }
 
+// Stegron the Dinosaur Man
+{
+    "name": "Stegron the Dinosaur Man",
+    "manaCost": "{4}{R}",
+    "typeLine": "Legendary Creature — Dinosaur Villain",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nDinosaur Formula — {1}{R}, Discard this card: Until end of turn, target creature you control gets +3/+1 and becomes a Dinosaur in addition to its other types.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{R}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "AddCreatureType",
+                            "subtype": "Dinosaur",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            },
+                            "duration": "EndOfTurn"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    }
+                ],
+                "activateFromZone": "Hand"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "artist": "John Tyler Christopher",
+        "flavorText": "\"It isss my intention to return the dinosaur to hisss rightful place as master of thisss earth.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/485ceacb-fa76-4517-8466-c3c6bf6bcd6e.jpg?1783905330"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Strength of Will
 {
     "name": "Strength of Will",
