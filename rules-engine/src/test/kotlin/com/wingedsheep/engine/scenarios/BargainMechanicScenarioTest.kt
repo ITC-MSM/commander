@@ -6,7 +6,6 @@ import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.wasKickedChoice
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.ManaCost
@@ -29,6 +28,7 @@ import com.wingedsheep.sdk.scripting.events.SpellCastPredicate
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 
@@ -300,7 +300,8 @@ class BargainMechanicScenarioTest : ScenarioTestBase() {
             // with no legal sacrifice it is never payable, and the client can't submit it.
             val unpayable = withoutFodder.getLegalActions(1)
                 .filter { it.actionType == "CastWithKicker" }
-            unpayable.forEach { it.isAffordable shouldBe false }
+            unpayable shouldHaveSize 1
+            unpayable.single().isAffordable shouldBe false
 
             val withFodder = scenario()
                 .withPlayers("Caster", "Opponent")

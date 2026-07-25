@@ -1991,6 +1991,19 @@ class CastSpellEnumerator : ActionEnumerator {
             val optionalCosts = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
             if (optionalCosts.isEmpty()) continue
 
+            // Card-level gates, checked before the per-slot loop so an unplayable card is skipped
+            // whole — including the unaffordable-normal-cast fallback at the bottom, which must not
+            // advertise a cast the timing rules forbid outright.
+            val isInstant = cardComponent.typeLine.isInstant
+            val hasFlash = cardDef.keywords.contains(Keyword.FLASH)
+            val grantedFlash = hasFlash || context.castPermissionUtils.hasGrantedFlash(state, cardId)
+            if (!isInstant && !grantedFlash && optionalCosts.none { it.grantsFlashTiming } &&
+                !context.canPlaySorcerySpeed
+            ) continue
+
+            val castRestrictions = cardDef.script.castRestrictions
+            if (castRestrictions.isNotEmpty() && !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+
             // One cast variant per mechanic riding the optional-additional-cost rail, keyed by the
             // slot it declares: kicker/multikicker/offspring stamp KICKED, bargain stamps BARGAINED
             // (CR 702.166b). Grouping by slot keeps them separate cast options rather than one
@@ -2000,18 +2013,12 @@ class CastSpellEnumerator : ActionEnumerator {
                 val additionalCostKicker = kickers.firstOrNull { it.additionalCost != null }
                 val offspringAbility = kickers.firstOrNull { it.keyword == Keyword.OFFSPRING }
 
-                // Check timing (same rules as normal cast — but a flash-timing kicker unlocks
-                // instant-speed casting when kicked, e.g. Ghitu Fire's pay-{2}-more clause).
-                val isInstant = cardComponent.typeLine.isInstant
-                val hasFlash = cardDef.keywords.contains(Keyword.FLASH)
-                val grantedFlash = hasFlash || context.castPermissionUtils.hasGrantedFlash(state, cardId)
+                // Re-check timing per slot: the flash unlock belongs to the mechanic that prints it
+                // (Ghitu Fire's pay-{2}-more clause), so a bargain variant on the same card must not
+                // ride a kicker's instant-speed permission.
                 val flashKicker = manaKicker?.grantsFlashTiming == true ||
                     additionalCostKicker?.grantsFlashTiming == true
                 if (!isInstant && !grantedFlash && !flashKicker && !context.canPlaySorcerySpeed) continue
-
-                // Check cast restrictions
-                val castRestrictions = cardDef.script.castRestrictions
-                if (castRestrictions.isNotEmpty() && !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
 
                 // Calculate kicked/offspring cost. The base cost is priced *for this branch*: a
                 // "costs {2} less to cast if it's bargained" reduction (Hamlet Glutton) is gated on the

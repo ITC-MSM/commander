@@ -349,8 +349,8 @@ sealed interface KeywordAbility {
             }
         }
         override val description: String = when {
-            // Bargain's cost is definitional (CR 702.166a), so the printed text is the bare
-            // keyword plus reminder text — never "Bargain—sacrifice …".
+            // Bargain's cost is definitional (CR 702.166a), so the printed text is the bare keyword
+            // — never "Bargain—sacrifice …". The reminder text belongs to the card's `oracleText`.
             declaredSlot == ChoiceSlot.BARGAINED -> displayPrefix
             grantsFlashTiming && additionalCost != null ->
                 "You may cast this spell as though it had flash if you " +

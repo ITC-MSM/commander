@@ -988,13 +988,15 @@ class SpellBuilder {
         get() = returnTransformedFromGraveyard
 
     /**
-     * Alternate effect used when kicker is paid. When set along with [kickerTarget],
-     * the kicked version uses completely different targeting and effect resolution.
+     * Alternate effect used when an optional additional cost was declared. When set along with
+     * [kickerTarget], that branch uses completely different targeting and effect resolution.
+     * Shared by every mechanic on the optional-additional-cost rail — kicker and bargain
+     * (CR 702.166d) both land here; the kicker naming is historical and serialized.
      */
     var kickerEffect: Effect? = null
 
     /**
-     * Alternate target used when kicker is paid. When set, the kicked version
+     * Alternate target used when an optional additional cost was declared. When set, that branch
      * uses this target requirement instead of the normal [target].
      */
     var kickerTarget: TargetRequirement? = null
@@ -1003,8 +1005,9 @@ class SpellBuilder {
     private val namedKickerTargets: MutableList<Pair<String, TargetRequirement>> = mutableListOf()
 
     /**
-     * Declare a named kicker target and get an EffectTarget reference to use in kickerEffect.
-     * Use this when the kicked version needs multiple targets (e.g., Goblin Barrage).
+     * Declare a named target for the optional-additional-cost branch and get an EffectTarget
+     * reference to use in [kickerEffect]. Use this when that branch needs multiple targets
+     * (e.g., Goblin Barrage), or is the only branch with a target at all (CR 702.166d).
      *
      * @param name A descriptive name for the target
      * @param requirement The target requirement specification

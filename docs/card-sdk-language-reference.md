@@ -5003,7 +5003,7 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > "if it was bargained" abilities are linked to that bargain ability (702.166c).
 >
 > `card { bargain() }` (import `com.wingedsheep.sdk.dsl.bargain`) is the whole wiring: it adds
-> `KeywordAbility.OptionalAdditionalCost(additionalCost = Costs.additional.SacrificePermanent(BargainSacrificeFilter),
+> `KeywordAbility.OptionalAdditionalCost(additionalCost = Costs.additional.SacrificePermanent(GameObjectFilter.ArtifactEnchantmentOrToken),
 > displayPrefix = "Bargain", keyword = Keyword.BARGAIN, declaredSlot = ChoiceSlot.BARGAINED)`. Bargain
 > therefore rides the **same rail as kicker** — the enumerator offers a `CastWithKicker` variant labelled
 > "(Bargained)" whenever the caster controls something sacrificeable, the ordinary additional-cost

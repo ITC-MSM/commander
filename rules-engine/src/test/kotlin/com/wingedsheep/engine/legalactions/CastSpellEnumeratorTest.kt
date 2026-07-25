@@ -333,6 +333,20 @@ class CastSpellEnumeratorTest : FunSpec({
         kicked.affordable shouldBe false
     }
 
+    test("a sorcery-speed card on the optional-cost rail offers nothing at instant speed") {
+        // Upkeep: neither the kicked variant nor the base cast may be offered. The optional-cost
+        // pass owns its own timing gate, and it has to skip the card whole — including the
+        // unaffordable-base-cast fallback it emits when only the kicked variant is payable.
+        val driver = setupP1(
+            hand = listOf("Stronghold Confessor"),
+            battlefield = listOf("Swamp"),
+            extraSetCards = listOf(StrongholdConfessor),
+            atStep = Step.UPKEEP
+        )
+
+        driver.enumerateFor(driver.player1).castActionsFor("Stronghold Confessor").shouldBeEmpty()
+    }
+
     // -------------------------------------------------------------------------
     // Damage distribution (Forked Lightning)
     // -------------------------------------------------------------------------
