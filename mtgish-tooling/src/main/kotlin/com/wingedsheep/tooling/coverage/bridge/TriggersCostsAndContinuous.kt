@@ -33,6 +33,12 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // attacker filter exactly or declines -> SCAFFOLD.
     supported("WhenAPlayerAttacksWithAnyNumberOfCreatures", "trigger: you attack with one or more creatures matching a filter (Triggers.YouAttackWithFilter)")
     supported("WhenACreatureBlocks", "trigger: blocks (Ydwen Efreet)")
+    // "Whenever a player discards a card" — Triggers.AnyOpponentDiscards / YouDiscard, or the
+    // discards(player, cardFilter, batch) factory. Fires once per discarded card, and each firing binds
+    // *its* card as the triggering entity, so a payoff can act on "it" — the card the discard put into
+    // the graveyard (CR 400.7e). That binding is what makes "exile it from their graveyard with a stash
+    // counter on it" (Tinybones, Bauble Burglar) expressible.
+    supported("WhenAPlayerDiscardsACard", "trigger: a player discards a card (Triggers.AnyOpponentDiscards / YouDiscard / discards(player, cardFilter)); binds the discarded card as TriggeringEntity")
     supported("WhenAPermanentBecomesTapped", "trigger: this permanent becomes tapped (Triggers.BecomesTapped — Wylie Duke, Atiin Hero)")
     supported("WhenACreatureDealsCombatDamageToAPlayer", "trigger: combat damage to player")
     // "Whenever you sacrifice a/another [filter] …" — the batched sacrifice trigger that fires when a
@@ -269,6 +275,18 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
         "GrantMayPlayFromExile over the cards that player exiled this way",
         composes = listOf("GrantMayPlayFromExile"),
     )
+    // "You may play cards <filter> from exile, and mana of any type can be spent to cast those spells"
+    // (Tinybones, Bauble Burglar) — a *filter over exile* rather than a per-card grant, so it keeps
+    // covering cards a previous copy of the granter exiled. Maps to the MayPlayCardsFromExile static
+    // (filter + optional condition, e.g. Conditions.IsYourTurn from an enclosing IsPlayersTurn, +
+    // withAnyManaType per CR 118.14). The exile-card filter tags it needs — ownership and
+    // has-a-counter-of-type — are the standard filter predicates.
+    effect(
+        "MayPlayExiledCardsAndMaySpendManaAsThoughAnyTypeToCast",
+        "MayPlayCardsFromExile",
+        note = "static: may play filtered cards from exile, mana of any type for those casts",
+    )
+    supported("CardsInExile", "filter over cards in exile (ownership / has-a-counter-of-type predicates on GameObjectFilter)")
     // "Players can't play cards from their hand" (Memory Vessel) — the nested _PlayerEffect of a
     // CreateEachPlayerEffectUntil. Renders to the hand-scoped player restriction
     // `CantPlayCardsFromHand` (blocks casting spells and playing lands from the hand zone only;

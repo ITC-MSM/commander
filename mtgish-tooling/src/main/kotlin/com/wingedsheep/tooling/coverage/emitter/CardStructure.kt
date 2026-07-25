@@ -2805,6 +2805,23 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         ) return "Triggers.YouDraw"
     }
 
+    // "Whenever an opponent discards a card" (Entropic Battlecruiser, Tinybones, Bauble Burglar) /
+    // "whenever you discard a card". Fires once per discarded card, and each firing binds that card as
+    // the triggering entity, so a payoff can reference "it". Only the *unfiltered* `AnyCard` shape
+    // renders: a card-type filter ("whenever an opponent discards a creature card") needs the
+    // `discards(player, cardFilter)` factory with a recovered filter, so it declines -> SCAFFOLD rather
+    // than silently widen to "any card". The batch wording ("one or more cards") is a different IR tag.
+    if (jsonContains(trig, "_Trigger", "WhenAPlayerDiscardsACard") &&
+        jsonContains(trig, "_CardsInHand", "AnyCard")
+    ) {
+        val args = trig["args"].asArr?.filterIsInstance<JsonObject>() ?: emptyList()
+        val scope = args.firstOrNull { it.containsKey("_Players") || it.containsKey("_Player") }
+        if (scope?.strField("_Players") == "Opponent") return "Triggers.AnyOpponentDiscards"
+        if (scope?.strField("_Player") == "You" ||
+            (scope?.strField("_Players") == "SinglePlayer" && jsonContains(scope["args"], "_Player", "You"))
+        ) return "Triggers.YouDiscard"
+    }
+
     // "Whenever you gain life" (You) — Pest Mascot, Essence Channeler. Only the You scope maps to
     // Triggers.YouGainLife; an any-player / opponent scope has no calibrated card yet, so it
     // declines -> SCAFFOLD rather than guess a binding.

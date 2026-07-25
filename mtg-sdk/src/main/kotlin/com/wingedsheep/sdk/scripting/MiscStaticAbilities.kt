@@ -507,6 +507,62 @@ data object MayPlayLandsFromGraveyard : StaticAbility {
 }
 
 /**
+ * You may play cards in exile matching [filter] — "play", so lands and spells alike (CR 601.3:
+ * a permission from an effect is what lets a player cast a card from a zone other than their hand).
+ *
+ * Unlike [GrantMayCastFromLinkedExile], the playable set is defined by a *filter over every exile
+ * zone* rather than by the cards linked to this permanent. That difference is load-bearing for
+ * Tinybones, Bauble Burglar ("During your turn, you may play cards you don't own with stash counters
+ * on them from exile") — per its ruling the permission covers every stash-countered card, "regardless
+ * of whether they were put there by the Tinybones you currently control or a Tinybones that was
+ * previously on the battlefield". Filter-defined also means the grant is naturally live: it appears
+ * when the granting permanent enters and disappears when it leaves, with no per-card bookkeeping.
+ *
+ * The engine turns this into a live
+ * [com.wingedsheep.engine.state.permissions.MayPlayPermission] for the ability's controller, so the
+ * existing exile play/cast machinery (timing, costs, land drops, cast restrictions) applies
+ * unchanged. Nothing is waived: all costs and normal timing rules still hold, which is exactly what
+ * Tinybones' second ruling requires (a stash-countered land is playable only during your main phase
+ * with an empty stack).
+ *
+ * @property filter Which exiled cards may be played — e.g.
+ *   `GameObjectFilter.Any.ownedByOpponent().withCounter(Counters.STASH)` for "cards you don't own
+ *   with stash counters on them". Ownership predicates work here because cards in exile carry an
+ *   owner but no controller.
+ * @property condition Optional gate re-evaluated on every read, so the permission opens and closes
+ *   with the game state. "During your turn, …" is `Conditions.IsYourTurn`; the same slot expresses
+ *   any other qualifier a future card puts on the permission ("as long as you control a Zombie",
+ *   "if an opponent lost life this turn"). Mirrors [MayCastSelfFromZones.condition] — a `Condition`
+ *   rather than a timing-only boolean, since the restriction axis isn't specific to turns.
+ * @property withAnyManaType When true, mana of any type can be spent to cast spells played this way
+ *   (CR 118.14 / 609.4b). This rides the permission rather than being a blanket
+ *   [SpendAnyManaTypeForSpells] precisely because CR 118.14 scopes the relaxation to spells cast
+ *   *through* the permission; it is the same flag [GrantMayPlayFromExileEffect.withAnyManaType] and
+ *   `MayPlayPermission.withAnyManaType` already spell, so it maps 1:1 onto engine vocabulary.
+ */
+@SerialName("MayPlayCardsFromExile")
+@Serializable
+data class MayPlayCardsFromExile(
+    val filter: GameObjectFilter,
+    val condition: Condition? = null,
+    val withAnyManaType: Boolean = false
+) : StaticAbility {
+    override val description: String = buildString {
+        append("You may play ${filter.description} from exile")
+        if (condition != null) append(" ${condition.description}")
+        if (withAnyManaType) append(", and mana of any type can be spent to cast those spells")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        val newCondition = condition?.applyTextReplacement(replacer)
+        return if (newFilter !== filter || newCondition !== condition) {
+            copy(filter = newFilter, condition = newCondition)
+        } else this
+    }
+}
+
+/**
  * Prevents all players from cycling cards.
  * Used for Stabilizer: "Players can't cycle cards."
  *

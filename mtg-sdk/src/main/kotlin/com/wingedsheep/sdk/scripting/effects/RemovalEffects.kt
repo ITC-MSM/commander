@@ -1,5 +1,6 @@
 package com.wingedsheep.sdk.scripting.effects
 
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -353,7 +354,14 @@ data class MoveToZoneEffect(
      * 0 = top, 1 = second from top, 2 = third from top, etc.
      * Takes precedence over [placement] when destination is LIBRARY.
      */
-    val positionFromTop: Int? = null
+    val positionFromTop: Int? = null,
+    /**
+     * When non-null, one counter of this type is put on the card after it lands in its destination
+     * zone — "exile it with a stash counter on it" (Tinybones, Bauble Burglar), "with a dream
+     * counter on it" (Goliath Daydreamer). The single-target counterpart of
+     * [MoveCollectionEffect.addCounterType]; skipped along with the move when [fromZone] gates it out.
+     */
+    val addCounterType: CounterType? = null
 ) : Effect {
     override val description: String = buildString {
         when {

@@ -864,6 +864,7 @@ class StaticAbilityHandler(
             is MayCastWithoutPayingManaCost,
             is MayPlayLandsFromGraveyard,
             is MayPlayPermanentsFromGraveyard,
+            is com.wingedsheep.sdk.scripting.MayPlayCardsFromExile,
             // Equip-timing/cost permissions (consulted by CastPermissionUtils /
             // ActivatedAbilityEnumerator / ActivateAbilityHandler, not continuous effects):
             is EquipAbilitiesAtInstantSpeed,

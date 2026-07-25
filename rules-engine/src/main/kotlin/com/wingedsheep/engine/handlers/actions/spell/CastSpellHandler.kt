@@ -292,7 +292,7 @@ class CastSpellHandler(
             val grantedFlash = hasFlash || zoneResolver.hasGrantedFlash(state, action.cardId)
             // A from-exile may-play permission with an "as though it had flash" rider (Azula,
             // Cunning Usurper) lets a non-instant exiled card be cast at instant speed (CR 702.8).
-            val mayPlayFlash = state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator)
+            val mayPlayFlash = state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator, cardRegistry)
                 .any { it.asThoughFlash }
             // A flash-timing kicker unlocks instant-speed casting when paid — whether the
             // optional cost is mana (Ghitu Fire) or a non-mana cost like Behold (Molten Exhale).
@@ -1100,7 +1100,7 @@ class CastSpellHandler(
                 action.cardId in state.getZone(ZoneKey(ownerId, Zone.GRAVEYARD))
         }
         if (!inGrantableZone) return false
-        return state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator)
+        return state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator, cardRegistry)
             .any { it.withAnyManaType }
     }
 
