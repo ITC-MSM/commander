@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 131 / 190
+**Implemented:** 132 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -159,7 +159,7 @@
 - [x] Subway Train
 - [x] Sudden Strike
 - [ ] Sun-Spider, Nimble Webber
-- [ ] Superior Foes of Spider-Man
+- [x] Superior Foes of Spider-Man
 - [x] Superior Spider-Man
 - [x] Supportive Parents
 - [ ] Swarm, Being of Bees
