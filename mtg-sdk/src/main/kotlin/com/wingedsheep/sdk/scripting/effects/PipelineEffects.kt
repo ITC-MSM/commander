@@ -641,7 +641,14 @@ sealed interface SelectionRestriction {
 enum class Chooser {
     /** The controller of the spell/ability decides */
     Controller,
-    /** An opponent decides */
+    /**
+     * An opponent decides — *one* opponent, chosen by the controller of the spell or ability.
+     * The engine asks the controller which opponent decides whenever there is more than one
+     * (CR 601.7a / 602.3a, and rulings like Curator of Destinies' "You decide which opponent
+     * chooses the pile"); with a sole opponent the choice is forced and nothing is prompted, so
+     * two-player games never see the extra step. Each "an opponent chooses" step in a resolution
+     * gets its own pick.
+     */
     Opponent,
     /** The target player decides (resolved from context.targets[0]) */
     TargetPlayer,

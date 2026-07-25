@@ -215,6 +215,7 @@ val engineSerializersModule = SerializersModule {
         subclass(ChooseNumberThenContinuation::class)
         subclass(ChooseNumberForSourceContinuation::class)
         subclass(ChooseOpponentForSourceContinuation::class)
+        subclass(ChooseOpponentDeciderContinuation::class)
         subclass(ConvertCountersToTokensContinuation::class)
         subclass(ChooseManaColorContinuation::class)
         subclass(ChooseColorForTargetContinuation::class)

@@ -7507,6 +7507,18 @@ Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `Mo
     to hand). Use `ControllerOfTarget` for "destroy target permanent. Its controller searches/chooses…" where the
     targeted permanent's controller performs a follow-up (Magmatic Hellkite: destroy target nonbasic land, *its
     controller* searches for a basic). The same `chooser` set is accepted by `ChoosePileEffect`.
+  - **`Chooser.Opponent` in multiplayer.** "An opponent" is *one* opponent, and the controller of the spell or
+    ability picks which one (CR 601.7a / 602.3a for cast/activation-time choices; resolution-time choices follow the
+    same principle and cards say so in their rulings — Curator of Destinies: "You decide which opponent chooses the
+    pile"). The engine handles that for you: with several opponents the step first pauses on a `ChooseOptionDecision`
+    for the controller listing the opponents by name, then re-runs itself and presents the real choice to the named
+    opponent. With a sole opponent the choice is forced and nothing extra is prompted, so two-player games are
+    unaffected. Each "an opponent chooses" step in one resolution gets its own pick — the choice is
+    resolution-scoped, not recorded on the source. All of this lives in the engine's `ChooserResolution`, so any
+    effect carrying a `Chooser` inherits it; card definitions just say `Chooser.Opponent`. (For the durable,
+    cast-time "you may promise **an opponent** a gift"-style recipient choice, use
+    `Effects.ChooseOpponentForSource` + `Player.ChosenOpponent` instead — that one is stored on the source and
+    persists past the resolution.)
 
 **Linked exile**
 

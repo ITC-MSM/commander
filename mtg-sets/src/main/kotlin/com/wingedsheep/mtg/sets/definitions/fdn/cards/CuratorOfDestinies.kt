@@ -42,9 +42,8 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *     nobody is asked to split or choose between two empty piles. A 1–4 card library still splits.
  *  - "An opponent chooses" is a resolution-time choice, not a target, so it is
  *    [Chooser.Opponent] rather than a `TargetRequirement` (no shroud/targeting restrictions apply).
- *    Deviation worth naming: the ruling says *you* decide which opponent chooses. The engine's
- *    `Chooser.Opponent` resolves to the first opponent, which is exact in two-player games but
- *    does not let the controller pick the decider in multiplayer.
+ *    Per the ruling *you* decide which opponent chooses, which [Chooser.Opponent] handles: with
+ *    several opponents the engine first asks you which one picks a pile; with one it is forced.
  */
 val CuratorOfDestinies = card("Curator of Destinies") {
     manaCost = "{4}{U}{U}"
