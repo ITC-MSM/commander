@@ -6850,6 +6850,88 @@
     ]
 }
 
+// Wall Crawl
+{
+    "name": "Wall Crawl",
+    "manaCost": "{3}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, create a 2/1 green Spider creature token with reach, then you gain 1 life for each Spider you control.\nSpiders you control get +1/+1 and can't be blocked by creatures with defender.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 1,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Spider"
+                            ],
+                            "keywords": [
+                                "REACH"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a40f6e1-3545-4503-af3e-f0acfb735e3a.jpg?1757379309"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature Spider"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Spider ctrl:you"
+                }
+            },
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "HasKeyword",
+                            "keyword": "DEFENDER"
+                        }
+                    ]
+                },
+                "filter": {
+                    "baseFilter": "creature Spider ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "rarity": "UNCOMMON",
+        "artist": "Alexander Gering",
+        "flavorText": "With the proportionate strength and stickiness of a spider, Spider-Man can scale skyscrapers with ease.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/7/97a2a1ab-57ec-4210-9412-765ae4f02db0.jpg?1783905321"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Web Up
 {
     "name": "Web Up",
