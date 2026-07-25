@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 132 / 190
+**Implemented:** 133 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -150,7 +150,7 @@
 - [ ] Spider-Verse
 - [x] Spider-Woman, Stunning Savior
 - [ ] Spiders-Man, Heroic Horde
-- [ ] Spinneret and Spiderling
+- [x] Spinneret and Spiderling
 - [x] Starling, Aerial Ally
 - [x] Steel Wrecking Ball
 - [x] Stegron the Dinosaur Man
