@@ -586,6 +586,13 @@ object Effects {
     fun EachOpponentDiscards(count: Int = 1): Effect = HandPatterns.eachOpponentDiscards(count)
 
     /**
+     * Each player (including you) discards N cards, each choosing their own — Rankle's Prank.
+     * The symmetric twin of [EachOpponentDiscards]: same ForEachPlayer → Gather → Select → Move
+     * pipeline, iterated over every player in APNAP order. See [HandPatterns.eachPlayerDiscards].
+     */
+    fun EachPlayerDiscards(count: Int = 1): Effect = HandPatterns.eachPlayerDiscards(count)
+
+    /**
      * Each opponent exiles N cards from their hand (Mindleech Ghoul). Same
      * ForEachPlayer(EachOpponent) → Gather → Select → Move pipeline as [EachOpponentDiscards], but
      * the destination is exile; each opponent chooses their own card(s).

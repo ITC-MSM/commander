@@ -592,6 +592,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `DynamicAmount` ("discard X cards, where X is …" — e.g. Converge's Arcane Omens with
   `DynamicAmounts.colorsOfManaSpent()`).
 - `EachOpponentDiscards(count)` — each opponent discards N.
+- `EachPlayerDiscards(count)` — each player, *including you*, discards N, each choosing from their own hand — Rankle's Prank. Symmetric twin of `EachOpponentDiscards`: same `ForEachPlayer` → Gather → Select → Move pipeline, but iterated over `Player.ActivePlayerFirst` so the choices happen in APNAP order (CR 101.4). Known deviation: iterations run one after another, so a later player chooses after an earlier player's cards have already hit the graveyard, where the rules would have every player choose face down (CR 101.4a) and discard simultaneously.
 - `EachOpponentExilesFromHand(count)` — each opponent exiles N cards from their own hand (each chooses their own). Same `ForEachPlayer(EachOpponent)` → Gather → Select → Move pipeline as `EachOpponentDiscards`, but the destination is exile — Mindleech Ghoul.
 - `EachPlayerReturnPermanentToHand()` — each player bounces a permanent.
 - `EachPlayerDrawsForDamageDealtToSource()` — each player draws equal to damage source took this turn.
@@ -1840,6 +1841,7 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `discardRandom(count, target)` — random discards.
 - `discardHand(target)` — discard entire hand.
 - `eachOpponentDiscards(count, controllerDrawsPerDiscard?)` — Mind Twist-style.
+- `eachPlayerDiscards(count)` — each player *including you* discards N, each from their own hand (facade `Effects.EachPlayerDiscards(count)`). Rankle's Prank's first mode, Lore Broker's second half. One `ForEachPlayer(Player.ActivePlayerFirst)` iteration per player so the choices happen in APNAP order (CR 101.4); iterations run sequentially, so a later player chooses after an earlier player's cards have already hit the graveyard, where the rules would have every player choose face down (CR 101.4a) and discard simultaneously. The mtgish emitter renders `EachPlayerAction(AnyPlayer, Discard…)` to this pattern when the discard is the player's sole action.
 - `eachPlayerDiscardsDraws(controllerBonusDraw?)` — Windfall / Wheel of Fortune.
 - `eachPlayerDrawsX(includeController?, includeOpponents?)` — Howling Mine shape.
 - `eachPlayerMayDraw(maxCards, lifePerCardNotDrawn?)` — optional group draw with a tax.
