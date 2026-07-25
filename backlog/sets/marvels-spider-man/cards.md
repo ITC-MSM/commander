@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 130 / 190
+**Implemented:** 131 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -67,7 +67,7 @@
 - [x] Madame Web, Clairvoyant
 - [x] Mary Jane Watson
 - [x] Masked Meower
-- [ ] Maximum Carnage
+- [x] Maximum Carnage
 - [x] Mechanical Mobster
 - [x] Merciless Enforcers
 - [ ] Miles Morales // Ultimate Spider-Man
