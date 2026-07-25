@@ -2457,6 +2457,32 @@ private fun EmitCtx.singleInterveningIfDsl(cond: JsonObject): String? {
             }
         }
     }
+    // Celebration (WOE ability word, CR 207.2c) — "if two or more nonland permanents entered the
+    // battlefield under your control this turn":
+    //   NumberPermanentsEnteredTheBattlefieldUnderPlayersControlThisTurn(
+    //     GreaterThanOrEqualTo N, And(IsNonCardtype Land, IsPermanent), You)
+    // -> Conditions.Celebration (N = 2, the printed threshold) / Conditions.NonlandPermanentsEnteredThisTurn(N).
+    // Only the You scope, a GTE comparison, and exactly the bare "nonland permanent" filter render —
+    // a narrower filter (a card type, a subtype) would need a per-type entry tracker we don't have,
+    // so it declines -> SCAFFOLD rather than silently widening to "any nonland permanent".
+    if (cond.strField("_Condition") == "NumberPermanentsEnteredTheBattlefieldUnderPlayersControlThisTurn") {
+        val condArgs = cond["args"].asArr
+        val cmp = condArgs?.getOrNull(0) as? JsonObject
+        val filt = condArgs?.getOrNull(1) as? JsonObject
+        val player = (condArgs?.getOrNull(2) as? JsonObject)?.strField("_Player")
+        val arms = filt?.takeIf { it.strField("_Permanents") == "And" }
+            ?.get("args").asArr?.filterIsInstance<JsonObject>().orEmpty()
+        val bareNonlandPermanent = arms.size == 2 &&
+            arms.any { it.strField("_Permanents") == "IsNonCardtype" && it.field("args").asStr() == "Land" } &&
+            arms.any { it.strField("_Permanents") == "IsPermanent" && it.size == 1 }
+        if (player == "You" && cmp?.strField("_Comparison") == "GreaterThanOrEqualTo" && bareNonlandPermanent) {
+            val n = findInteger(cmp["args"])
+            if (n is Int) {
+                return if (n == 2) "Conditions.Celebration"
+                else "Conditions.NonlandPermanentsEnteredThisTurn($n)"
+            }
+        }
+    }
     // "if it's tapped" — PermanentPassesFilter(<subject>, IsTapped) over a bare IsTapped filter (no
     // other clause). Two subjects render:
     //  - Ref_TargetPermanent (the ability's first targeted permanent) -> Conditions.TargetIsTapped()

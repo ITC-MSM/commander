@@ -5931,9 +5931,22 @@ default to "you" so card authors don't need to pass it explicitly.
   even if the artifact is destroyed before combat). Captured types are read from the
   *projected* state at the moment of entry, so a permanent that's an artifact via a
   continuous effect at ETB (Mycosynth Lattice, etc.) also counts. Backed by the per-player
-  `PermanentTypesEnteredBattlefieldThisTurnComponent`, cleared by `CleanupPhaseManager` at
-  end of turn. Every battlefield entry must go through `BattlefieldEntry.place` for this
+  `PermanentsEnteredUnderControlThisTurnComponent` entry log, cleared by `CleanupPhaseManager`
+  at end of turn. Every battlefield entry must go through `BattlefieldEntry.place` for this
   tracker to stay in sync. Shortcut: `Conditions.ArtifactEnteredBattlefieldThisTurn`.
+- `Celebration` / `NonlandPermanentsEnteredThisTurn(atLeast = 1, player = Player.You)` — the
+  **Celebration** ability word (Wilds of Eldraine; CR 207.2c — italic flavor with no rules
+  meaning, so there is no keyword, only this condition): "if two or more nonland permanents
+  entered the battlefield under your control this turn". Composes through
+  `Compare(TurnTracking(player, TurnTracker.NONLAND_PERMANENTS_ENTERED), GTE, Fixed(atLeast))`
+  over the same per-player entry log as `PermanentTypeEnteredBattlefieldThisTurn`, so it is a
+  pure past-event check: the permanents need not still be on the battlefield or still be yours
+  (WOE release notes). Tokens count; lands — including land creatures — never do. It's a
+  threshold, not a count: a third entry adds nothing. Dual-mode, which is what the mechanic
+  needs — the printed cards use it both as an intervening-'if' `triggerCondition` (CR 603.4;
+  Pests of Honor, Lady of Laughter, Ash, Party Crasher) and as a `ConditionalStaticAbility` gate
+  (Armory Mice, Grand Ball Guest, Gallant Pie-Wielder). Use
+  `DynamicAmounts.nonlandPermanentsEnteredUnderControlThisTurn(player)` for the raw count.
 - `YouDescendedThisTurn(atLeast = 1)` — CR 700.11 gate: at least `atLeast` nontoken
   permanent cards were put into your graveyard from *any* zone this turn (battlefield,
   hand, library, stack, exile). Tokens do not count, even though they briefly enter the
@@ -6717,6 +6730,13 @@ this turn").
   opponent-gift effects), so it differs from `LANDS_PLAYED`. Backs
   `DynamicAmounts.landsEnteredUnderControlThisTurn(player)` — e.g. Bioengineered Future's
   "for each land that entered the battlefield under your control this turn."
+- `NONLAND_PERMANENTS_ENTERED` — the complement of `LANDS_ENTERED_UNDER_CONTROL` over the same
+  per-player entry log: nonland permanents that entered the battlefield under the player's control
+  this turn. Tokens count; a permanent that is both a land and a creature does not (it's a land).
+  One count per *entry event*, so a permanent that leaves and re-enters counts twice (CR 400.7 — a
+  new object each time), and an entry stays counted after the permanent leaves or changes
+  controller. Backs `DynamicAmounts.nonlandPermanentsEnteredUnderControlThisTurn(player)` and,
+  at a threshold of two, the **Celebration** ability word — see `Conditions.Celebration`.
 - `FOOD_SACRIFICED` — Food tokens sacrificed.
 - `CARDS_LEFT_GRAVEYARD` — cards leaving your graveyard.
 - `DESCENDED` — number of times a player has descended this turn (CR 700.11) — i.e.

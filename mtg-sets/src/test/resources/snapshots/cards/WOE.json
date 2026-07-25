@@ -152,6 +152,56 @@
     ]
 }
 
+// Armory Mice
+{
+    "name": "Armory Mice",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Mouse",
+    "oracleText": "Celebration — This creature gets +0/+2 as long as two or more nonland permanents entered the battlefield under your control this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 0,
+                    "toughnessBonus": 2,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "NONLAND_PERMANENTS_ENTERED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "3",
+        "artist": "Chris Seaman",
+        "flavorText": "They help ensure that the forges of the dwarves are always squeaky clean.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/b/4b041949-6fb6-40a6-9329-f209be537219.jpg?1783915136"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Ashiok's Reaper
 {
     "name": "Ashiok's Reaper",
@@ -4432,6 +4482,60 @@
     "colorIdentityOverride": [
         "BLUE",
         "BLACK"
+    ]
+}
+
+// Pests of Honor
+{
+    "name": "Pests of Honor",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Mouse",
+    "oracleText": "Celebration — At the beginning of combat on your turn, if two or more nonland permanents entered the battlefield under your control this turn, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "NONLAND_PERMANENTS_ENTERED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, if two or more nonland permanents entered the battlefield under your control this turn, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "310",
+        "rarity": "UNCOMMON",
+        "artist": "Quintin Gleim",
+        "flavorText": "They dash—then dine.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/5671c2a0-51e8-4d5e-8409-87abd6c0a8ab.jpg?1783915040"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
