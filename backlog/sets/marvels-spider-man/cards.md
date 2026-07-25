@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 129 / 190
+**Implemented:** 130 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -76,7 +76,7 @@
 - [x] Molten Man, Inferno Incarnate
 - [x] Morbius the Living Vampire
 - [x] Morlun, Devourer of Spiders
-- [ ] Multiversal Passage
+- [x] Multiversal Passage
 - [x] Mysterio's Phantasm
 - [x] Mysterio, Master of Illusion
 - [x] News Helicopter
