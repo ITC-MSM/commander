@@ -505,6 +505,12 @@ object DynamicAmounts {
     fun startingLifeTotal(player: Player = Player.You): DynamicAmount =
         DynamicAmount.StartingLifeTotal(player)
 
+    /**
+     * A player's speed, 0–4 (Aetherdrift, CR 702.179) — "where X is your speed". A player with no
+     * speed reads as 0 (CR 702.179f), so this never needs a guard.
+     */
+    fun speed(player: Player = Player.You): DynamicAmount = DynamicAmount.Speed(player)
+
     // =========================================================================
     // Entity property shortcuts (composable entity + property)
     // =========================================================================

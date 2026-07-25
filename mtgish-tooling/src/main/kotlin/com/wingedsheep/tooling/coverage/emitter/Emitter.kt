@@ -308,6 +308,14 @@ object Emitter {
                 rname == "StackSpellsEffect" -> block = ctx.stackSpellsEffectBlock(rule)
                 // Station keyword ability (CR 702.184a) — fully fixed, renders the no-arg builder.
                 rname == "Station" -> block = listOf(Eval(call("station")))
+                // Start your engines! (CR 702.179a, Aetherdrift) — the keyword is the whole card-side
+                // mechanic: the CR 704.5z state-based action starts the controller's speed at 1. Render
+                // the `startYourEngines()` builder call (like `station()`); it carries no args.
+                rname == "StartYourEngines" -> block = listOf(Eval(call("startYourEngines")))
+                // Max speed — [Ability] (CR 702.178a). Delegates the nested ability to its normal
+                // builder and re-parents it under `maxSpeed { }`; declines to SCAFFOLD for payloads the
+                // block can't hold (notably a gated replacement effect). See SpeedHandlers.kt.
+                rname == "MaxSpeed" -> block = ctx.maxSpeedBlock(rule)
                 // Increment (Secrets of Strixhaven) — a keyword whose whole mechanic ("whenever you cast
                 // a spell, if the mana you spent exceeds this creature's power or toughness, +1/+1
                 // counter") is composed by the `increment()` CardBuilder helper. Like `station()` /

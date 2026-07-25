@@ -687,6 +687,29 @@ data class GameState(
             ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 0
 
     /**
+     * [playerId]'s **speed** (Aetherdrift, CR 702.179), 0–[com.wingedsheep.sdk.core.Speed.MAX].
+     *
+     * A player who has no speed reads as 0 per CR 702.179f, so every consumer — dynamic amounts, the
+     * max-speed gate, the client DTO — can treat speed as a plain number. Use [hasSpeed] for the two
+     * rules that genuinely distinguish "no speed" from "speed 0".
+     *
+     * Speed is per-player even in team games: unlike life and poison, CR 810 does not pool it.
+     */
+    fun speed(playerId: EntityId): Int =
+        getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.PlayerSpeedComponent>()?.speed
+            ?: com.wingedsheep.sdk.core.Speed.NONE
+
+    /**
+     * Whether [playerId] has a speed at all (CR 702.179b). False means the CR 704.5z state-based
+     * action may still start their speed at 1, and that they have no inherent speed trigger yet
+     * (CR 702.179d).
+     */
+    fun hasSpeed(playerId: EntityId): Boolean =
+        getEntity(playerId)
+            ?.has<com.wingedsheep.engine.state.components.player.PlayerSpeedComponent>() == true
+
+    /**
      * Set [playerId]'s (team's) life total to [newLife], writing the canonical owner's component.
      * Low-level — callers still emit the appropriate `LifeChangedEvent` (attributed to the
      * individual player per CR 810.9) and run any prevention/replacement before computing [newLife].

@@ -310,6 +310,29 @@ enum class Keyword(val displayName: String) {
     ASCEND("Ascend"),
 
     /**
+     * Start your engines! (Aetherdrift, CR 702.179). "If a player controls a permanent with start
+     * your engines! and that player has no speed, their speed becomes 1."
+     *
+     * Unlike most display-only keywords, this one is *load-bearing*: the engine's
+     * `StartYourEnginesCheck` state-based action (CR 704.5z) scans projected battlefield permanents
+     * for this keyword, so granting it to a permanent at runtime works. Nothing else needs wiring on
+     * the card — add it with the `startYourEngines()` helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder]. See [com.wingedsheep.sdk.core.Speed].
+     */
+    START_YOUR_ENGINES("Start your engines!"),
+
+    /**
+     * Max speed (Aetherdrift, CR 702.178). "Max speed — [Ability]" means "As long as your speed is
+     * 4, this object has '[Ability].'"
+     *
+     * Display-only: the keyword prints the "Max speed — " prefix and drives the client badge, while
+     * the gate itself is an ordinary condition applied to whatever ability the card grants. Author
+     * it with the `maxSpeed { }` block on [com.wingedsheep.sdk.dsl.CardBuilder], which attaches this
+     * keyword and gates each ability inside it on [com.wingedsheep.sdk.dsl.Conditions.YouHaveMaxSpeed].
+     */
+    MAX_SPEED("Max speed"),
+
+    /**
      * Decayed (CR 702.147, Innistrad: Midnight Hunt). A static ability plus a
      * triggered ability: "This creature can't block" and "When this creature
      * attacks, sacrifice it at end of combat."

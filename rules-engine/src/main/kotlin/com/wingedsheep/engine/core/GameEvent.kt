@@ -238,6 +238,28 @@ data class CitysBlessingGainedEvent(
 ) : GameEvent
 
 /**
+ * A player's speed changed (Aetherdrift, CR 702.179).
+ *
+ * Fired both by the CR 704.5z state-based action that starts a speed at 1 ([oldSpeed] = 0) and by
+ * every later increase. Speed only ever rises and never past
+ * [com.wingedsheep.sdk.core.Speed.MAX], so [newSpeed] > [oldSpeed] always holds and reaching
+ * [com.wingedsheep.sdk.core.Speed.MAX] fires at most once per player per game — which is what lets
+ * the client animate "max speed reached" off this event alone.
+ *
+ * @param sourceName The permanent or ability that raised the speed; "Start your engines!" for the
+ *   state-based action, which has no source object.
+ */
+@Serializable
+@SerialName("SpeedChangedEvent")
+data class SpeedChangedEvent(
+    val playerId: EntityId,
+    val playerName: String,
+    val oldSpeed: Int,
+    val newSpeed: Int,
+    val sourceName: String
+) : GameEvent
+
+/**
  * A player lost their maximum hand size for the rest of the game (Wisdom of Ages,
  * "You have no maximum hand size for the rest of the game"). Permanent — fires at most
  * once per player per game.

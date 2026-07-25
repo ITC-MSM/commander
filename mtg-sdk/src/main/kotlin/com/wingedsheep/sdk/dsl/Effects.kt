@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Speed
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.*
@@ -1058,6 +1059,37 @@ object Effects {
      */
     fun GainCitysBlessing(target: EffectTarget = EffectTarget.Controller): Effect =
         com.wingedsheep.sdk.scripting.effects.GainCitysBlessingEffect(target)
+
+    /**
+     * "[target]'s speed increases by [amount]" (Aetherdrift, CR 702.179).
+     *
+     * Clamped to [com.wingedsheep.sdk.core.Speed.MAX]; a player with no speed ends up at [amount]
+     * (CR 702.179c). This backs the inherent speed trigger (CR 702.179d) and is the primitive for
+     * any card that raises speed. Speed itself is started by the "Start your engines!" keyword —
+     * see the `startYourEngines()` helper on [CardBuilder].
+     */
+    fun IncreaseSpeed(
+        amount: DynamicAmount = DynamicAmount.Fixed(1),
+        target: EffectTarget = EffectTarget.Controller
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ChangeSpeedEffect(target, amount)
+
+    /**
+     * "Reduce [target]'s speed by [amount]" (Aetherdrift, CR 702.179) — the mirror of
+     * [IncreaseSpeed], sharing its one effect type and executor.
+     *
+     * [minimum] is the card's own floor: Spikeshell Harrier prints "This effect can't reduce their
+     * speed below 1", so it passes [com.wingedsheep.sdk.core.Speed.STARTING] (the default). A player
+     * with no speed is never *given* speed by a reduction, whatever the floor.
+     */
+    fun ReduceSpeed(
+        amount: DynamicAmount = DynamicAmount.Fixed(1),
+        target: EffectTarget = EffectTarget.Controller,
+        minimum: Int = Speed.STARTING
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ChangeSpeedEffect(
+        target = target,
+        amount = DynamicAmount.Multiply(amount, -1),
+        minimum = minimum
+    )
 
     /**
      * "[target] has no maximum hand size for the rest of the game." A one-shot resolution effect

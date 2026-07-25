@@ -5085,7 +5085,7 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Defender, Indestructible, Hexproof, Shroud, Haste,
 Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Storm, Flashback, Harmonize, Evoke, Sneak, Ninjutsu, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
-Offspring, Persist, Enduring, Ascend, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, … (display-only — engine effect lives in handlers or
+Offspring, Persist, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, … (display-only — engine effect lives in handlers or
 composite abilities).
 
 **Parameterized `KeywordAbility.*`**
@@ -5955,6 +5955,11 @@ default to "you" so card authors don't need to pass it explicitly.
   (stamped in the turn-face-up handler), both cleared at the turn boundary. Compose with `Conditions.Not` /
   `Conditions.Any` for the "unless A or B" rider.
 - `YouHaveCitysBlessing` — Ascend gate. Backed by `PlayerHasCitysBlessing(Player.You)`.
+- `YouHaveMaxSpeed` / `HasMaxSpeed(player)` — "your speed is 4" (CR 702.179e), the gate the
+  `maxSpeed { }` block applies. `SpeedBelowMax(player)` is the complement used by the inherent speed
+  trigger's intervening-if. All three are plain `Compare` over `DynamicAmount.Speed`, so they need no
+  new condition type and evaluate identically at resolution and in projection. Wrap `HasMaxSpeed` in
+  `Conditions.Not` for "doesn't have max speed" (Outpace Oblivion, Hazoret, Godseeker).
 - `IsFirstSpellPaidWithTreasureManaCastThisTurn` — gates a triggered ability to fire only
   on the first spell each turn that mana from a Treasure was spent to cast (Rain of
   Riches). Reads `CastSpellRecord.paidWithTreasureMana` on the per-player spell history.
@@ -6276,6 +6281,11 @@ Numbers computed at resolution time.
   (Ozai, the Phoenix King) via `Conditions.YouHaveUnspentManaAtLeast(n)` /
   `CompareAmounts(UnspentMana(You), GTE, Fixed(n))`.
 - `HandSize(player)` — cards in hand.
+- `Speed(player)` — that player's speed, 0–4 (Aetherdrift, CR 702.179; facade
+  `DynamicAmounts.speed(player)`). Powers "where X is your speed" (Point the Way, The Speed Demon,
+  Samut, the Driving Force) and, via `Compare`, the whole max-speed gate. A player with no speed reads
+  as 0 (CR 702.179f), so it never needs a has-speed guard. Not pooled in team games, unlike life and
+  poison.
 - `TurnCount(player)` — turn number for that player.
 - `TurnTracking(player, TurnTracker)` — value of a per-turn counter (see below).
 - `SpellsCastThisTurn(player, filter?, excludeSelf?, fromZone?, countDistinctCardTypes?, beforeTriggeringSpell?)` — count of spells `player` has cast
@@ -7691,6 +7701,46 @@ Card authors rarely reference these directly; they are created/updated by the ma
   linkToSource = true)` + `CardSource.FromLinkedExile()`; no special engine plumbing needed.
 - **Ascend / City's Blessing** — `Keyword.ASCEND` + `Effects.GainCitysBlessing()` + `Conditions.YouHaveCitysBlessing` /
   `SourceProjectionCondition.ControllerHasCitysBlessing` + `PlayerCitysBlessingComponent`.
+- **Speed / Start your engines! / Max speed** (Aetherdrift, CR 702.178–702.179) — a player's speed is
+  an `Int` 0–4 (`Speed.NONE` / `Speed.STARTING` / `Speed.MAX` in `core/Speed.kt`) held by
+  `PlayerSpeedComponent`. It only ever rises, is clamped at 4, and is never removed — like the city's
+  blessing. Author it with two `CardBuilder` helpers and add nothing else:
+
+  ```kotlin
+  startYourEngines()                                     // CR 702.179a — just the keyword
+  maxSpeed { keywords(Keyword.DOUBLE_STRIKE) }            // "Max speed — This creature has double strike."
+  maxSpeed {                                              // any ability kind works inside the block
+      activatedAbility { cost = Costs.Tap; effect = Effects.AddMana("{R}{R}"); manaAbility = true }
+      triggeredAbility { trigger = Triggers.BeginningOfYourEndStep; effect = … }
+      staticAbility { ability = ModifyStats(1, 2, GroupFilter.source()) }
+  }
+  ```
+
+  - `startYourEngines()` adds only `Keyword.START_YOUR_ENGINES`. Setting a controller's speed to 1 is a
+    *state-based action* (CR 704.5z, `StartYourEnginesCheck`), not a trigger, so nothing is authored on
+    the card. Because the check reads projected keywords and projected controllers, gaining control of
+    a permanent with the keyword or having the keyword granted to one both start speed for free.
+  - `maxSpeed { }` adds display-only `Keyword.MAX_SPEED` and gates each ability it declares on
+    `Conditions.YouHaveMaxSpeed` using that ability kind's existing vocabulary — statics via
+    `ConditionalStaticAbility`, activated via `ActivationRestriction.OnlyIfCondition`, triggered via
+    `triggerCondition` (CR 603.4). No new ability type; activated/triggered labels get the printed
+    "Max speed — " prefix. Several abilities may share one block (Tsagan, Raider Warlord).
+  - Raising speed is `Effects.IncreaseSpeed(amount, target)`. The inherent CR 702.179d trigger
+    ("Whenever one or more opponents lose life during your turn, if your speed is less than 4, your
+    speed increases by 1. This ability triggers only once each turn.") is synthesized per player by
+    `SpeedAbilities.inherentSpeedIncrease` and handed out by `TriggerDetector.detectInherentSpeedTriggers`
+    with the *player entity* as its source — which is what makes the generic `oncePerTurn` tracker and
+    its cleanup reset enforce the once-each-turn clause with no new machinery.
+  - Read speed with `DynamicAmounts.speed(player)` ("where X is your speed"); a player with no speed
+    reads as 0 (CR 702.179f), so no has-speed guard is ever needed. `SpeedService` is the single writer,
+    holding the clamp and the CR 702.179c "no speed + N ⇒ N" rule.
+  - Client: `ClientPlayer.speed` (public info, unmasked) plus `ClientEvent.SpeedChanged`; the UI renders
+    a four-bar `SpeedGauge` that redlines at max speed.
+  - **Gap:** a max-speed-gated *replacement* effect (Vnwxt, Verbose Host; Far Fortune, End Boss) is not
+    supported. Replacement effects are read straight off `ReplacementEffectSourceComponent` at ~20
+    independent interception sites, none of which evaluates a condition, so gating one needs a shared
+    conditional-replacement seam that doesn't exist yet. `MaxSpeedBuilder` deliberately offers no
+    `replacementEffect` slot rather than approximating it per site.
 - **Siege (named-mode entry)** — `EntersWithChoice(ChoiceType.MODE, modeOptions = ...)` + `SourceChosenModeIs("id")`.
 - **Morph** — `morph = "{2}{U}"` (top-level) + `morphFaceUpEffect` for "as it turns face up".
 - **Warp** — `warp = "{1}{R}"`; alt-cost that exiles end of turn. Like morph and cycle, a warp card

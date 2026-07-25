@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
+import com.wingedsheep.sdk.core.Speed
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -1549,6 +1550,36 @@ object Conditions {
      */
     val YouHaveCitysBlessing: ConditionInterface =
         PlayerHasCitysBlessing(Player.You)
+
+    // =========================================================================
+    // Speed (Aetherdrift, CR 702.178–702.179)
+    // =========================================================================
+
+    /**
+     * "if you have max speed" — your speed is exactly 4 (CR 702.179e).
+     *
+     * This is the gate the `maxSpeed { }` block on [CardBuilder] applies to every ability inside it
+     * (CR 702.178a, "as long as your speed is 4, this object has [Ability]"). It is a plain
+     * [Compare] over [DynamicAmount.Speed], so it evaluates identically at resolution and during
+     * state projection — which is what lets one gate serve static, activated and triggered abilities
+     * alike.
+     *
+     * Equality (not `>=`) matches the rule literally; the engine clamps speed at
+     * [com.wingedsheep.sdk.core.Speed.MAX], so the two agree today.
+     */
+    val YouHaveMaxSpeed: ConditionInterface = HasMaxSpeed(Player.You)
+
+    /** [Player]-parametric "if [player] has max speed" — wrap in [Not] for "doesn't have max speed". */
+    fun HasMaxSpeed(player: Player): ConditionInterface =
+        Compare(DynamicAmount.Speed(player), ComparisonOperator.EQ, DynamicAmount.Fixed(Speed.MAX))
+
+    /**
+     * "if [player]'s speed is less than 4" — the intervening-if of the inherent speed trigger
+     * (CR 702.179d), and the gate for any effect that should only fire while there's speed left to
+     * gain. A player with no speed reads as 0 (CR 702.179f), so this holds for them too.
+     */
+    fun SpeedBelowMax(player: Player = Player.You): ConditionInterface =
+        Compare(DynamicAmount.Speed(player), ComparisonOperator.LT, DynamicAmount.Fixed(Speed.MAX))
 
     // =========================================================================
     // Trigger Entity Conditions

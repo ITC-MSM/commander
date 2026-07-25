@@ -1888,7 +1888,9 @@ class ClientStateTransformer(
             hasLost = hasLost,
             manaPool = manaPool,
             activeEffects = activeEffects,
-            commanderDamage = buildCommanderDamage(state, playerId)
+            commanderDamage = buildCommanderDamage(state, playerId),
+            // CR 702.179 — public information, and 0 for the overwhelming majority of games.
+            speed = state.speed(playerId)
         )
     }
 
