@@ -3680,6 +3680,92 @@
     ]
 }
 
+// Mysterio, Master of Illusion
+{
+    "name": "Mysterio, Master of Illusion",
+    "manaCost": "{3}{U}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "When Mysterio enters, create a 3/3 blue Illusion Villain creature token for each nontoken Villain you control. Exile those tokens when Mysterio leaves the battlefield.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "creature Villain nontoken ctrl:you"
+                    },
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Illusion",
+                        "Villain"
+                    ],
+                    "name": "Illusion Villain",
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/6/f67d6b6d-c57e-431f-ae80-a9658d628827.jpg?1783905184",
+                    "stampCreator": true
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "statePredicates": [
+                                        "CreatedBySource"
+                                    ]
+                                }
+                            },
+                            "storeAs": "mysterioTokens"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "mysterioTokens",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "37",
+        "rarity": "RARE",
+        "artist": "Alexander Gering",
+        "flavorText": "A skilled showman, Quentin Beck incorporated lights, special effects, holography . . . all in the service of a . . . DRAMATIC . . . ENTRANCE!",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/facbd96f-c088-4377-b740-5e0fe99102bb.jpg?1783905353"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // News Helicopter
 {
     "name": "News Helicopter",

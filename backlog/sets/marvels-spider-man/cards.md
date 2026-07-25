@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 126 / 190
+**Implemented:** 127 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -78,7 +78,7 @@
 - [x] Morlun, Devourer of Spiders
 - [ ] Multiversal Passage
 - [x] Mysterio's Phantasm
-- [ ] Mysterio, Master of Illusion
+- [x] Mysterio, Master of Illusion
 - [x] News Helicopter
 - [ ] Norman Osborn // Green Goblin
 - [x] Ominous Asylum
