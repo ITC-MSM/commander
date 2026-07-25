@@ -130,4 +130,5 @@ export const counterManaClass: Record<string, string> = {
   WISH: 'counter-charge',
   REVIVAL: 'counter-charge',
   INGENUITY: 'counter-charge',
+  FILM: 'counter-charge',
 }

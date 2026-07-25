@@ -4730,6 +4730,84 @@
     ]
 }
 
+// Peter Parker's Camera
+{
+    "name": "Peter Parker's Camera",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "This artifact enters with three film counters on it.\n{2}, {T}, Remove a film counter from this artifact: Copy target activated or triggered ability you control. You may choose new targets for the copy.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "film",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CopyTargetSpellOrAbility",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "activated or triggered ability you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsActivatedOrTriggeredAbility"
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            },
+                            "zone": "Stack"
+                        },
+                        "id": "activated or triggered ability you control"
+                    }
+                ],
+                "descriptionOverride": "{2}, {T}, Remove a film counter from this artifact: Copy target activated or triggered ability you control. You may choose new targets for the copy."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "film"
+                },
+                "count": 3,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "rarity": "RARE",
+        "artist": "Lixin Yin",
+        "flavorText": "\"How does Parker get those close-ups?\"\n—J. Jonah Jameson",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/47875dff-c046-4cb0-b1e3-f926cbe25b59.jpg?1783905303"
+    },
+    "colorIdentityOverride": []
+}
+
 // Pictures of Spider-Man
 {
     "name": "Pictures of Spider-Man",
