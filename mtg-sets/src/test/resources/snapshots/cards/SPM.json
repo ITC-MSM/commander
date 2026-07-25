@@ -1599,6 +1599,192 @@
     ]
 }
 
+// Eddie Brock
+{
+    "name": "Eddie Brock",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Human Hero Villain",
+    "oracleText": "When Eddie Brock enters, return target creature card with mana value 1 or less from your graveyard to the battlefield.\n{3}{B}{R}{G}: Transform Eddie Brock. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card with mana value 1 or less from your graveyard"
+                    },
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature mv<=1 own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card with mana value 1 or less from your graveyard"
+                },
+                "descriptionOverride": "When Eddie Brock enters, return target creature card with mana value 1 or less from your graveyard to the battlefield."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{B}{R}{G}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Eddie Brock. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Venom, Lethal Protector",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Symbiote Hero Villain",
+        "oracleText": "Menace, trample, haste\nWhenever Venom attacks, you may sacrifice another creature. If you do, draw X cards, then you may put a permanent card with mana value X or less from your hand onto the battlefield, where X is the sacrificed creature's mana value.",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 5
+        },
+        "keywords": [
+            "MENACE",
+            "TRAMPLE",
+            "HASTE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "SacrificeTarget",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "another creature"
+                                    }
+                                },
+                                {
+                                    "type": "DrawCards",
+                                    "count": {
+                                        "type": "EntityProperty",
+                                        "entity": "Sacrificed",
+                                        "numericProperty": "ManaValue"
+                                    }
+                                },
+                                {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Hand",
+                                                "filter": "permanent"
+                                            },
+                                            "storeAs": "venomHand"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "venomHand",
+                                            "selection": {
+                                                "type": "ChooseUpTo",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "venomChosen",
+                                            "prompt": "You may put a permanent card with mana value X or less onto the battlefield",
+                                            "restrictions": [
+                                                {
+                                                    "type": "TotalManaValueAtMost",
+                                                    "maxAmount": {
+                                                        "type": "EntityProperty",
+                                                        "entity": "Sacrificed",
+                                                        "numericProperty": "ManaValue"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "venomChosen",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Battlefield"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "targetRequirement": {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you",
+                            "excludeSelf": true
+                        },
+                        "id": "another creature"
+                    },
+                    "descriptionOverride": "Whenever Venom attacks, you may sacrifice another creature. If you do, draw X cards, then you may put a permanent card with mana value X or less from your hand onto the battlefield, where X is the sacrificed creature's mana value."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "55",
+            "rarity": "MYTHIC",
+            "artist": "Greg Staples",
+            "flavorText": "\"... we are Venom!\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/f/3/f3455651-e643-445e-9489-51e4e24fca4c.jpg?1783905351"
+        },
+        "colorIdentityOverride": [
+            "BLACK",
+            "RED",
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "BLACK",
+            "RED",
+            "GREEN"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "rarity": "MYTHIC",
+        "artist": "Greg Staples",
+        "flavorText": "\"I've got the nose for the story. He's got the hunger for the kill. Together...\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3455651-e643-445e-9489-51e4e24fca4c.jpg?1783905351"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Eerie Gravestone
 {
     "name": "Eerie Gravestone",
