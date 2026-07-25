@@ -25,6 +25,11 @@ test-rules:
 test-server:
     scripts/gradle-locked :game-server:test
 
+# Run tests for the AI module only (advisors, deckbuild/draft heuristics)
+[group: 'build']
+test-ai:
+    scripts/gradle-locked :ai:test
+
 # Run tests for gym only
 [group: 'build']
 test-gym:
@@ -34,6 +39,11 @@ test-gym:
 [group: 'build']
 test-class CLASS:
     scripts/gradle-locked :rules-engine:test --tests "{{CLASS}}"
+
+# Re-bless per-set card snapshot goldens after an intentional change (review the diff: only your cards should move)
+[group: 'build']
+rebless-cards:
+    scripts/gradle-locked :mtg-sets:test --tests "*CardDefinitionSnapshotTest" -DupdateSnapshots=true
 
 # CLASS options (all in :ai): AdvisorBenchmark   - AI advisor vs random, per-card timing
 #                             GameBenchmark      - full AI-vs-AI games, sealed decks

@@ -1009,10 +1009,10 @@ class ConditionEvaluator(
         ctx: ConditionEvaluationContext
     ): Boolean {
         val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
-        val tracker = state.getEntity(playerId)
-            ?.get<com.wingedsheep.engine.state.components.player.PermanentTypesEnteredBattlefieldThisTurnComponent>()
+        val log = state.getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent>()
             ?: return false
-        return condition.cardType in tracker.cardTypes
+        return log.countOfType(condition.cardType) > 0
     }
 
     private fun evaluatePermanentLeftBattlefieldThisTurnCtx(

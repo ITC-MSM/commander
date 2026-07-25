@@ -318,6 +318,20 @@ data class EffectContext(
     val chosenColor: Color? = null,
     /** Creature type chosen during casting (e.g., Aphetto Dredging) */
     val chosenCreatureType: String? = null,
+    /**
+     * The opponent the controller picked to make a
+     * [com.wingedsheep.sdk.scripting.effects.Chooser.Opponent] decision, when the game has more
+     * than one opponent to choose from (CR 601.7a / 602.3a and the matching resolution-time
+     * rulings). Set by
+     * [com.wingedsheep.engine.core.ChooseOpponentDeciderContinuation]'s resumer just before the
+     * effect is re-executed, and read back by
+     * [com.wingedsheep.engine.handlers.effects.ChooserResolution.resolve].
+     *
+     * Resolution-scoped on purpose: the stamp rides only the re-run context, so each separate
+     * "an opponent chooses" step gets its own prompt. Null in two-player games (a sole opponent
+     * is a forced choice, never asked) and before the pick is made.
+     */
+    val opponentDeciderId: EntityId? = null,
     // --- Zone state ---
     /** Zone the spell was cast from (e.g., HAND, GRAVEYARD for flashback) */
     val castFromZone: Zone? = null,
