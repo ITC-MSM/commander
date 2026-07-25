@@ -9,6 +9,29 @@ This is an `add-feature` project (server/client capability + a new engine-side `
 **not** `add-card` — except the appendix, which is a plain `add-card` backlog for the 47 cards the
 bundled Standard Cube is missing.
 
+## Status: **next pick** (decided 2026-07-25)
+
+This is the chosen next feature project, ahead of the other open backlog items.
+
+**Why this one.** It multiplies content that already exists instead of widening the surface: 313/360
+of the bundled example cube is implemented, pack generation is already a pure function of `SetConfig`,
+and cube storage mirrors saved decks. One feature turns limited from "draft the sets we support" into
+an indefinitely replayable format a friend group can tune themselves — and it was requested by a
+player, so there's real demand behind it.
+
+**Considered and deferred:**
+
+- *Autonomous bug-hunting gauntlet* (invariant oracle + self-play fuzz + delta-debug shrinker over
+  compact replays) — highest long-term leverage on correctness confidence, and the foundation
+  [`forge-parity-harness.md`](forge-parity-harness.md) would need anyway. Deferred, not dropped: the
+  strongest candidate for the pick after this one.
+- *Live MCTS AI difficulty tier* (promote `gym-trainer` into the lobby) — biggest experiential upgrade
+  for solo play, but doesn't help the friend-group play that Cube serves directly.
+- *More format variants* ([`emperor-format.md`](emperor-format.md), [`momir-basic-format.md`](momir-basic-format.md),
+  [`brawl-draft-format.md`](brawl-draft-format.md)) — explicitly lower priority. Emperor in particular
+  is large engine risk (CR 801 range of influence touches targeting, attacking, and every "each
+  player" effect) for a format needing six simultaneous players.
+
 ## Confirmed scope decisions
 
 - **Cube storage:** account-owned rows in Postgres, mirroring saved decks (`decks` table →
