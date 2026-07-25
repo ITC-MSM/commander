@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 113 / 190
+**Implemented:** 114 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -107,7 +107,7 @@
 - [x] Romantic Rendezvous
 - [x] SP//dr, Piloted by Peni
 - [ ] Sandman's Quicksand
-- [ ] Sandman, Shifting Scoundrel
+- [x] Sandman, Shifting Scoundrel
 - [x] Savage Mansion
 - [ ] Scarlet Spider, Ben Reilly
 - [ ] Scarlet Spider, Kaine

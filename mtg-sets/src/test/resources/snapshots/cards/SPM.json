@@ -4266,6 +4266,102 @@
     ]
 }
 
+// Sandman, Shifting Scoundrel
+{
+    "name": "Sandman, Shifting Scoundrel",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Legendary Creature — Sand Elemental Villain",
+    "oracleText": "Sandman's power and toughness are each equal to the number of lands you control.\nSandman can't be blocked by creatures with power 2 or less.\n{3}{G}{G}: Return this card and target land card from your graveyard to the battlefield tapped.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "land"
+            }
+        },
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "land"
+            }
+        }
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{G}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Battlefield",
+                            "placement": "Tapped",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "land"
+                            },
+                            "destination": "Battlefield",
+                            "placement": "Tapped",
+                            "fromZone": "Graveyard"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "land own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "land"
+                    }
+                ],
+                "activateFromZone": "Graveyard"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "PowerAtMost",
+                            "max": 2
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "rarity": "RARE",
+        "artist": "Bartek Fedyczak",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/609ac18c-ec58-4fa7-bbee-3912a69d0ec6.jpg?1783905324"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Savage Mansion
 {
     "name": "Savage Mansion",
