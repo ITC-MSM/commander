@@ -6365,6 +6365,68 @@
     ]
 }
 
+// Strength of Will
+{
+    "name": "Strength of Will",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Until end of turn, target creature you control gains indestructible and \"Whenever this creature is dealt damage, put that many +1/+1 counters on it.\"",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "INDESTRUCTIBLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                {
+                    "type": "GrantTriggeredAbility",
+                    "ability": {
+                        "id": "ability_1",
+                        "trigger": "DamageReceivedEvent",
+                        "effect": {
+                            "type": "AddDynamicCounters",
+                            "counterType": "+1/+1",
+                            "amount": {
+                                "type": "ContextProperty",
+                                "key": "TRIGGER_DAMAGE_AMOUNT"
+                            },
+                            "target": "Self"
+                        }
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "rarity": "RARE",
+        "artist": "Ryan Pancoast",
+        "flavorText": "And then—as the agonizing ache in his limbs seems unendurable—from out of the pain—from out of the agony—comes triumph!",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/68f985c7-7765-46c3-ad31-edae3abb9fbf.jpg?1783905321"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Suburban Sanctuary
 {
     "name": "Suburban Sanctuary",

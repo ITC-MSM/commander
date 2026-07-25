@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 121 / 190
+**Implemented:** 122 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -154,7 +154,7 @@
 - [x] Starling, Aerial Ally
 - [ ] Steel Wrecking Ball
 - [ ] Stegron the Dinosaur Man
-- [ ] Strength of Will
+- [x] Strength of Will
 - [x] Suburban Sanctuary
 - [x] Subway Train
 - [x] Sudden Strike
