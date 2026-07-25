@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 123 / 190
+**Implemented:** 124 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -152,7 +152,7 @@
 - [ ] Spiders-Man, Heroic Horde
 - [ ] Spinneret and Spiderling
 - [x] Starling, Aerial Ally
-- [ ] Steel Wrecking Ball
+- [x] Steel Wrecking Ball
 - [ ] Stegron the Dinosaur Man
 - [x] Strength of Will
 - [x] Suburban Sanctuary

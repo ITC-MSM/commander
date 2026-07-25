@@ -6486,6 +6486,89 @@
     ]
 }
 
+// Steel Wrecking Ball
+{
+    "name": "Steel Wrecking Ball",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact enters, it deals 5 damage to target creature.\n{1}{R}, Discard this card: Destroy target artifact.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{R}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact"
+                        },
+                        "id": "target artifact"
+                    }
+                ],
+                "activateFromZone": "Hand"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "177",
+        "artist": "Michele Giorgi",
+        "flavorText": "\"Heads up! It's time for a fast game of catch!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f2c74f5-1cfe-4918-a86b-0d58ac8b7469.jpg?1783905300"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Strength of Will
 {
     "name": "Strength of Will",
