@@ -4835,6 +4835,191 @@
     ]
 }
 
+// Kaito, Cunning Infiltrator
+{
+    "name": "Kaito, Cunning Infiltrator",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Legendary Planeswalker — Kaito",
+    "oracleText": "Whenever a creature you control deals combat damage to a player, put a loyalty counter on Kaito.\n+1: Up to one target creature you control can't be blocked this turn. Draw a card, then discard a card.\n−2: Create a 2/1 blue Ninja creature token.\n−9: You get an emblem with \"Whenever a player casts a spell, you create a 2/1 blue Ninja creature token.\"",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer",
+                    "sourceFilter": "creature ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "loyalty",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever a creature you control deals combat damage to a player, put a loyalty counter on Kaito."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "CANT_BE_BLOCKED",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature you control"
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "DrawCards",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Hand"
+                                            },
+                                            "storeAs": "hand"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "hand",
+                                            "selection": {
+                                                "type": "ChooseExactly",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "discarded",
+                                            "prompt": "Choose 1 card to discard"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "discarded",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Discard"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "up to one target creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -2
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Ninja"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/a/e/aeec04b1-475c-4e55-b72f-327ea5258146.jpg?1783908590"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -9
+                },
+                "effect": {
+                    "type": "CreateGlobalTriggeredAbility",
+                    "ability": {
+                        "id": "ability_5",
+                        "trigger": {
+                            "type": "SpellCastEvent",
+                            "player": "Each"
+                        },
+                        "binding": "ANY",
+                        "effect": {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 1,
+                            "colors": [
+                                "BLUE"
+                            ],
+                            "creatureTypes": [
+                                "Ninja"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/a/e/aeec04b1-475c-4e55-b72f-327ea5258146.jpg?1783908590"
+                        },
+                        "descriptionOverride": "Whenever a player casts a spell, you create a 2/1 blue Ninja creature token."
+                    },
+                    "descriptionOverride": "Whenever a player casts a spell, you create a 2/1 blue Ninja creature token."
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "44",
+        "rarity": "MYTHIC",
+        "artist": "Evyn Fong",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/d/5dabdea9-2015-49b9-853d-4f7e1262eab3.jpg?1783909117",
+        "rulings": [
+            {
+                "date": "2024-11-08",
+                "text": "You don't have to choose a target for Kaito's first loyalty ability. However, if you do and that target is illegal when the ability tries to resolve, it won't resolve and none of its effects will happen. You won't draw or discard. The loyalty counter that was added to Kaito to pay the cost of the ability will remain on Kaito, however."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "The ability of the emblem created by Kaito's last ability resolves before the spell that caused it to trigger. It resolves even if that spell is countered or otherwise leaves the stack without resolving."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Kellan, Planar Trailblazer
 {
     "name": "Kellan, Planar Trailblazer",
