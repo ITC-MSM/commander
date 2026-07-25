@@ -272,9 +272,19 @@ class TargetEnumerationUtils(
                 // number of legal targets on the board, so the client offers all of them.
                 // A board-state `dynamicMaxCount` (anything but XValue, which is unbound
                 // until the X is chosen and so is surfaced via [xConstrainsCount]) is
-                // resolved here so the UI caps at the right number immediately.
+                // resolved here so the UI caps at the right number immediately — including
+                // *alongside* `unlimited`, where the wording is "any number of target …" but
+                // the effect still bounds how many targets are usable (Chandra, Flameshaper's
+                // "8 damage divided as you choose among any number of target creatures and/or
+                // planeswalkers" — each target needs at least 1 damage, so at most 8). Without
+                // the cap the player could pick a ninth target and then be unable to produce a
+                // legal division.
                 maxTargets = when {
-                    req.unlimited -> validTargets.size
+                    req.unlimited ->
+                        minOf(
+                            validTargets.size,
+                            resolveStaticDynamicMax(state, req, playerId, sourceId) ?: validTargets.size
+                        )
                     else -> resolveStaticDynamicMax(state, req, playerId, sourceId) ?: req.count
                 },
                 validTargets = validTargets,

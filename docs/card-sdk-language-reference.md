@@ -509,13 +509,30 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   and marked-damage-aware) that `target1` deals **to `target2`** is stored into that pipeline number
   variable for a following effect to read via `DynamicAmount.VariableReference` — e.g. The Last Agni Kai:
   `Fight(yours, theirs, "excess") then AddMana(RED, VariableReference("excess"))`.
-- `DividedDamageEffect(totalDamage, minTargets, maxTargets, dynamicTotal?)` — "N damage divided as you
+- `Effects.DividedDamage(total, minTargets, maxTargets, dynamicTotal?)` — "N damage divided as you
   choose among target ..." The targets come from the ability's target requirement; pair with
-  `TargetCreature(count, minCount)` (Forked Lightning, Skirk Volcanist) or, for "any number of target"
-  + a dynamic total, a `TargetObject(optional = true, dynamicMaxCount = ..., filter = ...)`. Set
-  `dynamicTotal` (a `DynamicAmount`) for totals computed when the ability resolves/goes on the stack —
-  Ureni, the Song Unending: `dynamicTotal = DynamicAmounts.landsYouControl()`. Works for creatures and
-  planeswalkers (`GameObjectFilter.CreatureOrPlaneswalker`); zero chosen targets ⇒ no-op.
+  `TargetCreature(count, minCount)` (Forked Lightning, Skirk Volcanist) or, for "any number of target",
+  a `TargetObject(unlimited = true, dynamicMaxCount = ..., filter = ...)`. Set `dynamicTotal` (a
+  `DynamicAmount`) for totals computed when the ability resolves/goes on the stack — Ureni, the Song
+  Unending: `dynamicTotal = DynamicAmounts.landsYouControl()`. Works for creatures and planeswalkers
+  (`GameObjectFilter.CreatureOrPlaneswalker`); zero chosen targets ⇒ no-op.
+
+  **Always cap the target count at the total.** Each chosen target must be assigned at least 1 damage
+  (CR 601.2d), so a requirement that lets the player pick more targets than there is damage leaves them
+  with no legal division to submit. Pass `dynamicMaxCount` alongside `unlimited` — a
+  `DynamicAmount.Fixed(total)` for a fixed total (Chandra, Flameshaper: 8 damage ⇒ at most 8 targets),
+  or the same `DynamicAmount` that drives `dynamicTotal` when the total is board-derived (Ureni). The
+  cap and `unlimited` compose: the client is offered `min(legal targets, cap)`.
+
+  **The division is chosen at announcement, never at resolution** (CR 601.2d). It rides on the action
+  (`CastSpell.damageDistribution` / `ActivateAbility.damageDistribution`), is locked onto the stack
+  object, and is honored verbatim when the effect resolves — so a target removed in response costs that
+  target's share and the survivors keep exactly what they were assigned (the total is *not* re-divided).
+  The engine surfaces `requiresDamageDistribution` / `totalDamageToDistribute` / `minDamagePerTarget` on
+  the legal action for both spells and activated abilities, and the client collects the division right
+  after targeting. When no division is supplied (a single target, or a non-interactive controller such
+  as the built-in AI) the executor deals the whole total to a lone target, or asks for the division at
+  resolution via a `DistributeDecision`.
 - `DamageCantBePreventedThisTurn()` — "Damage can't be prevented this turn." Turn-scoped one-shot that
   sets a `GameState` flag (cleared at the next turn boundary), shutting off all damage prevention for
   the rest of the turn — prevention shields, prevention/replacement-of-damage effects, and protection's

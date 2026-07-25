@@ -280,10 +280,10 @@ export interface XSelectionState {
  * Damage distribution state for DividedDamageEffect spells.
  */
 export interface DamageDistributionState {
-  /** The action info containing the spell being cast */
+  /** The action info containing the spell being cast or the ability being activated */
   actionInfo: LegalActionInfo
-  /** The action with targets already set */
-  action: import('../../types').CastSpellAction
+  /** The action with targets already set (a divided-damage spell or activated ability) */
+  action: import('../../types').CastSpellAction | import('../../types').ActivateAbilityAction
   /** Card name for display */
   cardName: string
   /** Selected target entity IDs */

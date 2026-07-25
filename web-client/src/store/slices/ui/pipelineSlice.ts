@@ -7,7 +7,7 @@
  * current subscriptions.
  */
 import type { SliceCreator, ActionPipelineState, PhaseResult } from '../types'
-import type { CastSpellAction, EntityId, LegalActionInfo } from '@/types'
+import type { ActivateAbilityAction, CastSpellAction, EntityId, LegalActionInfo } from '@/types'
 import { computePhases, mergeResult, enterPhase } from './pipelinePhases'
 import type { PipelineStoreMethods } from './pipelinePhases'
 import {
@@ -218,7 +218,10 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
       actionInfo.totalDamageToDistribute &&
       result.selectedTargets.length > 1
     ) {
-      const cardName = actionInfo.description.replace('Cast ', '')
+      // Spells read "Cast <name>", activated abilities "Activate <name>: …" — strip either verb so
+      // the modal header names the source (Chandra, Flameshaper's −4 divides damage the same way
+      // Arc Lightning does).
+      const cardName = actionInfo.description.replace(/^(Cast|Activate) /, '')
       const minPerTarget = actionInfo.minDamagePerTarget ?? 1
       const initialDistribution: Record<string, number> = {}
       for (const targetId of result.selectedTargets) {
@@ -235,7 +238,7 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
 
       get().startDamageDistribution({
         actionInfo,
-        action: mergedAction as CastSpellAction,
+        action: mergedAction as CastSpellAction | ActivateAbilityAction,
         cardName,
         targetIds: [...result.selectedTargets],
         totalDamage: actionInfo.totalDamageToDistribute,
