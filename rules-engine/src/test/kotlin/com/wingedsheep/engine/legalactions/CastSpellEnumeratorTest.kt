@@ -11,6 +11,7 @@ import com.wingedsheep.engine.state.components.player.CantCastSpellsComponent
 import com.wingedsheep.mtg.sets.definitions.dom.cards.StrongholdConfessor
 import com.wingedsheep.mtg.sets.definitions.ktk.cards.TormentingVoice
 import com.wingedsheep.mtg.sets.definitions.ecl.cards.BrigidsCommand
+import com.wingedsheep.mtg.sets.definitions.ecl.cards.MorningtidesLight
 import com.wingedsheep.sdk.core.Step
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -143,6 +144,28 @@ class CastSpellEnumeratorTest : FunSpec({
         // AnyTarget allows both players; both should be in the valid set.
         cast.validTargets!! shouldContain driver.player1
         cast.validTargets shouldContain driver.player2
+    }
+
+    test("'any number of target creatures' caps at the legal-target count, not the static count of 1") {
+        // Morningtide's Light declares TargetCreature(unlimited = true), whose static `count`
+        // is the default 1. The enumerated cap must be "every legal target" — a single-
+        // requirement action ships no targetRequirements, so `targetCount` is the only max
+        // the client and the AI ever see.
+        val driver = setupP1(
+            hand = listOf("Morningtide's Light"),
+            battlefield = listOf(
+                "Plains", "Plains", "Plains", "Plains",
+                "Grizzly Bears", "Grizzly Bears", "Grizzly Bears"
+            ),
+            extraSetCards = listOf(MorningtidesLight)
+        )
+
+        val cast = driver.enumerateFor(driver.player1).castActionsFor("Morningtide's Light").first()
+
+        cast.requiresTargets shouldBe true
+        cast.targetCount shouldBe 3
+        cast.minTargets shouldBe 0   // "any number" — targeting nothing is legal
+        cast.validTargets!! shouldHaveSize 3
     }
 
     test("CastSpell action carries the card's entity id") {
