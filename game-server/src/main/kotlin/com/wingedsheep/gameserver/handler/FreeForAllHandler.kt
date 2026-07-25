@@ -287,9 +287,8 @@ class FreeForAllHandler(
                 gameNumber = lobby.ffaGamesPlayed + 1,
                 players = gameSession.seatInfos(identity.playerId),
             ))
-            if (gameSession.getPlayerSession(identity.playerId) != null) {
-                gameSession.removePlayer(identity.playerId)
-            }
+            // Reseat in one step rather than remove-then-add: a pod's games run long enough that
+            // mid-game reconnects are routine, and each one must not cost the seat its decklist.
             gameSession.associatePlayer(playerSession)
             when {
                 gameSession.isAwaitingBottomCards(identity.playerId) -> {

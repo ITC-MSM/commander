@@ -708,7 +708,9 @@ class GamePlayHandler(
                     participants = gameSession.getPlayers().map { player ->
                         val identity = sessionRegistry.getIdentityByWsId(player.webSocketSession.id)
                         val isAi = persistenceInfo[player.playerId]?.isAi == true
-                        val deckList = gameSession.getDeckList(player.playerId)
+                        // Every seat's starting deck — read through the replay-setup fallback so a
+                        // seat whose live entry went missing still lands in history with its deck.
+                        val deckList = gameSession.getStartingDeckList(player.playerId)
                         val profile = deckList?.let { deckProfiler.profile(it, gameSession.quickGameSetCode) }
                         // Count copies by canonical card name (strip any "#collector" pin).
                         val deckCards = deckList
@@ -1114,7 +1116,7 @@ class GamePlayHandler(
         if (aiPlayers.isEmpty()) return
 
         for ((aiPlayerId, pi) in aiPlayers) {
-            val deckList = gameSession.getDeckList(aiPlayerId)
+            val deckList = gameSession.getStartingDeckList(aiPlayerId)
                 ?.groupingBy { it }?.eachCount()
             aiGameManager.wireAiForGame(
                 gameSession = gameSession,

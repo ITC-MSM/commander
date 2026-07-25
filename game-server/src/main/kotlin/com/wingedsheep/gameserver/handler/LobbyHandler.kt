@@ -935,9 +935,8 @@ class LobbyHandler(
                         gameSessionId = activePlayerMatch.gameSessionId!!,
                         opponentName = opponentName
                     ))
-                    if (gs.getPlayerSession(identity.playerId) != null) {
-                        gs.removePlayer(identity.playerId)
-                    }
+                    // Reseat in place — un-seating first would drop the submitted deck and sideboard,
+                    // blanking this seat's deck in match history and breaking sideboarding.
                     gs.associatePlayer(playerSession)
                     when {
                         gs.isAwaitingBottomCards(identity.playerId) -> {

@@ -316,13 +316,22 @@ class GameSession(
     }
 
     /**
-     * Remove a player from the session.
+     * Un-seat a player: they give up their chair in this session.
+     *
+     * Before the game starts that also releases their submitted deck and sideboard — the seat is free
+     * for someone else. Once the game is under way the decklist stops being live state and becomes
+     * part of the historical record (match history reads every seat's deck at game over, and the AI is
+     * re-wired from it after a restart), so it is kept. That distinction matters because "un-seat then
+     * re-seat" is a tempting way to swap in a reconnecting player's new socket — see [associatePlayer],
+     * which does that in one step without disturbing the seat at all.
      */
     fun removePlayer(playerId: EntityId) {
         players[playerId]?.currentGameSessionId = null
         players.remove(playerId)
-        deckLists.remove(playerId)
-        sideboards.remove(playerId)
+        if (!isStarted) {
+            deckLists.remove(playerId)
+            sideboards.remove(playerId)
+        }
     }
 
     /**
@@ -1408,6 +1417,19 @@ class GameSession(
     /** Get deck list for a specific player. Used by engine AI to know the opponent's deck. */
     fun getDeckList(playerId: EntityId): List<String>? = deckLists[playerId]
 
+    /**
+     * The deck a seat *started the game with*, for anything that has to describe the game after the
+     * fact (match-history recording, re-wiring an AI after a restart). Prefers the live submitted
+     * deck and falls back to the copy frozen into the replay setup at [startGame], which is captured
+     * once and never mutated for the life of the session — so a seat's deck can still be reported
+     * even if its live entry was dropped (a pre-game leave, or a reseat bug like the one that used to
+     * blank multiplayer decks). Null only for sessions that never recorded a setup (dev scenario /
+     * hotseat) and have no live deck either.
+     */
+    fun getStartingDeckList(playerId: EntityId): List<String>? =
+        deckLists[playerId]
+            ?: replaySetup?.players?.firstOrNull { it.playerId == playerId.value }?.deck?.cards
+
     // =========================================================================
     // Persistence Support (for Redis caching)
     // =========================================================================
@@ -1489,7 +1511,12 @@ class GameSession(
     }
 
     /**
-     * Associate a player identity with this session (for reconnection after restore).
+     * Seat this player session — either a first association after a restore, or a reconnecting player
+     * being put back in the chair they already had.
+     *
+     * Seats are keyed by [PlayerSession.playerId], so this replaces any existing entry in place and
+     * leaves everything that describes the seat (deck, sideboard, commander, per-player log) alone.
+     * It is the whole reconnect operation on its own: don't call [removePlayer] first.
      */
     fun associatePlayer(playerSession: PlayerSession) {
         players[playerSession.playerId] = playerSession
