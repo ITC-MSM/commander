@@ -2910,6 +2910,118 @@
     ]
 }
 
+// Lady Octopus, Inspired Inventor
+{
+    "name": "Lady Octopus, Inspired Inventor",
+    "manaCost": "{U}",
+    "typeLine": "Legendary Creature — Human Scientist Villain",
+    "oracleText": "Whenever you draw your first or second card each turn, put an ingenuity counter on Lady Octopus.\n{T}: You may cast an artifact spell from your hand with mana value less than or equal to the number of ingenuity counters on Lady Octopus without paying its mana cost.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 1
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "ingenuity",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you draw your first card each turn, put an ingenuity counter on Lady Octopus."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "ingenuity",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you draw your second card each turn, put an ingenuity counter on Lady Octopus."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "filter": "artifact"
+                            },
+                            "storeAs": "ladyOctopusCandidates"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "ladyOctopusCandidates",
+                            "filter": {
+                                "type": "ManaValueAtMost",
+                                "max": {
+                                    "type": "EntityProperty",
+                                    "entity": "Source",
+                                    "numericProperty": {
+                                        "type": "CounterCount",
+                                        "counterType": {
+                                            "type": "Named",
+                                            "name": "ingenuity"
+                                        }
+                                    }
+                                }
+                            },
+                            "storeMatching": "ladyOctopusEligible"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "ladyOctopusEligible",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "ladyOctopusChosen",
+                            "selectedLabel": "Cast without paying its mana cost"
+                        },
+                        {
+                            "type": "CastFromCollectionWithoutPayingCost",
+                            "from": "ladyOctopusChosen"
+                        }
+                    ]
+                },
+                "descriptionOverride": "You may cast an artifact spell from your hand with mana value less than or equal to the number of ingenuity counters on Lady Octopus without paying its mana cost."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "RARE",
+        "artist": "Fariba Khamseh",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8c5f360b-f9a0-46e0-9e8b-58e5b4b0389e.jpg?1783905354"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Living Brain, Mechanical Marvel
 {
     "name": "Living Brain, Mechanical Marvel",

@@ -75,7 +75,8 @@ enum class CounterType {
     BORE,
     POINT,
     WISH,
-    REVIVAL;
+    REVIVAL,
+    INGENUITY;
 
     companion object {
         /**
@@ -348,6 +349,15 @@ object Counters {
      * `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val REVIVAL = "revival"
+
+    /**
+     * Ingenuity counter (SPM — Lady Octopus, Inspired Inventor). Passive storage counter with no
+     * inherent rule of its own — Lady Octopus's first/second-draw triggers each add one and her
+     * {T} ability reads the count (via `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(
+     * Counters.INGENUITY))`) to cap the mana value of the artifact she can free-cast from hand.
+     * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val INGENUITY = "ingenuity"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.

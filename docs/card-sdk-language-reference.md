@@ -906,7 +906,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   dies trigger reads the last-known count to come back with one fewer),
   `Counters.NET`, `Counters.FIRE`, `Counters.CONQUEROR`, `Counters.POINT` (Contested Game Ball — its
   `{2}, {T}` ability adds one per activation and, when five or more are present, sacrifices the artifact and
-  creates a Treasure), `Counters.WISH` (Wishclaw Talisman — see below).
+  creates a Treasure), `Counters.WISH` (Wishclaw Talisman — see below), `Counters.INGENUITY` (Lady Octopus,
+  Inspired Inventor — her first/second-draw triggers each add one and her `{T}` ability caps the mana value of
+  the hand artifact she free-casts at the count via `CollectionFilter.ManaValueAtMost(DynamicAmounts.countersOnSelf(
+  CounterTypeFilter.Named(Counters.INGENUITY)))`).
 - `DistributeCountersFromSelf(type?, count?)` — split source's counters among creatures you control.
 - `DistributeCountersAmongTargets(total, type?, minPerTarget?)` — divvy N counters among chosen targets.
 - `DistributeCountersAmongFiltered(total, type?, filter, minPerTarget?)` — distribute N **new** counters among permanents matching `filter`, chosen at resolution (not the spell's targets); `minPerTarget = 0` models "among any number of". Unlike `DistributeCountersFromSelf` nothing is removed from a source. Crashing Wave: `DistributeCountersAmongFiltered(3, Counters.STUN, Filters.Creature.tapped().opponentControls())` — "distribute three stun counters among any number of tapped creatures your opponents control."
@@ -7514,6 +7517,11 @@ substitution.
   DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withChosenSubtype()))`; a
   `GrantDynamicStatsEffect` sized by `DynamicAmounts.countersOnSelf(...)` reads the count back) — a pure
   passive resource counter with no inherent rule.
+  `ingenuity` (`Counters.INGENUITY`): SPM — Lady Octopus, Inspired Inventor (two `Triggers.NthCardDrawn`
+  triggers — first and second draw each turn — each add one via `AddCounters(Counters.INGENUITY, 1, EffectTarget.Self)`;
+  her `{T}` ability reads the count via `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.INGENUITY))`
+  inside a `CollectionFilter.ManaValueAtMost` to gate which hand artifact she can free-cast) — a pure passive
+  resource counter with no inherent rule.
   `wish` (`Counters.WISH`): ELD — Wishclaw Talisman (enters with three via an `EntersWithCounters(
   CounterTypeFilter.Named(Counters.WISH), count = 3, selfOnly = true)` replacement; each activation of its
   tutor ability spends one via `Costs.RemoveCounterFromSelf(Counters.WISH, 1)`). A pure "uses left" counter
