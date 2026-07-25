@@ -3187,6 +3187,10 @@ object Effects {
      *
      * If [keywordsForCopy] is non-empty, the copy will also be treated as having those
      * keywords for the duration of its time on the stack (e.g., wither, lifelink).
+     *
+     * [copies] makes more than one independent copy, each retargetable on its own (CR 707.10c) —
+     * "copy it for each other instant and sorcery spell you've cast before it this turn"
+     * (Thousand-Year Storm). A count of zero or less makes no copies.
      */
     fun CopyTargetSpell(
         target: EffectTarget = EffectTarget.ContextTarget(0),
@@ -3194,7 +3198,8 @@ object Effects {
         removeLegendary: Boolean = false,
         addedTokenKeywords: Set<com.wingedsheep.sdk.core.Keyword> = emptySet(),
         sacrificeTokenAtStep: com.wingedsheep.sdk.core.Step? = null,
-        sacrificeTokenOnlyOnControllersTurn: Boolean = false
+        sacrificeTokenOnlyOnControllersTurn: Boolean = false,
+        copies: DynamicAmount = DynamicAmount.Fixed(1)
     ): Effect =
         CopyTargetSpellEffect(
             target,
@@ -3202,7 +3207,8 @@ object Effects {
             removeLegendary,
             addedTokenKeywords,
             sacrificeTokenAtStep,
-            sacrificeTokenOnlyOnControllersTurn
+            sacrificeTokenOnlyOnControllersTurn,
+            copies
         )
 
     /**
@@ -3246,7 +3252,7 @@ object Effects {
      * [copies] copies of the chosen object are created; it defaults to a single copy. Pass a
      * [DynamicAmount] (e.g. [DynamicAmount.XValue]) to copy an ability multiple times — "Copy target
      * activated or triggered ability you control X times" (Gogo, Master of Mimicry). New targets may
-     * be chosen independently for each copy. Only the ability branches honor [copies] > 1.
+     * be chosen independently for each copy.
      */
     fun CopyTargetSpellOrAbility(
         target: EffectTarget = EffectTarget.ContextTarget(0),
