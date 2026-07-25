@@ -1190,69 +1190,54 @@ data class PlayerDescendedThisTurnComponent(val count: Int = 0) : Component
 data object FlippedCoinsThisTurnComponent : Component
 
 /**
- * Tracks which card types have entered the battlefield under this player's control this turn.
- * Populated by `BattlefieldEntry.place` (via `PermanentEntryTracker.record`) from the projected
- * types at the moment of entry, so a permanent that's an artifact-by-effect at ETB is recorded
- * just like a printed artifact. Once recorded, the entry is insensitive to later state changes
- * — the entry of an artifact remains recorded even if the permanent is destroyed, loses its
- * artifact type, or changes controllers later in the turn.
- *
- * Cleared at end of turn by CleanupPhaseManager.
- *
- * Used for conditions like Mechan Shieldmate's "as long as an artifact entered the battlefield
- * under your control this turn".
- */
-@Serializable
-data class PermanentTypesEnteredBattlefieldThisTurnComponent(
-    val cardTypes: Set<com.wingedsheep.sdk.core.CardType> = emptySet()
-) : Component
-
-/**
- * Tracks the number of lands that have entered the battlefield under this player's control
- * during the current turn. Counts every ETB regardless of how the land arrived — normal land
- * drops, Lander-token search, Cultivate-style "put a land onto the battlefield" effects,
- * gift-a-land effects, etc. — so it diverges from `LandDropsComponent` (which only counts
- * the from-hand action).
- *
- * Populated by `PermanentEntryTracker.record` whenever the entering permanent's projected
- * types include `LAND`. Cleared at end of turn by [CleanupPhaseManager].
- *
- * Used for `DynamicAmount.TurnTracking(player, TurnTracker.LANDS_ENTERED_UNDER_CONTROL)` —
- * e.g. Bioengineered Future's "for each land that entered the battlefield under your
- * control this turn".
- */
-@Serializable
-data class LandsEnteredUnderControlThisTurnComponent(val count: Int = 0) : Component
-
-/**
- * One permanent that entered the battlefield under a player's control this turn, captured for
- * subtype-keyed "for each [creature type] that entered the battlefield under your control this
- * turn" counts (Geralf, the Fleshwright). [subtypes] is snapshotted from the **projected** state
- * at the instant of entry, so a permanent that was a Zombie when it entered still counts even
- * after it leaves the battlefield or loses the type (CR 603.10 last-known style — the entry event
- * is what matters, not current state). [entityId] lets a triggered ability exclude the permanent
- * that caused it to trigger ("each *other* Zombie", and simultaneous entries per the 2024-04-12
- * ruling).
+ * One permanent that entered the battlefield under a player's control this turn. [cardTypes] and
+ * [subtypes] are snapshotted from the **projected** state at the instant of entry, so a permanent
+ * that was an artifact (or a Zombie) when it entered still counts even after it leaves the
+ * battlefield, loses the type, or changes controllers (CR 603.10 last-known style — the entry
+ * event is what matters, not current state). [entityId] lets a triggered ability exclude the
+ * permanent that caused it to trigger ("each *other* Zombie", and simultaneous entries per the
+ * 2024-04-12 ruling).
  */
 @Serializable
 data class EnteredPermanentRecord(
     val entityId: EntityId,
+    val cardTypes: Set<com.wingedsheep.sdk.core.CardType> = emptySet(),
     val subtypes: Set<String> = emptySet()
-)
+) {
+    val isLand: Boolean get() = com.wingedsheep.sdk.core.CardType.LAND in cardTypes
+}
 
 /**
- * Tracks every permanent that entered the battlefield under this player's control during the
- * current turn, with the subtypes each had at entry. Populated by `PermanentEntryTracker.record`
- * (exactly once per ETB) and cleared at end of turn by [CleanupPhaseManager].
+ * The single per-player log of every permanent that entered the battlefield under this player's
+ * control during the current turn, one [EnteredPermanentRecord] per entry. Populated by
+ * `PermanentEntryTracker.record` (exactly once per ETB) and cleared at end of turn by
+ * [CleanupPhaseManager].
  *
- * Backs `DynamicAmount.SubtypeEnteredUnderControlThisTurn(player, subtype, excludeTriggeringEntity)`
- * — "for each [other] [subtype] that entered the battlefield under your control this turn"
- * (Geralf, the Fleshwright). Counts entries even if the permanent has since left or changed type.
+ * One entry per *entry event*, not per permanent: a permanent that leaves and re-enters is a new
+ * object (CR 400.7) and is logged twice.
+ *
+ * Every "an X entered the battlefield under your control this turn" reader derives from this log
+ * rather than keeping its own counter:
+ *  - [countNonland] → `TurnTracker.NONLAND_PERMANENTS_ENTERED`, the Celebration ability word's
+ *    "two or more nonland permanents entered the battlefield under your control this turn" (WOE).
+ *  - [countOfType] → `TurnTracker.LANDS_ENTERED_UNDER_CONTROL` ("for each land that entered the
+ *    battlefield under your control this turn", Bioengineered Future) and the
+ *    `PermanentTypeEnteredBattlefieldThisTurn` condition (Mechan Shieldmate's "as long as an
+ *    artifact entered the battlefield under your control this turn").
+ *  - [entries] directly → `DynamicAmount.SubtypeEnteredUnderControlThisTurn` ("each other Zombie
+ *    that entered the battlefield under your control this turn", Geralf, the Fleshwright).
  */
 @Serializable
 data class PermanentsEnteredUnderControlThisTurnComponent(
     val entries: List<EnteredPermanentRecord> = emptyList()
-) : Component
+) : Component {
+    /** Number of logged entries that were **not** lands at the moment they entered. */
+    fun countNonland(): Int = entries.count { !it.isLand }
+
+    /** Number of logged entries that had [cardType] at the moment they entered. */
+    fun countOfType(cardType: com.wingedsheep.sdk.core.CardType): Int =
+        entries.count { cardType in it.cardTypes }
+}
 
 /**
  * Marker component indicating that this player has put a counter on a creature this turn.

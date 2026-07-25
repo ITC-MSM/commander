@@ -1238,6 +1238,41 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.VoidCondition
 
     /**
+     * Celebration: "if two or more nonland permanents entered the battlefield under your control
+     * this turn". Backs the Celebration ability word from Wilds of Eldraine (CR 207.2c — an
+     * ability word is italic flavor with no rules meaning, so there is no keyword; only this
+     * condition).
+     *
+     * Pure past-event check (per the WOE rulings): the permanents need not still be on the
+     * battlefield or still be yours. Tokens count; lands do not (nor does a land creature).
+     * Crossing the threshold is all that matters — a third entry changes nothing.
+     *
+     * Works in both shapes the mechanic ships in:
+     *  - `triggerCondition = Conditions.Celebration` for the intervening-'if' triggers (CR 603.4 —
+     *    checked at trigger time *and* on resolution): Pests of Honor, Lady of Laughter, Ash,
+     *    Party Crasher, …
+     *  - a `ConditionalStaticAbility` gate for the "as long as …" statics (re-evaluated every
+     *    projection): Armory Mice, Grand Ball Guest, Gallant Pie-Wielder, …
+     */
+    val Celebration: ConditionInterface =
+        NonlandPermanentsEnteredThisTurn(atLeast = 2)
+
+    /**
+     * "If [atLeast] or more nonland permanents entered the battlefield under [player]'s control
+     * this turn" — the general form behind [Celebration], for wordings with a different threshold
+     * or a player other than the controller.
+     */
+    fun NonlandPermanentsEnteredThisTurn(
+        atLeast: Int = 1,
+        player: Player = Player.You
+    ): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.NONLAND_PERMANENTS_ENTERED,
+            atLeast,
+            player,
+        )
+
+    /**
      * If an opponent lost life this turn (from any source).
      * Used for cards like Hired Claw: "Activate only if an opponent lost life this turn"
      */

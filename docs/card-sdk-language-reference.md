@@ -5936,9 +5936,22 @@ default to "you" so card authors don't need to pass it explicitly.
   even if the artifact is destroyed before combat). Captured types are read from the
   *projected* state at the moment of entry, so a permanent that's an artifact via a
   continuous effect at ETB (Mycosynth Lattice, etc.) also counts. Backed by the per-player
-  `PermanentTypesEnteredBattlefieldThisTurnComponent`, cleared by `CleanupPhaseManager` at
-  end of turn. Every battlefield entry must go through `BattlefieldEntry.place` for this
+  `PermanentsEnteredUnderControlThisTurnComponent` entry log, cleared by `CleanupPhaseManager`
+  at end of turn. Every battlefield entry must go through `BattlefieldEntry.place` for this
   tracker to stay in sync. Shortcut: `Conditions.ArtifactEnteredBattlefieldThisTurn`.
+- `Celebration` / `NonlandPermanentsEnteredThisTurn(atLeast = 1, player = Player.You)` — the
+  **Celebration** ability word (Wilds of Eldraine; CR 207.2c — italic flavor with no rules
+  meaning, so there is no keyword, only this condition): "if two or more nonland permanents
+  entered the battlefield under your control this turn". Composes through
+  `Compare(TurnTracking(player, TurnTracker.NONLAND_PERMANENTS_ENTERED), GTE, Fixed(atLeast))`
+  over the same per-player entry log as `PermanentTypeEnteredBattlefieldThisTurn`, so it is a
+  pure past-event check: the permanents need not still be on the battlefield or still be yours
+  (WOE release notes). Tokens count; lands — including land creatures — never do. It's a
+  threshold, not a count: a third entry adds nothing. Dual-mode, which is what the mechanic
+  needs — the printed cards use it both as an intervening-'if' `triggerCondition` (CR 603.4;
+  Pests of Honor, Lady of Laughter, Ash, Party Crasher) and as a `ConditionalStaticAbility` gate
+  (Armory Mice, Grand Ball Guest, Gallant Pie-Wielder). Use
+  `DynamicAmounts.nonlandPermanentsEnteredUnderControlThisTurn(player)` for the raw count.
 - `YouDescendedThisTurn(atLeast = 1)` — CR 700.11 gate: at least `atLeast` nontoken
   permanent cards were put into your graveyard from *any* zone this turn (battlefield,
   hand, library, stack, exile). Tokens do not count, even though they briefly enter the
@@ -6727,6 +6740,13 @@ this turn").
   opponent-gift effects), so it differs from `LANDS_PLAYED`. Backs
   `DynamicAmounts.landsEnteredUnderControlThisTurn(player)` — e.g. Bioengineered Future's
   "for each land that entered the battlefield under your control this turn."
+- `NONLAND_PERMANENTS_ENTERED` — the complement of `LANDS_ENTERED_UNDER_CONTROL` over the same
+  per-player entry log: nonland permanents that entered the battlefield under the player's control
+  this turn. Tokens count; a permanent that is both a land and a creature does not (it's a land).
+  One count per *entry event*, so a permanent that leaves and re-enters counts twice (CR 400.7 — a
+  new object each time), and an entry stays counted after the permanent leaves or changes
+  controller. Backs `DynamicAmounts.nonlandPermanentsEnteredUnderControlThisTurn(player)` and,
+  at a threshold of two, the **Celebration** ability word — see `Conditions.Celebration`.
 - `FOOD_SACRIFICED` — Food tokens sacrificed.
 - `CARDS_LEFT_GRAVEYARD` — cards leaving your graveyard.
 - `DESCENDED` — number of times a player has descended this turn (CR 700.11) — i.e.
@@ -7517,6 +7537,18 @@ Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `Mo
     to hand). Use `ControllerOfTarget` for "destroy target permanent. Its controller searches/chooses…" where the
     targeted permanent's controller performs a follow-up (Magmatic Hellkite: destroy target nonbasic land, *its
     controller* searches for a basic). The same `chooser` set is accepted by `ChoosePileEffect`.
+  - **`Chooser.Opponent` in multiplayer.** "An opponent" is *one* opponent, and the controller of the spell or
+    ability picks which one (CR 601.7a / 602.3a for cast/activation-time choices; resolution-time choices follow the
+    same principle and cards say so in their rulings — Curator of Destinies: "You decide which opponent chooses the
+    pile"). The engine handles that for you: with several opponents the step first pauses on a `ChooseOptionDecision`
+    for the controller listing the opponents by name, then re-runs itself and presents the real choice to the named
+    opponent. With a sole opponent the choice is forced and nothing extra is prompted, so two-player games are
+    unaffected. Each "an opponent chooses" step in one resolution gets its own pick — the choice is
+    resolution-scoped, not recorded on the source. All of this lives in the engine's `ChooserResolution`, so any
+    effect carrying a `Chooser` inherits it; card definitions just say `Chooser.Opponent`. (For the durable,
+    cast-time "you may promise **an opponent** a gift"-style recipient choice, use
+    `Effects.ChooseOpponentForSource` + `Player.ChosenOpponent` instead — that one is stored on the source and
+    persists past the resolution.)
 
 **Linked exile**
 

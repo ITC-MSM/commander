@@ -71,6 +71,20 @@ enum class TurnTracker {
      * control this turn" wording (Bioengineered Future).
      */
     LANDS_ENTERED_UNDER_CONTROL,
+    /**
+     * Number of **nonland** permanents that entered the battlefield under the player's control
+     * this turn — the complement of [LANDS_ENTERED_UNDER_CONTROL] over the same per-player entry
+     * log. Tokens count (they're permanents); a permanent that is both a land and a creature does
+     * not (it's a land). Entries are counted per *entry event*, so a permanent that leaves and
+     * re-enters counts twice (CR 400.7 — it's a new object each time), and an entry stays counted
+     * even after the permanent leaves the battlefield or changes controller.
+     *
+     * `Compare(TurnTracking(You, NONLAND_PERMANENTS_ENTERED), GTE, Fixed(2))` is the **Celebration**
+     * ability word (Wilds of Eldraine, CR 207.2c — flavor only, no keyword): "two or more nonland
+     * permanents entered the battlefield under your control this turn". Reach for it via
+     * `Conditions.Celebration`.
+     */
+    NONLAND_PERMANENTS_ENTERED,
     /** Indicator (0 or 1) that the player sacrificed at least one Food this turn. */
     FOOD_SACRIFICED,
     /** Total cards that left the player's graveyard this turn (Bonecache Overseer). */
@@ -136,6 +150,7 @@ enum class TurnTracker {
         COUNTERS_PUT_ON_CREATURE -> "whether ${player.description} put a counter on a creature this turn"
         LANDS_PLAYED -> "the number of lands ${player.description} played this turn"
         LANDS_ENTERED_UNDER_CONTROL -> "the number of lands that entered the battlefield under ${player.possessive} control this turn"
+        NONLAND_PERMANENTS_ENTERED -> "the number of nonland permanents that entered the battlefield under ${player.possessive} control this turn"
         FOOD_SACRIFICED -> "whether ${player.description} sacrificed a Food this turn"
         CARDS_LEFT_GRAVEYARD -> "the number of cards that left ${player.possessive} graveyard this turn"
         DESCENDED -> "the number of times ${player.description} descended this turn"

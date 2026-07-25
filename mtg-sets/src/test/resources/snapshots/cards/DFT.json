@@ -2059,6 +2059,88 @@
     ]
 }
 
+// Dune Drifter
+{
+    "name": "Dune Drifter",
+    "manaCost": "{X}{W}{B}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "When this Vehicle enters, return target artifact or creature card with mana value X or less from your graveyard to the battlefield.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact or creature card with mana value X or less in your graveyard"
+                    },
+                    "destination": "Battlefield"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        "IsCreature",
+                                        "IsArtifact"
+                                    ]
+                                },
+                                {
+                                    "type": "ManaValueAtMostDynamic",
+                                    "amount": "CastX"
+                                }
+                            ],
+                            "controllerPredicate": "OwnedByYou"
+                        },
+                        "zone": "Graveyard"
+                    },
+                    "id": "target artifact or creature card with mana value X or less in your graveyard"
+                },
+                "descriptionOverride": "When this Vehicle enters, return target artifact or creature card with mana value X or less from your graveyard to the battlefield."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "200",
+        "rarity": "UNCOMMON",
+        "artist": "Simon Dominic",
+        "flavorText": "It was easy for them to replace lost crew members once they reached home turf.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/36185de4-55c2-4e5d-9bcc-ea12b7052728.jpg?1783907860",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If this Vehicle enters and wasn't cast, or it was cast without paying its mana cost, X is 0."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Endrider Catalyzer
 {
     "name": "Endrider Catalyzer",
@@ -2742,6 +2824,82 @@
     ]
 }
 
+// Grim Javelineer
+{
+    "name": "Grim Javelineer",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Warrior",
+    "oracleText": "Whenever you attack, target attacking creature gets +1/+0 until end of turn. When that creature dies this turn, surveil 1. (Look at the top card of your library. You may put that card into your graveyard.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature"
+                            }
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "effect": {
+                                "type": "Surveil",
+                                "count": 1
+                            },
+                            "trigger": {
+                                "event": {
+                                    "type": "ZoneChangeEvent",
+                                    "from": "Battlefield",
+                                    "to": "Graveyard"
+                                }
+                            },
+                            "watchedTarget": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature attacking"
+                    },
+                    "id": "target attacking creature"
+                },
+                "descriptionOverride": "Whenever you attack, target attacking creature gets +1/+0 until end of turn. When that creature dies this turn, surveil 1."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Bartek Fedyczak",
+        "flavorText": "Kheti lost everything to the Eternals and the Phyrexians. What she gained was an intimate knowledge of death in its myriad forms.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/87154116-e306-4e15-bd5a-dcdb5ddbcd36.jpg?1783907895"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Guidelight Synergist
 {
     "name": "Guidelight Synergist",
@@ -3418,6 +3576,81 @@
     ]
 }
 
+// Molt Tender
+{
+    "name": "Molt Tender",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Insect Druid",
+    "oracleText": "{T}: Mill a card. (Put the top card of your library into your graveyard.)\n{T}, Exile a card from your graveyard: Add one mana of any color.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{T}: Mill a card."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomExileFrom",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}, Exile a card from your graveyard: Add one mana of any color."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "rarity": "UNCOMMON",
+        "artist": "Filip Burburan",
+        "flavorText": "The Speedbrood regards molting as a selfless act worthy of the highest of honors. It allows one to be born anew for the good of the brood.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f800bf4e-4bfb-45b6-950b-c76952f52bb1.jpg?1783907868"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Night Market
 {
     "name": "Night Market",
@@ -3811,6 +4044,102 @@
         "artist": "Brian Valeza",
         "flavorText": "Like most goblins, Rocketeers value nothing more than a good old-fashioned near-death experience.",
         "imageUri": "https://cards.scryfall.io/normal/front/a/3/a311d4b3-ab2a-43c2-8480-6c5daac41178.jpg?1782687824"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Pothole Mole
+{
+    "name": "Pothole Mole",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Mole",
+    "oracleText": "When this creature enters, mill three cards, then you may return a land card from your graveyard to your hand. (To mill three cards, put the top three cards of your library into your graveyard.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 3
+                                        },
+                                        "isMill": true
+                                    },
+                                    "storeAs": "milled"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "milled",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "land"
+                            },
+                            "storeAs": "gathered1"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered1",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected2",
+                            "prompt": "You may return a land card from your graveyard to your hand",
+                            "selectedLabel": "Return to hand",
+                            "remainderLabel": "Leave in graveyard",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected2",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, mill three cards, then you may return a land card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "176",
+        "artist": "Daren Bader",
+        "flavorText": "\"Someone please call pest control. Again.\"\n—Termin, track designer",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/21c7b59f-fdae-4a11-9784-497a8165d75a.jpg?1783907868"
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -5408,6 +5737,57 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Ticket Tortoise
+{
+    "name": "Ticket Tortoise",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Turtle",
+    "oracleText": "Defender\nWhen this creature enters, if an opponent controls more lands than you, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "EachOpponent",
+                        "filter": "land"
+                    },
+                    "operator": "GT",
+                    "right": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "land"
+                    }
+                },
+                "descriptionOverride": "When this creature enters, if an opponent controls more lands than you, you create a Treasure token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "245",
+        "artist": "Brian Valeza",
+        "flavorText": "\"ADMIT ONE. ENJOY THE RACE.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa178ed7-8f3a-45f0-817d-5fbc7993b04a.jpg?1783907846"
+    }
 }
 
 // Trade the Helm

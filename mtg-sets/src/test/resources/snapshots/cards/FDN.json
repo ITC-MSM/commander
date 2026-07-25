@@ -1922,6 +1922,133 @@
     ]
 }
 
+// Curator of Destinies
+{
+    "name": "Curator of Destinies",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Sphinx",
+    "oracleText": "This spell can't be countered.\nFlying\nWhen this creature enters, look at the top five cards of your library and separate them into a face-down pile and a face-up pile. An opponent chooses one of those piles. Put that pile into your hand and the other into your graveyard.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "looked",
+                            "ifNotEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "looked",
+                                        "selection": "ChooseAnyNumber",
+                                        "storeSelected": "faceUp",
+                                        "storeRemainder": "faceDown",
+                                        "prompt": "Separate the top five cards into a face-up pile and a face-down pile. The cards you select are placed face up; the rest stay face down.",
+                                        "selectedLabel": "Face-up pile",
+                                        "remainderLabel": "Face-down pile",
+                                        "showAllCards": true,
+                                        "alwaysPrompt": true
+                                    },
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromVariable",
+                                            "variableName": "faceUp"
+                                        },
+                                        "storeAs": "faceUpRevealed",
+                                        "revealed": true
+                                    },
+                                    {
+                                        "type": "ChoosePile",
+                                        "pileA": "faceUpRevealed",
+                                        "pileB": "faceDown",
+                                        "pileALabel": "Face-up pile",
+                                        "pileBLabel": "Face-down pile",
+                                        "chooser": "Opponent",
+                                        "storeChosenAs": "chosenPile4",
+                                        "storeOtherAs": "otherPile4",
+                                        "prompt": "Choose a pile. That pile goes to your opponent's hand; the other goes to their graveyard."
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "chosenPile4",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        }
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "otherPile4",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "rarity": "RARE",
+        "artist": "Ralph Horsley",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9ff79da7-c3f7-4541-87a0-503544c699b5.jpg?1783909120",
+        "rulings": [
+            {
+                "date": "2024-11-08",
+                "text": "A spell or ability that counters spells can still target Curator of Destinies. When that spell or ability resolves, Curator of Destinies won't be countered, but any additional effects of the countering spell or ability will still happen."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "You may split the cards into one pile of five and one pile of zero. The pile of five cards could be the face-up pile or the face-down pile. The opponent may choose the empty pile to be put into your hand."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "You decide which opponent chooses the pile while resolving Curator of Destinies's last ability."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "If the opponent chooses the face-down pile to be put into your hand, you don't have to reveal the cards in that pile."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Dauntless Veteran
 {
     "name": "Dauntless Veteran",
