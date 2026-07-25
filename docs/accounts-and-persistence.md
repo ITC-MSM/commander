@@ -142,12 +142,13 @@ placement is done — Bronze `<1000`, Silver `1000–1199`, Gold `1200–1399`, 
 `1600–1999`, **Mythic** `≥2000` (open-ended) — and is shown as **Provisional** during placement. The
 profile page shows a card per queue (rating + tier + record) and a rating-over-time line chart.
 
-Flyway migrations `V5__game_replays.sql` and `V10__replay_durability.sql` hold replays — the *only*
+Flyway migrations `V5__game_replays.sql`, `V10__replay_durability.sql` and
+`V11__replay_pins_write_once.sql` hold replays — the *only*
 place they live, in progress or finished:
 
 | Table | Purpose |
 |-------|---------|
-| `game_replays` | one row per recorded game keyed by `game_id`: a gzip+base64 `CompactReplay` (RNG seed + decks + ordered action stream + pinned card definitions + checkpoints) in `data`, the gzipped `{initialSnapshot, deltas}` archive in `presentation`, and summary columns. `status` distinguishes an `IN_PROGRESS` recording from a `FINISHED` one, and `resume_fingerprint` gates resuming the former after a restart. See [data-contracts.md](data-contracts.md) → *Compact replays*. |
+| `game_replays` | one row per recorded game keyed by `game_id`: a gzip+base64 `CompactReplay` (RNG seed + decks + ordered action stream + checkpoints) in `data`, the pinned card definitions in a write-once `pinned_cards` column (kept out of `data` because that one is rewritten on every flush), the gzipped `{initialSnapshot, deltas}` archive in `presentation`, and summary columns. `status` distinguishes an `IN_PROGRESS` recording from a `FINISHED` one, and `resume_fingerprint` gates resuming the former after a restart. See [data-contracts.md](data-contracts.md) → *Compact replays*. |
 | `game_replay_players` | seat roster (owned child), so "replays I played in" is an indexed join rather than a scan. Rows written before V10 have no children and drop out of a player's own list, though their share links keep working. |
 
 A signed-in player's history (`/api/stats/me/history`) `LEFT JOIN`s `game_replays` on `game_id` to

@@ -473,9 +473,9 @@ things address that:
 
 | | What | Cost |
 |---|---|---|
-| `pinnedCards` | Compiled `CardDefinition` JSON for every card in the decks, overlaid on the live corpus during reconstruction (`ReplayCardPin` → a child `CardRegistry`). Card edits stop mattering; ability ids also stay stable, so recorded yields keep matching. | 7 KB gzipped on POR (34 definitions) up to ~30 KB on a modern set (113) — scales with deck variety, not game length; usually the largest part of `data` |
+| `pinnedCards` | Compiled `CardDefinition` JSON for every card in the decks, overlaid on the live corpus during reconstruction (`ReplayCardPin` → a child `CardRegistry`). Card edits stop mattering; ability ids also stay stable, so recorded yields keep matching. Stored in its own write-once `pinned_cards` column, not in `data`, so the periodic flush doesn't rewrite it. | 7 KB gzipped on POR (34 definitions) up to ~40 KB on a modern set (113) — scales with deck variety, not game length, and is usually the largest part of a record |
 | `checkpoints` | A cheap position fingerprint (`ReplayFingerprint`: entity counter, clock, turn/phase, zone sizes, life) every 20 actions. Catches *silent* drift — actions that still apply but no longer produce the board that was played — instead of rendering it. | ~30 bytes each |
-| `presentation` | The `{initialSnapshot, deltas}` stream, materialized just after game over (the last moment we're provably on the recording build, on a background thread so it stays off the game-over path) and stored gzipped in its own column. A result rather than a recipe, so it renders regardless of engine changes. | ~45 KB gzipped for a 263-action game, ~160 KB for a 1650-action one — this one *does* scale with game length |
+| `presentation` | The `{initialSnapshot, deltas}` stream, materialized just after game over (the last moment we're provably on the recording build, on a background thread so it stays off the game-over path) and stored gzipped in its own column. A result rather than a recipe, so it renders regardless of engine changes. | ~62 KB gzipped for a 357-action game, ~160 KB for a 1650-action one — this one *does* scale with game length |
 
 `ReplayService.viewerPayload` picks between them: re-simulate first, and if that comes back faithful
 serve it (current view code, and "share frame as scenario" works because a real `GameState` exists);
@@ -499,25 +499,28 @@ measures both payloads. On POR, ~1650 actions over ~32 turns per game:
 
 **POR is the cheap end of the range, though — don't plan capacity from it.** Portal's cards are
 simple, so its definitions are small and there are few distinct ones. The pins scale with *deck
-variety and card complexity*, not with game length, and on a modern set they dominate. A real
-263-action ECL game (40-card decks, human vs AI) measured:
+variety and card complexity*, not with game length, and on a modern set they dominate everything
+else. Measured on a real 357-action ECL game (40-card decks, human vs AI), per stored column:
 
-| Payload | Stored (gzip+base64) |
-|---|---|
-| Input log + pins + checkpoints (`data`) | **~46 KB** — of which **~30 KB is 113 pinned definitions** (80% of the raw payload; median definition ~1.3 KB) |
-| Archived frame stream (`presentation`) | **~45 KB** — ~1× the input log |
+| Column | Stored (gzip+base64) | Scales with |
+|---|---|---|
+| `data` — input log + checkpoints | **~4.8 KB** | game length |
+| `pinned_cards` — 113 definitions | **~40 KB** | deck variety / card complexity (fixed per game) |
+| `presentation` — archived frames | **~62 KB** | game length |
 
-So the two payloads can be the same order of magnitude, and the input log's floor is set by the pins
-rather than by the actions. The recipe is still the record, but for a sharper reason than size: only
-it can rebuild a real `GameState`, which is what "share frame as scenario" needs. Treat ~11 KB as the
-Portal-shaped best case and tens of KB as normal.
+So ~107 KB per finished game, and **the pins are the single largest cost** — bigger than the input log
+by an order of magnitude, and unrelated to how long the game ran. Two consequences: budget per *game*,
+not per *action*; and a 20-turn concession costs nearly as much as a 40-minute grind.
 
-Two consequences worth knowing. Capacity: budget per *game* (pins) more than per *action*. Write
-volume: `ReplayCheckpointFlusher` re-encodes the whole blob on every flush, so ~80% of each in-flight
-write is byte-identical pin data — a 30-minute game is on the order of 360 flushes × ~46 KB. If that
-ever matters, store the pins once (their own column, written on the first flush) rather than folding
-them into every flush; they can't simply be deferred to game over, because a restart onto a new build
-mid-game would then pin the *new* definitions for a game that started on the old ones.
+The input log itself stays genuinely tiny (~4.8 KB here, ~13× smaller than the archive), which is what
+keeps re-simulation the primary path. But note that the size argument is no longer the *reason* it is
+the record — with the pins counted, the recipe and the result are the same order of magnitude. The real
+reason is that only the input log can rebuild a real `GameState`, which is what "share frame as
+scenario" needs.
+
+This split is also why the pins live in their own column rather than inside `data`: the flush rewrites
+`data` every few seconds for the length of a game, and folding 40 KB of never-changing definitions into
+each of those writes cost ~12× more per flush than the action log itself. See `V11__replay_pins_write_once.sql`.
 
 Random play is action-heavy (it passes priority constantly and rarely closes out a game), so real
 AI/human games tend to have shorter action logs — but the same or larger pins. Run it with:
