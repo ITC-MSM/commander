@@ -1683,10 +1683,18 @@ function GameCardImpl({
         </div>
       )}
 
-      {/* Stash counter badge */}
-      {battlefield && getStashCounters(card) > 0 && (
+      {/* Stash counter badge. Unlike the other counter badges this one is *not* gated on
+          `battlefield`: a stash counter marks a card sitting in exile (Tinybones, Bauble Burglar
+          exiles opponents' discards with one), and that card is rendered off-battlefield — as a
+          castable ghost card in the hand row and in the exile browser. Hiding the badge there would
+          hide the only cue for why the card is playable. */}
+      {getStashCounters(card) > 0 && (
         <div style={{
           ...styles.stashCounterBadge,
+          // Off the battlefield the top-right corner is the mana-cost badge's (hand and
+          // playable-from-exile ghost cards draw it there, at a higher z-index), so the counter
+          // moves to the free top-left corner instead of hiding behind the cost.
+          ...(battlefield ? {} : { right: 'auto', left: 4 }),
           fontSize: responsive.badges.counterTextFontSize,
           padding: responsive.badges.badgePadding,
         }}>

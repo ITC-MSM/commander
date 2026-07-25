@@ -1269,23 +1269,30 @@ class TriggerDetector(
                         }
                     }
                     // Same shape for "whenever an opponent discards a card" — discarding N cards
-                    // through one effect creates N separate trigger firings. A card filter narrows
-                    // that to the matching cards, so defer to the matcher for the count. Batch
-                    // wording ("whenever you discard one or more cards", CR 603.2c) collapses the
-                    // whole event to a single firing — CardsDiscardedEvent is already one event
-                    // per discard action, so the cap is exactly the printed once-per-event.
+                    // through one effect creates N separate trigger firings, one per matching card,
+                    // and each firing binds *its* card as the triggering entity so "exile it from
+                    // their graveyard" (Tinybones, Bauble Burglar) acts on the right card (CR 400.7e
+                    // — the trigger can find the object the discarded card became in the graveyard).
+                    // Batch wording ("whenever you discard one or more cards", CR 603.2c) collapses
+                    // the whole event to a single firing — CardsDiscardedEvent is already one event
+                    // per discard action, so the cap is exactly the printed once-per-event — and has
+                    // no single "it" to bind.
                     else if (ability.trigger is EventPattern.DiscardEvent &&
                         event is CardsDiscardedEvent) {
                         val discardTrigger = ability.trigger as EventPattern.DiscardEvent
-                        val matchingCards = matcher.matchingDiscardCount(
+                        val matchingCards = matcher.matchingDiscardedCards(
                             discardTrigger,
                             event,
                             entityId,
                             controllerId,
                             state
                         )
-                        val firings = if (discardTrigger.batch) minOf(matchingCards, 1) else matchingCards
-                        repeat(firings) {
+                        val boundCards: List<EntityId?> = if (discardTrigger.batch) {
+                            if (matchingCards.isEmpty()) emptyList() else listOf(null)
+                        } else {
+                            matchingCards
+                        }
+                        for (discardedCardId in boundCards) {
                             triggers.add(
                                 PendingTrigger(
                                     ability = ability,
@@ -1293,6 +1300,7 @@ class TriggerDetector(
                                     sourceName = cardComponent.name,
                                     controllerId = controllerId,
                                     triggerContext = TriggerContext.fromEvent(event)
+                                        .copy(triggeringEntityId = discardedCardId)
                                 )
                             )
                         }

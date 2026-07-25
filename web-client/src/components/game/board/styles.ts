@@ -332,6 +332,25 @@ export const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 0 6px rgba(245, 215, 110, 0.85)',
     pointerEvents: 'none',
   } as React.CSSProperties,
+  // Stash-counter badge for a card in the exile browser grid (Tinybones, Bauble Burglar). Sits
+  // opposite the plotted badge so a plotted, stash-countered card shows both. Same amber palette as
+  // the on-card `stashCounterBadge`, so the counter reads the same wherever the card is rendered.
+  stashGridBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    borderRadius: 4,
+    padding: '2px 6px',
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#f0a030',
+    backgroundColor: 'rgba(120, 50, 20, 0.95)',
+    border: '1px solid rgba(220, 120, 40, 0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+    pointerEvents: 'none',
+  } as React.CSSProperties,
   plottedOverlay: {
     position: 'fixed',
     top: 0,

@@ -8347,6 +8347,133 @@
     ]
 }
 
+// Tinybones, Bauble Burglar
+{
+    "name": "Tinybones, Bauble Burglar",
+    "manaCost": "{1}{B}",
+    "typeLine": "Legendary Creature — Skeleton Rogue",
+    "oracleText": "Whenever an opponent discards a card, exile it from their graveyard with a stash counter on it.\nDuring your turn, you may play cards you don't own with stash counters on them from exile, and mana of any type can be spent to cast those spells.\n{3}{B}, {T}: Each opponent discards a card. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DiscardEvent",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "TriggeringEntity",
+                    "destination": "Exile",
+                    "fromZone": "Graveyard",
+                    "addCounterType": "STASH"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Each opponent discards a card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "MayPlayCardsFromExile",
+                "filter": {
+                    "statePredicates": [
+                        {
+                            "type": "HasCounter",
+                            "counterType": "stash"
+                        }
+                    ],
+                    "controllerPredicate": "OwnedByOpponent"
+                },
+                "condition": "IsYourTurn",
+                "withAnyManaType": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "RARE",
+        "artist": "Leonardo Santanna",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff3d85bc-ef2d-4251-baf4-a14bd0cee61e.jpg?1783909107",
+        "rulings": [
+            {
+                "date": "2024-11-08",
+                "text": "Tinybones's second ability allows you to play all exiled cards you don't own with stash counters on them, regardless of whether they were put there by the Tinybones you currently control or a Tinybones that was previously on the battlefield."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "You pay all costs and follow all normal timing rules for cards played with the permission granted by Tinybones's second ability. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Tragic Banshee
 {
     "name": "Tragic Banshee",

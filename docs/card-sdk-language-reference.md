@@ -637,7 +637,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `EffectContext.triggerLastKnownBlockingOrBlockedByIds`) via `CardSource.LastKnownCombatPairedWithSource`,
   restricted to creatures still on the battlefield.
 - `DestroyAllEquipmentOnTarget(target)` — wreck the gear attached to a creature.
-- `Exile(target)` — exile target.
+- `Exile(target, fromZone?, addCounterType?)` — exile target. `fromZone` skips the exile unless the
+  card is still in that zone ("exile it **from their graveyard**" does nothing once the card has moved
+  on — by then it's a new object, CR 400.7); `addCounterType` puts one counter of that type on the card
+  once it lands ("exile it **with a stash counter on it**" — Tinybones, Bauble Burglar), and is skipped
+  along with the move when the `fromZone` gate closes. Both are pass-throughs to `MoveToZoneEffect`
+  (also reachable via `Effects.Move`), where `addCounterType` is the single-target counterpart of
+  `MoveCollectionEffect.addCounterType`.
 - `ExileAndGrantOwnerPlayPermission(target, until?)` — exile + owner may play it (Garth-style).
 - `ExileOpponentsGraveyards()` — exile every card in each opponent's graveyard.
 - `ExileUntilLeaves(target)` — linked exile; the exiled card returns when the source leaves the battlefield (pair with `ReturnLinkedExile*` on the source's `LeavesBattlefield` trigger). The target is normally a **battlefield** permanent (O-Ring: Liminal Hold, Driftgloom Coyote), but a **graveyard card** is also legal — the executor moves the target to exile from whichever of those two zones it is in, so a cross-zone union `target(...)` ("creature on the battlefield **or** creature card from a graveyard") works directly (Savior of Ollenbock). Other zones are ignored.
@@ -3238,7 +3244,14 @@ in the repo today):
 Fires once per card discarded — a single resolution that discards N cards fires the
 trigger N times (mirrors how `YouDraw` handles multi-card draws). The engine emits
 one aggregate `CardsDiscardedEvent` per resolution and fans it out in the detector.
-`Player.TriggeringPlayer` resolves to the discarding player inside the effect.
+`Player.TriggeringPlayer` resolves to the discarding player inside the effect, and **each firing
+binds its own discarded card** as the triggering entity — so `EffectTarget.TriggeringEntity` /
+`CardSource.TriggeringEntity` is "it", the card the discard put into the graveyard (CR 400.7e: a
+trigger can find the new object a card became in a public zone). Tinybones, Bauble Burglar's
+"exile **it** from their graveyard with a stash counter on it" =
+`Effects.Exile(EffectTarget.TriggeringEntity, fromZone = Zone.GRAVEYARD, addCounterType = CounterType.STASH)`.
+Batch wording (`batch = true`) collapses the event to a single firing and binds no card — there is no
+single "it" for "one or more cards".
 
 - `AnyOpponentDiscards` — whenever an opponent discards a card. (Entropic Battlecruiser.)
 - `YouDiscard` — whenever you discard a card.
@@ -4661,6 +4674,26 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   `effectiveSneakCost` are read by `SneakCastEnumerator` (a graveyard loop) and four sites in
   `CastSpellHandler` (zone gate, both cost paths, the enters-tapped/bounce resolution). No
   exile-on-resolution (unlike flashback) — the creature simply moves graveyard → stack → battlefield.
+- `MayPlayCardsFromExile(filter, condition = null, withAnyManaType = false)` — "you may **play** cards
+  in exile matching `filter`" (spells *and* lands, CR 601.3). The sibling of
+  `GrantMayCastFromLinkedExile` for the case where the playable set is a **filter over every exile
+  zone** rather than the cards linked to this permanent. Tinybones, Bauble Burglar = "During your turn,
+  you may play cards you don't own with stash counters on them from exile, and mana of any type can be
+  spent to cast those spells" =
+  `MayPlayCardsFromExile(GameObjectFilter.Any.ownedByOpponent().withCounter(Counters.STASH), condition = Conditions.IsYourTurn, withAnyManaType = true)`
+  (`ownedByOpponent()` is the engine's "not owned by you" predicate; cards in exile carry an owner but
+  no controller, so ownership predicates are the ones that read correctly there). Filter-defined rather
+  than card-remembered is load-bearing for its ruling: the permission covers every stash-countered card
+  "regardless of whether they were put there by the Tinybones you currently control or a Tinybones that
+  was previously on the battlefield". `condition` is re-evaluated on every read, so the window opens and
+  closes with the game state; `withAnyManaType` relaxes the colored/hybrid/Phyrexian requirements of
+  spells cast **through this permission only** (CR 118.14 / 609.4b) — the reason it rides here instead of
+  being a blanket `SpendAnyManaTypeForSpells`. Nothing else is waived: normal timing and all costs still
+  apply, so a stash-countered land is playable only during your main phase with an empty stack.
+  Engine-side, `StaticMayPlayGrants` derives a live `MayPlayPermission` per matching exiled card, which
+  is unioned into `GameState.activeMayPlayFor`, so the existing exile play/cast machinery (enumeration,
+  cast handler, land handler, cost paths, and the client's `playableFromExile` ghost-card affordance)
+  covers it with no separate code path.
 - `MayCastSelfFromZones(zones, condition = null, additionalCost = null)` — intrinsic *self*
   permission: this card may be cast from any of `zones` (graveyard/exile) following normal timing
   and for its normal mana cost. Squee, the Immortal = `MayCastSelfFromZones(listOf(GRAVEYARD,

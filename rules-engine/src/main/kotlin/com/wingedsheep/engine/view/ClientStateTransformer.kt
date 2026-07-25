@@ -1209,7 +1209,7 @@ class ClientStateTransformer(
 
         // Check if this card is playable from exile (impulse draw like Mind's Desire,
         // or cast-from-linked-exile like Rona / Dawnhand Dissident).
-        val mayPlayFromExile = state.hasMayPlayFor(entityId, viewingPlayerId, conditionEvaluator)
+        val mayPlayFromExile = state.hasMayPlayFor(entityId, viewingPlayerId, conditionEvaluator, cardRegistry)
         val playableFromExile = zoneKey.zoneType == Zone.EXILE && (
             mayPlayFromExile || isCastableFromLinkedExile(state, viewingPlayerId, entityId, container)
         )

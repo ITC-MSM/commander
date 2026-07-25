@@ -3,6 +3,7 @@ package com.wingedsheep.sdk.dsl
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.BendType
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
@@ -729,9 +730,23 @@ object Effects {
 
     /**
      * Exile a target.
+     *
+     * [fromZone] gates the exile on the card still being in that zone — "exile it from their
+     * graveyard" does nothing if the card left the graveyard before the ability resolved (CR 400.7:
+     * it would be a new object). [addCounterType] puts one counter of that type on the exiled card
+     * once it lands ("exile it with a stash counter on it"); it is skipped along with the move when
+     * the [fromZone] gate closes.
      */
-    fun Exile(target: EffectTarget): Effect =
-        MoveToZoneEffect(target, Zone.EXILE)
+    fun Exile(
+        target: EffectTarget,
+        fromZone: Zone? = null,
+        addCounterType: CounterType? = null
+    ): Effect = MoveToZoneEffect(
+        target = target,
+        destination = Zone.EXILE,
+        fromZone = fromZone,
+        addCounterType = addCounterType
+    )
 
     /**
      * Exile a target and let its owner play it while it remains exiled.
@@ -2778,7 +2793,8 @@ object Effects {
         fromZone: Zone? = null,
         faceDown: FaceDownMode? = null,
         linkToSource: Boolean = false,
-        positionFromTop: Int? = null
+        positionFromTop: Int? = null,
+        addCounterType: CounterType? = null
     ): Effect = MoveToZoneEffect(
         target = target,
         destination = destination,
@@ -2788,7 +2804,8 @@ object Effects {
         fromZone = fromZone,
         faceDown = faceDown,
         linkToSource = linkToSource,
-        positionFromTop = positionFromTop
+        positionFromTop = positionFromTop,
+        addCounterType = addCounterType
     )
 
     /**

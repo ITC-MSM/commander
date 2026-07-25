@@ -102,7 +102,7 @@ class CastZoneResolver(
         // (Possibility Technician's "if you control a Kavu"), fall through to linked-exile
         // granters when the gate is closed — those are independent permission sources and
         // may still apply.
-        if (state.hasMayPlayFor(cardId, playerId, conditionEvaluator)) return true
+        if (state.hasMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)) return true
 
         // Check for GrantMayCastFromLinkedExile static abilities on battlefield permanents
         return hasLinkedExileCastPermission(state, playerId, cardId)

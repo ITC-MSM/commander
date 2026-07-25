@@ -523,7 +523,7 @@ class PlayLandHandler(
             cardId in state.getZone(ZoneKey(pid, Zone.EXILE))
         }
         if (!inAnyExile) return false
-        return state.hasMayPlayFor(cardId, playerId, conditionEvaluator)
+        return state.hasMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)
     }
 
     /**
@@ -536,7 +536,7 @@ class PlayLandHandler(
         state: GameState,
         playerId: EntityId,
         cardId: EntityId
-    ): Boolean = state.activeMayPlayFor(cardId, playerId, conditionEvaluator)
+    ): Boolean = state.activeMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)
         .any { it.landEntersTapped }
 
     private fun hasPlayFromTopOfLibrary(state: GameState, playerId: EntityId): Boolean {
@@ -575,7 +575,7 @@ class PlayLandHandler(
         // exile path in [isInExileWithPlayPermission] and CastFromZoneEnumerator, which already
         // offers the PlayLand action for such a card; without this the handler would reject the
         // very action the enumerator advertised.
-        if (state.hasMayPlayFor(cardId, playerId, conditionEvaluator)) return true
+        if (state.hasMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)) return true
         if (hasLandGraveyardPlayPermission(state, playerId)) return true
         return findGraveyardPlayPermissionSource(state, playerId, CardType.LAND.name) != null
     }
