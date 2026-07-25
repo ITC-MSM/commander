@@ -2586,6 +2586,39 @@
     ]
 }
 
+// Kraven, Proud Predator
+{
+    "name": "Kraven, Proud Predator",
+    "manaCost": "{1}{R}{G}",
+    "typeLine": "Legendary Creature — Human Warrior Villain",
+    "oracleText": "Vigilance\nTop of the Food Chain — Kraven's power is equal to the greatest mana value among permanents you control.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "aggregation": "MAX",
+                "property": "MANA_VALUE"
+            }
+        },
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "metadata": {
+        "collectorNumber": "132",
+        "rarity": "UNCOMMON",
+        "artist": "Alexander Mokhov",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af7c63e1-eccc-40a2-ba14-ce0d2a6123fc.jpg?1783905316"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Living Brain, Mechanical Marvel
 {
     "name": "Living Brain, Mechanical Marvel",
