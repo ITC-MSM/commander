@@ -221,7 +221,7 @@ class GraveyardAbilityEnumerator : ActionEnumerator {
                                 action = ActivateAbility(playerId, entityId, ability.id),
                                 validTargets = firstInfo.validTargets,
                                 requiresTargets = true,
-                                targetCount = firstReq.count,
+                                targetCount = firstInfo.maxTargets,
                                 minTargets = firstReq.effectiveMinCount,
                                 targetDescription = firstReq.description,
                                 targetRequirements = if (targetInfos.size > 1) targetInfos else null,

@@ -20,6 +20,18 @@ data class LegalAction(
     // Targeting
     val validTargets: List<EntityId>? = null,
     val requiresTargets: Boolean = false,
+    /**
+     * Maximum number of targets the player may pick for the *first* requirement. Always the
+     * resolved cap — i.e. [TargetInfo.maxTargets] of that requirement — never the
+     * requirement's static `count`. `count` is only a placeholder for "any number of
+     * target ..." (`unlimited`, where the real cap is how many legal targets exist) and for a
+     * board-state `dynamicMaxCount`; reading it here silently clamped such spells to a single
+     * target, because [targetRequirements] is populated only for multi-requirement actions, so
+     * neither the client nor the AI could recover the real maximum.
+     *
+     * The one exception is an X-driven cap ([xConstrainsTargetCount]): X is unbound at
+     * enumeration time, so this stays a placeholder the client replaces with the chosen X.
+     */
     val targetCount: Int = 1,
     val minTargets: Int = targetCount,
     val targetDescription: String? = null,
