@@ -229,6 +229,13 @@ class GameSession(
     // Persistent-yield mutations applied out-of-band of [recordedActions]. Captured in turn order so
     // the reconstructor can re-apply each at the action position it was set (see [CompactReplay.yields]).
     private val recordedYields = CopyOnWriteArrayList<com.wingedsheep.gameserver.replay.ReplayYieldEntry>()
+    // Sparse position fingerprints, so a later reconstruction can tell "this is the game that was
+    // played" from "this is a game the current engine produces from the same inputs".
+    private val recordedCheckpoints =
+        CopyOnWriteArrayList<com.wingedsheep.gameserver.replay.ReplayCheckpoint>()
+    // Archived card definitions for this game, computed lazily on first use — see [getPinnedCards].
+    @Volatile
+    private var pinnedCards: List<String>? = null
     var replayStartedAt: Instant? = null
         private set
 
@@ -1092,6 +1099,7 @@ class GameSession(
         undoCheckpointActionCount?.let { target ->
             while (recordedActions.size > target) recordedActions.removeAt(recordedActions.size - 1)
             recordedYields.removeIf { it.afterActionCount > target }
+            recordedCheckpoints.removeIf { it.afterActionCount > target }
         }
         clearCheckpoint()
         logger.info("Player $playerId undid their last action")
@@ -1275,6 +1283,28 @@ class GameSession(
     /** Append an applied, state-advancing action to the compact replay log. */
     private fun recordAction(action: GameAction) {
         recordedActions.add(action)
+        stampCheckpointIfDue()
+    }
+
+    /**
+     * Every N actions, fingerprint the live position and keep it with the recording.
+     *
+     * The input log alone can't tell a faithful re-simulation from a drifted one — both just apply
+     * actions. These stamps are what makes the difference detectable later, when the engine has
+     * moved on and "the actions still applied" no longer implies "the same game came out". Costs one
+     * short SHA-256 per 20 actions; see [com.wingedsheep.gameserver.replay.ReplayFingerprint].
+     */
+    private fun stampCheckpointIfDue() {
+        if (replaySetup == null) return
+        val count = recordedActions.size
+        if (count % com.wingedsheep.gameserver.replay.ReplayRecordingPolicy.CHECKPOINT_EVERY_ACTIONS != 0) return
+        val state = gameState ?: return
+        recordedCheckpoints.add(
+            com.wingedsheep.gameserver.replay.ReplayCheckpoint(
+                afterActionCount = count,
+                fingerprint = com.wingedsheep.gameserver.replay.ReplayFingerprint.of(state),
+            )
+        )
     }
 
     /**
@@ -1311,6 +1341,52 @@ class GameSession(
 
     /** The persistent-yield mutations applied to this game, in order, for replay reconstruction. */
     fun getReplayYields(): List<com.wingedsheep.gameserver.replay.ReplayYieldEntry> = recordedYields.toList()
+
+    /** Sparse position fingerprints taken while this game was played. */
+    fun getReplayCheckpoints(): List<com.wingedsheep.gameserver.replay.ReplayCheckpoint> =
+        recordedCheckpoints.toList()
+
+    /**
+     * The compiled definitions of every card in this game's decks, archived with the replay so it
+     * re-simulates against the card code it actually ran on rather than whatever the corpus looks
+     * like when someone watches it — see [com.wingedsheep.gameserver.replay.ReplayCardPin].
+     *
+     * Computed once, on first use (the first flush or game over) rather than at [startGame], so the
+     * serialization cost lands off the game-start path and never at all for games that end before
+     * they're worth recording.
+     *
+     * Serialization happens *outside* [stateLock]: it reads only the setup's decklists, which never
+     * change once the game has started, and it is tens of milliseconds of JSON per game — long
+     * enough that holding the game's lock for it would visibly stall play on the first flush. Two
+     * callers racing here both capture and one result is published; wasted work, never wrong.
+     */
+    fun getPinnedCards(): List<String> {
+        pinnedCards?.let { return it }
+        val setup = getReplaySetup() ?: return emptyList()
+        val captured = com.wingedsheep.gameserver.replay.ReplayCardPin.capture(cardRegistry, setup)
+        return synchronized(stateLock) { pinnedCards ?: captured.also { pinnedCards = it } }
+    }
+
+    /**
+     * One consistent read of everything the flusher needs, so the recording it stores and the
+     * fingerprint it stores describe the *same* position — see
+     * [com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot] for why sampling them separately
+     * is unsound. Null for sessions that aren't being recorded, or aren't started yet.
+     */
+    internal fun replayRecordingSnapshot(): com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot? =
+        synchronized(stateLock) {
+            val setup = replaySetup ?: return null
+            val state = gameState ?: return null
+            com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot(
+                setup = setup,
+                actions = recordedActions.toList(),
+                yields = recordedYields.toList(),
+                checkpoints = recordedCheckpoints.toList(),
+                fingerprint = com.wingedsheep.gameserver.replay.ReplayFingerprint.of(state),
+                startedAt = replayStartedAt,
+                gameOver = state.gameOver,
+            )
+        }
 
     /**
      * Total number of replay frames: the initial state plus one per recorded action. Zero until the
@@ -1490,24 +1566,55 @@ class GameSession(
     }
 
     /**
-     * Restore the compact-replay recording (setup + action log) after a server restart, so a game
-     * interrupted mid-play is still saved as a replay when it finishes. Null setup leaves the game
-     * unrecorded (a pre-feature game or an injected scenario).
+     * Resume the compact-replay recording of a game interrupted by a restart, so it is still saved
+     * as a replay when it finishes.
+     *
+     * The recording is flushed to the store periodically rather than on every action, so the stored
+     * log can be *behind* the live state we just recovered. Appending the rest of the game onto a
+     * short prefix would produce a record of a game nobody played — worse than no record, because it
+     * looks fine. [expectedFingerprint] is the position the flush captured; if the recovered state
+     * doesn't match it, actions were lost and we stop recording here, keeping the shorter but honest
+     * replay that was already stored.
+     *
+     * A null [expectedFingerprint] means the flush couldn't capture one, so there is nothing to
+     * check against and we resume unverified — the one path where a stale prefix could still be
+     * extended. The flusher always writes a fingerprint for a recorded session, so this should be
+     * unreachable; it is logged rather than assumed so it can't become reachable quietly.
+     *
+     * Returns whether recording continues.
      */
     internal fun restoreReplayRecording(
-        setup: com.wingedsheep.gameserver.replay.ReplaySetup?,
-        actions: List<GameAction>,
-        startedAtIso: String?,
-        yields: List<com.wingedsheep.gameserver.replay.ReplayYieldEntry> = emptyList(),
-    ) {
-        synchronized(stateLock) {
-            replaySetup = setup
-            recordedActions.clear()
-            recordedActions.addAll(actions)
-            recordedYields.clear()
-            recordedYields.addAll(yields)
-            replayStartedAt = startedAtIso?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        record: com.wingedsheep.gameserver.replay.CompactReplay,
+        expectedFingerprint: String?,
+    ): Boolean = synchronized(stateLock) {
+        val live = gameState
+        val actual = live?.let { com.wingedsheep.gameserver.replay.ReplayFingerprint.of(it) }
+        if (expectedFingerprint == null) {
+            logger.warn(
+                "Replay recording for $sessionId has no stored fingerprint " +
+                    "(${record.actions.size} actions at $actual) — resuming without verifying that " +
+                    "the stored log matches the recovered state"
+            )
         }
+        if (expectedFingerprint != null && actual != expectedFingerprint) {
+            logger.warn(
+                "Replay recording for $sessionId is behind the recovered state " +
+                    "(stored ${record.actions.size} actions at $expectedFingerprint, live at $actual) — " +
+                    "keeping the stored prefix and stopping recording"
+            )
+            replaySetup = null
+            return false
+        }
+
+        replaySetup = record.setup
+        recordedActions.clear()
+        recordedActions.addAll(record.actions)
+        recordedYields.clear()
+        recordedYields.addAll(record.yields)
+        recordedCheckpoints.clear()
+        recordedCheckpoints.addAll(record.checkpoints)
+        replayStartedAt = runCatching { Instant.parse(record.startedAt) }.getOrNull()
+        return true
     }
 
     /**

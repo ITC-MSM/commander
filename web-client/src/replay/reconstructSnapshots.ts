@@ -58,6 +58,19 @@ export interface PublicReplayData {
     startedAt: string
     endedAt: string
     snapshotCount: number
+    /**
+     * How the server produced these frames. EXACT / UNVERIFIED mean it re-simulated the recorded
+     * inputs; DIVERGED means the current engine can no longer reproduce the game and the frames
+     * came out of the archive stored when it was played.
+     */
+    fidelity?: 'EXACT' | 'UNVERIFIED' | 'DIVERGED'
+    /** Player-facing explanation to show when the replay isn't a faithful re-simulation. */
+    degradedReason?: string | null
+    /**
+     * Whether the server can still rebuild a real game state for these frames — i.e. whether
+     * "share frame as scenario" will work. False when watching archived frames.
+     */
+    stateReproducible?: boolean
   }
   initialSnapshot: SpectatorStateUpdate
   deltas: SpectatorReplayDelta[]

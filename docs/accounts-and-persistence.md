@@ -35,6 +35,11 @@ A game is only recorded if it reached a winner **or** had more than a trivial nu
 Redis stays responsible for hot/ephemeral game/lobby/tournament state. Postgres only holds durable,
 user-owned data. Different lifecycles, deliberately not merged.
 
+Replays used to straddle that line — the Redis session blob carried the in-progress recording while
+Postgres held the finished one — which meant two stores that could disagree about what a game was.
+They don't any more: a replay is a durable artefact, so it lives only in Postgres from the first
+flush, and `PersistentGameSession` carries no replay data at all.
+
 ## Enabling it
 
 Set these (e.g. in `.env` for `just server`, or the deploy environment):
@@ -143,15 +148,17 @@ placement is done — Bronze `<1000`, Silver `1000–1199`, Gold `1200–1399`, 
 `1600–1999`, **Mythic** `≥2000` (open-ended) — and is shown as **Provisional** during placement. The
 profile page shows a card per queue (rating + tier + record) and a rating-over-time line chart.
 
-Flyway migration `V5__game_replays.sql` adds durable replays:
+Flyway migrations `V5__game_replays.sql`, `V10__replay_durability.sql` and
+`V11__replay_pins_write_once.sql` hold replays — the *only*
+place they live, in progress or finished:
 
 | Table | Purpose |
 |-------|---------|
-| `game_replays` | one row per finished game keyed by `game_id`: a gzip+base64 `CompactReplay` (RNG seed + decks + ordered action stream) in `data`, plus summary columns. A few KB each — the engine is deterministic, so the whole game is reconstructed from its inputs rather than stored frame-by-frame (see [data-contracts.md](data-contracts.md) → *Compact replays*). |
+| `game_replays` | one row per recorded game keyed by `game_id`: a gzip+base64 `CompactReplay` (RNG seed + decks + ordered action stream + checkpoints) in `data`, the pinned card definitions in a write-once `pinned_cards` column (kept out of `data` because that one is rewritten on every flush), the gzipped `{initialSnapshot, deltas}` archive in `presentation`, and summary columns. `status` distinguishes an `IN_PROGRESS` recording from a `FINISHED` one, and `resume_fingerprint` gates resuming the former after a restart. See [data-contracts.md](data-contracts.md) → *Compact replays*. |
+| `game_replay_players` | seat roster (owned child), so "replays I played in" is an indexed join rather than a scan. Rows written before V10 have no children and drop out of a player's own list, though their share links keep working. |
 
 A signed-in player's history (`/api/stats/me/history`) `LEFT JOIN`s `game_replays` on `game_id` to
-flag which past games can be watched/shared (`hasReplay`). Stored replays survive server restarts and
-the 100-game in-memory cache; the unguessable `game_id` doubles as the share token via the public
+flag which past games can be watched/shared (`hasReplay`); the unguessable `game_id` doubles as the share token via the public
 `/replay/{gameId}` page. For ranked games each history row also carries `selfRating`/`opponentRating`
 (both players' ELO at game time) plus `ratingDelta` (`rating_after − rating_before` from
 `rating_history`), so the recent-games table can show how each game moved your rating (green +N /

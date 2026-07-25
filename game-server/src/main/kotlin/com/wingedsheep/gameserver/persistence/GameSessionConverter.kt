@@ -35,10 +35,6 @@ fun GameSession.toPersistent(
             )
         },
         lobbyId = lobbyId,
-        replaySetup = getReplaySetup(),
-        recordedActions = getRecordedActions(),
-        recordedYields = getReplayYields(),
-        replayStartedAt = replayStartedAt?.toString(),
     )
 }
 
@@ -83,13 +79,8 @@ fun restoreGameSession(
         sideboardLists = sideboards
     )
 
-    // Restore the compact-replay recording so a game interrupted by a restart can still be saved.
-    session.restoreReplayRecording(
-        setup = persistent.replaySetup,
-        actions = persistent.recordedActions,
-        startedAtIso = persistent.replayStartedAt,
-        yields = persistent.recordedYields,
-    )
+    // The compact-replay recording is NOT restored here — it lives in the ReplayStore, not in this
+    // blob, and the caller resumes it from there (see RedisGameRepository).
 
     // Restore player persistence info
     val playerInfo = persistent.playerInfos.associate { info ->
