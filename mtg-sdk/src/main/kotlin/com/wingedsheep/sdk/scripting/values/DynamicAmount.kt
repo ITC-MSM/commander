@@ -1207,6 +1207,14 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
      *   *distinct card types* among them (April O'Neil, Hacktivist: "for each card type among
      *   spells you've cast this turn"). An artifact creature spell contributes both Artifact and
      *   Creature. Card types are unioned across every player resolved by [player].
+     * @param beforeTriggeringSpell Count only the casts recorded *before* the triggering spell's own
+     *   cast record — the "each other spell you've cast **before it** this turn" clause that Storm
+     *   (CR 702.40a) and Thousand-Year Storm share. The triggering spell itself, and anything cast in
+     *   response to the trigger while it waits on the stack, are both excluded, so the count is the
+     *   spell's position in the turn's cast history rather than a resolution-time total. Unlike
+     *   [excludeSelf] (which keys off the resolving *source*, so it is inert for a permanent's
+     *   triggered ability) this keys off the triggering entity. A player whose history
+     *   holds no record for the triggering spell contributes nothing.
      */
     @SerialName("SpellsCastThisTurn")
     @Serializable
@@ -1215,7 +1223,8 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         val filter: GameObjectFilter = GameObjectFilter.Any,
         val excludeSelf: Boolean = false,
         val fromZone: Zone? = null,
-        val countDistinctCardTypes: Boolean = false
+        val countDistinctCardTypes: Boolean = false,
+        val beforeTriggeringSpell: Boolean = false
     ) : DynamicAmount {
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount {
             val newFilter = filter.applyTextReplacement(replacer)
@@ -1225,11 +1234,11 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
             append("the number of ")
             if (countDistinctCardTypes) {
                 append("card types among ")
-                if (excludeSelf) append("other ")
+                if (excludeSelf || beforeTriggeringSpell) append("other ")
                 if (filter != GameObjectFilter.Any) append("${filter.description} ")
                 append("spells")
             } else {
-                if (excludeSelf) append("other ")
+                if (excludeSelf || beforeTriggeringSpell) append("other ")
                 if (filter == GameObjectFilter.Any) append("spells")
                 else append("${filter.description} spells")
             }
@@ -1239,6 +1248,7 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
                 else -> append("${player.description} has cast")
             }
             if (fromZone != null) append(" from ${fromZone.name.lowercase()}")
+            if (beforeTriggeringSpell) append(" before it")
             append(" this turn")
         }
     }

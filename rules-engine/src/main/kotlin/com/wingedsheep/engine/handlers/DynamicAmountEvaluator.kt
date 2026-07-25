@@ -552,19 +552,27 @@ class DynamicAmountEvaluator(
                         // Zone qualifier is checked independently of the filter (see condition note).
                         (amount.fromZone == null || record.castFromZone == amount.fromZone) &&
                         predicateEvaluator.matchesFilter(record, amount.filter)
+                // beforeTriggeringSpell truncates each player's history at the triggering spell's own
+                // cast record ("each other spell you've cast BEFORE IT this turn"), so neither the
+                // triggering spell nor anything cast in response to the trigger is counted. A history
+                // with no record for the triggering spell contributes nothing.
+                fun history(playerId: EntityId): List<com.wingedsheep.engine.state.CastSpellRecord> {
+                    val records = state.spellsCastThisTurnByPlayer[playerId] ?: emptyList()
+                    if (!amount.beforeTriggeringSpell) return records
+                    val boundary = records.indexOfFirst { it.sourceEntityId == context.triggeringEntityId }
+                    return if (boundary < 0) emptyList() else records.subList(0, boundary)
+                }
                 if (amount.countDistinctCardTypes) {
                     // "for each card type among spells you've cast this turn" — union the card types
                     // across every matching record (an artifact creature spell counts for both).
                     playerIds
-                        .flatMap { state.spellsCastThisTurnByPlayer[it] ?: emptyList() }
+                        .flatMap { history(it) }
                         .filter { matches(it) }
                         .flatMap { it.typeLine.cardTypes }
                         .toSet()
                         .size
                 } else {
-                    playerIds.sumOf { playerId ->
-                        (state.spellsCastThisTurnByPlayer[playerId] ?: emptyList()).count { matches(it) }
-                    }
+                    playerIds.sumOf { playerId -> history(playerId).count { matches(it) } }
                 }
             }
 

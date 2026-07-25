@@ -709,9 +709,19 @@ data class CopyTargetSpellEffect(
      * copy controller's turn — i.e. "at the beginning of *your* next end step" rather than the very
      * next end step of any player. Mirrors [CreateTokenCopyOfTargetEffect.sacrificeOnlyOnControllersTurn].
      */
-    val sacrificeTokenOnlyOnControllersTurn: Boolean = false
+    val sacrificeTokenOnlyOnControllersTurn: Boolean = false,
+    /**
+     * How many copies to create (CR 707.10 — each is an independent copy, and the controller may
+     * choose new targets for each one separately). Defaults to a single copy. Pass a [DynamicAmount]
+     * for "copy it for each …" clauses whose count is only known at resolution — Thousand-Year Storm
+     * copies the triggering spell once per other instant or sorcery cast before it this turn. A
+     * count of zero or less makes no copies at all.
+     */
+    val copies: DynamicAmount = DynamicAmount.Fixed(1)
 ) : Effect {
-    override val description: String = "Copy target spell"
+    override val description: String =
+        if (copies == DynamicAmount.Fixed(1)) "Copy target spell"
+        else "Copy target spell ${copies.description} times"
 }
 
 /**
@@ -771,7 +781,7 @@ data class CopyTargetTriggeredAbilityEffect(
  * [DynamicAmount.XValue] models "copy … X times" (Gogo, Master of Mimicry: "{X}{X}, {T}: Copy
  * target activated or triggered ability you control X times"). When more than one copy is made and
  * the source ability has targets, the controller may choose new targets independently for every
- * copy. Only the ability branches honor [copies] > 1; the spell branch always makes a single copy.
+ * copy. [copies] > 1 is honored on both branches — spells and abilities alike.
  *
  * @property target The effect target referencing the spell or ability to copy (typically ContextTarget(0))
  * @property copies How many copies to create (defaults to a single copy)
