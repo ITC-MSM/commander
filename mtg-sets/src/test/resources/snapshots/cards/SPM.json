@@ -7189,6 +7189,54 @@
     ]
 }
 
+// Spider-Ham, Peter Porker
+{
+    "name": "Spider-Ham, Peter Porker",
+    "manaCost": "{1}{G}",
+    "typeLine": "Legendary Creature — Spider Boar Hero",
+    "oracleText": "When Spider-Ham enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nAnimal May-Ham — Other Spiders, Boars, Bats, Bears, Birds, Cats, Dogs, Frogs, Jackals, Lizards, Mice, Otters, Rabbits, Raccoons, Rats, Squirrels, Turtles, and Wolves you control get +1/+1.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                },
+                "descriptionOverride": "When Spider-Ham enters, create a Food token."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Spider|Boar|Bat|Bear|Bird|Cat|Dog|Frog|Jackal|Lizard|Mouse|Otter|Rabbit|Raccoon|Rat|Squirrel|Turtle|Wolf ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "rarity": "RARE",
+        "artist": "Filipe Pagliuso",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/41f18f42-b86b-4a12-9f0d-76b761571195.jpg?1783905324"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Spider-Man No More
 {
     "name": "Spider-Man No More",

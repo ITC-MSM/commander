@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 144 / 190
+**Implemented:** 145 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -132,7 +132,7 @@
 - [x] Spider-Byte, Web Warden
 - [x] Spider-Girl, Legacy Hero
 - [x] Spider-Gwen, Free Spirit
-- [ ] Spider-Ham, Peter Porker
+- [x] Spider-Ham, Peter Porker
 - [ ] Spider-Islanders
 - [ ] Spider-Man 2099
 - [ ] Spider-Man India
