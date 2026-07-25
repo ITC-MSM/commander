@@ -76,5 +76,5 @@ This handles: Scryfall lookup, card definition, set registration, effect impleme
 
 After the add-card skill completes:
 
-- **Backlog mode**: confirm the `cards.md` file has the card checked off, the colour count in the header is updated, and the total implementation count is updated (add-card handles this in its Step 9).
+- **Backlog mode**: confirm the `cards.md` file has the card checked off, the colour count in the header is updated, and the total implementation count is updated (add-card does this in its final step, via `just fix-backlog`).
 - **Card-status mode**: re-run `scripts/card-status --set <CODE>` and confirm the implemented count went up by 1 and the picked card no longer appears in `--list` output. No backlog file to update.
