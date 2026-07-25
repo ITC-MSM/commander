@@ -255,6 +255,99 @@
     ]
 }
 
+// Araña, Heart of the Spider
+{
+    "name": "Araña, Heart of the Spider",
+    "manaCost": "{1}{R}{W}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "Whenever you attack, put a +1/+1 counter on target attacking creature.\nWhenever a modified creature you control deals combat damage to a player, exile the top card of your library. You may play that card this turn. (Equipment, Auras you control, and counters are modifications.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target attacking creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature attacking"
+                    },
+                    "id": "target attacking creature"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer",
+                    "sourceFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "IsModified"
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "impulseExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "impulseExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "impulseExiled"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "rarity": "RARE",
+        "artist": "Kevin Glint",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b02bfa0e-f761-45e1-b35c-f44ff7c5d0e8.jpg?1783905320"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Aunt May
 {
     "name": "Aunt May",
