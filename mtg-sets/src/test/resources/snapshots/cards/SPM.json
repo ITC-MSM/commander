@@ -6072,6 +6072,44 @@
     "colorIdentityOverride": []
 }
 
+// Spider-Woman, Stunning Savior
+{
+    "name": "Spider-Woman, Stunning Savior",
+    "manaCost": "{1}{W/U}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "Flying\nVenom Blast — Artifacts and creatures your opponents control enter tapped.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact|creature ctrl:opponent",
+                    "to": "Battlefield"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "rarity": "RARE",
+        "artist": "Justyna Dura",
+        "flavorText": "To know her is to fear her.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc9b2a76-3cce-4fd0-a4ef-932747cb11b2.jpg?1783905310"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Starling, Aerial Ally
 {
     "name": "Starling, Aerial Ally",
