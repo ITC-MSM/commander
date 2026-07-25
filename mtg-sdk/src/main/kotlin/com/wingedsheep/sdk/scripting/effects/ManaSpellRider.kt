@@ -1,5 +1,6 @@
 package com.wingedsheep.sdk.scripting.effects
 
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -48,5 +49,30 @@ sealed interface ManaSpellRider {
     data class ScryOnSharedTypeWithCommander(val amount: Int = 1) : ManaSpellRider {
         override val description: String =
             "When that mana is spent to cast a creature spell that shares a creature type with your commander, scry $amount"
+    }
+
+    /**
+     * "When that mana is spent to cast a [spellFilter] spell, copy that spell and you may choose
+     * new targets for the copy." (Pyromancer's Goggles, with
+     * `spellFilter = GameObjectFilter.InstantOrSorcery.withColor(Color.RED)`.)
+     *
+     * On consumption the cast pipeline matches the spell against [spellFilter] using its cast
+     * characteristics. On a match, a triggered ability is placed on the stack **above** the spell
+     * that, on resolution, copies it (CR 707.10) — so the copy resolves before the original, which
+     * is the printed behavior. The copy's controller may choose new targets.
+     *
+     * The rider is a no-op when the spell doesn't match (e.g. the {R} paid for a creature spell).
+     * Consuming two riders copies the spell twice, one independent copy per rider.
+     *
+     * @property spellFilter Which cast spells the rider copies.
+     */
+    @SerialName("CopySpellWhenSpent")
+    @Serializable
+    data class CopySpellWhenSpent(
+        val spellFilter: GameObjectFilter
+    ) : ManaSpellRider {
+        override val description: String =
+            "When that mana is spent to cast a ${spellFilter.description} spell, copy that spell " +
+                "and you may choose new targets for the copy"
     }
 }

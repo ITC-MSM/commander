@@ -919,11 +919,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Mana
 
-- `AddMana(color, amount, restriction?, expiry?)` — add N of one color. `expiry` is a `ManaExpiry`
-  (default `END_OF_TURN`); set `END_OF_COMBAT` for firebending-style combat-duration mana that the
-  pool keeps through combat and discards when combat ends. Combat-duration mana is stored as an
-  `AnySpend` restricted entry (so it spends like any other mana) and cleared by
-  `CombatManager.endCombat`. See [ManaExpiry](#manaexpiry).
+- `AddMana(color, amount, restriction?, expiry?, riders?)` — add N of one color. `expiry` is a
+  `ManaExpiry` (default `END_OF_TURN`); set `END_OF_COMBAT` for firebending-style combat-duration mana
+  that the pool keeps through combat and discards when combat ends. Combat-duration mana is stored as
+  an `AnySpend` restricted entry (so it spends like any other mana) and cleared by
+  `CombatManager.endCombat`. See [ManaExpiry](#manaexpiry). `riders` is a `Set<ManaSpellRider>`
+  applied to whatever spell this mana ends up paying for (Pyromancer's Goggles tags its {R} with
+  `CopySpellWhenSpent`); as with `AddManaOfChoice`, riders without a `restriction` are stored under
+  `ManaRestriction.AnySpend` so the rider survives in the pool while the mana stays spendable on
+  anything. See [ManaSpellRider](#manaspellrider).
 - `AddColorlessMana(amount, restriction?)` — add colorless.
 - `RetainUnspentMana(vararg colors)` — "Until end of turn, you don't lose unspent mana of these colours
   as steps and phases end." The colour-filtered, single-player, turn-scoped one-shot cousin of the
@@ -4388,6 +4392,18 @@ staticAbility {
   `GroupFilter.AllCreaturesYouControl` for "spend mana as though it were mana of any color to activate
   abilities of creatures you control" (Agatha's Soul Cauldron). (Sharkey, Tyrant of the Shire — "Mana
   of any type can be spent to activate Sharkey's abilities" → `GroupFilter.source()`.)
+- `SpendAnyManaTypeForSpells(filter)` — the **spell-side sibling** of the above: the controller may
+  spend mana of any type on the mana cost of spells matching `filter` (a `GameObjectFilter`), relaxing
+  colored/hybrid/Phyrexian/colorless pips to generic per CR 118.14 / 609.4b. Scoped to spells cast by
+  *this permanent's controller* (the printed wording is always "**you** can spend …") and
+  **zone-agnostic** — hand, top of library, graveyard, exile alike. That zone-independence is why it's
+  a static rather than a flag on a cast permission: `MayPlayPermission.withAnyManaType` already covers
+  per-card "cast *that exiled card* with any mana" grants (Taster of Wares, Tinybones), but "any
+  creature spell you cast" isn't tied to one card in one zone. Only the mana portion is relaxed —
+  additional and alternative costs are untouched. Applied to affordability, the auto-tap solver and
+  payment validation, but deliberately **not** to the mana cost string sent to the client, so a
+  creature card still shows its printed `{2}{G}` instead of a misleading `{3}`. (Vizier of the
+  Menagerie — "You can spend mana of any type to cast creature spells" → `GameObjectFilter.Creature`.)
 - `PreventManaPoolEmptying` — mana pools don't empty between steps/phases. (Upwelling)
 - `ConvertEmptyingManaToRed` — "If you would lose unspent mana, that mana becomes red instead."
   The colour-converting cousin of `PreventManaPoolEmptying`: at every step/phase-end mana emptying
@@ -6491,7 +6507,7 @@ restriction matches the spell context.
   Creeping Peeper's "cast an enchantment spell, unlock a door, or turn a permanent face up" is
   `AnyOf(CardTypeSpellsOrAbilitiesOnly(ENCHANTMENT), UnlockDoorOnly, TurnPermanentsFaceUpOnly)`.
 
-### `ManaSpellRider`
+### `ManaSpellRider`<a id="manaspellrider"></a>
 
 Side-effects attached to mana that fire when the mana is spent on a spell. Orthogonal to
 `ManaRestriction`: the restriction controls *where* the mana may be spent; the rider
@@ -6499,11 +6515,23 @@ controls *what happens to the spell* when it is spent. The cast pipeline either 
 spell directly (e.g. stamps a component) or queues a triggered ability onto the stack above
 the spell when the rider needs the stack (typically because it requires a player decision).
 
+Attach riders via the `riders` parameter of `AddMana`, `AddManaOfChoice` or
+`AddManaOfSourceChosenSubtype`. The set of riders consumed by a payment is collected as a **list**,
+not a set — multiplicity is load-bearing, since two rider-carrying mana spent on one spell must fire
+the rider twice (Pyromancer's Goggles: "That many copies will be created").
+
 - `ManaSpellRider.MakesSpellUncounterable` — Cavern of Souls: stamps `CantBeCounteredComponent`
   on the spell at cast time.
 - `ManaSpellRider.ScryOnSharedTypeWithCommander(amount)` — Path of Ancestry: if the spell is
   a creature spell that shares a creature type with any of the controller's commanders,
   queues a `scry amount` triggered ability above the spell.
+- `ManaSpellRider.CopySpellWhenSpent(spellFilter)` — Pyromancer's Goggles
+  (`GameObjectFilter.InstantOrSorcery.withColor(Color.RED)`): if the cast spell matches
+  `spellFilter`, queues a `CopyTargetSpellEffect(TriggeringEntity)` triggered ability **above** the
+  spell, so the copy resolves first (CR 707.10) and its controller may choose new targets. Matching
+  happens at payment time against the spell's cast characteristics; a non-matching spell is a silent
+  no-op. Because the queued trigger's source is the *spell*, it still fires if the mana's producer
+  has already left the battlefield.
 
 ### `ManaExpiry`<a id="manaexpiry"></a>
 

@@ -251,8 +251,14 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     } else {
                         topCardComponent.manaCost
                     }
+                    // "You can spend mana of any type to cast [these] spells" (Vizier of the
+                    // Menagerie — whose own second ability is what makes a creature spell castable
+                    // from here in the first place). Relaxed for payment only; the displayed
+                    // `manaCostString` below stays the printed cost.
+                    val topPayableCost = context.castPermissionUtils
+                        .relaxSpellCostColorsIfAny(state, playerId, topCardId, topEffectiveCost)
                     val cachedSources = context.availableManaSources
-                    val canAfford = context.manaSolver.canPay(state, playerId, topEffectiveCost, precomputedSources = cachedSources)
+                    val canAfford = context.manaSolver.canPay(state, playerId, topPayableCost, precomputedSources = cachedSources)
                     if (canAfford) {
                         val targetReqs = buildList {
                             addAll(topCardDef?.script?.targetRequirements ?: emptyList())
@@ -268,7 +274,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                             ((availableSources - fixedCost) / xSymbolCount).coerceAtLeast(0)
                         } else null
                         val autoTapPreview = if (context.skipAutoTapPreview) null else {
-                            context.manaSolver.solve(state, playerId, topEffectiveCost, precomputedSources = cachedSources)
+                            context.manaSolver.solve(state, playerId, topPayableCost, precomputedSources = cachedSources)
                                 ?.sources?.map { it.entityId }
                         }
 
@@ -431,7 +437,12 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     } else {
                         baseEffectiveCost
                     }
-                    var effectiveCost = if (permissions.any { it.withAnyManaType }) {
+                    // Mana of any type: either the may-play permission itself carries the rider
+                    // (Taster of Wares, Tinybones) or a blanket static covers this spell wherever
+                    // it is cast from (Vizier of the Menagerie).
+                    val anyManaType = permissions.any { it.withAnyManaType } ||
+                        context.castPermissionUtils.canSpendAnyManaTypeForSpell(state, playerId, cardId)
+                    var effectiveCost = if (anyManaType) {
                         baseCost.relaxColors()
                     } else {
                         baseCost

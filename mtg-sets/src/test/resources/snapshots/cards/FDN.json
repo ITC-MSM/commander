@@ -4835,6 +4835,179 @@
     ]
 }
 
+// Kellan, Planar Trailblazer
+{
+    "name": "Kellan, Planar Trailblazer",
+    "manaCost": "{R}",
+    "typeLine": "Legendary Creature — Human Faerie Scout",
+    "oracleText": "{1}{R}: If Kellan is a Scout, it becomes a Human Faerie Detective and gains \"Whenever Kellan deals combat damage to a player, exile the top card of your library. You may play that card this turn.\"\n{2}{R}: If Kellan is a Detective, it becomes a 3/2 Human Faerie Rogue and gains double strike.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": "Scout"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetCreatureSubtypes",
+                                "subtypes": [
+                                    "Human",
+                                    "Faerie",
+                                    "Detective"
+                                ]
+                            },
+                            {
+                                "type": "GrantTriggeredAbility",
+                                "ability": {
+                                    "id": "ability_2",
+                                    "trigger": {
+                                        "type": "DealsDamageEvent",
+                                        "damageType": "DamageCombat",
+                                        "recipient": "AnyPlayer"
+                                    },
+                                    "effect": {
+                                        "type": "Composite",
+                                        "effects": [
+                                            {
+                                                "type": "GatherCards",
+                                                "source": {
+                                                    "type": "TopOfLibrary",
+                                                    "count": {
+                                                        "type": "Fixed",
+                                                        "amount": 1
+                                                    }
+                                                },
+                                                "storeAs": "kellanImpulseExiled"
+                                            },
+                                            {
+                                                "type": "MoveCollection",
+                                                "from": "kellanImpulseExiled",
+                                                "destination": {
+                                                    "type": "ToZone",
+                                                    "zone": "Exile"
+                                                }
+                                            },
+                                            {
+                                                "type": "GrantMayPlayFromExile",
+                                                "from": "kellanImpulseExiled"
+                                            }
+                                        ]
+                                    },
+                                    "descriptionOverride": "Whenever Kellan deals combat damage to a player, exile the top card of your library. You may play that card this turn."
+                                },
+                                "target": "Self",
+                                "duration": "Permanent"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "If Kellan is a Scout, it becomes a Human Faerie Detective and gains \"Whenever Kellan deals combat damage to a player, exile the top card of your library. You may play that card this turn.\""
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": "Detective"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetBaseStats",
+                                "target": "Self",
+                                "power": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "toughness": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            {
+                                "type": "SetCreatureSubtypes",
+                                "subtypes": [
+                                    "Human",
+                                    "Faerie",
+                                    "Rogue"
+                                ]
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "DOUBLE_STRIKE",
+                                "target": "Self",
+                                "duration": "Permanent"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "If Kellan is a Detective, it becomes a 3/2 Human Faerie Rogue and gains double strike."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f46a9329-7b91-441d-8653-50c1152c9120.jpg?1783909101",
+        "rulings": [
+            {
+                "date": "2024-11-08",
+                "text": "Neither of these abilities have durations. If one of them resolves, it will remain in effect until the game ends, Kellan leaves the battlefield, or some subsequent effect changes its characteristics, whichever comes first."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "Kellan's abilities overwrite its existing creature types. For example, once Kellan's first ability resolves, if he was a Scout when it resolved, Kellan will be a Human Faerie Detective. He won't have the Scout creature type."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "You can activate Kellan's abilities regardless of what creature types he currently has. Each ability checks Kellan's creature types when it resolves. If Kellan doesn't have the appropriate creature type at that time, the ability will do nothing."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "The effects from Kellan's abilities overwrite other effects that set power and/or toughness if and only if those effects existed before the ability resolved. They will not overwrite effects that modify power or toughness without setting it (whether from a static ability, counters, or a resolved spell or ability), nor will they overwrite effects that set power and toughness which come into existence after they resolve. Effects that switch the creature's power and toughness are always applied after any other power or toughness changing effects, including these two, regardless of the order in which they are created."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Kiora, the Rising Tide
 {
     "name": "Kiora, the Rising Tide",
