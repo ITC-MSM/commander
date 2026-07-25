@@ -165,6 +165,10 @@ internal fun keywordLines(card: JsonObject, keywords: Set<String>, oracleText: S
         // "Increment"`), which itself surfaces Keyword.INCREMENT. A bare `keywords(Keyword.INCREMENT)`
         // here would both duplicate the keyword and drop the cast-spell trigger, so skip it.
         if (rname == "Increment") continue
+        // Bargain is likewise composed by the `bargain()` builder (Emitter `rname == "Bargain"`), which
+        // carries Keyword.BARGAIN itself; a bare stamp here would duplicate the keyword and drop the
+        // optional additional cost.
+        if (rname == "Bargain") continue
         // Speed (Aetherdrift): both keywords are surfaced by their own builders — `startYourEngines()`
         // and `maxSpeed { }` (Emitter `rname == "StartYourEngines"` / `"MaxSpeed"`). A bare
         // `keywords(Keyword.START_YOUR_ENGINES)` here would duplicate the keyword, and a bare

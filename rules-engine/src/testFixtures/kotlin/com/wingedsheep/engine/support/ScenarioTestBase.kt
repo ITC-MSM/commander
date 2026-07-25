@@ -1418,6 +1418,45 @@ abstract class ScenarioTestBase : FunSpec() {
         }
 
         /**
+         * Cast a spell **bargained** (CR 702.166b) — declaring its optional "sacrifice an artifact,
+         * enchantment, or token" additional cost and paying it with [sacrificeName].
+         *
+         * @param playerNumber The player casting the spell (1 or 2)
+         * @param spellName The name of the spell to cast, from that player's hand
+         * @param sacrificeName The permanent that player controls to sacrifice for bargain
+         * @param targetId Optional single target for the spell
+         */
+        fun castSpellBargained(
+            playerNumber: Int,
+            spellName: String,
+            sacrificeName: String,
+            targetId: EntityId? = null,
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val cardId = state.getHand(playerId).find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's hand")
+
+            val sacrificeId = state.getBattlefield().find { entityId ->
+                val container = state.getEntity(entityId) ?: return@find false
+                container.get<CardComponent>()?.name == sacrificeName &&
+                    container.get<ControllerComponent>()?.playerId == playerId
+            } ?: error("Permanent '$sacrificeName' not found on player $playerNumber's battlefield")
+
+            return execute(
+                CastSpell(
+                    playerId = playerId,
+                    cardId = cardId,
+                    targets = targetId?.let { listOf(ChosenTarget.Permanent(it)) } ?: emptyList(),
+                    declaredCostSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED,
+                    additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
+                        sacrificedPermanents = listOf(sacrificeId)
+                    ),
+                )
+            )
+        }
+
+        /**
          * Cast a spell with an additional sacrifice cost.
          * @param playerNumber The player casting the spell (1 or 2)
          * @param spellName The name of the spell to cast

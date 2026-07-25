@@ -48,6 +48,7 @@ import com.wingedsheep.sdk.scripting.events.AbilityTargetMatch
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.ExploreReveal
 import com.wingedsheep.sdk.scripting.events.ControllerFilter
@@ -1574,7 +1575,9 @@ class TriggerMatcher(
             val from = spellComponent?.castFromZone
             from != null && from != predicate.zone
         }
-        SpellCastPredicate.WasKicked -> event.wasKicked
+        // "a kicked spell" is specifically the kicker mechanic — a spell that declared some other
+        // optional additional cost on the same rail (bargain, CR 702.166c) does not qualify.
+        SpellCastPredicate.WasKicked -> event.declaredCostSlot == ChoiceSlot.KICKED
         is SpellCastPredicate.PaidWithManaFromSubtype -> predicate.subtype in event.spentManaSubtypes
         is SpellCastPredicate.PaidWithManaFromSource -> sourceId in event.spentManaSourceIds
         SpellCastPredicate.IsModal -> event.chosenModesCount > 0

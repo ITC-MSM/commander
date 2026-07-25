@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -480,7 +481,12 @@ data class SpellCastEvent(
     val casterId: EntityId,
     val targetNames: List<String> = emptyList(),
     val xValue: Int? = null,
-    val wasKicked: Boolean = false,
+    /**
+     * Which optional-additional-cost mechanic this cast declared, or null when none — the fact
+     * "whenever you cast a kicked spell" filters on (`SpellCastPredicate.WasKicked` matches
+     * [ChoiceSlot.KICKED] only, so a bargained spell doesn't satisfy it).
+     */
+    val declaredCostSlot: ChoiceSlot? = null,
     /** Total mana spent to cast this spell (for Expend trigger detection) */
     val totalManaSpent: Int = 0,
     /**

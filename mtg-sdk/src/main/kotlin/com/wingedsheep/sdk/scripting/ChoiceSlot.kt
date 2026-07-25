@@ -49,6 +49,19 @@ enum class ChoiceSlot {
     KICKED,
 
     /**
+     * Whether the spell's **bargain** additional cost was declared when cast (CR 702.166b, Wilds of
+     * Eldraine — "you may sacrifice an artifact, enchantment, or token as you cast this spell"). A
+     * present value means the spell was *bargained*. Read back through
+     * [com.wingedsheep.sdk.dsl.Conditions.WasBargained].
+     *
+     * Deliberately distinct from [KICKED] even though both ride the same optional-additional-cost
+     * rail ([KeywordAbility.OptionalAdditionalCost.declaredSlot]): CR 702.166c links a card's
+     * "if it was bargained" abilities to *its own* bargain ability, so a bargained spell must not
+     * read as kicked to unrelated "whenever you cast a kicked spell" payoffs.
+     */
+    BARGAINED,
+
+    /**
      * Whether the spell's sneak cost was paid when cast (CR 702.190, e.g. Leonardo, Leader
      * in Blue). A present value means "cast for its sneak cost". Read back through
      * [com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid].

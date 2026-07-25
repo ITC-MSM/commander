@@ -184,6 +184,23 @@ enum class Keyword(val displayName: String) {
     CASUALTY("Casualty"),
 
     /**
+     * Bargain (CR 702.166, Wilds of Eldraine). A static ability that functions while the spell is
+     * on the stack: "As an additional cost to cast this spell, you may sacrifice an artifact,
+     * enchantment, or token." A spell whose controller declared that intention has been
+     * *bargained* (CR 702.166b), and the card's other abilities — linked to this one
+     * (CR 702.166c) — branch on that fact.
+     *
+     * Modelled as an optional additional cost on the shared cast-time rail:
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost] with
+     * `declaredSlot = `[com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED], so "bargained" is a
+     * *different* fact from "kicked" — a bargained spell never triggers a "whenever you cast a
+     * kicked spell" payoff, and vice versa. Wired by the `bargain()` DSL helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder]; payoffs read it back through
+     * [com.wingedsheep.sdk.dsl.Conditions.WasBargained].
+     */
+    BARGAIN("Bargain"),
+
+    /**
      * Miracle {cost} (CR 702.94). "You may cast this card for its miracle cost when you draw it if
      * it's the first card you drew this turn." Modeled as a hand-only alternative cost gated by a
      * one-turn window: when a card with miracle (printed via

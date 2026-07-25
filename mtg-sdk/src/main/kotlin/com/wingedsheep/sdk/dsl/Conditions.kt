@@ -782,6 +782,28 @@ object Conditions {
         WasKickedCondition
 
     /**
+     * If this spell was **bargained** (CR 702.166b, Wilds of Eldraine) — its optional "sacrifice an
+     * artifact, enchantment, or token" additional cost was declared as it was cast.
+     *
+     * A facade over the durable choice-slot read ([com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED]),
+     * so bargain needs no condition type of its own. Works in both directions of the mechanic:
+     * - on a **spell**, as a rider inside the spell's own effect ("If this spell was bargained, that
+     *   creature also gains flying and lifelink until end of turn"), read from the declaration the
+     *   spell carries on the stack;
+     * - on a **permanent**, as an intervening-if on an enters-the-battlefield trigger ("When this
+     *   creature enters, if it was bargained, …"), read from the flag stamped durably on the
+     *   permanent as it resolved;
+     * - as a **cost gate** — `CostGating.OnlyIf(Conditions.WasBargained)` on a `SelfCast`
+     *   [com.wingedsheep.sdk.scripting.ModifySpellCost] for "This spell costs {2} less to cast if
+     *   it's bargained", where it is evaluated against the cast branch being priced.
+     *
+     * Never true for a merely *kicked* spell: bargain and kicker are separate facts (CR 702.166c).
+     * Pairs with the `bargain()` DSL helper on [CardBuilder].
+     */
+    val WasBargained: ConditionInterface =
+        CastChoiceMadeCondition(com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED)
+
+    /**
      * If this spell's sneak cost was paid (CR 702.190 — [com.wingedsheep.sdk.scripting.KeywordAbility.Sneak]).
      * Used for riders like Leonardo, Leader in Blue and The Last Ronin's Technique whose
      * effect changes when the spell was cast for its sneak cost.

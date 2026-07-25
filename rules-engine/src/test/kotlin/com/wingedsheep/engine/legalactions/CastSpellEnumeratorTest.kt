@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.legalactions
 
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.support.EnumerationFixtures
 import com.wingedsheep.engine.legalactions.support.setupP1
@@ -314,7 +315,7 @@ class CastSpellEnumeratorTest : FunSpec({
         kicked.affordable shouldBe true
         // Kicker adds {3} to the base {B} cost.
         kicked.manaCostString shouldBe "{3}{B}"
-        (kicked.action as CastSpell).wasKicked shouldBe true
+        (kicked.action as CastSpell).declaredCostSlot shouldBe ChoiceSlot.KICKED
     }
 
     test("Kicker action is emitted as unaffordable when the kicked cost can't be paid") {
@@ -330,6 +331,20 @@ class CastSpellEnumeratorTest : FunSpec({
             .single { it.actionType == "CastWithKicker" }
 
         kicked.affordable shouldBe false
+    }
+
+    test("a sorcery-speed card on the optional-cost rail offers nothing at instant speed") {
+        // Upkeep: neither the kicked variant nor the base cast may be offered. The optional-cost
+        // pass owns its own timing gate, and it has to skip the card whole — including the
+        // unaffordable-base-cast fallback it emits when only the kicked variant is payable.
+        val driver = setupP1(
+            hand = listOf("Stronghold Confessor"),
+            battlefield = listOf("Swamp"),
+            extraSetCards = listOf(StrongholdConfessor),
+            atStep = Step.UPKEEP
+        )
+
+        driver.enumerateFor(driver.player1).castActionsFor("Stronghold Confessor").shouldBeEmpty()
     }
 
     // -------------------------------------------------------------------------

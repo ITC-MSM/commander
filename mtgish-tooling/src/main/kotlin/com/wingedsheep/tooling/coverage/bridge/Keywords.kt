@@ -30,6 +30,20 @@ internal fun BridgeBuilder.keywords() {
     // declines (SCAFFOLD): which GiftKind is listed, and how the card's *other* text branches on
     // `Conditions.GiftWasPromised`, is a per-card read.
     supported("Gift", "keyword ability: Gift a [something] -> gift(GiftKind.…) on permanents / Patterns.Mechanic.giftSpell on instants & sorceries (CR 702.174)")
+    // Bargain (CR 702.166, Wilds of Eldraine) — "You may sacrifice an artifact, enchantment, or token
+    // as you cast this spell." `composed`, not a bare `keyword`: `Keyword.BARGAIN` exists, but stamping
+    // it alone would print the word and drop the whole mechanic — the optional additional cost and the
+    // ChoiceSlot.BARGAINED declaration its payoffs read. The `bargain()` CardBuilder helper composes
+    // both (an OptionalAdditionalCost over ArtifactEnchantmentOrToken declaring that slot), and the
+    // emitter's `rname == "Bargain"` branch renders that no-arg builder call (the rule carries no args).
+    // The payoff side — `SpellPassesFilter(ThisSpell, WasBargained)` — renders as
+    // `Conditions.WasBargained` in actionConditionDsl, so a plain "if this spell was bargained, X else
+    // Y" rider emits whole.
+    composed(
+        "Bargain",
+        "keyword: bargain() -> optional 'sacrifice an artifact, enchantment, or token' additional cost + ChoiceSlot.BARGAINED (CR 702.166)",
+        composes = listOf("Sacrifice"),
+    )
     // Saddle N (CR 702.171) — a PARAMETERIZED keyword ability (the N count rides in the rule's args),
     // NOT a bare card keyword. It must be `supported`, not `keyword`: a `keyword` entry would make
     // `keywordLines` stamp a bare `keywords(Keyword.SADDLE)` on the card and drop the N, exactly the

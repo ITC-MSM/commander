@@ -1099,8 +1099,21 @@ class ClientStateTransformer(
             )
         } else emptyList()
 
-        // Get kicker status for spells on the stack
-        val wasKicked = spellOnStack?.wasKicked ?: false
+        // Name the optional additional cost a spell on the stack declared ("Kicked", "Bargained",
+        // "Offspring"), so opponents can see at a glance which branch is coming on resolution. The
+        // label is derived server-side from the keyword's printed prefix — the client renders the
+        // badge verbatim rather than mapping slots to words itself.
+        val optionalCostLabel = spellOnStack?.declaredCostSlot?.let { slot ->
+            val declared = cardDef?.keywordAbilities
+                ?.filterIsInstance<com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost>()
+                ?.firstOrNull { it.declaredSlot == slot }
+            when {
+                declared?.keyword == Keyword.OFFSPRING -> "Offspring"
+                slot == com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED -> "Bargained"
+                slot == com.wingedsheep.sdk.scripting.ChoiceSlot.KICKED -> "Kicked"
+                else -> slot.name.lowercase().replaceFirstChar { it.uppercase() }
+            }
+        }
 
         // Surface whether the optional Blight additional cost was paid (Lorwyn Eclipsed)
         // so opponents can see at a glance that a stronger effect is incoming on resolution.
@@ -1335,7 +1348,7 @@ class ClientStateTransformer(
             rulings = cardDef?.metadata?.rulings?.map {
                 ClientRuling(date = it.date, text = it.text)
             } ?: emptyList(),
-            wasKicked = wasKicked,
+            optionalCostLabel = optionalCostLabel,
             giftPromised = giftPromised,
             wasBlightPaid = wasBlightPaid,
             chosenX = chosenX,
@@ -1531,7 +1544,7 @@ class ClientStateTransformer(
                 sourceId = spellEntityId,
                 controllerId = spellOnStack.casterId,
                 xValue = spellOnStack.xValue,
-                wasKicked = spellOnStack.wasKicked,
+                declaredCostSlot = spellOnStack.declaredCostSlot,
                 wasBlightPaid = spellOnStack.wasBlightPaid,
                 sacrificedPermanents = spellOnStack.sacrificedPermanents,
                 chosenEntitySnapshots = spellOnStack.chosenEntitySnapshots,

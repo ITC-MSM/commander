@@ -57,6 +57,7 @@ import com.wingedsheep.engine.handlers.effects.permanent.types.returnDfcFace
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
@@ -113,7 +114,7 @@ class StackResolver(
         exiledCardCount: Int = 0,
         additionalCostBlightAmount: Int = 0,
         additionalCostPayXLifeAmount: Int? = null,
-        wasKicked: Boolean = false,
+        declaredCostSlot: ChoiceSlot? = null,
         wasBlightPaid: Boolean = false,
         wasWaterbendPaid: Boolean = false,
         giftRecipient: EntityId? = null,
@@ -177,7 +178,7 @@ class StackResolver(
             var updated = c.with(SpellOnStackComponent(
                 casterId = casterId,
                 xValue = xValue,
-                wasKicked = wasKicked,
+                declaredCostSlot = declaredCostSlot,
                 wasBlightPaid = wasBlightPaid,
                 wasWaterbendPaid = wasWaterbendPaid,
                 giftRecipient = giftRecipient,
@@ -341,7 +342,7 @@ class StackResolver(
                 casterId = casterId,
                 targetNames = targetNames,
                 xValue = xValue,
-                wasKicked = wasKicked,
+                declaredCostSlot = declaredCostSlot,
                 totalManaSpent = totalManaSpent,
                 distinctColorsSpent =
                     com.wingedsheep.engine.handlers.ManaSpentReader.distinctColorsSpent(newState, cardId),
@@ -571,7 +572,7 @@ class StackResolver(
         val copiedCardComp = sourceCard.copy(ownerId = copyController)
 
         // Clone cast-time state; per 707.10 the copy inherits every decision made for
-        // the original. The data-class copy preserves: xValue, wasKicked, wasBlightPaid,
+        // the original. The data-class copy preserves: xValue, declaredCostSlot, wasBlightPaid,
         // wasWarped, wasEvoked, sacrificedPermanents (snapshots of P/T + subtypes), damageDistribution,
         // chosenCreatureType, exiledCardCount, castFromZone, beheldCards, and the
         // manaSpent{White,Blue,Black,Red,Green,Colorless} colors. Only the caster
@@ -1179,9 +1180,13 @@ class StackResolver(
                 val entered = updated.get<com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent>()
                 var bag = entered ?: com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent()
                 spellComponent.xValue?.let { bag = bag.copy(x = it) }
-                if (spellComponent.wasKicked) {
+                // The optional additional cost declared while casting (kicker → KICKED, bargain →
+                // BARGAINED, CR 702.166b) marks the permanent under its own slot, so a bargained
+                // permanent's "if it was bargained" enters trigger reads true while a kicker payoff
+                // reading KICKED still reads false.
+                spellComponent.declaredCostSlot?.let { slot ->
                     bag = bag.withChoice(
-                        com.wingedsheep.sdk.scripting.ChoiceSlot.KICKED,
+                        slot,
                         com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
                     )
                 }
@@ -1671,7 +1676,7 @@ class StackResolver(
         }
         val baseSpellEffect = when {
             faceSpellEffect != null -> faceSpellEffect
-            spellComponent.wasKicked && cardComponent != null ->
+            spellComponent.declaredCostSlot != null && cardComponent != null ->
                 resolvedCardDef?.script?.kickerSpellEffect ?: cardComponent.spellEffect
             // Cleave (CR 702.148): a spell cast for its cleave cost resolves with its
             // brackets-removed effect variant, applied structurally at cast time rather than by
@@ -1706,7 +1711,7 @@ class StackResolver(
                     spellComponent.manaSpentBlack + spellComponent.manaSpentRed +
                     spellComponent.manaSpentGreen + spellComponent.manaSpentColorless,
                 manaSpentOnXByColor = spellComponent.manaSpentOnXByColor,
-                wasKicked = spellComponent.wasKicked,
+                declaredCostSlot = spellComponent.declaredCostSlot,
                 wasBlightPaid = spellComponent.wasBlightPaid,
                 wasWaterbendPaid = spellComponent.wasWaterbendPaid,
                 wasSneaked = spellComponent.wasSneaked,

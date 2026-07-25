@@ -479,14 +479,27 @@ object DynamicAmounts {
      *
      * Pass [fromZone] to count only spells cast from that zone (e.g. `Zone.HAND`), matched
      * independently of [filter].
+     *
+     * Pass [beforeTriggeringSpell] for the storm-style "each other spell you've cast **before it**
+     * this turn" clause: only casts recorded ahead of the triggering spell count, so neither the
+     * triggering spell nor anything cast in response to the trigger is included.
+     *
+     * ```kotlin
+     * // Thousand-Year Storm: "for each other instant and sorcery spell you've cast before it"
+     * DynamicAmounts.spellsCastThisTurn(
+     *     filter = GameObjectFilter.InstantOrSorcery, beforeTriggeringSpell = true)
+     * ```
      */
     fun spellsCastThisTurn(
         player: Player = Player.You,
         filter: GameObjectFilter = GameObjectFilter.Any,
         excludeSelf: Boolean = false,
-        fromZone: Zone? = null
+        fromZone: Zone? = null,
+        beforeTriggeringSpell: Boolean = false
     ): DynamicAmount =
-        DynamicAmount.SpellsCastThisTurn(player, filter, excludeSelf, fromZone)
+        DynamicAmount.SpellsCastThisTurn(
+            player, filter, excludeSelf, fromZone, beforeTriggeringSpell = beforeTriggeringSpell
+        )
 
     /** The starting life total of a player (20 in standard, 40 in commander). */
     fun startingLifeTotal(player: Player = Player.You): DynamicAmount =
