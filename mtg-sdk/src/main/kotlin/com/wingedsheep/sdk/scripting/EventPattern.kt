@@ -270,12 +270,10 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     data class DrawEvent(
         val player: Player = Player.You,
         val exceptFirstInDrawStep: Boolean = false,
-        val condition: Condition? = null
     ) : EventPattern {
         override val description: String = buildString {
             append(player.description)
             append(" would draw a card")
-            if (condition != null) append(" ${condition.description}")
             if (exceptFirstInDrawStep) append(" (except the first each draw step)")
         }
     }

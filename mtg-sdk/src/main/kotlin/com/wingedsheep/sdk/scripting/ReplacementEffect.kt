@@ -1,16 +1,16 @@
 package com.wingedsheep.sdk.scripting
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.events.RecipientFilter
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
 import com.wingedsheep.sdk.scripting.text.TextReplacer
-import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -897,10 +897,12 @@ data class ModifyMillAmount(
 data class ReplaceDrawWithEffect(
     val replacementEffect: Effect,
     override val optional: Boolean = false,
-    override val appliesTo: EventPattern = EventPattern.DrawEvent()
+    override val appliesTo: EventPattern = EventPattern.DrawEvent(),
+    override val restrictions: List<Condition> = emptyList()
 ) : ReplacementEffect {
     override val description: String = buildString {
-        append("If ${appliesTo.description}, ")
+        val restrictionDesc = restrictions.joinToString(" and ") { it.description.removePrefix("if ") }
+        append("If ${appliesTo.description} while $restrictionDesc, ")
         if (optional) append("you may ")
         append("instead ${replacementEffect.description}")
     }

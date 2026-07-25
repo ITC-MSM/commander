@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.ltr.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.card
@@ -9,7 +8,6 @@ import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.ModifyLifeGain
 import com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect
 import com.wingedsheep.sdk.scripting.TimingRule
-import com.wingedsheep.sdk.scripting.conditions.Exists
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.references.Player
@@ -38,11 +36,8 @@ val PhialOfGaladriel = card("Phial of Galadriel") {
     replacementEffect(
         ReplaceDrawWithEffect(
             replacementEffect = DrawCardsEffect(2),
-            appliesTo = EventPattern.DrawEvent(condition = Exists(
-                player = Player.You,
-                zone = Zone.HAND,
-                negate = true
-            ))
+            appliesTo = EventPattern.DrawEvent(),
+            restrictions = listOf(Conditions.EmptyHand),
         )
     )
 
