@@ -6,8 +6,9 @@ import { graveyard, exile, library } from '@/types'
 import type { ClientCard, ClientDeckCard, ClientPlayer } from '@/types'
 import { CARD_BACK_IMAGE_URL } from '@/utils/cardImages.ts'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
-import { useResponsiveContext, handleImageError } from './shared'
+import { useResponsiveContext, handleImageError, getStashCounters } from './shared'
 import { DeckBrowser } from './DeckBrowser'
+import { counterManaClass } from '@/assets/icons/keywords'
 import { styles } from './styles'
 
 /** Stable empty array so the `ownDeck` selector doesn't hand Zustand a new reference each render. */
@@ -589,6 +590,11 @@ function ExileBrowser({ cards, ownerLabel, onClose }: { cards: readonly ClientCa
                 onError={(e) => handleImageError(e, card.name, 'normal')}
               />
               {card.isPlotted && <div style={styles.plottedGridBadge}>Plotted</div>}
+              {getStashCounters(card) > 0 && (
+                <div style={styles.stashGridBadge}>
+                  <i className={`ms ms-${counterManaClass.STASH}`} /> {getStashCounters(card)}
+                </div>
+              )}
             </div>
           ))}
         </div>
