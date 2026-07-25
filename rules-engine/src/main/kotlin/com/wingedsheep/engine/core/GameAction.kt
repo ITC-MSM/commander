@@ -269,6 +269,14 @@ sealed interface PaymentStrategy {
  * @property targets Chosen targets for the ability's effect
  * @property costPayment Payment choices for costs (sacrifice, etc.)
  * @property manaColorChoice Color chosen for "add one mana of any color" abilities
+ * @property damageDistribution Pre-chosen damage distribution for a
+ *           [com.wingedsheep.sdk.scripting.effects.DividedDamageEffect] ability (target ID ->
+ *           damage amount). The activated-ability twin of [CastSpell.damageDistribution]: CR 601.2d
+ *           has the division chosen **as the ability is activated**, not when it resolves, so
+ *           opponents responding by removing a target lose that damage entirely rather than letting
+ *           the controller re-divide (Chandra, Flameshaper's −4). Omitted for every other ability;
+ *           when omitted for a divided-damage ability the executor falls back to a resolution-time
+ *           `DistributeDecision`, which is how non-interactive controllers (the built-in AI) divide.
  */
 @Serializable
 @SerialName("ActivateAbility")
@@ -283,6 +291,7 @@ data class ActivateAbility(
     val repeatCount: Int = 1,
     val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay,
     val alternativePayment: AlternativePaymentChoice? = null,
+    val damageDistribution: Map<EntityId, Int>? = null,
     /**
      * Internal resume marker for "… of an opponent's choice" targets (Cuombajj Witches). On the
      * first pass the handler pauses to let an opponent pick the opponent-chosen target(s); the

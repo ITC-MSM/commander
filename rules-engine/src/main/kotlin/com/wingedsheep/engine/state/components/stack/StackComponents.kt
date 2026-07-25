@@ -263,7 +263,14 @@ data class ActivatedAbilityOnStackComponent(
      * granter via [com.wingedsheep.sdk.scripting.targets.EffectTarget.GrantingSource] — e.g. Trusty
      * Boomerang's "Return [this Equipment] to its owner's hand". Null for non-granted abilities.
      */
-    val granterId: EntityId? = null
+    val granterId: EntityId? = null,
+    /**
+     * Division chosen at activation for a `DividedDamageEffect` ability (target -> damage), locked
+     * onto the stack object so responding removal can't make the controller re-divide (CR 601.2d).
+     * Mirrors [SpellOnStackComponent.damageDistribution]. Null for every other ability, and for a
+     * divided-damage ability whose controller left the division to resolution time.
+     */
+    val damageDistribution: Map<EntityId, Int>? = null
 ) : Component {
     val hasTargets: Boolean = false  // Will be updated based on effect
 }

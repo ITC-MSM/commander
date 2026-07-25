@@ -875,6 +875,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         // work to do (e.g. the trigger we wanted to copy isn't on top yet).
                         val holdPriorityForTopOfStack = ability.holdPriority &&
                             state.stack.lastOrNull()?.let { it in firstReqInfo.validTargets } == true
+                        // "N damage divided as you choose among …" — the division is part of
+                        // activating the ability (CR 601.2d), so flag it here and let the client
+                        // collect it after targeting, exactly as the cast path does for spells
+                        // (Chandra, Flameshaper's −4).
+                        val dividedDamage = ability.effect as? DividedDamageEffect
                         result.add(LegalAction(
                             actionType = "ActivateAbility",
                             description = displayDescription,
@@ -897,7 +902,10 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             convokeCreatures = abilityConvokeCreatures,
                             hasWaterbend = ability.hasWaterbend,
                             waterbendPermanents = abilityWaterbendPermanents,
-                            holdPriority = holdPriorityForTopOfStack
+                            holdPriority = holdPriorityForTopOfStack,
+                            requiresDamageDistribution = dividedDamage != null,
+                            totalDamageToDistribute = dividedDamage?.totalDamage,
+                            minDamagePerTarget = if (dividedDamage != null) 1 else null
                         ))
                     }
                 } else {

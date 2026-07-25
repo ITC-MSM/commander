@@ -84,6 +84,7 @@ import com.wingedsheep.sdk.scripting.effects.SuccessCriterion
 import com.wingedsheep.sdk.scripting.effects.GrantDamageBonusEffect
 import com.wingedsheep.sdk.scripting.effects.DamageCantBePreventedThisTurnEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
+import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.EachPlayerReturnsPermanentToHandEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -261,6 +262,37 @@ object Effects {
      */
     fun DealXDamage(target: EffectTarget): Effect =
         DealDamageEffect(DynamicAmount.XValue, target)
+
+    /**
+     * "N damage divided as you choose among …" (Arc Lightning, Chandra, Flameshaper's −4).
+     *
+     * The targets among which the total is split come from the ability's own target requirement,
+     * not from here — so the requirement decides whether the wording is "1, 2, or 3 target
+     * creatures" (`TargetCreature(count = 3, minCount = 1)`) or "any number of target creatures
+     * and/or planeswalkers" (`TargetObject(unlimited = true, …)`). Because each chosen target must
+     * be assigned at least 1 damage (CR 601.2d), cap the requirement's target count at the total:
+     * pass `dynamicMaxCount = DynamicAmount.Fixed(total)` on an `unlimited` requirement, or let a
+     * board-derived cap do it when the total itself is dynamic.
+     *
+     * The division is chosen as the spell is cast / the ability is activated, never at resolution;
+     * if a target becomes illegal in between, its share is simply not dealt and the rest keep what
+     * they were assigned.
+     *
+     * @param total Fixed total to divide. Ignored when [dynamicTotal] is supplied.
+     * @param dynamicTotal Total computed at resolution instead ("X damage …, where X is the number
+     *        of lands you control" — Ureni, the Song Unending).
+     */
+    fun DividedDamage(
+        total: Int = 0,
+        minTargets: Int = 1,
+        maxTargets: Int = 3,
+        dynamicTotal: DynamicAmount? = null
+    ): Effect = DividedDamageEffect(
+        totalDamage = total,
+        minTargets = minTargets,
+        maxTargets = maxTargets,
+        dynamicTotal = dynamicTotal
+    )
 
     /**
      * Install a turn-duration replacement that adds [bonus] to every noncombat damage instance

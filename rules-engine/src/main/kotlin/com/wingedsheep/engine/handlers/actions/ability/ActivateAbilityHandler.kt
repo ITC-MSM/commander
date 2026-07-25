@@ -19,6 +19,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.toEntityId
 import com.wingedsheep.engine.handlers.effects.bend.BendEvents
 import com.wingedsheep.engine.mechanics.mana.AlternativePaymentHandler
 import com.wingedsheep.engine.mechanics.mana.IntrinsicManaAbilities
@@ -68,6 +69,7 @@ import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.AdditionalManaOnSourceTap
 import com.wingedsheep.sdk.scripting.TappedForManaType
 import com.wingedsheep.sdk.scripting.ReplaceLandManaColor
@@ -454,6 +456,29 @@ class ActivateAbilityHandler(
             // for it during execute(); don't reject that here either.
             if (exilePermanentsCost == null && controllerTargetReqs.any { it.effectiveMinCount > 0 }) {
                 return "This ability requires a target"
+            }
+        }
+
+        // Validate a client-supplied divided-damage division (Chandra, Flameshaper's −4). The
+        // division is chosen as the ability is activated (CR 601.2d), so it arrives on the action
+        // rather than being asked for at resolution. Absence is legal — the executor then raises a
+        // resolution-time DistributeDecision, which is how non-interactive controllers divide — but
+        // anything present must be a well-formed division of exactly the printed total.
+        val distribution = action.damageDistribution
+        if (distribution != null) {
+            val dividedDamage = ability.effect as? DividedDamageEffect
+                ?: return "This ability does not divide damage among its targets"
+            val chosenTargetIds = action.targets.map { it.toEntityId() }.toSet()
+            if (distribution.keys != chosenTargetIds) {
+                return "Damage distribution targets must match chosen targets"
+            }
+            val totalDistributed = distribution.values.sum()
+            if (totalDistributed != dividedDamage.totalDamage) {
+                return "Total distributed damage ($totalDistributed) must equal ${dividedDamage.totalDamage}"
+            }
+            // CR 601.2d: each target in the division must be assigned at least 1 damage.
+            if (distribution.values.any { it < 1 }) {
+                return "Each target must receive at least 1 damage"
             }
         }
 
@@ -1555,7 +1580,10 @@ class ActivateAbilityHandler(
             abilityIdentity = com.wingedsheep.sdk.scripting.AbilityIdentity(
                 cardComponent.cardDefinitionId, ability.id
             ),
-            granterId = staticGranterId
+            granterId = staticGranterId,
+            // Lock in the activation-time damage division (CR 601.2d) so removal in response
+            // can't hand the controller a fresh division at resolution.
+            damageDistribution = action.damageDistribution
         )
 
         // Apply text-changing effects to the target requirements for resolution-time re-validation

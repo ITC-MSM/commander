@@ -173,6 +173,12 @@ export interface ActivateAbilityAction {
   readonly paymentStrategy?: PaymentStrategy
   /** Alternative payment choices (e.g., convoke for abilities like Heirloom Epic) */
   readonly alternativePayment?: AlternativePaymentChoice
+  /**
+   * Pre-chosen damage distribution for a "N damage divided as you choose" ability
+   * (target ID -> damage amount). Chosen as the ability is activated, not at resolution, so
+   * removal in response can't let the player re-divide (Chandra, Flameshaper's −4).
+   */
+  readonly damageDistribution?: Record<EntityId, number>
 }
 
 // =============================================================================
