@@ -6002,6 +6002,121 @@
     ]
 }
 
+// Terrific Team-Up
+{
+    "name": "Terrific Team-Up",
+    "manaCost": "{3}{G}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {2} less to cast if you control a permanent with mana value 4 or greater.\nOne or two target creatures you control each get +1/+0 until end of turn. They each deal damage equal to their power to target creature an opponent controls.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "allTargets"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "allTargets",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "creature ctrl:you"
+                    },
+                    "storeMatching": "team"
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "team"
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "team"
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "IterationEntity",
+                            "numericProperty": "Power"
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "damageSource": "Self"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "creature an opponent controls"
+            },
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "minCount": 1,
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "one or two creatures you control"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 2
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "Exists",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "permanent mv>=4"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "rarity": "UNCOMMON",
+        "artist": "InHyuk Lee",
+        "flavorText": "\"Hey, Miles! Are you busy at the moment?\"\n—Spider-Man, Peter Parker",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3c587b0-66b9-46bf-90ee-a6163c006c9e.jpg?1783905321"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // The Death of Gwen Stacy
 {
     "name": "The Death of Gwen Stacy",

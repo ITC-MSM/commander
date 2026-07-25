@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 111 / 190
+**Implemented:** 112 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -165,7 +165,7 @@
 - [ ] Swarm, Being of Bees
 - [ ] Symbiote Spider-Man
 - [x] Taxi Driver
-- [ ] Terrific Team-Up
+- [x] Terrific Team-Up
 - [ ] The Clone Saga
 - [x] The Death of Gwen Stacy
 - [ ] The Soul Stone
