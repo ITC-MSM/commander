@@ -178,6 +178,7 @@ object CardLinter {
         put("Behold" to "storeAs", write(Space.COLLECTION))
         put("BeholdOrPay" to "storeAs", write(Space.COLLECTION))
         put("ChooseEntity" to "storeAs", write(Space.COLLECTION))
+        put("ChooseOnePerCategory" to "storeAs", write(Space.COLLECTION))
         put("StoreNumber" to "name", write(Space.NUMBER))
         put("FlipCoins" to "storeHeadsAs", write(Space.NUMBER))
         put("ForEachCapturedController" to "countVariable", write(Space.NUMBER))
@@ -195,6 +196,7 @@ object CardLinter {
             "ChoosePile", "MoveCollection", "GrantMayPlayFromExile", "GrantPlayWithoutPayingCost",
             "MakePlotted",
             "GrantPlayWithAdditionalCost", "GrantPlayWithCostIncrease", "FilterCollection",
+            "ChooseOnePerCategory",
             "StoreCardName", "CastFromCollectionWithoutPayingCost",
             "CastAnyNumberFromCollectionWithoutPayingCost", "ExileFromStorage",
             "CopyCollectionIntoCollection", "RecordChosenLinkedExile",

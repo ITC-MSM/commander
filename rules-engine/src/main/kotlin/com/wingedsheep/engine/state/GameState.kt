@@ -473,6 +473,25 @@ data class GameState(
         }
 
     /**
+     * [activePlayers] rotated into **APNAP order** (CR 101.4): the active player first, then the
+     * remaining players in turn order starting from the one after them. This is the order in which
+     * players make simultaneous choices — "each player sacrifices a creature" asks the active
+     * player first, then each nonactive player in turn order, and only then do the sacrifices
+     * happen.
+     *
+     * Note this is a *rotation*, not "active player prepended to seat order": with seats [A, B, C]
+     * and B active the order is [B, C, A], not [B, A, C]. Falls back to plain turn order when
+     * there is no active player (before the first turn begins).
+     */
+    val apnapOrder: List<EntityId>
+        get() {
+            val ordered = activePlayers
+            val active = activePlayerId ?: return ordered
+            val index = ordered.indexOf(active)
+            return if (index <= 0) ordered else ordered.drop(index) + ordered.take(index)
+        }
+
+    /**
      * Opponents of a player, in turn order, excluding players who have lost or left the
      * game. There is deliberately no single-opponent helper: any code that needs one
      * specific opponent must say which one (a chosen target, an iteration, or the

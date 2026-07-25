@@ -201,10 +201,7 @@ class ForEachExecutor(
     private fun resolvePlayers(player: Player, state: GameState, context: EffectContext): List<EntityId> {
         return when (player) {
             Player.Each -> state.activePlayers
-            Player.ActivePlayerFirst -> {
-                val activePlayer = state.activePlayerId ?: return state.activePlayers
-                listOf(activePlayer) + state.activePlayers.filter { it != activePlayer }
-            }
+            Player.ActivePlayerFirst -> state.apnapOrder
             Player.You -> listOf(context.controllerId)
             Player.EachOpponent -> state.getOpponents(context.controllerId)
             // Distinct owners of the cards still in the source's linked-exile pile. Resolve to

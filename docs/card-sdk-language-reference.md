@@ -1256,6 +1256,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   composite step can read the count via `DynamicAmounts.permanentsSacrificedThisWay()` — e.g.
   "Sacrifice any number of lands. Reveal the top X cards … where X is the number of lands
   sacrificed this way" (Hew the Entwood; same shape as Scapeshift).
+- "Each player chooses \<one permanent per category\> they control, then \<does something to\> the
+  rest" is a **pipeline composition**, not an effect type — see `chooseOnePerCategory` / `exclude` in
+  §5.5. Liliana, Dreadhorde General's −9 is
+  `gather(Permanent.opponentControls())` → `chooseOnePerCategory(…, Filters.PermanentTypes)` →
+  `sacrifice(exclude(pool, kept))`; swapping the last step gives Consuming Tide's "returns the rest
+  to their hands", and swapping the category list gives Cataclysm / Divine Reckoning. For "all
+  permanents matching a filter are sacrificed by their controllers" with no choice at all, use
+  `Effects.SacrificeAll(filter)` instead.
 - "Return a permanent you control [to its owner's hand]" is a pipeline composition, not an effect type:
   `GatherCards(BattlefieldMatching(filter, Player.You, excludeSelf?))` →
   `SelectFromCollection(ChooseExactly(1), useTargetingUI = true)` → `MoveCollection(→ HAND)` (the
@@ -1963,7 +1971,8 @@ with cards):
 | `gather(source)` / `gather(filter, player?, …)` (battlefield shorthand) | `GatherCardsEffect` |
 | `gatherUntilMatch(filter, …)` → `(match, revealed)` | `GatherUntilMatchEffect` |
 | `chooseExactly(n, from)` / `chooseUpTo` / `chooseAnyNumber` / `chooseRandom` / `selectAll` (+ `…Split` variants returning `(selected, remainder)`) | `SelectFromCollectionEffect` |
-| `filter(from, filter)` / `filterSplit(…)` → `(matching, rest)` | `FilterCollectionEffect` |
+| `filter(from, filter)` / `filterSplit(…)` → `(matching, rest)` / `exclude(from, minus)` (set difference via `CollectionFilter.ExcludeOtherCollection`) | `FilterCollectionEffect` |
+| `chooseOnePerCategory(from, categories)` | `ChooseOnePerCategoryEffect` |
 | `move(from, destination, …)` / `moveTracked(…)` / sugar `destroy`, `sacrifice`, `exile`, `toHand`, `toGraveyard`, `toLibraryTop`, `toLibraryBottom` | `MoveCollectionEffect` |
 | `reveal(from, …)` | `RevealCollectionEffect` |
 | `captureControllers(from)` | `CaptureControllersEffect` |
@@ -1977,6 +1986,28 @@ with cards):
 | `ifNotEmpty(slot, filter?, minSize?) { … } orElse { … }` | `ConditionalOnCollectionEffect` |
 | `whenMatches(slot, filter)` (returns a `Condition`, adds no step) | `CollectionContainsMatch` |
 | `run(effect)` | any other `Effect`, verbatim |
+
+**`chooseOnePerCategory(from, categories)`** — "…chooses a permanent they control of each permanent
+type…". Each *controller* represented in `from` picks one of their own members for every filter in
+`categories`, and all picks land in the returned slot. Choosers are asked in **APNAP order**
+(CR 101.4) — the choosers are derived from the pool's controllers, so the "each player" / "each
+opponent" scoping lives in the `gather`, not in the step. A category the chooser controls nothing of
+is skipped, a category with one candidate resolves itself without a prompt, and **one permanent may
+be the pick for several categories** (an artifact creature spared as both the artifact and the
+creature) — which is why this is a sequence of one-of-each choices and not a single
+`SelectionRestriction.OnePerCardType` selection, under which that permanent could claim only one of
+its types. The step moves nothing; pair it with `exclude` for "the rest" and any move step for their
+fate:
+
+```kotlin
+// Liliana, Dreadhorde General −9: "Each opponent chooses a permanent they control of each
+// permanent type and sacrifices the rest."
+effect = Effects.Pipeline {
+    val atRisk = gather(GameObjectFilter.Permanent.opponentControls())
+    val kept = chooseOnePerCategory(atRisk, Filters.PermanentTypes)
+    sacrifice(exclude(atRisk, kept))
+}
+```
 
 `run(...)` keeps the builder open: non-pipeline effects (a `ShuffleLibraryEffect`, a damage effect)
 interleave without the builder needing a verb for everything. Optional secondary outputs
@@ -2394,6 +2425,12 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   card that satisfies more than one clause is counted once).
 - `Filters.Permanent` — permanent card.
 - `Filters.NonlandPermanent` — nonland permanent.
+- `Filters.PermanentTypes` — a `List<GameObjectFilter>`, one per **permanent type** (CR 110.4), in the
+  order the rules list them: artifact, creature, enchantment, land, planeswalker. The canonical
+  expansion of "of each permanent type" — feed it to `chooseOnePerCategory` (§5.5) as in Liliana,
+  Dreadhorde General's −9. CR 110.4
+  names six types; *battle* is absent because the engine has no `CardType.BATTLE` yet, so adding
+  battles means adding the filter here and every "each permanent type" card picks it up.
 - `Filters.WithSubtype(subtype)` — card of a given subtype.
 - `GameObjectFilter.Multicolored` — multicolored card (two or more colors; `CardPredicate.IsMulticolored`).
 - `CardPredicate.IsColored` — one or more colors (the complement of `IsColorless`). Used for "a
