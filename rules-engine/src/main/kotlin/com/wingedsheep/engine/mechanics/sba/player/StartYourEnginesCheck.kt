@@ -21,8 +21,18 @@ import com.wingedsheep.sdk.model.EntityId
  *   change-of-control trigger to write.
  * - A permanent that is *granted* the keyword mid-game starts its controller's speed, because the
  *   keyword is read from projected state (Layer 6), not from the printed card.
- * - It runs to fixpoint inside the SBA loop, so there is never a moment where the permanent is on
- *   the battlefield and its controller still has no speed.
+ * - It is idempotent and runs to fixpoint inside the SBA loop, so several permanents with the keyword
+ *   under one controller still start exactly one speed.
+ *
+ * **When it actually fires.** CR 704.3 has state-based actions checked whenever a player would
+ * receive priority; this engine polls them more narrowly — after a spell or ability resolves
+ * (`PassPriorityHandler`), after the draw step and on the end-the-turn path (`TurnManager`), and after
+ * a decision resolves. For the normal case that is indistinguishable: a permanent with the keyword is
+ * *cast*, so the SBA runs the moment it resolves and speed starts before anyone gets priority. The
+ * gap shows only for a permanent that reaches the battlefield without anything resolving afterwards —
+ * a land drop (Amonkhet Raceway), or a scenario-injected board — where speed starts at the next poll
+ * instead. Nothing can read speed in that window except a max-speed gate, which needs 4 anyway. This
+ * is the engine's SBA cadence, shared by every check here, not something specific to speed.
  *
  * Ordering: this runs before the loss checks so that a player who is about to lose still ends up with
  * a consistent speed value in the same SBA pass — the position is otherwise immaterial, since

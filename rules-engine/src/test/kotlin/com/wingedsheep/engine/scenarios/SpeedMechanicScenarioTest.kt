@@ -636,10 +636,10 @@ class SpeedMechanicScenarioTest : ScenarioTestBase() {
      * here. [extra] adds the permanents/cards that test needs.
      *
      * Deliberately built one step *earlier* (upkeep) and then advanced: the CR 704.5z state-based
-     * action runs when the engine polls state-based actions, which it does on a step change — so
-     * arriving in the main phase through a real step transition is what proves the check is wired
-     * into the game loop rather than merely callable. A plain `passPriority()` would neither poll
-     * SBAs nor leave the active player holding priority.
+     * action fires when the engine polls state-based actions, and the poll this crosses is the one
+     * after the draw step (`TurnManager`) — so arriving in the main phase through a real step
+     * sequence is what proves the check is wired into the game loop rather than merely callable. A
+     * plain `passPriority()` would neither poll SBAs nor leave the active player holding priority.
      *
      * Both libraries are stocked so crossing the draw step (here and when a test rounds the table)
      * can't deck anyone and turn every assertion into a loss check.
