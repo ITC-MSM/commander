@@ -1240,6 +1240,91 @@
     ]
 }
 
+// Curse of the Werefox
+{
+    "name": "Curse of the Werefox",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create a Monster Role token attached to target creature you control. When you do, that creature fights up to one target creature you don't control. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1 and has trample. Creatures that fight each deal damage equal to their power to the other.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "roleHost"
+                },
+                {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "CreateRoleToken",
+                        "roleName": "Monster Role",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        }
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "Fight",
+                        "target1": {
+                            "type": "PipelineTarget",
+                            "collectionName": "roleHost"
+                        },
+                        "target2": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "optional": true,
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "When you do, that creature fights up to one target creature you don't control."
+                }
+            ],
+            "descriptionOverride": "Create a Monster Role token attached to target creature you control. When you do, that creature fights up to one target creature you don't control."
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "167",
+        "artist": "Andrew Mar",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/89148458-1fd6-48ef-a2d9-7b434c9723ec.jpg?1783915083",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You don't choose a target for the creature to fight at the time you cast this spell. Rather, a second \"reflexive\" ability triggers when you create a Monster Role token attached to the creature that was targeted by the spell. You choose a target for that ability as it goes on the stack. Each player may respond to this triggered ability as normal."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you can't attach a Monster Role token to the target creature you control when Curse of the Werefox resolves, the reflexive trigger that causes the fight won't happen."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the creature you control already has a Role that you control attached to it, that Role will be put into its owner's graveyard as a state-based action after the Monster Role is attached to it but before the reflexive triggered ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Cursed Courtier
 {
     "name": "Cursed Courtier",
@@ -2137,6 +2222,145 @@
     ]
 }
 
+// Fell Horseman
+{
+    "name": "Fell Horseman",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Zombie Knight",
+    "oracleText": "When this creature dies, put it on the bottom of its owner's library.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Library",
+                    "placement": "Bottom"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "artist": "Igor Krstic",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/43bb3890-4013-48be-8cb5-54fd8fd8ec52.jpg?1783915106",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Fell Horseman will be put on the bottom of its owner's library only if it's still in the graveyard when its ability resolves. If it leaves the graveyard before that point, it will stay in whatever zone it's in, even if it's returned to the graveyard before the ability resolves."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "An adventurer card is a permanent card in every zone except the stack, as well as while on the stack if not cast as an Adventure. Ignore its alternative characteristics in those cases."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Deathly Ride",
+            "manaCost": "{1}{B}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Return target creature card from your graveyard to your hand. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target creature card in your graveyard"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+// Ferocious Werefox
+{
+    "name": "Ferocious Werefox",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Elf Fox Warrior",
+    "oracleText": "Trample",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "metadata": {
+        "collectorNumber": "170",
+        "artist": "Caroline Gariba",
+        "flavorText": "Each night, the elves of Redtooth Keep transform into feral, monstrous beasts.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac1907e8-0713-47dd-ac42-bf1323c5bec0.jpg?1783915082",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If a permanent has more than one Role attached to it controlled by the same player, each of those Roles except the one with the most recent timestamp is put into its owner's graveyard. This is a state-based action."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "In rare cases, a spell or ability might attempt to create a Role token enchanting a permanent that it can't legally enchant (because of an ability like protection from enchantments). In such cases, the Role token isn't created."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Guard Change",
+            "manaCost": "{1}{G}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Create a Monster Role token attached to target creature you control. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1 and has trample.) (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "CreateRoleToken",
+                    "roleName": "Monster Role",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Flick a Coin
 {
     "name": "Flick a Coin",
@@ -2704,6 +2928,92 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Hollow Scavenger
+{
+    "name": "Hollow Scavenger",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "{1}, Sacrifice a Food: This creature gets +2/+2 until end of turn. Activate only once each turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "Food"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "OncePerTurn"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "artist": "Michele Giorgi",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0ad345b6-7077-4dd2-b515-c774a3185fe4.jpg?1783915081",
+        "rulings": [
+            {
+                "date": "2024-11-08",
+                "text": "If an effect refers to a Food, it means any Food artifact, not just a Food artifact token."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "You can't sacrifice a Food to pay multiple costs. For example, you can't sacrifice a Food token to activate its own ability and also to activate this ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Bakery Raid",
+            "manaCost": "{G}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Create a Food token. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                }
+            }
+        }
     ]
 }
 
@@ -6596,6 +6906,125 @@
         "artist": "Julia Metzger",
         "flavorText": "Where an ouphe makes its home, the land blooms with color and joy.",
         "imageUri": "https://cards.scryfall.io/normal/front/f/0/f0a6349a-beff-4abd-b005-86d27c1e2957.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Tough Cookie
+{
+    "name": "Tough Cookie",
+    "manaCost": "{1}{G}",
+    "typeLine": "Artifact Creature — Food Golem",
+    "oracleText": "When this creature enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\n{2}{G}: Until end of turn, target noncreature artifact you control becomes a 4/4 artifact creature.\n{2}, {T}, Sacrifice this creature: You gain 3 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target noncreature artifact you control"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "addTypes": [
+                        "ARTIFACT"
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsArtifact",
+                                    {
+                                        "type": "Not",
+                                        "predicate": "IsCreature"
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            }
+                        },
+                        "id": "target noncreature artifact you control"
+                    }
+                ],
+                "descriptionOverride": "{2}{G}: Until end of turn, target noncreature artifact you control becomes a 4/4 artifact creature."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "rarity": "UNCOMMON",
+        "artist": "Milivoj Ćeran",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7aa37f85-5336-4372-97a2-9c8b00798c7a.jpg?1783915075",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "As Tough Cookie's second ability resolves, the target permanent keeps any other types and subtypes it had before it became an artifact creature."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "Food is an artifact type. Even though it appears on some creatures, it's never a creature type."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "GREEN"
