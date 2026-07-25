@@ -1,6 +1,7 @@
 package com.wingedsheep.sdk.dsl
 
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.scripting.GiftKind
 import com.wingedsheep.sdk.scripting.KeywordAbility
@@ -45,19 +46,22 @@ fun giftEffect(kind: GiftKind): Effect {
  * The triggered ability that *is* gift on a permanent (CR 702.174b): "When this permanent enters,
  * if its gift cost was paid, [effect]."
  *
- * An intervening-if trigger gated on [Conditions.GiftWasPromised], so a permanent cast without
- * promising the gift never puts the ability on the stack at all. Resolving it is what makes the
- * controller "give a gift" (CR 702.174c), hence the closing [Effects.GiftGiven] marker that fires
- * "whenever you give a gift" triggers.
+ * An intervening-if trigger gated on [Conditions.GiftWasPromised] (CR 603.4), so a permanent cast
+ * without promising the gift never puts the ability on the stack at all. Resolving it is what makes
+ * the controller "give a gift" (CR 702.174c), hence the closing [Effects.GiftGiven] marker that
+ * fires "whenever you give a gift" triggers.
+ *
+ * [subject] names the permanent the way the printed card does ("this Aura", "this Equipment") for
+ * the rules text only; it defaults to the rule's own generic wording.
  */
-fun giftEnterTrigger(kind: GiftKind): TriggeredAbility =
+fun giftEnterTrigger(kind: GiftKind, subject: String = "this permanent"): TriggeredAbility =
     TriggeredAbility.create(
         trigger = Triggers.EntersBattlefield.event,
         binding = Triggers.EntersBattlefield.binding,
         triggerCondition = Conditions.GiftWasPromised,
         effect = giftEffect(kind).then(Effects.GiftGiven()),
         descriptionOverride =
-            "When this permanent enters, if the gift was promised, ${kind.effectText}."
+            "When $subject enters, if the gift was promised, ${kind.effectText}."
     )
 
 /**
@@ -74,11 +78,31 @@ fun giftEnterTrigger(kind: GiftKind): TriggeredAbility =
  * the permanent had already entered.
  *
  * Instants and sorceries have no permanent to trigger off, so their gift branch is folded into the
- * spell's own effect via [MechanicPatterns.giftSpell] instead.
+ * spell's own effect via [MechanicPatterns.giftSpell] instead — `CardValidator` rejects this keyword
+ * on a non-permanent for exactly that reason.
+ *
+ * Call this *after* `typeLine`: the derived ability names the permanent the way the printed card
+ * does ("When this Aura enters, …"), read off the type line. Out of order it falls back to the
+ * rule's own generic "this permanent" — the wording gets less specific, never wrong.
  */
 fun CardBuilder.gift(kind: GiftKind) {
     keywordAbilityList.add(KeywordAbility.Gift(kind))
-    triggeredAbilities.add(giftEnterTrigger(kind))
+    triggeredAbilities.add(giftEnterTrigger(kind, giftSubjectFor(typeLine)))
+}
+
+/** How the printed card refers to itself in its gift ability, given its type line. */
+private fun giftSubjectFor(typeLineString: String): String {
+    val typeLine = runCatching { TypeLine.parse(typeLineString) }.getOrNull()
+        ?: return "this permanent"
+    return when {
+        typeLine.isAura -> "this Aura"
+        typeLine.isEquipment -> "this Equipment"
+        typeLine.isCreature -> "this creature"
+        typeLine.isEnchantment -> "this enchantment"
+        typeLine.isArtifact -> "this artifact"
+        typeLine.isLand -> "this land"
+        else -> "this permanent"
+    }
 }
 
 /**

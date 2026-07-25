@@ -26,7 +26,8 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * The gift is promised as you cast (CR 702.174a) — `gift(...)` supplies both the additional cost
  * and the "they draw a card" enters ability. The printed enters ability is an intervening-if
  * trigger (CR 603.4) on the same promise, so a Scrapshooter cast without the gift never triggers
- * and never asks for a target.
+ * and never asks for a target — which is what CR 702.174m requires: targets belonging to a
+ * gift-gated part of an ability are chosen only if the gift was promised.
  */
 val Scrapshooter = card("Scrapshooter") {
     manaCost = "{1}{G}{G}"

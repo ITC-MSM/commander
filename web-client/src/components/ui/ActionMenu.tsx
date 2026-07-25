@@ -160,6 +160,20 @@ function buildActionOptions(
             impendingTime: impendingInfo.time,
           }
     )
+    // Any further cost variant the server offered (e.g. a gift promise per opponent — CR 702.174a)
+    // has to survive this branch too, or picking impending's sibling silently drops the option.
+    castActions
+      .filter((ca) => ca !== normalCast && ca !== impendingCast)
+      .forEach((ca, index) => {
+        options.push({
+          key: `cast-extra-${index}`,
+          label: ca.description,
+          manaCost: ca.manaCostString || cardInfo.manaCost || null,
+          isAvailable: ca.isAffordable !== false,
+          action: ca,
+          actionType: 'cast',
+        })
+      })
   } else if (castActions.length > 1) {
     // 1b. Multiple cast options (e.g., BlightOrPay — blight path vs pay path)
     castActions.forEach((ca, index) => {

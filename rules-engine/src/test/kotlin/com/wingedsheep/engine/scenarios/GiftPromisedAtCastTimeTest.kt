@@ -72,6 +72,42 @@ class GiftPromisedAtCastTimeTest : ScenarioTestBase() {
                 }
             }
 
+            test("the promise rides a free cast too — an additional cost outlives the mana cost") {
+                // CR 601.2b / 601.2f–h: additional costs are chosen and paid whichever cost pays the
+                // mana cost. With Omniscience out and no Forests, the free cast is the only payable
+                // path, so it must be the one carrying the gift offer.
+                val game = scenario()
+                    .withPlayers("Caster", "Opponent")
+                    .withCardOnBattlefield(1, "Omniscience")
+                    .withCardInHand(1, "Scrapshooter")
+                    .withCardOnBattlefield(2, "Sol Ring")
+                    .withCardInLibrary(2, "Forest")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val scrapshooter = game.handCard(1, "Scrapshooter")
+                val giftActions = game.getLegalActions(1)
+                    .filter { it.actionType == "CastWithGift" && (it.action as? CastSpell)?.cardId == scrapshooter }
+
+                val freeGift = withClue("the free cast needs its own gift twin") {
+                    giftActions.single { (it.action as CastSpell).useWithoutPayingManaCost }
+                }
+                withClue("an unaffordable cast must not spawn a greyed-out gift twin per opponent") {
+                    giftActions.none { !(it.action as CastSpell).useWithoutPayingManaCost } shouldBe true
+                }
+
+                game.execute(freeGift.action).error shouldBe null
+                game.resolveStack()
+                game.selectTargets(listOf(game.findPermanent("Sol Ring").shouldNotBeNull()))
+                game.resolveStack()
+
+                withClue("promised on a free cast, the gift and its rider both happen") {
+                    game.handSize(2) shouldBe 1
+                    game.isOnBattlefield("Sol Ring") shouldBe false
+                }
+            }
+
             test("Kitnap with the gift promised: opponent draws, no stun counters, nothing asked at ETB") {
                 val game = scenario()
                     .withPlayers("Caster", "Opponent")

@@ -29,7 +29,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * The gift is promised as you cast (CR 702.174a) — `gift(...)` supplies both the additional cost
  * and the "they create a tapped Fish" enters ability. The printed attach ability is an
  * intervening-if trigger (CR 603.4) on the same promise, so an unpromised cast never triggers and
- * never asks for a creature to attach to.
+ * never asks for a creature to attach to — which is what CR 702.174m requires: targets belonging
+ * to a gift-gated part of an ability are chosen only if the gift was promised.
  */
 val StarforgedSword = card("Starforged Sword") {
     manaCost = "{4}"

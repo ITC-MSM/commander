@@ -4907,7 +4907,12 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > printed enters-abilities gate on `Conditions.GiftWasPromised` / `Conditions.Not(...)` instead of asking
 > the player anything at resolution. **Never model the promise as a resolution-time choice**: the gift is
 > promised as the spell is cast, so a mode picker on the enters-trigger asks after the permanent has
-> already entered.
+> already entered. CR 702.174m is the rule that makes this mandatory rather than merely tidy — "if part
+> of a spell's ability has its effect only if its gift was promised, and that part of the ability includes
+> any targets, the spell's controller chooses those targets only if the gift was promised" — so a
+> promise-carrying mode that also collects targets picks them before the promise exists.
+> The promise rides *every* cost path, since it's an additional cost (CR 601.2b, 601.2f–h): the
+> enumerator clones alternative-cost and free casts too, not just the plain one.
 >
 > *Instants and sorceries* have no permanent to trigger off — their gift-paid branch is part of the
 > spell's own effect, so they keep `Patterns.Mechanic.giftSpell(noGiftMode, giftMode)`: a two-mode
