@@ -1977,6 +1977,125 @@
     ]
 }
 
+// Heroes' Hangout
+{
+    "name": "Heroes' Hangout",
+    "manaCost": "{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Date Night — Exile the top two cards of your library. Choose one of them. Until the end of your next turn, you may play that card.\n• Patrol Night — One or two target creatures each get +1/+0 and gain first strike until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeAs": "exiledCards"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "exiledCards",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "chosen",
+                                "prompt": "Choose one of the exiled cards to play.",
+                                "showAllCards": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "exiledCards",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            },
+                            {
+                                "type": "GrantMayPlayFromExile",
+                                "from": "chosen",
+                                "expiry": {
+                                    "type": "UntilControllerStep",
+                                    "step": "CLEANUP",
+                                    "includeCurrentTurn": false
+                                }
+                            }
+                        ]
+                    },
+                    "description": "Date Night — Exile the top two cards of your library. Choose one of them. Until the end of your next turn, you may play that card."
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Fixed",
+                                        "amount": 0
+                                    },
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                },
+                                {
+                                    "type": "GrantKeyword",
+                                    "keyword": "FIRST_STRIKE",
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "count": 2,
+                            "minCount": 1,
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        }
+                    ],
+                    "description": "Patrol Night — One or two target creatures each get +1/+0 and gain first strike until end of turn."
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "79",
+        "rarity": "UNCOMMON",
+        "artist": "Smirtouille",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/4148d7e8-6371-468c-858b-35254995409a.jpg?1783905337"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hide on the Ceiling
 {
     "name": "Hide on the Ceiling",
