@@ -532,6 +532,11 @@ export interface ClientPlayer {
    * Rendered as a progress badge under the life orb.
    */
   readonly commanderDamage?: readonly ClientCommanderDamage[]
+  /**
+   * This player's speed, 0–4 (Aetherdrift, CR 702.179). `0` means they have no speed and no gauge is
+   * rendered; `4` is max speed, which switches on every "Max speed —" ability they control.
+   */
+  readonly speed?: number
 }
 
 /**

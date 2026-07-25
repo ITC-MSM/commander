@@ -42,6 +42,34 @@ sealed interface ClientEvent {
         }
     ) : ClientEvent
 
+    /**
+     * A player's speed went up (Aetherdrift, CR 702.179) — either "Start your engines!" starting it
+     * at 1 ([oldSpeed] 0) or the inherent speed trigger raising it.
+     *
+     * Surfaced as a real client event rather than left to a silent state diff so the speed gauge can
+     * animate the step and call out reaching max speed. Speed only rises and stops at
+     * [com.wingedsheep.sdk.core.Speed.MAX], so [reachedMaxSpeed] fires at most once per player per game.
+     */
+    @Serializable
+    @SerialName("speedChanged")
+    data class SpeedChanged(
+        val playerId: EntityId,
+        val oldSpeed: Int,
+        val newSpeed: Int,
+        val isYours: Boolean? = null,
+        val reachedMaxSpeed: Boolean = newSpeed >= com.wingedsheep.sdk.core.Speed.MAX,
+        override val description: String = when {
+            isYours == true && reachedMaxSpeed -> "You reached max speed"
+            isYours == false && reachedMaxSpeed -> "Opponent reached max speed"
+            reachedMaxSpeed -> "Player reached max speed"
+            isYours == true && oldSpeed == 0 -> "Your speed started at $newSpeed"
+            isYours == false && oldSpeed == 0 -> "Opponent's speed started at $newSpeed"
+            isYours == true -> "Your speed increased to $newSpeed"
+            isYours == false -> "Opponent's speed increased to $newSpeed"
+            else -> "Player's speed increased to $newSpeed"
+        }
+    ) : ClientEvent
+
     @Serializable
     @SerialName("damageDealt")
     data class DamageDealt(
@@ -752,6 +780,13 @@ object ClientEventTransformer {
         viewingPlayerId: EntityId
     ): ClientEvent? {
         return when (event) {
+            is SpeedChangedEvent -> ClientEvent.SpeedChanged(
+                playerId = event.playerId,
+                oldSpeed = event.oldSpeed,
+                newSpeed = event.newSpeed,
+                isYours = event.playerId == viewingPlayerId
+            )
+
             is LifeChangedEvent -> ClientEvent.LifeChanged(
                 playerId = event.playerId,
                 oldLife = event.oldLife,

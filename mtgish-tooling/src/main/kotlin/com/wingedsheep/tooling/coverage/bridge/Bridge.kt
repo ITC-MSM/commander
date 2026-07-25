@@ -36,6 +36,7 @@ object Bridge {
             zoneMovement()
             manaCountersAndState()
             triggersCostsAndContinuous()
+            speed()
         }.build()
     }
 

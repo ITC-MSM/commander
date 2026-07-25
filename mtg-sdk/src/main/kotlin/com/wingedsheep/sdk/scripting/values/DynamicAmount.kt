@@ -326,6 +326,26 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * A player's **speed** (Aetherdrift, CR 702.179) — the 0–4 designation that
+     * "Start your engines!" begins and the inherent speed trigger raises.
+     *
+     * A player who has no speed reads as 0 (CR 702.179f), so this is always a plain number and
+     * needs no "has speed" guard at the use site.
+     *
+     * Examples:
+     * ```kotlin
+     * Speed(Player.You)  // "your speed" — Point the Way's X, The Speed Demon's X
+     * ```
+     * Comparisons build the max-speed gate: `Compare(Speed(Player.You), EQ, Fixed(Speed.MAX))`,
+     * exposed as [com.wingedsheep.sdk.dsl.Conditions.YouHaveMaxSpeed].
+     */
+    @SerialName("Speed")
+    @Serializable
+    data class Speed(val player: Player = Player.You) : DynamicAmount {
+        override val description: String = "${player.possessive} speed"
+    }
+
+    /**
      * The starting life total of a player (e.g., 20 in standard, 40 in commander).
      * Used for conditions like "life total ≤ half your starting life total".
      */

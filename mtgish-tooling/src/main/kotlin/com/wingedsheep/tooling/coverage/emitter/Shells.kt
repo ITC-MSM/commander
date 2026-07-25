@@ -165,6 +165,11 @@ internal fun keywordLines(card: JsonObject, keywords: Set<String>, oracleText: S
         // "Increment"`), which itself surfaces Keyword.INCREMENT. A bare `keywords(Keyword.INCREMENT)`
         // here would both duplicate the keyword and drop the cast-spell trigger, so skip it.
         if (rname == "Increment") continue
+        // Speed (Aetherdrift): both keywords are surfaced by their own builders — `startYourEngines()`
+        // and `maxSpeed { }` (Emitter `rname == "StartYourEngines"` / `"MaxSpeed"`). A bare
+        // `keywords(Keyword.START_YOUR_ENGINES)` here would duplicate the keyword, and a bare
+        // `keywords(Keyword.MAX_SPEED)` would print the keyword while dropping the gated ability.
+        if (rname == "StartYourEngines" || rname == "MaxSpeed") continue
         val entry = Bridge.entry("_Rule", rname)
         val auto = pascalToUpperSnake(rname)
         if (entry is MappingEntry.Keyword) out.add(entry.tag)

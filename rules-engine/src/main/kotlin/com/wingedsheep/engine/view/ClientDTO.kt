@@ -645,7 +645,16 @@ data class ClientPlayer(
      * commander that has dealt at least 1 damage. Empty outside `Format.Commander`. The client
      * renders these as progress badges (e.g., `⚔ Atraxa 14/21`) under the life orb.
      */
-    val commanderDamage: List<ClientCommanderDamage> = emptyList()
+    val commanderDamage: List<ClientCommanderDamage> = emptyList(),
+
+    /**
+     * This player's speed, 0–4 (Aetherdrift, CR 702.179). `0` means they have no speed and the client
+     * renders no speed gauge at all; `4` is max speed.
+     *
+     * Public information — speed is a visible player designation like poison counters, so it is not
+     * masked. Defaulted so every non-Aetherdrift game serializes it away and the field costs nothing.
+     */
+    val speed: Int = 0
 )
 
 /**

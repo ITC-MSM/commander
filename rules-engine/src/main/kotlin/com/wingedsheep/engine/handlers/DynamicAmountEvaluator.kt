@@ -193,6 +193,15 @@ class DynamicAmountEvaluator(
                 state.getEntity(playerId)?.get<PlayerComponent>()?.startingLifeTotal ?: 20
             }
 
+            // A player's speed, 0–4 (CR 702.179). "No speed" reads as 0 per CR 702.179f, which
+            // GameState.speed already returns, so there is no has-speed branch here. Speed is not
+            // pooled in team games, unlike life and poison.
+            is DynamicAmount.Speed -> {
+                val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
+                val playerId = playerIds.firstOrNull() ?: return 0
+                state.speed(playerId)
+            }
+
             // Total unspent mana in the player's pool (Ozai, the Phoenix King's "six or more
             // unspent mana"). Reads the base-state ManaPoolComponent.total, which is unaffected by
             // continuous projection.

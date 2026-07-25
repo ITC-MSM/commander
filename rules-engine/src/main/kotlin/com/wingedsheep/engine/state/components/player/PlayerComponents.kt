@@ -739,6 +739,31 @@ data class TheRingComponent(
 ) : Component
 
 /**
+ * Tracks a player's **speed** (Aetherdrift, CR 702.179).
+ *
+ * *Presence* of this component means the player has speed at all; its absence is CR 702.179b's "no
+ * speed". The distinction matters for one thing only — whether the CR 704.5z state-based action
+ * fires (it sets speed to 1 for a player who has *no* speed) and whether the inherent speed trigger
+ * exists (only for a player with 1 or more speed, CR 702.179d). Everything that *reads* speed treats
+ * "no speed" as 0 (CR 702.179f), which is what [com.wingedsheep.engine.state.GameState.speed] does,
+ * so callers never need a has-speed guard.
+ *
+ * [speed] is always in `1..`[com.wingedsheep.sdk.core.Speed.MAX] — the component is never created
+ * with 0, and every increase is clamped by
+ * [com.wingedsheep.engine.mechanics.speed.SpeedService].
+ *
+ * Like the city's blessing and The Ring emblem, speed is never removed once gained: it survives the
+ * granting permanent leaving play, so there is no `removeOn` field and cleanup never touches it. The
+ * "only once each turn" cap on the inherent trigger is *not* tracked here — that rides on the
+ * generic [com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredThisTurnComponent]
+ * stamped on the player entity, which cleanup already resets.
+ */
+@Serializable
+data class PlayerSpeedComponent(
+    val speed: Int
+) : Component
+
+/**
  * Describes when a player-level effect component should be removed.
  */
 @Serializable

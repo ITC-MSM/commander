@@ -15,6 +15,7 @@ import {
 import { teamColor, type SeatColor } from '@/styles/seatColors'
 import type { ClientCard, ClientPlayer, EntityId } from '@/types'
 import { useResponsiveContext } from './board/shared'
+import { SpeedGauge } from './overlay'
 
 /**
  * Total viewport width claimed by the fixed rail column (chip width + left offset + a
@@ -528,6 +529,11 @@ function SelfRailChip({ self }: { self: ClientPlayer }) {
           </span>
         )}
 
+        {/* Speed (CR 702.179) — the rail's own compact tachometer */}
+        {!tomb && (self.speed ?? 0) > 0 && (
+          <SpeedGauge speed={self.speed ?? 0} compact />
+        )}
+
         {/* Poison */}
         {!tomb && self.poisonCounters > 0 && (
           <span
@@ -996,6 +1002,11 @@ function RailChip({
             <HandCountIcon color={handLimitSuffix(opponent.maxHandSize) ? '#f0d488' : '#8899bb'} />
             {opponent.handSize}{handLimitSuffix(opponent.maxHandSize)}
           </span>
+        )}
+
+        {/* Speed (CR 702.179) — the rail's own compact tachometer */}
+        {!tomb && (opponent.speed ?? 0) > 0 && (
+          <SpeedGauge speed={opponent.speed ?? 0} compact />
         )}
 
         {/* Poison */}
