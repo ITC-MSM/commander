@@ -1075,16 +1075,26 @@ class CastSpellHandler(
     }
 
     /**
-     * True if the spell is being cast via a [com.wingedsheep.engine.state.permissions.MayPlayPermission]
-     * that allows mana of any type to be spent. The card must currently be in a zone a may-play
-     * permission can grant casting from — exile (the card's owner's, which may be an opponent —
-     * e.g. Taster of Wares leaves the exiled card in the revealing player's exile) or a graveyard
-     * (per-card grants that leave the card in the graveyard — e.g. Tinybones, the Pickpocket lets
-     * you cast a targeted nonland permanent card from the damaged player's graveyard). An active
-     * permission must be granted to the casting player with its condition gate open, and the
-     * `withAnyManaType` flag must be set on at least one of those active permissions.
+     * True if mana of any type may be spent on this spell's mana cost (CR 118.14 / 609.4b). Two
+     * independent sources:
+     *
+     * 1. A [com.wingedsheep.sdk.scripting.SpendAnyManaTypeForSpells] static controlled by the
+     *    caster whose filter matches the card — the blanket "you can spend mana of any type to cast
+     *    [these] spells" (Vizier of the Menagerie). Zone-agnostic, so it is checked first and covers
+     *    hand and top-of-library casts too.
+     * 2. A [com.wingedsheep.engine.state.permissions.MayPlayPermission] carrying the
+     *    `withAnyManaType` rider. That is a *per-card* grant, so the card must currently be in a
+     *    zone a may-play permission can grant casting from — exile (the card's owner's, which may be
+     *    an opponent — e.g. Taster of Wares leaves the exiled card in the revealing player's exile)
+     *    or a graveyard (per-card grants that leave the card in the graveyard — e.g. Tinybones, the
+     *    Pickpocket lets you cast a targeted nonland permanent card from the damaged player's
+     *    graveyard). An active permission must be granted to the casting player with its condition
+     *    gate open, and the `withAnyManaType` flag must be set on at least one of them.
      */
     private fun isCastWithAnyManaType(state: GameState, action: CastSpell): Boolean {
+        if (castPermissionUtils.canSpendAnyManaTypeForSpell(state, action.playerId, action.cardId)) {
+            return true
+        }
         val inGrantableZone = state.turnOrder.any { ownerId ->
             action.cardId in state.getZone(ZoneKey(ownerId, Zone.EXILE)) ||
                 action.cardId in state.getZone(ZoneKey(ownerId, Zone.GRAVEYARD))
@@ -3978,6 +3988,60 @@ class CastSpellHandler(
 
         is com.wingedsheep.sdk.scripting.effects.ManaSpellRider.ScryOnSharedTypeWithCommander ->
             buildScryOnSharedTypeWithCommanderTrigger(state, action, cardComponent, rider.amount)
+
+        is com.wingedsheep.sdk.scripting.effects.ManaSpellRider.CopySpellWhenSpent ->
+            buildCopySpellRiderTrigger(state, action, cardComponent, rider.spellFilter)
+    }
+
+    /**
+     * Pyromancer's Goggles' rider: if the cast spell matches [spellFilter], queue a copy trigger
+     * above the spell. Otherwise no-op (the {R} was spent on something else).
+     *
+     * The trigger resolves *before* the spell it copies, which is the printed behavior — the copy
+     * is put onto the stack above the original and resolves first (CR 707.10). The copy's controller
+     * may choose new targets, handled by [CopyTargetSpellEffect]'s own retarget pause.
+     *
+     * The spell is matched with [PredicateEvaluator] against its stack characteristics — projected
+     * *battlefield* state doesn't apply to an object on the stack, but the evaluator still reads
+     * color/type off the spell's [CardComponent], which is what "a red instant or sorcery spell"
+     * needs. Matching happens now, at payment time, not at trigger resolution.
+     */
+    private fun buildCopySpellRiderTrigger(
+        state: GameState,
+        action: CastSpell,
+        cardComponent: CardComponent,
+        spellFilter: com.wingedsheep.sdk.scripting.GameObjectFilter,
+    ): Pair<GameState, List<PendingTrigger>> {
+        val matches = predicateEvaluator.matches(
+            state,
+            state.projectedState,
+            action.cardId,
+            spellFilter,
+            PredicateContext(controllerId = action.playerId)
+        )
+        if (!matches) return state to emptyList()
+
+        val copyAbility = TriggeredAbility(
+            id = AbilityId.generate(),
+            trigger = SdkGameEvent.SpellCastEvent(player = Player.You),
+            binding = TriggerBinding.SELF,
+            effect = com.wingedsheep.sdk.scripting.effects.CopyTargetSpellEffect(
+                target = com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity
+            ),
+            activeZone = Zone.STACK,
+            descriptionOverride = "Copy ${cardComponent.name}. You may choose new targets for the copy."
+        )
+        val pending = PendingTrigger(
+            ability = copyAbility,
+            sourceId = action.cardId,
+            sourceName = cardComponent.name,
+            controllerId = action.playerId,
+            triggerContext = TriggerContext(
+                triggeringEntityId = action.cardId,
+                triggeringPlayerId = action.playerId
+            )
+        )
+        return state to listOf(pending)
     }
 
     /**

@@ -492,24 +492,30 @@ class CastSpellEnumerator : ActionEnumerator {
                 cardTypes = cardComponent.typeLine.cardTypes,
             )
 
+            // "You can spend mana of any type to cast [these] spells" (Vizier of the Menagerie):
+            // relax the colored requirements for *payment* only. `effectiveCost` stays the printed
+            // cost so the client keeps showing {2}{G} rather than a misleading {3}.
+            val payableCost = context.castPermissionUtils
+                .relaxSpellCostColorsIfAny(state, playerId, cardId, effectiveCost)
+
             // For Convoke/Delve spells, check if affordable with alternative payment help
             val cachedSources = context.availableManaSources
             val canAfford = if (hasConvoke && convokeCreatures != null && convokeCreatures.isNotEmpty()) {
-                context.manaSolver.canPay(state, playerId, effectiveCost, spellContext = spellContext, precomputedSources = cachedSources) ||
-                    context.costUtils.canAffordWithConvoke(state, playerId, effectiveCost, convokeCreatures, precomputedSources = cachedSources)
+                context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
+                    context.costUtils.canAffordWithConvoke(state, playerId, payableCost, convokeCreatures, precomputedSources = cachedSources)
             } else if (hasDelve && delveCards != null && delveCards.isNotEmpty()) {
-                context.manaSolver.canPay(state, playerId, effectiveCost, spellContext = spellContext, precomputedSources = cachedSources) ||
-                    context.costUtils.canAffordWithDelve(state, playerId, effectiveCost, delveCards, precomputedSources = cachedSources)
+                context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
+                    context.costUtils.canAffordWithDelve(state, playerId, payableCost, delveCards, precomputedSources = cachedSources)
             } else if (mandatoryWaterbend) {
-                // effectiveCost already includes the mandatory waterbend {N}; taps can cover up to {N}.
-                context.manaSolver.canPay(state, playerId, effectiveCost, spellContext = spellContext, precomputedSources = cachedSources) ||
+                // payableCost already includes the mandatory waterbend {N}; taps can cover up to {N}.
+                context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
                     context.costUtils.canAffordWithWaterbend(
-                        state, playerId, effectiveCost,
+                        state, playerId, payableCost,
                         waterbendPermanents.take(spellWaterbend!!.amount),
                         precomputedSources = cachedSources
                     )
             } else {
-                context.manaSolver.canPay(state, playerId, effectiveCost, spellContext = spellContext, precomputedSources = cachedSources)
+                context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources)
             }
 
             // Check alternative casting cost affordability (e.g., Jodah's {W}{U}{B}{R}{G})
@@ -732,10 +738,12 @@ class CastSpellEnumerator : ActionEnumerator {
             // `CastPaymentProcessor.explicitPay` taps only the minimum subset needed
             // after the alt-payment reduction is actually applied.
             val autoTapPreview = if (context.skipAutoTapPreview) null else {
+                // Solve against `payableCost`, not `effectiveCost` — under Vizier of the Menagerie
+                // the off-color solve is exactly what the player will actually tap.
                 val costForPreview = if (hasDelve && minDelveNeeded != null && minDelveNeeded > 0) {
-                    effectiveCost.reduceGeneric(minDelveNeeded)
+                    payableCost.reduceGeneric(minDelveNeeded)
                 } else {
-                    effectiveCost
+                    payableCost
                 }
                 context.manaSolver.solve(state, playerId, costForPreview, precomputedSources = cachedSources)
                     ?.sources?.map { it.entityId }

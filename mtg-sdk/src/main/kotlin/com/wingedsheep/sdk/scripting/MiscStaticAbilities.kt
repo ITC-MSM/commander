@@ -626,6 +626,43 @@ data class SpendAnyManaTypeForActivatedAbilities(
 }
 
 /**
+ * You can spend mana of any type to cast spells matching [filter] (CR 118.14 / 609.4b — the
+ * colored, hybrid, Phyrexian and colorless requirements of the spell's mana cost may each be paid
+ * with mana of any color or with colorless mana).
+ *
+ * The spell-side sibling of [SpendAnyManaTypeForActivatedAbilities]. Models Vizier of the
+ * Menagerie ("You can spend mana of any type to cast creature spells") with
+ * `filter = GameObjectFilter.Creature`.
+ *
+ * Scope: the relaxation applies to spells cast by *this permanent's controller* — the printed
+ * wording is always "**you** can spend …" — and to those spells **wherever they are cast from**
+ * (hand, top of library, graveyard, exile). That last part is why this is a static rather than a
+ * flag on a cast permission: the per-card
+ * [com.wingedsheep.engine.state.permissions.MayPlayPermission] already carries a `withAnyManaType`
+ * rider for "cast *that exiled card* with any mana" grants (Taster of Wares, Tinybones), but a
+ * blanket "any creature spell you cast" isn't tied to one card in one zone.
+ *
+ * Only the *mana* portion is relaxed; additional costs are untouched. The relaxation is applied to
+ * affordability checks, the auto-tap solver and payment validation — deliberately **not** to the
+ * mana cost the client displays, so a creature card still shows its printed `{2}{G}` rather than a
+ * misleading `{3}`.
+ *
+ * @property filter Which spells the caster may pay for with mana of any type.
+ */
+@SerialName("SpendAnyManaTypeForSpells")
+@Serializable
+data class SpendAnyManaTypeForSpells(
+    val filter: GameObjectFilter
+) : StaticAbility {
+    override val description: String =
+        "You can spend mana of any type to cast ${filter.description} spells"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * Permanents matching [filter] entering the battlefield don't cause abilities to trigger
  * (CR 603.6 enters-the-battlefield triggers are suppressed).
  *

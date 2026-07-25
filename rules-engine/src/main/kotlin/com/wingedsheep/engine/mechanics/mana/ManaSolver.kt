@@ -218,7 +218,7 @@ data class ManaSolution(
      * ability contributes [ManaSpellRider.MakesSpellUncounterable] when tapped for
      * a color, but its colorless `{T}: Add {C}` ability does not).
      */
-    val consumedRiders: Set<ManaSpellRider> = emptySet(),
+    val consumedRiders: List<ManaSpellRider> = emptyList(),
     /**
      * For a color-restricted `{X}` cost ("spend only [colors] on X"), the per-color
      * breakdown of mana this solution allocated to the X portion specifically. Empty
@@ -775,9 +775,12 @@ class ManaSolver(
             genericRemaining--
         }
 
-        val consumedRiders: Set<ManaSpellRider> = usedSources.flatMapTo(mutableSetOf()) { source ->
-            val color = manaProduced[source.entityId]?.color ?: return@flatMapTo emptySet()
-            source.colorRiders[color] ?: emptySet()
+        // A List, not a Set: multiplicity is load-bearing. Two rider-carrying sources spent on
+        // one spell fire the rider twice (Pyromancer's Goggles: "That many copies will be
+        // created"), so identical riders must not collapse.
+        val consumedRiders: List<ManaSpellRider> = usedSources.flatMap { source ->
+            val color = manaProduced[source.entityId]?.color ?: return@flatMap emptyList()
+            source.colorRiders[color]?.toList() ?: emptyList()
         }
         return ManaSolution(
             usedSources,

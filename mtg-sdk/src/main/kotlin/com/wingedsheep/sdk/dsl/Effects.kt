@@ -1842,16 +1842,28 @@ object Effects {
 
     /**
      * Add mana of a specific color.
+     *
+     * [riders] attaches side-effects that fire on whatever spell this mana ends up paying for
+     * (Pyromancer's Goggles: "When that mana is spent to cast a red instant or sorcery spell, copy
+     * that spell"). See [com.wingedsheep.sdk.scripting.effects.ManaSpellRider].
      */
-    fun AddMana(color: Color, amount: Int = 1, restriction: ManaRestriction? = null): Effect =
-        AddManaEffect(color, amount, restriction)
+    fun AddMana(
+        color: Color,
+        amount: Int = 1,
+        restriction: ManaRestriction? = null,
+        riders: Set<com.wingedsheep.sdk.scripting.effects.ManaSpellRider> = emptySet()
+    ): Effect = AddManaEffect(color, DynamicAmount.Fixed(amount), restriction, riders = riders)
 
     /**
      * Add a dynamic amount of mana of a specific color.
      * Used for effects like "Add {R} for each Goblin on the battlefield."
      */
-    fun AddMana(color: Color, amount: DynamicAmount, restriction: ManaRestriction? = null): Effect =
-        AddManaEffect(color, amount, restriction)
+    fun AddMana(
+        color: Color,
+        amount: DynamicAmount,
+        restriction: ManaRestriction? = null,
+        riders: Set<com.wingedsheep.sdk.scripting.effects.ManaSpellRider> = emptySet()
+    ): Effect = AddManaEffect(color, amount, restriction, riders = riders)
 
     /**
      * Add colorless mana.

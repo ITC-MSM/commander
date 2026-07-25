@@ -851,6 +851,7 @@ class StaticAbilityHandler(
             // CastSpellEnumerator / PlayLandHandler):
             is CantCastSpellsSharingColorWithLastCast,
             is CastSpellTypesFromTopOfLibrary,
+            is com.wingedsheep.sdk.scripting.SpendAnyManaTypeForSpells,
             is GrantAdditionalLandDrop,
             is GrantFlashToSpellType,
             is GrantMayCastFromLinkedExile,

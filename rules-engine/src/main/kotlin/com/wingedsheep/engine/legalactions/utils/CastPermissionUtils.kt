@@ -1282,6 +1282,53 @@ class CastPermissionUtils(
     }
 
     /**
+     * True when a [com.wingedsheep.sdk.scripting.SpendAnyManaTypeForSpells] static controlled by
+     * [playerId] matches the card [cardId] they are casting — i.e. mana of any type may be spent on
+     * that spell's mana cost (Vizier of the Menagerie: "You can spend mana of any type to cast
+     * creature spells"). Callers relax the cost via
+     * [com.wingedsheep.sdk.core.ManaCost.relaxColors] when this returns true (CR 118.14 / 609.4b).
+     *
+     * Zone-agnostic by design: the printed wording covers every creature spell you cast, so this is
+     * consulted for hand casts, top-of-library casts and may-play casts alike. The card is matched
+     * against the filter in projected state, so a permanent that is only a creature *because* of a
+     * continuous effect still counts.
+     */
+    fun canSpendAnyManaTypeForSpell(state: GameState, playerId: EntityId, cardId: EntityId): Boolean {
+        val projected = state.projectedState
+        for (granterId in state.getBattlefield()) {
+            val granter = state.getEntity(granterId) ?: continue
+            if (granter.has<com.wingedsheep.engine.state.components.identity.FaceDownComponent>()) continue
+            if (projected.getController(granterId) != playerId) continue
+            val card = granter.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            val classLevel = granter.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel
+            for (ability in cardDef.script.effectiveStaticAbilities(classLevel)) {
+                val any = ability as? com.wingedsheep.sdk.scripting.SpendAnyManaTypeForSpells ?: continue
+                val matches = predicateEvaluator.matches(
+                    state, projected, cardId, any.filter,
+                    PredicateContext(controllerId = playerId, sourceId = granterId)
+                )
+                if (matches) return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * [cost] with its colored/hybrid/Phyrexian/colorless requirements relaxed to generic when
+     * [canSpendAnyManaTypeForSpell] holds for this cast, otherwise [cost] unchanged. Use for
+     * affordability checks, the auto-tap solver and payment — **not** for the cost string shown to
+     * the client, which must stay the printed cost.
+     */
+    fun relaxSpellCostColorsIfAny(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId,
+        cost: ManaCost
+    ): ManaCost =
+        if (canSpendAnyManaTypeForSpell(state, playerId, cardId)) cost.relaxColors() else cost
+
+    /**
      * Get activated abilities granted to an entity by static abilities on battlefield permanents.
      */
     fun getStaticGrantedActivatedAbilities(
