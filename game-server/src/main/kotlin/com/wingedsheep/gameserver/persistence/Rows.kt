@@ -138,8 +138,15 @@ data class GameReplayRow(
     val engineVersion: String? = null,
     /** Position fingerprint at the last flush; gates resuming an interrupted recording. */
     val resumeFingerprint: String? = null,
-    /** gzip+base64-encoded CompactReplay JSON. */
+    /** gzip+base64-encoded CompactReplay JSON, *without* the pins (see [pinnedCards]). */
     val data: String,
+    /**
+     * gzip+base64-encoded pinned `CardDefinition` JSON array — the largest part of a record and the
+     * only part that never changes, so it lives here instead of inside [data], written once when the
+     * row is inserted and untouched by later flushes (see `GameReplayRepository.updateRecording`).
+     * Null for pre-V11 rows, whose pins are still inside [data], and for unpinned records.
+     */
+    val pinnedCards: String? = null,
     /** gzip+base64-encoded `{initialSnapshot, deltas}` viewer body; null when not archived. */
     val presentation: String? = null,
     /** Seat roster, indexed so "replays I played in" is a join rather than a scan. */

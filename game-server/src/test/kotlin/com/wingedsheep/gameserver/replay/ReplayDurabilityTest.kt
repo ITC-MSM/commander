@@ -254,6 +254,23 @@ class ReplayDurabilityTest : ScenarioTestBase() {
             result.frameCount shouldBe (1 + replay.actions.size)
         }
 
+        test("pins round-trip through their own write-once column encoding") {
+            val recording = CardRegistry(parent = cardRegistry).apply { register(bear(2, 2)) }
+            val replay = recordGame(recording)
+            replay.pinnedCards.shouldNotBeEmpty()
+
+            // Stored separately from the blob, so the blob no longer carries them...
+            val encodedPins = ReplayCodec.encodePins(replay.pinnedCards).shouldNotBeNull()
+            ReplayCodec.decodePins(encodedPins) shouldBe replay.pinnedCards
+            // ...and the two recombine into the record the reconstructor needs.
+            val blob = ReplayCodec.encode(replay.copy(pinnedCards = emptyList()))
+            ReplayCodec.decode(blob).copy(pinnedCards = ReplayCodec.decodePins(encodedPins)) shouldBe replay
+
+            // An unpinned record leaves the column honestly empty rather than storing "[]".
+            ReplayCodec.encodePins(emptyList()) shouldBe null
+            ReplayCodec.decodePins(null) shouldBe emptyList()
+        }
+
         test("the durable codec round-trips every v2 field") {
             val recording = CardRegistry(parent = cardRegistry).apply { register(bear(2, 2)) }
             val replay = recordGame(recording)

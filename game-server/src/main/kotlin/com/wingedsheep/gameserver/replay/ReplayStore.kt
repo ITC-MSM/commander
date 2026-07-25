@@ -113,26 +113,60 @@ class InMemoryReplayStore : ReplayStore {
 class JdbcReplayStore(private val replays: GameReplayRepository) : ReplayStore {
     private val logger = LoggerFactory.getLogger(JdbcReplayStore::class.java)
 
+    /**
+     * Upsert by game id, keeping the pins out of the hot path.
+     *
+     * A game in progress is flushed every few seconds and only its action log moves, so an existing
+     * in-progress row takes the narrow [GameReplayRepository.updateRecording] write. The full
+     * aggregate save — which also (re)writes the pins, the seat children and the finished-game
+     * metadata — runs on the first flush and again at game over, twice per game rather than once per
+     * five seconds.
+     */
     override fun save(record: StoredReplay) {
         val replay = record.replay
-        val existingId = replays.findByGameId(replay.gameId)?.id
+        val existing = replays.findByGameId(replay.gameId)
+        // Pins live in their own write-once column, so they must not also ride along in the blob.
+        val data = ReplayCodec.encode(replay.copy(pinnedCards = emptyList()))
+        val endedAt = parseInstant(replay.endedAt) ?: Instant.now()
+
+        if (existing != null && existing.status == ReplayStatus.IN_PROGRESS.name && record.status == ReplayStatus.IN_PROGRESS) {
+            replays.updateRecording(
+                gameId = replay.gameId,
+                data = data,
+                status = record.status.name,
+                resumeFingerprint = record.resumeFingerprint,
+                frameCount = replay.frameCount,
+                endedAt = endedAt,
+                engineVersion = replay.engineVersion,
+            )
+            logger.debug(
+                "Flushed in-progress replay {} ({} actions, pins untouched)",
+                replay.gameId, replay.actions.size,
+            )
+            return
+        }
+
         replays.save(
             GameReplayRow(
-                id = existingId,
+                id = existing?.id,
                 gameId = replay.gameId,
                 format = replay.setup.format::class.simpleName,
                 winnerName = replay.winnerName,
                 tournamentName = replay.tournamentName,
                 tournamentRound = replay.tournamentRound,
                 startedAt = parseInstant(replay.startedAt),
-                endedAt = parseInstant(replay.endedAt) ?: Instant.now(),
+                endedAt = endedAt,
                 frameCount = replay.frameCount,
                 playerNames = replay.players.joinToString(", ") { it.name },
                 status = record.status.name,
                 engineVersion = replay.engineVersion,
                 resumeFingerprint = record.resumeFingerprint,
-                data = ReplayCodec.encode(replay),
-                presentation = record.presentation?.let { ReplayCodec.encodeText(it) },
+                data = data,
+                // Never drop pins already stored: a record can be re-saved by a path that didn't
+                // recompute them (finalizePartial), and losing them costs the replay its durability.
+                pinnedCards = ReplayCodec.encodePins(replay.pinnedCards) ?: existing?.pinnedCards,
+                presentation = record.presentation?.let { ReplayCodec.encodeText(it) }
+                    ?: existing?.presentation,
                 players = replay.players.mapIndexed { seat, player ->
                     GameReplayPlayerRow(seat = seat, playerId = player.playerId, playerName = player.name)
                 }.toSet(),
@@ -166,8 +200,13 @@ class JdbcReplayStore(private val replays: GameReplayRepository) : ReplayStore {
         val decoded = runCatching { ReplayCodec.decode(data) }
             .onFailure { logger.error("Replay {} failed to decode: {}", gameId, it.message) }
             .getOrNull() ?: return null
+        // Pins come from their own column post-V11. A pre-V11 row has none there and still carries
+        // them inside the blob, so only overwrite when the column actually holds something.
+        val pins = runCatching { ReplayCodec.decodePins(pinnedCards) }
+            .onFailure { logger.error("Replay {} has unreadable pins: {}", gameId, it.message) }
+            .getOrDefault(emptyList())
         return StoredReplay(
-            replay = decoded,
+            replay = if (pins.isEmpty()) decoded else decoded.copy(pinnedCards = pins),
             status = runCatching { ReplayStatus.valueOf(status) }.getOrDefault(ReplayStatus.FINISHED),
             presentation = presentation?.let { runCatching { ReplayCodec.decodeText(it) }.getOrNull() },
             resumeFingerprint = resumeFingerprint,

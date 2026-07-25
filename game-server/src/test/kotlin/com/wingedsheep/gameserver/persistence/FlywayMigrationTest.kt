@@ -385,4 +385,45 @@ class FlywayMigrationTest : FunSpec({
             postgres.stop()
         }
     }
+
+    test("V11 gives pins a write-once column that the flush update leaves alone").config(enabled = dockerAvailable) {
+        val postgres = PostgreSQLContainer<Nothing>(DockerImageName.parse("postgres:16-alpine"))
+        postgres.start()
+        try {
+            migrateAll(postgres)
+
+            DriverManager.getConnection(postgres.jdbcUrl, postgres.username, postgres.password).use { conn ->
+                conn.createStatement().use { st ->
+                    // A pre-V11 row: pins are still inside `data`, the new column is null, and it has
+                    // to keep working — the read path only prefers the column when it is populated.
+                    st.execute("INSERT INTO game_replays(id, game_id, data, ended_at) VALUES (1, 'g-prev11', 'BLOB_WITH_PINS', now())")
+                    st.executeQuery("SELECT pinned_cards FROM game_replays WHERE id = 1").use { rs ->
+                        rs.next(); rs.getString(1) shouldBe null
+                    }
+
+                    // A recording inserted with its pins, then flushed the way
+                    // GameReplayRepository.updateRecording does — naming only the volatile columns.
+                    st.execute(
+                        "INSERT INTO game_replays(id, game_id, data, pinned_cards, status, frame_count, ended_at) " +
+                            "VALUES (2, 'g-live', 'BLOB_1', 'PINS', 'IN_PROGRESS', 20, now())"
+                    )
+                    st.execute(
+                        "UPDATE game_replays SET data = 'BLOB_2', status = 'IN_PROGRESS', frame_count = 40 " +
+                            "WHERE game_id = 'g-live'"
+                    )
+
+                    // The blob moved; the pins are untouched, which is the whole point — an UPDATE that
+                    // doesn't name a TOASTed column doesn't rewrite its storage.
+                    st.executeQuery("SELECT data, pinned_cards, frame_count FROM game_replays WHERE id = 2").use { rs ->
+                        rs.next()
+                        rs.getString(1) shouldBe "BLOB_2"
+                        rs.getString(2) shouldBe "PINS"
+                        rs.getInt(3) shouldBe 40
+                    }
+                }
+            }
+        } finally {
+            postgres.stop()
+        }
+    }
 })

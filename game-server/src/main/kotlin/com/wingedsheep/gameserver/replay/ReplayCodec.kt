@@ -1,6 +1,8 @@
 package com.wingedsheep.gameserver.replay
 
 import com.wingedsheep.gameserver.persistence.persistenceJson
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.Base64
@@ -39,4 +41,18 @@ object ReplayCodec {
         GZIPInputStream(ByteArrayInputStream(Base64.getDecoder().decode(encoded))).use {
             it.readBytes().toString(Charsets.UTF_8)
         }
+
+    /**
+     * The pinned card definitions, encoded for their own write-once column rather than folded into
+     * [encode]'s blob — they are the largest part of a record and the only part that never changes,
+     * so keeping them out of the per-flush payload is what stops a long game rewriting them a few
+     * hundred times. Null for a record with no pins, so the column stays honestly empty.
+     */
+    fun encodePins(pins: List<String>): String? =
+        if (pins.isEmpty()) null
+        else encodeText(persistenceJson.encodeToString(ListSerializer(String.serializer()), pins))
+
+    fun decodePins(encoded: String?): List<String> =
+        encoded?.let { persistenceJson.decodeFromString(ListSerializer(String.serializer()), decodeText(it)) }
+            ?: emptyList()
 }
