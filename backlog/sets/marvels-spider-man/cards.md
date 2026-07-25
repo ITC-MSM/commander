@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 118 / 190
+**Implemented:** 119 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -64,7 +64,7 @@
 - [x] Living Brain, Mechanical Marvel
 - [x] Lizard, Connors's Curse
 - [x] Lurking Lizards
-- [ ] Madame Web, Clairvoyant
+- [x] Madame Web, Clairvoyant
 - [x] Mary Jane Watson
 - [x] Masked Meower
 - [ ] Maximum Carnage
