@@ -3738,6 +3738,135 @@
     ]
 }
 
+// Not Dead After All
+{
+    "name": "Not Dead After All",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "Until end of turn, target creature you control gains \"When this creature dies, return it to the battlefield tapped under its owner's control, then create a Wicked Role token attached to it.\" (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1. When this token is put into a graveyard, each opponent loses 1 life.)",
+    "script": {
+        "spellEffect": {
+            "type": "GrantTriggeredAbility",
+            "ability": {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Battlefield",
+                            "placement": "Tapped",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "CreateRoleToken",
+                            "roleName": "Wicked Role",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature dies, return it to the battlefield tapped under its owner's control, then create a Wicked Role token attached to it."
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "artist": "Randy Vargas",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/0/d01a2b68-efe6-4027-846d-db7b19d9eef6.jpg?1783915104",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If the creature doesn't return to the battlefield or returns as a noncreature permanent, the Wicked Role token won't be created."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a permanent has more than one Role attached to it controlled by the same player, each of those Roles except the one with the most recent timestamp is put into its owner's graveyard. This is a state-based action."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Obyra's Attendants
+{
+    "name": "Obyra's Attendants",
+    "manaCost": "{4}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "63",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "Obyra's devoted servants shrieked as their sleeping mistress slashed at them, unseeing.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/0001e77a-7fff-49d2-a55c-42f6fdf6db08.jpg?1783915116"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Desperate Parry",
+            "manaCost": "{1}{U}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Target creature gets -4/-0 until end of turn. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -4
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Obyra, Dreaming Duelist
 {
     "name": "Obyra, Dreaming Duelist",
@@ -4467,6 +4596,96 @@
     ]
 }
 
+// Return from the Wilds
+{
+    "name": "Return from the Wilds",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose two —\n• Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\n• Create a 1/1 white Human creature token.\n• Create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield",
+                                    "placement": "Tapped"
+                                }
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "description": "Search your library for a basic land card, put it onto the battlefield tapped, then shuffle"
+                },
+                {
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Human"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/5/0/50240867-3a3e-4a8d-9569-816ab4a3671a.jpg?1783914992"
+                    }
+                },
+                {
+                    "effect": {
+                        "type": "CreatePredefinedToken",
+                        "tokenType": "Food"
+                    }
+                }
+            ],
+            "chooseCount": 2
+        }
+    },
+    "metadata": {
+        "collectorNumber": "181",
+        "artist": "Julia Metzger",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/9597d9ea-d9b2-4009-8e7c-02caa3585bc5.jpg?1783915079",
+        "rulings": [
+            {
+                "date": "2024-11-08",
+                "text": "Food is an artifact type. Even though it appears on some creatures, it's never a creature type."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Rimefur Reindeer
 {
     "name": "Rimefur Reindeer",
@@ -4954,6 +5173,59 @@
     ]
 }
 
+// Skybeast Tracker
+{
+    "name": "Skybeast Tracker",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Giant Archer",
+    "oracleText": "Reach\nWhenever you cast a spell with mana value 5 or greater, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "ManaValueAtLeast",
+                                "min": 5
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "185",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "Cloud eaters, heaven tillers, beanstalk wurms—he favors prey worthy of a giant's appetite.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/0/a08da5c6-ebe7-4166-99d5-2aca5b0b529f.jpg?1783915079",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If a spell has {X} in its mana cost, use the value chosen for that X to determine the mana value of that spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Sleep-Cursed Faerie
 {
     "name": "Sleep-Cursed Faerie",
@@ -5414,6 +5686,80 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Splashy Spellcaster
+{
+    "name": "Splashy Spellcaster",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Elemental Wizard",
+    "oracleText": "Whenever you cast an instant or sorcery spell, create a Sorcerer Role token attached to up to one other target creature you control. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1 and has \"Whenever this creature attacks, scry 1.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateRoleToken",
+                    "roleName": "Sorcerer Role",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one other target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "up to one other target creature you control"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "rarity": "UNCOMMON",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73ebd7f0-a54d-43a8-a5ee-9d6835308794.jpg?1783915114",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If you don't choose a target for Splashy Spellcaster's ability, the Sorcerer Role token won't be created."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Roles are colorless enchantment tokens. Each one has the Aura and Role subtypes and the enchant creature ability."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a permanent has more than one Role attached to it controlled by the same player, each of those Roles except the one with the most recent timestamp is put into its owner's graveyard. This is a state-based action."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
