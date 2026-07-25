@@ -3457,6 +3457,69 @@
     ]
 }
 
+// Passenger Ferry
+{
+    "name": "Passenger Ferry",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Whenever this Vehicle attacks, you may pay {U}. When you do, another target attacking creature can't be blocked this turn.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "PayManaCost",
+                        "cost": "{U}"
+                    },
+                    "reflexiveEffect": {
+                        "type": "GrantKeyword",
+                        "keyword": "CANT_BE_BLOCKED",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature attacking",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "artist": "Leon Tukker",
+        "flavorText": "\"Staten Island in peril? Uh, give me an hour?\"\n—Ghost-Spider, Gwen Stacy",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/2495f477-b88c-4938-a86a-f72c3c861188.jpg?1783905304"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Pictures of Spider-Man
 {
     "name": "Pictures of Spider-Man",
