@@ -2737,6 +2737,78 @@
     ]
 }
 
+// Gingerbread Hunter
+{
+    "name": "Gingerbread Hunter",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Giant",
+    "oracleText": "When this creature enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "rarity": "UNCOMMON",
+        "artist": "Milivoj Ćeran",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e77a8fd4-af5f-42b3-a87e-788baf2562dd.jpg?1783915065"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Puny Snack",
+            "manaCost": "{2}{B}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Target creature gets -2/-2 until end of turn. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Gnawing Crescendo
 {
     "name": "Gnawing Crescendo",
@@ -3531,6 +3603,141 @@
     ]
 }
 
+// Lord Skitter's Butcher
+{
+    "name": "Lord Skitter's Butcher",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Rat Peasant",
+    "oracleText": "When this creature enters, choose one —\n• Create a 1/1 black Rat creature token with \"This token can't block.\"\n• You may sacrifice another creature. If you do, scry 2, then draw a card.\n• Creatures you control gain menace until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "BLACK"
+                                ],
+                                "creatureTypes": [
+                                    "Rat"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e0205f2-25c1-403b-b408-56e3f2d63b4d.jpg?1783915000",
+                                "staticAbilities": [
+                                    "CantBlock"
+                                ]
+                            },
+                            "description": "Create a 1/1 black Rat creature token with \"This token can't block.\""
+                        },
+                        {
+                            "effect": {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.DoAction",
+                                    "action": {
+                                        "type": "Composite",
+                                        "effects": [
+                                            {
+                                                "type": "GatherCards",
+                                                "source": {
+                                                    "type": "BattlefieldMatching",
+                                                    "filter": "creature",
+                                                    "player": "You",
+                                                    "excludeSelf": true
+                                                },
+                                                "storeAs": "gathered0"
+                                            },
+                                            {
+                                                "type": "SelectFromCollection",
+                                                "from": "gathered0",
+                                                "selection": {
+                                                    "type": "ChooseUpTo",
+                                                    "count": {
+                                                        "type": "Fixed",
+                                                        "amount": 1
+                                                    }
+                                                },
+                                                "storeSelected": "selected1",
+                                                "prompt": "Choose another creature to sacrifice",
+                                                "useTargetingUI": true
+                                            },
+                                            {
+                                                "type": "MoveCollection",
+                                                "from": "selected1",
+                                                "destination": {
+                                                    "type": "ToZone",
+                                                    "zone": "Graveyard"
+                                                },
+                                                "moveType": "Sacrifice"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "then": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "Scry",
+                                            "count": 2
+                                        },
+                                        {
+                                            "type": "DrawCards",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "description": "You may sacrifice another creature. If you do, scry 2, then draw a card."
+                        },
+                        {
+                            "effect": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "MENACE",
+                                    "target": "Self"
+                                }
+                            },
+                            "description": "Creatures you control gain menace until end of turn."
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "rarity": "UNCOMMON",
+        "artist": "Leesha Hannigan",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/21b31d2b-ef66-4e16-a75e-4e27eb5ebfe9.jpg?1783915105"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Merfolk Coralsmith
 {
     "name": "Merfolk Coralsmith",
@@ -4280,6 +4487,91 @@
     ]
 }
 
+// Pollen-Shield Hare
+{
+    "name": "Pollen-Shield Hare",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Rabbit",
+    "oracleText": "Creature tokens you control get +1/+1.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature token ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "233",
+        "rarity": "RARE",
+        "artist": "Olena Richards",
+        "flavorText": "She can drive off any threat, from owl to hunter to Phyrexian monster.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/139f31f5-28f0-4e90-abdf-3f6ed0992dea.jpg?1783915063"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Hare Raising",
+            "manaCost": "{G}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Target creature you control gains vigilance and gets +X/+X until end of turn, where X is the number of creatures you control. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "VIGILANCE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature"
+                            },
+                            "toughnessModifier": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Protective Parents
 {
     "name": "Protective Parents",
@@ -4536,6 +4828,73 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Ratcatcher Trainee
+{
+    "name": "Ratcatcher Trainee",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Peasant",
+    "oracleText": "During your turn, this creature has first strike.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "artist": "Michele Giorgi",
+        "flavorText": "\"Where do they keep coming from?!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f4c0959-a107-4d61-9e51-256b2955f6ba.jpg?1783915090"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Pest Problem",
+            "manaCost": "{2}{R}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Create two 1/1 black Rat creature tokens with \"This token can't block.\" (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Rat"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e0205f2-25c1-403b-b408-56e3f2d63b4d.jpg?1783915000",
+                    "staticAbilities": [
+                        "CantBlock"
+                    ]
+                }
+            }
+        }
     ]
 }
 
@@ -5263,6 +5622,87 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Scalding Viper
+{
+    "name": "Scalding Viper",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Elemental Snake",
+    "oracleText": "Whenever an opponent casts a spell with mana value 3 or less, this creature deals 1 damage to that player.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "ManaValueAtMost",
+                                "max": 3
+                            }
+                        ]
+                    },
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "RARE",
+        "artist": "Andrew Mar",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/58e72bfb-6f64-4647-afb6-b5ad4737121c.jpg?1783915062"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Steam Clean",
+            "manaCost": "{1}{U}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Return target nonland permanent to its owner's hand. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "nonland permanent"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        }
     ]
 }
 
