@@ -2150,6 +2150,205 @@
     ]
 }
 
+// Gwen Stacy
+{
+    "name": "Gwen Stacy",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Human Performer Hero",
+    "oracleText": "When Gwen Stacy enters, exile the top card of your library. You may play that card for as long as you control this creature.\n{2}{U}{R}{W}: Transform Gwen Stacy. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "gwenExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "gwenExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "gwenExiled",
+                            "expiry": "Permanent",
+                            "condition": "YouControlSource"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Gwen Stacy enters, exile the top card of your library. You may play that card for as long as you control this creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{U}{R}{W}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Gwen Stacy. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Ghost-Spider",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Spider Human Hero",
+        "oracleText": "Flying, vigilance, haste\nWhenever you play a land from exile or cast a spell from exile, put a +1/+1 counter on Ghost-Spider.\nRemove two counters from Ghost-Spider: Exile the top card of your library. You may play that card this turn.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "keywords": [
+            "FLYING",
+            "VIGILANCE",
+            "HASTE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "SpellCastEvent",
+                        "requires": [
+                            {
+                                "type": "SpellCastFromZone",
+                                "zone": "Exile"
+                            }
+                        ]
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "Whenever you cast a spell from exile, put a +1/+1 counter on Ghost-Spider."
+                },
+                {
+                    "id": "ability_4",
+                    "trigger": {
+                        "type": "ZoneChangeEvent",
+                        "filter": "land ctrl:you",
+                        "from": "Exile",
+                        "to": "Battlefield"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "Whenever you play a land from exile, put a +1/+1 counter on Ghost-Spider."
+                }
+            ],
+            "activatedAbilities": [
+                {
+                    "id": "ability_5",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomRemoveCounters",
+                            "counterType": "+1/+1",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "self": true
+                        }
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeAs": "impulseExiled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "impulseExiled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            },
+                            {
+                                "type": "GrantMayPlayFromExile",
+                                "from": "impulseExiled"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Exile the top card of your library. You may play that card this turn."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "78",
+            "rarity": "MYTHIC",
+            "artist": "Victor Adame Minguez",
+            "imageUri": "https://cards.scryfall.io/normal/back/b/0/b0f1597f-1dc7-465e-8fcb-0afe61bcca46.jpg?1783905342"
+        },
+        "colorIdentityOverride": [
+            "RED",
+            "BLUE",
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "RED",
+            "BLUE",
+            "WHITE"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "rarity": "MYTHIC",
+        "artist": "Victor Adame Minguez",
+        "flavorText": "\"Spiders don't hold still given any other choice, and I have all the choices in the Multiverse!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b0f1597f-1dc7-465e-8fcb-0afe61bcca46.jpg?1783905342"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "BLUE",
+        "WHITE"
+    ]
+}
+
 // Heroes' Hangout
 {
     "name": "Heroes' Hangout",

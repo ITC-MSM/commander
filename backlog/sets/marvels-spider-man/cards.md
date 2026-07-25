@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 148 / 190
+**Implemented:** 149 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -42,7 +42,7 @@
 - [ ] Green Goblin, Revenant
 - [x] Grow Extra Arms
 - [x] Guy in the Chair
-- [ ] Gwen Stacy // Ghost-Spider
+- [x] Gwen Stacy // Ghost-Spider
 - [ ] Gwenom, Remorseless
 - [x] Heroes' Hangout
 - [x] Hide on the Ceiling
