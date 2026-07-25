@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 115 / 190
+**Implemented:** 116 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -46,7 +46,7 @@
 - [ ] Gwenom, Remorseless
 - [ ] Heroes' Hangout
 - [x] Hide on the Ceiling
-- [ ] Hobgoblin, Mantled Marauder
+- [x] Hobgoblin, Mantled Marauder
 - [x] Hot Dog Cart
 - [ ] Hydro-Man, Fluid Felon
 - [x] Impostor Syndrome

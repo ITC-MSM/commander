@@ -1761,6 +1761,54 @@
     ]
 }
 
+// Hobgoblin, Mantled Marauder
+{
+    "name": "Hobgoblin, Mantled Marauder",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Goblin Human Villain",
+    "oracleText": "Flying, haste\nWhenever you discard a card, Hobgoblin gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DiscardEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you discard a card, Hobgoblin gets +2/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "rarity": "UNCOMMON",
+        "artist": "Dave DeVries",
+        "flavorText": "\"Alrighty, let's see who's behind the mask this time. Kingsley, is that you?\"\n—Spider-Man",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/50716fe3-7a19-431e-8758-984fc48d714e.jpg?1783905338"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hot Dog Cart
 {
     "name": "Hot Dog Cart",
