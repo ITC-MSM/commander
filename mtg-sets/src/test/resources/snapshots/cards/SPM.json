@@ -8665,6 +8665,118 @@
     ]
 }
 
+// The Spot, Living Portal
+{
+    "name": "The Spot, Living Portal",
+    "manaCost": "{3}{W}{B}",
+    "typeLine": "Legendary Creature — Human Scientist Villain",
+    "oracleText": "When The Spot enters, exile up to one target nonland permanent and up to one target nonland permanent card from a graveyard.\nWhen The Spot dies, put him on the bottom of his owner's library. If you do, return the exiled cards to their owners' hands.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ExileUntilLeaves",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target nonland permanent"
+                            }
+                        },
+                        {
+                            "type": "ExileUntilLeaves",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target nonland permanent card from a graveyard"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "nonland permanent"
+                    },
+                    "id": "up to one target nonland permanent"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "nonland permanent",
+                            "zone": "Graveyard"
+                        },
+                        "id": "up to one target nonland permanent card from a graveyard"
+                    }
+                ],
+                "descriptionOverride": "When The Spot enters, exile up to one target nonland permanent and up to one target nonland permanent card from a graveyard."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Library",
+                            "placement": "Bottom"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": "FromLinkedExile",
+                                "storeAs": "linked_return_hand"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "linked_return_hand",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "When The Spot dies, put him on the bottom of his owner's library. If you do, return the exiled cards to their owners' hands."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "rarity": "RARE",
+        "artist": "Bastien Grivet",
+        "flavorText": "Dr. Johnathon Ohnn had no problem breaking laws, physical or otherwise.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/09081740-1180-48ea-b50b-e016d9c3828a.jpg?1783905309"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Thwip!
 {
     "name": "Thwip!",
