@@ -4312,6 +4312,130 @@
     ]
 }
 
+// Parker Luck
+{
+    "name": "Parker Luck",
+    "manaCost": "{2}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your end step, two target players each reveal the top card of their library. They each lose life equal to the mana value of the card revealed by the other player. Then they each put the card they revealed into their hand.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "revealedA"
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "revealedA"
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 1
+                                }
+                            },
+                            "storeAs": "revealedB"
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "revealedB"
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "StoredCardManaValue",
+                                "collectionName": "revealedB"
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "StoredCardManaValue",
+                                "collectionName": "revealedA"
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 1
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "revealedA",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "revealedB",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 1
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "count": 2,
+                    "id": "players"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "rarity": "RARE",
+        "artist": "Raoul Vitale",
+        "flavorText": "\"Things have gotta go my way eventually, right?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e375bcf0-7fcb-4fe4-a7e8-a4cbf9b23e3c.jpg?1783905343"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Passenger Ferry
 {
     "name": "Passenger Ferry",

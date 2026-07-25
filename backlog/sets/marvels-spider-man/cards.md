@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 134 / 190
+**Implemented:** 135 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -85,7 +85,7 @@
 - [x] Origin of Spider-Man
 - [ ] Oscorp Industries
 - [x] Oscorp Research Team
-- [ ] Parker Luck
+- [x] Parker Luck
 - [x] Passenger Ferry
 - [ ] Peter Parker // Amazing Spider-Man
 - [ ] Peter Parker's Camera
