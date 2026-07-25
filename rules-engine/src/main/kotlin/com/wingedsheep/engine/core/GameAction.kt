@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import com.wingedsheep.sdk.scripting.AlternativePaymentChoice
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -66,7 +67,19 @@ data class CastSpell(
     val alternativePayment: AlternativePaymentChoice? = null,
     val additionalCostPayment: AdditionalCostPayment? = null,
     val castFaceDown: Boolean = false,
-    val wasKicked: Boolean = false,
+    /**
+     * The optional-additional-cost mechanic this cast declares (CR 601.2b), or `null` when the
+     * spell is cast without it — the single rail shared by every
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost] keyword: kicker,
+     * multikicker, offspring, the pay-more-for-flash unlock, and bargain (CR 702.166b).
+     *
+     * The slot, rather than a bare "was kicked" boolean, *is* the mechanic's identity: it must equal
+     * the [com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost.declaredSlot] of a
+     * keyword the card actually has (the handler rejects the cast otherwise), it is stamped on the
+     * spell and durably on the permanent it becomes, and payoffs key off it — so a bargained spell
+     * is never mistaken for a kicked one.
+     */
+    val declaredCostSlot: ChoiceSlot? = null,
     /**
      * Whether the spell's *optional* waterbend additional cost was elected (Avatar: The Last
      * Airbender — [com.wingedsheep.sdk.scripting.SpellWaterbendCost] with `optional = true`).

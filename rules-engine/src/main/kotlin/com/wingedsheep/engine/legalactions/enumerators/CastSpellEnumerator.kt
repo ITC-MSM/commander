@@ -23,6 +23,7 @@ import com.wingedsheep.sdk.model.CardFace
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.dsl.giftKeyword
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
@@ -1987,204 +1988,228 @@ class CastSpellEnumerator : ActionEnumerator {
             if (context.cantCastSpell(cardId)) continue
 
             val cardDef = context.cardRegistry.getCard(cardComponent.name) ?: continue
-            val kickers = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
-            val manaKicker = kickers.firstOrNull { it.manaCost != null && it.keyword != Keyword.OFFSPRING }
-            val additionalCostKicker = kickers.firstOrNull { it.additionalCost != null }
-            val offspringAbility = kickers.firstOrNull { it.keyword == Keyword.OFFSPRING }
-            if (manaKicker == null && additionalCostKicker == null && offspringAbility == null) continue
+            val optionalCosts = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
+            if (optionalCosts.isEmpty()) continue
 
-            // Check timing (same rules as normal cast — but a flash-timing kicker unlocks
-            // instant-speed casting when kicked, e.g. Ghitu Fire's pay-{2}-more clause).
+            // Card-level gates, checked before the per-slot loop so an unplayable card is skipped
+            // whole — including the unaffordable-normal-cast fallback at the bottom, which must not
+            // advertise a cast the timing rules forbid outright.
             val isInstant = cardComponent.typeLine.isInstant
             val hasFlash = cardDef.keywords.contains(Keyword.FLASH)
             val grantedFlash = hasFlash || context.castPermissionUtils.hasGrantedFlash(state, cardId)
-            val flashKicker = manaKicker?.grantsFlashTiming == true ||
-                additionalCostKicker?.grantsFlashTiming == true
-            if (!isInstant && !grantedFlash && !flashKicker && !context.canPlaySorcerySpeed) continue
+            if (!isInstant && !grantedFlash && optionalCosts.none { it.grantsFlashTiming } &&
+                !context.canPlaySorcerySpeed
+            ) continue
 
-            // Check cast restrictions
             val castRestrictions = cardDef.script.castRestrictions
             if (castRestrictions.isNotEmpty() && !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
 
-            // Calculate kicked/offspring cost
-            val baseCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
-            val kickedManaCost = manaKicker?.manaCost ?: offspringAbility?.manaCost
-            val kickedCost = if (kickedManaCost != null) baseCost + kickedManaCost else baseCost
-            val kickedSpellContext = SpellPaymentContext(
-                isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-                isKicked = true,
-                isCreature = cardComponent.typeLine.isCreature,
-                isLegendary = cardComponent.typeLine.isLegendary,
-                manaValue = cardComponent.manaCost.cmc,
-                hasXInCost = cardComponent.manaCost.hasX,
-                subtypes = paymentSubtypesOf(cardComponent),
-                cardTypes = cardComponent.typeLine.cardTypes,
-            )
-            val canAffordKickedMana = context.manaSolver.canPay(state, playerId, kickedCost, spellContext = kickedSpellContext, precomputedSources = context.availableManaSources)
-            val kickedCostString = kickedCost.toString()
-            val kickedAutoTapPreview = if (context.skipAutoTapPreview) null else {
-                context.manaSolver.solve(state, playerId, kickedCost, spellContext = kickedSpellContext, precomputedSources = context.availableManaSources)
-                    ?.sources?.map { it.entityId }
-            }
+            // One cast variant per mechanic riding the optional-additional-cost rail, keyed by the
+            // slot it declares: kicker/multikicker/offspring stamp KICKED, bargain stamps BARGAINED
+            // (CR 702.166b). Grouping by slot keeps them separate cast options rather than one
+            // conflated "kicked" cast.
+            for ((declaredSlot, kickers) in optionalCosts.groupBy { it.declaredSlot }) {
+                val manaKicker = kickers.firstOrNull { it.manaCost != null && it.keyword != Keyword.OFFSPRING }
+                val additionalCostKicker = kickers.firstOrNull { it.additionalCost != null }
+                val offspringAbility = kickers.firstOrNull { it.keyword == Keyword.OFFSPRING }
 
-            // Kicker {X} (e.g. Verdeloth the Ancient): the kicked cost carries {X}, so the
-            // client must prompt for X exactly like a base-cost X spell. The chosen X flows
-            // through CastSpell.xValue → SpellOnStackComponent.xValue → the ETB event's
-            // xValue, which "create X tokens" reads via DynamicAmount.XValue.
-            val kickedHasXCost = kickedCost.hasX
-            val kickedMaxAffordableX: Int? = if (kickedHasXCost) {
-                val availableSources = context.manaSolver.getAvailableManaCount(state, playerId, precomputedSources = context.availableManaSources, spellContext = kickedSpellContext)
-                val fixedCost = kickedCost.cmc  // X contributes 0 to CMC
-                val xSymbolCount = kickedCost.xCount.coerceAtLeast(1)
-                ((availableSources - fixedCost) / xSymbolCount).coerceAtLeast(0)
-            } else null
+                // Re-check timing per slot: the flash unlock belongs to the mechanic that prints it
+                // (Ghitu Fire's pay-{2}-more clause), so a bargain variant on the same card must not
+                // ride a kicker's instant-speed permission.
+                val flashKicker = manaKicker?.grantsFlashTiming == true ||
+                    additionalCostKicker?.grantsFlashTiming == true
+                if (!isInstant && !grantedFlash && !flashKicker && !context.canPlaySorcerySpeed) continue
 
-            // Check additional cost payability (e.g., sacrifice a creature)
-            var kickerCostInfo: AdditionalCostData? = null
-            var canPayKickerAdditionalCost = true
-            if (additionalCostKicker?.additionalCost != null) {
-                when (val cost = additionalCostKicker.additionalCost) {
-                    is AdditionalCost.Atom -> when (val atom = cost.atom) {
-                        is CostAtom.Sacrifice -> {
-                            val validSacTargets = context.costUtils.findSacrificeTargets(state, playerId, atom)
-                            if (validSacTargets.size < atom.count) {
+                // Calculate kicked/offspring cost. The base cost is priced *for this branch*: a
+                // "costs {2} less to cast if it's bargained" reduction (Hamlet Glutton) is gated on the
+                // declaration, so it only applies to the variant that declares it.
+                val baseCost = context.costCalculator.calculateEffectiveCost(
+                    state, cardDef, playerId, declaredCostSlot = declaredSlot,
+                )
+                val kickedManaCost = manaKicker?.manaCost ?: offspringAbility?.manaCost
+                val kickedCost = if (kickedManaCost != null) baseCost + kickedManaCost else baseCost
+                val kickedSpellContext = SpellPaymentContext(
+                    isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
+                    isKicked = declaredSlot == ChoiceSlot.KICKED,
+                    isCreature = cardComponent.typeLine.isCreature,
+                    isLegendary = cardComponent.typeLine.isLegendary,
+                    manaValue = cardComponent.manaCost.cmc,
+                    hasXInCost = cardComponent.manaCost.hasX,
+                    subtypes = paymentSubtypesOf(cardComponent),
+                    cardTypes = cardComponent.typeLine.cardTypes,
+                )
+                val canAffordKickedMana = context.manaSolver.canPay(state, playerId, kickedCost, spellContext = kickedSpellContext, precomputedSources = context.availableManaSources)
+                val kickedCostString = kickedCost.toString()
+                val kickedAutoTapPreview = if (context.skipAutoTapPreview) null else {
+                    context.manaSolver.solve(state, playerId, kickedCost, spellContext = kickedSpellContext, precomputedSources = context.availableManaSources)
+                        ?.sources?.map { it.entityId }
+                }
+
+                // Kicker {X} (e.g. Verdeloth the Ancient): the kicked cost carries {X}, so the
+                // client must prompt for X exactly like a base-cost X spell. The chosen X flows
+                // through CastSpell.xValue → SpellOnStackComponent.xValue → the ETB event's
+                // xValue, which "create X tokens" reads via DynamicAmount.XValue.
+                val kickedHasXCost = kickedCost.hasX
+                val kickedMaxAffordableX: Int? = if (kickedHasXCost) {
+                    val availableSources = context.manaSolver.getAvailableManaCount(state, playerId, precomputedSources = context.availableManaSources, spellContext = kickedSpellContext)
+                    val fixedCost = kickedCost.cmc  // X contributes 0 to CMC
+                    val xSymbolCount = kickedCost.xCount.coerceAtLeast(1)
+                    ((availableSources - fixedCost) / xSymbolCount).coerceAtLeast(0)
+                } else null
+
+                // Check additional cost payability (e.g., sacrifice a creature)
+                var kickerCostInfo: AdditionalCostData? = null
+                var canPayKickerAdditionalCost = true
+                if (additionalCostKicker?.additionalCost != null) {
+                    when (val cost = additionalCostKicker.additionalCost) {
+                        is AdditionalCost.Atom -> when (val atom = cost.atom) {
+                            is CostAtom.Sacrifice -> {
+                                val validSacTargets = context.costUtils.findSacrificeTargets(state, playerId, atom)
+                                if (validSacTargets.size < atom.count) {
+                                    canPayKickerAdditionalCost = false
+                                } else {
+                                    kickerCostInfo = AdditionalCostData(
+                                        description = atom.description.replaceFirstChar { it.uppercase() },
+                                        costType = "SacrificePermanent",
+                                        validSacrificeTargets = validSacTargets,
+                                        sacrificeCount = atom.count
+                                    )
+                                }
+                            }
+                            else -> {}
+                        }
+                        is AdditionalCost.Behold -> {
+                            // Behold a matching permanent you control or reveal a matching
+                            // card from hand (e.g. Molten Exhale's "behold a Dragon" flash
+                            // unlock). Mirrors the mandatory-additional-cost Behold path.
+                            val projected = state.projectedState
+                            val predicateContext = PredicateContext(controllerId = playerId)
+                            val battlefieldMatches = projected.getBattlefieldControlledBy(playerId).filter { permId ->
+                                context.predicateEvaluator.matches(state, projected, permId, cost.filter, predicateContext)
+                            }
+                            val handMatches = state.getZone(ZoneKey(playerId, Zone.HAND))
+                                .filter { it != cardId }
+                                .filter { context.predicateEvaluator.matches(state, state.projectedState, it, cost.filter, predicateContext) }
+                            val beholdTargets = battlefieldMatches + handMatches
+                            if (beholdTargets.size < cost.count) {
                                 canPayKickerAdditionalCost = false
                             } else {
                                 kickerCostInfo = AdditionalCostData(
-                                    description = atom.description.replaceFirstChar { it.uppercase() },
-                                    costType = "SacrificePermanent",
-                                    validSacrificeTargets = validSacTargets,
-                                    sacrificeCount = atom.count
+                                    description = cost.description,
+                                    costType = "Behold",
+                                    validBeholdTargets = beholdTargets,
+                                    beholdCount = cost.count
                                 )
                             }
                         }
                         else -> {}
                     }
-                    is AdditionalCost.Behold -> {
-                        // Behold a matching permanent you control or reveal a matching
-                        // card from hand (e.g. Molten Exhale's "behold a Dragon" flash
-                        // unlock). Mirrors the mandatory-additional-cost Behold path.
-                        val projected = state.projectedState
-                        val predicateContext = PredicateContext(controllerId = playerId)
-                        val battlefieldMatches = projected.getBattlefieldControlledBy(playerId).filter { permId ->
-                            context.predicateEvaluator.matches(state, projected, permId, cost.filter, predicateContext)
-                        }
-                        val handMatches = state.getZone(ZoneKey(playerId, Zone.HAND))
-                            .filter { it != cardId }
-                            .filter { context.predicateEvaluator.matches(state, state.projectedState, it, cost.filter, predicateContext) }
-                        val beholdTargets = battlefieldMatches + handMatches
-                        if (beholdTargets.size < cost.count) {
-                            canPayKickerAdditionalCost = false
+                }
+
+                val canAffordKicked = canAffordKickedMana && canPayKickerAdditionalCost
+
+                // Build target info — use kickerTargetRequirements if available
+                val kickerBaseReqs = if (cardDef.script.kickerTargetRequirements.isNotEmpty()) {
+                    cardDef.script.kickerTargetRequirements
+                } else {
+                    cardDef.script.targetRequirements
+                }
+                val targetReqs = buildList {
+                    addAll(kickerBaseReqs)
+                    cardDef.script.auraTarget?.let { add(it) }
+                }
+
+                // The printed name of what's being paid — "Bargained" for bargain, "Offspring" /
+                // "with Flash" / "Kicked" for the kicker family. The client shows this verbatim.
+                val kickLabel = when {
+                    declaredSlot == ChoiceSlot.BARGAINED -> "Bargained"
+                    offspringAbility != null -> "Offspring"
+                    flashKicker -> "with Flash"
+                    else -> "Kicked"
+                }
+
+                // Check for DividedDamageEffect in the kicked spell effect
+                val kickerSpellEffect = cardDef.script.kickerSpellEffect ?: cardDef.script.spellEffect
+                val kickerDividedDamage = kickerSpellEffect as? DividedDamageEffect
+                val kickerRequiresDamageDistribution = kickerDividedDamage != null
+                val kickerTotalDamage = kickerDividedDamage?.totalDamage
+                val kickerMinDamagePerTarget = if (kickerDividedDamage != null) 1 else null
+
+                if (targetReqs.isNotEmpty()) {
+                    val targetReqInfos = context.targetUtils.buildTargetInfos(state, playerId, targetReqs)
+                    val allRequirementsSatisfied = context.targetUtils.allRequirementsSatisfied(targetReqInfos)
+                    if (allRequirementsSatisfied) {
+                        val firstReq = targetReqs.first()
+                        val firstReqInfo = targetReqInfos.first()
+
+                        val canAutoSelect = targetReqs.size == 1 &&
+                            context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
+
+                        if (canAutoSelect) {
+                            val autoSelectedTarget = ChosenTarget.Player(firstReqInfo.validTargets.first())
+                            result.add(LegalAction(
+                                actionType = "CastWithKicker",
+                                description = "Cast ${cardComponent.name} ($kickLabel)",
+                                action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget), declaredCostSlot = declaredSlot),
+                                affordable = canAffordKicked,
+                                manaCostString = kickedCostString,
+                                autoTapPreview = kickedAutoTapPreview,
+                                additionalCostInfo = kickerCostInfo,
+                                hasXCost = kickedHasXCost,
+                                maxAffordableX = kickedMaxAffordableX,
+                                requiresDamageDistribution = kickerRequiresDamageDistribution,
+                                totalDamageToDistribute = kickerTotalDamage,
+                                minDamagePerTarget = kickerMinDamagePerTarget
+                            ))
                         } else {
-                            kickerCostInfo = AdditionalCostData(
-                                description = cost.description,
-                                costType = "Behold",
-                                validBeholdTargets = beholdTargets,
-                                beholdCount = cost.count
-                            )
+                            result.add(LegalAction(
+                                actionType = "CastWithKicker",
+                                description = "Cast ${cardComponent.name} ($kickLabel)",
+                                action = CastSpell(playerId, cardId, declaredCostSlot = declaredSlot),
+                                validTargets = firstReqInfo.validTargets,
+                                requiresTargets = true,
+                                targetCount = firstReqInfo.maxTargets,
+                                minTargets = firstReq.effectiveMinCount,
+                                targetDescription = firstReq.description,
+                                targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
+                                affordable = canAffordKicked,
+                                manaCostString = kickedCostString,
+                                autoTapPreview = kickedAutoTapPreview,
+                                additionalCostInfo = kickerCostInfo,
+                                hasXCost = kickedHasXCost,
+                                maxAffordableX = kickedMaxAffordableX,
+                                requiresDamageDistribution = kickerRequiresDamageDistribution,
+                                totalDamageToDistribute = kickerTotalDamage,
+                                minDamagePerTarget = kickerMinDamagePerTarget
+                            ))
                         }
                     }
-                    else -> {}
+                } else {
+                    result.add(LegalAction(
+                        actionType = "CastWithKicker",
+                        description = "Cast ${cardComponent.name} ($kickLabel)",
+                        action = CastSpell(playerId, cardId, declaredCostSlot = declaredSlot),
+                        affordable = canAffordKicked,
+                        manaCostString = kickedCostString,
+                        autoTapPreview = kickedAutoTapPreview,
+                        additionalCostInfo = kickerCostInfo,
+                        hasXCost = kickedHasXCost,
+                        maxAffordableX = kickedMaxAffordableX
+                    ))
                 }
             }
 
-            val canAffordKicked = canAffordKickedMana && canPayKickerAdditionalCost
-
-            // Build target info — use kickerTargetRequirements if available
-            val kickerBaseReqs = if (cardDef.script.kickerTargetRequirements.isNotEmpty()) {
-                cardDef.script.kickerTargetRequirements
-            } else {
-                cardDef.script.targetRequirements
-            }
-            val targetReqs = buildList {
-                addAll(kickerBaseReqs)
-                cardDef.script.auraTarget?.let { add(it) }
-            }
-
-            val kickLabel = when {
-                offspringAbility != null -> "Offspring"
-                flashKicker -> "with Flash"
-                else -> "Kicked"
-            }
-
-            // Check for DividedDamageEffect in the kicked spell effect
-            val kickerSpellEffect = cardDef.script.kickerSpellEffect ?: cardDef.script.spellEffect
-            val kickerDividedDamage = kickerSpellEffect as? DividedDamageEffect
-            val kickerRequiresDamageDistribution = kickerDividedDamage != null
-            val kickerTotalDamage = kickerDividedDamage?.totalDamage
-            val kickerMinDamagePerTarget = if (kickerDividedDamage != null) 1 else null
-
-            if (targetReqs.isNotEmpty()) {
-                val targetReqInfos = context.targetUtils.buildTargetInfos(state, playerId, targetReqs)
-                val allRequirementsSatisfied = context.targetUtils.allRequirementsSatisfied(targetReqInfos)
-                if (allRequirementsSatisfied) {
-                    val firstReq = targetReqs.first()
-                    val firstReqInfo = targetReqInfos.first()
-
-                    val canAutoSelect = targetReqs.size == 1 &&
-                        context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
-
-                    if (canAutoSelect) {
-                        val autoSelectedTarget = ChosenTarget.Player(firstReqInfo.validTargets.first())
-                        result.add(LegalAction(
-                            actionType = "CastWithKicker",
-                            description = "Cast ${cardComponent.name} ($kickLabel)",
-                            action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget), wasKicked = true),
-                            affordable = canAffordKicked,
-                            manaCostString = kickedCostString,
-                            autoTapPreview = kickedAutoTapPreview,
-                            additionalCostInfo = kickerCostInfo,
-                            hasXCost = kickedHasXCost,
-                            maxAffordableX = kickedMaxAffordableX,
-                            requiresDamageDistribution = kickerRequiresDamageDistribution,
-                            totalDamageToDistribute = kickerTotalDamage,
-                            minDamagePerTarget = kickerMinDamagePerTarget
-                        ))
-                    } else {
-                        result.add(LegalAction(
-                            actionType = "CastWithKicker",
-                            description = "Cast ${cardComponent.name} ($kickLabel)",
-                            action = CastSpell(playerId, cardId, wasKicked = true),
-                            validTargets = firstReqInfo.validTargets,
-                            requiresTargets = true,
-                            targetCount = firstReqInfo.maxTargets,
-                            minTargets = firstReq.effectiveMinCount,
-                            targetDescription = firstReq.description,
-                            targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
-                            affordable = canAffordKicked,
-                            manaCostString = kickedCostString,
-                            autoTapPreview = kickedAutoTapPreview,
-                            additionalCostInfo = kickerCostInfo,
-                            hasXCost = kickedHasXCost,
-                            maxAffordableX = kickedMaxAffordableX,
-                            requiresDamageDistribution = kickerRequiresDamageDistribution,
-                            totalDamageToDistribute = kickerTotalDamage,
-                            minDamagePerTarget = kickerMinDamagePerTarget
-                        ))
-                    }
-                }
-            } else {
-                result.add(LegalAction(
-                    actionType = "CastWithKicker",
-                    description = "Cast ${cardComponent.name} ($kickLabel)",
-                    action = CastSpell(playerId, cardId, wasKicked = true),
-                    affordable = canAffordKicked,
-                    manaCostString = kickedCostString,
-                    autoTapPreview = kickedAutoTapPreview,
-                    additionalCostInfo = kickerCostInfo,
-                    hasXCost = kickedHasXCost,
-                    maxAffordableX = kickedMaxAffordableX
-                ))
-            }
-
-            // If normal cast is not affordable but kicker is (unlikely), ensure normal cast shows unaffordable
-            if (!context.manaSolver.canPay(state, playerId, baseCost, precomputedSources = context.availableManaSources)) {
+            // If normal cast is not affordable but the optional-cost cast is (unlikely), ensure the
+            // normal cast still shows as unaffordable. Priced with no declaration, so a
+            // "costs less if it's bargained" reduction doesn't leak into the plain cast.
+            val undeclaredCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
+            if (!context.manaSolver.canPay(state, playerId, undeclaredCost, precomputedSources = context.availableManaSources)) {
                 result.add(LegalAction(
                     actionType = "CastSpell",
                     description = "Cast ${cardComponent.name}",
                     action = CastSpell(playerId, cardId),
                     affordable = false,
-                    manaCostString = baseCost.toString()
+                    manaCostString = undeclaredCost.toString()
                 ))
             }
         }

@@ -3,6 +3,12 @@ package com.wingedsheep.gameserver.replay
 import com.wingedsheep.gameserver.persistence.persistenceJson
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonObject
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.Base64
@@ -27,7 +33,40 @@ object ReplayCodec {
         encodeText(persistenceJson.encodeToString(CompactReplay.serializer(), replay))
 
     fun decode(encoded: String): CompactReplay =
-        persistenceJson.decodeFromString(CompactReplay.serializer(), decodeText(encoded))
+        persistenceJson.decodeFromString(CompactReplay.serializer(), migrateKickerFlag(decodeText(encoded)))
+
+    /**
+     * Rewrite the pre-Bargain `CastSpell.wasKicked: Boolean` into the `declaredCostSlot: ChoiceSlot?`
+     * that replaced it. Bargain (CR 702.166) rides the same optional-additional-cost rail as kicker,
+     * so the flag had to become *which* mechanic declared — and a rename is not something
+     * [persistenceJson] can bridge on its own.
+     *
+     * This has to happen or old records decode wrong rather than fail: `ignoreUnknownKeys` silently
+     * drops the legacy key and `declaredCostSlot` falls back to its `null` default, so every recorded
+     * kicked cast re-simulates *unkicked* — a different game from the one that was played, which is
+     * precisely the silent drift the checkpoint fingerprints exist to catch.
+     *
+     * Gated on a substring test so the untouched majority of replays skip the extra parse entirely.
+     */
+    private fun migrateKickerFlag(json: String): String {
+        if (!json.contains("\"wasKicked\"")) return json
+        val root = persistenceJson.parseToJsonElement(json).jsonObject
+        val actions = root["actions"] as? JsonArray ?: return json
+        val migrated = JsonArray(
+            actions.map { action ->
+                val obj = action as? JsonObject ?: return@map action
+                val kicked = (obj["wasKicked"] as? JsonPrimitive)?.booleanOrNull ?: return@map action
+                val rest = obj.filterKeys { it != "wasKicked" }
+                JsonObject(
+                    if (kicked) rest + ("declaredCostSlot" to JsonPrimitive("KICKED")) else rest
+                )
+            }
+        )
+        return persistenceJson.encodeToString(
+            JsonElement.serializer(),
+            JsonObject(root + ("actions" to migrated)),
+        )
+    }
 
     /** gzip + base64 an arbitrary JSON payload (used for the archived presentation stream). */
     fun encodeText(text: String): String {

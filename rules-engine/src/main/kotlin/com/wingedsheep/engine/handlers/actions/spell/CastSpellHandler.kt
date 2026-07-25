@@ -83,6 +83,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCost
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.CastRestriction
@@ -136,7 +137,7 @@ private fun CastSpell.altAllows(type: AlternativeCostType): Boolean =
 /**
  * True if this cast is paying the card's cleave cost (CR 702.148). Cleave is an alternative cost,
  * so it's driven by [CastSpell.useAlternativeCost] gated on the chosen [AlternativeCostType.CLEAVE]
- * (never by `wasKicked`, which is an *additional* cost). When true, the resolver swaps in the
+ * (never by `declaredCostSlot`, which names an *additional* cost). When true, the resolver swaps in the
  * brackets-removed effect / target-requirement variant (`cleaveSpellEffect` /
  * `cleaveTargetRequirements`).
  */
@@ -144,6 +145,24 @@ private fun isCleaveCast(action: CastSpell, cardDef: com.wingedsheep.sdk.model.C
     action.useAlternativeCost &&
         action.altAllows(AlternativeCostType.CLEAVE) &&
         cardDef.keywordAbilities.any { it is KeywordAbility.Cleave }
+
+/**
+ * The card's optional-additional-cost keywords matching the slot this cast declared (CR 601.2b) —
+ * empty when the cast declared none, or when the card has no keyword for the declared slot (which
+ * `validate` turns into a rejection). A card can carry two entries for one slot (a mana kicker
+ * alongside a sacrifice kicker), hence a list: the mana portion and the non-mana portion are read
+ * separately.
+ */
+private fun declaredOptionalCosts(
+    action: CastSpell,
+    cardDef: com.wingedsheep.sdk.model.CardDefinition?,
+): List<KeywordAbility.OptionalAdditionalCost> {
+    val slot = action.declaredCostSlot ?: return emptyList()
+    return cardDef?.keywordAbilities
+        ?.filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
+        ?.filter { it.declaredSlot == slot }
+        ?: emptyList()
+}
 
 class CastSpellHandler(
     private val cardRegistry: CardRegistry,
@@ -296,9 +315,7 @@ class CastSpellHandler(
                 .any { it.asThoughFlash }
             // A flash-timing kicker unlocks instant-speed casting when paid — whether the
             // optional cost is mana (Ghitu Fire) or a non-mana cost like Behold (Molten Exhale).
-            val flashTimingKicker = action.wasKicked && cardDef?.keywordAbilities
-                ?.filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
-                ?.any { it.grantsFlashTiming } == true
+            val flashTimingKicker = declaredOptionalCosts(action, cardDef).any { it.grantsFlashTiming }
             if (!grantedFlash && !mayPlayFlash && !flashTimingKicker && !castingForSneak &&
                 !turnManager.canPlaySorcerySpeed(state, action.playerId)
             ) {
@@ -376,16 +393,26 @@ class CastSpellHandler(
             if (runtimeCostError != null) return runtimeCostError
         }
 
-        // Validate kicker/offspring: card must have a Kicker keyword ability
-        if (action.wasKicked && cardDef != null) {
-            val kickers = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
-            if (kickers.isEmpty()) return "This card does not have kicker"
+        // Validate the declared optional additional cost (kicker/offspring/bargain): the card must
+        // actually have a keyword declaring that slot, so a hand-built action can't claim to have
+        // bargained a kicker spell (or bargained a card with no bargain at all).
+        if (action.declaredCostSlot != null && cardDef != null) {
+            val declared = declaredOptionalCosts(action, cardDef)
+            if (declared.isEmpty()) {
+                val mechanic = when (action.declaredCostSlot) {
+                    ChoiceSlot.BARGAINED -> "bargain"
+                    ChoiceSlot.KICKED -> "kicker"
+                    else -> action.declaredCostSlot.name.lowercase()
+                }
+                return "This card does not have $mechanic"
+            }
 
-            // Validate non-mana kicker additional cost (sacrifice, etc.)
-            val kickerAdditionalCost = kickers.firstOrNull { it.additionalCost != null }?.additionalCost
-            if (kickerAdditionalCost != null) {
-                val kickerCostError = validateAdditionalCosts(state, listOf(kickerAdditionalCost), action)
-                if (kickerCostError != null) return kickerCostError
+            // Validate the non-mana portion (sacrifice a creature for kicker, an artifact /
+            // enchantment / token for bargain, …).
+            val declaredAdditionalCost = declared.firstOrNull { it.additionalCost != null }?.additionalCost
+            if (declaredAdditionalCost != null) {
+                val costError = validateAdditionalCosts(state, listOf(declaredAdditionalCost), action)
+                if (costError != null) return costError
             }
         }
 
@@ -502,7 +529,7 @@ class CastSpellHandler(
                 action.chosenModes.flatMap { modeIndex ->
                     modalEffect.modes.getOrNull(modeIndex)?.targetRequirements ?: emptyList()
                 }
-            } else if (action.wasKicked && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
+            } else if (action.declaredCostSlot != null && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
                 cardDef.script.kickerTargetRequirements
             } else if (isCleaveCast(action, cardDef) && cardDef.script.cleaveTargetRequirements.isNotEmpty()) {
                 // Cleave (CR 702.148): removing bracketed text can change the legal target set
@@ -541,7 +568,7 @@ class CastSpellHandler(
 
         // Validate damage distribution for DividedDamageEffect spells
         // Use kickerSpellEffect when kicked, cleaveSpellEffect when cleaved, else the printed effect.
-        val spellEffect = if (action.wasKicked && cardDef?.script?.kickerSpellEffect != null) {
+        val spellEffect = if (action.declaredCostSlot != null && cardDef?.script?.kickerSpellEffect != null) {
             cardDef.script.kickerSpellEffect
         } else if (cardDef != null && isCleaveCast(action, cardDef) && cardDef.script.cleaveSpellEffect != null) {
             cardDef.script.cleaveSpellEffect
@@ -821,15 +848,17 @@ class CastSpellHandler(
                 action.playerId,
                 action.targets.map { it.toEntityId() },
                 fromZone = if (castingFromCommandZone) Zone.COMMAND else castSourceZone(state, action.cardId),
+                // Price the branch the player actually announced — a "costs {2} less to cast if
+                // it's bargained" reduction is gated on the declaration (CR 702.166).
+                declaredCostSlot = action.declaredCostSlot,
             )
         } else {
             cardComponent.manaCost
         }
 
         // Add kicker/offspring mana cost if kicked (only for mana-based kicker/offspring)
-        if (action.wasKicked && !playForFree && !action.useAlternativeCost && cardDef != null) {
-            val kickerManaCost = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
+        if (!playForFree && !action.useAlternativeCost) {
+            val kickerManaCost = declaredOptionalCosts(action, cardDef)
                 .firstOrNull { it.manaCost != null }
                 ?.manaCost
             if (kickerManaCost != null) {
@@ -981,7 +1010,7 @@ class CastSpellHandler(
         val spellCtx = if (cardComponent != null) {
             SpellPaymentContext(
                 isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-                isKicked = action.wasKicked,
+                isKicked = action.declaredCostSlot == ChoiceSlot.KICKED,
                 isCreature = cardComponent.typeLine.isCreature,
                 isLegendary = cardComponent.typeLine.isLegendary,
                 manaValue = cardComponent.manaCost.cmc,
@@ -2008,15 +2037,15 @@ class CastSpellHandler(
                 action.playerId,
                 action.targets.map { it.toEntityId() },
                 fromZone = if (castingFromCommand) Zone.COMMAND else castSourceZone(currentState, action.cardId),
+                declaredCostSlot = action.declaredCostSlot,
             )
         } else {
             cardComponent.manaCost
         }
 
         // Add kicker/offspring cost if kicked (not applicable with alternative costs)
-        if (action.wasKicked && !playForFreeInExecute && !action.useAlternativeCost && cardDef != null) {
-            val kickerManaCost = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
+        if (!playForFreeInExecute && !action.useAlternativeCost) {
+            val kickerManaCost = declaredOptionalCosts(action, cardDef)
                 .firstOrNull { it.manaCost != null }
                 ?.manaCost
             if (kickerManaCost != null) {
@@ -2141,13 +2170,10 @@ class CastSpellHandler(
         // Per-mode additional costs override card-level costs when present
         val allAdditionalCosts = buildList {
             if (cardDef != null) addAll(resolveAdditionalCostsForMode(cardDef, action))
-            if (action.wasKicked && cardDef != null) {
-                val kickerAdditionalCost = cardDef.keywordAbilities
-                    .filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
-                    .firstOrNull { it.additionalCost != null }
-                    ?.additionalCost
-                if (kickerAdditionalCost != null) add(kickerAdditionalCost)
-            }
+            declaredOptionalCosts(action, cardDef)
+                .firstOrNull { it.additionalCost != null }
+                ?.additionalCost
+                ?.let { add(it) }
             if (action.useAlternativeCost && cardDef != null) {
                 // Each bundled additional cost is gated by the chosen alternative-cost type so a
                 // collision (e.g. granted warp on a card also being evoked) doesn't drag in the
@@ -2688,7 +2714,7 @@ class CastSpellHandler(
         // Build spell context for conditional mana restrictions
         val spellContext = SpellPaymentContext(
             isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-            isKicked = action.wasKicked,
+            isKicked = action.declaredCostSlot == ChoiceSlot.KICKED,
             isCreature = cardComponent.typeLine.isCreature,
             isLegendary = cardComponent.typeLine.isLegendary,
             manaValue = cardComponent.manaCost.cmc,
@@ -2799,7 +2825,7 @@ class CastSpellHandler(
                 action.chosenModes.flatMap { idx ->
                     modalEffectForTargets.modes.getOrNull(idx)?.targetRequirements ?: emptyList()
                 }
-            } else if (action.wasKicked && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
+            } else if (action.declaredCostSlot != null && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
                 cardDef.script.kickerTargetRequirements
             } else if (isCleaveCast(action, cardDef) && cardDef.script.cleaveTargetRequirements.isNotEmpty()) {
                 cardDef.script.cleaveTargetRequirements
@@ -2993,7 +3019,7 @@ class CastSpellHandler(
             exiledCardCount = exiledCardCount,
             additionalCostBlightAmount = action.additionalCostPayment?.blightAmount ?: 0,
             additionalCostPayXLifeAmount = payXLifeAmount,
-            wasKicked = action.wasKicked,
+            declaredCostSlot = action.declaredCostSlot,
             wasBlightPaid = (action.additionalCostPayment?.blightTargets?.isNotEmpty() == true),
             // True when the spell's waterbend additional cost was paid (Avatar) — mandatory costs
             // always, optional "you may waterbend {N}" only when the player elected it.

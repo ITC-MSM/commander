@@ -313,8 +313,11 @@ export interface ClientCard {
   /** Official rulings for this card (for card details view) */
   readonly rulings?: readonly ClientRuling[]
 
-  /** Whether this spell was kicked (only present on stack) */
-  readonly wasKicked?: boolean
+  /**
+   * Name of the optional additional cost this spell declared — "Kicked", "Bargained", "Offspring"
+   * — or absent when it declared none. Server-derived label; render verbatim (only on the stack).
+   */
+  readonly optionalCostLabel?: string
 
   /** Whether this spell promised a gift (Bloomburrow gift mechanic — only present on stack) */
   readonly giftPromised?: boolean

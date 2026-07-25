@@ -349,8 +349,12 @@ data class ClientCard(
     /** Official rulings for this card (for card details view) */
     val rulings: List<ClientRuling> = emptyList(),
 
-    /** Whether this spell was kicked (only present on stack) */
-    val wasKicked: Boolean = false,
+    /**
+     * The optional additional cost this spell declared as it was cast — "Kicked", "Bargained",
+     * "Offspring" — or null when it declared none. Only present on the stack; rendered verbatim as
+     * a badge, so the naming decision stays server-side.
+     */
+    val optionalCostLabel: String? = null,
 
     /** Whether this spell promised a gift (Bloomburrow gift mechanic — only present on stack) */
     val giftPromised: Boolean = false,

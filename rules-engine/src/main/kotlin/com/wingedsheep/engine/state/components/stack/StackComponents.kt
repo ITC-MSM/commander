@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import kotlinx.serialization.SerialName
@@ -20,7 +21,12 @@ import com.wingedsheep.sdk.dsl.sneak
 data class SpellOnStackComponent(
     val casterId: EntityId,
     val xValue: Int? = null,  // For X spells
-    val wasKicked: Boolean = false,  // For kicker costs
+    /**
+     * Which optional-additional-cost mechanic this spell was cast with (kicker/multikicker/
+     * offspring → [ChoiceSlot.KICKED], bargain → [ChoiceSlot.BARGAINED]), or null when none was
+     * declared. Carried onto the resolving permanent's cast-choices bag by `StackResolver`.
+     */
+    val declaredCostSlot: ChoiceSlot? = null,
     val wasBlightPaid: Boolean = false,  // For BlightOrPay additional cost — true if blight path was taken
     val wasWaterbendPaid: Boolean = false,  // For optional spell waterbend additional cost (Avatar) — true if "you may waterbend {N}" was paid; readable via WaterbendWasPaid
     /**

@@ -165,6 +165,24 @@ data class GameObjectFilter(
                 CardPredicate.Or(listOf(CardPredicate.IsArtifact, CardPredicate.IsEnchantment))
             )
         )
+
+        /**
+         * Artifact, enchantment, or token — the permanents bargain lets you sacrifice
+         * (CR 702.166a). "Token" is not a card type, so it's an independent alternative here:
+         * a Food artifact token, an Aura, and a plain 1/1 creature token all qualify, while a
+         * nontoken creature does not.
+         */
+        val ArtifactEnchantmentOrToken = GameObjectFilter(
+            cardPredicates = listOf(
+                CardPredicate.Or(
+                    listOf(
+                        CardPredicate.IsArtifact,
+                        CardPredicate.IsEnchantment,
+                        CardPredicate.IsToken,
+                    )
+                )
+            )
+        )
         val CreatureOrArtifact = GameObjectFilter(
             cardPredicates = listOf(
                 CardPredicate.Or(listOf(CardPredicate.IsCreature, CardPredicate.IsArtifact))

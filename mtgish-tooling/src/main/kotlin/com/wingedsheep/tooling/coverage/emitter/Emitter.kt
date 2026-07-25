@@ -313,6 +313,12 @@ object Emitter {
                 // counter") is composed by the `increment()` CardBuilder helper. Like `station()` /
                 // `firebending(n)`, render the builder call directly rather than a bare keywordAbility
                 // (which would print the keyword but drop the cast-spell trigger). The rule carries no args.
+                // Bargain (CR 702.166, Wilds of Eldraine) — the keyword's whole mechanic (the optional
+                // "sacrifice an artifact, enchantment, or token" additional cost plus the
+                // ChoiceSlot.BARGAINED declaration its payoffs read) is composed by the `bargain()`
+                // CardBuilder helper. Render the builder call, never a bare keyword stamp, which would
+                // drop the cost. The rule carries no args.
+                rname == "Bargain" -> block = listOf(Eval(call("bargain")))
                 rname == "Increment" -> block = listOf(Eval(call("increment")))
                 // {N+} station symbol that animates into a creature (CR 721.2b). Non-animating
                 // `StationCharged` (gating an activated/triggered ability) is left to the default
