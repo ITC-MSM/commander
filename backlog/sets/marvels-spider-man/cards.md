@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 143 / 190
+**Implemented:** 144 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -35,7 +35,7 @@
 - [ ] Electro's Bolt
 - [ ] Electro, Assaulting Battery
 - [x] Ezekiel Sims, Spider-Totem
-- [ ] Flash Thompson, Spider-Fan
+- [x] Flash Thompson, Spider-Fan
 - [x] Flying Octobot
 - [x] Friendly Neighborhood
 - [x] Gallant Citizen

@@ -1668,6 +1668,86 @@
     ]
 }
 
+// Flash Thompson, Spider-Fan
+{
+    "name": "Flash Thompson, Spider-Fan",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Human Citizen",
+    "oracleText": "Flash\nWhen Flash Thompson enters, choose one or both —\n• Heckle — Tap target creature.\n• Hero Worship — Untap target creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "TapUntap",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature"
+                                    }
+                                }
+                            ],
+                            "description": "Heckle — Tap target creature."
+                        },
+                        {
+                            "effect": {
+                                "type": "TapUntap",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "tap": false
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature"
+                                    }
+                                }
+                            ],
+                            "description": "Hero Worship — Untap target creature."
+                        }
+                    ],
+                    "chooseCount": 2,
+                    "minChooseCount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "rarity": "UNCOMMON",
+        "artist": "Gal Or",
+        "flavorText": "\"No one cares about your Spider-Man obsession, Flash.\"\n—Liz Allan",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44cf372b-f668-45e9-981e-4533295dcc74.jpg?1783905364"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Flying Octobot
 {
     "name": "Flying Octobot",
