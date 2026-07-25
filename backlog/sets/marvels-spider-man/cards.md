@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 127 / 190
+**Implemented:** 128 / 190
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -120,7 +120,7 @@
 - [ ] Shadow of the Goblin
 - [x] Shock
 - [x] Shocker, Unshakable
-- [ ] Shriek, Treblemaker
+- [x] Shriek, Treblemaker
 - [ ] Silk, Web Weaver
 - [x] Silver Sable, Mercenary Leader
 - [x] Sinister Hideout
