@@ -1,3 +1,41 @@
+// A Tale for the Ages
+{
+    "name": "A Tale for the Ages",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Enchanted creatures you control get +2/+2.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2,
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "IsEnchanted"
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "rarity": "RARE",
+        "artist": "Julie Dillon",
+        "flavorText": "With every retelling of Agatha's demise, Kellan got taller and Ruby got stronger. But the core story stayed the same, and people remembered what happens to those who prey on the weak.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca0c8d3b-ce30-4da5-a6a8-9bdcb3c757f9.jpg?1783915126"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Agatha's Champion
 {
     "name": "Agatha's Champion",
@@ -4067,6 +4105,62 @@
     ]
 }
 
+// Howling Galefang
+{
+    "name": "Howling Galefang",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Vigilance\nThis creature has haste as long as you own a card in exile that has an Adventure.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Exile",
+                    "filter": {
+                        "cardPredicates": [
+                            "HasAdventure"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "rarity": "UNCOMMON",
+        "artist": "Néstor Ossandón Leal",
+        "flavorText": "\"I have to hand it to you, Yorvo. Since your pet showed up, not a single smallfolk has even made it to the door of my vault.\"\n—Beluna Grandsquall",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/86311523-d0eb-4db3-b586-8349de9c2d37.jpg?1783915080",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Howling Galefang will have haste as long as any card you own in exile has an Adventure. It doesn't matter if that card was cast as an Adventure or not."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Imodane's Recruiter
 {
     "name": "Imodane's Recruiter",
@@ -4686,6 +4780,118 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Lord Skitter's Blessing
+{
+    "name": "Lord Skitter's Blessing",
+    "manaCost": "{1}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, create a Wicked Role token attached to target creature you control. (Enchanted creature gets +1/+1. When this token is put into a graveyard, each opponent loses 1 life.)\nAt the beginning of your draw step, if you control an enchanted creature, you lose 1 life and you draw an additional card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateRoleToken",
+                    "roleName": "Wicked Role",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "descriptionOverride": "When this enchantment enters, create a Wicked Role token attached to target creature you control."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "DRAW"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": "Controller"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                "IsEnchanted"
+                            ],
+                            "controllerPredicate": "ControlledByYou"
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "At the beginning of your draw step, if you control an enchanted creature, you lose 1 life and you draw an additional card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "rarity": "RARE",
+        "artist": "Joseph Weston",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/4/84f343a9-883f-4532-ae66-be6470d67d38.jpg?1783915106",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Roles are colorless enchantment tokens. Each one has the Aura and Role subtypes and the enchant creature ability."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a permanent has more than one Role attached to it controlled by the same player, each of those Roles except the one with the most recent timestamp is put into its owner's graveyard. This is a state-based action."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "A permanent can have multiple Roles attached to it if each one is controlled by a different player."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Some spells and abilities that create Role tokens require targets. If each target chosen is an illegal target as that spell or ability tries to resolve, it won't resolve. The Role token won't be created."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -8161,6 +8367,79 @@
     ]
 }
 
+// Stonesplitter Bolt
+{
+    "name": "Stonesplitter Bolt",
+    "manaCost": "{X}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nStonesplitter Bolt deals X damage to target creature or planeswalker. If this spell was bargained, it deals twice X damage to that permanent instead.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "BARGAINED"
+                },
+                "ifTrue": {
+                    "type": "Multiply",
+                    "amount": "XValue",
+                    "multiplier": 2
+                },
+                "ifFalse": "XValue"
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature or planeswalker"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target creature or planeswalker"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "rarity": "UNCOMMON",
+        "artist": "Alexandr Leskinen",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb22f79c-3075-439d-a072-ceaabe35d76f.jpg?1783915088",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you copy a bargained spell, the copy is also bargained."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Stormkeld Prowler
 {
     "name": "Stormkeld Prowler",
@@ -8783,6 +9062,92 @@
                 }
             }
         }
+    ]
+}
+
+// Tenacious Tomeseeker
+{
+    "name": "Tenacious Tomeseeker",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nWhen this creature enters, if it was bargained, return target instant or sorcery card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target instant or sorcery card from your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "instant|sorcery own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target instant or sorcery card from your graveyard"
+                },
+                "triggerCondition": {
+                    "type": "CastChoiceMade",
+                    "slot": "BARGAINED"
+                },
+                "descriptionOverride": "When this creature enters, if it was bargained, return target instant or sorcery card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "UNCOMMON",
+        "artist": "Kai Carpenter",
+        "flavorText": "\"An intact volume of Tales of the Fae? The king will be pleased.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/4/c40be735-0780-459b-8dd2-a298575beaab.jpg?1783915113",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Adventurer cards aren't instant or sorcery cards while they're in your graveyard. You can't use Tenacious Tomeseeker's ability to return an adventurer card from your graveyard to your hand."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You can bargain a permanent spell even if you won't be able to choose targets for an enters-the-battlefield ability of that permanent once the spell resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

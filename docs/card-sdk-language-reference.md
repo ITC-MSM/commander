@@ -2886,6 +2886,18 @@ work for abilities-on-stack (which carry no `CardComponent`).
   your Ring-bearer" use the existing `Conditions.SourceIsRingBearer`.
 - `IsFaceDown` — currently face-down.
 - `HasCounter(type)` — has at least one counter of `type`.
+- `IsEquipped` (filter builder `equipped()`) — has at least one Equipment attached.
+- `IsEnchanted` (filter builder `enchanted()`) — has at least one **Aura** attached, i.e. the MTG
+  adjective "enchanted" (CR 303.4). The Aura mirror of `IsEquipped`, and strictly narrower than
+  `SourceIsModified` / `IsModified`: Equipment attached or counters on the permanent do *not* make it
+  enchanted. Control of the Aura is irrelevant — an opponent's Aura still enchants your creature — so
+  "enchanted creatures you control" is two predicates that bind to different objects:
+  `GameObjectFilter.Creature.youControl().enchanted()` (A Tale for the Ages' +2/+2 anthem, Lord
+  Skitter's Blessing's `Conditions.YouControlAtLeast(1, …)` draw-step gate). Role tokens are Auras
+  (CR 113.2c), which makes this the Wilds of Eldraine Roles payoff predicate. Resolves in both
+  `PredicateEvaluator` (targets/conditions) and `AffectsFilterResolver` (layer-7c group projection).
+- `IsModified` — has an Equipment attached, an Aura attached, **or** any counter (the MTG "modified"
+  definition). For the source-relative form use `Conditions.SourceIsModified`.
 - `AttachedToCardType(cardType)` — Aura/Equipment whose `AttachedToComponent` points to a
   permanent that currently has the given top-level [`CardType`] in its **projected** type
   set. Used by filters like "Aura attached to a land" (Pyramids) or "Equipment attached

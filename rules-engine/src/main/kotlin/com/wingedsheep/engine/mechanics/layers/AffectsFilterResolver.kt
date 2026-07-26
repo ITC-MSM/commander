@@ -478,6 +478,16 @@ internal class AffectsFilterResolver {
                 state.getEntity(attachId)?.get<CardComponent>()?.typeLine?.isEquipment == true
             }
         }
+        // "Enchanted creatures you control get +2/+2" (A Tale for the Ages) is a layer-7c group
+        // static, so this has to resolve during projection: read the base attachment index and the
+        // attached card's printed type line — an Aura's own Aura-ness is never granted or removed by
+        // a continuous effect, so no projected lookup is needed for the attachment itself.
+        StatePredicate.IsEnchanted -> {
+            val attachments = container.get<AttachmentsComponent>()
+            attachments != null && attachments.attachedIds.any { attachId ->
+                state.getEntity(attachId)?.get<CardComponent>()?.typeLine?.isAura == true
+            }
+        }
         StatePredicate.IsModified -> com.wingedsheep.engine.handlers.predicates.isModified(state, entityId)
         // A general "attached to <filter>" host constraint whose nested filter may carry a controller
         // predicate ("a creature you control"). Group-static projection has no ability controller to
