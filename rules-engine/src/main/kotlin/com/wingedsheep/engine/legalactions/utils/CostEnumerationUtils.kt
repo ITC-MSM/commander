@@ -7,6 +7,7 @@ import com.wingedsheep.engine.legalactions.*
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.mana.ManaSource
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -200,12 +201,20 @@ class CostEnumerationUtils(
         }
     }
 
+    /**
+     * Whether [manaCost] is payable with the help of convoke taps. [spellContext] describes the
+     * spell being cast (or ability being activated) so conditional floating mana — "spend this
+     * mana only to cast spells with mana value 4 or greater" (Ashling, Rimebound) — counts toward
+     * affordability when it is eligible for *this* payment. Passing null ignores restricted mana
+     * entirely, which under-reports affordability and hides the cast from the client.
+     */
     fun canAffordWithConvoke(
         state: GameState,
         playerId: EntityId,
         manaCost: ManaCost,
         convokeCreatures: List<ConvokeCreatureData>,
-        precomputedSources: List<ManaSource>? = null
+        precomputedSources: List<ManaSource>? = null,
+        spellContext: SpellPaymentContext? = null
     ): Boolean {
         // Convoke creatures with their own mana abilities (e.g. Llanowar Elves) appear in
         // both lists — but tapping the creature can pay either a convoke pip or a mana
@@ -214,7 +223,7 @@ class CostEnumerationUtils(
         val convokeIds = convokeCreatures.mapTo(mutableSetOf()) { it.entityId }
         val sourcesForMana = (precomputedSources ?: manaSolver.findAvailableManaSources(state, playerId))
             .filter { it.entityId !in convokeIds }
-        val availableMana = manaSolver.getAvailableManaCount(state, playerId, sourcesForMana)
+        val availableMana = manaSolver.getAvailableManaCount(state, playerId, sourcesForMana, spellContext)
         val totalResources = availableMana + convokeCreatures.size
         if (totalResources < manaCost.cmc) return false
 
@@ -260,19 +269,21 @@ class CostEnumerationUtils(
      * exactly {1} generic, so colored pips must come from mana sources; the generic portion may
      * be covered by mana sources and/or waterbend permanents. A permanent tapped for waterbend
      * can't also be a mana source, so any that double as mana sources are excluded from the mana
-     * count.
+     * count. [spellContext] lets eligible conditional floating mana count — see
+     * [canAffordWithConvoke].
      */
     fun canAffordWithWaterbend(
         state: GameState,
         playerId: EntityId,
         manaCost: ManaCost,
         waterbendPermanents: List<WaterbendPermanentData>,
-        precomputedSources: List<ManaSource>? = null
+        precomputedSources: List<ManaSource>? = null,
+        spellContext: SpellPaymentContext? = null
     ): Boolean {
         val waterbendIds = waterbendPermanents.mapTo(mutableSetOf()) { it.entityId }
         val sourcesForMana = (precomputedSources ?: manaSolver.findAvailableManaSources(state, playerId))
             .filter { it.entityId !in waterbendIds }
-        val availableMana = manaSolver.getAvailableManaCount(state, playerId, sourcesForMana)
+        val availableMana = manaSolver.getAvailableManaCount(state, playerId, sourcesForMana, spellContext)
 
         // Colored pips can only be paid by mana — waterbend is generic-only.
         val coloredRequired = manaCost.colorCount.values.sum()
@@ -306,15 +317,21 @@ class CostEnumerationUtils(
      * Can the player pay [manaCost] either as-is or after tapping a single Harmonize creature
      * (reducing the generic portion by its power)? A creature tapped for Harmonize can't also
      * tap for mana, so it is excluded from the mana sources when evaluating its reduction.
+     * [spellContext] lets eligible conditional floating mana count — see [canAffordWithConvoke].
      */
     fun canAffordWithHarmonize(
         state: GameState,
         playerId: EntityId,
         manaCost: ManaCost,
         harmonizeCreatures: List<HarmonizeCreatureData>,
-        precomputedSources: List<ManaSource>? = null
+        precomputedSources: List<ManaSource>? = null,
+        spellContext: SpellPaymentContext? = null
     ): Boolean {
-        if (manaSolver.canPay(state, playerId, manaCost, precomputedSources = precomputedSources)) return true
+        if (manaSolver.canPay(
+                state, playerId, manaCost,
+                precomputedSources = precomputedSources, spellContext = spellContext
+            )
+        ) return true
         val generic = manaCost.genericAmount
         for (creature in harmonizeCreatures) {
             val reduction = minOf(creature.power, generic)
@@ -322,7 +339,11 @@ class CostEnumerationUtils(
             val reducedCost = manaCost.reduceGeneric(reduction)
             val sourcesForMana = (precomputedSources ?: manaSolver.findAvailableManaSources(state, playerId))
                 .filter { it.entityId != creature.entityId }
-            if (manaSolver.canPay(state, playerId, reducedCost, precomputedSources = sourcesForMana)) return true
+            if (manaSolver.canPay(
+                    state, playerId, reducedCost,
+                    precomputedSources = sourcesForMana, spellContext = spellContext
+                )
+            ) return true
         }
         return false
     }
@@ -341,7 +362,8 @@ class CostEnumerationUtils(
         playerId: EntityId,
         manaCost: ManaCost,
         harmonizeCreatures: List<HarmonizeCreatureData>,
-        precomputedSources: List<ManaSource>? = null
+        precomputedSources: List<ManaSource>? = null,
+        spellContext: SpellPaymentContext? = null
     ): Int {
         if (!manaCost.hasX) return 0
         val xCount = manaCost.xCount.coerceAtLeast(1)
@@ -350,7 +372,7 @@ class CostEnumerationUtils(
 
         fun maxXFor(reduction: Int, excludeId: EntityId?): Int {
             val usable = if (excludeId == null) sources else sources.filter { it.entityId != excludeId }
-            val available = manaSolver.getAvailableManaCount(state, playerId, usable)
+            val available = manaSolver.getAvailableManaCount(state, playerId, usable, spellContext)
             return ((available - fixedCost + reduction) / xCount).coerceAtLeast(0)
         }
 
@@ -374,29 +396,44 @@ class CostEnumerationUtils(
         }
     }
 
+    /** [spellContext] lets eligible conditional floating mana count — see [canAffordWithConvoke]. */
     fun canAffordWithDelve(
         state: GameState,
         playerId: EntityId,
         manaCost: ManaCost,
         delveCards: List<DelveCardData>,
-        precomputedSources: List<ManaSource>? = null
+        precomputedSources: List<ManaSource>? = null,
+        spellContext: SpellPaymentContext? = null
     ): Boolean {
         val maxDelve = minOf(delveCards.size, manaCost.genericAmount)
         val reducedCost = manaCost.reduceGeneric(maxDelve)
-        return manaSolver.canPay(state, playerId, reducedCost, precomputedSources = precomputedSources)
+        return manaSolver.canPay(
+            state, playerId, reducedCost,
+            precomputedSources = precomputedSources, spellContext = spellContext
+        )
     }
 
+    /** [spellContext] lets eligible conditional floating mana count — see [canAffordWithConvoke]. */
     fun calculateMinDelveNeeded(
         state: GameState,
         playerId: EntityId,
         manaCost: ManaCost,
         delveCards: List<DelveCardData>,
-        precomputedSources: List<ManaSource>? = null
+        precomputedSources: List<ManaSource>? = null,
+        spellContext: SpellPaymentContext? = null
     ): Int {
-        if (manaSolver.canPay(state, playerId, manaCost, precomputedSources = precomputedSources)) return 0
+        if (manaSolver.canPay(
+                state, playerId, manaCost,
+                precomputedSources = precomputedSources, spellContext = spellContext
+            )
+        ) return 0
         val maxDelve = minOf(delveCards.size, manaCost.genericAmount)
         for (delveCount in 1..maxDelve) {
-            if (manaSolver.canPay(state, playerId, manaCost.reduceGeneric(delveCount), precomputedSources = precomputedSources)) {
+            if (manaSolver.canPay(
+                    state, playerId, manaCost.reduceGeneric(delveCount),
+                    precomputedSources = precomputedSources, spellContext = spellContext
+                )
+            ) {
                 return delveCount
             }
         }

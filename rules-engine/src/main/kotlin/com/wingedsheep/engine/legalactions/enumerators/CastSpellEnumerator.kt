@@ -30,8 +30,8 @@ import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.engine.mechanics.mana.ManaSource
-import com.wingedsheep.engine.mechanics.mana.paymentSubtypesOf
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
+import com.wingedsheep.engine.mechanics.mana.spellPaymentContextFor
 
 /**
  * Enumerates legal CastSpell actions for spells in hand.
@@ -473,25 +473,21 @@ class CastSpellEnumerator : ActionEnumerator {
                 context.costUtils.findConvokeCreatures(state, playerId)
             } else null
 
+            // Build spell context for conditional mana restriction awareness. Every affordability
+            // check below takes it, so eligible restricted floating mana (Ashling, Rimebound's
+            // MV4+ mana) counts — including on the convoke/delve/waterbend tap-to-help paths.
+            val spellContext = spellPaymentContextFor(cardComponent)
+
             val hasDelve = context.grantedKeywordResolver.hasKeyword(state, playerId, cardDef, Keyword.DELVE)
             val delveCards = if (hasDelve) {
                 context.costUtils.findDelveCards(state, playerId)
             } else null
             val minDelveNeeded = if (hasDelve && delveCards != null && delveCards.isNotEmpty()) {
-                context.costUtils.calculateMinDelveNeeded(state, playerId, effectiveCost, delveCards, precomputedSources = context.availableManaSources)
+                context.costUtils.calculateMinDelveNeeded(
+                    state, playerId, effectiveCost, delveCards,
+                    precomputedSources = context.availableManaSources, spellContext = spellContext
+                )
             } else null
-
-            // Build spell context for conditional mana restriction awareness
-            val spellContext = SpellPaymentContext(
-                isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-                isKicked = false,
-                isCreature = cardComponent.typeLine.isCreature,
-                isLegendary = cardComponent.typeLine.isLegendary,
-                manaValue = cardComponent.manaCost.cmc,
-                hasXInCost = cardComponent.manaCost.hasX,
-                subtypes = paymentSubtypesOf(cardComponent),
-                cardTypes = cardComponent.typeLine.cardTypes,
-            )
 
             // "You can spend mana of any type to cast [these] spells" (Vizier of the Menagerie):
             // relax the colored requirements for *payment* only. `effectiveCost` stays the printed
@@ -503,17 +499,23 @@ class CastSpellEnumerator : ActionEnumerator {
             val cachedSources = context.availableManaSources
             val canAfford = if (hasConvoke && convokeCreatures != null && convokeCreatures.isNotEmpty()) {
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
-                    context.costUtils.canAffordWithConvoke(state, playerId, payableCost, convokeCreatures, precomputedSources = cachedSources)
+                    context.costUtils.canAffordWithConvoke(
+                        state, playerId, payableCost, convokeCreatures,
+                        precomputedSources = cachedSources, spellContext = spellContext
+                    )
             } else if (hasDelve && delveCards != null && delveCards.isNotEmpty()) {
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
-                    context.costUtils.canAffordWithDelve(state, playerId, payableCost, delveCards, precomputedSources = cachedSources)
+                    context.costUtils.canAffordWithDelve(
+                        state, playerId, payableCost, delveCards,
+                        precomputedSources = cachedSources, spellContext = spellContext
+                    )
             } else if (mandatoryWaterbend) {
                 // payableCost already includes the mandatory waterbend {N}; taps can cover up to {N}.
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
                     context.costUtils.canAffordWithWaterbend(
                         state, playerId, payableCost,
                         waterbendPermanents.take(spellWaterbend!!.amount),
-                        precomputedSources = cachedSources
+                        precomputedSources = cachedSources, spellContext = spellContext
                     )
             } else {
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources)
@@ -1726,7 +1728,10 @@ class CastSpellEnumerator : ActionEnumerator {
                 val paidCost = baseCost + ManaCost.parse("{${wb.amount}}")
                 val affordablePaid = context.costUtils.canAffordWithWaterbend(
                     state, cs.playerId, paidCost, perms.take(wb.amount),
-                    precomputedSources = context.availableManaSources
+                    precomputedSources = context.availableManaSources,
+                    // Eligible conditional floating mana counts toward the paid variant too.
+                    spellContext = state.getEntity(cs.cardId)?.get<CardComponent>()
+                        ?.let { spellPaymentContextFor(it) }
                 )
                 if (!affordablePaid) continue
                 out.add(la.copy(
@@ -1800,16 +1805,7 @@ class CastSpellEnumerator : ActionEnumerator {
             if (eligibleTapTargets.size < 2) continue
 
             val baseCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
-            val spellContext = SpellPaymentContext(
-                isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-                isKicked = false,
-                isCreature = cardComponent.typeLine.isCreature,
-                isLegendary = cardComponent.typeLine.isLegendary,
-                manaValue = cardComponent.manaCost.cmc,
-                hasXInCost = cardComponent.manaCost.hasX,
-                subtypes = paymentSubtypesOf(cardComponent),
-                cardTypes = cardComponent.typeLine.cardTypes,
-            )
+            val spellContext = spellPaymentContextFor(cardComponent)
             val canAfford = context.manaSolver.canPay(state, playerId, baseCost, spellContext = spellContext, precomputedSources = context.availableManaSources)
             val autoTapPreview = if (context.skipAutoTapPreview) null else {
                 context.manaSolver.solve(state, playerId, baseCost, spellContext = spellContext, precomputedSources = context.availableManaSources)
@@ -1909,16 +1905,7 @@ class CastSpellEnumerator : ActionEnumerator {
             if (eligibleSacrifices.isEmpty()) continue
 
             val baseCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
-            val spellContext = SpellPaymentContext(
-                isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-                isKicked = false,
-                isCreature = cardComponent.typeLine.isCreature,
-                isLegendary = cardComponent.typeLine.isLegendary,
-                manaValue = cardComponent.manaCost.cmc,
-                hasXInCost = cardComponent.manaCost.hasX,
-                subtypes = paymentSubtypesOf(cardComponent),
-                cardTypes = cardComponent.typeLine.cardTypes,
-            )
+            val spellContext = spellPaymentContextFor(cardComponent)
             val canAfford = context.manaSolver.canPay(state, playerId, baseCost, spellContext = spellContext, precomputedSources = context.availableManaSources)
             val autoTapPreview = if (context.skipAutoTapPreview) null else {
                 context.manaSolver.solve(state, playerId, baseCost, spellContext = spellContext, precomputedSources = context.availableManaSources)
@@ -2028,16 +2015,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 )
                 val kickedManaCost = manaKicker?.manaCost ?: offspringAbility?.manaCost
                 val kickedCost = if (kickedManaCost != null) baseCost + kickedManaCost else baseCost
-                val kickedSpellContext = SpellPaymentContext(
-                    isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-                    isKicked = declaredSlot == ChoiceSlot.KICKED,
-                    isCreature = cardComponent.typeLine.isCreature,
-                    isLegendary = cardComponent.typeLine.isLegendary,
-                    manaValue = cardComponent.manaCost.cmc,
-                    hasXInCost = cardComponent.manaCost.hasX,
-                    subtypes = paymentSubtypesOf(cardComponent),
-                    cardTypes = cardComponent.typeLine.cardTypes,
-                )
+                val kickedSpellContext = spellPaymentContextFor(cardComponent, isKicked = declaredSlot == ChoiceSlot.KICKED)
                 val canAffordKickedMana = context.manaSolver.canPay(state, playerId, kickedCost, spellContext = kickedSpellContext, precomputedSources = context.availableManaSources)
                 val kickedCostString = kickedCost.toString()
                 val kickedAutoTapPreview = if (context.skipAutoTapPreview) null else {
@@ -2270,16 +2248,7 @@ class CastSpellEnumerator : ActionEnumerator {
             // unchanged, so the resolving effect's `DynamicAmount.XValue` reads the chosen X.
             val cleaveHasX = cleaveCost.hasX
             val cleaveMaxAffordableX: Int? = if (cleaveHasX) {
-                val spellContext = SpellPaymentContext(
-                    isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-                    isKicked = false,
-                    isCreature = cardComponent.typeLine.isCreature,
-                    isLegendary = cardComponent.typeLine.isLegendary,
-                    manaValue = cardComponent.manaCost.cmc,
-                    hasXInCost = cleaveCost.hasX,
-                    subtypes = paymentSubtypesOf(cardComponent),
-                    cardTypes = cardComponent.typeLine.cardTypes,
-                )
+                val spellContext = spellPaymentContextFor(cardComponent).copy(hasXInCost = cleaveCost.hasX)
                 val availableSources = context.manaSolver.getAvailableManaCount(
                     state, playerId, precomputedSources = context.availableManaSources, spellContext = spellContext
                 )

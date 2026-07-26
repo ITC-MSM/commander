@@ -217,13 +217,15 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     context.costUtils.canAffordWithConvoke(
                                         state, playerId, atom.cost,
                                         context.costUtils.findConvokeCreatures(state, playerId),
-                                        precomputedSources = context.availableManaSources
+                                        precomputedSources = context.availableManaSources,
+                                        spellContext = abilityContext
                                     )
                                 val affordableViaWaterbend = ability.hasWaterbend &&
                                     context.costUtils.canAffordWithWaterbend(
                                         state, playerId, atom.cost,
                                         context.costUtils.findWaterbendPermanents(state, playerId),
-                                        precomputedSources = context.availableManaSources
+                                        precomputedSources = context.availableManaSources,
+                                        spellContext = abilityContext
                                     )
                                 if (!affordableViaConvoke && !affordableViaWaterbend) {
                                     costAffordable = false
@@ -360,13 +362,15 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                                 context.costUtils.canAffordWithConvoke(
                                                     state, playerId, atom.cost,
                                                     context.costUtils.findConvokeCreatures(state, playerId),
-                                                    precomputedSources = context.availableManaSources
+                                                    precomputedSources = context.availableManaSources,
+                                                    spellContext = abilityContext
                                                 )
                                             val affordableViaWaterbend = ability.hasWaterbend &&
                                                 context.costUtils.canAffordWithWaterbend(
                                                     state, playerId, atom.cost,
                                                     context.costUtils.findWaterbendPermanents(state, playerId),
-                                                    precomputedSources = context.availableManaSources
+                                                    precomputedSources = context.availableManaSources,
+                                                    spellContext = abilityContext
                                                 )
                                             if (!affordableViaConvoke && !affordableViaWaterbend) {
                                                 costCanBePaid = false
