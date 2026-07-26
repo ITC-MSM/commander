@@ -366,7 +366,7 @@ export function TournamentOverlay({
                     {totalGames > 0 ? `${winRate}%` : '-'}
                   </td>
                   {isWaitingForReady && (
-                    <td className={`${styles.standingsTd} ${styles.standingsReady}`} style={{ color: isReady ? 'var(--color-success-light)' : 'var(--text-disabled)' }}>
+                    <td className={styles.standingsTd} style={{ color: isReady ? 'var(--color-success-light)' : 'var(--text-disabled)' }}>
                       {standing.isConnected ? (isReady ? '✓' : '···') : '-'}
                     </td>
                   )}

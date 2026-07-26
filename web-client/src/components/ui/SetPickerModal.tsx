@@ -245,7 +245,7 @@ export function SetPickerModal({
               </span>
             </button>
             <label className={styles.setPickerMinCards}>
-              <span className={styles.setPickerMinCardsLabel}>Min cards</span>
+              <span>Min cards</span>
               <input
                 type="number"
                 min={0}

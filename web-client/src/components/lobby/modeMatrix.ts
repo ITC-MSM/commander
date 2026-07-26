@@ -74,6 +74,10 @@ const SHAPE_AXES: Record<ShapeId, { table: TableAxis; event: EventAxis }> = {
   TEAM_VS_TEAM: { table: 'TEAM_VS_TEAM', event: 'SINGLE_GAME' },
 }
 
+/** The closed domain, for the same reason `CARDS_KINDS` / `TABLE_VALUES` / `ROSTERS` exist: so a
+ *  test can walk every value rather than restate the list and drift from it. */
+export const SHAPE_IDS: readonly ShapeId[] = Object.keys(SHAPE_AXES) as ShapeId[]
+
 export function shapeAxes(shape: ShapeId): { table: TableAxis; event: EventAxis } {
   return SHAPE_AXES[shape]
 }
