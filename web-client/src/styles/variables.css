@@ -179,6 +179,15 @@
   --font-weight-bold: 700;
 
   /* =========================================================================
+   * Layout
+   * ========================================================================= */
+  /* The centred glass card every pre-game screen sits in — the landing screen and the lobby.
+   * Shared rather than per-screen because those two are consecutive: the lobby capped itself at
+   * 560px against the landing's 756, so creating a lobby visibly narrowed the card you were
+   * already looking at, for no reason a player could name. */
+  --screen-card-w: 756px;
+
+  /* =========================================================================
    * Border Radius
    * ========================================================================= */
   --radius-sm: 4px;

@@ -38,7 +38,7 @@
      1120px, where a basis would be read as a height. */
   flex: 0 1 auto;
   width: 100%;
-  max-width: var(--landing-card-w);
+  max-width: var(--screen-card-w);
   min-width: 0;
   box-sizing: border-box;
   display: flex;
@@ -119,7 +119,6 @@
  */
 .landingLayout {
   --landing-rail-w: 320px;
-  --landing-card-w: 756px;
   margin: auto 0;
   width: 100%;
   display: flex;
@@ -249,9 +248,11 @@
   }
 }
 
+/* Same width as the landing card it replaces — see `--screen-card-w`. The two are consecutive
+   screens, so a different cap on each read as the page reflowing rather than as a new screen. */
 .lobbyContent {
   width: 100%;
-  max-width: 560px;
+  max-width: var(--screen-card-w);
   margin: auto 0;
   display: flex;
   flex-direction: column;
@@ -704,7 +705,7 @@
 
 @media (max-width: 1120px) {
   .sidePanelStack {
-    width: min(var(--landing-card-w), 100%);
+    width: min(var(--screen-card-w), 100%);
     max-height: none;
   }
 }

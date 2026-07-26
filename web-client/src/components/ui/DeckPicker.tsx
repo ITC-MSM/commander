@@ -179,7 +179,22 @@ export function DeckPicker({
         : (tabs[0] ?? 'paste')
   const [uncontrolledTab, setUncontrolledTab] = useState<Tab>(() => initialTab)
   const tab = controlledTab ?? uncontrolledTab
+  /**
+   * Whether landing on Random was a *placeholder* rather than a decision.
+   *
+   * The deck library hydrates asynchronously, so on the first render `decks` is always empty and
+   * {@link initialTab} falls through to `random` — the picker's way of showing something rather than
+   * an empty "My Decks". That placeholder is replaced by `saved` as soon as the list arrives.
+   *
+   * Random asked for *from outside* is the opposite: the landing wizard's "Random pool" and the
+   * cross-kind recreate both hand the tab in through {@link DeckPickerProps.tab}, having already
+   * promised the player a rolled pool. Before this the two were indistinguishable, so
+   * "A friend → Random pool → Create lobby" opened a lobby sitting on My Decks — the picker
+   * overwrote the answer the wizard had just collected.
+   */
+  const randomIsPlaceholder = useRef(controlledTab === undefined)
   const setTab = useCallback((next: Tab) => {
+    randomIsPlaceholder.current = false
     setUncontrolledTab(next)
     onTabChange?.(next)
   }, [onTabChange])
@@ -210,11 +225,12 @@ export function DeckPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Move off `random` to `saved` once decks are hydrated, so users land on their own list. Keyed
-  // on `decks.length`, so this only fires as the deck list arrives — a user who picks Random later
-  // stays on it.
+  // Replace the placeholder Random tab with `saved` once decks are hydrated, so users land on their
+  // own list. Keyed on `decks.length`, so this only fires as the deck list arrives — a user who
+  // picks Random later stays on it, and so does a Random the caller asked for
+  // (see `randomIsPlaceholder`).
   useEffect(() => {
-    if (decks.length > 0 && tab === 'random' && showSaved) {
+    if (randomIsPlaceholder.current && decks.length > 0 && tab === 'random' && showSaved) {
       setTab('saved')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -504,39 +520,51 @@ export function DeckPicker({
 
         {tab === 'random' && (
           <>
-            {availableSets.length > 0 && (() => {
-              const selectedSet = randomSetCode
-                ? availableSets.find((s) => s.code === randomSetCode) ?? null
-                : null
-              return (
-                <div className={styles.actionsRow}>
-                  <label className={styles.helperText} style={{ flexShrink: 0 }}>Set</label>
-                  <span
-                    className={`${lobbyStyles.setChip} ${selectedSet?.partial ? lobbyStyles.setChipPartial : ''}`}
-                    title={selectedSet?.name ?? 'A random set is rolled when the game starts'}
-                  >
-                    {selectedSet ? (
-                      <SetIcon code={selectedSet.code} className={lobbyStyles.setChipIcon} />
-                    ) : (
-                      <span className={lobbyStyles.setChipIcon} aria-hidden>🎲</span>
-                    )}
-                    <span className={lobbyStyles.setChipName}>{selectedSet?.name ?? 'Random Set'}</span>
-                  </span>
-                  <button
-                    type="button"
-                    className={lobbyStyles.addSetsButton}
-                    onClick={() => setShowSetPicker(true)}
-                    disabled={disabled}
-                    style={{ marginLeft: 'auto' }}
-                  >
-                    Choose set
-                  </button>
-                </div>
-              )
-            })()}
-            <p className={styles.helperText}>
-              The server will generate a random sealed pool deck when the game starts.
-            </p>
+            {/* The one tab whose answer is "nothing to do", which is exactly why it has to say so.
+                It used to be a single grey line in a 220px box — indistinguishable from a panel
+                that had failed to load, and the least convincing possible landing place for
+                someone who has just answered "Random pool" in the wizard. */}
+            <div className={styles.randomCard} data-testid="random-pool-panel">
+              <span className={styles.randomDie} aria-hidden>🎲</span>
+              <h3 className={styles.randomTitle}>The server builds your deck</h3>
+              <p className={styles.randomBody}>
+                Eight boosters from one set, auto-built into a 40-card deck the moment the game
+                starts. Nothing to pick, nothing to submit — just ready up.
+              </p>
+              <p className={styles.randomBody}>
+                This covers your seat only. Your opponent can still bring a deck of their own.
+              </p>
+              {availableSets.length > 0 && (() => {
+                const selectedSet = randomSetCode
+                  ? availableSets.find((s) => s.code === randomSetCode) ?? null
+                  : null
+                return (
+                  <div className={styles.randomSetRow}>
+                    <label className={styles.helperText} style={{ flexShrink: 0 }}>Set</label>
+                    <span
+                      className={`${lobbyStyles.setChip} ${selectedSet?.partial ? lobbyStyles.setChipPartial : ''}`}
+                      title={selectedSet?.name ?? 'A random set is rolled when the game starts'}
+                    >
+                      {selectedSet ? (
+                        <SetIcon code={selectedSet.code} className={lobbyStyles.setChipIcon} />
+                      ) : (
+                        <span className={lobbyStyles.setChipIcon} aria-hidden>🎲</span>
+                      )}
+                      <span className={lobbyStyles.setChipName}>{selectedSet?.name ?? 'Random Set'}</span>
+                    </span>
+                    <button
+                      type="button"
+                      className={lobbyStyles.addSetsButton}
+                      onClick={() => setShowSetPicker(true)}
+                      disabled={disabled}
+                      style={{ marginLeft: 'auto' }}
+                    >
+                      Choose set
+                    </button>
+                  </div>
+                )
+              })()}
+            </div>
             {showSetPicker && (
               <SetPickerModal
                 sets={availableSets}
