@@ -131,6 +131,13 @@ data class TriggerContext(
      */
     val scryCount: Int? = null,
     /**
+     * Number of cards discarded in the batch that caused this trigger to fire (CR 603.2c). Read
+     * by `ContextPropertyKey.TRIGGER_DISCARD_COUNT` so "Whenever you discard one or more cards,
+     * ... that much" payoffs (Magmakin Artillerist) scale with the batch. `null` when the trigger
+     * was not driven by a discard.
+     */
+    val discardedCardCount: Int? = null,
+    /**
      * The discover value N (mana-value threshold) of the discover that fired this trigger (CR
      * 701.57). Read by `ContextPropertyKey.TRIGGER_DISCOVER_VALUE` so "discover again for the same
      * value" payoffs (Curator of Sun's Creation) reuse it. `null` when the trigger was not driven
@@ -262,7 +269,12 @@ data class TriggerContext(
                     triggeringPlayerId = event.playerId,
                     capturedEntityIds = event.graveyardCardIds.takeIf { it.isNotEmpty() }
                 )
-                is CardsDiscardedEvent -> TriggerContext(triggeringPlayerId = event.playerId)
+                // The batch size feeds TRIGGER_DISCARD_COUNT ("that much") — one event per
+                // discard, however many cards it contained (CR 603.2c).
+                is CardsDiscardedEvent -> TriggerContext(
+                    triggeringPlayerId = event.playerId,
+                    discardedCardCount = event.cardIds.size
+                )
                 is CardRevealedFromDrawEvent -> TriggerContext(
                     triggeringEntityId = event.cardEntityId,
                     triggeringPlayerId = event.playerId

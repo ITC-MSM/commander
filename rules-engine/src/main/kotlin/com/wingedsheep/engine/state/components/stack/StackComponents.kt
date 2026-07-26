@@ -175,6 +175,9 @@ data class TriggeredAbilityOnStackComponent(
     val granterId: EntityId? = null,
     /** Cards looked at by the scry that fired this trigger (CR 701.18). Null for non-scry triggers. */
     val triggerScryCount: Int? = null,
+    /** Cards discarded in the batch that fired this trigger (CR 603.2c). Read via
+     *  `ContextPropertyKey.TRIGGER_DISCARD_COUNT` (Magmakin Artillerist). Null for non-discard triggers. */
+    val triggerDiscardCount: Int? = null,
     /** Discover value N of the discover that fired this trigger (CR 701.57). Null for non-discover triggers. */
     val triggerDiscoverValue: Int? = null,
     /** Damage past lethal dealt to the trigger's creature recipient (CR 120.4a). Null for non-damage triggers. */

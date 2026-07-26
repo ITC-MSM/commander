@@ -281,6 +281,14 @@ enum class ContextPropertyKey(val description: String) {
      * `0` when the trigger was not a creatures-died batch.
      */
     DIED_BATCH_TOTAL_POWER("the total power of those creatures"),
+    /**
+     * Number of cards discarded in the batch that fired this trigger (CR 603.2c). Read by
+     * "Whenever you discard one or more cards, ... that much / that many" payoffs (Magmakin
+     * Artillerist). Populated from `CardsDiscardedEvent.cardIds.size`, so a single discard
+     * event of three cards reports `3` while three sequential one-card discards fire three
+     * separate triggers reporting `1`. `0` when the trigger was not a discard.
+     */
+    TRIGGER_DISCARD_COUNT("that much"),
 }
 
 /**
