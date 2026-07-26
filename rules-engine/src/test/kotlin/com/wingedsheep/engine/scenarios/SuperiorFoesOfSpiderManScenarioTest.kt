@@ -73,6 +73,53 @@ class SuperiorFoesOfSpiderManScenarioTest : FunSpec({
         driver.state.mayPlayPermissions.any { exiledCard in it.cardIds } shouldBe true
     }
 
+    test("exiling another card with this creature revokes the earlier card's play permission") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40), startingLife = 20)
+        val player = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putCreatureOnBattlefield(player, "Superior Foes of Spider-Man")
+
+        // Helper: advance until the resolving trigger's "may exile" yes/no appears, then accept.
+        fun exileTopCard() {
+            var guard = 0
+            while (driver.pendingDecision !is YesNoDecision && guard++ < 8) {
+                driver.bothPass()
+            }
+            val yesNo = driver.pendingDecision as YesNoDecision
+            driver.submitYesNo(yesNo.playerId, true)
+        }
+
+        // First mana value 4+ spell → exile the top card (Forest) and grant a play permission.
+        val forestId = driver.putCardOnTopOfLibrary(player, "Forest")
+        val big1 = driver.putCardInHand(player, "Big Threat")
+        driver.giveMana(player, Color.RED, 4)
+        driver.castSpell(player, big1)
+        exileTopCard()
+        driver.state.mayPlayPermissions.any { forestId in it.cardIds } shouldBe true
+
+        // Let Big Threat #1 finish resolving so the active player regains priority to cast again.
+        var guard = 0
+        while (driver.getStackSpellNames().isNotEmpty() && guard++ < 20) {
+            driver.bothPass()
+        }
+
+        // Second mana value 4+ spell → exile another card (Island) with this same creature. Per
+        // "until you exile another card with this creature", that supersedes the Forest grant.
+        val islandId = driver.putCardOnTopOfLibrary(player, "Island")
+        val big2 = driver.putCardInHand(player, "Big Threat")
+        driver.giveMana(player, Color.RED, 4)
+        driver.castSpell(player, big2)
+        exileTopCard()
+
+        // Both cards remain in exile...
+        driver.getExileCardNames(player).toSet() shouldBe setOf("Forest", "Island")
+        // ...but only the most-recently-exiled Island is still playable; Forest's grant was revoked.
+        driver.state.mayPlayPermissions.any { islandId in it.cardIds } shouldBe true
+        driver.state.mayPlayPermissions.any { forestId in it.cardIds } shouldBe false
+    }
+
     test("casting a spell with mana value less than 4 does not trigger the ability") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Mountain" to 40), startingLife = 20)

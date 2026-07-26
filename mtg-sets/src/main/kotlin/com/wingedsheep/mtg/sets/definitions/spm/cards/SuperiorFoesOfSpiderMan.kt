@@ -22,15 +22,11 @@ import com.wingedsheep.sdk.scripting.references.Player
  *
  * Modeling: a `Player.You` cast trigger gated on `manaValueAtLeast(4)` fires a `MayEffect`
  * (the "you may exile" yes/no) wrapping the standard impulse pipeline (gather top card → exile →
- * grant play-from-exile). The permission is granted with [MayPlayExpiry.Permanent] — "for as long
- * as it remains exiled" — which faithfully models the persistent, across-turns play window; the
- * grant is source-scoped to this creature via the trigger's `sourceId`.
- *
- * Deviation: the engine has no "revoke the prior grant when this same source exiles another card"
- * expiry, so the literal "until you exile another card with this creature" superseding clause is
- * approximated as `Permanent`. This diverges only in the rare case where a second mv>=4 spell is
- * cast while a card exiled by a previous trigger is still unplayed in exile — the engine keeps both
- * playable rather than revoking the earlier one. The common single-card impulse behavior matches.
+ * grant play-from-exile). The permission is granted with [MayPlayExpiry.UntilSourceExilesAnother],
+ * which persists across turns (surviving this creature leaving play) but is revoked the moment this
+ * same creature exiles another card — faithfully modeling "until you exile another card with this
+ * creature": only the most-recently-exiled card stays playable, and any earlier one remains in exile
+ * but can no longer be played. The grant is source-scoped to this creature via the trigger's `sourceId`.
  */
 val SuperiorFoesOfSpiderMan = card("Superior Foes of Spider-Man") {
     manaCost = "{2}{R}"
@@ -53,7 +49,7 @@ val SuperiorFoesOfSpiderMan = card("Superior Foes of Spider-Man") {
             binding = TriggerBinding.ANY
         )
         effect = MayEffect(
-            ExilePatterns.impulse(count = 1, expiry = MayPlayExpiry.Permanent)
+            ExilePatterns.impulse(count = 1, expiry = MayPlayExpiry.UntilSourceExilesAnother)
         )
     }
 

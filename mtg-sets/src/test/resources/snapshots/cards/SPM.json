@@ -8889,7 +8889,7 @@
                             {
                                 "type": "GrantMayPlayFromExile",
                                 "from": "impulseExiled",
-                                "expiry": "Permanent"
+                                "expiry": "UntilSourceExilesAnother"
                             }
                         ]
                     }

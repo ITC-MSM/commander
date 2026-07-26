@@ -19,6 +19,20 @@ fun GameState.removeMayPlayPermission(id: EntityId): GameState =
     copy(mayPlayPermissions = mayPlayPermissions.filterNot { it.id == id })
 
 /**
+ * Revoke every [MayPlayPermission.supersededBySameSource] permission granted by [sourceId].
+ * Called when that source grants a new such permission (exiles another card), so only its
+ * most-recently-exiled card stays playable — models "until you exile another card with this
+ * permanent" (Superior Foes of Spider-Man). The superseded cards remain in exile; they simply
+ * lose their play permission.
+ */
+fun GameState.revokeSupersededPermissionsFromSource(sourceId: EntityId): GameState =
+    copy(
+        mayPlayPermissions = mayPlayPermissions.filterNot {
+            it.supersededBySameSource && it.sourceId == sourceId
+        }
+    )
+
+/**
  * Drop [cardId] from every permission's `cardIds`. Used when a card moves to a zone where
  * the permission is no longer meaningful (e.g., on resolve), to keep the list compact.
  *
