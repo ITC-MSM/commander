@@ -293,7 +293,7 @@ object LibraryPatterns {
     )
 
     /**
-     * "Scry [count]" (CR 701.18). Returns the compact [ScryEffect] macro node; the engine expands
+     * "Scry [count]" (CR 701.22). Returns the compact [ScryEffect] macro node; the engine expands
      * it to [scryPipeline] at execution time. A card whose effect *is* scry therefore serializes as
      * a single `{"type":"Scry"}` node rather than the unrolled pipeline (see [ScryEffect]).
      */
@@ -322,7 +322,7 @@ object LibraryPatterns {
     }
 
     /**
-     * "Surveil [count]" (CR 701.42). Returns the compact [SurveilEffect] macro node; the engine
+     * "Surveil [count]" (CR 701.25). Returns the compact [SurveilEffect] macro node; the engine
      * expands it to [surveilPipeline] at execution time (see [SurveilEffect]).
      */
     fun surveil(count: Int): SurveilEffect = SurveilEffect(count)
@@ -375,12 +375,12 @@ object LibraryPatterns {
                 destination = CardDestination.ToZone(Zone.LIBRARY, player, placement = ZonePlacement.Top),
                 order = CardOrder.ControllerChooses
             ),
-            // Fire "Whenever you scry" triggers (CR 701.18) after the pipeline finishes.
+            // Fire "Whenever you scry" triggers (CR 701.22) after the pipeline finishes.
             // The event count is the actual size of the "scried" gather collection at
             // resolution time, not the literal N (handles library-smaller-than-N). Per
-            // CR 701.18d the trigger still fires when the library was empty and zero
+            // CR 701.22d the trigger still fires when the library was empty and zero
             // cards were looked at, so the tail emits unconditionally — it is only
-            // omitted for a literal "scry 0" (CR 701.18b: no scry event occurs).
+            // omitted for a literal "scry 0" (CR 701.22b: no scry event occurs).
             if (count > 0) EmitScriedEventEffect() else null
         )
     )
@@ -413,12 +413,12 @@ object LibraryPatterns {
                 destination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Top),
                 order = CardOrder.ControllerChooses
             ),
-            // Fire "Whenever you surveil" / "scry or surveil" triggers (CR 701.42) after the
+            // Fire "Whenever you surveil" / "scry or surveil" triggers (CR 701.25) after the
             // pipeline finishes. The event count is the actual size of the "surveiled" gather
             // collection at resolution time, not the literal N (handles library-smaller-than-N).
-            // Per CR 701.42d the trigger still fires when the library was empty and zero cards
+            // Per CR 701.25d the trigger still fires when the library was empty and zero cards
             // were looked at, so the tail emits unconditionally — it is only omitted for a literal
-            // "surveil 0" (CR 701.42c: no surveil event occurs).
+            // "surveil 0" (CR 701.25c: no surveil event occurs).
             if (count > 0) EmitSurveiledEventEffect() else null
         )
     )

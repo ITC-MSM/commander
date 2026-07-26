@@ -508,7 +508,7 @@ object Effects {
     fun ReadTheRunes(): Effect = HandPatterns.readTheRunes()
 
     /**
-     * "Scry [count]" (CR 701.18): look at the top [count] cards of your library, put any number on
+     * "Scry [count]" (CR 701.22): look at the top [count] cards of your library, put any number on
      * the bottom and the rest on top in any order. Returns the compact `ScryEffect` macro node,
      * which the engine expands into the shared Gather → Select → Move pipeline at resolution (so the
      * card serializes as one `{"type":"Scry"}` node — see [LibraryPatterns.scry]).
@@ -525,7 +525,7 @@ object Effects {
     fun Scry(count: Int, target: EffectTarget): Effect = LibraryPatterns.scry(count, target)
 
     /**
-     * "Surveil [count]" (CR 701.42): look at the top [count] cards of your library, put any number
+     * "Surveil [count]" (CR 701.25): look at the top [count] cards of your library, put any number
      * into your graveyard and the rest on top in any order. The surveil twin of [Scry]; see
      * [LibraryPatterns.surveil].
      */

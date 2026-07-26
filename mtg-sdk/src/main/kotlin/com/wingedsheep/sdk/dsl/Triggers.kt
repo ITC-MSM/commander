@@ -1993,7 +1993,7 @@ object Triggers {
     )
 
     // =========================================================================
-    // Scry Triggers (CR 701.18)
+    // Scry Triggers (CR 701.22)
     // =========================================================================
 
     /**
@@ -2008,7 +2008,7 @@ object Triggers {
     )
 
     /**
-     * Whenever you surveil (CR 701.42). The surveil twin of [WheneverYouScry] — fires once per
+     * Whenever you surveil (CR 701.25). The surveil twin of [WheneverYouScry] — fires once per
      * surveil resolution, after the kept/graveyard moves resolve. Pair with TRIGGER_SCRY_COUNT to
      * scale by "the number of cards looked at." Used by Golbez and similar surveil payoffs.
      */
@@ -2018,7 +2018,7 @@ object Triggers {
     )
 
     /**
-     * Whenever you scry **or** surveil (CR 701.18 / 701.42) — the combined look-at-top trigger
+     * Whenever you scry **or** surveil (CR 701.22 / 701.25) — the combined look-at-top trigger
      * (Matoya, Archon Elder). Fires once per scry and once per surveil.
      */
     val WheneverYouScryOrSurveil: TriggerSpec = TriggerSpec(

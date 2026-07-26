@@ -173,7 +173,7 @@ data class TriggeredAbilityOnStackComponent(
      * Blunderbuss". Null for the source's own printed abilities.
      */
     val granterId: EntityId? = null,
-    /** Cards looked at by the scry that fired this trigger (CR 701.18). Null for non-scry triggers. */
+    /** Cards looked at by the scry that fired this trigger (CR 701.22). Null for non-scry triggers. */
     val triggerScryCount: Int? = null,
     /** Cards discarded in the batch that fired this trigger (CR 603.2c). Read via
      *  `ContextPropertyKey.TRIGGER_DISCARD_COUNT` (Magmakin Artillerist). Null for non-discard triggers. */
