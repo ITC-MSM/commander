@@ -1,5 +1,8 @@
 .page {
-  min-height: 100vh;
+  /* `#root` is locked to height:100% / overflow:hidden for the game board, so this must be its own
+     scroll container. It has to be `height`, not `min-height`: with min-height the box grows to fit
+     its content, so `overflow-y: auto` has nothing to scroll and #root just clips the overflow. */
+  height: 100vh;
   padding: var(--space-6) var(--space-5) var(--space-8);
   background: var(--bg-app, #0b0c12);
   color: var(--text-primary);

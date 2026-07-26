@@ -936,26 +936,44 @@
   margin-bottom: var(--space-2);
 }
 
-.lobbyFormat {
-  font-size: 11px;
-  font-weight: var(--font-weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  margin-bottom: var(--space-2);
-}
-
-.lobbyFormatSealed {
-  color: var(--color-warning-light);
-}
-
-.lobbyFormatDraft {
-  color: var(--color-accent-dark);
-}
-
 .lobbySubtitle {
   color: var(--text-faint);
   font-size: var(--font-sm);
   margin: 0;
+}
+
+/* Cards / Table / Event chips — the lobby's point in the three-axis space, shown to every player
+   (the settings panel below is host-only). */
+.axisSummary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.axisChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px var(--space-2);
+  background-color: var(--bg-surface-4);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+}
+
+.axisChipName {
+  font-size: 9px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-disabled);
+}
+
+.axisChipValue {
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
 }
 
 /* =========================================================================
@@ -995,6 +1013,17 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+}
+
+/* A sub-option of the row above it (Cards → Sealed/Draft shape, Cards → deck legality). Indented
+   and tinted so the hierarchy is visible: sub-options hang off one axis, never across axes. */
+.settingsRowSub {
+  padding-left: var(--space-6);
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.settingsRowSub .settingsLabel {
+  color: var(--text-disabled);
 }
 
 .formatRestrictionNotice {
@@ -1152,6 +1181,8 @@
 
 .settingsButtons {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-1);
 }
 
@@ -1164,6 +1195,14 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: var(--font-weight-normal);
+}
+
+/* Unsupported axis values stay visible and disabled rather than being hidden — a combination you
+   can see but can't pick teaches the shape of the system; one that isn't rendered just looks like
+   nobody thought of it. Each carries a `title` with the reason. */
+.settingsButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .settingsButtonActive {

@@ -18,13 +18,13 @@ This is an `add-feature` project (client capability, plus a tail of server work 
 **Audience we optimise for: knows Magic, new to Argentum.** Not a rules tutorial — no teaching what
 a phase or the stack is. Explicitly out of scope at the bottom.
 
-## Status: **in progress** (2026-07-26) — Phases 0, 1, 3 landed
+## Status: **in progress** (2026-07-26) — Phases 0, 1, 2, 3 landed
 
 | Phase | State |
 |---|---|
 | 0 — split `GameUI.tsx` | **done** |
 | 1 — landing restructure | **done** |
-| 2 — axis renaming in both lobbies | not started |
+| 2 — axis renaming in both lobbies | **done** |
 | 3 — help (`topics.ts`, `/help`, `HelpTip`, `shortcuts.ts`) | **done** |
 | 4 — unified lobby over a view model | not started |
 | 5 — server gaps (4c) | not started |
@@ -32,8 +32,8 @@ a phase or the stack is. Explicitly out of scope at the bottom.
 
 Phase 1 landed the **Cards / Table / Event** vocabulary as
 [`web-client/src/components/lobby/axes.ts`](../web-client/src/components/lobby/axes.ts) and the six
-presets as [`modePresets.ts`](../web-client/src/components/ui/modePresets.ts). Phase 2 is now purely
-about renaming the *lobby's* controls onto that same vocabulary; the types already exist.
+presets as [`modePresets.ts`](../web-client/src/components/ui/modePresets.ts). Phase 2 wired both
+lobbies' controls onto that vocabulary and gave `axes.ts` the server-mapping half it was missing.
 
 Sequenced behind [`cube-draft-format.md`](cube-draft-format.md), which is the current next pick.
 Phases 0–3 are independent of Cube and can land in any order relative to it; Phase 2's taxonomy is
@@ -435,7 +435,7 @@ Resolve the phantom number-key comment (`useMultiplayerView.ts:64`) while doing 
 |---|---|---|
 | ~~**0**~~ | ~~Split `GameUI.tsx`~~ — **done.** `HomeScreen.tsx` (709), `components/lobby/LobbyOverlay.tsx` (1123), `components/tournament/{TournamentOverlay,FreeForAllOverlay}.tsx`, shared `FullscreenButton.tsx`. `GameUI.tsx` is now a 34-line router. | no — enabler |
 | ~~**1**~~ | ~~Landing restructure~~ — **done.** `axes.ts` + `modePresets.ts`, three tiers, Lab caption, Continue chip, `/stats` `/friends` `/profile` surfaced. | **yes** |
-| **2** | Axis renaming across both lobbies (Cards / Table / Event). No structural merge yet. **The types now exist** (`components/lobby/axes.ts`) — this phase is wiring the lobby controls onto them. | **yes** — kills the Format/Mode overloading |
+| ~~**2**~~ | ~~Axis renaming across both lobbies~~ — **done.** `axes.ts` gained the server-mapping half; both lobbies show a `LobbyAxisSummary`; the tournament lobby's Format/Mode/Variant rows became Cards (+ sub-options) / Table / Event. | **yes** — kills the Format/Mode overloading |
 | ~~**3**~~ | ~~Help~~ — **done.** `src/help/{topics,shortcuts,helpStore}.ts`, `/help/:section`, portal `HelpTip`, in-game drawer, `?` on home. | **yes** |
 | **4** | Unified lobby: view model + `LobbyScreen` + `LobbyAxes`, with the v1 recreate-on-switch confirm. | yes |
 | **5** | Server gaps from 4c, in the numbered order. | yes, each |
@@ -458,6 +458,65 @@ Resolve the phantom number-key comment (`useMultiplayerView.ts:64`) while doing 
 - **Resolved from Part 1's findings:** the phantom number-key comment at `useMultiplayerView.ts:64`
   (no such handler exists — comment corrected, feature not invented). Still open: dead
   `components/spectating/SpectatorView.tsx`, and the two duplicated deckbuilders / replay viewers.
+
+### What Phase 2 actually shipped
+
+- **`axes.ts` gained the half it was missing.** Phase 1 gave it the vocabulary; Phase 2 gave it the
+  translation onto the two server lobby kinds — `axesFromLobbySettings`, `axesFromQuickGameLobby`,
+  `tableFromGameMode` / `gameModeForTable`, `cardsFromTournamentFormat`, `eventFromGameMode`,
+  `eventUnavailableReason`, the `*TopicId` helpers and a shared `LEGALITY_OPTIONS` derived from the
+  deckbuilder's `DECK_FORMATS`. One module now knows the mapping, which is what Phase 4's view model
+  will be built on.
+- **`components/lobby/LobbyAxisSummary.tsx`** — Cards/Table/Event chips in *both* lobby headers,
+  each with a `HelpTip` bound to the value in effect. It replaced the one-word `lobbyFormat` chip.
+  Notably this is the first time a **non-host** can see what they joined: the settings panel is
+  host-only.
+- **Tournament lobby rows restructured**, not just relabelled:
+  - `Format: Sealed|Draft|Premade` → `Cards: Bring a deck|Sealed|Draft`, with its sub-options
+    (deck legality, sealed shape, draft shape) as indented rows directly beneath it. The deck-format
+    dropdown moved up from the bottom of the panel to sit under the value it belongs to.
+  - `Mode: Tournament|Multiplayer` + `Variant: FFA|2HG|Team` → one flat
+    `Table: 1v1|Free-for-All|Two-Headed Giant|Team vs. Team`. The old pair made 1v1 a peer of
+    "multiplayer" rather than of the three shapes, and hid the shapes behind a click.
+  - New `Event: Single game|Round-robin bracket` row. Derived from Table today, so the unreachable
+    value renders **disabled with the reason attached** (`eventUnavailableReason`) — that is the
+    Phase 5 hole, made visible instead of hidden. `.settingsButton:disabled` got a style, which the
+    already-disabled Winston/Grid/Commander buttons had been silently missing.
+  - Draft "Normal" → **"Booster"**, matching `cardsLabel()` and the plan's taxonomy.
+- **Quick lobby**: `FormatSelector` → `CardsSelector`; "Format" → "Cards"; the dropdown reads
+  "Bring a deck — no restriction"; "or pick a custom format" → "or pick a variant".
+- **`Games per matchup` is now gated on `event === ROUND_ROBIN`** (was `!isFfa`), so it stops
+  appearing on 2HG and Team vs. Team tables where a single shared game made it a no-op.
+- **New topic `axis-limits`** documents every combination that isn't wired up yet, cross-linked from
+  `axes`, `ranked` and both event topics.
+
+Verified against the running stack by walking the tournament lobby through Sealed → Bring a deck
+(+ Modern) → Free-for-All → 2HG → Draft and the quick lobby through Bring a deck → Pauper → Momir,
+asserting the header chips against the control state at each step. One honest bug surfaced and was
+fixed doing this: the quick lobby's Cards chip read "Bring a deck" while the deck picker sat on its
+Random tab. Random pool is per-player, not a lobby setting, so `axesFromQuickGameLobby` now takes
+the viewer's seat and reports `RANDOM` when they have submitted an empty deck (the server's own
+"roll me one" signal). A chip contradicting the control under it is precisely the drift this
+vocabulary exists to remove.
+
+Two things fixed on the way past, both reported by Vincent:
+
+- **`/help` could not be scrolled.** `HelpPage.module.css` used `min-height: 100vh` with
+  `overflow-y: auto` — with `min-height` the box grows to its content, so there is nothing to
+  scroll, and `#root { height:100%; overflow:hidden }` just clips it. Now `height: 100vh`, the same
+  fix `SetCompletionPage` and `adminUi` already document. The in-game drawer was never affected
+  (fixed positioning + `flex:1; overflow-y:auto`).
+- **`the-ring` and `speed` topics removed.** They explained MTG mechanics rather than what Argentum
+  does with them, which is out of this project's stated scope. Neither had a call site — both were
+  `/help`-only. The in-game `title=` tooltips on `TheRingBadge` and `SpeedGauge` are untouched, which
+  is the right home for a mechanic explainer. `card-badges` stays: it answers "what is this label the
+  client is drawing on my card", which is unanswerable from the card text.
+- **Scenario Builder is now dev-only** on the home screen, alongside LLM Tournament — it drives
+  `/api/dev/scenarios/*`, which a production server does not expose. The *route* stays open in both
+  builds, because a replay's "share as scenario" link is a real `/scenario?s=` deep link.
+
+Still open from Part 1: dead `components/spectating/SpectatorView.tsx`, and the two duplicated
+deckbuilders / replay viewers.
 
 ### Deliberate deviations from the plan above
 

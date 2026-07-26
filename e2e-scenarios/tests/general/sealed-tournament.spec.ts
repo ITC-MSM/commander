@@ -160,7 +160,7 @@ test.describe('Sealed Tournament with 5 Players', () => {
     // Verify all players see each other in the lobby
     for (const player of players) {
       for (const otherPlayer of players) {
-        await expect(player.page.getByText(otherPlayer.name)).toBeVisible({ timeout: 5000 })
+        await expect(player.page.getByText(otherPlayer.name, { exact: true })).toBeVisible({ timeout: 5000 })
       }
     }
     console.log('All 5 players in lobby')
@@ -175,7 +175,7 @@ test.describe('Sealed Tournament with 5 Players', () => {
     await expect(player3.page.getByText('Invite Code')).toBeVisible({ timeout: 10000 })
     await expect(player3.page.getByText(lobbyId)).toBeVisible()
     for (const otherPlayer of players) {
-      await expect(player3.page.getByText(otherPlayer.name)).toBeVisible({ timeout: 5000 })
+      await expect(player3.page.getByText(otherPlayer.name, { exact: true })).toBeVisible({ timeout: 5000 })
     }
     console.log(`${player3.name} successfully reconnected after refresh`)
 

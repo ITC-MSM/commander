@@ -145,7 +145,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       { kind: 'p', text: 'They are independent: “Sealed” is not an alternative to “Tournament”, it is an alternative to “Draft”. A tournament is an alternative to a single game. That is why a 1v1 sealed game with one friend and an eight-player bracket are the same screen with different settings.' },
       { kind: 'p', text: 'The six cards on the home screen are named starting points, not six separate systems. Each sets the three values; the lobby lets you change any of them.' },
     ],
-    related: ['cards-sealed', 'table-free-for-all', 'event-round-robin'],
+    related: ['cards-sealed', 'table-free-for-all', 'event-round-robin', 'axis-limits'],
   },
   {
     id: 'cards-bring-a-deck',
@@ -238,6 +238,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'modes',
     title: 'Event: Single game',
     summary: 'One game, then everyone is back at the lobby. Multiplayer tables offer a “Play Again” ready loop.',
+    related: ['axis-limits'],
   },
   {
     id: 'event-round-robin',
@@ -249,7 +250,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       { kind: 'p', text: 'Standings show wins–losses–draws, points and game win rate; hovering a row spells out the tiebreakers actually used (opponents’ match win %, game win %, opponents’ game win %, life differential).' },
       { kind: 'p', text: 'Odd player counts give someone a bye each round. When a round ends, everyone readies up for the next one; the host can add an extra round after the bracket completes.' },
     ],
-    related: ['ranked'],
+    related: ['ranked', 'axis-limits'],
   },
   {
     id: 'ranked',
@@ -260,7 +261,24 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     body: [
       { kind: 'p', text: 'Ranked is currently available on 1v1 games only. Multiplayer tables are always casual.' },
     ],
-    related: ['guest-vs-account'],
+    related: ['guest-vs-account', 'axis-limits'],
+  },
+  {
+    id: 'axis-limits',
+    section: 'modes',
+    title: 'Combinations that aren’t available yet',
+    summary:
+      'Not every point in the Cards × Table × Event space is wired up. Options that can’t be picked are shown disabled with the reason attached, rather than hidden.',
+    body: [
+      { kind: 'p', text: 'Everything below is a gap in the plumbing, not a rules decision — an option you can see and can’t use tells you the shape of the system; one that isn’t rendered just looks like nobody thought of it.' },
+      { kind: 'ul', items: [
+        'Event follows Table. A 1v1 lobby always runs as a bracket (with two players and one game per matchup, that is a single game); every multiplayer table plays exactly one shared game.',
+        'Ranked is 1v1 only. Multiplayer tables are always casual.',
+        'The AI can only be added to a 1v1 lobby. It cannot take a seat in a Free-for-All or a team game, or bring a deck to a “Bring a deck” lobby.',
+        'Momir Basic is a quick-lobby variant only — it is not yet a Cards value in the lobby that seats more than two.',
+      ] },
+    ],
+    related: ['axes', 'ranked'],
   },
   {
     id: 'preset-vs-ai',
@@ -398,20 +416,6 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     ],
   },
   {
-    id: 'the-ring',
-    section: 'playing',
-    title: 'The Ring',
-    summary:
-      'The gilded badge shows how many times the Ring has tempted you. Hover it to see exactly which abilities your Ring-bearer currently has — one per tempt, kept for the rest of the game (CR 701.54c).',
-  },
-  {
-    id: 'speed',
-    section: 'playing',
-    title: 'Speed',
-    summary:
-      'The four-bar gauge is your speed (CR 702.179). It only appears once you actually have speed; hover it for how speed rises and what max speed unlocks.',
-  },
-  {
     id: 'undo',
     section: 'playing',
     title: 'Undo',
@@ -517,7 +521,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'advanced',
     title: 'Lab tools',
     summary:
-      'Debugging and content tools, not part of normal play: the Scenario Builder (start a game from a hand-authored board state), Set Completion (which cards of a set are implemented), and, in dev builds, the LLM Tournament runner.',
+      'Debugging and content tools, not part of normal play. Set Completion (which cards of a set are implemented) is always available; the Scenario Builder (start a game from a hand-authored board state) and the LLM Tournament runner only appear in dev builds, because both need server endpoints a production deployment does not expose.',
     related: ['replays'],
   },
 ]

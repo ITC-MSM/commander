@@ -13,6 +13,20 @@ import { buildJoinUrl } from '@/utils/joinLink'
 import { labelForFormat } from '@/utils/deckLegality'
 import { TournamentOverlay } from '../tournament/TournamentOverlay'
 import { FreeForAllOverlay } from '../tournament/FreeForAllOverlay'
+import { LobbyAxisSummary } from './LobbyAxisSummary'
+import {
+  axesFromLobbySettings,
+  cardsTopicId,
+  eventLabel,
+  eventTopicId,
+  eventUnavailableReason,
+  gameModeForTable,
+  tableLabel,
+  tableTopicId,
+  LEGALITY_OPTIONS,
+  type EventAxis,
+  type TableAxis,
+} from './axes'
 import styles from '../ui/GameUI.module.css'
 
 /**
@@ -23,6 +37,32 @@ import styles from '../ui/GameUI.module.css'
 const RANDOM_SET_CODE = 'RANDOM'
 const isRandomSetCode = (code: string): boolean =>
   code === RANDOM_SET_CODE || code.startsWith(`${RANDOM_SET_CODE}-`)
+
+/**
+ * The Table axis as one flat row: seat cap per shape, plus why it is out of reach when the lobby
+ * already holds too many players. Upper bounds only — a shape that also needs an exact or even
+ * count (2HG wants 4; Team vs. Team wants an even 4/6/8) stays selectable and is caught by the
+ * start button, so the host can pick the shape first and then fill the seats.
+ */
+const TABLE_CHOICES: ReadonlyArray<{
+  table: TableAxis
+  maxPlayers: number
+  unavailable: (count: number) => string
+}> = [
+  { table: 'ONE_V_ONE', maxPlayers: Infinity, unavailable: () => '' },
+  { table: 'FREE_FOR_ALL', maxPlayers: 6, unavailable: (n) => `Free-for-All seats at most 6 — this lobby has ${n}` },
+  { table: 'TWO_HEADED_GIANT', maxPlayers: 4, unavailable: (n) => `Two-Headed Giant is exactly 4 players — this lobby has ${n}` },
+  { table: 'TEAM_VS_TEAM', maxPlayers: 8, unavailable: (n) => `Team vs. Team seats at most 8 — this lobby has ${n}` },
+]
+
+const TABLE_CAPTIONS: Record<TableAxis, string> = {
+  ONE_V_ONE: 'Two players per game. Everyone plays everyone; most match wins takes it.',
+  FREE_FOR_ALL: 'One game, everyone at the same table (2-6 players). Last player standing wins.',
+  TWO_HEADED_GIANT:
+    'Four players in two teams of two. Each team shares one 30-life total, takes turns together, and attacks and blocks as one. Last team standing wins.',
+  TEAM_VS_TEAM:
+    'An even pod (4/6/8) split into two teams — 2v2, 3v3, or 4v4. Each player keeps their own 20 life and their own turn; players are knocked out one at a time. The last team with anyone standing wins.',
+}
 
 /**
  * Lobby overlay for sealed lobbies.
@@ -72,8 +112,12 @@ export function LobbyOverlay({
   const isTeamVsTeam = lobbyState.settings.gameMode === 'TEAM_VS_TEAM'
   // Any team mode shares the random/manual team-assignment controls below.
   const isTeamGame = is2hg || isTeamVsTeam
-  // Top-level mode axis: Tournament (1v1 bracket) vs Multiplayer (one shared game, picked by variant below).
+  // Anything that isn't a 1v1 bracket puts everyone at one table for a single shared game.
   const isMultiplayer = isFfa || isTeamGame
+  // The lobby's point in the three-axis space (Cards / Table / Event) — the vocabulary the header
+  // chips and the settings rows below both speak. Derived, never stored: the server still only
+  // knows `format` + `gameMode`, and `axes.ts` owns that translation.
+  const axes = axesFromLobbySettings(lobbyState.settings)
   // Both team modes split the pod into exactly two even teams; team size follows the player count.
   const teamSize = Math.max(1, Math.floor(lobbyState.players.length / 2))
   // Team setup: random by default, or host-assigned (playerId -> team, defaulting to join order).
@@ -170,15 +214,6 @@ export function LobbyOverlay({
       <div className={styles.lobbyContent}>
         {/* Header */}
         <div className={styles.lobbyHeader}>
-          <div className={`${styles.lobbyFormat} ${isAnyDraft ? styles.lobbyFormatDraft : styles.lobbyFormatSealed}`}>
-            {isGridDraft ? 'Grid'
-              : isWinston ? 'Winston'
-              : isCommanderDraft ? 'Commander Draft'
-              : isCommanderSealed ? 'Commander Sealed'
-              : isDraft ? 'Draft'
-              : isPremade ? 'Premade'
-              : 'Sealed'}
-          </div>
           <h1 className={styles.lobbyTitle}>
             {isPremade
               ? (is2hg ? 'Premade Decks Two-Headed Giant' : isTeamVsTeam ? 'Premade Decks Team vs. Team' : isFfa ? 'Premade Decks Free-for-All' : 'Premade Decks Tournament')
@@ -203,10 +238,8 @@ export function LobbyOverlay({
               return distText ?? `${lobbyState.settings.boosterCount} boosters per player`
             })()}
             {!isFfa && !isTeamGame && (lobbyState.settings.gamesPerMatch ?? 1) > 1 && ` · ${lobbyState.settings.gamesPerMatch} games per matchup`}
-            {isFfa && ' · Free-for-All'}
-            {is2hg && ' · Two-Headed Giant'}
-            {isTeamVsTeam && ' · Team vs. Team'}
           </p>
+          <LobbyAxisSummary axes={axes} />
         </div>
 
         {/* Invite code + scannable QR to pull another device straight into the lobby */}
@@ -234,62 +267,184 @@ export function LobbyOverlay({
         {/* Settings (host only) */}
         {isWaiting && lobbyState.isHost && (
           <div className={styles.settingsPanel}>
-            {/* Format selection — top row picks the pool type; variant sub-row picks the shape. */}
+            {/* ── Cards: where the deck comes from. Its sub-options (shape, deck legality) are the
+                indented rows immediately below; they never hang off a different axis. ── */}
             <div className={styles.settingsRow}>
-              <SettingsLabel topicId="axes">Format</SettingsLabel>
+              <SettingsLabel topicId={cardsTopicId(axes.cards)}>Cards</SettingsLabel>
               <div className={styles.settingsButtons}>
+                <button
+                  onClick={() => updateLobbySettings({ format: 'PREMADE_DECKS' })}
+                  className={`${styles.settingsButton} ${isPremade ? styles.settingsButtonActive : ''}`}
+                  title="Everyone plays a deck they already built (saved or pasted)"
+                >
+                  Bring a deck
+                </button>
                 <button
                   onClick={() => { if (!isAnySealed) updateLobbySettings({ format: 'SEALED' }) }}
                   className={`${styles.settingsButton} ${isAnySealed ? styles.settingsButtonActive : ''}`}
+                  title="Open boosters and build from what you get"
                 >
                   Sealed
                 </button>
                 <button
                   onClick={() => { if (!isAnyDraft) updateLobbySettings({ format: 'DRAFT' }) }}
                   className={`${styles.settingsButton} ${isAnyDraft ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : ''}`}
+                  title="Pass packs around and pick one card at a time"
                 >
                   Draft
                 </button>
-                <button
-                  onClick={() => updateLobbySettings({ format: 'PREMADE_DECKS' })}
-                  className={`${styles.settingsButton} ${isPremade ? styles.settingsButtonActive : ''}`}
-                  title="Players bring their own pre-built decks (saved or pasted)"
-                >
-                  Premade
-                </button>
               </div>
             </div>
-            {/* Mode axis (orthogonal to format): a bracket of 1v1 matches (Tournament) vs a single
-                shared multiplayer game (Multiplayer). The multiplayer variant — Free-for-All, Two-Headed
-                Giant, or Team vs. Team — is picked in the sub-row that appears once Multiplayer is on. */}
+            {/* Cards → Bring a deck: which constructed format submitted decks must be legal in. */}
+            {isPremade && (
+              <div className={`${styles.settingsRow} ${styles.settingsRowSub}`}>
+                <span className={styles.settingsLabel}>Deck legality</span>
+                <select
+                  value={lobbyState.settings.deckFormat ?? ''}
+                  onChange={(e) =>
+                    updateLobbySettings({ deckFormat: (e.target.value || '') as never })
+                  }
+                  className={styles.settingsSelect}
+                  title="Restrict submitted decks to a constructed format. No restriction = anything the engine implements."
+                >
+                  <option value="">No restriction</option>
+                  {LEGALITY_OPTIONS.map((f) => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {/* Cards → Sealed: which sealed shape. */}
+            {isAnySealed && (
+              <div className={`${styles.settingsRow} ${styles.settingsRowSub}`}>
+                <span className={styles.settingsLabel}>Sealed shape</span>
+                <div className={styles.variantGroup}>
+                  <div className={styles.settingsButtons}>
+                    <button
+                      onClick={() => updateLobbySettings({ format: 'SEALED' })}
+                      className={`${styles.settingsButton} ${isSealed ? styles.settingsButtonActive : ''}`}
+                    >
+                      Standard
+                    </button>
+                    <button
+                      onClick={() => canSwitchToCommander && updateLobbySettings({ format: 'COMMANDER_SEALED' })}
+                      disabled={!canSwitchToCommander}
+                      className={`${styles.settingsButton} ${isCommanderSealed ? styles.settingsButtonActive : ''}`}
+                      title={canSwitchToCommander ? '' : 'Commander Sealed is 1v1 — too many players in this lobby'}
+                    >
+                      Commander
+                    </button>
+                  </div>
+                  <div className={styles.variantCaption}>
+                    {isCommanderSealed
+                      ? 'Open Commander-shaped packs and build a 60-card deck around a commander from your pool. 1v1.'
+                      : 'Open 6 boosters and build a 40-card deck.'}
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Cards → Draft: which of the four draft shapes. */}
+            {isAnyDraft && (
+              <div className={`${styles.settingsRow} ${styles.settingsRowSub}`}>
+                <span className={styles.settingsLabel}>Draft shape</span>
+                <div className={styles.variantGroup}>
+                  <div className={styles.settingsButtons}>
+                    <button
+                      onClick={() => canSwitchToNormalDraft && updateLobbySettings({ format: 'DRAFT' })}
+                      disabled={!canSwitchToNormalDraft}
+                      className={`${styles.settingsButton} ${isDraft ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : ''}`}
+                      title={canSwitchToNormalDraft ? '' : 'Booster Draft seats at most 8 players'}
+                    >
+                      Booster
+                    </button>
+                    <button
+                      onClick={() => canSwitchToWinston && updateLobbySettings({ format: 'WINSTON_DRAFT' })}
+                      disabled={!canSwitchToWinston}
+                      className={`${styles.settingsButton} ${isWinston ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : ''}`}
+                      title={canSwitchToWinston ? '' : 'Winston Draft is exactly 2 players'}
+                    >
+                      Winston
+                    </button>
+                    <button
+                      onClick={() => canSwitchToGrid && updateLobbySettings({ format: 'GRID_DRAFT' })}
+                      disabled={!canSwitchToGrid}
+                      className={`${styles.settingsButton} ${isGridDraft ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : ''}`}
+                      title={canSwitchToGrid ? '' : 'Grid Draft seats at most 4 players'}
+                    >
+                      Grid
+                    </button>
+                    <button
+                      onClick={() => canSwitchToCommander && updateLobbySettings({ format: 'COMMANDER_DRAFT' })}
+                      disabled={!canSwitchToCommander}
+                      className={`${styles.settingsButton} ${isCommanderDraft ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : ''}`}
+                      title={canSwitchToCommander ? '' : 'Commander Draft is 1v1 — too many players in this lobby'}
+                    >
+                      Commander
+                    </button>
+                  </div>
+                  <div className={styles.variantCaption}>
+                    {isCommanderDraft
+                      ? 'Commander-shaped 20-card packs; pick a commander from your pool. 1v1.'
+                      : isWinston ? 'Pick from 3 face-down piles. 2 players.'
+                      : isGridDraft ? 'Pick a row or column from a 3×3 grid. 2-4 players.'
+                      : 'Pass packs around the table. 3-8 players.'}
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* ── Table: who is at it. One flat row of four — the old Mode (Tournament|Multiplayer)
+                + Variant (FFA|2HG|Team) pair made 1v1 look like a peer of "multiplayer" rather than
+                of the three table shapes, and hid the shapes behind a click. ── */}
             <div className={styles.settingsRow}>
-              <SettingsLabel topicId="event-round-robin">Mode</SettingsLabel>
+              <SettingsLabel topicId={tableTopicId(axes.table)}>Table</SettingsLabel>
               <div className={styles.variantGroup}>
                 <div className={styles.settingsButtons}>
-                  <button
-                    onClick={() => updateLobbySettings({ gameMode: 'TOURNAMENT' })}
-                    className={`${styles.settingsButton} ${!isMultiplayer ? styles.settingsButtonActive : ''}`}
-                    title="Round-robin bracket of 1v1 matches"
-                  >
-                    Tournament
-                  </button>
-                  <button
-                    onClick={() => { if (!isMultiplayer) updateLobbySettings({ gameMode: 'FREE_FOR_ALL' }) }}
-                    className={`${styles.settingsButton} ${isMultiplayer ? styles.settingsButtonActive : ''}`}
-                    title="One shared game — Free-for-All, Two-Headed Giant, or Team vs. Team"
-                  >
-                    Multiplayer
-                  </button>
+                  {TABLE_CHOICES.map(({ table, maxPlayers, unavailable }) => {
+                    const blocked = playerCount > maxPlayers
+                    return (
+                      <button
+                        key={table}
+                        onClick={() => { if (!blocked) updateLobbySettings({ gameMode: gameModeForTable(table) }) }}
+                        disabled={blocked}
+                        className={`${styles.settingsButton} ${axes.table === table ? styles.settingsButtonActive : ''}`}
+                        title={blocked ? unavailable(playerCount) : ''}
+                      >
+                        {tableLabel(table)}
+                      </button>
+                    )
+                  })}
                 </div>
-                {!isMultiplayer && (
-                  <div className={styles.variantCaption}>
-                    Round-robin bracket of 1v1 matches. Everyone plays everyone; most match wins takes it.
-                  </div>
-                )}
+                <div className={styles.variantCaption}>{TABLE_CAPTIONS[axes.table]}</div>
               </div>
             </div>
-            {/* Ranked toggle — only a Tournament bracket (1v1 matches) is ranked-eligible. A ranked
-                tournament adjusts each player's ELO per match and can only start with everyone signed in. */}
+            {/* ── Event: one game, or a series. Derived from Table today — see
+                `eventUnavailableReason`. Shown as its own axis anyway, with the unreachable value
+                disabled and explained, because that is the hole Phase 5 fills. ── */}
+            <div className={styles.settingsRow}>
+              <SettingsLabel topicId={eventTopicId(axes.event)}>Event</SettingsLabel>
+              <div className={styles.variantGroup}>
+                <div className={styles.settingsButtons}>
+                  {(['SINGLE_GAME', 'ROUND_ROBIN'] as const).map((event: EventAxis) => {
+                    const reason = eventUnavailableReason(axes.table, event)
+                    return (
+                      <button
+                        key={event}
+                        disabled={reason !== null}
+                        className={`${styles.settingsButton} ${axes.event === event ? styles.settingsButtonActive : ''}`}
+                        title={reason ?? ''}
+                      >
+                        {eventLabel(event)}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className={styles.variantCaption}>
+                  {eventUnavailableReason(axes.table, axes.event === 'ROUND_ROBIN' ? 'SINGLE_GAME' : 'ROUND_ROBIN')}
+                </div>
+              </div>
+            </div>
+            {/* Ranked toggle — 1v1 brackets only. A ranked bracket adjusts each player's ELO per
+                match and only counts if everyone is signed in. */}
             {!isMultiplayer && (
               <div className={styles.settingsRow}>
                 <SettingsLabel topicId="ranked">Ranked</SettingsLabel>
@@ -314,58 +469,6 @@ export function LobbyOverlay({
                     <div className={styles.variantCaption}>
                       Ranked matches adjust each player's ELO. All players must be signed in for the game
                       to count as ranked — otherwise it just plays unranked. Uncheck to play casually.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            {/* Multiplayer variant sub-row: only the three single-game modes, shown once Multiplayer is on. */}
-            {isMultiplayer && (
-              <div className={styles.settingsRow}>
-                <SettingsLabel topicId="table-free-for-all">Variant</SettingsLabel>
-                <div className={styles.variantGroup}>
-                  <div className={styles.settingsButtons}>
-                    <button
-                      onClick={() => playerCount <= 6 && updateLobbySettings({ gameMode: 'FREE_FOR_ALL' })}
-                      disabled={playerCount > 6}
-                      className={`${styles.settingsButton} ${isFfa ? styles.settingsButtonActive : ''}`}
-                      title="One multiplayer game — everyone at the same table (2-6 players)"
-                    >
-                      Free-for-All
-                    </button>
-                    <button
-                      onClick={() => playerCount <= 4 && updateLobbySettings({ gameMode: 'TWO_HEADED_GIANT' })}
-                      disabled={playerCount > 4}
-                      className={`${styles.settingsButton} ${is2hg ? styles.settingsButtonActive : ''}`}
-                      title="2v2 teams — draft or seal, then play one team game (exactly 4 players)"
-                    >
-                      Two-Headed Giant
-                    </button>
-                    <button
-                      onClick={() => playerCount <= 8 && updateLobbySettings({ gameMode: 'TEAM_VS_TEAM' })}
-                      disabled={playerCount > 8}
-                      className={`${styles.settingsButton} ${isTeamVsTeam ? styles.settingsButtonActive : ''}`}
-                      title="Two even teams — 2v2, 3v3, or 4v4. Own life and own turns; last team standing wins."
-                    >
-                      Team vs. Team
-                    </button>
-                  </div>
-                  {isFfa && (
-                    <div className={styles.variantCaption}>
-                      One game, everyone at the same table (2-6 players). Last player standing wins.
-                    </div>
-                  )}
-                  {is2hg && (
-                    <div className={styles.variantCaption}>
-                      Four players in two teams of two. Each team shares one 30-life total, takes turns
-                      together, and attacks and blocks as one. Last team standing wins.
-                    </div>
-                  )}
-                  {isTeamVsTeam && (
-                    <div className={styles.variantCaption}>
-                      An even pod (4/6/8) split into two teams — 2v2, 3v3, or 4v4. Each player keeps their
-                      own 20 life and their own turn; players are knocked out one at a time. The last team
-                      with anyone standing wins.
                     </div>
                   )}
                 </div>
@@ -429,79 +532,6 @@ export function LobbyOverlay({
                 </div>
               </div>
             )}
-            {isAnySealed && (() => {
-              const caption = isCommanderSealed
-                ? 'Open Commander-shaped packs and build a 60-card deck around a commander from your pool. 1v1.'
-                : 'Open 6 boosters and build a 40-card deck.'
-              return (
-                <div className={styles.settingsRow}>
-                  <SettingsLabel topicId="cards-sealed">Variant</SettingsLabel>
-                  <div className={styles.variantGroup}>
-                    <div className={styles.settingsButtons}>
-                      <button
-                        onClick={() => updateLobbySettings({ format: 'SEALED' })}
-                        className={`${styles.settingsButton} ${isSealed ? styles.settingsButtonActive : ''}`}
-                      >
-                        Standard
-                      </button>
-                      <button
-                        onClick={() => canSwitchToCommander && updateLobbySettings({ format: 'COMMANDER_SEALED' })}
-                        disabled={!canSwitchToCommander}
-                        className={`${styles.settingsButton} ${isCommanderSealed ? styles.settingsButtonActive : ''}`}
-                      >
-                        Commander
-                      </button>
-                    </div>
-                    <div className={styles.variantCaption}>{caption}</div>
-                  </div>
-                </div>
-              )
-            })()}
-            {isAnyDraft && (() => {
-              const caption = isCommanderDraft
-                ? 'Commander-shaped 20-card packs; pick a commander from your pool. 1v1.'
-                : isWinston ? 'Pick from 3 face-down piles. 2 players.'
-                : isGridDraft ? 'Pick a row or column from a 3×3 grid. 2-4 players.'
-                : 'Pass packs around the table. 3-8 players.'
-              return (
-                <div className={styles.settingsRow}>
-                  <SettingsLabel topicId="cards-draft">Variant</SettingsLabel>
-                  <div className={styles.variantGroup}>
-                    <div className={styles.settingsButtons}>
-                      <button
-                        onClick={() => canSwitchToNormalDraft && updateLobbySettings({ format: 'DRAFT' })}
-                        disabled={!canSwitchToNormalDraft}
-                        className={`${styles.settingsButton} ${isDraft ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : ''}`}
-                      >
-                        Normal
-                      </button>
-                      <button
-                        onClick={() => canSwitchToWinston && updateLobbySettings({ format: 'WINSTON_DRAFT' })}
-                        disabled={!canSwitchToWinston}
-                        className={`${styles.settingsButton} ${isWinston ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : ''}`}
-                      >
-                        Winston
-                      </button>
-                      <button
-                        onClick={() => canSwitchToGrid && updateLobbySettings({ format: 'GRID_DRAFT' })}
-                        disabled={!canSwitchToGrid}
-                        className={`${styles.settingsButton} ${isGridDraft ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : ''}`}
-                      >
-                        Grid
-                      </button>
-                      <button
-                        onClick={() => canSwitchToCommander && updateLobbySettings({ format: 'COMMANDER_DRAFT' })}
-                        disabled={!canSwitchToCommander}
-                        className={`${styles.settingsButton} ${isCommanderDraft ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : ''}`}
-                      >
-                        Commander
-                      </button>
-                    </div>
-                    <div className={styles.variantCaption}>{caption}</div>
-                  </div>
-                </div>
-              )
-            })()}
             {/* Set selection — selected sets shown as chips; the full searchable browser is a modal.
                 Skipped for Premade Decks since no boosters are generated. */}
             {!isPremade && (
@@ -794,7 +824,9 @@ export function LobbyOverlay({
                 </div>
               </>
             )}
-            {!isFfa && (
+            {/* Only a bracket has matchups. Previously shown for 2HG and Team vs. Team too, where a
+                single shared game means it did nothing. */}
+            {axes.event === 'ROUND_ROBIN' && (
               <div className={styles.settingsRow}>
                 <span className={styles.settingsLabel}>Games per matchup</span>
                 <select
@@ -844,31 +876,6 @@ export function LobbyOverlay({
                 </button>
               </div>
             </div>
-            {isPremade && (
-              <div className={styles.settingsRow}>
-                <span className={styles.settingsLabel}>Deck format</span>
-                <select
-                  value={lobbyState.settings.deckFormat ?? ''}
-                  onChange={(e) =>
-                    updateLobbySettings({ deckFormat: (e.target.value || '') as never })
-                  }
-                  className={styles.settingsSelect}
-                  title="Restrict submitted decks to a constructed format. None = no restriction."
-                >
-                  <option value="">No restriction</option>
-                  <option value="STANDARD">Standard</option>
-                  <option value="PIONEER">Pioneer</option>
-                  <option value="MODERN">Modern</option>
-                  <option value="PAUPER">Pauper</option>
-                  <option value="LEGACY">Legacy</option>
-                  <option value="VINTAGE">Vintage</option>
-                  <option value="COMMANDER">Commander</option>
-                  <option value="BRAWL">Brawl</option>
-                  <option value="STANDARD_BRAWL">Standard Brawl</option>
-                  <option value="PREMODERN">Premodern</option>
-                </select>
-              </div>
-            )}
           </div>
         )}
 

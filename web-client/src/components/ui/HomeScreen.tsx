@@ -444,16 +444,23 @@ export function HomeScreen({
               <section className={styles.homeTier}>
                 <SectionHeading label="Lab" hint="advanced" />
                 <div className={styles.secondaryButtonRow}>
-                  <button onClick={() => navigate('/scenario')} className={styles.secondaryButton}>
-                    Scenario Builder
-                  </button>
                   <button onClick={() => navigate('/set-completion')} className={styles.secondaryButton}>
                     Set Completion
                   </button>
+                  {/* Dev-only entry points. The Scenario Builder drives `/api/dev/scenarios/*`, which
+                      only exists when the server runs with GAME_DEV_ENDPOINTS_ENABLED — so in a
+                      production build the button would lead somewhere that cannot work. The *routes*
+                      stay open either way: a replay's "share as scenario" link is a real `/scenario?s=`
+                      deep link, and gating the route would break it. */}
                   {import.meta.env.DEV && (
-                    <button onClick={() => navigate('/llm-tournament')} className={styles.secondaryButton}>
-                      LLM Tournament
-                    </button>
+                    <>
+                      <button onClick={() => navigate('/scenario')} className={styles.secondaryButton}>
+                        Scenario Builder
+                      </button>
+                      <button onClick={() => navigate('/llm-tournament')} className={styles.secondaryButton}>
+                        LLM Tournament
+                      </button>
+                    </>
                   )}
                 </div>
                 <p className={styles.tierCaption}>

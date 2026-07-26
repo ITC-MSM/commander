@@ -60,7 +60,7 @@ test.describe('Draft Tournament with 4 Players', () => {
     console.log(`Lobby created: ${lobbyId}`)
 
     // Switch to Draft format
-    await host.page.getByRole('button', { name: 'Draft' }).click()
+    await host.page.getByRole('button', { name: 'Draft', exact: true }).click()
     console.log('Switched to Draft format')
 
     // Other players join
@@ -225,7 +225,7 @@ test.describe('Draft Tournament with 4 Players', () => {
     await expect(pages[0].getByText('Invite Code')).toBeVisible({ timeout: 10000 })
 
     // Switch to Draft
-    await pages[0].getByRole('button', { name: 'Draft' }).click()
+    await pages[0].getByRole('button', { name: 'Draft', exact: true }).click()
 
     const lid = await pages[0].getByTestId('invite-code').textContent() ?? ''
 

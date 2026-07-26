@@ -19,20 +19,9 @@ import { DeckPicker } from './DeckPicker'
 import { JoinQrModal } from './JoinQrModal'
 import { buildJoinUrl } from '@/utils/joinLink'
 import { SettingsLabel } from './SettingsLabel'
+import { LobbyAxisSummary } from '../lobby/LobbyAxisSummary'
+import { axesFromQuickGameLobby, cardsTopicId, LEGALITY_OPTIONS } from '../lobby/axes'
 import styles from './GameUI.module.css'
-
-const FORMAT_OPTIONS: Array<{ value: DeckFormat; label: string }> = [
-  { value: 'STANDARD', label: 'Standard' },
-  { value: 'PIONEER', label: 'Pioneer' },
-  { value: 'MODERN', label: 'Modern' },
-  { value: 'PAUPER', label: 'Pauper' },
-  { value: 'LEGACY', label: 'Legacy' },
-  { value: 'VINTAGE', label: 'Vintage' },
-  { value: 'COMMANDER', label: 'Commander' },
-  { value: 'BRAWL', label: 'Brawl' },
-  { value: 'STANDARD_BRAWL', label: 'Standard Brawl' },
-  { value: 'PREMODERN', label: 'Premodern' },
-]
 
 export function QuickGameLobbyOverlay() {
   const lobby = useGameStore((s) => s.quickGameLobbyState)
@@ -101,6 +90,10 @@ export function QuickGameLobbyOverlay() {
   const host = lobby.players.find((p) => !p.isAi)
   const isHost = host?.playerId === lobby.youPlayerId
   const isMomir = lobby.momirBasic ?? false
+  // Table and Event are constants here — a quick lobby is two seats and one game — so the summary
+  // is mostly there to name what the controls below mean and to match the tournament lobby. Cards
+  // tracks *your* seat, so it follows the deck picker onto Random rather than claiming otherwise.
+  const axes = axesFromQuickGameLobby(lobby, you)
 
   const copyLobbyId = () => {
     navigator.clipboard.writeText(lobby.lobbyId)
@@ -132,9 +125,6 @@ export function QuickGameLobbyOverlay() {
               }}
             />
           )}
-          <div className={`${styles.lobbyFormat} ${styles.lobbyFormatSealed}`}>
-            {isMomir ? 'Momir Basic' : 'Quick Game'}
-          </div>
           <h1 className={styles.lobbyTitle}>
             {lobby.vsAi ? 'vs AI' : 'Lobby'}
           </h1>
@@ -147,6 +137,7 @@ export function QuickGameLobbyOverlay() {
                 ? 'Pick a deck and ready up — the AI starts as soon as you do.'
                 : 'Share the invite code with a friend, then both players ready up.'}
           </p>
+          <LobbyAxisSummary axes={axes} />
         </div>
 
         {!lobby.vsAi && (
@@ -222,13 +213,13 @@ export function QuickGameLobbyOverlay() {
                 </div>
               </div>
             )}
-            <FormatSelector isMomir={isMomir} format={lobby.format ?? null} isHost={isHost} onChange={setFormat} />
+            <CardsSelector topicId={cardsTopicId(axes.cards)} isMomir={isMomir} format={lobby.format ?? null} isHost={isHost} onChange={setFormat} />
           </div>
         )}
 
         {lobby.vsAi && (
           <div className={styles.settingsPanel}>
-            <FormatSelector isMomir={isMomir} format={lobby.format ?? null} isHost={isHost} onChange={setFormat} />
+            <CardsSelector topicId={cardsTopicId(axes.cards)} isMomir={isMomir} format={lobby.format ?? null} isHost={isHost} onChange={setFormat} />
           </div>
         )}
 
@@ -295,13 +286,13 @@ export function QuickGameLobbyOverlay() {
 const MOMIR_FORMAT_VALUE = 'MOMIR'
 
 /**
- * Non-deckbuilding game modes, surfaced as their own elevated section (see {@link CustomFormatSection})
- * rather than buried among constructed formats in the dropdown. Currently just Momir Basic — fixed
+ * Cards-axis values that skip deckbuilding entirely, surfaced as their own elevated section rather
+ * than buried among the legality options in the dropdown. Currently just Momir Basic — fixed
  * 60-basic decks, the avatar in the command zone, creatures rolled from every set.
  *
  * NOTE: the lobby's format channel is `(format, momirBasic)` where `momirBasic` is Momir-specific.
- * Adding a second custom mode here means widening that contract (e.g. a custom-format key) so this
- * section can tell the modes apart — today the toggle simply maps to the `momirBasic` flag.
+ * Adding a second variant here means widening that contract (e.g. a Cards-kind key) so this
+ * section can tell them apart — today the toggle simply maps to the `momirBasic` flag.
  */
 const CUSTOM_FORMATS: ReadonlyArray<{ key: string; name: string; desc: string; icon: string }> = [
   {
@@ -313,23 +304,29 @@ const CUSTOM_FORMATS: ReadonlyArray<{ key: string; name: string; desc: string; i
 ]
 
 /**
- * Lobby format picker — a single either/or choice, not two stacked settings.
+ * The Cards axis in a quick lobby — a single either/or choice, not two stacked settings.
  *
- * The top row restricts submitted decks to a *constructed* format ("No restriction" = anything);
- * below an explicit "or" divider, the *custom* (non-deckbuilding) modes appear as selectable cards.
- * The two are mutually exclusive server-side, so we make that visible: while a custom mode is
- * active the constructed dropdown is disabled (and reads "No restriction", since the server clears
- * `format`), and selecting a constructed format leaves every custom card unselected. Exactly one
- * side is ever live. Toggle a custom card off to return to no restriction and re-enable the dropdown.
+ * The top row is "Bring a deck", optionally restricted to a constructed format ("No restriction" =
+ * anything); below an explicit "or" divider, the variants that skip deckbuilding appear as
+ * selectable cards. The two are mutually exclusive server-side, so we make that visible: while a
+ * variant is active the legality dropdown is disabled (and reads "No restriction", since the
+ * server clears `format`), and picking a legality leaves every variant card unselected. Exactly
+ * one side is ever live. Toggle a variant off to return to Bring a deck.
+ *
+ * The third Cards value reachable here — Random pool — isn't a lobby setting: it is the deck
+ * picker's Random tab, so one player can roll a pool while the other brings a deck.
  *
  * Host-only; the opponent sees both halves read-only.
  */
-function FormatSelector({
+function CardsSelector({
+  topicId,
   isMomir,
   format,
   isHost,
   onChange,
 }: {
+  /** Help topic for the Cards value currently in effect for this seat. */
+  topicId: string
   isMomir: boolean
   format: DeckFormat | null
   isHost: boolean
@@ -340,7 +337,7 @@ function FormatSelector({
   return (
     <div className={styles.formatSelector}>
       <div className={styles.formatSelectorTop}>
-        <SettingsLabel topicId="cards-bring-a-deck">Format</SettingsLabel>
+        <SettingsLabel topicId={topicId}>Cards</SettingsLabel>
         <select
           value={dropdownValue}
           onChange={(e) => {
@@ -351,24 +348,24 @@ function FormatSelector({
           disabled={dropdownDisabled}
           title={
             isMomir
-              ? 'A custom format is active — turn it off below to restrict by a constructed format.'
+              ? 'A variant is active — turn it off below to bring your own deck.'
               : isHost
-                ? 'Restrict submitted decks to a constructed format. None = no restriction.'
-                : 'Only the host can change the format'
+                ? 'Restrict submitted decks to a constructed format. No restriction = anything the engine implements.'
+                : 'Only the host can change this'
           }
           className={`${styles.settingsButton} ${isMomir ? styles.formatDropdownInactive : ''}`}
-          style={{ minWidth: 160 }}
+          style={{ minWidth: 190 }}
         >
-          <option value="">No restriction</option>
-          <optgroup label="Constructed">
-            {FORMAT_OPTIONS.map((f) => (
+          <option value="">Bring a deck — no restriction</option>
+          <optgroup label="Bring a deck — legal in">
+            {LEGALITY_OPTIONS.map((f) => (
               <option key={f.value} value={f.value}>{f.label}</option>
             ))}
           </optgroup>
         </select>
       </div>
 
-      <div className={styles.formatOrDivider}>or pick a custom format</div>
+      <div className={styles.formatOrDivider}>or pick a variant</div>
 
       <div className={styles.customFormatCards}>
         {CUSTOM_FORMATS.map((cf) => {
@@ -386,7 +383,7 @@ function FormatSelector({
                 onChange(null, !active)
               }}
               className={`${styles.customFormatCard} ${active ? styles.customFormatCardActive : ''}`}
-              title={isHost ? '' : 'Only the host can change the format'}
+              title={isHost ? '' : 'Only the host can change this'}
               data-testid={`custom-format-${cf.key.toLowerCase()}`}
             >
               <span
