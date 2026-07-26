@@ -3869,6 +3869,77 @@
     ]
 }
 
+// Haunt the Network
+{
+    "name": "Haunt the Network",
+    "manaCost": "{3}{U}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose target opponent. Create two 1/1 colorless Thopter artifact creature tokens with flying. Then the chosen player loses X life and you gain X life, where X is the number of artifacts you control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Thopter"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/d/3/d38fc294-ad86-441e-96fe-4ca286a11218.jpg?1783907677",
+                    "artifactToken": true
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "artifact"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "artifact"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetOpponent",
+                "id": "target opponent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "207",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Carpenter",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/478d236c-9778-435a-ac21-bd0017a17d5b.jpg?1783907857"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Hazard of the Dunes
 {
     "name": "Hazard of the Dunes",
@@ -4833,6 +4904,49 @@
     ]
 }
 
+// Midnight Mangler
+{
+    "name": "Midnight Mangler",
+    "manaCost": "{1}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "During turns other than yours, this Vehicle is an artifact creature.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantCardType",
+                    "cardType": "CREATURE"
+                },
+                "condition": "IsNotYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "artist": "Villarrte",
+        "flavorText": "\"Is someone asleep at the wheel, or are the wheels driving themselves?!\"\n—Vnwxt, Grand Prix host",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/237568e3-7331-4bbb-a091-a766723134fc.jpg?1783907906"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Migrating Ketradon
 {
     "name": "Migrating Ketradon",
@@ -5684,6 +5798,69 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Pride of the Road
+{
+    "name": "Pride of the Road",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Zombie Cat Warrior",
+    "oracleText": "Vigilance\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — At the beginning of combat on your turn, target creature or Vehicle you control gains double strike until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE",
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOUBLE_STRIKE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature or Vehicle you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature|Vehicle ctrl:you"
+                    },
+                    "id": "creature or Vehicle you control"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                "descriptionOverride": "Max speed — At the beginning of combat on your turn, target creature or Vehicle you control gains double strike until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "UNCOMMON",
+        "artist": "Alfonso Santano",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/4172222f-d871-4354-9a02-7af0001d8956.jpg?1783907916"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -6591,6 +6768,59 @@
         "imageUri": "https://cards.scryfall.io/normal/front/1/2/12ccd555-60d4-49a1-b022-1e119344172a.jpg?1783907846"
     },
     "colorIdentityOverride": []
+}
+
+// Scrounging Skyray
+{
+    "name": "Scrounging Skyray",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Fish Pirate",
+    "oracleText": "Flying\nWhenever you discard one or more cards, put that many +1/+1 counters on this creature.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DiscardEvent",
+                    "batch": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DISCARD_COUNT"
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you discard one or more cards, put that many +1/+1 counters on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "rarity": "UNCOMMON",
+        "artist": "Ron Spears",
+        "flavorText": "\"Oi, you ain't gonna believe what these kelpheads just threw away!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d60bece3-6f63-4d9e-bca0-cef2d38f1472.jpg?1783907904"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Shefet Archfiend
@@ -7780,6 +8010,72 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Thundering Broodwagon
+{
+    "name": "Thundering Broodwagon",
+    "manaCost": "{2}{B}{B}{G}{G}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Menace, reach\nWhen this Vehicle enters, destroy target nonland permanent an opponent controls with mana value 4 or less.\nCrew 3\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "MENACE",
+        "REACH",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 3
+        },
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "nonland permanent an opponent controls with mana value 4 or less"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "nonland permanent mv<=4 ctrl:opponent"
+                    },
+                    "id": "nonland permanent an opponent controls with mana value 4 or less"
+                },
+                "descriptionOverride": "When this Vehicle enters, destroy target nonland permanent an opponent controls with mana value 4 or less."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "rarity": "UNCOMMON",
+        "artist": "Bartek Fedyczak",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2d1576d4-15a3-4e91-84ef-e71e258185e7.jpg?1783907851"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
