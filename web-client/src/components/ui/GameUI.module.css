@@ -990,10 +990,19 @@
   overflow: hidden auto;
 }
 
+/* Wraps on purpose. Without it the row is one unbreakable line, so an oversized control group
+   gets *shrunk* instead — and since `.settingsButtons` is right-aligned, its overflow lands alone
+   on a second line, reading as a layout bug. The Cards row does exactly that once all five values
+   are shown: it wants 441px beside a 46px label in 508px, and misses by 11. With wrap, flex breaks
+   lines on base sizes before shrinking, so the group keeps its natural width — and if it ever
+   genuinely outgrows the row (Cube adds a sixth Cards value) it drops to its own full-width line
+   rather than orphaning one button. */
 .settingsRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border-subtle);
 }
