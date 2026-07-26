@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.replacement.PendingGameEvent
 import com.wingedsheep.engine.replacement.ProcessorResult
+import com.wingedsheep.engine.replacement.ReplacementEffectIdentity
 import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.replacement.ReplacementOutcome
 import com.wingedsheep.engine.state.GameState
@@ -99,8 +100,9 @@ class DrawReplacementDispatcher(
             is ProcessorResult.Resolved -> {
                 when (val outcome = processorResult.outcome) {
                     is ReplacementOutcome.Consumed -> {
-                        // Draw prevented
-                        return DispatchResult.Replaced(processorResult.state, emptyList())
+                        // Draw prevented, consume NextUse shield if applicable.
+                        val state = consumeIfFloating(processorResult.state, processorResult.identity)
+                        return DispatchResult.Replaced(state, emptyList())
                     }
                     is ReplacementOutcome.Replaced -> {
                         // A replacement effect should execute instead of drawing.
@@ -109,7 +111,8 @@ class DrawReplacementDispatcher(
                             return executeFromShield(
                                 processorResult.state, playerId,
                                 outcome.newEffect, ctx,
-                                remainingDraws, isDrawStep
+                                remainingDraws, isDrawStep,
+                                processorResult.identity
                             )
                         }
                         // Battlefield replacement (not a shield) — mark replaced without execution.
@@ -120,7 +123,8 @@ class DrawReplacementDispatcher(
                         val newRemaining = modifiedEvent?.remainingDraws ?: remainingDraws
                         val delta = newRemaining - remainingDraws
                         if (delta != 0) {
-                            val cleared = processorResult.state.copy(activeReplacementChain = null)
+                            val state = consumeIfFloating(processorResult.state, processorResult.identity)
+                            val cleared = state.copy(activeReplacementChain = null)
                             return DispatchResult.Modified(cleared, delta)
                         }
                     }
@@ -178,7 +182,8 @@ class DrawReplacementDispatcher(
                         val newTotal = modifiedEvent?.totalCount ?: totalCount
                         val delta = newTotal - totalCount
                         if (delta != 0) {
-                            return DispatchResult.Modified(processorResult.state, delta)
+                            val state = consumeIfFloating(processorResult.state, processorResult.identity)
+                            return DispatchResult.Modified(state, delta)
                         }
                     }
                     is ReplacementOutcome.Replaced -> {
@@ -187,13 +192,15 @@ class DrawReplacementDispatcher(
                             return executeFromShield(
                                 processorResult.state, playerId,
                                 outcome.newEffect, ctx,
-                                totalCount - 1, isDrawStep
+                                totalCount - 1, isDrawStep,
+                                processorResult.identity
                             )
                         }
                         return DispatchResult.Replaced(processorResult.state, emptyList())
                     }
                     is ReplacementOutcome.Consumed -> {
-                        return DispatchResult.Replaced(processorResult.state, emptyList())
+                        val state = consumeIfFloating(processorResult.state, processorResult.identity)
+                        return DispatchResult.Replaced(state, emptyList())
                     }
                 }
             }
@@ -202,6 +209,21 @@ class DrawReplacementDispatcher(
             }
         }
         return null
+    }
+
+    /**
+     * Consume a NextUse floating-effect shield from state if [identity] is a
+     * [ReplacementEffectIdentity.FloatingIdentity]. This is a no-op for all
+     * other identity types (battlefield, granted, self-redirect).
+     */
+    private fun consumeIfFloating(
+        state: GameState,
+        identity: ReplacementEffectIdentity?
+    ): GameState {
+        if (identity is ReplacementEffectIdentity.FloatingIdentity) {
+            return processor.consumeFloatingEffect(state, identity.floatingIndex)
+        }
+        return state
     }
 
     /**
@@ -217,12 +239,15 @@ class DrawReplacementDispatcher(
         replacementEffect: Effect,
         context: EffectContext,
         remainingDraws: Int,
-        isDrawStep: Boolean
+        isDrawStep: Boolean,
+        identity: ReplacementEffectIdentity? = null
     ): DispatchResult {
         val executor = effectExecutor ?: return DispatchResult.Replaced(processorState, emptyList())
 
-        // Push remaining-draws continuation so the draw loop resumes after the pipeline
-        var state = processorState
+        // Confirm execution before consuming the shield (point of no return).
+        // NextUse shields must be consumed here (not in the processor) so that
+        // a null effectExecutor doesn't silently burn the shield.
+        var state = consumeIfFloating(processorState, identity)
         if (remainingDraws > 0) {
             state = state.pushContinuation(
                 DrawReplacementRemainingDrawsContinuation(

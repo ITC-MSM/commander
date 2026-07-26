@@ -10,6 +10,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.SelfZoneRedirectComponent
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.ReplacementEffect
 import com.wingedsheep.sdk.scripting.ReplacementPriorityGroup
 import java.util.*
@@ -36,11 +37,15 @@ sealed interface ProcessorResult {
      * @property executionContext Context for executing the replacement effect,
      *   built from floating-shield data when the matched replacement came from
      *   a floating effect. Null for battlefield-originated replacements.
+     * @property identity The identity of the replacement effect that was applied,
+     *   or null if no single effect identity is associated with the outcome.
+     *   Callers use this for lifecycle management (e.g., consuming NextUse shields).
      */
     data class Resolved(
         val state: GameState,
         val outcome: ReplacementOutcome,
-        val executionContext: EffectContext? = null
+        val executionContext: EffectContext? = null,
+        val identity: ReplacementEffectIdentity? = null
     ) : ProcessorResult
 }
 
@@ -200,15 +205,9 @@ class ReplacementEffectProcessor {
             )
         }
 
-        // Consume floating-effect shield if the replacement came from one
-        // (e.g. Words cycle NextUse shields). This removes the floating effect
-        // from state so it won't match future events.
-        val consumedState = when (val identity = gathered.identity) {
-            is ReplacementEffectIdentity.FloatingIdentity -> {
-                consumeFloatingEffect(state, identity.floatingIndex)
-            }
-            else -> state
-        }
+        // Lifecycle management (e.g., NextUse shield consumption) is the caller's
+        // responsibility — the processor only computes the outcome and passes the
+        // identity through so callers can act on it.
 
         val updatedAlreadyApplied = alreadyApplied + gathered.identity
 
@@ -216,13 +215,13 @@ class ReplacementEffectProcessor {
             is ReplacementOutcome.Modified -> {
                 // Stamp the updated chain on state so subsequent iterations of the
                 // per-card draw loop don't re-apply the same ModifyDrawAmount (CR 614.5).
-                val stateWithChain = consumedState.copy(activeReplacementChain = updatedAlreadyApplied)
+                val stateWithChain = state.copy(activeReplacementChain = updatedAlreadyApplied)
                 val recurseResult = processInternal(
                     stateWithChain, outcome.modifiedEvent, execContext, updatedAlreadyApplied
                 )
                 when (recurseResult) {
                     is ProcessorResult.Pass -> {
-                        ProcessorResult.Resolved(stateWithChain, outcome, execContext)
+                        ProcessorResult.Resolved(stateWithChain, outcome, execContext, gathered.identity)
                     }
                     else -> recurseResult
                 }
@@ -231,11 +230,11 @@ class ReplacementEffectProcessor {
                 // Stamp the updated chain on the returned state so nested effect
                 // execution (e.g. a DrawCardsEffect produced by the replacement)
                 // does not re-trigger effects already applied in this chain.
-                val stateWithChain = consumedState.copy(activeReplacementChain = updatedAlreadyApplied)
-                ProcessorResult.Resolved(stateWithChain, outcome, execContext)
+                val stateWithChain = state.copy(activeReplacementChain = updatedAlreadyApplied)
+                ProcessorResult.Resolved(stateWithChain, outcome, execContext, gathered.identity)
             }
             is ReplacementOutcome.Consumed -> {
-                ProcessorResult.Resolved(consumedState, outcome, execContext)
+                ProcessorResult.Resolved(state, outcome, execContext, gathered.identity)
             }
         }
     }
@@ -256,10 +255,13 @@ class ReplacementEffectProcessor {
 
     /**
      * Remove a floating effect by its index in [GameState.floatingEffects].
-     * Used to consume NextUse shields after their replacement effect is applied.
+     * Only consumes effects with [Duration.NextUse] — other durations
+     * (EndOfTurn, Permanent, etc.) are managed by the turn/phase/condition
+     * expiry machinery and must not be removed here.
      */
-    private fun consumeFloatingEffect(state: GameState, floatingIndex: Int): GameState {
+    internal fun consumeFloatingEffect(state: GameState, floatingIndex: Int): GameState {
         if (floatingIndex < 0 || floatingIndex >= state.floatingEffects.size) return state
+        if (state.floatingEffects[floatingIndex].duration !is Duration.NextUse) return state
         val updatedEffects = state.floatingEffects.toMutableList()
         updatedEffects.removeAt(floatingIndex)
         return state.copy(floatingEffects = updatedEffects)

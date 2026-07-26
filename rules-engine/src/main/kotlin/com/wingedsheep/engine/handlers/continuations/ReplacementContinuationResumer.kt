@@ -34,8 +34,9 @@ class ReplacementContinuationResumer(
      * Resume after the player chose one of multiple competing replacement
      * effects (CR 616.1d).
      *
-     * Delegates to the processor's [applySingle] to handle both outcome
-     * creation and NextUse shield consumption, then resumes the result.
+     * Delegates outcome computation to [ReplacementEffectProcessor.applySingle],
+     * then manages lifecycle (NextUse shield consumption) before resuming
+     * the original context.
      */
     private fun resumeReplacementChoice(
         state: GameState,
@@ -59,7 +60,7 @@ class ReplacementContinuationResumer(
         // Pass continuation.context for condition evaluation during recursive processing.
         val context = continuation.context
 
-        // Push remaining-draws continuation before the processor consumes the shield,
+        // Push remaining-draws continuation before the replacement resolves,
         // so the draw loop (which sits below any ReplacementResolveContinuation in the
         // continuation stack) can resume after the replacement effect resolves.
         val stateWithRemaining = run {
@@ -75,7 +76,7 @@ class ReplacementContinuationResumer(
             } else state
         }
 
-        // Let the processor apply the replacement (handles outcome creation + shield consumption)
+        // Compute the outcome.
         val result = processor.applySingle(
             state = stateWithRemaining,
             gathered = chosen,
@@ -86,19 +87,20 @@ class ReplacementContinuationResumer(
 
         return when (result) {
             is ProcessorResult.Resolved -> {
+                // Consume NextUse floating-effect shield if applicable (caller's lifecycle responsibility).
+                val stateAfterLifecycle = if (result.identity is ReplacementEffectIdentity.FloatingIdentity) {
+                    processor.consumeFloatingEffect(result.state, result.identity.floatingIndex)
+                } else {
+                    result.state
+                }
                 when (val outcome = result.outcome) {
                     is ReplacementOutcome.Replaced -> {
-                        // Execute the replacement effect, then resume original context.
-                        // result.state has the consumed-state (shield already removed by processor).
-                        // Use the processor's execution context (built from shield data) if available,
-                        // falling back to the continuation's context for battlefield-originated replacements.
                         val execCtx = result.executionContext ?: context
-                        handleReplacedOutcome(result.state, outcome, continuation, execCtx, checkForMore)
+                        handleReplacedOutcome(stateAfterLifecycle, outcome, continuation, execCtx, checkForMore)
                     }
-                    is ReplacementOutcome.Consumed -> checkForMore(result.state, emptyList())
+                    is ReplacementOutcome.Consumed -> checkForMore(stateAfterLifecycle, emptyList())
                     is ReplacementOutcome.Modified -> {
-                        // Event consumed/modified — nothing more to do; resume original flow.
-                        handleReplacedOutcome(result.state, outcome, continuation, context, checkForMore)
+                        handleReplacedOutcome(stateAfterLifecycle, outcome, continuation, context, checkForMore)
                     }
                 }
             }

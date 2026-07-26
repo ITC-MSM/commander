@@ -117,7 +117,7 @@ sealed interface PendingGameEvent {
                 }
                 is PreventDraw -> ReplacementOutcome.Consumed
                 is ReplaceDrawWithEffect -> ReplacementOutcome.Replaced(effect.replacementEffect)
-                else -> ReplacementOutcome.Modified(this)
+                else -> error("Unsupported replacement effect type '${effect::class.simpleName}' for ${this::class.simpleName}")
             }
         }
 
@@ -234,7 +234,7 @@ sealed interface PendingGameEvent {
                 )
                 is PreventDraw -> ReplacementOutcome.Consumed
                 is ReplaceDrawWithEffect -> ReplacementOutcome.Replaced(effect.replacementEffect)
-                else -> ReplacementOutcome.Modified(this)
+                else -> error("Unsupported replacement effect type '${effect::class.simpleName}' for ${this::class.simpleName}")
             }
         }
 
