@@ -475,6 +475,13 @@ client tears down and recreates on the other kind.
 
 Each is independent. Ordered by value.
 
+**All seven re-verified against the server on 2026-07-26**, after the phase-0–7 PR merged `main`
+forward 26 commits — nothing in this list has been closed by other work, and the PR branch carries
+**zero** `game-server/` changes. Line references below are current as of that check. Two of the
+original evidence lines had drifted and are corrected in place: gap #5 gained the defaults finding
+(note under the table), and gap #6's "0 hits in `web-client/`" is now 1 hit — a comment recording the
+gap, not a use of it.
+
 | # | Gap | Where | Why it matters |
 |---|---|---|---|
 | 1 | **AI rejected in `PREMADE_DECKS` and in all FFA/team modes** | `LobbyHandler.kt:1386–1393`, `:1395–1403`, `:2080–2088` | "Bring a deck + vs AI" and "FFA with AI seats" both read as obvious once the axes are visible, and both currently fail. Highest-value fix in the list. |
@@ -482,7 +489,7 @@ Each is independent. Ordered by value.
 | 3 | **No per-player "random pool" in premade** | `QuickGameLobbyPlayer.setCode` (empty `deckList` = server picks); tournament SEALED forces a `DECK_BUILDING` phase | "Random" is the zero-prep on-ramp — the fastest path from cold open to playing. It must survive the merge. |
 | 4 | **No per-player ready in tournament `WAITING_FOR_PLAYERS`** | host presses `startTournamentLobby`; there is no per-player ready toggle | The 2-player "both ready → go" flow is what makes a quick game *feel* quick. |
 | 5 | **Ranked gated to `gameMode == TOURNAMENT`, and the two kinds default it differently** | `TournamentLobby.rankedEligible` (`:335–358`) vs `QuickGameLobby.rankedEligible` + `Ranked.modeForQuickGame`; defaults at `ClientMessage.CreateTournamentLobby.ranked = true` vs `TournamentLobby.ranked = false` | Two different ranked paths need reconciling before ranked can appear on one axis panel. Both already silently downgrade to unranked at start, so the failure mode is safe but confusing. **See the note below** — the defaults disagreeing is now visible on the shared panel. |
-| 6 | **Quick-lobby 2HG is phantom capability** | `QuickGameLobby.twoHeadedGiant` + `TWO_HEADED_GIANT_PLAYERS = 4` are implemented; `grep -rn twoHeadedGiant web-client/` = **0 hits**, and it's missing from `QuickGameLobbyStateMessage` (`types/messages.ts:2711–2727`) along with `maxPlayers` and `QuickGameLobbyPlayerView.teamIndex` | Either wire it up or delete it. Right now it's server capability no client can reach. |
+| 6 | **Quick-lobby 2HG is phantom capability** | `QuickGameLobby.twoHeadedGiant` + `TWO_HEADED_GIANT_PLAYERS = 4` are implemented (`QuickGameLobby.kt:51,70,85,93`); missing from `QuickGameLobbyStateMessage` (`types/messages.ts:2712–2727`) along with `maxPlayers` and `QuickGameLobbyPlayerView.teamIndex`, so no client can read it. The only `twoHeadedGiant` in `web-client/` is the comment at `lobbyViewModel.ts:171` recording exactly that | Either wire it up or delete it. Right now it's server capability no client can reach. |
 | 7 | **`PersistentTournamentLobby` missing fields** | `persistence/LobbyConverter.kt` — lacks `deckFormat`, `ranked`, `bannedCardNames`, `deckSizeMin`, `allowDuplicates`, `commanderPreset`, `ffaLastStandings` | Any new unified setting needs a converter pass or it won't survive a restart. Pre-existing bug, worth fixing while in here. |
 
 **Gap #5, sharpened — the two ranked defaults disagree, and it now shows.** Found while verifying the
@@ -593,6 +600,20 @@ Resolve the phantom number-key comment (`useMultiplayerView.ts:64`) while doing 
 | ~~**7**~~ | ~~Landing wizard~~ — **done.** `modeMatrix.ts` + `PlayWizard.tsx` replace the six preset cards; `modePresets.ts` and the `preset-*` topics deleted; numbered stepper, commitment badges, flow line, open-by-default seats, `Play again` chip, `Seats` in the lobby, e2e fixture helper. | **yes** |
 | **5** | Server gaps from 4c, in the numbered order. Each one deletes a disabled option from the wizard. | yes, each |
 | **6** | Optional: `convertLobby` preserving the invite code; real URLs for in-`/` screens so Back works — including a URL per wizard step, which is the point at which the wizard's Back and the browser's Back can finally agree. | yes |
+
+**Phase 6, re-verified 2026-07-26.** Both halves are untouched. `convertLobby` does not exist anywhere
+in the server or the client; its only two mentions are the comments at
+[`axisChoices.ts:13`](../web-client/src/components/lobby/axisChoices.ts) and
+[`useLobbyCommands.ts:12`](../web-client/src/components/lobby/useLobbyCommands.ts) pointing here, which
+is the seam it lands on. `main.tsx` now registers 18 routes (`/help` and `/help/:section` were added by
+Phase 3), but every screen inside `/` — home *and the wizard's three steps*, lobby, draft, deckbuild,
+standings, game, game over — is still a Zustand view under `*` → `App`, so none of them can be
+bookmarked and browser Back still exits the app.
+
+Phase 7 added a reason to do this that the original plan only half-anticipated: the wizard has its own
+Back (the numbered stepper), so there are now **two** back affordances on the landing screen that
+disagree — the stepper steps back a question, the browser leaves Argentum. A URL per step is what
+reconciles them.
 
 ### What Phases 0/1/3 actually shipped
 
