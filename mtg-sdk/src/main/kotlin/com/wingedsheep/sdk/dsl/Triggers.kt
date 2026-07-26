@@ -1752,12 +1752,30 @@ object Triggers {
     )
 
     /**
+     * Whenever you sacrifice **a** permanent matching the filter.
+     * Per-permanent trigger — fires once for EACH matching permanent sacrificed, even when several
+     * are sacrificed simultaneously (CR 603.2c). The bare-article template ([TriggerBinding.ANY])
+     * counts the source sacrificing itself, unlike [YouSacrificeAnother].
+     *
+     * Distinct from [YouSacrificeOneOrMore] (batch — one Rat for three Foods instead of three).
+     * Template: Experimental Confectioner ("Whenever you sacrifice a Food").
+     *
+     * Example: "Whenever you sacrifice a Food"
+     * → YouSacrificeA(GameObjectFilter.Artifact.withSubtype("Food"))
+     */
+    fun YouSacrificeA(filter: GameObjectFilter = GameObjectFilter.Any): TriggerSpec = TriggerSpec(
+        event = PermanentsSacrificedEvent(filter = filter, perPermanent = true),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever you sacrifice another permanent matching the filter.
      * Per-permanent trigger — fires once for EACH matching permanent sacrificed, even when several
      * are sacrificed simultaneously (CR 603.2c). "Another" ([TriggerBinding.OTHER]) excludes the
      * source, so the source sacrificing itself doesn't fire it.
      *
-     * Distinct from [YouSacrificeOneOrMore] (batch — fires once per event batch). Template:
+     * Distinct from [YouSacrificeOneOrMore] (batch — fires once per event batch) and from
+     * [YouSacrificeA] (same per-permanent multiplicity, but counts the source). Template:
      * Mazirek, Kraul Death Priest; Savra, Queen of the Golgari; Zhao, Ruthless Admiral.
      *
      * Example: "Whenever you sacrifice another permanent"
