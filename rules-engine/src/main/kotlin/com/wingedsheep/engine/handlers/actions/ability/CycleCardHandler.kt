@@ -233,8 +233,8 @@ class CycleCardHandler(
         }
 
         // Draw a card using DrawCardsExecutor (checks replacement shields and promptOnDraw).
-        // Cycling is "Discard this card: Draw a card" (CR 702.29a). ModifyDrawAmount
-        // replacements apply inside the draw loop, so no announcement-site modifier needed.
+        // Cycling is "Discard this card: Draw a card" (CR 702.29a). The announcement-site
+        // modifier (CR 121.2a) fires via executeDraws → checkDrawAmount before the per-card loop.
         val drawExecutor = DrawCardsExecutor(cardRegistry = cardRegistry)
         val drawResult = drawExecutor.executeDraws(currentState, action.playerId, 1)
         if (drawResult.isPaused) {

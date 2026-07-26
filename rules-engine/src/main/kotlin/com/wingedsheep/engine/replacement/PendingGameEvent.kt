@@ -112,7 +112,7 @@ sealed interface PendingGameEvent {
             return when (effect) {
                 is ModifyDrawAmount -> {
                     ReplacementOutcome.Modified(
-                        copy(remainingDraws = (remainingDraws + effect.modifier).coerceAtLeast(0))
+                        copy(remainingDraws = remainingDraws + effect.modifier)
                     )
                 }
                 is PreventDraw -> ReplacementOutcome.Consumed
