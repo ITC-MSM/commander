@@ -322,8 +322,7 @@ actually answer, in the order that prunes hardest, and the *answers* compose int
   │ Bring a    │ Random     │ Momir      │ Sealed     │ Draft      │
   │ deck       │ pool       │ Basic      │            │            │
   └────────────┴────────────┴────────────┴────────────┴────────────┘
-       └ Booster · Winston(2 only) · Grid(2–4) · Commander   ← sub-shape row
-  [← Back]
+  [← Back]                        (no sub-shape row — see § 3e)
 
   Step 3 of 3 — How do you play it?     Just me · Booster Draft · ✎
   ┌──────────────────────┬──────────────────────┐
@@ -381,8 +380,9 @@ Three things this table settles that were guesses before:
   tournament lobby, so Phase 4's note that "a limited pool always runs as a bracket" is only true at
   a *1v1* table, where the sole single-game path is the quick lobby and it can't do limited.
 
-Sub-shape reachability, same treatment: Winston is exactly 2 players, Grid is 2–4, so both are
-blocked-with-reason under **A group** and Winston under a solo pod larger than 2.
+Sub-shape reachability was originally given the same treatment — Winston is exactly 2 players, Grid is
+2–4, so both blocked-with-reason under **A group**. **Superseded by § 3e:** the sub-shape is no longer a
+wizard question at all.
 
 ### 3d. Implementation rules
 
@@ -415,12 +415,47 @@ blocked-with-reason under **A group** and Winston under a solo pod larger than 2
   `ModePreset.launch` — the six-way mapping onto the two server lobby kinds — is subsumed by
   `resolveLaunch`, which is the same seam with a smaller surface.
 - **Test ids:** `wizard-roster-{solo,friend,group}`, `wizard-cards-{bring-a-deck,random,momir,sealed,draft}`,
-  `wizard-shape-<id>`, `wizard-back`, `wizard-create`, `wizard-play-again`. The two e2e specs that
-  click `mode-preset-draft-sealed` (`sealed-tournament.spec.ts`, `draft-tournament.spec.ts`) move
-  onto a shared fixture helper — they have now been rewritten by two consecutive landing changes,
-  which is the argument for the helper.
+  `wizard-shape-<id>`, `wizard-seats-<n>`, `wizard-back-<step>`, `wizard-create`, `wizard-play-again`.
+  (There is no `wizard-subshape-*` — see § 3e.) The two e2e specs that click `mode-preset-draft-sealed`
+  (`sealed-tournament.spec.ts`, `draft-tournament.spec.ts`) move onto a shared fixture helper — they
+  have now been rewritten by two consecutive landing changes, which is the argument for the helper.
+  Since Phase 6a a spec can also skip the clicking entirely and `page.goto('/play/group/draft/bracket')`.
 - **Help:** new topics for the three roster values and for the wizard itself; `/help` § Game modes
   reorganised around the three questions; every disabled option's reason cross-links `axis-limits`.
+
+### 3e. Sealed and draft shape are a lobby sub-option, not a question
+
+Decided 2026-07-26 by Vincent, after seeing the wizard running. The sub-shape row is removed from step
+2; picking Sealed or Draft commits on the *kind* at its default (Standard sealed, Booster draft) and
+goes straight to step 3.
+
+The reasoning that makes it obvious in hindsight: **the sub-shape is the same category of thing as deck
+legality.** Both hang off the Cards axis as sub-options, both are already rendered by the lobby
+(`LobbyAxes`' `Sealed shape` / `Draft shape` rows, gated by its own `shapeBlock`), and neither is one of
+the three questions the landing screen exists to ask. "Booster, Winston, Grid or Commander?" is a
+question only someone who has already decided to draft can have an opinion about — asking it before
+they have said who they are playing with is asking it too early.
+
+It also simplifies the URL scheme in a principled direction: slugs are the Cards kind
+(`/play/group/draft`, not `/play/group/draft-booster`), because encoding a sub-shape nobody chose would
+invent an answer — exactly the reason `legality` was never encoded either. One segment per answer.
+
+`modeMatrix.subShapeChoices` (plus `subShapeLabel` / `subShapeCaption`) is deleted with it: the wizard
+was its only production consumer, since the lobby's row is hand-written. The
+`COMMANDER_LIMITED_HAS_NO_AI` reason it carried is still live at `LobbyAxes.tsx:292`, so nothing that
+was being explained stopped being explained — it is explained where the control now is.
+
+> **One constraint got weaker, and it is worth knowing.** The wizard used to refuse a group Winston
+> selection up front ("Winston is exactly two players"). The lobby's `shapeBlock` gates on players
+> *present*, not seats — `view.players.length > cardsSeatCap(cards)` — so a lone host in an 8-seat lobby
+> can select Winston and no warning appears until people join. This is **not new** (create a Booster
+> draft for 8, switch it to Winston: same outcome), and the underlying cause is server-side:
+> `LobbyHandler.kt:2164–2175` re-clamps `maxPlayers` for Winston/Grid only when the message *carries*
+> `maxPlayers`, so changing the format alone leaves an 8-seat cap on a 2-player format. The honest fix
+> is a Phase 5 one — re-clamp on format change. A client-side stopgap would be to gate `shapeBlock` on
+> `maxPlayers` rather than players present, at the cost of making the host lower Seats before Winston
+> becomes selectable.
+
 
 ---
 
