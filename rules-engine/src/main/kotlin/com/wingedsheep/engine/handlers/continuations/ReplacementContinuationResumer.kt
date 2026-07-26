@@ -32,7 +32,7 @@ class ReplacementContinuationResumer(
 
     /**
      * Resume after the player chose one of multiple competing replacement
-     * effects (CR 616.1d).
+     * effects (CR 616.1e).
      *
      * Delegates outcome computation to [ReplacementEffectProcessor.applySingle],
      * then manages lifecycle (NextUse shield consumption) before resuming

@@ -541,7 +541,7 @@ class WordsOfWarTest : FunSpec({
         driver.castSpell(activePlayer, inspiration)
         driver.bothPass()
 
-        // Two different shields (War + Wilding) — engine pauses for choice (CR 616.1d)
+        // Two different shields (War + Wilding) — engine pauses for choice (CR 616.1e)
         val warIdx = (driver.pendingDecision as ChooseOptionDecision)
             .options.indexOfFirst { it.contains("War", ignoreCase = true) }
         driver.submitDecision(activePlayer, OptionChosenResponse(driver.pendingDecision!!.id, warIdx))

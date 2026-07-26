@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
  * Three outcomes are possible per CR 614:
  *
  * - [Modified]: the event is modified (e.g., draw 2 instead of 1). The modified
- *   event must be re-checked against remaining replacement effects (CR 616.1e).
+ *   event must be re-checked against remaining replacement effects (CR 616.1f).
  *
  * - [Replaced]: the event is fully replaced with a new composed effect to
  *   execute instead (e.g., Rest in Peace redirecting graveyard to exile).

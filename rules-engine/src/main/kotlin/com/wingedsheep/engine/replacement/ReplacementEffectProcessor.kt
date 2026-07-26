@@ -59,7 +59,7 @@ sealed interface ProcessorResult {
  *
  * - CR 614.5: Only applies each effect once per event chain
  * - CR 616.1: Player choice between competing same-group effects
- * - CR 616.1e: Repeated application until no more effects match
+ * - CR 616.1f: Repeated application until no more effects match
  *
  * This processor is fully domain-agnostic. Each [PendingGameEvent] subtype
  * implements [PendingGameEvent.matches] (event-pattern matching) and
@@ -177,7 +177,7 @@ class ReplacementEffectProcessor {
 
     /**
      * Apply a single replacement effect and recursively re-check if modified
-     * (CR 616.1e — after applying an effect, repeat until no more apply).
+     * (CR 616.1f — after applying an effect, repeat until no more apply).
      *
      * If the outcome is [ReplacementOutcome.Modified], the modified event is run through the
      * pipeline again. If no further replacements match (returns [ProcessorResult.Pass]), the

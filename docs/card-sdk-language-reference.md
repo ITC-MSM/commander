@@ -6799,9 +6799,22 @@ replacementEffect {
 }
 ```
 
-All `ReplacementEffect` subtypes inherit a virtual `restrictions: List<Condition>` property (default empty) from the interface. 
-When non-empty, the replacement only applies if every condition passes when evaluated against the replacement's controller — 
-a uniform gating mechanism used by `PreventDamage`, `DoubleDamage`, `ModifyLifeLoss`, `LifeLossFloor`, and others.
+All `ReplacementEffect` subtypes inherit the following virtual properties from the sealed interface:
+
+- `restrictions: List<Condition>` (default empty) — when non-empty, the replacement only applies if every condition passes when evaluated against the replacement's controller; a uniform gating mechanism used by `PreventDamage`, `DoubleDamage`, `ModifyLifeLoss`, `LifeLossFloor`, and others.
+- `optional: Boolean` (default `false`) — when `true`, the player affected by the event may decline the replacement (e.g. "you may draw a card instead").
+- `priorityGroup: ReplacementPriorityGroup` (default `ReplacementPriorityGroup.ANY`) — the CR 616.1a–f priority tier, declared per subtype so the engine processor never pattern-matches on SDK types.
+
+The priority groups are (CR 616.1a–f):
+
+| Group | CR | Description |
+|-------|-----|-------------|
+| `SELF_REPLACEMENT` | 616.1a | Effects on the affected object itself |
+| `CONTROL_CHANGE` | 616.1b | Control-changing effects |
+| `COPY` | 616.1c | Copy effects |
+| `TRANSFORM` | 616.1d | Replacements that cause entering with back face up |
+| `ANY` | 616.1e | All others — affected player chooses freely |
+| _(repeat)_ | 616.1f | After applying one effect, repeat until no more apply |
 
 - `ReplacementEffect.PreventDamage(amount?, restrictions?, appliesTo)` — prevent damage matching the
   `EventPattern.DamageEvent` shape. `amount = null` prevents all; a number prevents up to that much.

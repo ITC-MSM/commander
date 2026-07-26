@@ -73,7 +73,7 @@ sealed interface ReplacementEffect : TextReplaceable<ReplacementEffect> {
     val optional: Boolean get() = false
 
     /**
-     * Priority group per CR 616.1a-e. Each sealed subtype declares its own
+     * Priority group per CR 616.1a-f. Each sealed subtype declares its own
      * override; the [ReplacementEffectProcessor] reads this directly rather
      * than re-classifying via pattern matching.
      *

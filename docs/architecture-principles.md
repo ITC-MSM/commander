@@ -757,6 +757,7 @@ enum class ReplacementPriorityGroup {
     SELF_REPLACEMENT,  // CR 616.1a — effects on the affected object itself
     CONTROL_CHANGE,    // CR 616.1b — control-changing effects
     COPY,              // CR 616.1c — copy effects
+    TRANSFORM,         // CR 616.1d — replacements that cause entering with back face up
     ANY                // CR 616.1e — all others, player chooses freely
 }
 ```
@@ -772,7 +773,7 @@ The processor:
 4. **Groups by priority** and auto-applies single-effect groups. When multiple effects in the
    same group compete, the player chooses via a `ChooseOptionDecision` continuation
    (`ReplacementChoiceContinuation`).
-5. **Recurses** after each application (CR 616.1e) — applying one replacement may change the
+5. **Recurses** after each application (CR 616.1f) — applying one replacement may change the
    event in a way that makes a new replacement eligible.
 
 **Duration.NextUse (consumable shields).** The SDK provides a general-purpose

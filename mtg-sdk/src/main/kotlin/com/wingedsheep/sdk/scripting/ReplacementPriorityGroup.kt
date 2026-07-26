@@ -1,7 +1,7 @@
 package com.wingedsheep.sdk.scripting
 
 /**
- * Priority group for classifying replacement effects per CR 616.1a-e.
+ * Priority group for classifying replacement effects per CR 616.1a-f.
  *
  * Each [ReplacementEffect] subtype declares its own [ReplacementEffect.priorityGroup]
  * so the engine processor never needs to pattern-match on SDK types.

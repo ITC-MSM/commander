@@ -487,7 +487,7 @@ class WordsOfWorshipTest : FunSpec({
         driver.castSpell(activePlayer, inspiration)
         driver.bothPass()
 
-        // Two different shields exist (Worship + Wilding) — engine pauses for choice (CR 616.1d)
+        // Two different shields exist (Worship + Wilding) — engine pauses for choice (CR 616.1e)
         val worshipIdx = (driver.pendingDecision as ChooseOptionDecision)
             .options.indexOfFirst { it.contains("Worship", ignoreCase = true) }
         driver.submitDecision(activePlayer, OptionChosenResponse(driver.pendingDecision!!.id, worshipIdx))
