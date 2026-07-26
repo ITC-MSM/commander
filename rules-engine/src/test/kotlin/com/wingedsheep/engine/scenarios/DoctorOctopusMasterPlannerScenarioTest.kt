@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -11,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Doctor Octopus, Master Planner (SPM) — {5}{U}{B} Legendary Creature — Human Scientist Villain 4/8.
@@ -76,6 +78,56 @@ class DoctorOctopusMasterPlannerScenarioTest : FunSpec({
         withClue("Drew cards equal to the difference (8 - 0), filling the hand to eight") {
             d.getHandSize(you) shouldBe 8
         }
+    }
+
+    test("cleanup does not force a discard at eight cards — max hand size is raised to eight") {
+        val d = driver()
+        val you = d.activePlayer!!
+        d.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        d.putPermanentOnBattlefield(you, "Doctor Octopus, Master Planner")
+
+        // Exactly eight cards: within Doc Ock's raised maximum, so cleanup must not prompt a discard.
+        // (Regression: the base default of seven used to clamp the "set to eight" static back down.)
+        d.getHand(you).toList().forEach { d.replaceState(d.state.removeFromZone(ZoneKey(you, Zone.HAND), it)) }
+        repeat(8) { d.putCardInHand(you, "Forest") }
+        d.getHandSize(you) shouldBe 8
+
+        d.passPriorityUntil(Step.END)
+        while (!d.isPaused && d.state.stack.isNotEmpty()) d.bothPass()
+        d.bothPass() // pass through the (empty) end step into cleanup
+
+        withClue("Max hand size is eight, so holding eight cards triggers no cleanup discard") {
+            d.pendingDecision shouldBe null
+            d.getHandSize(you) shouldBe 8
+        }
+    }
+
+    test("cleanup discards down to eight when the hand exceeds Doc Ock's raised maximum") {
+        val d = driver()
+        val you = d.activePlayer!!
+        d.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        d.putPermanentOnBattlefield(you, "Doctor Octopus, Master Planner")
+
+        // Nine cards: one over the raised maximum of eight, so cleanup forces a single discard.
+        d.getHand(you).toList().forEach { d.replaceState(d.state.removeFromZone(ZoneKey(you, Zone.HAND), it)) }
+        repeat(9) { d.putCardInHand(you, "Forest") }
+        d.getHandSize(you) shouldBe 9
+
+        d.passPriorityUntil(Step.END)
+        while (!d.isPaused && d.state.stack.isNotEmpty()) d.bothPass()
+        d.bothPass() // pass through the (empty) end step into cleanup
+
+        withClue("Nine cards over a maximum of eight prompts a one-card discard (9 - 8 = 1)") {
+            d.isPaused shouldBe true
+            val decision = d.pendingDecision
+            decision.shouldBeInstanceOf<SelectCardsDecision>()
+            decision.minSelections shouldBe 1
+            decision.maxSelections shouldBe 1
+            decision.prompt shouldBe "Discard down to 8 cards (choose 1 to discard)"
+        }
+
+        d.submitCardSelection(you, d.getHand(you).take(1))
+        d.getHandSize(you) shouldBe 8
     }
 
     test("end step does not trigger when the hand is already at eight") {
