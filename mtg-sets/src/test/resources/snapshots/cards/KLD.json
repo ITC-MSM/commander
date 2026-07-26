@@ -311,6 +311,66 @@
     ]
 }
 
+// Gearseeker Serpent
+{
+    "name": "Gearseeker Serpent",
+    "manaCost": "{5}{U}{U}",
+    "typeLine": "Creature — Serpent",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\n{5}{U}: This creature can't be blocked this turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "keywords": [
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{5}{U}: This creature can't be blocked this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Filip Burburan",
+        "flavorText": "Its collection is vast, yet each ship has a special place in its heart.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d32d8327-6ec2-4d43-b254-b04407612715.jpg?1783937221",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "This card's first ability can't reduce the total cost to cast the spell below {U}{U}."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Once this creature has been blocked, activating its last ability won't cause it to become unblocked."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Workshop Assistant
 {
     "name": "Workshop Assistant",

@@ -3431,6 +3431,71 @@
     ]
 }
 
+// Marketback Walker
+{
+    "name": "Marketback Walker",
+    "manaCost": "{X}{X}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "This creature enters with X +1/+1 counters on it.\n{4}: Put a +1/+1 counter on this creature.\nWhen this creature dies, draw a card for each +1/+1 counter on it.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "ContextProperty",
+                        "key": "LAST_KNOWN_PLUS_ONE_COUNTER_COUNT"
+                    }
+                },
+                "descriptionOverride": "When this creature dies, draw a card for each +1/+1 counter on it."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "{4}: Put a +1/+1 counter on this creature."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": "XValue"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "RARE",
+        "artist": "Svetlin Velinov",
+        "flavorText": "Many of the inventions built to fight the Phyrexians have since been repurposed for civilian use.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2152030-6007-493f-a616-545723a00249.jpg?1783907848"
+    },
+    "colorIdentityOverride": []
+}
+
 // Maximum Overdrive
 {
     "name": "Maximum Overdrive",
@@ -4959,6 +5024,99 @@
     ]
 }
 
+// Scrap Compactor
+{
+    "name": "Scrap Compactor",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{3}, {T}, Sacrifice this artifact: It deals 3 damage to target creature.\n{6}, {T}, Sacrifice this artifact: Destroy target creature or Vehicle.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}, Sacrifice this artifact: It deals 3 damage to target creature."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{6}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or Vehicle"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature|Vehicle"
+                        },
+                        "id": "target creature or Vehicle"
+                    }
+                ],
+                "descriptionOverride": "{6}, {T}, Sacrifice this artifact: Destroy target creature or Vehicle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "242",
+        "artist": "Viko Menezes",
+        "flavorText": "From the screaming of Duskmourn's possessed metal came the happy cries of freed souls.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/12ccd555-60d4-49a1-b022-1e119344172a.jpg?1783907846"
+    },
+    "colorIdentityOverride": []
+}
+
 // Shefet Archfiend
 {
     "name": "Shefet Archfiend",
@@ -5195,6 +5353,41 @@
         "artist": "Elizabeth Peiró",
         "flavorText": "Garima was delighted to finally test out her design. The amazing views were a bonus.",
         "imageUri": "https://cards.scryfall.io/normal/front/5/b/5bc9c501-098d-4560-9826-329b05689e0f.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Spectral Interference
+{
+    "name": "Spectral Interference",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target artifact or creature spell unless its controller pays {4}.",
+    "script": {
+        "spellEffect": {
+            "type": "Counter",
+            "condition": {
+                "type": "CounterCondition.UnlessPaysMana",
+                "cost": "{4}"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|artifact",
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "artist": "Steve Ellis",
+        "flavorText": "\"So many fears. Let's make them all come true.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/860cb8af-a5f6-47e7-a34b-7b9f11ddc8c6.jpg?1783907903"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -6263,6 +6456,42 @@
     ]
 }
 
+// Voyager Quickwelder
+{
+    "name": "Voyager Quickwelder",
+    "manaCost": "{2}{W}",
+    "typeLine": "Artifact Creature — Robot Artificer",
+    "oracleText": "Artifact spells you cast cost {1} less to cast.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "artifact"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "37",
+        "artist": "Kenn Yap",
+        "flavorText": "The Guidelight Voyagers had been stranded on Avishkar with no way to get home. They considered every last unit essential, down to the glitchiest grunt.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6dcdc8c-fba1-4ea1-bf93-65072d10f0da.jpg?1783907912"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Walking Sarcophagus
 {
     "name": "Walking Sarcophagus",
@@ -6439,6 +6668,106 @@
         "GREEN",
         "BLUE"
     ]
+}
+
+// Wreck Remover
+{
+    "name": "Wreck Remover",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Whenever this creature enters or attacks, exile up to one target card from a graveyard. You gain 1 life.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target card in a graveyard"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Graveyard"
+                    },
+                    "id": "up to one target card in a graveyard"
+                },
+                "descriptionOverride": "Whenever this creature enters or attacks, exile up to one target card from a graveyard. You gain 1 life."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target card in a graveyard"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Graveyard"
+                    },
+                    "id": "up to one target card in a graveyard"
+                },
+                "descriptionOverride": "Whenever this creature enters or attacks, exile up to one target card from a graveyard. You gain 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "artist": "Villarrte",
+        "flavorText": "\"Don't get too cocky. We're all junk to the cleanup crew.\"\n—Far Fortune",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e3151960-cc0c-47b5-b476-295d7a17ae14.jpg?1783907845"
+    },
+    "colorIdentityOverride": []
 }
 
 // Wreckage Wickerfolk
