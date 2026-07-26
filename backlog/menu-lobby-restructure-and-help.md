@@ -29,12 +29,14 @@ a phase or the stack is. Explicitly out of scope at the bottom.
 | 4 — unified lobby over a view model | **done** |
 | 7 — landing wizard: three questions, not six cards | **done** |
 | — polish pass | **done** — see § *Polish pass* |
+| 6a — wizard-step URLs | **done** — see § *Phase 6, the wizard half* |
 | 5 — server gaps (4c) | not started — **next**, in the numbered order |
-| 6 — `convertLobby`, real URLs | not started |
+| 6b — `convertLobby`, URLs for the other in-`/` screens | not started |
 
 Everything landed so far is **client-only**. Phase 5 is where this project first touches the server,
 and it is deliberately a separate PR: each of the seven gaps stands alone and each one deletes a
-disabled option from the wizard.
+disabled option from the wizard. Phase 6 split cleanly along the same line — the wizard's URLs needed
+no server, `convertLobby` is nothing but server.
 
 Phase 1 landed the **Cards / Table / Event** vocabulary as
 [`web-client/src/components/lobby/axes.ts`](../web-client/src/components/lobby/axes.ts) and the six
@@ -107,6 +109,10 @@ Consequences: nothing here can be bookmarked, shared, or deep-linked, and **brow
 app** rather than stepping back a screen. `App.tsx:103–113` rewrites the address bar to
 `/tournament/<id>` with raw `history.replaceState`, bypassing the router — so React Router's
 location is stale relative to the address bar during lobby play.
+
+> **Partly resolved (Phase 6a).** The landing wizard's three steps now have real URLs under `/play/...`
+> and are bookmarkable and shareable, so Back steps back a question there. Everything else in this list
+> still has no URL — see § *What is left of Phase 6* for why the remainder is not the same size of job.
 
 ### Duplicated surfaces
 
@@ -599,21 +605,83 @@ Resolve the phantom number-key comment (`useMultiplayerView.ts:64`) while doing 
 | ~~**4**~~ | ~~Unified lobby~~ — **done.** `lobbyViewModel.ts` + `axisChoices.ts` + `useLobbyCommands.ts` behind one `LobbyScreen`; both old overlays deleted; v1 recreate-on-switch confirm. | **yes** |
 | ~~**7**~~ | ~~Landing wizard~~ — **done.** `modeMatrix.ts` + `PlayWizard.tsx` replace the six preset cards; `modePresets.ts` and the `preset-*` topics deleted; numbered stepper, commitment badges, flow line, open-by-default seats, `Play again` chip, `Seats` in the lobby, e2e fixture helper. | **yes** |
 | **5** | Server gaps from 4c, in the numbered order. Each one deletes a disabled option from the wizard. | yes, each |
-| **6** | Optional: `convertLobby` preserving the invite code; real URLs for in-`/` screens so Back works — including a URL per wizard step, which is the point at which the wizard's Back and the browser's Back can finally agree. | yes |
+| ~~**6a**~~ | ~~A URL per wizard step~~ — **done.** `wizardUrl.ts`; the stepper's Back and the browser's Back finally agree, and a selection is shareable. Client-only. | **yes** |
+| **6b** | `convertLobby` preserving the invite code (server); real URLs for the remaining in-`/` screens so Back works across them. | yes |
 
-**Phase 6, re-verified 2026-07-26.** Both halves are untouched. `convertLobby` does not exist anywhere
-in the server or the client; its only two mentions are the comments at
-[`axisChoices.ts:13`](../web-client/src/components/lobby/axisChoices.ts) and
+### Phase 6, the wizard half
+
+**Landed.** The wizard's answers are the URL:
+[`components/ui/wizardUrl.ts`](../web-client/src/components/ui/wizardUrl.ts).
+
+```
+/                                         who with?
+/play/group                               what with?
+/play/group/draft-booster                 how?
+/play/group/draft-booster/bracket         ready
+/play/group/draft-booster/bracket?seats=4 ready, narrowed
+```
+
+**The path carries the answers, not the step number**, so the step stays derived from which answers are
+present — the same derivation `PlayWizard` already did from `useState` — and `history.back()` is by
+construction "drop the last answer". One user action = one history entry is the invariant that keeps
+Back honest; a seat narrowing *replaces*, since it refines the current answer rather than adding one
+(clicking through 8·7·6·5 would otherwise cost four Backs to escape). The stepper's pencil and the
+browser's Back are now exact inverses, which is what Phase 7 broke and this fixes.
+
+A side effect worth having: **a selection is shareable.** Nothing exists server-side until Create, so
+the link is "here's what we're playing", not a lobby.
+
+**Decoding validates**, the same way `loadLastSelection` re-checks `localStorage`: each answer is
+checked against the one before it, so `/play/group/momir` renders step 2 with Momir disabled and its
+reason rather than a dead screen. It also auto-resolves a one-answer step, which is what makes
+`/play/solo/bring-a-deck` complete without the shape being written down.
+
+**The rule that took a bug to find: normalisation may only ever *complete* a path, never shorten one.**
+Truncating is a reachability verdict, and reachability depends on `aiEnabled`, which arrives with the
+connection — so a truncating normalise races the socket. A cold `/play/solo/bring-a-deck` was being
+rewritten to `/` before the server had said whether AI exists, silently destroying a shared link.
+Keeping the link and explaining why it can't be used is both safer and better. (The first diagnosis of
+this blamed `connectionHandlers`' `aiEnabled: msg.aiEnabled ?? false`. That is *not* the cause —
+`MessageSender` sets `encodeDefaults = true`, so the field is always on the wire. Worth writing down,
+because a store probe via `import('/src/store/gameStore.ts')` reads a **different module instance**
+than the app's and reported `aiEnabled: false` throughout; the UI is the only reliable witness.)
+
+**`App.tsx`'s address-bar sync no longer erases in-`/` paths.** Its reset arm sent *any* non-`/` path
+back to `/` on every lobby state change, which ate the wizard's steps; it is now scoped to
+`/tournament/...`. It still deliberately uses raw `history.replaceState` rather than `navigate()`,
+because `/tournament/:lobbyId` is a real route rendering `TournamentEntryPage` — routing there would
+unmount the app and drop the WebSocket. That constraint is the reason the rest of Phase 6 is not free,
+and the comment now says so at the call site.
+
+`wizardUrl.test.ts` walks the same space `modeMatrix.test.ts` does and asserts the round trip, one
+distinct path per selection, the default seat count staying out of the query, and that decoding is
+defensive about every way a hand-typed URL can be wrong.
+
+### What is left of Phase 6
+
+Two things, both **re-verified 2026-07-26**.
+
+**`convertLobby` does not exist** anywhere in the server or the client; its only two mentions are the
+comments at [`axisChoices.ts:13`](../web-client/src/components/lobby/axisChoices.ts) and
 [`useLobbyCommands.ts:12`](../web-client/src/components/lobby/useLobbyCommands.ts) pointing here, which
-is the seam it lands on. `main.tsx` now registers 18 routes (`/help` and `/help/:section` were added by
-Phase 3), but every screen inside `/` — home *and the wizard's three steps*, lobby, draft, deckbuild,
-standings, game, game over — is still a Zustand view under `*` → `App`, so none of them can be
-bookmarked and browser Back still exits the app.
+is the seam it lands on. It is pure server work and does not belong to a client-only PR: the two lobby
+models share no interface and no `kind` discriminator, and `lobbyId` ownership is how
+`QuickGameLobbyHandler.handleJoin:241` decides which handler a code belongs to — so preserving the id
+and the joined players across a conversion means atomically moving a lobby between an in-memory map and
+Redis and re-associating every session. It overlaps gap #7.
 
-Phase 7 added a reason to do this that the original plan only half-anticipated: the wizard has its own
-Back (the numbered stepper), so there are now **two** back affordances on the landing screen that
-disagree — the stepper steps back a question, the browser leaves Argentum. A URL per step is what
-reconciles them.
+**The other in-`/` screens still have no URL.** Lobby, draft, deckbuild, standings, game, game over and
+spectate remain Zustand views under `*` → `App`. Two things make this harder than the wizard was, and
+both are worth knowing before starting:
+
+- They are **store-driven, not navigable**: the state comes from WebSocket messages, so a URL for
+  `/game/:id` can only *reflect* what is showing. Entering one cold would need the socket to repopulate
+  before the screen means anything.
+- **The route table fights it.** `/tournament/:lobbyId` renders `TournamentEntryPage`, so `App` cannot
+  `navigate()` there without unmounting itself and dropping the socket — which is exactly why the sync
+  at `App.tsx:115–125` writes the address bar with raw `history.replaceState` and leaves React Router's
+  location stale. Giving these screens real URLs means restructuring that route so one element owns both
+  the bare and the `:lobbyId` form.
 
 ### What Phases 0/1/3 actually shipped
 
