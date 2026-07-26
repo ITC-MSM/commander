@@ -1166,15 +1166,20 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       )}
 
       {/* Show-table bottom row: the viewer's team (team game) or the balanced bottom half (FFA)
-          shares the bottom as a multi-board strip (rows 4-5), mirroring the top row. Your own
-          board (when playing) keeps its interactive battlefield + fixed hand; every other seat —
-          including every seat for an observer — renders as an overview cell (lands toward the
-          bottom edge) with per-board collapse. Otherwise the classic single bottom board. */}
+          shares the bottom as a multi-board strip, mirroring the top row. Your own board (when
+          playing) keeps its interactive battlefield + fixed hand; every other seat — including
+          every seat for an observer — renders as an overview cell (lands toward the bottom edge)
+          with per-board collapse. Otherwise the classic single bottom board.
+
+          Rows: an observer has no hand of their own down here, so the strip takes row 5 as well
+          (the mirror of the top strip claiming row 1 once opponent hands are hidden). A *playing*
+          viewer's fixed hand fan still paints in row 5 — the strip must stop above it, or the
+          bottom boards size themselves into that band and their land row runs off the screen. */}
       {bottomStripActive ? (
         <div
           data-team-strip="bottom"
           style={{
-            gridRow: '4 / 6',
+            gridRow: viewerIsObserver ? '4 / 6' : '4 / 5',
             position: 'relative',
             display: 'flex',
             overflow: 'hidden',
