@@ -1014,6 +1014,17 @@ floating mana before tapping anything — so the player simply confirms. A mana 
 decision of its own (choosing a color) nests above a `ReopenManaPaymentDecisionContinuation`, which
 restores the window once it resolves.
 
+**Affordability vs. auto-tappability.** These payments gate the *prompt itself* on `canPay`: ward
+counters the spell, and a "you may pay" trigger is skipped, without asking when the solver sees no
+way to pay. So `canPay` must know about mana the solver would never auto-tap. It does, via four
+"extras" helpers that contribute production on top of `solve()`: `TapPermanents` (Birchlore
+Rangers), tap+`SacrificeSelf` (Treasure), composite tap+`TapPermanents` (Springleaf Drum), and
+`calculateExplicitActivationBonusMana` for cost shapes `findAvailableManaSources` doesn't model at
+all. They are affordability-only — auto-pay must never silently sacrifice or discard, so the player
+activates these themselves, at priority or inside the payment window. Each helper owns a disjoint
+set of cost shapes; `ExplicitActivationManaSourcesTest` pins that partition so the same source can't
+be counted twice.
+
 **Why three tiers instead of a single "pay cost" function?**
 
 - **Legal action computation.** The server must determine whether each spell in a player's hand is

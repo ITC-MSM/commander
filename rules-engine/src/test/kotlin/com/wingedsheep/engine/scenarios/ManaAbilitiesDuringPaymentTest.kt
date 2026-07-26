@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -194,6 +195,56 @@ class ManaAbilitiesDuringPaymentTest : FunSpec({
         driver.bothPass()
 
         driver.findPermanent(opponent, "Warded Bear") shouldBe null
+    }
+
+    test("ward prompts at all when the only mana source is one the solver can't tap") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40), startingLife = 20)
+        val caster = driver.activePlayer!!
+        val opponent = driver.getOpponent(caster)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val bear = driver.putCreatureOnBattlefield(opponent, "Warded Bear")
+        // No lands at all — Blood Chalice's "Sacrifice this artifact: Add {B}" is the only way to
+        // pay ward {1}, and `findAvailableManaSources` cannot see it. Before the affordability
+        // path learned about explicit-activation sources, the pre-gate concluded "can't pay" and
+        // countered the spell without ever asking.
+        val chalice = driver.putPermanentOnBattlefield(caster, "Blood Chalice")
+
+        driver.giveMana(caster, Color.RED, 1)
+        val bolt = driver.putCardInHand(caster, "Lightning Bolt")
+        driver.castSpellWithTargets(caster, bolt, listOf(ChosenTarget.Permanent(bear)))
+        driver.bothPass()
+
+        val decision = driver.pendingDecision
+        decision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        decision.availableSources.shouldBeEmpty()
+
+        driver.submit(ActivateAbility(caster, chalice, driver.manaAbilityOf("Blood Chalice").id))
+            .error shouldBe null
+        driver.submitDecision(caster, ManaSourcesSelectedResponse(driver.pendingDecision!!.id))
+        driver.bothPass()
+
+        driver.findPermanent(opponent, "Warded Bear") shouldBe null
+    }
+
+    test("ward still counters with no way at all to pay") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40), startingLife = 20)
+        val caster = driver.activePlayer!!
+        val opponent = driver.getOpponent(caster)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val bear = driver.putCreatureOnBattlefield(opponent, "Warded Bear")
+        // A Blood Chalice with nothing to sacrifice… is fine, it sacrifices itself. Give the
+        // caster nothing instead: the pre-gate must still short-circuit to countered.
+        driver.giveMana(caster, Color.RED, 1)
+        val bolt = driver.putCardInHand(caster, "Lightning Bolt")
+        driver.castSpellWithTargets(caster, bolt, listOf(ChosenTarget.Permanent(bear)))
+        driver.bothPass()
+
+        driver.pendingDecision shouldBe null
+        driver.findPermanent(opponent, "Warded Bear").shouldNotBeNull()
     }
 
     test("declining a ward explicitly still counters the spell even with mana floating") {
