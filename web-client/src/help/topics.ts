@@ -18,6 +18,8 @@
  * both surfaces can render (and that a lint/test can walk).
  */
 
+import { SHORTCUTS } from './shortcuts'
+
 export type HelpSection = 'getting-started' | 'modes' | 'playing' | 'decks' | 'advanced'
 
 export type HelpBlock =
@@ -25,6 +27,12 @@ export type HelpBlock =
   | { kind: 'ul'; items: readonly string[] }
   /** Renders the full `shortcuts.ts` table. */
   | { kind: 'shortcuts' }
+
+/** An off-site reference. Only for things we deliberately track rather than define ourselves. */
+export interface HelpLink {
+  label: string
+  href: string
+}
 
 export interface HelpTopic {
   id: string
@@ -36,6 +44,8 @@ export interface HelpTopic {
   body?: readonly HelpBlock[]
   /** Other topic ids, rendered as links. */
   related?: readonly string[]
+  /** External references, rendered as outbound links below `related`. */
+  links?: readonly HelpLink[]
   /** Ids from `shortcuts.ts`, rendered as chips under the topic. */
   shortcuts?: readonly string[]
 }
@@ -126,7 +136,11 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     title: 'Where your decks live',
     summary:
       'Saved decks live in this browser until you sign in, and in your account afterwards. The deckbuilder’s My Decks list is the same list every lobby deck picker reads from.',
-    related: ['deckbuilder', 'deck-sharing'],
+    body: [
+      { kind: 'p', text: 'Browser storage is per-browser and easy to lose: clearing site data or history takes your decks with it, and they do not follow you to a phone or a second computer. An account is the fix — signing in later keeps everything you already built, and you are offered a one-click migration.' },
+      { kind: 'p', text: 'A deck you want to keep without an account can also be exported as a decklist or a share link, both of which survive the browser.' },
+    ],
+    related: ['guest-vs-account', 'deckbuilder', 'deck-sharing', 'deck-import-export'],
   },
 
   // ── Game modes ─────────────────────────────────────────────────────────
@@ -470,7 +484,21 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     title: 'Search syntax',
     summary:
       'The deckbuilder search speaks a Scryfall-style query language — `t:creature`, `c<=rw`, `cmc>=4`, `o:flying`, `f:standard`, `is:legendary`. The `?` button beside the search box lists every operator with examples.',
+    body: [
+      { kind: 'p', text: 'The grammar is Scryfall’s, deliberately: bare words match names, `key:value` filters, `-` negates, `or` and parentheses group, quotes hold phrases together, and the comparison operators `:` `=` `>` `<` `>=` `<=` work wherever a value is ordered.' },
+      { kind: 'ul', items: [
+        'Colour — `c:rg`, `c:azorius`, `c<=rw`, `c:colorless`, and `id:` for colour identity.',
+        'Type and text — `t:goblin`, `t:legendary`, `o:flying` for oracle text, `kw:trample` for keywords.',
+        'Cost — `mv>=4` (`cmc` also works), `m:{2/G}` for a specific mana cost.',
+        'Stats — `pow>=4`, `tou<2`, `loy:3`.',
+        'Printing — `s:fdn` for a set, `r:mythic` for rarity.',
+        'Legality — `f:standard`, `f:commander`, `f:pauper`.',
+        'Flags — `is:legendary`, `is:permanent`, `is:multicolor`, `is:vanilla`, `is:dfc`.',
+      ] },
+      { kind: 'p', text: 'Not every filter Scryfall documents is implemented. Anything needing data the engine does not carry — prices, artists, printing dates — is rejected rather than silently ignored, and so is anything the card model does not distinguish yet: `is:split` answers “split-card layout not modelled”. A query never quietly means something other than what you typed.' },
+    ],
     related: ['deckbuilder'],
+    links: [{ label: 'Scryfall’s full syntax reference', href: 'https://scryfall.com/docs/syntax' }],
   },
   {
     id: 'deck-import-export',
@@ -478,7 +506,19 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     title: 'Import and export',
     summary:
       'Paste an Arena-style decklist (`4 Lightning Bolt`) straight into the deckbuilder or a lobby deck picker, and export the same way.',
-    related: ['deckbuilder'],
+    body: [
+      { kind: 'p', text: 'Arena, Moxfield and plain text are accepted interchangeably, so whatever your other tool exports should paste in as-is. These line shapes are recognised:' },
+      { kind: 'ul', items: [
+        '`4 Lightning Bolt` — plain.',
+        '`4x Lightning Bolt` — the Moxfield “x”.',
+        '`4 Lightning Bolt (LEA) 161` — Arena, with set code and collector number. Give these when you want a specific printing; without them you get the latest.',
+        '`1 Cardname (SET) *F* *A* 42 #tag` — Moxfield bulk edit. Foil, alter and tag markers are read and discarded.',
+        '`SB: 2 Counterspell` — the MTGO sideboard prefix.',
+      ] },
+      { kind: 'p', text: 'Section headers are case-insensitive: `Deck` / `Mainboard` / `Main Deck` / `Maindeck`, `Sideboard` / `Side` / `SB`, `Commander` / `Commanders` / `EDH`, `Companion`, and `About`. Only the main deck and commander are imported. Blank lines and lines starting with `//` or `#` are ignored.' },
+      { kind: 'p', text: 'A line that looks like a card but cannot be matched is reported rather than dropped, so an import never silently loses cards. Export writes the plain `4 Lightning Bolt` shape, which every one of the above tools reads.' },
+    ],
+    related: ['deckbuilder', 'deck-sharing'],
   },
   {
     id: 'deck-sharing',
@@ -498,6 +538,17 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       { kind: 'p', text: 'Anything you leave out of the deck stays available as your sideboard between games in a match. You can save a drafted deck to My Decks from the standings screen — the printings you actually drafted are preserved.' },
     ],
     related: ['cards-sealed', 'cards-draft'],
+  },
+  {
+    id: 'set-completion',
+    section: 'decks',
+    title: 'Which cards are implemented',
+    summary:
+      'Set Completion, on the home screen under Build & Browse, lists every set and how much of it the engine can actually play. Useful before committing to a deck or picking a set to draft.',
+    body: [
+      { kind: 'p', text: 'The deckbuilder only ever offers implemented cards, so a deck you build there always works. This page is the other direction: it tells you what is missing from a set you had in mind.' },
+    ],
+    related: ['deckbuilder'],
   },
 
   // ── Advanced ───────────────────────────────────────────────────────────
@@ -546,8 +597,8 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'advanced',
     title: 'Lab tools',
     summary:
-      'Debugging and content tools, not part of normal play. Set Completion (which cards of a set are implemented) is always available; the Scenario Builder (start a game from a hand-authored board state) and the LLM Tournament runner only appear in dev builds, because both need server endpoints a production deployment does not expose.',
-    related: ['replays'],
+      'Debugging and content tools, not part of normal play: the Scenario Builder (start a game from a hand-authored board state) and the LLM Tournament runner. They only appear in dev builds, because both need server endpoints a production deployment does not expose.',
+    related: ['replays', 'set-completion'],
   },
 ]
 
@@ -557,6 +608,41 @@ export function topicById(id: string): HelpTopic | undefined {
 
 export function topicsInSection(section: HelpSection): readonly HelpTopic[] {
   return HELP_TOPICS.filter((t) => t.section === section)
+}
+
+export function sectionMeta(section: HelpSection) {
+  // Non-null: `HelpSection` is exactly the set of ids in HELP_SECTIONS.
+  return HELP_SECTIONS.find((s) => s.id === section)!
+}
+
+/**
+ * Everything about a topic that a reader might type into the search box, lower-cased once.
+ *
+ * Includes the section's own title and blurb (so "modes" finds the mode topics) and, for the
+ * shortcuts block, the whole shortcut table — otherwise searching "escape" or "spectate" would miss
+ * the one topic that actually documents those keys.
+ */
+function topicHaystack(topic: HelpTopic): string {
+  const meta = sectionMeta(topic.section)
+  const parts: string[] = [topic.title, topic.summary, meta.title, meta.blurb]
+  for (const block of topic.body ?? []) {
+    if (block.kind === 'p') parts.push(block.text)
+    else if (block.kind === 'ul') parts.push(...block.items)
+    else for (const s of SHORTCUTS) parts.push(s.keys, s.label, s.where)
+  }
+  return parts.join(' ').toLowerCase()
+}
+
+const HAYSTACKS = new Map(HELP_TOPICS.map((t) => [t.id, topicHaystack(t)]))
+
+/** Topics matching every whitespace-separated term in `query`, in registry order. */
+export function searchTopics(query: string): readonly HelpTopic[] {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
+  if (terms.length === 0) return []
+  return HELP_TOPICS.filter((t) => {
+    const haystack = HAYSTACKS.get(t.id) ?? ''
+    return terms.every((term) => haystack.includes(term))
+  })
 }
 
 /** Deep link to a topic on the help page. */

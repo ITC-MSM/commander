@@ -32,6 +32,15 @@
 
 .contentBackdrop {
   position: relative;
+  /* Shrinkable, so the glass card gives ground to the side rail before the two can collide. The
+     max is the old fixed width: 660px of tiers plus the horizontal padding either side. Sized by
+     width rather than flex-basis because the same rule has to survive the stacked column below
+     1120px, where a basis would be read as a height. */
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: var(--landing-card-w);
+  min-width: 0;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -56,12 +65,59 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/*
+ * Landing layout: the glass card and the side rail (auth widget, public lobbies, live games).
+ *
+ * The rail used to be `position: fixed` in the top-right corner while the card was centred in the
+ * *viewport*, so the two were laid out in ignorance of each other. They only missed on a wide
+ * monitor: at 1512px (a 14" MacBook Pro) the gap was 1px, and at 1440px the rail sat 35px *over*
+ * the card. Both are in flow now, so a collision is not expressible.
+ *
+ * Three bands, widest first:
+ *  - >= 1480px  a mirror gutter is rendered opposite the rail, so the card is back to being exactly
+ *               viewport-centred with the rail floating in the right margin.
+ *  - 1121px+    no gutter: card and rail are centred as a pair, and the card gives up width first.
+ *  - <= 1120px  stacked, rail below the card — a 500px-wide card is worse than a scroll.
+ */
 .landingLayout {
+  --landing-rail-w: 320px;
+  --landing-card-w: 756px;
   margin: auto 0;
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+/* Reserves the same width as the rail on the opposite side. Empty on purpose — its only job is to
+   keep the card centred, and it is `display: none` in the bands where that isn't affordable. */
+.landingGutter {
+  display: none;
+  flex: none;
+  width: var(--landing-rail-w);
+}
+
+@media (min-width: 1480px) {
+  .landingGutter {
+    display: block;
+  }
+}
+
+/* Below this the padding is spending width the wizard needs more than the glass does. */
+@media (max-width: 1280px) {
+  .contentBackdrop {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+}
+
+@media (max-width: 1120px) {
+  .landingLayout {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+  }
 }
 
 @media (max-width: 639px) {
@@ -71,7 +127,6 @@
   }
 
   .landingLayout {
-    flex-direction: column;
     gap: var(--space-3);
   }
 }
@@ -596,22 +651,22 @@
 /* =========================================================================
  * Public Tournament List
  * ========================================================================= */
+/* In flow beside the glass card (see `.landingLayout`), not pinned to the viewport corner. Capped in
+   height so a busy server's lobby list scrolls inside the rail instead of stretching the row. */
 .sidePanelStack {
-  position: fixed;
-  top: var(--space-4);
-  right: var(--space-4);
-  width: min(360px, calc(100vw - 2 * var(--space-4)));
+  flex: none;
+  width: var(--landing-rail-w);
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  max-height: calc(100vh - 2 * var(--space-4));
+  max-height: calc(100vh - 2 * var(--space-6));
   overflow-y: auto;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1120px) {
   .sidePanelStack {
-    position: static;
-    width: min(480px, 100%);
+    width: min(var(--landing-card-w), 100%);
     max-height: none;
   }
 }
@@ -676,12 +731,14 @@
   box-shadow: 0 0 6px rgba(46, 204, 113, 0.7);
 }
 
+/* Sized for the 320px rail: the action button gets exactly the width its label needs and the rest
+   goes to the lobby description, which is the part that decides whether you click. */
 .publicTournamentRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3);
+  gap: var(--space-2);
+  padding: 9px var(--space-3);
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
@@ -697,8 +754,9 @@
 .publicTournamentInfo {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .publicTournamentName {
@@ -713,7 +771,8 @@
 .publicTournamentMeta,
 .publicTournamentEmpty {
   color: var(--text-tertiary);
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .publicTournamentEmpty {
@@ -721,13 +780,14 @@
 }
 
 .publicTournamentJoinButton {
+  flex: 0 0 auto;
   background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
   color: var(--text-primary);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--font-sm);
+  padding: 6px var(--space-3);
+  font-size: 12px;
   font-weight: var(--font-weight-semibold);
   white-space: nowrap;
 }
@@ -737,13 +797,14 @@
 }
 
 .spectateButton {
+  flex: 0 0 auto;
   background: linear-gradient(180deg, #6366f1 0%, #4338ca 100%);
   color: var(--text-primary);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--font-sm);
+  padding: 6px var(--space-3);
+  font-size: 12px;
   font-weight: var(--font-weight-semibold);
   white-space: nowrap;
 }
@@ -2858,11 +2919,13 @@
 /* =========================================================================
  * Attribution
  * ========================================================================= */
+/*
+ * In normal flow at the end of the scrolling overlay, not absolutely pinned. `.landingLayout`'s
+ * `margin: auto 0` still centres the card in whatever room is left above it, so on a roomy screen
+ * this reads as a pinned footer — but when the content is taller than the viewport the two scroll
+ * together instead of the footer sitting on top of the panel.
+ */
 .attribution {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2898,16 +2961,9 @@
   text-decoration-color: rgba(207, 231, 255, 0.9);
 }
 
-/*
- * On narrow screens the overlay scrolls and the absolutely-pinned attribution
- * floats over the content (it overlapped the public-lobby panel). Drop it back
- * into normal flow so it sits below the content as a full-width footer.
- * Placed after the base rules so these overrides win at equal specificity.
- */
+/* Full-bleed footer once the overlay's own padding is all the margin there is to spare. */
 @media (max-width: 639px) {
   .attribution {
-    position: static;
-    transform: none;
     margin: var(--space-2) auto 0;
     width: 100%;
     max-width: 100%;
@@ -3162,46 +3218,58 @@
   color: var(--text-tertiary);
 }
 
+/*
+ * The launch block: what happens, how many seats, and the button.
+ *
+ * These used to share one wrapping flex row with `align-items: flex-end`, which put a six-chip seat
+ * picker and its two-line caption beside a large primary button — the caption wrapped under the
+ * chips, the button floated at an arbitrary height, and the group read as three unrelated things
+ * that happened to be adjacent. One column, and the call to action gets the full width it is worth.
+ */
 .wizardFooter {
   display: flex;
-  align-items: flex-end;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--space-3);
-  padding-top: var(--space-1, 4px);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .wizardSeats {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1, 4px);
   min-width: 0;
 }
 
 .wizardSeatsRow {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-2);
 }
 
 .wizardSeatsCaption {
   margin: 0;
-  max-width: 44ch;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.4;
   color: var(--text-disabled);
 }
 
 /* What will actually happen, stage by stage: "Open boosters → Build a deck → Standings". The one
-   thing none of the names on the tiles can tell you. Inline text on its own row, not a flex row:
-   nested flex boxes at this width broke every stage onto its own line. */
+   thing none of the names on the tiles can tell you, so it leads the launch block rather than
+   trailing the tiles as loose 10px text. Inline text on its own row, not a flex row: nested flex
+   boxes at this width broke every stage onto its own line. */
 .wizardFlow {
   margin: 0;
-  font-size: var(--font-xs, 0.75rem);
+  font-size: var(--font-sm);
   line-height: 1.6;
 }
 
 .wizardFlowStage {
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
 }
 
 .wizardFlowArrow {
@@ -3277,6 +3345,13 @@
   gap: var(--space-3);
 }
 
+/* Four options — the Table question. Three columns leave a single tile stranded on a second row,
+   reading as an afterthought rather than as a peer of the other three; 2×2 is the same two rows with
+   no orphan, and the extra width lets the taglines fit in fewer lines. */
+.presetGridPairs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 @media (max-width: 900px) {
   .presetGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3284,7 +3359,8 @@
 }
 
 @media (max-width: 520px) {
-  .presetGrid {
+  .presetGrid,
+  .presetGridPairs {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -3422,4 +3498,35 @@
 
 .continueChipDismiss:hover {
   color: var(--text-primary);
+}
+
+/* =========================================================================
+ * Compact landing — short viewports
+ *
+ * A laptop is a wide, *short* screen: a 14" MacBook gives about 800px of viewport once the browser
+ * has taken its share. The tallest landing state — all three questions answered, four Table tiles,
+ * the seat picker and the launch block — overran that on vertical rhythm alone, so the rhythm
+ * tightens and nothing is taken away.
+ *
+ * Last in the file on purpose: every rule below overrides a single-class rule declared earlier, and
+ * at equal specificity source order is what decides.
+ * ========================================================================= */
+@media (max-height: 900px) {
+  .connectionOverlay {
+    gap: var(--space-4);
+  }
+
+  .contentBackdrop {
+    gap: var(--space-4);
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-4);
+  }
+
+  .title {
+    font-size: var(--font-2xl);
+  }
+
+  .homeTiers {
+    gap: var(--space-4);
+  }
 }

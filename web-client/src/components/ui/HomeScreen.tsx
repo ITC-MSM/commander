@@ -5,9 +5,10 @@
  *
  * - **PLAY** — the {@link PlayWizard}'s three questions, a join-code row, and a Continue chip when a
  *   lobby is still live from a previous page load.
- * - **BUILD & BROWSE** — deckbuilder, replays and the account pages (`/stats`, `/friends`,
- *   `/profile`), which had no home-screen entry at all before.
- * - **LAB** — debugging and content tools, explicitly captioned as not part of normal play.
+ * - **BUILD & BROWSE** — deckbuilder, replays and set completion. The account pages (`/stats`,
+ *   `/friends`, `/profile`) live on the {@link AuthWidget} in the side rail instead, next to who
+ *   you are signed in as.
+ * - **LAB** — debugging and content tools, dev builds only; the tier does not render otherwise.
  *
  * What is playable is declarative (`lobby/modeMatrix.ts`) and the wizard only renders it; this file
  * only knows how to turn a finished selection into lobby-creation messages.
@@ -282,7 +283,7 @@ export function HomeScreen({
 
   const showPublicLobbies = !sessionId && !lobbyState && (publicLobbies.length > 0 || publicLobbiesError || (onlinePlayers ?? 0) > 0)
   const showLiveGames = !sessionId && !lobbyState && liveGames.length > 0
-  const signedIn = authStatus === 'authenticated'
+  const showSideRail = accountsEnabled || showPublicLobbies || showLiveGames
 
   const handleSpectate = (gameSessionId: string) => {
     if (status === 'connected') {
@@ -310,6 +311,10 @@ export function HomeScreen({
         </button>
       </div>
       <div className={styles.landingLayout}>
+        {/* Mirrors the side rail's width so the glass card stays viewport-centred rather than
+            centred-minus-the-rail. Collapsed below 1480px, where that symmetry costs more width
+            than the card can spare — see `.landingGutter`. */}
+        {showSideRail && <div className={styles.landingGutter} aria-hidden="true" />}
         <div className={styles.contentBackdrop}>
           <h1 className={styles.title}>Argentum Engine</h1>
           <span className={styles.commitHash}>{__COMMIT_HASH__}</span>
@@ -407,7 +412,10 @@ export function HomeScreen({
                 <DeckMigrationPrompt />
               </section>
 
-              {/* ── BUILD & BROWSE ───────────────────────────────────── */}
+              {/* ── BUILD & BROWSE ───────────────────────────────────────
+                  Only what every visitor can use. Stats, Friends and Profile were here too, and
+                  they are all account-scoped and all already reachable from the AuthWidget in the
+                  side rail — two routes to the same three pages, one of which is right above. */}
               <section className={styles.homeTier}>
                 <SectionHeading label="Build & Browse" />
                 <div className={styles.secondaryButtonRow}>
@@ -417,49 +425,38 @@ export function HomeScreen({
                   <button onClick={() => setShowReplays(true)} className={styles.secondaryButton}>
                     Replays
                   </button>
-                  {signedIn && (
-                    <>
-                      <button onClick={() => navigate('/stats')} className={styles.secondaryButton}>
-                        Stats
-                      </button>
-                      <button onClick={() => navigate('/friends')} className={styles.secondaryButton}>
-                        Friends
-                      </button>
-                      <button onClick={() => navigate('/profile')} className={styles.secondaryButton}>
-                        Profile
-                      </button>
-                    </>
-                  )}
-                </div>
-              </section>
-
-              {/* ── LAB ──────────────────────────────────────────────── */}
-              <section className={styles.homeTier}>
-                <SectionHeading label="Lab" hint="advanced" />
-                <div className={styles.secondaryButtonRow}>
+                  {/* "Which cards of a set can I actually play with?" is a deckbuilding question, not
+                      a debugging one — it sat under LAB, behind an "advanced" caption that told
+                      players it wasn't for them. */}
                   <button onClick={() => navigate('/set-completion')} className={styles.secondaryButton}>
                     Set Completion
                   </button>
-                  {/* Dev-only entry points. The Scenario Builder drives `/api/dev/scenarios/*`, which
-                      only exists when the server runs with GAME_DEV_ENDPOINTS_ENABLED — so in a
-                      production build the button would lead somewhere that cannot work. The *routes*
-                      stay open either way: a replay's "share as scenario" link is a real `/scenario?s=`
-                      deep link, and gating the route would break it. */}
-                  {import.meta.env.DEV && (
-                    <>
-                      <button onClick={() => navigate('/scenario')} className={styles.secondaryButton}>
-                        Scenario Builder
-                      </button>
-                      <button onClick={() => navigate('/llm-tournament')} className={styles.secondaryButton}>
-                        LLM Tournament
-                      </button>
-                    </>
-                  )}
                 </div>
-                <p className={styles.tierCaption}>
-                  Debugging and content tools, not part of normal play.
-                </p>
               </section>
+
+              {/* ── LAB ──────────────────────────────────────────────────
+                  Dev builds only, and the whole tier goes with it. Both entry points drive
+                  `/api/dev/*`, which exists only when the server runs with GAME_DEV_ENDPOINTS_ENABLED
+                  — in a production build they lead somewhere that cannot work, and with Set
+                  Completion moved out there is nothing left in the tier to justify rendering it.
+                  The *routes* stay open either way: a replay's "share as scenario" link is a real
+                  `/scenario?s=` deep link, and gating the route would break it. */}
+              {import.meta.env.DEV && (
+                <section className={styles.homeTier}>
+                  <SectionHeading label="Lab" hint="dev builds only" />
+                  <div className={styles.secondaryButtonRow}>
+                    <button onClick={() => navigate('/scenario')} className={styles.secondaryButton}>
+                      Scenario Builder
+                    </button>
+                    <button onClick={() => navigate('/llm-tournament')} className={styles.secondaryButton}>
+                      LLM Tournament
+                    </button>
+                  </div>
+                  <p className={styles.tierCaption}>
+                    Debugging and content tools, not part of normal play.
+                  </p>
+                </section>
+              )}
             </div>
           )}
 
@@ -468,7 +465,7 @@ export function HomeScreen({
           )}
         </div>
 
-        {(accountsEnabled || showPublicLobbies || showLiveGames) && (
+        {showSideRail && (
           <div className={styles.sidePanelStack}>
             <AuthWidget />
             {showPublicLobbies && (
@@ -621,11 +618,11 @@ function LiveGameList({
 }
 
 function liveGameMeta(game: LiveGameEntry): string {
-  const lifeSummary = `${game.player1Life} / ${game.player2Life} life`
+  const lifeSummary = nbsp(`${game.player1Life} / ${game.player2Life} life`)
   if (game.kind === 'tournament') {
-    return `Tournament · Round ${game.round} · ${lifeSummary}`
+    return `Tournament · ${nbsp(`Round ${game.round}`)} · ${lifeSummary}`
   }
-  return `Quick Game · ${lifeSummary}`
+  return `${nbsp('Quick Game')} · ${lifeSummary}`
 }
 
 function publicLobbyName(entry: PublicLobbyEntry): string {
@@ -636,22 +633,34 @@ function publicLobbyName(entry: PublicLobbyEntry): string {
   return entry.hostName ? `${entry.hostName}'s Quick Game` : 'Quick Game'
 }
 
+/**
+ * Non-breaking spaces inside each fact, so the rail's narrow column only ever wraps at a `·` —
+ * "1/2" and "players" on separate lines read as two facts rather than one.
+ */
+function nbsp(text: string): string {
+  return text.replace(/ /g, ' ')
+}
+
 function publicLobbyMeta(entry: PublicLobbyEntry): string {
+  const seats = nbsp(`${entry.playerCount}/${entry.maxPlayers} players`)
   if (entry.kind === 'tournament') {
+    const series = entry.gamesPerMatch > 1 ? nbsp(`${entry.gamesPerMatch} games per matchup`) : null
     if (entry.format === 'PREMADE_DECKS') {
-      const parts = ['Premade Decks']
-      if (entry.deckFormat) parts.push(labelForFormat(entry.deckFormat))
-      parts.push(`${entry.playerCount}/${entry.maxPlayers} players`)
-      if (entry.gamesPerMatch > 1) parts.push(`${entry.gamesPerMatch} games per matchup`)
+      const parts = [nbsp('Premade Decks')]
+      if (entry.deckFormat) parts.push(nbsp(labelForFormat(entry.deckFormat)))
+      parts.push(seats)
+      if (series) parts.push(series)
       return parts.join(' · ')
     }
-    const base = `${formatTournamentFormat(entry.format)} · ${entry.boosterCount} ${entry.format === 'DRAFT' ? 'packs' : 'boosters'} · ${entry.playerCount}/${entry.maxPlayers} players`
-    return entry.gamesPerMatch > 1 ? `${base} · ${entry.gamesPerMatch} games per matchup` : base
+    const packs = nbsp(`${entry.boosterCount} ${entry.format === 'DRAFT' ? 'packs' : 'boosters'}`)
+    const parts = [nbsp(formatTournamentFormat(entry.format)), packs, seats]
+    if (series) parts.push(series)
+    return parts.join(' · ')
   }
-  const parts = ['Quick Game']
+  const parts = [nbsp('Quick Game')]
   if (entry.setCode) parts.push(entry.setCode)
-  if (entry.format) parts.push(labelForFormat(entry.format))
-  parts.push(`${entry.playerCount}/${entry.maxPlayers} players`)
+  if (entry.format) parts.push(nbsp(labelForFormat(entry.format)))
+  parts.push(seats)
   return parts.join(' · ')
 }
 
