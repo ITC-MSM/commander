@@ -1,3 +1,96 @@
+// Aatchik, Emerald Radian
+{
+    "name": "Aatchik, Emerald Radian",
+    "manaCost": "{3}{B}{B}{G}",
+    "typeLine": "Legendary Creature — Insect Druid",
+    "oracleText": "When Aatchik enters, create a 1/1 green Insect creature token for each artifact and/or creature card in your graveyard.\nWhenever another Insect you control dies, put a +1/+1 counter on Aatchik. Each opponent loses 1 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "creature|artifact"
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Insect"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/9/d/9d3d855d-93a1-4ec4-af19-e544f271ae10.jpg?1783907678"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Insect ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "EachOpponent"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "rarity": "RARE",
+        "artist": "Loïc Canavaggia",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbdaa29b-85ff-4a06-b27e-fcdbdfd4a3fe.jpg?1783907862",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If a card in your graveyard is an artifact creature card, count it only once when determining how many Insect tokens to create for Aatchik's first ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If Aatchik is dealt lethal damage at the same time as another Insect you control, Aatchik's last ability will still trigger, causing each opponent to lose 1 life, but Aatchik won't get a +1/+1 counter in time to save it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Aetherjacket
 {
     "name": "Aetherjacket",
@@ -232,6 +325,85 @@
     ]
 }
 
+// Amonkhet Raceway
+{
+    "name": "Amonkhet Raceway",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{T}: Add {C}.\nMax speed — {T}: Target creature gains haste until end of turn.",
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Max speed — {T}: Target creature gains haste until end of turn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "248",
+        "rarity": "UNCOMMON",
+        "artist": "Brian Valeza",
+        "flavorText": "Stage 2: The sands and waters of Amonkhet.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/f/4f312807-ea2a-4385-8774-4e23b4a5d4a6.jpg?1783907845",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "\"Max speed — [ability]\" means \"As long as you have max speed, this object has [ability].\" If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Apocalypse Runner
 {
     "name": "Apocalypse Runner",
@@ -378,6 +550,90 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Avishkar Raceway
+{
+    "name": "Avishkar Raceway",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{T}: Add {C}.\nMax speed — {3}, {T}, Discard a card: Draw a card.",
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Max speed — {3}, {T}, Discard a card: Draw a card"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "249",
+        "artist": "Julian Kok Joon Wen",
+        "flavorText": "Stage 1: The winding streets of Ghirapur.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/08a6b378-c7fa-4226-a310-4ee7e550b4d6.jpg?1783907845",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "\"Max speed — [ability]\" means \"As long as you have max speed, this object has [ability].\" If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Beastrider Vanguard
@@ -4378,6 +4634,90 @@
     ]
 }
 
+// Haunted Hellride
+{
+    "name": "Haunted Hellride",
+    "manaCost": "{1}{U}{B}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Whenever you attack, target creature you control gets +1/+0 and gains deathtouch until end of turn. Untap it.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "DEATHTOUCH",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            },
+                            "tap": false
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "UNCOMMON",
+        "artist": "Olivier Bernard",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2ce0d37-d5d7-49dd-885e-9998bb8abede.jpg?1783907857"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Hazard of the Dunes
 {
     "name": "Hazard of the Dunes",
@@ -5839,6 +6179,77 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Muraganda Raceway
+{
+    "name": "Muraganda Raceway",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{T}: Add {C}.\nMax speed — {T}: Add {C}{C}.",
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "isManaAbility": true,
+                "descriptionOverride": "Max speed — {T}: Add {C}{C}"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "257",
+        "rarity": "RARE",
+        "artist": "Brian Valeza",
+        "flavorText": "Stage 3: The steaming jungles of Muraganda under falling skies.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/5041ae16-29ff-4ad5-8a37-4736e9409294.jpg?1783907840",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "\"Max speed — [ability]\" means \"As long as you have max speed, this object has [ability].\" If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Mutant Surveyor
