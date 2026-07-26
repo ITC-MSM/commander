@@ -128,7 +128,11 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     title: 'Where your decks live',
     summary:
       'Saved decks live in this browser until you sign in, and in your account afterwards. The deckbuilder’s My Decks list is the same list every lobby deck picker reads from.',
-    related: ['deckbuilder', 'deck-sharing'],
+    body: [
+      { kind: 'p', text: 'Browser storage is per-browser and easy to lose: clearing site data or history takes your decks with it, and they do not follow you to a phone or a second computer. An account is the fix — signing in later keeps everything you already built, and you are offered a one-click migration.' },
+      { kind: 'p', text: 'A deck you want to keep without an account can also be exported as a decklist or a share link, both of which survive the browser.' },
+    ],
+    related: ['guest-vs-account', 'deckbuilder', 'deck-sharing', 'deck-import-export'],
   },
 
   // ── Game modes ─────────────────────────────────────────────────────────
