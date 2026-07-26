@@ -317,6 +317,7 @@ val engineSerializersModule = SerializersModule {
         subclass(PutOnBottomOfLibraryContinuation::class)
         subclass(ReflexiveTriggerResolveContinuation::class)
         subclass(ReflexiveTriggerTargetContinuation::class)
+        subclass(ReopenManaPaymentDecisionContinuation::class)
         subclass(ReturnFromGraveyardContinuation::class)
         subclass(ReturnFromLinkedExileContinuation::class)
         subclass(CascadeMayCastContinuation::class)

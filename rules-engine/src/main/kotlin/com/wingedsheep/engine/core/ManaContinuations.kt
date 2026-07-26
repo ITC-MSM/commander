@@ -403,3 +403,19 @@ data class AddManaPipsContinuation(
     val allowedColors: Set<Color>,
     val restriction: ManaRestriction? = null
 ) : ContinuationFrame
+
+/**
+ * Restores a mana-payment window that was set aside so the player could activate a mana ability
+ * inside it (CR 605.3a).
+ *
+ * Pushed by [com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow.suspend] on top of the payment
+ * continuation the window belongs to, so a decision the mana ability raises for itself (a color
+ * choice for Birds of Paradise, a Fertile Ground tap bonus) nests above this frame and the window
+ * is re-raised only once the ability has fully resolved. Carries the decision verbatim; the
+ * auto-resumer refreshes it against the post-activation board before re-raising it.
+ */
+@Serializable
+data class ReopenManaPaymentDecisionContinuation(
+    override val decisionId: String,
+    val decision: SelectManaSourcesDecision
+) : ContinuationFrame

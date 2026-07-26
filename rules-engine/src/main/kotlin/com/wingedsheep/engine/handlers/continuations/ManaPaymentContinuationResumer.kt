@@ -13,6 +13,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.handlers.PredicateContext
@@ -405,9 +406,9 @@ class ManaPaymentContinuationResumer(
             return ExecutionResult.error(state, "Expected mana sources selected response")
         }
 
-        // If the player declined (no mana sources, no auto-pay, and no Ward—Waterbend taps to
-        // help), counter the spell.
-        if (!response.autoPay && response.selectedSources.isEmpty() && response.waterbendPermanents.isEmpty()) {
+        // If the player declined (no mana sources, no auto-pay, no Ward—Waterbend taps to help,
+        // and nothing floating that already covers the cost), counter the spell.
+        if (response.isDecline(floatingCovers(state, continuation.payingPlayerId, continuation.manaCost))) {
             val counterResult = if (continuation.exileOnCounter) {
                 services.stackResolver.counterSpellToExile(
                     state, continuation.spellEntityId,
@@ -823,9 +824,10 @@ class ManaPaymentContinuationResumer(
 
         val playerId = continuation.playerId
 
-        // Declined — no mana sources, no auto-pay, and (for a waterbend gate) no taps to help. Run
-        // the "unless" branch (e.g. "discard a card") if one is attached, otherwise nothing happens.
-        if (!response.autoPay && response.selectedSources.isEmpty() && response.waterbendPermanents.isEmpty()) {
+        // Declined — no mana sources, no auto-pay, (for a waterbend gate) no taps to help, and no
+        // floating mana that already covers it. Run the "unless" branch (e.g. "discard a card") if
+        // one is attached, otherwise nothing happens.
+        if (response.isDecline(floatingCovers(state, playerId, continuation.manaCost))) {
             val otherwise = continuation.otherwise
                 ?: return checkForMore(state, emptyList())
             val otherwiseResult = services.effectExecutorRegistry
@@ -1548,4 +1550,12 @@ class ManaPaymentContinuationResumer(
             checkForMore
         )
     }
+
+    /**
+     * Whether [playerId]'s floating mana already covers [cost] — see
+     * [ManaSourcesSelectedResponse.isDecline]. A player who taps their own sources during the
+     * payment window (CR 605.3a) confirms with an empty selection, which must not read as a refusal.
+     */
+    private fun floatingCovers(state: GameState, playerId: EntityId, cost: ManaCost): Boolean =
+        com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow.floatingManaCovers(state, playerId, cost)
 }

@@ -415,7 +415,12 @@ function GameCardImpl({
   // Valid blockers with legal actions (e.g., activated abilities) are still playable since blocking uses drag.
   // Face-down cards can be playable too (for TurnFaceUp action)
   const isCombatRoleCard = isValidAttacker || (isValidBlocker && !hasLegalActions) || isAttackingInBlockerMode
-  const hasActiveDecision = pendingDecision !== null
+  // A mana-payment decision is the one kind that still leaves actions open: CR 605.3a lets the
+  // paying player activate mana abilities, and the server sends exactly those as legal actions
+  // while the window is up. Sources already offered in the decision's own menu are excluded —
+  // those get the selection highlight and a click toggles them rather than opening a menu.
+  const isManaPaymentWindow = pendingDecision?.type === 'SelectManaSourcesDecision'
+  const hasActiveDecision = pendingDecision !== null && !(isManaPaymentWindow && !isValidDecisionSelection)
   const isPlayable = interactive && hasLegalActions && (!isInCombatMode || !isCombatRoleCard) && !hasActiveDecision
 
   const cardImageUrl = faceDown

@@ -422,6 +422,7 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
     selectedSources: readonly EntityId[],
     autoPay: boolean,
     waterbendPermanents: readonly EntityId[] = [],
+    declined = false,
   ) => {
     const { pendingDecision, playerId } = get()
     if (!pendingDecision || !playerId) return
@@ -439,6 +440,9 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
         autoPay,
         // Artifacts/creatures tapped to pay {1} each via Waterbend (Ward—Waterbend).
         waterbendPermanents: [...waterbendPermanents],
+        // Explicit refusal. An empty submission alone is ambiguous now that the player can float
+        // mana themselves during the payment (CR 605.3a) and then confirm with nothing selected.
+        declined,
       },
     }
     getWebSocket()?.send(createSubmitActionMessage(action))

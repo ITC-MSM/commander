@@ -996,6 +996,24 @@ instead of paying generic mana, Convoke taps creatures, and Force of Will can be
 blue card and paying 1 life. The `AlternativePaymentHandler` processes these before the mana solver
 runs, reducing the remaining cost that must be paid with mana.
 
+**Mana-payment windows (CR 605.3a).** Casting a spell is not the only time a player owes mana.
+Ward, "you may pay {B}", an attack tax, a draw replacement — each stops the game and raises a
+`SelectManaSourcesDecision` asking one player for mana. CR 605.3a says a mana ability may be
+activated "whenever a rule or effect asks for a mana payment", so while that decision is open the
+paying player holds no priority but *may* still activate mana abilities. `ManaPaymentWindow` is the
+single definition of that state; both `ActivateAbilityHandler.validate` (the engine's authority
+check) and `GameSession.getLegalActions` (what the server offers the client) read it, and nothing
+else is unlocked — non-mana abilities and spells stay blocked.
+
+This matters because the decision's pre-computed `availableSources` menu is deliberately narrow:
+`findAvailableManaSources` only models `{T}`-shaped abilities, so Ashnod's Altar ("Sacrifice a
+creature: Add {C}{C}") and anything with a discard/Forage sub-cost has no entry in it. The window is
+the general escape hatch. Mana produced this way goes to the pool, the decision is re-raised
+refreshed (a source tapped by hand drops out of the menu), and every payment resumer already spends
+floating mana before tapping anything — so the player simply confirms. A mana ability that needs a
+decision of its own (choosing a color) nests above a `ReopenManaPaymentDecisionContinuation`, which
+restores the window once it resolves.
+
 **Why three tiers instead of a single "pay cost" function?**
 
 - **Legal action computation.** The server must determine whether each spell in a player's hand is
