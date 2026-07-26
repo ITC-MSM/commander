@@ -371,7 +371,7 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
-    // Equipment (Entity)
+    // Equipment / Auras (Entity)
     // =============================================================================
 
     /** Has at least one Equipment attached */
@@ -379,6 +379,23 @@ sealed interface StatePredicate {
     @Serializable
     data object IsEquipped : Entity {
         override val description: String = "equipped"
+    }
+
+    /**
+     * Has at least one Aura attached — the MTG adjective "enchanted" (CR 303.4: an Aura *enchants*
+     * the permanent it's attached to). The Aura mirror of [IsEquipped], and deliberately narrower
+     * than [IsModified]: an Equipment attached or a counter on the permanent does not make it
+     * enchanted. Control of the Aura is irrelevant — an opponent's Aura still enchants your
+     * creature, which is why "enchanted creatures you control" (A Tale for the Ages) scopes control
+     * on the *creature* via a separate controller predicate rather than on the attachment.
+     *
+     * Role tokens are Auras (CR 113.2c), so this is also the Wilds of Eldraine Roles payoff
+     * ("if you control an enchanted creature" — Lord Skitter's Blessing).
+     */
+    @SerialName("IsEnchanted")
+    @Serializable
+    data object IsEnchanted : Entity {
+        override val description: String = "enchanted"
     }
 
     /** Has an Equipment attached, an Aura attached, or any counter (MTG "modified" definition) */

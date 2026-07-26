@@ -1425,12 +1425,15 @@ abstract class ScenarioTestBase : FunSpec() {
          * @param spellName The name of the spell to cast, from that player's hand
          * @param sacrificeName The permanent that player controls to sacrifice for bargain
          * @param targetId Optional single target for the spell
+         * @param xValue The value chosen for `{X}` on a bargained X spell (Stonesplitter Bolt);
+         *   leave `null` for spells with no `{X}` in their cost
          */
         fun castSpellBargained(
             playerNumber: Int,
             spellName: String,
             sacrificeName: String,
             targetId: EntityId? = null,
+            xValue: Int? = null,
         ): ExecutionResult {
             val playerId = if (playerNumber == 1) player1Id else player2Id
             val cardId = state.getHand(playerId).find { entityId ->
@@ -1448,6 +1451,7 @@ abstract class ScenarioTestBase : FunSpec() {
                     playerId = playerId,
                     cardId = cardId,
                     targets = targetId?.let { listOf(ChosenTarget.Permanent(it)) } ?: emptyList(),
+                    xValue = xValue,
                     declaredCostSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED,
                     additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
                         sacrificedPermanents = listOf(sacrificeId)

@@ -924,6 +924,15 @@ data class GameObjectFilter(
     )
 
     /**
+     * Must have at least one Aura attached — "enchanted creature" as a group adjective. Compose with
+     * [youControl] for "enchanted creatures you control" (A Tale for the Ages); the Aura's own
+     * controller is irrelevant. See [StatePredicate.IsEnchanted].
+     */
+    fun enchanted() = copy(
+        statePredicates = statePredicates + StatePredicate.IsEnchanted
+    )
+
+    /**
      * Must be marked as a "warped card in exile" (CR 702.185b) — i.e., the
      * engine wrote a `WarpExiledComponent` when the warped permanent left the
      * battlefield at end of turn. Use this when filtering candidates in the

@@ -1160,6 +1160,16 @@ class PredicateEvaluator {
                 }
             }
 
+            // Aura state — "enchanted". Mirrors IsEquipped over the Aura subtype instead of
+            // Equipment, so a permanent carrying only Equipment (or only counters) is not enchanted.
+            StatePredicate.IsEnchanted -> {
+                val attachments = container.get<AttachmentsComponent>()
+                if (attachments == null || attachments.attachedIds.isEmpty()) return false
+                attachments.attachedIds.any { attachId ->
+                    state.getEntity(attachId)?.get<CardComponent>()?.typeLine?.isAura == true
+                }
+            }
+
             StatePredicate.IsModified -> com.wingedsheep.engine.handlers.predicates.isModified(state, entityId)
 
             // Attached-to-type — entity has an AttachedToComponent and the referenced

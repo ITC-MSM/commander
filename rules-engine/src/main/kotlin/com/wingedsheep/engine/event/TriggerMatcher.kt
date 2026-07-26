@@ -1809,6 +1809,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasLeastPowerAmongAllCreatures,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasLeastPower,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEquipped,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEnchanted,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsModified,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsSaddled,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.CrewedOrSaddledSourceThisTurn,
