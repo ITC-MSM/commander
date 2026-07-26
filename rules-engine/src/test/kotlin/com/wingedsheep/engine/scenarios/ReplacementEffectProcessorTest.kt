@@ -1,8 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
-import com.wingedsheep.engine.core.ChooseOptionDecision
-import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.ReplacementChoiceContinuation
 import com.wingedsheep.engine.replacement.PendingGameEvent
 import com.wingedsheep.engine.replacement.ProcessorResult
@@ -86,16 +84,16 @@ class ReplacementEffectProcessorTest : ScenarioTestBase() {
 
             driver.addPermanentWithReplacement(
                 playerId, "Draw Booster",
-                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawEvent(Player.You))
+                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawCardsEvent(Player.You))
             )
 
             val processor = ReplacementEffectProcessor()
-            val event = PendingGameEvent.DrawPending(playerId, 1)
+            val event = PendingGameEvent.DrawAmountPending(playerId, 1)
 
             val result = processor.process(driver.state, event)
             val resolved = result as ProcessorResult.Resolved
             resolved.outcome shouldBe ReplacementOutcome.Modified(
-                PendingGameEvent.DrawPending(playerId, count = 1, remainingDraws = 1)
+                PendingGameEvent.DrawAmountPending(playerId, totalCount = 2)
             )
         }
 
@@ -117,123 +115,81 @@ class ReplacementEffectProcessorTest : ScenarioTestBase() {
             resolved.outcome shouldBe ReplacementOutcome.Consumed
         }
 
-        test("prevent + modify both in ANY group so choice is presented") {
-            // Both effects are in the ANY group; the processor presents a choice.
-            // This test confirms the behavior, not the specific outcome.
+        test("ModifyDrawAmount adjusts total at announcement; PreventDraw catches via recursion") {
+            // Both ModifyDrawAmount(+1) and PreventDraw use DrawCardsEvent, so they
+            // both match DrawAmountPending at the announcement level (CR 121.2a).
+            // They compete in the ANY group → the processor presents a choice.
+            // Whichever is chosen, PreventDraw ultimately catches the draw:
+            //  - Pick PreventDraw first → immediate Consumed
+            //  - Pick ModifyDrawAmount first → Modified(totalCount=2), recursive check
+            //    finds PreventDraw still fresh → Consumed
+            //
+            // This test verifies through the full processor pipeline (not applySingle):
+            // 1. process() → Paused with correct choice structure
+            // 2. Stamp the ModifyDrawAmount identity onto the state chain to simulate
+            //    "ModifyDrawAmount was applied"; re-process → only PreventDraw is fresh
+            //    → PreventDraw fires → Consumed
             val driver = createDriver()
             driver.initMirrorMatch(deck = Deck.of("Plains" to 20))
             val playerId = driver.activePlayer!!
 
             driver.addPermanentWithReplacement(
                 playerId, "Draw Booster",
-                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawEvent(Player.You))
+                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawCardsEvent(Player.You))
             )
             driver.addPermanentWithReplacement(
                 playerId, "Draw Preventer",
-                PreventDraw(appliesTo = EventPattern.DrawEvent(Player.You))
+                PreventDraw(appliesTo = EventPattern.DrawCardsEvent(Player.You))
             )
 
             val processor = ReplacementEffectProcessor()
-            val event = PendingGameEvent.DrawPending(playerId, 1)
+            val event = PendingGameEvent.DrawAmountPending(playerId, totalCount = 1)
 
-            val result = processor.process(driver.state, event)
-            // Both effects are in the ANY group → multiple same-group → choice
-            (result is ProcessorResult.Paused) shouldBe true
-        }
-
-        test("full choice → apply → verify: choosing PreventDraw consumes the draw") {
-            // Set up two competing effects, get the choice, apply one, verify the outcome.
-            val driver = createDriver()
-            driver.initMirrorMatch(deck = Deck.of("Plains" to 20))
-            val playerId = driver.activePlayer!!
-
-            driver.addPermanentWithReplacement(
-                playerId, "Draw Booster",
-                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawEvent(Player.You))
-            )
-            driver.addPermanentWithReplacement(
-                playerId, "Draw Preventer",
-                PreventDraw(appliesTo = EventPattern.DrawEvent(Player.You))
-            )
-
-            val processor = ReplacementEffectProcessor()
-            val event = PendingGameEvent.DrawPending(playerId, 1)
-
-            // Step 1: Process → Paused with choice
+            // Full process: both match → Paused with choice (CR 616.1e)
             val result = processor.process(driver.state, event)
             (result is ProcessorResult.Paused) shouldBe true
             val paused = result as ProcessorResult.Paused
 
-            // Step 2: Extract the choice continuation to get the options
             val continuation = paused.state.continuationStack
                 .filterIsInstance<ReplacementChoiceContinuation>()
                 .firstOrNull()
             continuation shouldNotBe null
             continuation!!.options.size shouldBe 2
 
-            // Step 3: Choose PreventDraw (index 1, which is "Draw Preventer" based on add order)
-            // applySingle bypasses the choice prompt and applies the effect directly.
-            val applyResult = processor.applySingle(
-                state = driver.state,
-                gathered = continuation.options[1],
-                event = continuation.pendingEvent,
-                alreadyApplied = emptySet(),
-                context = continuation.context
-            )
+            // Simulate "ModifyDrawAmount was applied first": stamp its identity on
+            // the activeReplacementChain so re-processing filters it out, leaving
+            // only PreventDraw fresh.
+            val modifyIdentity = continuation.options[0].identity
+            val stateAfterModify = driver.state.copy(activeReplacementChain = setOf(modifyIdentity))
 
-            // Step 4: Verify PreventDraw was applied (Consumed outcome)
-            (applyResult is ProcessorResult.Resolved) shouldBe true
-            val resolved = applyResult as ProcessorResult.Resolved
-            withClue("Choosing PreventDraw should produce Consumed outcome") {
-                resolved.outcome shouldBe ReplacementOutcome.Consumed
+            // Re-process: PreventDraw is the only fresh effect → fires → Consumed
+            val recursiveResult = processor.process(stateAfterModify, event)
+            val recursiveResolved = recursiveResult as ProcessorResult.Resolved
+            withClue("ModifyDrawAmount made totalCount=2, then PreventDraw consumed") {
+                recursiveResolved.outcome shouldBe ReplacementOutcome.Consumed
             }
         }
 
-        test("full choice → apply → verify: choosing ModifyDrawAmount, then the remaining PreventDraw fires") {
-            // Choosing ModifyDrawAmount applies it (Modified), but the recursive check (CR 616.1e)
-            // finds PreventDraw still fresh (its identity isn't in alreadyApplied), so it fires too,
-            // resulting in Consumed.
+        test("ModifyDrawAmount alone adjusts totalCount at announcement") {
+            // A single ModifyDrawAmount(+1) with DrawCardsEvent matches
+            // DrawAmountPending and adjusts the total from 1 to 2.
             val driver = createDriver()
             driver.initMirrorMatch(deck = Deck.of("Plains" to 20))
             val playerId = driver.activePlayer!!
 
             driver.addPermanentWithReplacement(
                 playerId, "Draw Booster",
-                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawEvent(Player.You))
-            )
-            driver.addPermanentWithReplacement(
-                playerId, "Draw Preventer",
-                PreventDraw(appliesTo = EventPattern.DrawEvent(Player.You))
+                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawCardsEvent(Player.You))
             )
 
             val processor = ReplacementEffectProcessor()
-            val event = PendingGameEvent.DrawPending(playerId, 1)
+            val event = PendingGameEvent.DrawAmountPending(playerId, totalCount = 1)
 
             val result = processor.process(driver.state, event)
-            (result is ProcessorResult.Paused) shouldBe true
-            val paused = result as ProcessorResult.Paused
-
-            val continuation = paused.state.continuationStack
-                .filterIsInstance<ReplacementChoiceContinuation>()
-                .firstOrNull()
-            continuation shouldNotBe null
-
-            // Choose ModifyDrawAmount (index 0)
-            val applyResult = processor.applySingle(
-                state = driver.state,
-                gathered = continuation!!.options[0],
-                event = continuation.pendingEvent,
-                alreadyApplied = emptySet(),
-                context = continuation.context
+            val resolved = result as ProcessorResult.Resolved
+            resolved.outcome shouldBe ReplacementOutcome.Modified(
+                PendingGameEvent.DrawAmountPending(playerId, totalCount = 2)
             )
-
-            // After ModifyDrawAmount fires (+1 modifier), the recursive pass finds
-            // PreventDraw still applicable (CR 616.1e) and consumes the draw.
-            (applyResult is ProcessorResult.Resolved) shouldBe true
-            val resolved = applyResult as ProcessorResult.Resolved
-            withClue("Choosing ModifyDrawAmount, then PreventDraw fires → Consumed") {
-                resolved.outcome shouldBe ReplacementOutcome.Consumed
-            }
         }
 
         test("gatherReplacements, opponent's 'You' effects don't match active player") {
@@ -330,17 +286,17 @@ class ReplacementEffectProcessorTest : ScenarioTestBase() {
 
             driver.addPermanentWithReplacement(
                 playerId, "Draw Booster",
-                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawEvent(Player.You))
+                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawCardsEvent(Player.You))
             )
 
             val processor = ReplacementEffectProcessor()
-            val event = PendingGameEvent.DrawPending(playerId, 1)
+            val event = PendingGameEvent.DrawAmountPending(playerId, totalCount = 1)
 
             // First pass: Modifier applies
             val firstResult = processor.process(driver.state, event)
             val firstResolved = firstResult as ProcessorResult.Resolved
             firstResolved.outcome shouldBe ReplacementOutcome.Modified(
-                PendingGameEvent.DrawPending(playerId, count = 1, remainingDraws = 1)
+                PendingGameEvent.DrawAmountPending(playerId, totalCount = 2)
             )
 
             // Verify activeReplacementChain was stamped on the returned state
@@ -354,16 +310,31 @@ class ReplacementEffectProcessorTest : ScenarioTestBase() {
         }
 
         test("Multiple draw effect replacements") {
+            // Quantum Riddler (ModifyDrawAmount +1 on EventPattern.DrawCardsEvent)
+            // and Phial of Galadriel (ReplaceDrawWithEffect on EventPattern.DrawEvent)
+            // coexist: Quantum Riddler fires at announcement level (DrawAmountPending
+            // matches DrawCardsEvent), and Phial fires per-card (DrawPending matches
+            // DrawEvent). Both are mandatory, so no player choice is needed.
             val game = scenario()
                 .withPlayers()
                 .withCardOnBattlefield(1, "Quantum Riddler")
                 .withCardOnBattlefield(1, "Phial of Galadriel")
                 .withCardInHand(1, "Inspiration")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
                 .withLandsOnBattlefield(1, "Island", 4)
                 .build()
 
             val action = game.getLegalActions(1)
-                .map {it.action}
+                .map { it.action }
                 .filterIsInstance<CastSpell>()
                 .firstOrNull()
                 ?: error("No action found")
@@ -372,9 +343,193 @@ class ReplacementEffectProcessorTest : ScenarioTestBase() {
                 targets = listOf(ChosenTarget.Player(game.player1Id))
             ))
             game.resolveStack()
-            game.state.isPaused() shouldBe true
-            val modeDecision = game.state.pendingDecision as ChooseOptionDecision
-            game.submitDecision(OptionChosenResponse(modeDecision.id, 0))
+
+            // No pausing — both replacements are mandatory.
+            game.state.isPaused() shouldBe false
+            game.state.stack shouldBe emptyList()
+            game.state.getHand(game.player1Id).size shouldBe 4  // Inspiration draws 2, +1 from Riddler, +1 from Phial on first draw
+        }
+
+        test("sub-draw retains announcement-level chain — Riddler blocked on Phial replacement (CR 614.5)") {
+            // Regression: when Phial of Galadriel replaces the first card draw with
+            // DrawCardsEffect(2), the sub-draw goes through executeDraws() →
+            // checkDrawAmount(). The activeReplacementChain (stamped by the parent
+            // announcement) MUST still contain Riddler's identity so it doesn't fire
+            // again on the sub-draw.
+            //
+            // With protection:
+            //   Inspiration draws 2 + Riddler (+1) = 3 per-card iterations.
+            //   Card 1 → Phial replaces with DrawCardsEffect(2) → draws 2 cards,
+            //             Riddler blocked → exactly 2.
+            //   Card 2 → normal draw → 1.
+            //   Card 3 → normal draw → 1.
+            //   Total: 2 + 1 + 1 + 1 = 4.
+            // Without chain: sub-draw of 2 becomes 3 (Riddler re-fires) → total = 5.
+            val game = scenario()
+                .withPlayers()
+                .withCardOnBattlefield(1, "Quantum Riddler")
+                .withCardOnBattlefield(1, "Phial of Galadriel")
+                .withCardInHand(1, "Inspiration")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withLandsOnBattlefield(1, "Island", 8)
+                .build()
+
+            game.state.activeReplacementChain shouldBe null
+
+            val action = game.getLegalActions(1)
+                .map { it.action }
+                .filterIsInstance<CastSpell>()
+                .firstOrNull()
+                ?: error("No action found")
+            game.execute(action.copy(targets = listOf(ChosenTarget.Player(game.player1Id))))
+            game.resolveStack()
+
+            game.state.activeReplacementChain shouldBe null
+            game.state.stack shouldBe emptyList()
+            game.state.isPaused() shouldBe false
+            // If Riddler fired on the sub-draw, this would be 5.
+            game.state.getHand(game.player1Id).size shouldBe 4
+
+            // --- Second instruction: verify cross-instruction chain clearing ---
+            // Reset hand so both Riddler (≤1 card) and Phial (empty hand)
+            // restrictions are met, then fire a second Inspiration.
+            val handCards = game.state.getHand(game.player1Id).toList()
+            for (cardId in handCards) {
+                game.state = game.state.removeFromZone(ZoneKey(game.player1Id, Zone.HAND), cardId)
+                game.state = game.state.addToZone(ZoneKey(game.player1Id, Zone.LIBRARY), cardId)
+            }
+            val inspDef = cardRegistry.getCard("Inspiration")
+                ?: error("Inspiration not found")
+            val newInspId = EntityId.of("second-inspiration")
+            game.state = game.state.withEntity(newInspId,
+                ComponentContainer.of(
+                    CardComponent(
+                        cardDefinitionId = "Inspiration",
+                        name = "Inspiration",
+                        manaCost = inspDef.manaCost,
+                        typeLine = inspDef.typeLine,
+                        oracleText = inspDef.oracleText,
+                        baseStats = inspDef.creatureStats,
+                        baseKeywords = inspDef.keywords,
+                        baseFlags = inspDef.flags,
+                        colors = inspDef.colors,
+                        ownerId = game.player1Id,
+                        spellEffect = inspDef.spellEffect,
+                        hasNonManaActivatedAbility = inspDef.hasNonManaActivatedAbility,
+                    ),
+                    OwnerComponent(game.player1Id),
+                    ControllerComponent(game.player1Id)
+                )
+            )
+            game.state = game.state.addToZone(ZoneKey(game.player1Id, Zone.HAND), newInspId)
+            game.state.getHand(game.player1Id).size shouldBe 1
+
+            val secondAction = game.getLegalActions(1)
+                .map { it.action }
+                .filterIsInstance<CastSpell>()
+                .firstOrNull() ?: error("No castable spell")
+            game.execute(secondAction.copy(targets = listOf(ChosenTarget.Player(game.player1Id))))
+            game.resolveStack()
+
+            // If chain from first instruction leaked, second Riddler is blocked:
+            // draw 2 (blocked) → Card 1: Phial → DrawCardsEffect(2) → 2 cards,
+            // Card 2: normal → 1, total = 3.
+            // If chain was cleared: draw 3 (Riddler re-fires) → Card 1: Phial →
+            // DrawCardsEffect(2) → 2, Card 2: normal → 1, Card 3: normal → 1,
+            // total = 4.
+            game.state.activeReplacementChain shouldBe null
+            game.state.getHand(game.player1Id).size shouldBe 4
+        }
+
+        test("chain cleared between separate draw instructions — Riddler fires for each (CR 614.5)") {
+            // Regression: announcement-level chain (stamped by checkDrawAmount) must be
+            // cleared by DrawLoop.run() on exit so a subsequent separate draw instruction
+            // gets a fresh replacement check.
+            //
+            // Game-level: Quantum Riddler has ModifyDrawAmount(+1) gated on
+            // CardsInHandAtMost(1). After the first Inspiration (draws 3 instead of 2)
+            // the hand has 3 cards — too many for Riddler to fire. We tuck the hand
+            // into the library and add a new Inspiration to test that the chain from
+            // the first instruction doesn't block the second.
+            val game = scenario()
+                .withPlayers()
+                .withCardOnBattlefield(1, "Quantum Riddler")
+                .withCardInHand(1, "Inspiration")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withLandsOnBattlefield(1, "Island", 8)
+                .build()
+
+            game.state.activeReplacementChain shouldBe null
+
+            // --- First draw instruction ---
+            val firstAction = game.getLegalActions(1)
+                .map { it.action }
+                .filterIsInstance<CastSpell>()
+                .firstOrNull() ?: error("No castable spell")
+            game.execute(firstAction.copy(targets = listOf(ChosenTarget.Player(game.player1Id))))
+            game.resolveStack()
+
+            // Riddler fired: 2 + 1 = 3 cards drawn
+            game.state.activeReplacementChain shouldBe null
+            game.state.getHand(game.player1Id).size shouldBe 3
+
+            // Reset hand so Riddler restriction (≤1 card) is met for a second instruction.
+            val handCards = game.state.getHand(game.player1Id).toList()
+            for (cardId in handCards) {
+                game.state = game.state.removeFromZone(ZoneKey(game.player1Id, Zone.HAND), cardId)
+                game.state = game.state.addToZone(ZoneKey(game.player1Id, Zone.LIBRARY), cardId)
+            }
+            val inspDef = cardRegistry.getCard("Inspiration")
+                ?: error("Inspiration not found")
+            val newInspId = EntityId.of("second-inspiration")
+            game.state = game.state.withEntity(newInspId,
+                ComponentContainer.of(
+                    CardComponent(
+                        cardDefinitionId = "Inspiration",
+                        name = "Inspiration",
+                        manaCost = inspDef.manaCost,
+                        typeLine = inspDef.typeLine,
+                        oracleText = inspDef.oracleText,
+                        baseStats = inspDef.creatureStats,
+                        baseKeywords = inspDef.keywords,
+                        baseFlags = inspDef.flags,
+                        colors = inspDef.colors,
+                        ownerId = game.player1Id,
+                        spellEffect = inspDef.spellEffect,
+                        hasNonManaActivatedAbility = inspDef.hasNonManaActivatedAbility,
+                    ),
+                    OwnerComponent(game.player1Id),
+                    ControllerComponent(game.player1Id)
+                )
+            )
+            game.state = game.state.addToZone(ZoneKey(game.player1Id, Zone.HAND), newInspId)
+            game.state.getHand(game.player1Id).size shouldBe 1
+
+            // --- Second draw instruction ---
+            val secondAction = game.getLegalActions(1)
+                .map { it.action }
+                .filterIsInstance<CastSpell>()
+                .firstOrNull() ?: error("No castable spell")
+            game.execute(secondAction.copy(targets = listOf(ChosenTarget.Player(game.player1Id))))
+            game.resolveStack()
+
+            // Riddler fired again: chain from first instruction was properly cleared
+            game.state.activeReplacementChain shouldBe null
+            game.state.getHand(game.player1Id).size shouldBe 3
         }
     }
 }

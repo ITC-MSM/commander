@@ -1,20 +1,10 @@
 package com.wingedsheep.engine.replacement
 
-import com.wingedsheep.engine.core.ContinuationFrame
-import com.wingedsheep.engine.core.DecisionContext
-import com.wingedsheep.engine.core.DecisionPhase
-import com.wingedsheep.engine.core.PendingDecision
-import com.wingedsheep.engine.core.StaticDrawReplacementContinuation
-import com.wingedsheep.engine.core.YesNoDecision
-import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
-import com.wingedsheep.sdk.scripting.EventPattern
-import com.wingedsheep.sdk.scripting.ModifyDrawAmount
-import com.wingedsheep.sdk.scripting.PreventDraw
-import com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect
-import com.wingedsheep.sdk.scripting.ReplacementEffect
+import com.wingedsheep.sdk.scripting.*
 import com.wingedsheep.sdk.scripting.references.Player
 import kotlinx.serialization.Serializable
 
@@ -114,18 +104,8 @@ sealed interface PendingGameEvent {
             state: GameState,
             context: EffectContext?
         ): Boolean {
-            if (pattern !is EventPattern.DrawEvent) return false
-            val condition = pattern.condition
-            if (condition != null) {
-                val evalContext = context ?: EffectContext(
-                    sourceId = null,
-                    controllerId = sourceControllerId
-                )
-                if (!ConditionEvaluator().evaluate(state, condition, evalContext)) {
-                    return false
-                }
-            }
-            return matchesPlayerFilter(pattern.player, playerId, sourceControllerId)
+            val drawEvent = pattern as? EventPattern.DrawEvent ?: return false
+            return matchesPlayerFilter(drawEvent.player, playerId, sourceControllerId)
         }
 
         override fun applyReplacement(effect: ReplacementEffect, state: GameState): ReplacementOutcome {
@@ -203,6 +183,61 @@ sealed interface PendingGameEvent {
          * events are scoped to a single affected player; damage events with
          * multi-opponent semantics may need additional relationship tracking.
          */
+        private fun matchesPlayerFilter(
+            player: Player,
+            affectedPlayerId: EntityId,
+            sourceControllerId: EntityId
+        ): Boolean {
+            return when (player) {
+                Player.Each -> true
+                Player.You -> affectedPlayerId == sourceControllerId
+                Player.EachOpponent -> affectedPlayerId != sourceControllerId
+                else -> false
+            }
+        }
+    }
+
+    /**
+     * Draw announcement event: a draw instruction says a player will draw N cards.
+     *
+     * Created **once** per draw instruction (spell, ability, or draw-step),
+     * **before** the per-card [DrawLoop] fires. This allows `ModifyDrawAmount`
+     * replacement effects using [EventPattern.DrawCardsEvent] (e.g. "if you
+     * would draw two or more cards") to adjust the total before any individual
+     * card is drawn (CR 121.2a).
+     *
+     * This event **only** matches [EventPattern.DrawCardsEvent].
+     */
+    @Serializable
+    data class DrawAmountPending(
+        val playerId: EntityId,
+        val totalCount: Int,
+        val isDrawStep: Boolean = false
+    ) : PendingGameEvent {
+        override val affectedPlayerId: EntityId get() = playerId
+
+        override fun matches(
+            pattern: EventPattern,
+            sourceControllerId: EntityId,
+            state: GameState,
+            context: EffectContext?
+        ): Boolean {
+            return pattern is EventPattern.DrawCardsEvent &&
+                totalCount >= pattern.amount &&
+                matchesPlayerFilter(pattern.player, playerId, sourceControllerId)
+        }
+
+        override fun applyReplacement(effect: ReplacementEffect, state: GameState): ReplacementOutcome {
+            return when (effect) {
+                is ModifyDrawAmount -> ReplacementOutcome.Modified(
+                    copy(totalCount = (totalCount + effect.modifier).coerceAtLeast(0))
+                )
+                is PreventDraw -> ReplacementOutcome.Consumed
+                is ReplaceDrawWithEffect -> ReplacementOutcome.Replaced(effect.replacementEffect)
+                else -> ReplacementOutcome.Modified(this)
+            }
+        }
+
         private fun matchesPlayerFilter(
             player: Player,
             affectedPlayerId: EntityId,

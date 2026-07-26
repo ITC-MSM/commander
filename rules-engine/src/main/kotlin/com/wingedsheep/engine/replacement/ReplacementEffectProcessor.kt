@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.SelfZoneRedirectComponent
@@ -402,7 +403,11 @@ class ReplacementEffectProcessor {
 
             if (!matchesEvent(sdkEffect, event, fe.controllerId, state, context)) continue
 
-            val desc = (fe.effect.modification.javaClass.name ?: "").ifBlank { "Replace draw" }
+            val cardName = fe.sourceName
+                ?: fe.sourceId
+                ?.let { state.getEntity(it)?.get<CardComponent>()?.name }
+                ?: "Unknown"
+            val desc = "$cardName - ${sdkEffect.description}"
 
             results.add(
                 GatheredReplacement(

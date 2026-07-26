@@ -1,66 +1,36 @@
 package com.wingedsheep.engine.event
-import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
-import com.wingedsheep.engine.state.components.battlefield.chosenOpponent
-import com.wingedsheep.engine.state.components.battlefield.CountersComponent
-import com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString
 
-import com.wingedsheep.engine.core.BecomesTargetEvent
-import com.wingedsheep.engine.core.AbilityActivatedEvent
-import com.wingedsheep.engine.core.AbilityTriggeredEvent
-import com.wingedsheep.engine.core.AttackersDeclaredEvent
-import com.wingedsheep.engine.core.BlockersDeclaredEvent
-import com.wingedsheep.engine.core.CardCycledEvent
-import com.wingedsheep.engine.core.CardsDiscardedEvent
-import com.wingedsheep.engine.core.GiftGivenEvent
-import com.wingedsheep.engine.core.RoomFullyUnlockedEvent
-import com.wingedsheep.engine.core.CardRevealedFromDrawEvent
-import com.wingedsheep.engine.core.CardsDrawnEvent
-import com.wingedsheep.engine.core.CommitCrimeEvent
-import com.wingedsheep.engine.core.CountersAddedEvent
-import com.wingedsheep.engine.core.SagaChapterResolvedEvent
-import com.wingedsheep.engine.core.DamageDealtEvent
-import com.wingedsheep.engine.core.LifeChangedEvent
-import com.wingedsheep.engine.core.SpellCastEvent
-import com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent
-import com.wingedsheep.engine.state.components.player.ManaSpentOnSpellsThisTurnComponent
-import com.wingedsheep.engine.core.LandTappedForManaEvent
-import com.wingedsheep.engine.core.TappedEvent
-import com.wingedsheep.engine.core.TransformedEvent
-import com.wingedsheep.engine.core.TurnFaceUpEvent
-import com.wingedsheep.engine.core.UntappedEvent
-import com.wingedsheep.engine.core.PhasedInEvent
-import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
+import com.wingedsheep.engine.state.components.battlefield.chosenOpponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
-import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent
+import com.wingedsheep.engine.state.components.player.ManaSpentOnSpellsThisTurnComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
-import com.wingedsheep.sdk.scripting.events.AbilityTargetMatch
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.ExploreReveal
-import com.wingedsheep.sdk.scripting.events.ControllerFilter
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
-import com.wingedsheep.sdk.scripting.events.DamageType
-import com.wingedsheep.sdk.scripting.events.RecipientFilter
-import com.wingedsheep.sdk.scripting.events.AttackPredicate
-import com.wingedsheep.sdk.scripting.events.SourceFilter
-import com.wingedsheep.sdk.scripting.events.SpellCastPredicate
+import com.wingedsheep.sdk.scripting.events.*
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.predicates.evaluateWith
-
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 
@@ -96,6 +66,10 @@ class TriggerMatcher(
             // MillEvent is a replacement-only pattern (ModifyMillAmount); it never matches a
             // triggered ability. Applied at the mill announcement by MillAmountModifier.
             is EventPattern.MillEvent -> false
+            // DrawCardsEvent is a replacement-only pattern (ModifyDrawAmount for "N or more" draws);
+            // it never matches a triggered ability. Checked at the draw announcement by
+            // DrawReplacementDispatcher.checkDrawAmount.
+            is EventPattern.DrawCardsEvent -> false
             is EventPattern.NthCardDrawnEvent -> {
                 // Fires on CardsDrawnEvent when the drawing player's per-turn draw count
                 // crosses the threshold inside this batch. The component is incremented

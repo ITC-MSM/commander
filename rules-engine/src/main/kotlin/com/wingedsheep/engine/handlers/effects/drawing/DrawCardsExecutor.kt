@@ -1,12 +1,12 @@
 package com.wingedsheep.engine.handlers.effects.drawing
 
+import com.wingedsheep.engine.core.DrawPhaseManager
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent
-import com.wingedsheep.engine.core.DrawPhaseManager
-import com.wingedsheep.engine.handlers.continuations.CoreAutoResumerModule
-import com.wingedsheep.engine.handlers.actions.ability.CycleCardHandler
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.actions.ability.CycleCardHandler
+import com.wingedsheep.engine.handlers.continuations.CoreAutoResumerModule
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -84,10 +84,37 @@ class DrawCardsExecutor(
         emptyLibraryReason: String = "Empty library",
         context: EffectContext? = null
     ): EffectResult {
+        // Pre-loop announcement check (CR 121.2a): static replacement effects like
+        // ModifyDrawAmount (e.g., Quantum Riddler's "draw that many cards plus one")
+        // fire here against the total draw count before any individual card is drawn.
+        var adjustedCount = count
+        var currentState = state
+        val announceResult = dispatcher.checkDrawAmount(
+            currentState, playerId, count, isDrawStep, context
+        )
+        when (announceResult) {
+            is DrawReplacementDispatcher.DispatchResult.Modified -> {
+                currentState = announceResult.state
+                adjustedCount = count + announceResult.delta
+            }
+            is DrawReplacementDispatcher.DispatchResult.Replaced -> {
+                return EffectResult.success(announceResult.state, announceResult.events)
+            }
+            is DrawReplacementDispatcher.DispatchResult.Paused -> {
+                return EffectResult.paused(
+                    announceResult.result.state,
+                    announceResult.result.pendingDecision!!,
+                    announceResult.result.events
+                )
+            }
+            is DrawReplacementDispatcher.DispatchResult.None -> { /* no replacement */ }
+            null -> { /* no announcement replacement — proceed normally */ }
+        }
+
         return DrawLoop.run(
-            state = state,
+            state = currentState,
             playerId = playerId,
-            count = count,
+            count = adjustedCount,
             primitive = primitive,
             dispatcher = dispatcher,
             isDrawStep = isDrawStep,

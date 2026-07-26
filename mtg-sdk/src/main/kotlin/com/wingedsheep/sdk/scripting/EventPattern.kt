@@ -2,21 +2,12 @@ package com.wingedsheep.sdk.scripting
 
 import com.wingedsheep.sdk.core.BendType
 import com.wingedsheep.sdk.core.Step
-import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.dsl.Conditions
-import com.wingedsheep.sdk.scripting.conditions.Condition
-import com.wingedsheep.sdk.scripting.events.AmountFilter
-import com.wingedsheep.sdk.scripting.events.ControllerFilter
-import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
-import com.wingedsheep.sdk.scripting.events.DamageType
-import com.wingedsheep.sdk.scripting.events.AttackPredicate
-import com.wingedsheep.sdk.scripting.events.RecipientFilter
-import com.wingedsheep.sdk.scripting.events.SourceFilter
-import com.wingedsheep.sdk.scripting.events.SpellCastPredicate
+import com.wingedsheep.sdk.scripting.events.*
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.util.numberToWord
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -275,6 +266,27 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
             append(player.description)
             append(" would draw a card")
             if (exceptFirstInDrawStep) append(" (except the first each draw step)")
+        }
+    }
+
+    /**
+     * When a player would draw one or more cards. Fires at the beginning of the
+     * draw card cycle announcing the total cards drawn.
+     *
+     * The [amount] parameter is the threshold that triggers the event — "if an opponent
+     * would draw N or more cards".
+     */
+    @SerialName("DrawCardsEvent")
+    @Serializable
+    data class DrawCardsEvent(
+        val player: Player = Player.You,
+        val amount: Int = 1
+    ) : EventPattern {
+        override val description: String = buildString {
+            append(player.description)
+            append(" would draw ")
+            append(numberToWord(amount))
+            append(" or more cards")
         }
     }
 

@@ -5,13 +5,12 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.replacement.PendingGameEvent
-import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.replacement.ProcessorResult
+import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.replacement.ReplacementOutcome
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.ModifyDrawAmount
-import com.wingedsheep.sdk.scripting.PreventDraw
 import com.wingedsheep.sdk.scripting.effects.Effect
 
 /**
@@ -121,7 +120,8 @@ class DrawReplacementDispatcher(
                         val newRemaining = modifiedEvent?.remainingDraws ?: remainingDraws
                         val delta = newRemaining - remainingDraws
                         if (delta != 0) {
-                            return DispatchResult.Modified(processorResult.state, delta)
+                            val cleared = processorResult.state.copy(activeReplacementChain = null)
+                            return DispatchResult.Modified(cleared, delta)
                         }
                     }
                 }
@@ -132,6 +132,76 @@ class DrawReplacementDispatcher(
         }
 
         return DispatchResult.None
+    }
+
+    /**
+     * Check replacement effects at the draw instruction announcement site (CR 121.2a).
+     *
+     * Called **before** the per-card [DrawLoop] fires, this sends a single
+     * [PendingGameEvent.DrawAmountPending] with the **total** draw count so that
+     * `ModifyDrawAmount` effects like Quantum Riddler ("draw that many cards
+     * plus one instead") can modify the instruction's total before any
+     * individual card is drawn.
+     *
+     * @param state Current game state
+     * @param playerId The player who would draw the cards
+     * @param totalCount The total number of cards the instruction says to draw
+     * @param isDrawStep Whether this is the draw-step draw
+     * @param context Optional execution context
+     * @return A [DispatchResult] guiding the caller, or `null` when no
+     *         total-count replacement fires (proceed to per-card loop).
+     */
+    fun checkDrawAmount(
+        state: GameState,
+        playerId: EntityId,
+        totalCount: Int,
+        isDrawStep: Boolean = false,
+        context: EffectContext? = null
+    ): DispatchResult? {
+        if (totalCount <= 0) return null
+
+        val event = PendingGameEvent.DrawAmountPending(
+            playerId = playerId,
+            totalCount = totalCount,
+            isDrawStep = isDrawStep
+        )
+        when (val processorResult = processor.process(state, event, context)) {
+            is ProcessorResult.Paused -> {
+                return DispatchResult.Paused(
+                    EffectResult.paused(processorResult.state, processorResult.decision)
+                )
+            }
+            is ProcessorResult.Resolved -> {
+                when (val outcome = processorResult.outcome) {
+                    is ReplacementOutcome.Modified -> {
+                        val modifiedEvent = outcome.modifiedEvent as? PendingGameEvent.DrawAmountPending
+                        val newTotal = modifiedEvent?.totalCount ?: totalCount
+                        val delta = newTotal - totalCount
+                        if (delta != 0) {
+                            return DispatchResult.Modified(processorResult.state, delta)
+                        }
+                    }
+                    is ReplacementOutcome.Replaced -> {
+                        val ctx = processorResult.executionContext
+                        if (ctx != null) {
+                            return executeFromShield(
+                                processorResult.state, playerId,
+                                outcome.newEffect, ctx,
+                                totalCount - 1, isDrawStep
+                            )
+                        }
+                        return DispatchResult.Replaced(processorResult.state, emptyList())
+                    }
+                    is ReplacementOutcome.Consumed -> {
+                        return DispatchResult.Replaced(processorResult.state, emptyList())
+                    }
+                }
+            }
+            is ProcessorResult.Pass -> {
+                // No replacement matched.
+            }
+        }
+        return null
     }
 
     /**

@@ -1,10 +1,6 @@
 package com.wingedsheep.engine.handlers.effects.drawing
 
-import com.wingedsheep.engine.core.CardsDrawnEvent
-import com.wingedsheep.engine.core.EffectResult
-import com.wingedsheep.engine.core.GameEvent
-import com.wingedsheep.engine.core.DrawFailedEvent
-import com.wingedsheep.engine.core.CardRevealedFromDrawEvent
+import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -123,7 +119,7 @@ object DrawLoop {
         perCardEvents: List<GameEvent>
     ): EffectResult {
         val events = mutableListOf<GameEvent>()
-        var newState = state
+        var newState = state.copy(activeReplacementChain = null)
         if (drawnCards.isNotEmpty()) {
             val cardNames = drawnCards.map { newState.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
             events.add(CardsDrawnEvent(playerId, drawnCards.size, drawnCards, cardNames))
@@ -149,7 +145,7 @@ object DrawLoop {
         pauseResult: EffectResult
     ): EffectResult {
         val allEvents = mutableListOf<GameEvent>()
-        var pausedState = pauseResult.state
+        var pausedState = pauseResult.state.copy(activeReplacementChain = null)
         if (drawnCards.isNotEmpty()) {
             val cardNames = drawnCards.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
             allEvents.add(CardsDrawnEvent(playerId, drawnCards.size, drawnCards.toList(), cardNames))
