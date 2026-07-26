@@ -367,6 +367,88 @@
     ]
 }
 
+// Belligerent of the Ball
+{
+    "name": "Belligerent of the Ball",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Ogre Warrior",
+    "oracleText": "Celebration — At the beginning of combat on your turn, if two or more nonland permanents entered the battlefield under your control this turn, target creature you control gets +1/+0 and gains menace until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "NONLAND_PERMANENTS_ENTERED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, if two or more nonland permanents entered the battlefield under your control this turn, target creature you control gets +1/+0 and gains menace until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "rarity": "UNCOMMON",
+        "artist": "Pascal Quidault",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/6658398a-46a5-4f41-9b1b-4a47f2822cf8.jpg?1783915098"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Bellowing Bruiser
 {
     "name": "Bellowing Bruiser",
@@ -836,6 +918,97 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Candy Grapple
+{
+    "name": "Candy Grapple",
+    "manaCost": "{1}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nTarget creature gets -3/-3 until end of turn. If this spell was bargained, that creature gets -5/-5 until end of turn instead.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "BARGAINED"
+                        }
+                    },
+                    "then": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": -2
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "artist": "Konstantin Porubov",
+        "flavorText": "\"Don't you mean 'poisonous'? There's no such thing as a venomous—AGGHHH!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/190d97bc-dbef-496d-9bd1-b785bdf8a964.jpg?1783915109"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -2787,6 +2960,59 @@
     ]
 }
 
+// Gallant Pie-Wielder
+{
+    "name": "Gallant Pie-Wielder",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Dwarf Knight",
+    "oracleText": "First strike\nCelebration — This creature has double strike as long as two or more nonland permanents entered the battlefield under your control this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOUBLE_STRIKE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "NONLAND_PERMANENTS_ENTERED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Forsyth",
+        "flavorText": "\"Time for your just desserts, redcap scum!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e053d330-d0a2-4468-afba-42bf165b8fbf.jpg?1783915132"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Gingerbread Hunter
 {
     "name": "Gingerbread Hunter",
@@ -3782,6 +4008,83 @@
         "rarity": "UNCOMMON",
         "artist": "Leesha Hannigan",
         "imageUri": "https://cards.scryfall.io/normal/front/2/1/21b31d2b-ef66-4e16-a75e-4e27eb5ebfe9.jpg?1783915105"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Lord Skitter, Sewer King
+{
+    "name": "Lord Skitter, Sewer King",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Rat Noble",
+    "oracleText": "Whenever another Rat you control enters, exile up to one target card from an opponent's graveyard.\nAt the beginning of combat on your turn, create a 1/1 black Rat creature token with \"This token can't block.\"",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Rat ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target card in an opponent's graveyard"
+                    },
+                    "destination": "Exile",
+                    "fromZone": "Graveyard"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "own:opponent",
+                        "zone": "Graveyard"
+                    },
+                    "id": "up to one target card in an opponent's graveyard"
+                },
+                "descriptionOverride": "Whenever another Rat you control enters, exile up to one target card from an opponent's graveyard."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Rat"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e0205f2-25c1-403b-b408-56e3f2d63b4d.jpg?1783915000",
+                    "staticAbilities": [
+                        "CantBlock"
+                    ]
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, create a 1/1 black Rat creature token with \"This token can't block.\""
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "rarity": "RARE",
+        "artist": "Jesper Ejsing",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/729877be-4894-4ef5-9e60-de8a8fb2bdc0.jpg?1783915106"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -7569,6 +7872,76 @@
                 "text": "Food is an artifact type. Even though it appears on some creatures, it's never a creature type."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Troublemaker Ouphe
+{
+    "name": "Troublemaker Ouphe",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Ouphe",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nWhen this creature enters, if it was bargained, exile target artifact or enchantment an opponent controls.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact or enchantment an opponent controls"
+                    },
+                    "destination": "Exile"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact|enchantment ctrl:opponent"
+                    },
+                    "id": "target artifact or enchantment an opponent controls"
+                },
+                "triggerCondition": {
+                    "type": "CastChoiceMade",
+                    "slot": "BARGAINED"
+                },
+                "descriptionOverride": "When this creature enters, if it was bargained, exile target artifact or enchantment an opponent controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "194",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Heavy is the head that wears the vase.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f7b2fc0-d3f6-4c4d-a163-986a372e5b12.jpg?1783915075"
     },
     "colorIdentityOverride": [
         "GREEN"
