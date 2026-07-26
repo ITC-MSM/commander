@@ -23,6 +23,7 @@ import {
   axesFromQuickGameLobby,
   isCommanderLimited,
   type AxisTriple,
+  type CardsKind,
 } from './axes'
 
 /** Which server implementation is backing this lobby. */
@@ -119,6 +120,7 @@ export function fromQuickGameLobby(
   const isMomir = lobby.momirBasic ?? false
   const youReady = you?.ready ?? false
   const needsDeck = !isMomir && (!opts.deckValid || !you?.deckSelected)
+  const axes = axesFromQuickGameLobby(lobby, you, opts.deckTab)
 
   const players = lobby.players.map((p): LobbyViewPlayer => ({
     playerId: p.playerId,
@@ -140,18 +142,12 @@ export function fromQuickGameLobby(
     kind: 'QUICK',
     lobbyId: lobby.lobbyId,
     title: lobby.vsAi ? 'vs AI' : 'Lobby',
-    subtitle: isMomir
-      ? lobby.vsAi
-        ? 'No deckbuilding — ready up and the AI starts. Flip creatures with the Momir Vig avatar.'
-        : 'No deckbuilding — share the invite code, then both players ready up.'
-      : lobby.vsAi
-        ? 'Pick a deck and ready up — the AI starts as soon as you do.'
-        : 'Share the invite code with a friend, then both players ready up.',
+    subtitle: quickSubtitle(axes.cards.kind, lobby.vsAi),
     isHost,
     // A quick lobby has no state machine: it is staging right up until the game starts.
     isWaiting: true,
     invitable: !lobby.vsAi,
-    axes: axesFromQuickGameLobby(lobby, you, opts.deckTab),
+    axes,
     players,
     you: players.find((p) => p.isYou),
     maxPlayers: 2,
@@ -171,6 +167,29 @@ export function fromQuickGameLobby(
     // The server's `QuickGameLobby.twoHeadedGiant` exists but no client has ever reached it (gap
     // #6): it isn't in `QuickGameLobbyStateMessage` at all, so there is nothing here to read.
     teams: { mode: 'NONE' },
+  }
+}
+
+/**
+ * The line under a quick lobby's title: what it still needs from you, and how it starts.
+ *
+ * It follows the **Cards** axis and not just `vsAi`, because the three values ask for different
+ * things — and two of them ask for nothing. The previous copy branched on `vsAi` alone, so a lobby
+ * created from the wizard's "Random pool" opened telling the player to "pick a deck", which is the
+ * one instruction that answer had already made obsolete.
+ */
+function quickSubtitle(cards: CardsKind, vsAi: boolean): string {
+  const start = vsAi
+    ? 'Ready up and the AI starts.'
+    : 'Share the invite code with a friend, then both players ready up.'
+  switch (cards) {
+    case 'RANDOM':
+      // 8 boosters, auto-built into a 40-card deck — `SealedDeckGenerator.generate`.
+      return `Nothing to prepare — the server opens boosters and builds your deck when the game starts. ${start}`
+    case 'MOMIR':
+      return `No deckbuilding — everyone runs 60 basics and flips creatures with the Momir Vig avatar. ${start}`
+    default:
+      return `Pick a deck. ${start}`
   }
 }
 
