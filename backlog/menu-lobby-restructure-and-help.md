@@ -515,8 +515,40 @@ Two things fixed on the way past, both reported by Vincent:
   `/api/dev/scenarios/*`, which a production server does not expose. The *route* stays open in both
   builds, because a replay's "share as scenario" link is a real `/scenario?s=` deep link.
 
-Still open from Part 1: dead `components/spectating/SpectatorView.tsx`, and the two duplicated
-deckbuilders / replay viewers.
+### Part 1 duplication, closed
+
+Both of Part 1's remaining findings are resolved.
+
+- **`components/spectating/SpectatorView.tsx` deleted** — 1025 dead lines, superseded by
+  `SpectatorGameBoard.tsx`. Its only mention anywhere was its own `export`.
+- **The two replay viewers now share one playback surface**,
+  [`components/replay/ReplayPlayer.tsx`](../web-client/src/components/replay/ReplayPlayer.tsx):
+  transport, scrubber, share/scenario/snapshot actions, `SpectatorContext` and the board.
+
+  The two *entry points* deliberately stay separate, because they are different things: the route is
+  a shareable URL that loads a public replay by id; the overlay is an in-app screen that lists games
+  and **must not navigate**, since routing away drops the WebSocket. Everything after "here are the
+  frames" is now shared. `ReplayPage` is 494 → 143 lines (route, fetch, loading/error, team
+  stamping); `ReplayViewer` is 733 → 354 (list + fetch plumbing), and its dead style keys went with
+  it. 1227 lines → 920, with the surface existing once.
+
+  The copies had already drifted, and merging onto the route's better version means **the overlay
+  gains** replay metadata, the archived-frames badge, `stateReproducible` gating, multiplayer seat
+  labels instead of "Alice vs Bob", and the "Share as scenario" / "Save snapshot" buttons it never
+  had. `SpectatorStateUpdate` also moved out of `components/admin/` into
+  `replay/reconstructSnapshots.ts` — the public route was importing its core wire type from the
+  admin overlay.
+
+  > **Found while doing this:** `GameBoard` calls a **different number of hooks** depending on
+  > whether the store holds spectating state, so mounting it before frame 0 lands crashes React with
+  > *"Rendered more hooks than during the previous render"*. Both old call sites avoided it by
+  > accident, writing frame 0 in the same batch that revealed the board. `ReplayPlayer` now gates the
+  > mount explicitly (`primed`), but **the conditional hook in `GameBoard` is still there** and will
+  > bite the next thing that mounts it against an empty store. Worth fixing at source.
+
+**Deliberately not done:** merging the two deckbuilders. `/deckbuilder` (constructed) and
+`sealed/DeckBuilderOverlay` (limited pool) solve genuinely different problems, and Vincent's call is
+that the duplication is not worth paying down.
 
 ### Deliberate deviations from the plan above
 
@@ -590,5 +622,6 @@ Per `web-client/AGENTS.md`, UI changes need real data — run the stack, don't m
 - A persistent nav bar — the glass card stays.
 - Promoting hotseat to a real Table value; it stays a debugging affordance.
 - Cube — it slots into the Cards axis when [`cube-draft-format.md`](cube-draft-format.md) lands.
-- Merging the two deckbuilders or the two replay viewers. Noted in Part 1 as duplication; both are
-  real projects of their own.
+- Merging the two deckbuilders. Noted in Part 1 as duplication, but the constructed builder and the
+  limited-pool builder solve different problems — decided 2026-07-26 not to pay it down. (The two
+  *replay viewers* were merged; see § *Part 1 duplication, closed*.)

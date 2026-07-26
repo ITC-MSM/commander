@@ -654,7 +654,7 @@ export interface SpectatingState {
   combat: SpectatorCombatState | null
   /** Pending decision status (null if no decision in progress) */
   decisionStatus: SpectatorDecisionStatus | null
-  /** When true, the ReplayViewer handles its own UI — SpectatorGameBoard should not render */
+  /** When true, `ReplayPlayer` handles its own UI — SpectatorGameBoard should not render */
   isReplay?: boolean
 }
 
