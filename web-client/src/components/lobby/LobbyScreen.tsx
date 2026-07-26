@@ -27,6 +27,7 @@ import { DeckPicker, type DeckPickerTab } from '../ui/DeckPicker'
 import { FullscreenButton } from '../ui/FullscreenButton'
 import { JoinQrModal } from '../ui/JoinQrModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
+import { AiDeckSection, AiOpponentRow, initialAiSource, type AiDeckSource } from './AiOpponentPanel'
 import { LobbyAxes } from './LobbyAxes'
 import { LobbyAxisSummary } from './LobbyAxisSummary'
 import { TeamChip, TournamentLobbySettings } from './TournamentLobbySettings'
@@ -49,6 +50,9 @@ export function LobbyScreen() {
   // promise a Random pool from outside any mounted lobby screen. See `pendingDeckTab.ts`.
   const [deckTab, setDeckTab] = useState<DeckPickerTab | undefined>(takePendingDeckTab)
   const [copied, setCopied] = useState(false)
+  // Which source the AI-deck control is on. Lifted out of `AiOpponentRow` because its "Pick a
+  // deck" picker renders outside the settings panel the row lives in (see `AiDeckSection`).
+  const [aiSource, setAiSource] = useState<AiDeckSource>(() => initialAiSource(quickLobby?.aiDeck))
   const [pendingRecreate, setPendingRecreate] = useState<RecreateSpec | null>(null)
 
   const view: UnifiedLobbyView | null = quickLobby
@@ -165,6 +169,18 @@ export function LobbyScreen() {
             </div>
             )}
 
+            {/* Only a quick vs-AI lobby has an AI seat whose deck is the host's to choose.
+                Momir Basic hands every seat the same fixed 60 basics, so there is nothing to pick. */}
+            {view.kind === 'QUICK' && quickLobby?.vsAi && !isMomir && (
+              <AiOpponentRow
+                aiDeck={quickLobby.aiDeck ?? null}
+                format={quickLobby.format ?? null}
+                disabled={view.you?.tone === 'ready'}
+                source={aiSource}
+                onSourceChange={setAiSource}
+              />
+            )}
+
             {lobbyState && view.kind === 'TOURNAMENT' && (
               <TournamentLobbySettings view={view} lobbyState={lobbyState} />
             )}
@@ -177,6 +193,12 @@ export function LobbyScreen() {
         {view.kind === 'TOURNAMENT' && lobbyState && view.isWaiting &&
           lobbyState.settings.format === 'PREMADE_DECKS' && (
             <PremadeDeckPickerPanel lobbyState={lobbyState} playerId={playerId} />
+        )}
+        {view.kind === 'QUICK' && quickLobby?.vsAi && !isMomir && aiSource === 'deck' && (
+          <AiDeckSection
+            format={quickLobby.format ?? null}
+            disabled={view.you?.tone === 'ready'}
+          />
         )}
         {view.kind === 'QUICK' && quickLobby && !isMomir && (
           <QuickGameDeckPicker

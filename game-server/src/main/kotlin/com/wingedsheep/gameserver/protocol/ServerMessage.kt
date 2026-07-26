@@ -1108,6 +1108,11 @@ sealed interface ServerMessage {
         val ranked: Boolean = false,
         /** Whether ranked is even offered for this lobby: a standard 1v1 human-vs-human lobby. */
         val rankedEligible: Boolean = false,
+        /**
+         * What the AI seat will play, when [vsAi]. A summary rather than the spec itself — the
+         * decklist behind a "deck" choice never rides the lobby broadcast. Null in a human lobby.
+         */
+        val aiDeck: com.wingedsheep.gameserver.lobby.AiDeckSpecView? = null,
     ) : ServerMessage
 
     /**

@@ -1,9 +1,12 @@
 package com.wingedsheep.gameserver.handler
 
 import com.wingedsheep.ai.engine.SealedDeckGenerator
+import com.wingedsheep.gameserver.ai.AiDeckResolver
 import com.wingedsheep.gameserver.ai.AiGameManager
 import com.wingedsheep.gameserver.config.GameProperties
 import com.wingedsheep.gameserver.deck.DeckValidator
+import com.wingedsheep.gameserver.lobby.AiDeckSpec
+import com.wingedsheep.gameserver.lobby.AiDeckSpecView
 import com.wingedsheep.gameserver.lobby.MomirBasicSetup
 import com.wingedsheep.gameserver.lobby.QuickGameLobby
 import com.wingedsheep.gameserver.lobby.QuickGameLobbyPlayer
@@ -54,6 +57,8 @@ class QuickGameLobbyHandler(
     private val deckGenerator: SealedDeckGenerator,
     private val gameProperties: GameProperties,
     private val aiGameManager: AiGameManager,
+    private val aiDeckResolver: AiDeckResolver,
+    private val boosterGenerator: com.wingedsheep.engine.limited.BoosterGenerator,
     private val gamePlayHandler: GamePlayHandler,
 ) {
     private val logger = LoggerFactory.getLogger(QuickGameLobbyHandler::class.java)
@@ -76,7 +81,66 @@ class QuickGameLobbyHandler(
             is ClientMessage.SetQuickGameLobbyPublic -> handleSetPublic(session, message)
             is ClientMessage.SetQuickGameLobbyRanked -> handleSetRanked(session, message)
             is ClientMessage.SetQuickGameLobbyFormat -> handleSetFormat(session, message)
+            is ClientMessage.SetQuickGameAiDeck -> handleSetAiDeck(session, message)
             else -> {}
+        }
+    }
+
+    /**
+     * Host picks what the AI opponent plays (see [AiDeckSpec]).
+     *
+     * A [AiDeckSpec.Fixed] list is validated here, against the lobby's current format, so an
+     * illegal choice is refused at the point the host makes it rather than silently seating an
+     * illegal deck. [AiDeckSpec.Sets] only checks that the codes exist — whether the resulting pool
+     * can carry a deck is the resolver's problem at game start, and it falls back rather than fails.
+     */
+    private fun handleSetAiDeck(session: WebSocketSession, message: ClientMessage.SetQuickGameAiDeck) {
+        val playerSession = sessionRegistry.getPlayerSession(session.id) ?: run {
+            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected"); return
+        }
+        val lobby = lobbyRepository.findContainingPlayer(playerSession.playerId) ?: run {
+            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Not in a lobby"); return
+        }
+        lobbyRepository.withLock(lobby.lobbyId) { current ->
+            if (current == null) return@withLock
+            if (!current.vsAi) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "This lobby has no AI opponent")
+                return@withLock
+            }
+            val host = current.players.firstOrNull { !it.isAi }
+            if (host?.playerId != playerSession.playerId) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "Only the host can choose the AI's deck")
+                return@withLock
+            }
+            when (val spec = message.spec) {
+                is AiDeckSpec.Fixed -> {
+                    if (spec.deckList.isEmpty()) {
+                        sender.sendError(session, ErrorCode.INVALID_ACTION, "The AI's deck is empty")
+                        return@withLock
+                    }
+                    val result = deckValidator.validate(spec.deckList, current.format)
+                    if (!result.valid) {
+                        val reason = result.errors.firstOrNull()?.message ?: "Deck is not legal"
+                        sender.sendError(session, ErrorCode.INVALID_ACTION, "AI deck rejected: $reason")
+                        return@withLock
+                    }
+                }
+                is AiDeckSpec.Sets -> {
+                    val unknown = spec.setCodes.filterNot { it in boosterGenerator.availableSets }
+                    if (unknown.isNotEmpty()) {
+                        sender.sendError(
+                            session,
+                            ErrorCode.INVALID_ACTION,
+                            "Unknown set${if (unknown.size > 1) "s" else ""}: ${unknown.joinToString(", ")}",
+                        )
+                        return@withLock
+                    }
+                }
+                is AiDeckSpec.Auto -> {}
+            }
+            if (current.aiDeckSpec == message.spec) return@withLock
+            current.aiDeckSpec = message.spec
+            broadcastState(current)
         }
     }
 
@@ -110,6 +174,19 @@ class QuickGameLobbyHandler(
                     if (deck.isEmpty()) continue // Random pool — format restriction doesn't apply.
                     val result = deckValidator.validate(deck, message.format)
                     if (!result.valid) player.ready = false
+                }
+                // Same rule for the AI's hand-picked deck, except the AI has no ready flag to
+                // clear: an illegal list is dropped back to Auto, which always builds something
+                // legal for the new format. The host sees the seat's label change.
+                val aiSpec = current.aiDeckSpec
+                if (aiSpec is AiDeckSpec.Fixed && !deckValidator.validate(aiSpec.deckList, message.format).valid) {
+                    logger.info(
+                        "Lobby {}: AI deck '{}' is not legal in {}; reverting the AI to Auto",
+                        current.lobbyId,
+                        aiSpec.label,
+                        message.format?.displayName ?: "no format",
+                    )
+                    current.aiDeckSpec = AiDeckSpec.Auto
                 }
             }
             broadcastState(current)
@@ -523,7 +600,15 @@ class QuickGameLobbyHandler(
 
         if (lobby.vsAi) {
             // AI is added by AiGameManager. For Momir Basic it plays the same fixed 60-basic deck
-            // as the human; otherwise it generates its own random sealed deck for the chosen set.
+            // as the human; otherwise the host's AiDeckSpec decides — a hand-picked list, a build
+            // from chosen sets, or the Auto default that mirrors the human's set (and honours a
+            // constructed format restriction). Resolved here rather than inside AiGameManager so
+            // the deck-source policy lives next to the lobby state that configures it.
+            val aiDeck = if (lobby.momirBasic) {
+                MomirBasicSetup.fixedBasicDeck
+            } else {
+                aiDeckResolver.resolve(lobby.aiDeckSpec, lobby.format, aiSetCode)
+            }
             aiGameManager.createAiOpponent(
                 gameSession = gameSession,
                 setCode = aiSetCode,
@@ -531,7 +616,7 @@ class QuickGameLobbyHandler(
                 onMulliganKeep = { id -> gamePlayHandler.handleAiMulliganKeep(gameSession, id) },
                 onMulliganTake = { id -> gamePlayHandler.handleAiMulliganTake(gameSession, id) },
                 onBottomCards = { id, cardIds -> gamePlayHandler.handleAiBottomCards(gameSession, id, cardIds) },
-                deckOverride = if (lobby.momirBasic) MomirBasicSetup.fixedBasicDeck else null,
+                deckOverride = aiDeck,
             )
         }
 
@@ -581,6 +666,7 @@ class QuickGameLobbyHandler(
             maxPlayers = lobby.maxPlayers,
             ranked = lobby.ranked,
             rankedEligible = lobby.rankedEligible,
+            aiDeck = if (lobby.vsAi) AiDeckSpecView.of(lobby.aiDeckSpec) else null,
         )
         sender.send(session, msg)
     }
@@ -621,6 +707,7 @@ class QuickGameLobbyHandler(
                 maxPlayers = lobby.maxPlayers,
                 ranked = lobby.ranked,
                 rankedEligible = lobby.rankedEligible,
+                aiDeck = if (lobby.vsAi) AiDeckSpecView.of(lobby.aiDeckSpec) else null,
             )
             sender.send(ws, msg)
         }
@@ -659,6 +746,9 @@ class QuickGameLobbyHandler(
         // as "deck selected" and shows a fixed label rather than the deck-picker states.
         val label = when {
             lobby.momirBasic -> "Momir Basic (${MomirBasicSetup.COPIES_PER_BASIC * MomirBasicSetup.BASIC_LAND_NAMES.size} lands)"
+            // The AI seat holds no deck list of its own — it plays whatever the host's
+            // `aiDeckSpec` resolves to at game start — so it labels from the spec instead.
+            isAi -> aiDeckLabel(lobby)
             deckList == null -> "Choosing…"
             deckList!!.isEmpty() -> if (setCode != null) "Random Pool ($setCode)" else "Random Pool"
             else -> "Custom ($total)"
@@ -674,5 +764,17 @@ class QuickGameLobbyHandler(
             setCode = setCode,
             teamIndex = lobby.teamIndexOf(seatIndex),
         )
+    }
+
+    /** Player-list label for the AI seat, describing what the host chose for it. */
+    private fun aiDeckLabel(lobby: QuickGameLobby): String = when (val spec = lobby.aiDeckSpec) {
+        is AiDeckSpec.Auto -> if (lobby.format != null && !lobby.format!!.isCommanderShape) {
+            "Auto (${lobby.format!!.displayName})"
+        } else {
+            "Auto (sealed)"
+        }
+        is AiDeckSpec.Sets ->
+            if (spec.setCodes.isEmpty()) "Auto (sealed)" else "Built from ${spec.setCodes.joinToString(", ")}"
+        is AiDeckSpec.Fixed -> "${spec.label} (${spec.deckList.values.sum()})"
     }
 }

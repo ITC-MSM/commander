@@ -8,7 +8,7 @@
  * model — every state change comes from the server as a fresh `quickGameLobbyState` message,
  * so we just store and re-render.
  */
-import type { DeckFormat, QuickGameLobbyStateMessage } from '@/types'
+import type { AiDeckSpec, DeckFormat, QuickGameLobbyStateMessage } from '@/types'
 import {
   createCreateQuickGameLobbyMessage,
   createJoinQuickGameLobbyMessage,
@@ -19,6 +19,7 @@ import {
   createSetQuickGameLobbyPublicMessage,
   createSetQuickGameLobbyRankedMessage,
   createSetQuickGameLobbyFormatMessage,
+  createSetQuickGameAiDeckMessage,
 } from '@/types'
 import type { SliceCreator } from './types'
 import { getWebSocket } from './shared'
@@ -44,6 +45,8 @@ export interface QuickGameLobbySliceActions {
   setQuickGameLobbyPublic: (isPublic: boolean) => void
   setQuickGameLobbyRanked: (ranked: boolean) => void
   setQuickGameLobbyFormat: (format: DeckFormat | null, momirBasic?: boolean) => void
+  /** Host-only: choose what the AI opponent plays. No-op in a human lobby (server rejects). */
+  setQuickGameAiDeck: (spec: AiDeckSpec) => void
 }
 
 export type QuickGameLobbySlice = QuickGameLobbySliceState & QuickGameLobbySliceActions
@@ -86,5 +89,9 @@ export const createQuickGameLobbySlice: SliceCreator<QuickGameLobbySlice> = (set
 
   setQuickGameLobbyFormat: (format, momirBasic) => {
     getWebSocket()?.send(createSetQuickGameLobbyFormatMessage(format, momirBasic))
+  },
+
+  setQuickGameAiDeck: (spec) => {
+    getWebSocket()?.send(createSetQuickGameAiDeckMessage(spec))
   },
 })
