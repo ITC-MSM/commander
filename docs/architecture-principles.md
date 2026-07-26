@@ -997,8 +997,11 @@ blue card and paying 1 life. The `AlternativePaymentHandler` processes these bef
 runs, reducing the remaining cost that must be paid with mana.
 
 **Mana-payment windows (CR 605.3a).** Casting a spell is not the only time a player owes mana.
-Ward, "you may pay {B}", an attack tax, a draw replacement — each stops the game and raises a
-`SelectManaSourcesDecision` asking one player for mana. CR 605.3a says a mana ability may be
+Ward, "you may pay {B}", an attack tax, a draw replacement, "sacrifice this unless you pay {2}",
+a morph's turn-face-up cost — each stops the game and raises a `SelectManaSourcesDecision` asking
+one player for mana. Costs that ask a yes/no question first ("counter unless you pay", pay-or-suffer,
+anything through `CostPaymentService`) raise the window as a *second* step, and only when the
+player's floating mana doesn't already cover the cost — there is nothing to choose when it does. CR 605.3a says a mana ability may be
 activated "whenever a rule or effect asks for a mana payment", so while that decision is open the
 paying player holds no priority but *may* still activate mana abilities. `ManaPaymentWindow` is the
 single definition of that state; both `ActivateAbilityHandler.validate` (the engine's authority
@@ -1013,6 +1016,10 @@ refreshed (a source tapped by hand drops out of the menu), and every payment res
 floating mana before tapping anything — so the player simply confirms. A mana ability that needs a
 decision of its own (choosing a color) nests above a `ReopenManaPaymentDecisionContinuation`, which
 restores the window once it resolves.
+
+Because the window is where the payment actually happens, it is also the only place that may tap
+anything: once it closes, the payer's picks are spent as-is. No resumer falls back to the auto-tap
+solver for a shortfall, which would silently overrule what they chose.
 
 **Affordability vs. auto-tappability.** These payments gate the *prompt itself* on `canPay`: ward
 counters the spell, and a "you may pay" trigger is skipped, without asking when the solver sees no

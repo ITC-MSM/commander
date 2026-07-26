@@ -74,7 +74,7 @@ class ActivateAbilityXCostContinuationResumer(
             return ExecutionResult.error(state, "Expected number response for ActivateAbility mana-X choice")
         }
         val chosenX = response.number.coerceAtLeast(0)
-        return handler.execute(state, continuation.action.copy(xValue = chosenX))
+        return reenter(handler.execute(state, continuation.action.copy(xValue = chosenX)), checkForMore)
     }
 
     private fun resumeChooseX(
@@ -98,7 +98,7 @@ class ActivateAbilityXCostContinuationResumer(
                 costPayment = (action.costPayment ?: AdditionalCostPayment())
                     .copy(tappedPermanents = emptyList())
             )
-            return handler.execute(state, replay)
+            return reenter(handler.execute(state, replay), checkForMore)
         }
 
         // Raise the follow-up tap-target selection. minSelections == maxSelections == chosenX so
@@ -169,7 +169,7 @@ class ActivateAbilityXCostContinuationResumer(
             costPayment = (action.costPayment ?: AdditionalCostPayment())
                 .copy(exiledCards = response.selectedCards)
         )
-        return handler.execute(state, replay)
+        return reenter(handler.execute(state, replay), checkForMore)
     }
 
     /**
@@ -210,7 +210,7 @@ class ActivateAbilityXCostContinuationResumer(
             costPayment = (action.costPayment ?: AdditionalCostPayment())
                 .copy(sacrificedPermanents = response.selectedCards)
         )
-        return handler.execute(state, replay)
+        return reenter(handler.execute(state, replay), checkForMore)
     }
 
     /**
@@ -224,7 +224,7 @@ class ActivateAbilityXCostContinuationResumer(
         state: GameState,
         continuation: ActivateAbilityExilePermanentsContinuation,
         response: DecisionResponse,
-        @Suppress("UNUSED_PARAMETER") checkForMore: CheckForMore
+        checkForMore: CheckForMore
     ): ExecutionResult {
         if (response is CancelDecisionResponse) {
             // The exile cost is paid after this pause, so bailing here is side-effect-free.
@@ -251,7 +251,7 @@ class ActivateAbilityXCostContinuationResumer(
             costPayment = (action.costPayment ?: AdditionalCostPayment())
                 .copy(exiledCards = selected)
         )
-        return handler.execute(state, replay)
+        return reenter(handler.execute(state, replay), checkForMore)
     }
 
     /**
@@ -265,7 +265,7 @@ class ActivateAbilityXCostContinuationResumer(
         state: GameState,
         continuation: ActivateAbilityControllerTargetContinuation,
         response: DecisionResponse,
-        @Suppress("UNUSED_PARAMETER") checkForMore: CheckForMore
+        checkForMore: CheckForMore
     ): ExecutionResult {
         if (response is CancelDecisionResponse) {
             // The cost still hasn't been paid at this point, so cancelling is side-effect-free.
@@ -282,7 +282,7 @@ class ActivateAbilityXCostContinuationResumer(
             return ExecutionResult.error(state, "Not enough targets chosen")
         }
         val replay = continuation.action.copy(targets = chosen)
-        return handler.execute(state, replay)
+        return reenter(handler.execute(state, replay), checkForMore)
     }
 
     private fun resumeTapXTargets(
@@ -310,6 +310,20 @@ class ActivateAbilityXCostContinuationResumer(
             costPayment = (action.costPayment ?: AdditionalCostPayment())
                 .copy(tappedPermanents = response.selectedCards)
         )
-        return handler.execute(state, replay)
+        return reenter(handler.execute(state, replay), checkForMore)
     }
+
+    /**
+     * Chains a handler re-entry into `checkForMore` so a continuation pushed *beneath* this
+     * activation still resumes.
+     *
+     * These resumers finish by calling [ActivateAbilityHandler.execute] again with the player's
+     * choice filled in. Returning that result directly strands anything underneath — most visibly a
+     * [com.wingedsheep.engine.core.ReopenManaPaymentDecisionContinuation], which is how a mana
+     * ability activated during a mana payment (CR 605.3a) puts the payment window back up. A paused
+     * or failed re-entry is passed through untouched; its own frame is still in flight.
+     */
+    private fun reenter(result: ExecutionResult, checkForMore: CheckForMore): ExecutionResult =
+        if (result.isPaused || result.error != null) result
+        else checkForMore(result.newState, result.events)
 }

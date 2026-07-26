@@ -2,6 +2,9 @@ package com.wingedsheep.engine.mechanics.mana
 
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.ManaSourceOption
+import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
+import com.wingedsheep.engine.core.PermanentsSacrificedEvent
+import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.ReopenManaPaymentDecisionContinuation
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.GameEvent
@@ -47,6 +50,184 @@ object ManaPaymentWindow {
         val decision = state.pendingDecision as? SelectManaSourcesDecision ?: return null
         return decision.takeIf { state.actorFor(it.playerId) == actorId }
     }
+
+    /**
+     * Builds a mana-payment window for [cost] — the source menu, the auto-pay suggestion, and the
+     * decision itself. The caller pushes its own continuation with the returned `decisionId` and
+     * pauses; [floatSelectedMana] applies whatever the player submits.
+     *
+     * Sources carrying a secondary tap sub-cost (Springleaf Drum) are left out. Resolving those
+     * needs a nested "which permanent do you tap?" prompt, which only the ward resumer implements —
+     * and since CR 605.3a now lets the player activate any mana ability while the window is open,
+     * leaving them off the menu costs nothing: the player taps the Drum themselves and the mana is
+     * waiting in their pool.
+     */
+    fun buildDecision(
+        state: GameState,
+        playerId: EntityId,
+        cost: com.wingedsheep.sdk.core.ManaCost,
+        decisionId: String,
+        prompt: String,
+        context: com.wingedsheep.engine.core.DecisionContext,
+        canDecline: Boolean,
+        cardRegistry: CardRegistry
+    ): SelectManaSourcesDecision {
+        val solver = ManaSolver(cardRegistry)
+        val options = solver.findAvailableManaSources(state, playerId)
+            .filter { it.tapPermanentsSubCost == null }
+            .map { source ->
+                ManaSourceOption(
+                    entityId = source.entityId,
+                    name = source.name,
+                    producesColors = source.producesColors,
+                    producesColorless = source.producesColorless,
+                    requiresSacrifice = source.requiresSacrifice
+                )
+            }
+        val remaining = remainingAfterFloating(state, playerId, cost)
+        val suggestion = if (remaining.isEmpty()) emptyList()
+            else solver.solve(state, playerId, remaining)?.sources?.map { it.entityId }.orEmpty()
+
+        return SelectManaSourcesDecision(
+            id = decisionId,
+            playerId = playerId,
+            prompt = prompt,
+            context = context,
+            availableSources = options,
+            requiredCost = cost.toString(),
+            autoPaySuggestion = suggestion.filter { id -> options.any { it.entityId == id } },
+            canDecline = canDecline
+        )
+    }
+
+    /** Outcome of applying a [ManaSourcesSelectedResponse] to a window opened by [buildDecision]. */
+    data class FloatResult(
+        val state: GameState,
+        val events: List<GameEvent>,
+        /** False when the player refused, or the submission couldn't produce the mana. */
+        val paid: Boolean
+    )
+
+    /**
+     * Taps (or sacrifices) whatever the player submitted and puts the mana in their pool, leaving
+     * the caller's own payment code to spend it. Floating mana the player already had — including
+     * anything they made with a mana ability inside the window — is left alone and counts toward
+     * the cost.
+     *
+     * Returns `paid = false` for a refusal, or when the submission doesn't add up; the caller runs
+     * its "didn't pay" branch either way.
+     */
+    fun floatSelectedMana(
+        state: GameState,
+        playerId: EntityId,
+        cost: com.wingedsheep.sdk.core.ManaCost,
+        response: ManaSourcesSelectedResponse,
+        availableSources: List<ManaSourceOption>,
+        services: com.wingedsheep.engine.core.EngineServices
+    ): FloatResult {
+        val remaining = remainingAfterFloating(state, playerId, cost)
+        if (response.isDecline(remaining.isEmpty())) return FloatResult(state, emptyList(), paid = false)
+        if (remaining.isEmpty()) return FloatResult(state, emptyList(), paid = true)
+
+        var current = state
+        val events = mutableListOf<GameEvent>()
+        var produced = ManaPool()
+
+        if (response.autoPay) {
+            val solution = ManaSolver(services.cardRegistry).solve(current, playerId, remaining)
+                ?: return FloatResult(state, emptyList(), paid = false)
+            val (afterTaps, tapEvents) = services.manaAbilitySideEffectExecutor
+                .tapSourcesWithSideEffects(current, solution, playerId)
+            current = afterTaps
+            events.addAll(tapEvents)
+            for ((_, p) in solution.manaProduced) {
+                produced = if (p.color != null) produced.add(p.color, p.amount) else produced.addColorless(p.colorless)
+            }
+            // Bonus mana from mana auras / "whenever you tap for mana" riders isn't in
+            // manaProduced; credit it or the cost comes up short (mirrors CostPaymentService.payMana).
+            for (source in solution.sources) {
+                val bonusColor = source.bonusManaColor
+                if (source.bonusManaPerTap > 0 && bonusColor != null) {
+                    produced = produced.add(bonusColor, source.bonusManaPerTap)
+                }
+            }
+        } else {
+            val byId = availableSources.associateBy { it.entityId }
+            for (sourceId in response.selectedSources) {
+                val source = byId[sourceId] ?: return FloatResult(state, emptyList(), paid = false)
+                val tapped = tapOrSacrifice(current, sourceId, source, playerId)
+                current = tapped.first
+                events.addAll(tapped.second)
+                produced = when {
+                    source.producesColors.isNotEmpty() -> produced.add(source.producesColors.first())
+                    source.producesColorless -> produced.addColorless(1)
+                    else -> produced
+                }
+            }
+        }
+
+        return FloatResult(current.addToManaPool(playerId, produced), events, paid = true)
+    }
+
+    /**
+     * Pays a selected source's activation cost: a `{T}, Sacrifice this` source (a Treasure) is
+     * sacrificed, everything else is tapped. A [com.wingedsheep.engine.core.TappedEvent] fires
+     * either way so "becomes tapped" triggers see the tap sub-cost.
+     */
+    private fun tapOrSacrifice(
+        state: GameState,
+        sourceId: EntityId,
+        source: ManaSourceOption,
+        fallbackControllerId: EntityId
+    ): Pair<GameState, List<GameEvent>> {
+        if (!source.requiresSacrifice) {
+            val (tapped, event) = com.wingedsheep.engine.core.tap(state, sourceId)
+            return tapped to listOfNotNull(event)
+        }
+        val controller = state.getEntity(sourceId)
+            ?.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
+            ?: fallbackControllerId
+        val events = mutableListOf<GameEvent>(
+            com.wingedsheep.engine.core.TappedEvent(sourceId, source.name)
+        )
+        val preState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+            .trackPermanentSacrifice(state, listOf(sourceId), controller)
+        val transition = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+            .moveToZone(preState, sourceId, com.wingedsheep.sdk.core.Zone.GRAVEYARD)
+        events.add(com.wingedsheep.engine.core.PermanentsSacrificedEvent(controller, listOf(sourceId)))
+        events.addAll(transition.events)
+        return transition.state to events
+    }
+
+    /** [cost] minus [playerId]'s floating mana. */
+    private fun remainingAfterFloating(
+        state: GameState,
+        playerId: EntityId,
+        cost: com.wingedsheep.sdk.core.ManaCost
+    ): com.wingedsheep.sdk.core.ManaCost {
+        val pool = state.getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.ManaPoolComponent>()
+            ?: return cost
+        return ManaPool(pool.white, pool.blue, pool.black, pool.red, pool.green, pool.colorless)
+            .payPartial(cost).remainingCost
+    }
+
+    /** Adds [produced] to [playerId]'s pool, preserving restricted mana and provenance. */
+    private fun GameState.addToManaPool(playerId: EntityId, produced: ManaPool): GameState =
+        updateEntity(playerId) { container ->
+            val pool = container.get<com.wingedsheep.engine.state.components.player.ManaPoolComponent>()
+                ?: com.wingedsheep.engine.state.components.player.ManaPoolComponent()
+            container.with(
+                pool.copy(
+                    white = pool.white + produced.white,
+                    blue = pool.blue + produced.blue,
+                    black = pool.black + produced.black,
+                    red = pool.red + produced.red,
+                    green = pool.green + produced.green,
+                    colorless = pool.colorless + produced.colorless
+                )
+            )
+        }
 
     /**
      * Sets the window aside so a mana ability can resolve against a decision-free state, and
