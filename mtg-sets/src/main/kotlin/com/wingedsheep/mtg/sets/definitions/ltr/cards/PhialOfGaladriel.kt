@@ -23,7 +23,7 @@ import com.wingedsheep.sdk.scripting.values.ManaColorSet
  * If you would gain life while you have 5 or less life, you gain twice that much life instead.
  * {T}: Add one mana of any color.
  *
- * The two replacements compose from existing primitives: `ModifyDrawAmount(+1)` gated on an empty
+ * The two replacements compose from existing primitives: `ReplaceDrawWithEffect(draw 2)` gated on an empty
  * hand, and `ModifyLifeGain(×2)` gated on the new `restrictions` field (life ≤ 5).
  */
 val PhialOfGaladriel = card("Phial of Galadriel") {
