@@ -91,6 +91,109 @@
     ]
 }
 
+// Aether Syphon
+{
+    "name": "Aether Syphon",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Artifact",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{2}, {T}: Draw a card.\nMax speed — Whenever you draw a card, each opponent mills two cards. (Each opponent puts the top two cards of their library into their graveyard.)",
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DrawEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "player": "EachOpponent",
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": "EachOpponent"
+                            }
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                "descriptionOverride": "Max speed — Whenever you draw a card, each opponent mills two cards."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{2}, {T}: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "rarity": "UNCOMMON",
+        "artist": "Martin de Diego Sádaba",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d7033739-4cd8-4727-b9b5-099fb597006b.jpg?1783907911",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Start your engines! isn't a triggered ability. Increasing your speed to 1 is something that happens as a state-based action as soon as you control a permanent with the ability. Notably, this includes gaining control of a permanent with the ability that another player controls."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "“Max speed — [ability]” means “As long as you have max speed, this object has [ability].” If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Aetherjacket
 {
     "name": "Aetherjacket",
@@ -2694,6 +2797,101 @@
     ]
 }
 
+// Dredger's Insight
+{
+    "name": "Dredger's Insight",
+    "manaCost": "{1}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever one or more artifact and/or creature cards leave your graveyard, you gain 1 life.\nWhen this enchantment enters, mill four cards. You may put an artifact, creature, or land card from among the milled cards into your hand. (To mill four cards, put the top four cards of your library into your graveyard.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CardsLeftYourGraveyardEvent",
+                    "filter": "creature|artifact"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever one or more artifact and/or creature cards leave your graveyard, you gain 1 life."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "gathered0",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "creature|artifact|land",
+                            "storeSelected": "selected2",
+                            "prompt": "You may put an artifact, creature, or land card into your hand",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Leave in graveyard",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected2",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this enchantment enters, mill four cards. You may put an artifact, creature, or land card from among the milled cards into your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "159",
+        "rarity": "UNCOMMON",
+        "artist": "Bartek Fedyczak",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/148400a0-7819-4551-9815-9357eed1db4d.jpg?1783907872"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Dune Drifter
 {
     "name": "Dune Drifter",
@@ -4511,6 +4709,58 @@
     "colorIdentityOverride": []
 }
 
+// Guidelight Optimizer
+{
+    "name": "Guidelight Optimizer",
+    "manaCost": "{1}{U}",
+    "typeLine": "Artifact Creature — Robot",
+    "oracleText": "{T}: Add {U}. Spend this mana only to cast an artifact spell or activate an ability.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE",
+                    "restriction": {
+                        "type": "AnyOf",
+                        "restrictions": [
+                            {
+                                "type": "CardTypeSpellsOrAbilitiesOnly",
+                                "cardType": "ARTIFACT"
+                            },
+                            "AbilityActivationOnly"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {U}. Spend this mana only to cast an artifact spell or activate an ability."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "Mirko Failoni",
+        "flavorText": "\"Analysis: Systems operating at 125% efficiency. Stress within expected tolerances. Exclamatory: Punch it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/9/e9fc07dd-05b1-49ed-a3ee-46c31b8e0a3d.jpg?1783907909",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "You may use mana from this creature to pay the cost of any activated ability, not just abilities of artifacts."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Guidelight Synergist
 {
     "name": "Guidelight Synergist",
@@ -4764,6 +5014,75 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Hellish Sideswipe
+{
+    "name": "Hellish Sideswipe",
+    "manaCost": "{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nDestroy target creature or Vehicle. If the sacrificed permanent was a Vehicle, draw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "SacrificedPermanentHadSubtype",
+                            "subtype": "Vehicle"
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|Vehicle"
+                },
+                "id": "creature or Vehicle"
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "creature|artifact"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "UNCOMMON",
+        "artist": "Diana Franco",
+        "flavorText": "Might makes right-of-way.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a9db650-47f9-46d7-ac17-8d19fef6d6b0.jpg?1783907894"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -8533,6 +8852,73 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Spectacular Pileup
+{
+    "name": "Spectacular Pileup",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "All creatures and Vehicles lose indestructible until end of turn, then destroy all creatures and Vehicles.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature|Vehicle"
+                        }
+                    },
+                    "body": {
+                        "type": "RemoveKeyword",
+                        "keyword": "INDESTRUCTIBLE",
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "creature|Vehicle"
+                            },
+                            "storeAs": "destroyAll_gathered"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "destroyAll_gathered",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Destroy"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "rarity": "RARE",
+        "artist": "Zezhou Chen",
+        "flavorText": "The first four crashes were accidental. Then the Endriders joined the fun.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a24a6309-0e69-45f0-a9ff-44d4997e7e4d.jpg?1783907914"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
