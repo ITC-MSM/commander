@@ -165,7 +165,7 @@ export function OpponentRail({
         <>
           {/* Your team: shared-life header (2HG only), then your "you" chip + your ally chip(s). */}
           <TeamRailSection label="Your Team" color={teamColor(viewerTeam!)} life={sharedLife ? yourTeamLife : null}>
-            {self && <SelfRailChip self={self} />}
+            {self && <BottomSeatRailChip seat={self} isViewerSeat />}
             {teammates.map((opponent) => (
               <RailChip
                 key={opponent.playerId}
@@ -194,10 +194,13 @@ export function OpponentRail({
         </>
       ) : (
         <>
-          {/* "You" chip first, so the full turn order — and whose turn it is — reads left to
-              right across the rail. Informational only: your board is always at the bottom, and
-              your life/targeting anchor stays on the center-HUD orb. Hidden when spectating. */}
-          {!spectatorMode && self && <SelfRailChip self={self} />}
+          {/* The bottom-anchored seat's chip first, so the rail lists every seat at the table in
+              turn order — and whose turn it is — reading top to bottom. Informational only: that
+              board is always at the bottom of the screen, and its life/targeting anchor stays on
+              the center-HUD orb. In normal play the seat is "you"; while spectating it is whichever
+              seat the header's view switcher has anchored (it would otherwise be missing from the
+              rail entirely, since it is nobody's "opponent"). */}
+          {self && <BottomSeatRailChip seat={self} isViewerSeat={!spectatorMode} />}
           {opponents.map((opponent) => (
             <RailChip
               key={opponent.playerId}
@@ -370,42 +373,51 @@ function TeamRailSection({
 }
 
 /**
- * The viewing player's own chip in the rail — the multiplayer overview's "you" entry, so the
- * whole table (and whose turn it is) is visible in one strip. Deliberately a slim, informational
- * subset of [RailChip]: seat color, name, life, hand, poison, plus the active-turn ring and
- * priority/deciding indicators. It is not a view-switch / defender / target anchor — those stay
- * on your board and center-HUD orb — so it carries no `data-life-id`.
+ * The chip for the seat whose board owns the bottom half of the screen — the multiplayer
+ * overview's guarantee that the whole table (and whose turn it is) is visible in one strip.
+ * In normal play that seat is the viewing player ("YOU"); while spectating it is the seat the
+ * header's view switcher has anchored ("VIEW"), which is nobody's opponent and so appears
+ * nowhere else in the rail.
+ *
+ * Deliberately a slim, informational subset of [RailChip]: seat color, name, life, hand, poison,
+ * plus the active-turn ring and priority/deciding indicators. It is not a view-switch / defender /
+ * target anchor — those stay on the bottom board and its center-HUD orb — so it carries no
+ * `data-life-id`.
  */
-function SelfRailChip({ self }: { self: ClientPlayer }) {
+function BottomSeatRailChip({ seat, isViewerSeat }: { seat: ClientPlayer; isViewerSeat: boolean }) {
   const responsive = useResponsiveContext()
   const gameState = useGameStore(selectGameState)
   const opponentDecisionStatus = useGameStore((state) => state.opponentDecisionStatus)
 
-  const playerId = self.playerId
-  const seat = useIdentityColor(playerId)
+  const playerId = seat.playerId
+  const color = useIdentityColor(playerId)
   // Only when life is shared (2HG) does the team header carry it, so the chip drops its own
   // (identical) number; in Team vs. Team each chip keeps its own life. Hand/poison/turn/priority
   // signals are kept either way.
   const teamMode = useIsSharedLifeTeamGame()
 
-  const isActiveTurn = gameState?.activePlayerId === playerId && !self.hasLost
-  const hasPriority = gameState?.priorityPlayerId === playerId && !self.hasLost
+  const isActiveTurn = gameState?.activePlayerId === playerId && !seat.hasLost
+  const hasPriority = gameState?.priorityPlayerId === playerId && !seat.hasLost
   const isDeciding = opponentDecisionStatus?.playerId === playerId
 
   const compact = responsive.isMobile
   const sz = chipSizing(responsive)
-  const tomb = self.hasLost
-  const lifeDanger = self.life <= 5
+  const tomb = seat.hasLost
+  const lifeDanger = seat.life <= 5
 
-  const borderColor = tomb ? '#3a3a44' : seat.base
+  const borderColor = tomb ? '#3a3a44' : color.base
   const background = tomb
     ? 'rgba(18, 18, 24, 0.85)'
-    : `linear-gradient(180deg, ${seat.soft}, rgba(10, 12, 20, 0.92))`
+    : `linear-gradient(180deg, ${color.soft}, rgba(10, 12, 20, 0.92))`
 
   return (
     <div style={{ position: 'relative', pointerEvents: 'auto', width: '100%' }}>
       <div
-        title={`You — Life ${self.life} · Hand ${self.handSize}${self.hasLost ? ' · Eliminated' : ''}`}
+        title={
+          `${isViewerSeat ? 'You' : seat.name} — Life ${seat.life} · Hand ${seat.handSize}` +
+          `${seat.hasLost ? ' · Eliminated' : ''}` +
+          `${isViewerSeat ? '' : "\nShown at the bottom of the board (the header's View button switches seats)"}`
+        }
         style={{
           position: 'relative',
           display: 'flex',
@@ -427,8 +439,8 @@ function SelfRailChip({ self }: { self: ClientPlayer }) {
           ...(isActiveTurn && !tomb
             ? {
                 animation: 'railTurnRing 1.4s ease-in-out infinite',
-                ['--turn-color' as string]: seat.bright,
-                ['--turn-glow' as string]: seat.soft,
+                ['--turn-color' as string]: color.bright,
+                ['--turn-glow' as string]: color.soft,
               }
             : {}),
         }}
@@ -437,14 +449,14 @@ function SelfRailChip({ self }: { self: ClientPlayer }) {
         {isActiveTurn && !tomb && (
           <span
             aria-hidden
-            title="Your turn"
+            title={isViewerSeat ? 'Your turn' : 'Active turn'}
             style={{
-              color: seat.bright,
+              color: color.bright,
               fontSize: sz.marker,
               lineHeight: 1,
               flexShrink: 0,
               animation: 'railTurnArrow 1s ease-in-out infinite',
-              textShadow: `0 0 5px ${seat.soft}`,
+              textShadow: `0 0 5px ${color.soft}`,
             }}
           >
             ▶
@@ -460,8 +472,8 @@ function SelfRailChip({ self }: { self: ClientPlayer }) {
             width: sz.dot,
             height: sz.dot,
             borderRadius: '50%',
-            background: tomb ? 'transparent' : seat.base,
-            boxShadow: tomb ? 'none' : `0 0 5px ${seat.base}`,
+            background: tomb ? 'transparent' : color.base,
+            boxShadow: tomb ? 'none' : `0 0 5px ${color.base}`,
             fontSize: 10,
             flexShrink: 0,
           }}
@@ -479,12 +491,20 @@ function SelfRailChip({ self }: { self: ClientPlayer }) {
                 fontSize: sz.name,
                 fontWeight: 700,
                 letterSpacing: '0.02em',
-                color: tomb ? '#666' : seat.bright,
+                color: tomb ? '#666' : color.bright,
               }}
             >
-              {self.name}
+              {seat.name}
             </span>
-            <span aria-hidden style={{ fontSize: 9, opacity: 0.75, fontWeight: 600, flexShrink: 0 }}>YOU</span>
+            {/* "YOU" in normal play; while spectating the seat isn't the viewer, so the tag marks
+                it as the one anchored to the bottom of the board instead. */}
+            <span
+              aria-hidden
+              title={isViewerSeat ? undefined : 'Anchored to the bottom of the board'}
+              style={{ fontSize: 9, opacity: 0.75, fontWeight: 600, flexShrink: 0 }}
+            >
+              {isViewerSeat ? 'YOU' : 'VIEW'}
+            </span>
           </span>
         )}
 
@@ -505,7 +525,7 @@ function SelfRailChip({ self }: { self: ClientPlayer }) {
             }}
           >
             <span aria-hidden style={{ color: tomb ? '#555' : '#ff6b6b', fontSize: sz.heart }}>❤</span>
-            {self.life}
+            {seat.life}
           </span>
         )}
 
@@ -523,29 +543,29 @@ function SelfRailChip({ self }: { self: ClientPlayer }) {
               fontSize: sz.hand,
               fontWeight: 700,
               fontVariantNumeric: 'tabular-nums',
-              color: handLimitSuffix(self.maxHandSize) ? '#f0d488' : '#9fb0d0',
+              color: handLimitSuffix(seat.maxHandSize) ? '#f0d488' : '#9fb0d0',
             }}
-            title={handLimitSuffix(self.maxHandSize)
-              ? `Hand ${self.handSize} · maximum hand size ${self.maxHandSize ?? '∞'}`
+            title={handLimitSuffix(seat.maxHandSize)
+              ? `Hand ${seat.handSize} · maximum hand size ${seat.maxHandSize ?? '∞'}`
               : undefined}
           >
-            <HandCountIcon color={handLimitSuffix(self.maxHandSize) ? '#f0d488' : '#8899bb'} />
-            {self.handSize}{handLimitSuffix(self.maxHandSize)}
+            <HandCountIcon color={handLimitSuffix(seat.maxHandSize) ? '#f0d488' : '#8899bb'} />
+            {seat.handSize}{handLimitSuffix(seat.maxHandSize)}
           </span>
         )}
 
         {/* Speed (CR 702.179) — the rail's own compact tachometer */}
-        {!tomb && (self.speed ?? 0) > 0 && (
-          <SpeedGauge speed={self.speed ?? 0} compact />
+        {!tomb && (seat.speed ?? 0) > 0 && (
+          <SpeedGauge speed={seat.speed ?? 0} compact />
         )}
 
         {/* Poison */}
-        {!tomb && self.poisonCounters > 0 && (
+        {!tomb && seat.poisonCounters > 0 && (
           <span
-            title={`${self.poisonCounters}/10 poison counters`}
+            title={`${seat.poisonCounters}/10 poison counters`}
             style={{ fontSize: compact ? 10 : 11, fontWeight: 800, color: '#71f5a7' }}
           >
-            ☠{self.poisonCounters}
+            ☠{seat.poisonCounters}
           </span>
         )}
 
@@ -567,7 +587,7 @@ function SelfRailChip({ self }: { self: ClientPlayer }) {
         ) : hasPriority && !isActiveTurn ? (
           <span
             aria-hidden
-            title="You hold priority"
+            title={isViewerSeat ? 'You hold priority' : 'Holding priority'}
             style={{
               width: 6,
               height: 6,
