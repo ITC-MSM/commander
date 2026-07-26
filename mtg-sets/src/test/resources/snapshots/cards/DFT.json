@@ -2680,6 +2680,100 @@
     ]
 }
 
+// Greasewrench Goblin
+{
+    "name": "Greasewrench Goblin",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Artificer",
+    "oracleText": "Exhaust — {2}{R}: Discard up to two cards, then draw that many cards. Put a +1/+1 counter on this creature. (Activate each exhaust ability only once.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "discarded_candidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "discarded_candidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Discard up to 2 cards"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                },
+                                {
+                                    "type": "DrawCards",
+                                    "count": {
+                                        "type": "VariableReference",
+                                        "variableName": "discarded_count"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ],
+                    "descriptionOverride": "Discard up to two cards, then draw that many cards. Put a +1/+1 counter on this creature."
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "rarity": "UNCOMMON",
+        "artist": "Alexandre Honoré",
+        "flavorText": "Killswitch finally had the right wrench for the job. Now she needed to remember what the job was.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/8/c8f0b123-fdb0-4f3e-ba78-fa155c227e20.jpg?1783907881"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Greenbelt Guardian
 {
     "name": "Greenbelt Guardian",
@@ -3431,6 +3525,73 @@
     ]
 }
 
+// Loxodon Surveyor
+{
+    "name": "Loxodon Surveyor",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Elephant Scout",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — {3}, Exile this card from your graveyard: Draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostExileSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "Max speed — {3}, Exile this card from your graveyard: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "167",
+        "artist": "J.P. Targete",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd1cecb1-6776-4495-be56-b7dde65453f1.jpg?1783907870"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Marketback Walker
 {
     "name": "Marketback Walker",
@@ -3713,6 +3874,78 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Nesting Bot
+{
+    "name": "Nesting Bot",
+    "manaCost": "{W}",
+    "typeLine": "Artifact Creature — Robot",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nWhen this creature dies, create a 1/1 colorless Servo artifact creature token.\nMax speed — This creature gets +1/+0.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Servo"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/1/0/10de413b-3307-4bc7-bb21-f177543d7e21.jpg?1783907678",
+                    "artifactToken": true
+                },
+                "descriptionOverride": "When this creature dies, create a 1/1 colorless Servo artifact creature token."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "rarity": "UNCOMMON",
+        "artist": "Racrufi",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/7829c0ae-f72f-4195-ad43-775d7218565c.jpg?1783907917"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -5512,6 +5745,60 @@
     ]
 }
 
+// Stall Out
+{
+    "name": "Stall Out",
+    "manaCost": "{1}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Tap target creature or Vehicle, then put three stun counters on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or Vehicle"
+                    }
+                },
+                {
+                    "type": "AddCounters",
+                    "counterType": "stun",
+                    "count": 3,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or Vehicle"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|Vehicle"
+                },
+                "id": "target creature or Vehicle"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "artist": "Inkognit",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/e/4ea0e0d3-833f-4353-b648-57b0b657cc1c.jpg?1783907902"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Stampeding Scurryfoot
 {
     "name": "Stampeding Scurryfoot",
@@ -5571,6 +5858,108 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Starting Column
+{
+    "name": "Starting Column",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{T}: Add one mana of any color.\nMax speed — {T}, Sacrifice this artifact: Draw two cards, then discard a card.",
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add one mana of any color."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Max speed — {T}, Sacrifice this artifact: Draw two cards, then discard a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "244",
+        "artist": "Jakub Kasper",
+        "flavorText": "Ten teams. Ten dreams. One winner.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/0530b343-98c2-440a-b32e-d1566d318c3b.jpg?1783907846"
+    },
+    "colorIdentityOverride": []
 }
 
 // Stock Up
@@ -5637,6 +6026,57 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Streaking Oilgorger
+{
+    "name": "Streaking Oilgorger",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "Flying, haste\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — This creature has lifelink.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "HASTE",
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "artist": "Campbell White",
+        "flavorText": "\"They feed on OIL? Where were they during the Phyrexian Invasion?!\"\n—Chandra Nalaar",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/f/6ff120a2-e2bb-42a2-bcb7-a48eb7a6d9b2.jpg?1783907889"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

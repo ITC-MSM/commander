@@ -1869,6 +1869,12 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   so the count is readable downstream as `DynamicAmount.VariableReference("${storeAs}_count")` — e.g.
   Miasma Demon wires this as the `ReflexiveTriggerEffect` action and reads `discarded_count` as the
   reflexive targets' `dynamicMaxCount` ("up to that many target creatures").
+- `discardUpToThenDraw(max, draw?, storeAs?, prompt?)` — "discard up to N cards, then draw that many
+  cards" (Tersa Lightshatter, Sokka, Bold Boomeranger, Greasewrench Goblin). Loot backwards: the
+  selection is `SelectionMode.ChooseUpTo(max)` so declining entirely is legal and then nothing is drawn,
+  and the draw defaults to `DynamicAmount.VariableReference("${storeAs}_count")` — the number *actually*
+  discarded, not `max`. `max` takes an `Int` or a `DynamicAmount` ("discard up to X cards"); pass `draw`
+  to decouple the payoff from the discard ("discard up to two cards, then draw three").
 - `discardRandom(count, target)` — random discards.
 - `discardHand(target)` — discard entire hand.
 - `eachOpponentDiscards(count, controllerDrawsPerDiscard?)` — Mind Twist-style.

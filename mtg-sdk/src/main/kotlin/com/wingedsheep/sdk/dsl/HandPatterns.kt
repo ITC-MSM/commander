@@ -473,6 +473,58 @@ object HandPatterns {
     )
 
     /**
+     * Fixed-ceiling [discardUpToThenDraw] — "discard up to [max] cards, then draw that many cards",
+     * the wording Tersa Lightshatter, Sokka, Bold Boomeranger and Greasewrench Goblin all print
+     * verbatim. Only the prompt differs from the [DynamicAmount] overload, which can name the number.
+     */
+    fun discardUpToThenDraw(
+        max: Int,
+        draw: DynamicAmount? = null,
+        storeAs: String = "discarded",
+        prompt: String = "Discard up to $max card${if (max != 1) "s" else ""}",
+    ): CompositeEffect = discardUpToThenDraw(DynamicAmount.Fixed(max), draw, storeAs, prompt)
+
+    /**
+     * "Discard up to [max] cards, then draw that many cards" — loot run backwards.
+     *
+     * The bound matters twice: the selection is *up to* [max], so declining entirely is legal and
+     * then nothing is drawn, and the number drawn is the number **actually** discarded rather than
+     * [max] — read off the pipeline collection's `${storeAs}_count`, so a player holding one card
+     * discards one and draws one. Same Gather → Select → Move spine as [discardAnyNumber], with the
+     * ceiling applied at the select step.
+     *
+     * Both halves are [DynamicAmount]s. [max] takes a resolution-time ceiling ("discard up to X
+     * cards" off a cast X, or a count of permanents). [draw] defaults to `null`, meaning the printed
+     * "that many"; pass one to decouple the draw from the discard — a cost-shaped discard whose
+     * payoff is a flat or separately-scaled draw ("discard up to two cards, then draw three").
+     */
+    fun discardUpToThenDraw(
+        max: DynamicAmount,
+        draw: DynamicAmount? = null,
+        storeAs: String = "discarded",
+        prompt: String = "Choose cards to discard",
+    ): CompositeEffect = CompositeEffect(
+        listOf(
+            GatherCardsEffect(
+                source = CardSource.FromZone(Zone.HAND, Player.You),
+                storeAs = "${storeAs}_candidates"
+            ),
+            SelectFromCollectionEffect(
+                from = "${storeAs}_candidates",
+                selection = SelectionMode.ChooseUpTo(max),
+                storeSelected = storeAs,
+                prompt = prompt
+            ),
+            MoveCollectionEffect(
+                from = storeAs,
+                destination = CardDestination.ToZone(Zone.GRAVEYARD, Player.You),
+                moveType = MoveType.Discard
+            ),
+            DrawCardsEffect(draw ?: DynamicAmount.VariableReference("${storeAs}_count"))
+        )
+    )
+
+    /**
      * Read the Runes-style "draw X, then for each card drawn discard a card unless
      * you sacrifice a permanent" pipeline. Loops X times via [RepeatDynamicTimesEffect]
      * (iteration count = the X paid for the spell); each iteration presents a

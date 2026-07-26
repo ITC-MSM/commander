@@ -17118,11 +17118,11 @@
                                 "type": "FromZone",
                                 "zone": "Hand"
                             },
-                            "storeAs": "hand"
+                            "storeAs": "discarded_candidates"
                         },
                         {
                             "type": "SelectFromCollection",
-                            "from": "hand",
+                            "from": "discarded_candidates",
                             "selection": {
                                 "type": "ChooseUpTo",
                                 "count": {
@@ -17131,7 +17131,7 @@
                                 }
                             },
                             "storeSelected": "discarded",
-                            "prompt": "Discard up to two cards"
+                            "prompt": "Discard up to 2 cards"
                         },
                         {
                             "type": "MoveCollection",
