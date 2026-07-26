@@ -17801,8 +17801,10 @@
                     "filter": "noncreature nonland permanent mv<=3",
                     "storeSelected": "onto",
                     "storeRemainder": "rest",
+                    "prompt": "Put up to two noncreature, nonland permanent cards with mana value 3 or less onto the battlefield",
                     "selectedLabel": "Put onto the battlefield",
-                    "remainderLabel": "Put on bottom"
+                    "remainderLabel": "Put on bottom",
+                    "showAllCards": true
                 },
                 {
                     "type": "MoveCollection",
