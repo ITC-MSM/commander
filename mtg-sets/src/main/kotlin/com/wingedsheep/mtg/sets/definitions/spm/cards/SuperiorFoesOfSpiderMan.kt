@@ -1,7 +1,7 @@
 package com.wingedsheep.mtg.sets.definitions.spm.cards
 
 import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.dsl.ExilePatterns
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.EventPattern.SpellCastEvent
@@ -49,7 +49,7 @@ val SuperiorFoesOfSpiderMan = card("Superior Foes of Spider-Man") {
             binding = TriggerBinding.ANY
         )
         effect = MayEffect(
-            ExilePatterns.impulse(count = 1, expiry = MayPlayExpiry.UntilSourceExilesAnother)
+            Patterns.Exile.impulse(count = 1, expiry = MayPlayExpiry.UntilSourceExilesAnother)
         )
     }
 
