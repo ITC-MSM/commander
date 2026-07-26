@@ -499,6 +499,21 @@ sealed interface ClientMessage {
         val ranked: Boolean = false,
     ) : ClientMessage
 
+    /**
+     * Choose what the AI opponent plays. Host-only, and only meaningful in a `vsAi` lobby.
+     *
+     * The spec is stored on the lobby and resolved into a decklist at game start, so re-sending it
+     * is cheap and changing the lobby format afterwards still applies. A
+     * [com.wingedsheep.gameserver.lobby.AiDeckSpec.Fixed] list is validated against the lobby's
+     * format on arrival and rejected outright if it doesn't pass — the host finds out here rather
+     * than at game start.
+     */
+    @Serializable
+    @SerialName("setQuickGameAiDeck")
+    data class SetQuickGameAiDeck(
+        val spec: com.wingedsheep.gameserver.lobby.AiDeckSpec,
+    ) : ClientMessage
+
     /** Join an existing quick-game lobby by its short code. */
     @Serializable
     @SerialName("joinQuickGameLobby")

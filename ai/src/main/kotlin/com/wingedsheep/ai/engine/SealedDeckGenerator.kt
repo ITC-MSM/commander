@@ -68,6 +68,29 @@ class SealedDeckGenerator(
     }
 
     /**
+     * Generates a sealed deck from 8 boosters spread evenly across [setCodes].
+     *
+     * The multi-set flavour of [generate]: [BoosterGenerator.generateSealedPool] already knows how
+     * to split a booster count across sets, so this only has to pick which set's ratings tables the
+     * autobuilder loads — the first one, since Draftsim's tables are per-set and a mixed pool has no
+     * single home set. Sets without a ratings file fall back to the scorer's rarity ladder anyway.
+     *
+     * @param setCodes the sets to open boosters from; a single-element list behaves exactly like
+     *        [generate].
+     * @return A map of card name (or "Name#SetCode-CollectorNumber" for lands) to count
+     */
+    fun generate(setCodes: List<String>): Map<String, Int> {
+        require(setCodes.isNotEmpty()) { "At least one set code is required" }
+        if (setCodes.size == 1) return generate(setCodes.first())
+        setCodes.forEach { requireNotNull(boosterGenerator.availableSets[it]) { "Unknown set code: $it" } }
+
+        val pool = boosterGenerator.generateSealedPool(setCodes, boosterCount = 8)
+        val deck = buildSealedDeck(pool, setCodes.first())
+
+        return BoosterGenerator.withBasicLandArt(deck, boosterGenerator.getBasicLands(setCodes))
+    }
+
+    /**
      * Builds a sealed deck from [pool] with the Draftsim autobuilder, scoped to [setCode] so it loads
      * that set's ratings/removal/archetype tables. Sets without a Draftsim ratings file still build
      * (the scorer falls back to a rarity ladder). Falls back to [buildHeuristicSealedDeck] only if

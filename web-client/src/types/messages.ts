@@ -1859,6 +1859,7 @@ export type ClientMessage =
   | SetQuickGameLobbySetCodeMessage
   | SetQuickGameLobbyPublicMessage
   | SetQuickGameLobbyRankedMessage
+  | SetQuickGameAiDeckMessage
   | SetQuickGameLobbyFormatMessage
 
 /**
@@ -2732,6 +2733,37 @@ export interface QuickGameLobbyStateMessage {
   readonly ranked?: boolean
   /** Whether ranked is offered for this lobby: a standard 1v1 human-vs-human lobby. */
   readonly rankedEligible?: boolean
+  /** What the AI seat will play. Present only in a vs-AI lobby. See [AiDeckSpecView]. */
+  readonly aiDeck?: AiDeckSpecView | null
+}
+
+/**
+ * What the host has chosen for the AI opponent's deck.
+ *
+ * `auto` — the server picks: a sealed pool mirroring your set, or a format-legal constructed deck
+ * when the lobby carries a deck-format restriction.
+ * `sets` — the server builds the AI a deck from [setCodes].
+ * `deck` — the AI plays an exact list the host supplied (example deck / saved deck / pasted).
+ */
+export type AiDeckSpec =
+  | { readonly type: 'auto' }
+  | { readonly type: 'sets'; readonly setCodes: readonly string[] }
+  | { readonly type: 'deck'; readonly deckList: Record<string, number>; readonly label?: string }
+
+/**
+ * The lobby-broadcast summary of an [AiDeckSpec]. The decklist behind a `deck` choice never rides
+ * the lobby broadcast — only its label and card count — so this is a summary, not the spec.
+ */
+export interface AiDeckSpecView {
+  readonly kind: 'auto' | 'sets' | 'deck'
+  readonly setCodes?: readonly string[]
+  readonly label?: string | null
+  readonly cardCount?: number
+}
+
+export interface SetQuickGameAiDeckMessage {
+  readonly type: 'setQuickGameAiDeck'
+  readonly spec: AiDeckSpec
 }
 
 export interface QuickGameLobbyClosedMessage {
@@ -2880,6 +2912,9 @@ export function createSetQuickGameLobbySetCodeMessage(setCode: string | null): S
 }
 export function createSetQuickGameLobbyPublicMessage(isPublic: boolean): SetQuickGameLobbyPublicMessage {
   return { type: 'setQuickGameLobbyPublic', isPublic }
+}
+export function createSetQuickGameAiDeckMessage(spec: AiDeckSpec): SetQuickGameAiDeckMessage {
+  return { type: 'setQuickGameAiDeck', spec }
 }
 export function createSetQuickGameLobbyRankedMessage(ranked: boolean): SetQuickGameLobbyRankedMessage {
   return { type: 'setQuickGameLobbyRanked', ranked }

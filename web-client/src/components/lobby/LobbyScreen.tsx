@@ -27,6 +27,7 @@ import { DeckPicker, type DeckPickerTab } from '../ui/DeckPicker'
 import { FullscreenButton } from '../ui/FullscreenButton'
 import { JoinQrModal } from '../ui/JoinQrModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
+import { AiOpponentPanel } from './AiOpponentPanel'
 import { LobbyAxes } from './LobbyAxes'
 import { LobbyAxisSummary } from './LobbyAxisSummary'
 import { TeamChip, TournamentLobbySettings } from './TournamentLobbySettings'
@@ -163,6 +164,16 @@ export function LobbyScreen() {
                 </button>
               </div>
             </div>
+            )}
+
+            {/* Only a quick vs-AI lobby has an AI seat whose deck is the host's to choose.
+                Momir Basic hands every seat the same fixed 60 basics, so there is nothing to pick. */}
+            {view.kind === 'QUICK' && quickLobby?.vsAi && !isMomir && (
+              <AiOpponentPanel
+                aiDeck={quickLobby.aiDeck ?? null}
+                format={quickLobby.format ?? null}
+                disabled={view.you?.tone === 'ready'}
+              />
             )}
 
             {lobbyState && view.kind === 'TOURNAMENT' && (

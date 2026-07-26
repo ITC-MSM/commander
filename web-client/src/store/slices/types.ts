@@ -33,6 +33,7 @@ import type {
   Step,
   AvailableSet,
   QuickGameLobbyStateMessage,
+  AiDeckSpec,
   DeckFormat,
   YieldKind,
 } from '@/types'
@@ -930,6 +931,8 @@ export type GameStore = {
   setQuickGameLobbyPublic: (isPublic: boolean) => void
   setQuickGameLobbyRanked: (ranked: boolean) => void
   setQuickGameLobbyFormat: (format: DeckFormat | null, momirBasic?: boolean) => void
+  /** Host-only: choose what the AI opponent plays (auto / built from sets / an exact list). */
+  setQuickGameAiDeck: (spec: AiDeckSpec) => void
 
   // Draft slice
   deckBuildingState: DeckBuildingState | null

@@ -52,6 +52,15 @@ class QuickGameLobby(
 ) {
     val players: MutableList<QuickGameLobbyPlayer> = mutableListOf()
 
+    /**
+     * What the AI seat plays, when [vsAi]. Host-controlled from the lobby's AI panel and resolved
+     * into a decklist at game start by [com.wingedsheep.gameserver.ai.AiDeckResolver] — deferred so
+     * that changing [format] re-rolls the AI's deck under the new restriction. Ignored entirely in
+     * a human-only lobby, and overridden by [momirBasic] (every seat plays the fixed 60 basics).
+     */
+    @Volatile
+    var aiDeckSpec: AiDeckSpec = AiDeckSpec.Auto
+
     @Volatile
     var started: Boolean = false
 
