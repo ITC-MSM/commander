@@ -66,7 +66,45 @@
 }
 
 /*
- * Landing layout: the glass card and the side rail (auth widget, public lobbies, live games).
+ * Landing top bar: the viewport controls (fullscreen, help) at the left, the account widget at the
+ * right, as one flow row above everything else.
+ *
+ * The account pills belong in the corner — that is where you look for who you are signed in as — but
+ * they are the widest thing on the screen's top edge (five of them on an admin account), and a
+ * `position: fixed` corner has no way to know where the glass card's edge is. That is the collision
+ * `.landingLayout` below was built to make inexpressible, so the row is in flow too:
+ * `space-between` seats both clusters without either being able to reach the card.
+ */
+.landingTopBar {
+  flex: none;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.landingTopBarControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Under ~720px the two clusters can't share a line without shrinking each other — the pills start
+   breaking their own labels over two rows. Each takes a full line instead, account below controls,
+   still right-aligned. */
+@media (max-width: 720px) {
+  .landingTopBar {
+    flex-wrap: wrap;
+  }
+
+  .landingTopBar > * {
+    flex: 1 0 100%;
+  }
+}
+
+/*
+ * Landing layout: the glass card and the side rail (public lobbies, live games).
  *
  * The rail used to be `position: fixed` in the top-right corner while the card was centred in the
  * *viewport*, so the two were laid out in ignorance of each other. They only missed on a wide
@@ -2750,7 +2788,9 @@
 /* =========================================================================
  * Fullscreen Button
  * ========================================================================= */
-/* Fixed top-left cluster: fullscreen toggle, and on the home screen the help entry. */
+/* Fixed top-left cluster: the lobby screen's fullscreen toggle. The landing screen's equivalent is
+   the left half of `.landingTopBar`, which is in flow because it shares its row with the account
+   pills. */
 .cornerControls {
   position: fixed;
   top: var(--space-3);

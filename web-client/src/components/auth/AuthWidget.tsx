@@ -1,6 +1,7 @@
 /**
  * Account presence widget for the landing screen — deliberately separate from the navigation
- * buttons so the sign-in state reads as a distinct, persistent affordance. Anchored top-right.
+ * buttons so the sign-in state reads as a distinct, persistent affordance. It occupies the
+ * top-right of the landing top bar, opposite the fullscreen and help controls.
  *
  *  - signed in  → "Signed in as <name>" (opens the profile), Friends, Stats, and Log out
  *  - anonymous  → a single Log in button that opens the magic-link modal
