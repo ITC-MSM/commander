@@ -73,6 +73,7 @@ export function HelpDrawer() {
             <HelpTopicView
               key={topic.id}
               topic={topic}
+              className={styles.topicSeparated}
               onNavigate={(id) => {
                 const target = topicById(id)
                 if (!target) return

@@ -18,6 +18,8 @@
  * both surfaces can render (and that a lint/test can walk).
  */
 
+import { SHORTCUTS } from './shortcuts'
+
 export type HelpSection = 'getting-started' | 'modes' | 'playing' | 'decks' | 'advanced'
 
 export type HelpBlock =
@@ -499,6 +501,17 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     ],
     related: ['cards-sealed', 'cards-draft'],
   },
+  {
+    id: 'set-completion',
+    section: 'decks',
+    title: 'Which cards are implemented',
+    summary:
+      'Set Completion, on the home screen under Build & Browse, lists every set and how much of it the engine can actually play. Useful before committing to a deck or picking a set to draft.',
+    body: [
+      { kind: 'p', text: 'The deckbuilder only ever offers implemented cards, so a deck you build there always works. This page is the other direction: it tells you what is missing from a set you had in mind.' },
+    ],
+    related: ['deckbuilder'],
+  },
 
   // ── Advanced ───────────────────────────────────────────────────────────
   {
@@ -546,8 +559,8 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'advanced',
     title: 'Lab tools',
     summary:
-      'Debugging and content tools, not part of normal play. Set Completion (which cards of a set are implemented) is always available; the Scenario Builder (start a game from a hand-authored board state) and the LLM Tournament runner only appear in dev builds, because both need server endpoints a production deployment does not expose.',
-    related: ['replays'],
+      'Debugging and content tools, not part of normal play: the Scenario Builder (start a game from a hand-authored board state) and the LLM Tournament runner. They only appear in dev builds, because both need server endpoints a production deployment does not expose.',
+    related: ['replays', 'set-completion'],
   },
 ]
 
@@ -557,6 +570,41 @@ export function topicById(id: string): HelpTopic | undefined {
 
 export function topicsInSection(section: HelpSection): readonly HelpTopic[] {
   return HELP_TOPICS.filter((t) => t.section === section)
+}
+
+export function sectionMeta(section: HelpSection) {
+  // Non-null: `HelpSection` is exactly the set of ids in HELP_SECTIONS.
+  return HELP_SECTIONS.find((s) => s.id === section)!
+}
+
+/**
+ * Everything about a topic that a reader might type into the search box, lower-cased once.
+ *
+ * Includes the section's own title and blurb (so "modes" finds the mode topics) and, for the
+ * shortcuts block, the whole shortcut table — otherwise searching "escape" or "spectate" would miss
+ * the one topic that actually documents those keys.
+ */
+function topicHaystack(topic: HelpTopic): string {
+  const meta = sectionMeta(topic.section)
+  const parts: string[] = [topic.title, topic.summary, meta.title, meta.blurb]
+  for (const block of topic.body ?? []) {
+    if (block.kind === 'p') parts.push(block.text)
+    else if (block.kind === 'ul') parts.push(...block.items)
+    else for (const s of SHORTCUTS) parts.push(s.keys, s.label, s.where)
+  }
+  return parts.join(' ').toLowerCase()
+}
+
+const HAYSTACKS = new Map(HELP_TOPICS.map((t) => [t.id, topicHaystack(t)]))
+
+/** Topics matching every whitespace-separated term in `query`, in registry order. */
+export function searchTopics(query: string): readonly HelpTopic[] {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
+  if (terms.length === 0) return []
+  return HELP_TOPICS.filter((t) => {
+    const haystack = HAYSTACKS.get(t.id) ?? ''
+    return terms.every((term) => haystack.includes(term))
+  })
 }
 
 /** Deep link to a topic on the help page. */

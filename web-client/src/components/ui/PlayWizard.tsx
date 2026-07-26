@@ -265,18 +265,18 @@ export function PlayWizard({
 
       {complete !== null && (
         <>
-          {/* The stages, on their own full-width row rather than a repeat of the stepper: "Open
-              boosters → Build a deck → Everyone plays everyone → Standings" is the only place that
-              says how many steps this is before you commit to it. */}
-          <p className={styles.wizardFlow}>
-            {flowStages(complete).map((stage, i) => (
-              <span key={stage}>
-                {i > 0 && <span className={styles.wizardFlowArrow} aria-hidden> → </span>}
-                <span className={styles.wizardFlowStage}>{stage}</span>
-              </span>
-            ))}
-          </p>
+          {/* One block for everything that is about launching, rather than three rows loose under
+              the tiles. The stages lead it — "Open boosters → Build a deck → Everyone plays everyone
+              → Standings" is the only place that says how many steps this is before you commit. */}
           <div className={styles.wizardFooter}>
+            <p className={styles.wizardFlow}>
+              {flowStages(complete).map((stage, i) => (
+                <span key={stage}>
+                  {i > 0 && <span className={styles.wizardFlowArrow} aria-hidden> → </span>}
+                  <span className={styles.wizardFlowStage}>{stage}</span>
+                </span>
+              ))}
+            </p>
             <SeatControl
               selection={complete}
               onChange={(seats) => replaceDraft({ ...complete, seats })}
@@ -478,7 +478,7 @@ function OptionGrid<V extends string>({
   onPick: (value: V) => void
 }) {
   return (
-    <div className={styles.presetGrid}>
+    <div className={`${styles.presetGrid} ${choices.length === 4 ? styles.presetGridPairs : ''}`}>
       {choices.map((choice) => (
         // A wrapper div rather than one big button: the HelpTip is itself a button, and nesting
         // interactive elements is invalid HTML (and unreachable by keyboard).

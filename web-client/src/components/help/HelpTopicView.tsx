@@ -2,6 +2,7 @@
  * Renders one {@link HelpTopic}. Shared by `/help` and the in-game drawer so the two can never
  * drift — the whole point of the single topic registry.
  */
+import type { ReactNode } from 'react'
 import { HELP_TOPICS, topicById, helpHref, type HelpTopic } from '@/help/topics'
 import { SHORTCUTS, shortcutById } from '@/help/shortcuts'
 import styles from './help.module.css'
@@ -9,22 +10,31 @@ import styles from './help.module.css'
 export function HelpTopicView({
   topic,
   onNavigate,
+  headerAction,
+  className,
 }: {
   topic: HelpTopic
   /** How a related-topic link should be followed. Omit for a plain anchor (the `/help` page). */
   onNavigate?: (topicId: string) => void
+  /** Rendered opposite the title. The `/help` page puts its copy-link button here. */
+  headerAction?: ReactNode
+  /** Extra class on the article — how `/help` gives a topic its card surface. */
+  className?: string | undefined
 }) {
   return (
-    <article id={topic.id} className={styles.topic}>
-      <h3 className={styles.topicTitle}>{topic.title}</h3>
-      <p className={styles.topicSummary}>{topic.summary}</p>
+    <article id={topic.id} className={`${styles.topic} ${className ?? ''}`}>
+      <div className={styles.topicHeader}>
+        <h3 className={styles.topicTitle}>{topic.title}</h3>
+        {headerAction}
+      </div>
+      <p className={styles.topicSummary}>{withCode(topic.summary)}</p>
 
       {topic.body?.map((block, i) => {
-        if (block.kind === 'p') return <p key={i} className={styles.topicBody}>{block.text}</p>
+        if (block.kind === 'p') return <p key={i} className={styles.topicBody}>{withCode(block.text)}</p>
         if (block.kind === 'ul') {
           return (
             <ul key={i} className={styles.topicList}>
-              {block.items.map((item, j) => <li key={j}>{item}</li>)}
+              {block.items.map((item, j) => <li key={j}>{withCode(item)}</li>)}
             </ul>
           )
         }
@@ -70,6 +80,24 @@ export function HelpTopicView({
       )}
     </article>
   )
+}
+
+/**
+ * Renders markdown-style `code` spans in a topic string.
+ *
+ * `topics.ts` is plain text and there is no markdown pipeline in the client, but query syntax and
+ * decklist lines are unreadable without the distinction — and the backticks were rendering as
+ * literal backticks. This one inline construct is the whole of the markup the topics use; anything
+ * more is a reason to reach for a real renderer rather than to extend this.
+ */
+function withCode(text: string): ReactNode {
+  const parts = text.split(/(`[^`]+`)/g)
+  if (parts.length === 1) return text
+  return parts.map((part, i) => (
+    part.length > 2 && part.startsWith('`') && part.endsWith('`')
+      ? <code key={i} className={styles.inlineCode}>{part.slice(1, -1)}</code>
+      : part
+  ))
 }
 
 export function ShortcutTable() {

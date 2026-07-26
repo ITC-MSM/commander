@@ -84,17 +84,30 @@
 /* =========================================================================
  * Topic rendering (page + drawer)
  * ========================================================================= */
+/* The topic's own stacking. Separating one topic from the next is the surface's call: the drawer
+   adds `.topicSeparated` rules below, the `/help` page gives each topic a card instead. */
 .topic {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-4) 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   scroll-margin-top: var(--space-6);
 }
 
-.topic:last-child {
+.topicSeparated {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.topicSeparated:last-child {
   border-bottom: none;
+}
+
+/* Title plus whatever the surface wants beside it (the `/help` page's copy-link button). */
+.topicHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .topicTitle {
@@ -127,6 +140,18 @@
   font-size: var(--font-sm);
   line-height: 1.5;
   color: var(--text-tertiary);
+}
+
+/* `code` spans inside topic prose — see `withCode` in HelpTopicView. */
+.inlineCode {
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary, #ddd);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  white-space: nowrap;
 }
 
 .shortcutChips {
@@ -223,10 +248,12 @@
   vertical-align: top;
 }
 
+/* Wraps rather than forcing the whole table into a horizontal scroll: the third column carries the
+   longest strings ("Any card preview — hand, battlefield, deckbuilder") and neither the 460px drawer
+   nor the reading-width `/help` column has room for them on one line. */
 .shortcutWhere {
   color: var(--text-disabled);
   font-size: var(--font-xs, 0.75rem);
-  white-space: nowrap;
 }
 
 /* =========================================================================
