@@ -7,6 +7,7 @@ import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.spm.cards.Whoosh
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -47,7 +48,7 @@ class WhooshScenarioTest : FunSpec({
                 playerId = you,
                 cardId = whoosh,
                 targets = listOf(ChosenTarget.Permanent(creature)),
-                wasKicked = false,
+                declaredCostSlot = null,
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         ).isSuccess shouldBe true
@@ -74,7 +75,7 @@ class WhooshScenarioTest : FunSpec({
                 playerId = you,
                 cardId = whoosh,
                 targets = listOf(ChosenTarget.Permanent(creature)),
-                wasKicked = true,
+                declaredCostSlot = ChoiceSlot.KICKED,
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         ).isSuccess shouldBe true
