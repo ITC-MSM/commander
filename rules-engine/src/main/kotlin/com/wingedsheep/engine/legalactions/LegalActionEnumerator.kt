@@ -43,7 +43,8 @@ class LegalActionEnumerator(
         ActivatedAbilityEnumerator(),
         CrewEnumerator(),
         SaddleEnumerator(),
-        GraveyardAbilityEnumerator(),
+        ZoneActivatedAbilityEnumerator(com.wingedsheep.sdk.core.Zone.GRAVEYARD),
+        ZoneActivatedAbilityEnumerator(com.wingedsheep.sdk.core.Zone.HAND),
         CommandZoneAbilityEnumerator()
     )
 

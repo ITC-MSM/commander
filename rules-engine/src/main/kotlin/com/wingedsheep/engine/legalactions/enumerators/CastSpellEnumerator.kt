@@ -71,7 +71,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
         // Memory Vessel: "they can't play cards from their hand." Every card iterated here is in
         // the hand zone, so a blanket skip enforces the restriction without touching exile/graveyard
-        // casts (those are enumerated by CastFromZoneEnumerator / GraveyardAbilityEnumerator).
+        // casts (those are enumerated by CastFromZoneEnumerator / ZoneActivatedAbilityEnumerator).
         if (context.cantPlayCardsFromHand) return result
 
         // --- Normal spell casting ---

@@ -18,7 +18,7 @@ import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
  *
  * The motivating case is the Momir Basic Vanguard avatar
  * ([com.wingedsheep.sdk.core.Format.MomirBasic]), which grants "{X}{X}{X}, Discard a card: …"
- * with `activateFromZone == Zone.COMMAND`. Modeled on [GraveyardAbilityEnumerator]: scan a
+ * with `activateFromZone == Zone.COMMAND`. Modeled on [ZoneActivatedAbilityEnumerator]: scan a
  * non-battlefield zone, filter abilities by `activateFromZone`, gate sorcery timing on
  * [EnumerationContext.canPlaySorcerySpeed], honour activation restrictions, and surface
  * mana/discard cost payability plus X-cost info. [com.wingedsheep.engine.handlers.actions.ability.ActivateAbilityHandler]
