@@ -1324,7 +1324,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         ) : null}
       </div>}
 
-      {/* Floating pass/resolve button (bottom-right) - always present, disabled when unavailable */}
+      {/* Floating pass/resolve button plus the undo / auto-tap / priority-mode / help row above it
+          (bottom-right) — always present, the pass disabled when unavailable. One column so the
+          pass button and the icon row above it end up exactly the same width; the row's intrinsic
+          width wins whenever the priority-mode label ("Full Control") makes it the wider of the two. */}
       {!spectatorMode && !isEliminatedSpectator && viewingPlayer && !isInManaSelectionMode && !isInCounterDistMode && (() => {
         const passEnabled = canAct && !isHijacked && !isInCombatMode && !isInDistributeMode && !isInCounterDistMode && !isInManaSelectionMode && !delveSelectionState && !tapForPowerSelectionState && !targetingState && !pipelineState
         return (
@@ -1333,7 +1336,87 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             bottom: 16,
             right: 16,
             zIndex: 100,
+            display: 'flex',
+            flexDirection: 'column',
+            // On phones the pass button is label-sized, so right-align instead of stretching it.
+            alignItems: responsive.isMobile ? 'flex-end' : 'stretch',
+            gap: responsive.isMobile ? 6 : 8,
           }}>
+            <div style={{
+              display: 'flex',
+              gap: 4,
+              alignItems: 'stretch',
+              justifyContent: 'flex-end',
+            }}>
+              <button
+                onClick={requestUndo}
+                disabled={!undoAvailable}
+                title="Undo"
+                style={{
+                  ...styles.floatingBarButton,
+                  color: undoAvailable ? '#d4a017' : '#555',
+                  border: undoAvailable ? '1px solid #8b7000' : '1px solid #333',
+                  opacity: undoAvailable ? 1 : 0.4,
+                  cursor: undoAvailable ? 'pointer' : 'default',
+                }}
+              >
+                <i className="ms ms-untap" style={{ fontSize: 14 }} />
+              </button>
+              <button
+                onClick={toggleAutoTap}
+                title={
+                  autoTapEnabled
+                    ? 'Auto Tap: Lands are tapped automatically. Click to switch to manual mana selection.'
+                    : 'Manual Tap: You choose which lands to tap. Click to switch to auto tap.'
+                }
+                style={{
+                  ...styles.floatingBarButton,
+                  backgroundColor: autoTapEnabled ? 'rgba(40, 40, 40, 0.8)' : 'rgba(245, 158, 11, 0.9)',
+                  color: autoTapEnabled ? '#999' : '#000',
+                  border: autoTapEnabled ? '1px solid #555' : '1px solid #f59e0b',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <i className="ms ms-land" style={{ fontSize: 14 }} />
+              </button>
+              <button
+                onClick={cyclePriorityMode}
+                title={
+                  serverPriorityMode === 'fullControl'
+                    ? 'Full Control: You receive priority at every step. Click to switch to Auto.'
+                    : serverPriorityMode === 'stops'
+                    ? 'Stops: Pauses on opponent spells/abilities and combat damage. Click to switch to Full Control.'
+                    : 'Auto: Smart auto-passing. Click to switch to Stops.'
+                }
+                style={{
+                  ...styles.floatingBarButton,
+                  width: 'auto',
+                  padding: '0 8px',
+                  backgroundColor:
+                    serverPriorityMode === 'fullControl' ? 'rgba(79, 195, 247, 0.9)' :
+                    serverPriorityMode === 'stops' ? 'rgba(245, 158, 11, 0.9)' :
+                    'rgba(40, 40, 40, 0.8)',
+                  color:
+                    serverPriorityMode === 'fullControl' ? '#000' :
+                    serverPriorityMode === 'stops' ? '#000' :
+                    '#999',
+                  border:
+                    serverPriorityMode === 'fullControl' ? '1px solid #4fc3f7' :
+                    serverPriorityMode === 'stops' ? '1px solid #f59e0b' :
+                    '1px solid #555',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {serverPriorityMode === 'fullControl' ? 'Full Control' :
+                 serverPriorityMode === 'stops' ? 'Stops' :
+                 'Auto'}
+              </button>
+              {/* The in-game help entry. Opens a drawer rather than navigating — leaving `/` would
+                  unmount the app and drop the WebSocket. */}
+              <HelpDrawerButton />
+            </div>
             <button
               disabled={!passEnabled}
               onClick={() => {
@@ -1354,7 +1437,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 ...(passEnabled ? getPassButtonStyle() : {}),
                 // On phones the desktop-sized button dwarfs the other
                 // controls and covers the hand — let the label size it.
-                width: responsive.isMobile ? 'auto' : 170,
+                // On desktop it stretches to the column, with 170 as the floor.
+                width: responsive.isMobile ? 'auto' : '100%',
+                minWidth: responsive.isMobile ? 'auto' : 170,
                 height: responsive.isMobile ? 28 : 42,
                 padding: responsive.isMobile ? '0 10px' : '0 24px',
                 color: passEnabled ? 'white' : '#555',
@@ -1376,88 +1461,6 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           </div>
         )
       })()}
-
-      {/* Undo, priority mode icons (bottom-right, above pass button) */}
-      {!spectatorMode && !isEliminatedSpectator && viewingPlayer && !isInManaSelectionMode && !isInCounterDistMode && (
-        <div style={{
-          position: 'fixed',
-          bottom: responsive.isMobile ? 50 : 66,
-          right: 16,
-          display: 'flex',
-          gap: 4,
-          alignItems: 'stretch',
-          zIndex: 100,
-        }}>
-          <button
-            onClick={requestUndo}
-            disabled={!undoAvailable}
-            title="Undo"
-            style={{
-              ...styles.floatingBarButton,
-              color: undoAvailable ? '#d4a017' : '#555',
-              border: undoAvailable ? '1px solid #8b7000' : '1px solid #333',
-              opacity: undoAvailable ? 1 : 0.4,
-              cursor: undoAvailable ? 'pointer' : 'default',
-            }}
-          >
-            <i className="ms ms-untap" style={{ fontSize: 14 }} />
-          </button>
-          <button
-            onClick={toggleAutoTap}
-            title={
-              autoTapEnabled
-                ? 'Auto Tap: Lands are tapped automatically. Click to switch to manual mana selection.'
-                : 'Manual Tap: You choose which lands to tap. Click to switch to auto tap.'
-            }
-            style={{
-              ...styles.floatingBarButton,
-              backgroundColor: autoTapEnabled ? 'rgba(40, 40, 40, 0.8)' : 'rgba(245, 158, 11, 0.9)',
-              color: autoTapEnabled ? '#999' : '#000',
-              border: autoTapEnabled ? '1px solid #555' : '1px solid #f59e0b',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            <i className="ms ms-land" style={{ fontSize: 14 }} />
-          </button>
-          <button
-            onClick={cyclePriorityMode}
-            title={
-              serverPriorityMode === 'fullControl'
-                ? 'Full Control: You receive priority at every step. Click to switch to Auto.'
-                : serverPriorityMode === 'stops'
-                ? 'Stops: Pauses on opponent spells/abilities and combat damage. Click to switch to Full Control.'
-                : 'Auto: Smart auto-passing. Click to switch to Stops.'
-            }
-            style={{
-              ...styles.floatingBarButton,
-              width: 'auto',
-              padding: '0 8px',
-              backgroundColor:
-                serverPriorityMode === 'fullControl' ? 'rgba(79, 195, 247, 0.9)' :
-                serverPriorityMode === 'stops' ? 'rgba(245, 158, 11, 0.9)' :
-                'rgba(40, 40, 40, 0.8)',
-              color:
-                serverPriorityMode === 'fullControl' ? '#000' :
-                serverPriorityMode === 'stops' ? '#000' :
-                '#999',
-              border:
-                serverPriorityMode === 'fullControl' ? '1px solid #4fc3f7' :
-                serverPriorityMode === 'stops' ? '1px solid #f59e0b' :
-                '1px solid #555',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            {serverPriorityMode === 'fullControl' ? 'Full Control' :
-             serverPriorityMode === 'stops' ? 'Stops' :
-             'Auto'}
-          </button>
-          {/* The in-game help entry. Opens a drawer rather than navigating — leaving `/` would
-              unmount the app and drop the WebSocket. */}
-          <HelpDrawerButton />
-        </div>
-      )}
 
       {/* Attack-restriction explainer — "attack left/right" (CR 803.1) and similar
           restrictions are invisible on the board itself, so say exactly who can be
