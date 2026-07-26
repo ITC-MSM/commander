@@ -336,6 +336,29 @@ fully expressible via `youCastSpell(CastFromZoneOtherThan(HAND))` + `oncePerTurn
 Blocked cards:
 - **Spider-Verse** [93] — `{3}{R}{R}` Enchantment; the legend-rule exemption for Spiders is the blocker (the copy-spell-from-non-hand clause is fine).
 
+## Play cards exiled **face down** from an opponent's library (controller may look + cast)
+
+> Look at the top nine cards of target opponent's library, **exile two of them face down**, then
+> put the rest on the bottom in a random order. **You may play the exiled cards** for as long as
+> they remain exiled. Mana of any type can be spent to cast spells this way.
+
+`FaceDownMode.HIDDEN` is defined as face down with **no turn-up procedure** — "simply hidden;
+nothing lets it be turned face up in place" (used for Hideaway, where the card is later played via
+a dedicated activated ability that re-gathers `FromLinkedExile()` and grants may-play +
+without-paying-cost at activation time — e.g. Clive's Hideaway, Mosswort Bridge). Black Cat instead
+grants a **persistent** `GrantMayPlayFromExileEffect(MayPlayExpiry.Permanent)` directly over cards
+sitting in exile `HIDDEN`, expecting the controller to see and freely cast them from the exile zone
+at any time. That path isn't wired: HIDDEN cards are masked from everyone (including the
+controller), and the playable-action computation does not surface a face-down exiled card as a
+castable option. There is no face-down mode meaning "hidden from opponents, but the controller may
+look at and cast it from exile." Fix (add-feature): a controller-visible face-down-in-exile mode +
+masking that reveals those cards to their controller only + the cast-from-exile / legal-action path
+recognizing persistent-may-play over face-down exiled cards (cross-layer: masking → ClientDTO →
+CastSpellHandler).
+
+Blocked cards:
+- **Black Cat, Cunning Thief** [52] — `{3}{B}{B}` Legendary Creature — Human Rogue Villain, 2/3; the ETB look/exile-two-face-down/bottom-rest pipeline resolves, but "you may play the exiled cards" is uncastable because the face-down HIDDEN exiled cards never surface as playable to the controller. (Previously authored on branch `spm-no-engine`, then removed pending this feature.)
+
 ---
 
 ## Known divergences (card IS implemented, but one clause needs a future engine feature)

@@ -15,7 +15,7 @@
 - [x] Beetle, Legacy Criminal
 - [ ] Behold the Sinister Six!
 - [x] Biorganic Carapace
-- [x] Black Cat, Cunning Thief
+- [ ] Black Cat, Cunning Thief
 - [ ] Carnage, Crimson Chaos
 - [ ] Chameleon, Master of Disguise
 - [x] Cheering Crowd
