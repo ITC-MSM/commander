@@ -3319,6 +3319,8 @@ single "it" for "one or more cards".
   (CR 603.2c): fires once per discard event no matter how many cards it contained
   (Inti, Seneschal of the Sun). Sequential discards in the same resolution ("discard a
   card, then discard a card") are separate `CardsDiscardedEvent`s and fire separately.
+  Read the batch size ("that much" / "that many") via
+  `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DISCARD_COUNT)` — Magmakin Artillerist.
 
 **Factory** — `discards(player?, cardFilter?, batch?)` — generic shape. `player = Player.Each`
 matches any player; `cardFilter` narrows the fan-out to matching cards, so a batch that
@@ -6604,6 +6606,11 @@ Army just amassed by a sibling/action effect, or any cost-chosen entity. The plu
   - `TRIGGER_SCRY_COUNT` — cards looked at by the scry **or surveil** that fired the trigger
     (Celeborn the Wise, Elrond Master of Healing). Equals the scry/surveil N parameter unless the
     library held fewer cards.
+  - `TRIGGER_DISCARD_COUNT` — cards discarded in the batch that fired the trigger (CR 603.2c) —
+    Magmakin Artillerist's "whenever you discard one or more cards, this creature deals **that much**
+    damage to each opponent." Populated from `CardsDiscardedEvent.cardIds.size`, so one event of
+    three cards reports `3` while three sequential single discards fire three triggers reporting `1`.
+    Pair with `Triggers.YouDiscardOneOrMore`; `0` for non-discard triggers.
   - `TRIGGER_DISCOVER_VALUE` — the discover value N (mana-value threshold) of the discover that
     fired the trigger (CR 701.57) — Curator of Sun's Creation's "discover again for the same value."
     Pair with `Triggers.WheneverYouDiscover`; `0` for non-discover triggers.

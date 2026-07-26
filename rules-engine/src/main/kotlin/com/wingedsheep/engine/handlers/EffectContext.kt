@@ -292,6 +292,11 @@ data class EffectContext(
      */
     val triggerScryCount: Int? = null,
     /**
+     * Number of cards discarded in the batch that fired this trigger (CR 603.2c). Read by
+     * `ContextPropertyKey.TRIGGER_DISCARD_COUNT` (Magmakin Artillerist).
+     */
+    val triggerDiscardCount: Int? = null,
+    /**
      * Discover value N of the discover that fired this trigger (CR 701.57). Read by
      * `ContextPropertyKey.TRIGGER_DISCOVER_VALUE` (Curator of Sun's Creation).
      */

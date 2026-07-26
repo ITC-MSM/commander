@@ -1796,6 +1796,7 @@ class ClientStateTransformer(
         triggerLastKnownToughness = triggered.lastKnownToughness,
         triggerDiedBatchTotalPower = triggered.diedBatchTotalPower,
         triggerScryCount = triggered.triggerScryCount,
+        triggerDiscardCount = triggered.triggerDiscardCount,
         triggerDiscoverValue = triggered.triggerDiscoverValue,
         triggerExcessDamageAmount = triggered.triggerExcessDamageAmount,
         triggerRecipientToughness = triggered.triggerRecipientToughness,

@@ -1088,7 +1088,14 @@ data class DrawFailedEvent(
 data class CardsDiscardedEvent(
     val playerId: EntityId,
     val cardIds: List<EntityId>,
-    val cardNames: List<String> = emptyList()
+    val cardNames: List<String> = emptyList(),
+    /**
+     * True when the discard is the cost of a cycling/typecycling ability (CR 702.29a). Triggers
+     * ignore this — cycling really is a discard and "whenever you discard" payoffs must see it —
+     * but the client suppresses the "You discarded X" log line, because the accompanying
+     * [CardCycledEvent] already narrates the same action.
+     */
+    val asCyclingCost: Boolean = false
 ) : GameEvent
 
 /**

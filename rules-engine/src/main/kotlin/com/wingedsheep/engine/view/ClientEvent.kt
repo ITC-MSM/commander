@@ -843,7 +843,9 @@ object ClientEventTransformer {
             }
 
             is CardsDiscardedEvent -> {
-                if (event.cardIds.isNotEmpty()) {
+                // A cycling cost's discard is already narrated by its CardCycledEvent — logging
+                // both would read as two separate actions.
+                if (event.cardIds.isNotEmpty() && !event.asCyclingCost) {
                     val isYours = event.playerId == viewingPlayerId
                     if (event.cardNames.size > 1) {
                         val names = event.cardNames.joinToString(", ")
