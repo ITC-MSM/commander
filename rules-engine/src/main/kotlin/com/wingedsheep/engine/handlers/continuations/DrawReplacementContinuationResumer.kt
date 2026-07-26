@@ -51,6 +51,13 @@ class DrawReplacementContinuationResumer(
             val effectResult = services.effectExecutorRegistry.execute(
                 newState, continuation.replacementEffect, effectContext
             ).toExecutionResult()
+            if (effectResult.isPaused) {
+                return ExecutionResult.paused(
+                    effectResult.state,
+                    effectResult.pendingDecision!!,
+                    events + effectResult.events
+                )
+            }
             if (effectResult.isSuccess) {
                 newState = effectResult.newState
                 events.addAll(effectResult.events)
