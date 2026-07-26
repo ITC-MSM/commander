@@ -13,6 +13,13 @@
  *     Its `saved` / `examples` / `paste` tabs are three ways to arrive at a decklist, so all three
  *     collapse into one `deck` spec on the wire; the `random` tab is omitted because that is what
  *     "From sets" already is.
+ *
+ * Rendered as **two pieces** by `LobbyScreen`, sharing only the selected source:
+ * {@link AiOpponentRow} is a settings row inside the settings panel, and {@link AiDeckSection} is
+ * the "Pick a deck" picker, which sits *outside* that panel. The panel is itself a scroll
+ * container (`max-height: min(62vh, 640px); overflow: auto`), and the deck picker scrolls too, so
+ * nesting them put a scrollable inside a scrollable — two competing wheel targets over one control.
+ * Your own deck picker already lives outside the panel for the same reason; this just matches it.
  */
 import { useCallback, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
@@ -27,33 +34,40 @@ type Source = 'auto' | 'sets' | 'deck'
 /** Commander-shape formats the AI builders can't construct for — see `AiDeckResolver`. */
 const COMMANDER_SHAPES = ['COMMANDER', 'BRAWL', 'STANDARD_BRAWL']
 
-export function AiOpponentPanel({
+export type AiDeckSource = Source
+
+/** Which source a lobby should start on, given the server's summary of the current choice. */
+export function initialAiSource(aiDeck: AiDeckSpecView | null | undefined): Source {
+  return (aiDeck?.kind as Source | undefined) ?? 'auto'
+}
+
+export function AiOpponentRow({
   aiDeck,
   format,
   disabled,
+  source,
+  onSourceChange,
 }: {
-  /** The server's summary of the current choice; re-hydrates the panel after a reconnect. */
+  /** The server's summary of the current choice; re-hydrates the row after a reconnect. */
   aiDeck: AiDeckSpecView | null
   /** The lobby's deck-format restriction, upper-case, or null. */
   format: string | null
   /** True once the host has readied up — the choice is locked in at that point. */
   disabled: boolean
+  /** Selected source. Lifted to `LobbyScreen` so it can place {@link AiDeckSection} outside. */
+  source: Source
+  onSourceChange: (source: Source) => void
 }) {
   const setAiDeck = useGameStore((s) => s.setQuickGameAiDeck)
   const availableSets = useGameStore((s) => s.availableSets)
 
-  // Source follows the server's summary, so a reconnect or a format-triggered revert to Auto
-  // (see `QuickGameLobbyHandler.handleSetFormat`) moves the panel rather than leaving it lying
-  // about which source is live.
-  const [source, setSource] = useState<Source>((aiDeck?.kind as Source | undefined) ?? 'auto')
   const [setCodes, setSetCodes] = useState<readonly string[]>(aiDeck?.setCodes ?? [])
   const [showSetPicker, setShowSetPicker] = useState(false)
-  const lastDeckKeyRef = useRef<string | null>(null)
 
   const isCommanderShape = format !== null && COMMANDER_SHAPES.includes(format)
 
   const pick = (next: Source) => {
-    setSource(next)
+    onSourceChange(next)
     // Auto is complete the moment it's picked. The other two need a selection first, so they only
     // send once the host has actually chosen sets / a deck — otherwise clicking the tab would
     // submit an empty spec the server has to reject.
@@ -75,35 +89,25 @@ export function AiOpponentPanel({
     if (chosen) toggleSet(chosen.code)
   }
 
-  // Deduped like the human picker's submission path: DeckPicker re-emits its current deck on every
-  // render, and each send costs a lobby broadcast.
-  const handleDeckChange = useCallback(
-    (deckList: Record<string, number>) => {
-      const total = Object.values(deckList).reduce((a, b) => a + b, 0)
-      if (total === 0) return
-      const key = Object.entries(deckList).sort().map(([n, c]) => `${n}:${c}`).join('|')
-      if (key === lastDeckKeyRef.current) return
-      lastDeckKeyRef.current = key
-      setAiDeck({ type: 'deck', deckList, label: 'Chosen deck' } satisfies AiDeckSpec)
-    },
-    [setAiDeck],
+  const sourceButtons = (
+    <div className={styles.settingsButtons}>
+      <SourceButton active={source === 'auto'} disabled={disabled} onClick={() => pick('auto')}>
+        Auto
+      </SourceButton>
+      <SourceButton active={source === 'sets'} disabled={disabled} onClick={() => pick('sets')}>
+        From sets
+      </SourceButton>
+      <SourceButton active={source === 'deck'} disabled={disabled} onClick={() => pick('deck')}>
+        Pick a deck
+      </SourceButton>
+    </div>
   )
 
   return (
     <div className={styles.settingsRow} data-testid="ai-opponent-panel">
       <span className={styles.settingsLabel}>AI deck</span>
       <div className={styles.variantGroup}>
-        <div className={styles.settingsButtons}>
-          <SourceButton active={source === 'auto'} disabled={disabled} onClick={() => pick('auto')}>
-            Auto
-          </SourceButton>
-          <SourceButton active={source === 'sets'} disabled={disabled} onClick={() => pick('sets')}>
-            From sets
-          </SourceButton>
-          <SourceButton active={source === 'deck'} disabled={disabled} onClick={() => pick('deck')}>
-            Pick a deck
-          </SourceButton>
-        </div>
+        {sourceButtons}
 
         {source === 'auto' && (
           <div className={styles.variantCaption}>
@@ -158,21 +162,6 @@ export function AiOpponentPanel({
           </>
         )}
 
-        {source === 'deck' && (
-          <>
-            <DeckPicker
-              onDeckChange={handleDeckChange}
-              availableSets={availableSets}
-              disabled={disabled}
-              format={format}
-              tabs={['saved', 'examples', 'paste']}
-            />
-            <div className={styles.variantCaption}>
-              The AI plays this exact list. It is checked against the lobby format, and reverts to
-              Auto if you later switch to a format it isn’t legal in.
-            </div>
-          </>
-        )}
       </div>
 
       {showSetPicker && (
@@ -209,5 +198,59 @@ function SourceButton({
     >
       {children}
     </button>
+  )
+}
+
+/**
+ * The "Pick a deck" picker for the AI seat, rendered *outside* the lobby's settings panel.
+ *
+ * Outside, because the settings panel is a scroll container and so is the deck picker — nesting
+ * them gives one control two competing wheel targets. Your own picker is a sibling of the panel
+ * for the same reason, which makes this the consistent placement rather than a special case.
+ *
+ * That does put two identical-looking pickers on one screen, so the heading carries the whole
+ * burden of telling them apart and is deliberately blunt about whose deck this is.
+ */
+export function AiDeckSection({
+  format,
+  disabled,
+}: {
+  format: string | null
+  disabled: boolean
+}) {
+  const setAiDeck = useGameStore((s) => s.setQuickGameAiDeck)
+  const availableSets = useGameStore((s) => s.availableSets)
+  const lastDeckKeyRef = useRef<string | null>(null)
+
+  // Deduped like the human picker's submission path: DeckPicker re-emits its current deck on every
+  // render, and each send costs a lobby broadcast.
+  const handleDeckChange = useCallback(
+    (deckList: Record<string, number>) => {
+      const total = Object.values(deckList).reduce((a, b) => a + b, 0)
+      if (total === 0) return
+      const key = Object.entries(deckList).sort().map(([n, c]) => `${n}:${c}`).join('|')
+      if (key === lastDeckKeyRef.current) return
+      lastDeckKeyRef.current = key
+      setAiDeck({ type: 'deck', deckList, label: 'Chosen deck' } satisfies AiDeckSpec)
+    },
+    [setAiDeck],
+  )
+
+  return (
+    <div className={styles.aiDeckSection} data-testid="ai-deck-section">
+      <div className={styles.aiDeckSectionHeader}>
+        <span className={styles.aiDeckSectionTitle}>The AI opponent’s deck</span>
+        <span className={styles.aiDeckSectionHint}>
+          Not your own — yours is below. Checked against the lobby format.
+        </span>
+      </div>
+      <DeckPicker
+        onDeckChange={handleDeckChange}
+        availableSets={availableSets}
+        disabled={disabled}
+        format={format}
+        tabs={['saved', 'examples', 'paste']}
+      />
+    </div>
   )
 }

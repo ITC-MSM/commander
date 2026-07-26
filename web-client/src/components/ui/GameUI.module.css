@@ -1084,10 +1084,12 @@
   background-color: var(--bg-panel-light);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
-  /* Stable height: the panel never grows past this — extra rows scroll inside it instead of
-     resizing (and re-centering) the whole lobby as sets/boosters are added. */
-  max-height: min(62vh, 640px);
-  overflow: hidden auto;
+  /* Deliberately *not* a scroll container. It used to cap at `min(62vh, 640px)` and scroll
+     internally, to keep the lobby from re-centering as sets/boosters were added — but that put a
+     second scrollbar on the screen for the half of the lobby above Players, and a third once a
+     row's own control scrolled (the booster-count steppers, the AI seat's deck picker). Wheeling
+     over the settings then hit whichever container the pointer happened to be inside.
+     `.lobbyOverlay` is the one scroll container now; the panel grows and the page absorbs it. */
 }
 
 /* Wraps on purpose. Without it the row is one unbreakable line, so an oversized control group
@@ -1116,10 +1118,34 @@
   font-size: var(--font-sm);
 }
 
-.settingsLabelWithHelp {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+/* The AI seat's deck picker, a sibling of the settings panel rather than a row inside it — the
+   panel scrolls and so does the picker, and one control should not sit under two scroll contexts.
+   Two visually identical pickers end up on screen (the AI's and your own), so the header is what
+   distinguishes them and is styled to be read first. */
+.aiDeckSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-self: stretch;
+}
+
+.aiDeckSectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.aiDeckSectionTitle {
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+
+.aiDeckSectionHint {
+  color: var(--text-disabled);
+  font-size: var(--font-xs);
 }
 
 /* A sub-option of the row above it (Cards → Sealed/Draft shape, Cards → deck legality). Indented
@@ -1335,9 +1361,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  /* Cap the per-set stepper list so picking more sets scrolls here instead of growing the row. */
-  max-height: 216px;
-  overflow-y: auto;
+  /* Not capped: this list used to scroll at 216px so picking more sets wouldn't grow the row, but
+     the row sat inside the settings panel, which scrolled too. Now that the panel doesn't, the
+     list grows and the page absorbs it — one scrollbar for the whole lobby. */
 }
 
 .boosterDistributionRow {
