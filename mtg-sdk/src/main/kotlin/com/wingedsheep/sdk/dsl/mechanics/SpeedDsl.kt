@@ -4,7 +4,9 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
+import com.wingedsheep.sdk.scripting.CostGating
 import com.wingedsheep.sdk.scripting.GrantKeyword
+import com.wingedsheep.sdk.scripting.ModifySpellCost
 import com.wingedsheep.sdk.scripting.StaticAbility
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.conditions.AllConditions
@@ -48,6 +50,7 @@ fun CardBuilder.startYourEngines() {
  * | Declared as | Gate |
  * |---|---|
  * | `staticAbility { }` | [ConditionalStaticAbility] — re-evaluated every projection, so the ability appears and disappears with your speed |
+ * | `staticAbility { ability = ModifySpellCost(…) }` | [CostGating.OnlyIf] folded into the modifier itself — cost calculation never reads the layer system, so a wrapper would hide it (Racers' Scoreboard's "Max speed — Spells you cast cost {1} less to cast") |
  * | `activatedAbility { }` | [ActivationRestriction.OnlyIfCondition] — the ability isn't a legal action below max speed |
  * | `triggeredAbility { }` | `triggerCondition` (CR 603.4) — checked when the trigger would fire and again on resolution |
  * | `keywords(…)` | sugar for a gated [GrantKeyword] on the source, covering the common "Max speed — This creature has double strike" shape |
@@ -132,13 +135,27 @@ class MaxSpeedBuilder {
     }
 
     internal fun gatedStaticAbilities(): List<StaticAbility> = statics.map { ability ->
-        // A `staticAbility { condition = … }` block already wrapped itself; fold the max-speed gate
-        // into that wrapper's condition instead of nesting two ConditionalStaticAbility layers, so
-        // the projected description and the layer system see one conditional ability.
-        if (ability is ConditionalStaticAbility) {
-            ability.copy(condition = ability.condition and MAX_SPEED_GATE)
-        } else {
-            ConditionalStaticAbility(ability, MAX_SPEED_GATE)
+        when (ability) {
+            // A cost modifier never reaches the layer system: `CostCalculator` scans the raw
+            // static-ability list for `is ModifySpellCost`, so a ConditionalStaticAbility wrapper
+            // would hide it and the reduction would silently never apply. ModifySpellCost carries
+            // its own condition slot for exactly this — fold the gate into it.
+            is ModifySpellCost -> ability.copy(
+                gating = when (val existing = ability.gating) {
+                    CostGating.None -> CostGating.OnlyIf(MAX_SPEED_GATE)
+                    is CostGating.OnlyIf -> CostGating.OnlyIf(existing.condition and MAX_SPEED_GATE)
+                    // NthOfTypePerTurn holds a count, not a condition, so the two gates can't be
+                    // merged into one slot. No card needs both; refuse rather than drop one.
+                    else -> throw IllegalArgumentException(
+                        "Max speed cannot gate a ModifySpellCost that already uses ${existing::class.simpleName} gating"
+                    )
+                }
+            )
+            // A `staticAbility { condition = … }` block already wrapped itself; fold the max-speed
+            // gate into that wrapper's condition instead of nesting two ConditionalStaticAbility
+            // layers, so the projected description and the layer system see one conditional ability.
+            is ConditionalStaticAbility -> ability.copy(condition = ability.condition and MAX_SPEED_GATE)
+            else -> ConditionalStaticAbility(ability, MAX_SPEED_GATE)
         }
     }
 

@@ -1,11 +1,13 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.mechanics.speed.SpeedService
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Speed
 import com.wingedsheep.sdk.core.Step
@@ -14,7 +16,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 
 /**
- * The four Aetherdrift speed cards added with the mechanic, exercised as printed — one per
+ * The Aetherdrift speed cards added with the mechanic, exercised as printed — one per
  * "Max speed — [Ability]" payload kind, so each gate the `maxSpeed { }` block installs is proven on
  * real content rather than only on the inline test cards in [SpeedMechanicScenarioTest]:
  *
@@ -24,6 +26,7 @@ import io.kotest.matchers.shouldBe
  * | Walking Sarcophagus | static P/T buff | `ConditionalStaticAbility` |
  * | Endrider Catalyzer | activated mana ability | `ActivationRestriction.OnlyIfCondition` |
  * | Risen Necroregent | end-step trigger | `triggerCondition` |
+ * | Racers' Scoreboard | spell cost reduction | `CostGating.OnlyIf` |
  *
  * Each also carries "Start your engines!", so every test doubles as a check that the CR 704.5z
  * state-based action starts speed from a real card's printed keyword.
@@ -141,6 +144,70 @@ class AetherdriftSpeedCardsScenarioTest : ScenarioTestBase() {
                 atMax.resolveStack()
                 withClue("At max speed the end step makes one 2/2 Zombie") {
                     atMax.zombieTokens() shouldBe 1
+                }
+            }
+        }
+
+        context("Racers' Scoreboard") {
+
+            // A cost reduction never reaches the layer system: CostCalculator scans the raw static
+            // list for `is ModifySpellCost`, so the max-speed gate has to live in the modifier's own
+            // CostGating.OnlyIf slot. Wrapped in a ConditionalStaticAbility it would be invisible
+            // here and the reduction would apply at every speed.
+            test("its reduction applies only at max speed") {
+                val game = speedGame("Racers' Scoreboard")
+                val calculator = EngineServices(cardRegistry).costCalculator
+                val bears = cardRegistry.getCard("Grizzly Bears")!!
+
+                withClue("At speed 1 Grizzly Bears still costs its printed {1}{G}") {
+                    calculator.calculateEffectiveCost(game.state, bears, game.player1Id)
+                        .toString() shouldBe ManaCost.parse("{1}{G}").toString()
+                }
+
+                game.state = SpeedService.set(game.state, game.player1Id, Speed.MAX, "test").first
+
+                withClue("At max speed the generic pip is shaved off") {
+                    calculator.calculateEffectiveCost(game.state, bears, game.player1Id)
+                        .toString() shouldBe ManaCost.parse("{G}").toString()
+                }
+            }
+
+            test("the reduction is scoped to its controller's spells") {
+                val game = speedGame("Racers' Scoreboard")
+                val calculator = EngineServices(cardRegistry).costCalculator
+                val bears = cardRegistry.getCard("Grizzly Bears")!!
+
+                // "Spells you cast" reads the source's controller, so raising the *opponent's* speed
+                // must not discount their spells off a Scoreboard player 1 controls.
+                game.state = SpeedService.set(game.state, game.player2Id, Speed.MAX, "test").first
+
+                withClue("The opponent having max speed doesn't discount their spells") {
+                    calculator.calculateEffectiveCost(game.state, bears, game.player2Id)
+                        .toString() shouldBe ManaCost.parse("{1}{G}").toString()
+                }
+            }
+
+            test("it can actually be cast down to a cheaper real cast at max speed") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Racers' Scoreboard")
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withCardInHand(1, "Grizzly Bears")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.BEGINNING, Step.UPKEEP)
+                    .build()
+                game.passUntilPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+
+                val blocked = game.castSpell(1, "Grizzly Bears")
+                withClue("One Forest can't pay {1}{G} at speed 1") {
+                    (blocked.error != null).shouldBeTrue()
+                }
+
+                game.state = SpeedService.set(game.state, game.player1Id, Speed.MAX, "test").first
+
+                val allowed = game.castSpell(1, "Grizzly Bears")
+                withClue("At max speed the cost is {G}, which one Forest covers: ${allowed.error}") {
+                    allowed.error shouldBe null
                 }
             }
         }
