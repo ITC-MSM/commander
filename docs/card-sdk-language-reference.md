@@ -3614,11 +3614,11 @@ Triggers.youCastSpell(
 
 ### Scry / Surveil
 
-- `WheneverYouScry` — fires once per scry resolution (CR 701.18), after the cards have
+- `WheneverYouScry` — fires once per scry resolution (CR 701.22), after the cards have
   been placed on top/bottom. Pair with `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_SCRY_COUNT)`
   for "for each card looked at" payoffs (Celeborn the Wise, Elrond Master of Healing).
   Automatically emitted by `Patterns.Library.scry(N)`; no card has to opt in.
-- `WheneverYouSurveil` — the surveil twin (CR 701.42), fired once per surveil resolution.
+- `WheneverYouSurveil` — the surveil twin (CR 701.25), fired once per surveil resolution.
   Automatically emitted by `Patterns.Library.surveil(N)`. Reads the same `TRIGGER_SCRY_COUNT`
   ("cards looked at"). Used by Golbez.
 - `WheneverYouScryOrSurveil` — the combined look-at-top trigger; fires once per scry **and**
@@ -3672,9 +3672,9 @@ Triggers.youCastSpell(
   way" can move it out of the graveyard — e.g. **Paranormal Analyst**:
   `MoveCollection(from = TRIGGER_CAPTURED_COLLECTION, destination = ToZone(HAND))`. The collection is
   empty when nothing was binned, making the payoff a safe no-op.
-- A literal "scry 0" / "surveil 0" produces no event and fires no trigger (CR 701.18b / 701.42c);
-  the trigger still fires when the library was empty and zero cards were looked at (CR 701.18d /
-  701.42d).
+- A literal "scry 0" / "surveil 0" produces no event and fires no trigger (CR 701.22b / 701.25c);
+  the trigger still fires when the library was empty and zero cards were looked at (CR 701.22d /
+  701.25d).
 
 ### Saga creatures — "Enchantment Creature — Saga" (CR 714.1a)
 

@@ -308,7 +308,7 @@ data class RingTemptedEvent(
 ) : GameEvent
 
 /**
- * A player just finished a `scry N` (CR 701.18). Fires once per scry, after the
+ * A player just finished a `scry N` (CR 701.22). Fires once per scry, after the
  * top/bottom moves have all resolved. Drives "Whenever you scry" triggers; see
  * [com.wingedsheep.sdk.scripting.EventPattern.ScriedEvent].
  *
@@ -327,7 +327,7 @@ data class ScriedEvent(
 ) : GameEvent
 
 /**
- * A player just finished a `surveil N` (CR 701.42). Fires once per surveil, after the
+ * A player just finished a `surveil N` (CR 701.25). Fires once per surveil, after the
  * kept/graveyard moves have all resolved. Drives "Whenever you surveil" and "Whenever you
  * scry or surveil" triggers; see [com.wingedsheep.sdk.scripting.EventPattern.SurveiledEvent].
  *
