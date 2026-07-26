@@ -1566,7 +1566,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     `MayPayXForEffect` (see "Optional & gated" below).
   - The multi-player APNAP `AnyPlayerMayPayEffect` stays a **standalone effect**, not a gate — a
     single `decisionMaker` can't express its turn-order loop (see below).
-- `MayEffect(effect, descriptionOverride?, sourceRequiredZone?, inlineOnTrigger?, hint?, decisionMaker?, otherwise?)`
+- `MayEffect(effect, descriptionOverride?, sourceRequiredZone?, inlineOnTrigger?, hint?, decisionMaker?, otherwise?, feasibility?)`
   — "You may [effect]." Facade preserved for existing cards; it now **lowers to
   `GatedEffect(Gate.MayDecide(...), then = effect, otherwise = otherwise, decisionMaker = decisionMaker)`**
   (compiled form is `Gated`, no distinct `May` type or executor). The may-vs-target trigger reorder —
@@ -1578,6 +1578,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     as `target("target opponent", Targets.Opponent)` for "**target opponent may …**"). Only the
     yes/no prompt is delegated; the `then`/`otherwise` effects still resolve from the controller's
     perspective unless they themselves target a specific player.
+  - **`feasibility` suppresses an unanswerable prompt** — a `FeasibilityCheck`
+    (`ControlsPermanentMatching(filter, count?)` / `HasCardsInZone(zone, filter?, count?)`, both scoped to
+    the decision-maker) evaluated at resolution. Unmet ⇒ the yes/no is skipped and `otherwise` runs
+    directly, the no-target analogue of a targeted "may" with no legal targets. Reach for it on
+    **recurring** triggers whose action needs a resource the player may not have — Provisions Merchant
+    ("whenever this creature attacks, you may sacrifice a Food") would otherwise ask every combat. Only
+    for preconditions the engine can decide; never to pre-empt a genuine choice.
   - **`otherwise` is the "if that player doesn't" branch** — runs iff the chooser declines. Combine
     with a delegated `decisionMaker` for "target opponent may [then]; if that player doesn't,
     [otherwise]" (Palantír of Orthanc: "target opponent may have you draw a card; if that player
@@ -3718,8 +3725,9 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
   matching permanent is sacrificed and when the source permanent is itself sacrificed. The triggering entity is
   bound to the just-sacrificed permanent, so a payoff reading "that <permanent>" (its mana value / a token copy
   of it) resolves against its last-known information in the graveyard. This is exactly the wording "whenever you
-  sacrifice this permanent or another <filter>" (Esoteric Duplicator) as well as the plain "whenever you sacrifice
-  a <filter>" (Mayhem Devil). For the "another" exclusion use an `OTHER`-binding trigger instead.
+  sacrifice this permanent or another <filter>" (Esoteric Duplicator). For the singular "whenever you sacrifice
+  **a** <filter>" wording, which fires once per sacrificed permanent, use `YouSacrificeA`; for the "another"
+  exclusion use an `OTHER`-binding trigger instead.
   By default the ANY-binding form watches only the source *controller's* sacrifices ("whenever **you**
   sacrifice…"). For the "whenever **a player** sacrifices…" scope set
   `EventPattern.PermanentsSacrificedEvent(filter, byAnyPlayer = true)` (Zodiark, Umbral God — "Whenever a
@@ -3734,8 +3742,14 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
   permanents fires it three times; `YouSacrificeOneOrMore` (batch) fires once per event. (2) *exclusion* —
   `OTHER` excludes the source sacrificing itself; a source sacrificed *alongside* other permanents still
   reacts to those others (fires once per other), but not to itself. The `perPermanent` flag is the general
-  multiplicity switch on `PermanentsSacrificedEvent` — combine it with `binding = ANY` for the "whenever you
-  sacrifice **a** permanent" wording that also counts the source itself.
+  multiplicity switch on `PermanentsSacrificedEvent`; `YouSacrificeA` is the `ANY`-binding half of it.
+- `YouSacrificeA(filter?)` — the **per-permanent** template "whenever you sacrifice **a** <filter>"
+  (Experimental Confectioner — "Whenever you sacrifice a Food, create a 1/1 black Rat…"). Built with
+  `binding = ANY` and `PermanentsSacrificedEvent(filter, perPermanent = true)`, so it sits between the other
+  two: per-permanent multiplicity like `YouSacrificeAnother` (three Foods sacrificed at once = three Rats,
+  where `YouSacrificeOneOrMore` would give one) but ANY exclusion like `YouSacrificeOneOrMore` (a source that
+  is itself a Food counts its own sacrifice). Pick by the printed article — "one or more" → batch,
+  "a" → `YouSacrificeA`, "another" → `YouSacrificeAnother`.
 - `Sacrificed` — source is sacrificed.
 - `EventPattern.ExploitedEvent(player = Player.You, requireNontokenExploited = false)` — "whenever a creature you control
   exploits a creature" (CR 702.110b; the sacrifice half of the Exploit keyword). Fires once per exploited creature; the
