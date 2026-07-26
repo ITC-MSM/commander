@@ -261,3 +261,19 @@ data class ReturnFromGraveyardContinuation(
     val sourceName: String?,
     val destination: SearchDestination
 ) : ContinuationFrame
+
+/**
+ * Resume after the payer picks mana sources for a "pay {N} or suffer" cost they already agreed to.
+ *
+ * Same second step [CostPaymentManaSelectionContinuation] adds, for the [PayOrSufferEffect] path:
+ * answering "yes" used to hand the cost straight to the auto-tap solver, so the payer couldn't
+ * choose their sources and couldn't activate a mana ability to cover it (CR 605.3a). Declining at
+ * this step is the same outcome as answering "no" — the suffer effect runs.
+ */
+@Serializable
+data class PayOrSufferManaSelectionContinuation(
+    override val decisionId: String,
+    val inner: PayOrSufferContinuation,
+    val manaCost: ManaCost,
+    val availableSources: List<ManaSourceOption>
+) : ContinuationFrame

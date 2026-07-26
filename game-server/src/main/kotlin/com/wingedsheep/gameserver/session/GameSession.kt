@@ -12,6 +12,7 @@ import com.wingedsheep.gameserver.protocol.ServerMessage
 import com.wingedsheep.gameserver.priority.AutoPassManager
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
+import com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisCombatComponent
@@ -840,6 +841,17 @@ class GameSession(
 
     fun getLegalActions(playerId: EntityId): List<LegalActionInfo> {
         val state = gameState ?: return emptyList()
+
+        // CR 605.3a — while a rule or effect is asking this seat for a mana payment (ward, "you may
+        // pay {B}", an attack tax) they hold no priority, but they may still activate mana
+        // abilities. Offer exactly those: the pre-computed source menu on the decision only covers
+        // {T}-shaped abilities, so without this a cost payable only with, say, Ashnod's Altar is
+        // unreachable. See [ManaPaymentWindow].
+        ManaPaymentWindow.openFor(state, playerId)?.let { window ->
+            val manaActions = legalActionEnumerator.enumerateManaAbilities(state, window.playerId)
+            return legalActionEnricher.enrich(manaActions, state, window.playerId)
+        }
+
         val priorityPlayer = state.priorityPlayerId ?: return emptyList()
         // Allow either the priority player or, when their turn is hijacked, the controller
         // currently driving them. Legal actions are still enumerated for the affected
@@ -1044,6 +1056,11 @@ class GameSession(
 
         // Can't auto-pass if game is over
         if (state.gameOver) return null
+
+        // Nobody may pass priority while the game is waiting on a decision. This used to be
+        // implicit — getLegalActions returned nothing during a decision — but a mana-payment
+        // window (CR 605.3a) now legitimately offers mana abilities, so state it outright.
+        if (state.pendingDecision != null) return null
 
         // Get the player with priority
         val priorityPlayer = state.priorityPlayerId ?: return null

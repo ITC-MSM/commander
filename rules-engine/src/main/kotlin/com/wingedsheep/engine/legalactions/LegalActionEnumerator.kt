@@ -82,6 +82,31 @@ class LegalActionEnumerator(
         return enumerators.flatMap { it.enumerate(context) }
     }
 
+    /**
+     * Enumerate only [playerId]'s mana abilities, ignoring priority.
+     *
+     * This is the CR 605.3a surface: while a rule or effect is asking a player for a mana payment
+     * they hold no priority, but they may still activate mana abilities to produce the mana. See
+     * [com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow].
+     */
+    fun enumerateManaAbilities(
+        state: GameState,
+        playerId: EntityId,
+        mode: EnumerationMode = EnumerationMode.FULL
+    ): List<LegalAction> = ManaAbilityEnumerator().enumerate(
+        EnumerationContext(
+            state = state,
+            playerId = playerId,
+            cardRegistry = cardRegistry,
+            manaSolver = manaSolver,
+            costCalculator = costCalculator,
+            predicateEvaluator = predicateEvaluator,
+            conditionEvaluator = conditionEvaluator,
+            turnManager = turnManager,
+            mode = mode
+        )
+    )
+
     companion object {
         /**
          * Create a LegalActionEnumerator with the same dependencies as LegalActionsCalculator.
