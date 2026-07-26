@@ -532,7 +532,7 @@ object Effects {
     fun Surveil(count: Int): Effect = LibraryPatterns.surveil(count)
 
     /**
-     * "Surveil X" with a dynamic count (CR 701.42) — X resolved at resolution time, e.g.
+     * "Surveil X" with a dynamic count (CR 701.25) — X resolved at resolution time, e.g.
      * "surveil X, where X is the number of counters on it" (Spider-Man Noir). Expands to the
      * dynamic surveil pipeline; see [LibraryPatterns.surveil].
      */

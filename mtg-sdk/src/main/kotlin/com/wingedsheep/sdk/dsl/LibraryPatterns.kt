@@ -328,7 +328,7 @@ object LibraryPatterns {
     fun surveil(count: Int): SurveilEffect = SurveilEffect(count)
 
     /**
-     * "Surveil X" with a dynamic count (CR 701.42) — e.g. Spider-Man Noir's "surveil X, where X is
+     * "Surveil X" with a dynamic count (CR 701.25) — e.g. Spider-Man Noir's "surveil X, where X is
      * the number of counters on it." There is no compact macro node for a dynamic surveil (the
      * [SurveilEffect] macro only carries a literal), so this expands straight to the same
      * Gather → Select → Move graveyard/top → emit `SurveiledEvent` pipeline as [surveilPipeline],
