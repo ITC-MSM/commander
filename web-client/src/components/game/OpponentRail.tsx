@@ -17,6 +17,7 @@ import type { ClientCard, ClientPlayer, EntityId } from '@/types'
 import { useResponsiveContext } from './board/shared'
 import { SpeedGauge } from './overlay'
 import { HelpTip } from '../help/HelpTip'
+import { isLoneTargetRequirement } from '@/utils/targeting.ts'
 
 /**
  * Total viewport width claimed by the fixed rail column (chip width + left offset + a
@@ -669,8 +670,11 @@ function RailChip({
   const isValidTargetingTarget = targetingState?.validTargets.includes(playerId) ?? false
   const isTargetingSelected = targetingState?.selectedTargets.includes(playerId) ?? false
   const isChooseTargetsDecision = pendingDecision?.type === 'ChooseTargetsDecision'
-  const isSingleRequirementDecision = isChooseTargetsDecision && pendingDecision.targetRequirements.length === 1
-  const decisionLegalTargets = isSingleRequirementDecision ? (pendingDecision.legalTargets[0] ?? []) : []
+  // Only a lone single-target requirement uses the immediate click-to-submit path below; a
+  // multi-target player slot (e.g. Parker Luck's "two target players") routes to
+  // BattlefieldTargetingUI and is picked via the decisionSelectionState toggle path instead.
+  const isLoneTargetDecision = isChooseTargetsDecision && isLoneTargetRequirement(pendingDecision)
+  const decisionLegalTargets = isLoneTargetDecision ? (pendingDecision.legalTargets[0] ?? []) : []
   const isValidDecisionTarget = decisionLegalTargets.includes(playerId)
   const isValidDecisionSelection = decisionSelectionState?.validOptions.includes(playerId) ?? false
   const isSelectedDecisionOption = decisionSelectionState?.selectedOptions.includes(playerId) ?? false

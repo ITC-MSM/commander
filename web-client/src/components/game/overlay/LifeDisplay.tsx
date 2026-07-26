@@ -6,6 +6,7 @@ import { styles } from '../board/styles'
 import { HoverCardPreview } from '../../ui/HoverCardPreview'
 import { AbilityText } from '../../ui/ManaSymbols'
 import { TheRingBadge } from './TheRingBadge'
+import { isLoneTargetRequirement } from '@/utils/targeting.ts'
 
 /**
  * Life total display - interactive when in targeting mode or when a pending decision requires player targeting.
@@ -82,10 +83,13 @@ export function LifeDisplay({
   const isValidTargetingTarget = targetingState?.validTargets.includes(playerId) ?? false
   const isTargetingSelected = targetingState?.selectedTargets.includes(playerId) ?? false
 
-  // Check if this player is a valid target in a pending ChooseTargetsDecision (single-requirement only)
+  // Check if this player can be click-to-submitted for a pending ChooseTargetsDecision. Only a lone
+  // single-target requirement uses this immediate-submit path; a multi-target player slot (e.g.
+  // Parker Luck's "two target players") routes to BattlefieldTargetingUI and is picked via the
+  // decisionSelectionState toggle path below, so it must NOT match here.
   const isChooseTargetsDecision = pendingDecision?.type === 'ChooseTargetsDecision'
-  const isSingleRequirementDecision = isChooseTargetsDecision && pendingDecision.targetRequirements.length === 1
-  const decisionLegalTargets = isSingleRequirementDecision
+  const isLoneTargetDecision = isChooseTargetsDecision && isLoneTargetRequirement(pendingDecision)
+  const decisionLegalTargets = isLoneTargetDecision
     ? (pendingDecision.legalTargets[0] ?? [])
     : []
   const isValidDecisionTarget = decisionLegalTargets.includes(playerId)
