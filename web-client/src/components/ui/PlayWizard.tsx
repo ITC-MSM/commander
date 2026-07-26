@@ -21,9 +21,17 @@
  * - **The stepper is the back button.** All three questions are always on screen, numbered, with the
  *   answer under each; clicking an answer reopens that step and re-validates the ones after it.
  *
+ * **The draft lives in the URL, not in this component** (`wizardUrl.ts`). Phase 7 shipped the stepper
+ * with the answers in `useState`, which left the landing screen with two back affordances that
+ * disagreed: the stepper stepped back a question, the browser's Back left Argentum. Now each answer
+ * is a path segment, so `history.back()` *is* "drop the last answer" and every step is linkable.
+ * One user action = one `navigate`, which is the invariant that keeps Back honest; a seat narrowing
+ * replaces instead, since it refines the current answer rather than adding one.
+ *
  * Everything selectable comes from `lobby/modeMatrix.ts`; this file only renders it.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { HelpTip } from '@/components/help/HelpTip'
 import {
   cardsChoices,
@@ -45,23 +53,25 @@ import {
   type ShapeId,
 } from '../lobby/modeMatrix'
 import { cardsLabel, type CardsAxis, type CardsKind } from '../lobby/axes'
+import {
+  EMPTY_DRAFT as EMPTY,
+  WIZARD_PREFIX,
+  draftToPath,
+  pathToDraft,
+  type WizardDraft as Draft,
+} from './wizardUrl'
 import styles from './GameUI.module.css'
+
+/** How many answers a wizard path spells out — the query string is a refinement, not an answer. */
+function answerCount(path: string): number {
+  return (path.split('?')[0] ?? '').split('/').filter(Boolean).length
+}
 
 /** The three questions. */
 type AnsweredStep = 'roster' | 'cards' | 'shape'
 
 /** The three steps, plus the state after the last one is answered. */
 type StepId = AnsweredStep | 'done'
-
-/** A selection in progress: each answer is null until given. */
-interface Draft {
-  roster: Roster | null
-  cards: CardsAxis | null
-  shape: ShapeId | null
-  seats: number | null
-}
-
-const EMPTY: Draft = { roster: null, cards: null, shape: null, seats: null }
 
 const LAST_LAUNCH_KEY = 'argentum-last-play-selection'
 
@@ -73,8 +83,41 @@ export function PlayWizard({
   /** Create the lobby this selection describes. The wizard never touches the store itself. */
   onLaunch: (spec: LaunchSpec, selection: Selection) => void
 }) {
-  const [draft, setDraft] = useState<Draft>(EMPTY)
+  const navigate = useNavigate()
+  const { pathname, search } = useLocation()
+  const draft = useMemo(() => pathToDraft(pathname, search, aiEnabled), [pathname, search, aiEnabled])
   const lastSelection = useMemo(() => loadLastSelection(aiEnabled), [aiEnabled])
+
+  /** Answer a step: one history entry, so Back drops exactly this answer. */
+  const setDraft = (next: Draft) => navigate(draftToPath(next))
+
+  /** Refine the current answer (seats) without adding a step to walk back through. */
+  const replaceDraft = (next: Draft) => navigate(draftToPath(next), { replace: true })
+
+  /**
+   * Normalise the address bar onto the canonical path for what is selected — `/play/solo/bring-a-deck`
+   * gains the shape that was auto-resolved for it, `?seats=99` loses a count no rule allows. Replace,
+   * never push, so tidying a URL never becomes an extra Back to press.
+   *
+   * **It may only ever complete a path, never shorten one.** Shortening would mean acting on a
+   * *reachability* verdict, and reachability depends on `aiEnabled`, which arrives with the connection
+   * — so a truncating normalise races the socket and can delete a perfectly good shared link before
+   * the server has said whether it works. When a link turns out to be unreachable the wizard shows the
+   * step with the option disabled and its reason attached, and the next click rewrites the URL anyway.
+   * Keeping the link and explaining beats silently discarding it.
+   *
+   * Scoped to paths the wizard owns: `/` carries query params belonging to other features
+   * (`?spectate=`, `?token=`, `?decks=open`, `?profile=1`) that normalising there would strip.
+   */
+  const canonical = draftToPath(draft)
+  const wizardOwnsUrl = pathname === WIZARD_PREFIX || pathname.startsWith(`${WIZARD_PREFIX}/`)
+  useEffect(() => {
+    if (!wizardOwnsUrl) return
+    const current = `${pathname}${search}`
+    if (current === canonical) return
+    if (answerCount(canonical) < answerCount(current)) return
+    navigate(canonical, { replace: true })
+  }, [wizardOwnsUrl, canonical, pathname, search, navigate])
 
   // Step 3 is only a step when there is more than one shape to pick between. With one, `pickCards`
   // has already resolved it and the grid would be a question with a single answer.
@@ -136,17 +179,19 @@ export function PlayWizard({
    * renders that answer as `auto` and doesn't offer this.
    */
   const reopen = (target: AnsweredStep) => {
-    setDraft((d) => {
-      switch (target) {
-        case 'roster': return EMPTY
-        case 'cards': return { ...EMPTY, roster: d.roster }
-        case 'shape': return shapeIsAQuestion ? { ...d, shape: null, seats: null } : d
-      }
-    })
+    switch (target) {
+      case 'roster': return setDraft(EMPTY)
+      case 'cards': return setDraft({ ...EMPTY, roster: draft.roster })
+      case 'shape': if (shapeIsAQuestion) setDraft({ ...draft, shape: null, seats: null })
+    }
   }
 
   const launch = (selection: Selection) => {
     saveLastSelection(selection)
+    // Hand the URL back before the lobby appears. A lobby is not a wizard step, and leaving
+    // `/play/...` in the address bar would have it describe a screen that is no longer showing —
+    // giving the in-`/` screens their own URLs is the rest of Phase 6.
+    navigate('/', { replace: true })
     onLaunch(resolveLaunch(selection), selection)
   }
 
@@ -217,7 +262,7 @@ export function PlayWizard({
           <div className={styles.wizardFooter}>
             <SeatControl
               selection={complete}
-              onChange={(seats) => setDraft((d) => ({ ...d, seats }))}
+              onChange={(seats) => replaceDraft({ ...complete, seats })}
             />
             <button
               type="button"
