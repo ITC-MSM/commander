@@ -78,6 +78,24 @@ export function HelpTopicView({
           })}
         </div>
       )}
+
+      {topic.links && topic.links.length > 0 && (
+        <div className={styles.relatedRow}>
+          <span className={styles.relatedLabel}>Elsewhere</span>
+          {topic.links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.externalLink}
+            >
+              {link.label}
+              <span className={styles.externalMark} aria-hidden> ↗</span>
+            </a>
+          ))}
+        </div>
+      )}
     </article>
   )
 }

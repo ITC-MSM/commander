@@ -217,6 +217,21 @@
   text-decoration: underline;
 }
 
+/* Off-site references — marked with ↗ so it is clear before clicking that this one leaves. */
+.externalLink {
+  color: var(--color-accent, #4fc3f7);
+  font-size: var(--font-xs, 0.75rem);
+  text-decoration: none;
+}
+
+.externalLink:hover {
+  text-decoration: underline;
+}
+
+.externalMark {
+  color: var(--text-disabled);
+}
+
 /* =========================================================================
  * Shortcut table
  * ========================================================================= */
