@@ -450,6 +450,11 @@ data class PermanentsEnterTapped(
  *                  at the moment the permanent enters the battlefield. Used for cards like
  *                  Frilled Sparkshooter ("This creature enters with a +1/+1 counter on it if
  *                  an opponent lost life this turn.").
+ * @param otherOnly When true the source is excluded — "each **other** [filter] … enters with an
+ *                  additional counter" (Metallic Mimic). The [selfOnly] mirror, and the same flag
+ *                  [EntersWithDynamicCounters] carries: the source's own entry path skips an
+ *                  `otherOnly` effect, so the source can never counter itself as it enters. Leave
+ *                  false for a group effect that also covers the source's own entry.
  */
 @SerialName("EntersWithCounters")
 @Serializable
@@ -458,6 +463,7 @@ data class EntersWithCounters(
     val count: Int,
     val selfOnly: Boolean = false,
     val condition: Condition? = null,
+    val otherOnly: Boolean = false,
     override val appliesTo: EventPattern = EventPattern.ZoneChangeEvent(
         filter = GameObjectFilter.Creature.youControl(),
         to = Zone.BATTLEFIELD

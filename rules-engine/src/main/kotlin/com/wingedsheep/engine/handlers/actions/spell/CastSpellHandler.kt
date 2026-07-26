@@ -1550,10 +1550,12 @@ class CastSpellHandler(
                         }
                     }
                     // Mana / reveal are not produced as spell additional costs today;
-                    // put-counters-on-self is ability-scoped (no permanent to accrue them on) and
-                    // ExilePermanents is an activated-ability-only cost, never a spell additional cost.
+                    // put-counters-on-self is ability-scoped (no permanent to accrue them on);
+                    // ExilePermanents and Mill are activated-ability-only costs, never spell
+                    // additional costs (canPayAdditionalCost already reports Mill unpayable).
                     is CostAtom.Mana, is CostAtom.RevealFromHand,
-                    is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents -> {}
+                    is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents,
+                    is CostAtom.Mill -> {}
                     is CostAtom.RemoveCounters -> {
                         val needed = when (val c = atom.count) {
                             is com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed -> c.amount
@@ -2333,10 +2335,12 @@ class CastSpellHandler(
                         }
                         // PayLife is auto-paid in the loop above; mana / reveal aren't spell additional
                         // costs; put-counters-on-self is ability-scoped (a spell on the stack has no
-                        // permanent to accrue them on) and ExilePermanents is an activated-ability-only
-                        // cost, never a spell additional cost.
+                        // permanent to accrue them on); ExilePermanents and Mill are
+                        // activated-ability-only costs, never spell additional costs (and
+                        // canPayAdditionalCost reports Mill unpayable, so this is unreachable).
                         is CostAtom.PayLife, is CostAtom.Mana, is CostAtom.RevealFromHand,
-                        is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents -> {}
+                        is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents,
+                        is CostAtom.Mill -> {}
                         is CostAtom.RemoveCounters -> {
                             val resolvedRemovals = resolveDistributedCounterRemovalsForPayment(action)
                             for (removal in resolvedRemovals) {

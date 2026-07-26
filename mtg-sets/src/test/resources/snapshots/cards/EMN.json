@@ -1581,6 +1581,70 @@
     ]
 }
 
+// Thalia, Heretic Cathar
+{
+    "name": "Thalia, Heretic Cathar",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Human Soldier",
+    "oracleText": "First strike\nCreatures and nonbasic lands your opponents control enter tapped.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:opponent",
+                    "to": "Battlefield"
+                }
+            },
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsLand",
+                            {
+                                "type": "Not",
+                                "predicate": "IsBasicLand"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByOpponent"
+                    },
+                    "to": "Battlefield"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "rarity": "RARE",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"Salvation will not be granted by the Lunarch Council. It must be earned—at the edge of a sword, if necessary.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/ab0cee38-5e24-49d0-870c-22843ed4e101.jpg?1783937507",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "If an effect states that a creature or land enters the battlefield tapped unless a condition is met, Thalia's last ability has it enter tapped even if that condition is true."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If Thalia enters the battlefield at the same time as an opponent's creatures or nonbasic lands, those creatures and lands aren't affected by Thalia's last ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Thermo-Alchemist
 {
     "name": "Thermo-Alchemist",

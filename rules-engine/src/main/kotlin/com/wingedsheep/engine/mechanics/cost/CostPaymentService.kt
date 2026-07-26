@@ -23,6 +23,7 @@ import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+import com.wingedsheep.engine.handlers.effects.library.MillAmountModifier
 import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -130,6 +131,10 @@ class CostPaymentService(private val services: EngineServices) {
                     }
                 is CostAtom.ExileFrom ->
                     selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, cardsInZone(state, payerId, atom.filter, atom.zone), atom.count, useTargetingUI = atom.zone == Zone.BATTLEFIELD)
+                // Milling takes no selection — the cards are the top of the library — so this is a
+                // plain yes/no like paying life.
+                is CostAtom.Mill ->
+                    yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, "${atom.description.replaceFirstChar { it.uppercase() }}?", atom.description.replaceFirstChar { it.uppercase() })
                 is CostAtom.RevealFromHand ->
                     selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, cardsInHand(state, payerId, atom.filter), atom.count, useTargetingUI = false)
                 is CostAtom.Sacrifice ->
@@ -308,6 +313,7 @@ class CostPaymentService(private val services: EngineServices) {
                 if (atom.random) discardRandom(state, payerId, atom.filter, atom.count)
                 else discardSelected(state, payerId, selected.keys.toList())
             is CostAtom.ExileFrom -> exileSelected(state, payerId, selected.keys.toList(), atom.zone)
+            is CostAtom.Mill -> millTop(state, payerId, atom.count)
             is CostAtom.RevealFromHand -> revealSelected(state, payerId, selected.keys.toList())
             is CostAtom.Sacrifice -> sacrificeSelected(state, payerId, selected.keys.toList())
             is CostAtom.ReturnToHand -> returnSelected(state, selected.keys.toList())
@@ -523,6 +529,19 @@ class CostPaymentService(private val services: EngineServices) {
         return CostPaymentExecution(newState, events, success = true)
     }
 
+    /**
+     * Mill the top [count] cards as a cost payment (CR 701.17a). Mirrors `CostHandler.payAtom`'s
+     * mill branch: the announced count runs through the [MillAmountModifier] replacement chokepoint
+     * (CR 616) and the library→graveyard moves go through [ZoneTransitionService] so mill triggers
+     * and animations see the canonical zone changes.
+     */
+    private fun millTop(state: GameState, payerId: EntityId, count: Int): CostPaymentExecution {
+        val effectiveCount = MillAmountModifier.apply(state, payerId, count)
+        val milled = state.getZone(ZoneKey(payerId, Zone.LIBRARY)).take(effectiveCount)
+        val result = ZoneTransitionService.moveToZoneBatch(state, milled, Zone.GRAVEYARD)
+        return CostPaymentExecution(result.state, result.events, success = true)
+    }
+
     private fun exileSelected(state: GameState, payerId: EntityId, selected: List<EntityId>, zone: Zone): CostPaymentExecution {
         val fromZone = ZoneKey(payerId, zone)
         val exileZone = ZoneKey(payerId, Zone.EXILE)
@@ -624,6 +643,8 @@ class CostPaymentService(private val services: EngineServices) {
                     is CostAtom.PayLife -> life(state, payerId) >= atom.amount
                     is CostAtom.Discard -> cardsInHand(state, payerId, atom.filter).size >= atom.count
                     is CostAtom.ExileFrom -> cardsInZone(state, payerId, atom.filter, atom.zone).size >= atom.count
+                    // CR 701.17b — a mill cost is unpayable when the library holds fewer cards.
+                    is CostAtom.Mill -> state.getZone(ZoneKey(payerId, Zone.LIBRARY)).size >= atom.count
                     is CostAtom.RevealFromHand -> cardsInHand(state, payerId, atom.filter).size >= atom.count
                     is CostAtom.Sacrifice -> {
                         val candidates = controlledMatching(

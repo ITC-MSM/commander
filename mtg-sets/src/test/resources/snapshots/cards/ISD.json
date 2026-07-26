@@ -811,6 +811,59 @@
     "colorIdentityOverride": []
 }
 
+// Deranged Assistant
+{
+    "name": "Deranged Assistant",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{T}, Mill a card: Add {C}. (To mill a card, put the top card of your library into your graveyard.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomMill"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "artist": "Nils Hamm",
+        "flavorText": "\"Garl, adjust the slurry dispensers. Garl, fetch more corpses. Garl, quit crying and give me your brain tissue. If he doesn't stop being so rude, I'm quitting.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4c03171-5ff0-4f79-bb03-16decf7d34ce.jpg?1783940977",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "Once Deranged Assistant's ability has been activated, it can't be reversed for any reason. If you activate it while casting a spell and discover you can't produce enough mana to pay that spell's costs, the spell is reversed, but Deranged Assistant's ability isn't — you'll still have the mana it produced and the milled card will still be in your graveyard."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Desperate Ravings
 {
     "name": "Desperate Ravings",

@@ -104,6 +104,10 @@ object EntersWithReplacements {
         for (effect in cardDef.script.replacementEffects) {
             when (effect) {
                 is EntersWithCounters -> {
+                    // Skip "other only" effects when applying to self (Metallic Mimic's "each other
+                    // creature you control … enters with an additional +1/+1 counter" must not
+                    // counter the Mimic itself). Mirrors the EntersWithDynamicCounters path below.
+                    if (effect.otherOnly) continue
                     if (effect.condition != null) {
                         val condContext = EffectContext(
                             sourceId = entityId,
@@ -192,7 +196,7 @@ object EntersWithReplacements {
                 when (effect) {
                     is EntersWithCounters -> {
                         if (effect.selfOnly) continue
-                        if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceControllerId, newState)) continue
+                        if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceId, sourceControllerId, newState)) continue
                         if (effect.condition != null) {
                             // A non-self "enters with counters" condition describes the ENTERING
                             // creature ("it was cast from your graveyard", Leonardo), not the
@@ -220,7 +224,7 @@ object EntersWithReplacements {
                     }
                     is EntersWithDynamicCounters -> {
                         if (!effect.otherOnly) continue
-                        if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceControllerId, newState)) continue
+                        if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceId, sourceControllerId, newState)) continue
                         val counterType = resolveCounterType(effect.counterType)
                         // An "enters with N counters" count always describes the ENTERING object,
                         // not the replacement source — the counters go on the entering permanent and
@@ -251,7 +255,7 @@ object EntersWithReplacements {
                     }
                     is EntersWithKeywords -> {
                         if (effect.selfOnly) continue
-                        if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceControllerId, newState)) continue
+                        if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceId, sourceControllerId, newState)) continue
                         // Like the counters branch above: the condition describes the ENTERING
                         // permanent; controllerId stays the source's controller.
                         if (effect.condition != null) {
@@ -317,9 +321,21 @@ object EntersWithReplacements {
         return newState to events
     }
 
+    /**
+     * Does [enteringEntityId] match the `appliesTo` filter of a replacement carried by
+     * [replacementSourceId]?
+     *
+     * `sourceId` in the predicate context is the **replacement's source**, not the entering
+     * permanent: `appliesTo` describes the affected permanents *relative to the source*, so
+     * source-relative predicates have to resolve against it — `HasChosenSubtype` reads the type
+     * chosen as the source entered (Metallic Mimic), and `excludeSelf` means "other than the
+     * source". (Conditions are the opposite and keep `sourceId = enteringEntityId`, because an
+     * "enters with counters" condition describes the entering permanent — see the call sites.)
+     */
     private fun matchesEnterFilter(
         event: com.wingedsheep.sdk.scripting.EventPattern,
         enteringEntityId: EntityId,
+        replacementSourceId: EntityId,
         sourceControllerId: EntityId,
         state: GameState,
     ): Boolean {
@@ -328,7 +344,7 @@ object EntersWithReplacements {
         val filter = event.filter
 
         val predicateContext = PredicateContext(
-            sourceId = enteringEntityId,
+            sourceId = replacementSourceId,
             controllerId = sourceControllerId
         )
         return predicateEvaluator.matches(state, state.projectedState, enteringEntityId, filter, predicateContext)

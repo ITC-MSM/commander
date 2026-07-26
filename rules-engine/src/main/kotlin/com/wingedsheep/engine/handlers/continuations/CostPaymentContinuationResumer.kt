@@ -48,8 +48,9 @@ class CostPaymentContinuationResumer(
         is PayCost.OwnManaCost ->
             ExecutionResult.error(state, "OwnManaCost should have been resolved before payment")
         is PayCost.Atom -> when (val atom = cost.atom) {
-            // Yes/no costs: mana, life, and random discard.
-            is CostAtom.Mana, is CostAtom.PayLife ->
+            // Yes/no costs: mana, life, mill (the milled cards are the top of the library, so
+            // there is nothing to select), and random discard.
+            is CostAtom.Mana, is CostAtom.PayLife, is CostAtom.Mill ->
                 resumeYesNo(state, continuation, cost, response, checkForMore)
             is CostAtom.Discard ->
                 if (atom.random) resumeYesNo(state, continuation, cost, response, checkForMore)
