@@ -6,8 +6,8 @@
  * - **PLAY** — the {@link PlayWizard}'s three questions, a join-code row, and a Continue chip when a
  *   lobby is still live from a previous page load.
  * - **BUILD & BROWSE** — deckbuilder, replays and set completion. The account pages (`/stats`,
- *   `/friends`, `/profile`) live on the {@link AuthWidget} in the side rail instead, next to who
- *   you are signed in as.
+ *   `/friends`, `/profile`) live on the {@link AuthWidget} in the top bar instead, next to who you
+ *   are signed in as.
  * - **LAB** — debugging and content tools, dev builds only; the tier does not render otherwise.
  *
  * What is playable is declarative (`lobby/modeMatrix.ts`) and the wizard only renders it; this file
@@ -283,7 +283,9 @@ export function HomeScreen({
 
   const showPublicLobbies = !sessionId && !lobbyState && (publicLobbies.length > 0 || publicLobbiesError || (onlinePlayers ?? 0) > 0)
   const showLiveGames = !sessionId && !lobbyState && liveGames.length > 0
-  const showSideRail = accountsEnabled || showPublicLobbies || showLiveGames
+  // Only the lobby panels; the account widget rides the top bar, so an empty server no longer
+  // reserves a 320px rail (and its mirror gutter) for a single row of sign-in pills.
+  const showSideRail = showPublicLobbies || showLiveGames
 
   const handleSpectate = (gameSessionId: string) => {
     if (status === 'connected') {
@@ -299,16 +301,20 @@ export function HomeScreen({
 
   return (
     <div className={styles.connectionOverlay} style={{ backgroundImage: `url(${randomBackground})` }}>
-      <div className={styles.cornerControls}>
-        <FullscreenButton />
-        <button
-          type="button"
-          onClick={() => navigate('/help')}
-          className={styles.fullscreenButton}
-          title="How Argentum works — modes, priority, shortcuts"
-        >
-          ? Help
-        </button>
+      {/* One flow row across the top: viewport controls left, account right. See `.landingTopBar`. */}
+      <div className={styles.landingTopBar}>
+        <div className={styles.landingTopBarControls}>
+          <FullscreenButton />
+          <button
+            type="button"
+            onClick={() => navigate('/help')}
+            className={styles.fullscreenButton}
+            title="How Argentum works — modes, priority, shortcuts"
+          >
+            ? Help
+          </button>
+        </div>
+        <AuthWidget />
       </div>
       <div className={styles.landingLayout}>
         {/* Mirrors the side rail's width so the glass card stays viewport-centred rather than
@@ -467,7 +473,6 @@ export function HomeScreen({
 
         {showSideRail && (
           <div className={styles.sidePanelStack}>
-            <AuthWidget />
             {showPublicLobbies && (
               <PublicLobbyList
                 lobbies={publicLobbies}
