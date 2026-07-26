@@ -8,6 +8,7 @@ import { BanListEditor } from '../ui/BanListEditor'
 import { SetPickerModal } from '../ui/SetPickerModal'
 import { JoinQrModal } from '../ui/JoinQrModal'
 import { FullscreenButton } from '../ui/FullscreenButton'
+import { SettingsLabel } from '../ui/SettingsLabel'
 import { buildJoinUrl } from '@/utils/joinLink'
 import { labelForFormat } from '@/utils/deckLegality'
 import { TournamentOverlay } from '../tournament/TournamentOverlay'
@@ -165,7 +166,7 @@ export function LobbyOverlay({
 
   return (
     <div className={styles.lobbyOverlay} style={{ backgroundImage: `url(${randomBackground})` }}>
-      <FullscreenButton />
+      <div className={styles.cornerControls}><FullscreenButton /></div>
       <div className={styles.lobbyContent}>
         {/* Header */}
         <div className={styles.lobbyHeader}>
@@ -235,7 +236,7 @@ export function LobbyOverlay({
           <div className={styles.settingsPanel}>
             {/* Format selection — top row picks the pool type; variant sub-row picks the shape. */}
             <div className={styles.settingsRow}>
-              <span className={styles.settingsLabel}>Format</span>
+              <SettingsLabel topicId="axes">Format</SettingsLabel>
               <div className={styles.settingsButtons}>
                 <button
                   onClick={() => { if (!isAnySealed) updateLobbySettings({ format: 'SEALED' }) }}
@@ -262,7 +263,7 @@ export function LobbyOverlay({
                 shared multiplayer game (Multiplayer). The multiplayer variant — Free-for-All, Two-Headed
                 Giant, or Team vs. Team — is picked in the sub-row that appears once Multiplayer is on. */}
             <div className={styles.settingsRow}>
-              <span className={styles.settingsLabel}>Mode</span>
+              <SettingsLabel topicId="event-round-robin">Mode</SettingsLabel>
               <div className={styles.variantGroup}>
                 <div className={styles.settingsButtons}>
                   <button
@@ -291,7 +292,7 @@ export function LobbyOverlay({
                 tournament adjusts each player's ELO per match and can only start with everyone signed in. */}
             {!isMultiplayer && (
               <div className={styles.settingsRow}>
-                <span className={styles.settingsLabel}>Ranked</span>
+                <SettingsLabel topicId="ranked">Ranked</SettingsLabel>
                 <div className={styles.variantGroup}>
                   <div className={styles.settingsButtons}>
                     <button
@@ -321,7 +322,7 @@ export function LobbyOverlay({
             {/* Multiplayer variant sub-row: only the three single-game modes, shown once Multiplayer is on. */}
             {isMultiplayer && (
               <div className={styles.settingsRow}>
-                <span className={styles.settingsLabel}>Variant</span>
+                <SettingsLabel topicId="table-free-for-all">Variant</SettingsLabel>
                 <div className={styles.variantGroup}>
                   <div className={styles.settingsButtons}>
                     <button
@@ -373,7 +374,7 @@ export function LobbyOverlay({
             {/* Team setup (2HG — CR 810; Team vs. Team — CR 808): random teams each game, or host-picked teams. */}
             {isTeamGame && (
               <div className={styles.settingsRow}>
-                <span className={styles.settingsLabel}>Teams</span>
+                <SettingsLabel topicId="table-two-headed-giant">Teams</SettingsLabel>
                 <div className={styles.variantGroup}>
                   <div className={styles.settingsButtons}>
                     <button
@@ -404,7 +405,7 @@ export function LobbyOverlay({
             {/* Free-for-All attack rule (CR 802/803) — only relevant once 3+ players share one table */}
             {isFfa && (
               <div className={styles.settingsRow}>
-                <span className={styles.settingsLabel}>Attack</span>
+                <SettingsLabel topicId="table-free-for-all">Attack</SettingsLabel>
                 <div className={styles.variantGroup}>
                   <div className={styles.settingsButtons}>
                     {([
@@ -434,7 +435,7 @@ export function LobbyOverlay({
                 : 'Open 6 boosters and build a 40-card deck.'
               return (
                 <div className={styles.settingsRow}>
-                  <span className={styles.settingsLabel}>Variant</span>
+                  <SettingsLabel topicId="cards-sealed">Variant</SettingsLabel>
                   <div className={styles.variantGroup}>
                     <div className={styles.settingsButtons}>
                       <button
@@ -464,7 +465,7 @@ export function LobbyOverlay({
                 : 'Pass packs around the table. 3-8 players.'
               return (
                 <div className={styles.settingsRow}>
-                  <span className={styles.settingsLabel}>Variant</span>
+                  <SettingsLabel topicId="cards-draft">Variant</SettingsLabel>
                   <div className={styles.variantGroup}>
                     <div className={styles.settingsButtons}>
                       <button

@@ -18,6 +18,7 @@ import momirVigUrl from '@/assets/momir-vig.svg'
 import { DeckPicker } from './DeckPicker'
 import { JoinQrModal } from './JoinQrModal'
 import { buildJoinUrl } from '@/utils/joinLink'
+import { SettingsLabel } from './SettingsLabel'
 import styles from './GameUI.module.css'
 
 const FORMAT_OPTIONS: Array<{ value: DeckFormat; label: string }> = [
@@ -198,7 +199,7 @@ export function QuickGameLobbyOverlay() {
             </div>
             {lobby.rankedEligible && (
               <div className={styles.settingsRow}>
-                <span className={styles.settingsLabel}>Ranked</span>
+                <SettingsLabel topicId="ranked">Ranked</SettingsLabel>
                 <div className={styles.settingsButtons}>
                   <button
                     type="button"
@@ -339,7 +340,7 @@ function FormatSelector({
   return (
     <div className={styles.formatSelector}>
       <div className={styles.formatSelectorTop}>
-        <span className={styles.settingsLabel}>Format</span>
+        <SettingsLabel topicId="cards-bring-a-deck">Format</SettingsLabel>
         <select
           value={dropdownValue}
           onChange={(e) => {

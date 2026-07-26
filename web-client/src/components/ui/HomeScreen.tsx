@@ -1,3 +1,16 @@
+/**
+ * Landing screen — the centred glass card you see before any game exists.
+ *
+ * Three labelled tiers instead of one `Quick Game | Tournament` toggle:
+ *
+ * - **PLAY** — the six {@link MODE_PRESETS} cards, a join-code row, and a Continue chip when a
+ *   lobby is still live from a previous page load.
+ * - **BUILD & BROWSE** — deckbuilder, replays and the account pages (`/stats`, `/friends`,
+ *   `/profile`), which had no home-screen entry at all before.
+ * - **LAB** — debugging and content tools, explicitly captioned as not part of normal play.
+ *
+ * The presets are declarative (`modePresets.ts`); this file only knows how to *launch* one.
+ */
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore.ts'
@@ -15,9 +28,11 @@ import { FullscreenButton } from './FullscreenButton'
 import { LobbyOverlay } from '../lobby/LobbyOverlay'
 import { TournamentOverlay } from '../tournament/TournamentOverlay'
 import { FreeForAllOverlay } from '../tournament/FreeForAllOverlay'
+import { HelpTip } from '@/components/help/HelpTip'
+import { MODE_PRESETS, type ModePreset } from './modePresets'
+import { axisSummary } from '../lobby/axes'
+import { loadLobbyId, clearLobbyId } from '@/store/slices/shared'
 import styles from './GameUI.module.css'
-
-type GameMode = 'normal' | 'tournament'
 
 interface PublicTournamentSummary {
   lobbyId: string
@@ -66,9 +81,8 @@ type LiveGameEntry =
   | ({ kind: 'tournament' } & LiveTournamentMatchSummary)
   | ({ kind: 'quickGame' } & LiveQuickGameSummary)
 
-
 /**
- * Connection overlay shown before game starts.
+ * Home screen shown before a game starts — and the router into the lobby / tournament overlays.
  */
 export function HomeScreen({
   status,
@@ -85,10 +99,8 @@ export function HomeScreen({
   const createTournamentLobby = useGameStore((state) => state.createTournamentLobby)
   const createQuickGameLobby = useGameStore((state) => state.createQuickGameLobby)
   const joinQuickGameLobby = useGameStore((state) => state.joinQuickGameLobby)
-  const setPendingTournamentId = useGameStore((state) => state.setPendingTournamentId)
   const lobbyState = useGameStore((state) => state.lobbyState)
   const [joinSessionId, setJoinSessionId] = useState('')
-  const [gameMode, setGameMode] = useState<GameMode>('normal')
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('argentum-player-name') || '')
 
   const [nameConfirmed, setNameConfirmed] = useState(() => !!localStorage.getItem('argentum-player-name'))
@@ -97,6 +109,14 @@ export function HomeScreen({
   const [publicLobbies, setPublicLobbies] = useState<PublicLobbyEntry[]>([])
   const [publicLobbiesError, setPublicLobbiesError] = useState<string | null>(null)
   const [liveGames, setLiveGames] = useState<LiveGameEntry[]>([])
+  // A join requested before the socket was up (name entry, or a public-lobby row clicked while
+  // disconnected), replayed once we're connected. Kind-agnostic: the quick-game join handler
+  // delegates to the tournament handler when the code belongs to one.
+  const [pendingJoinCode, setPendingJoinCode] = useState<string | null>(null)
+  // Read once at first render, before `connect` gets a chance to clear it: the lobby this browser
+  // was in before the page reloaded. Surfaced as the Continue chip — a mid-lobby refresh used to
+  // land you back here with no indication that a lobby was still waiting for you.
+  const [resumableLobbyId, setResumableLobbyId] = useState<string | null>(() => loadLobbyId())
   const onlinePlayers = useGameStore((state) => state.onlinePlayers)
   const spectateGame = useGameStore((state) => state.spectateGame)
   const setPendingSpectateGameId = useGameStore((state) => state.setPendingSpectateGameId)
@@ -112,26 +132,9 @@ export function HomeScreen({
     if (playerName.trim()) {
       localStorage.setItem('argentum-player-name', playerName.trim())
       setNameConfirmed(true)
-      if (gameMode === 'tournament' && joinSessionId.trim()) {
-        setPendingTournamentId(joinSessionId.trim())
-      }
+      if (joinSessionId.trim()) setPendingJoinCode(joinSessionId.trim())
       connect(playerName.trim())
     }
-  }
-
-  const handleCreate = () => {
-    if (gameMode === 'tournament') {
-      // Create lobby with default settings - host can change in lobby
-      createTournamentLobby(['ECL'], 'SEALED')
-    } else {
-      // Quick games go through a real lobby; deck/format/set selection (including the Momir Basic
-      // custom format) all live inside it.
-      createQuickGameLobby(false)
-    }
-  }
-
-  const handlePlayVsAi = () => {
-    createQuickGameLobby(true)
   }
 
   const handleJoin = () => {
@@ -142,6 +145,25 @@ export function HomeScreen({
       joinQuickGameLobby(joinSessionId.trim())
     }
   }
+
+  /** Open the lobby a preset describes. See {@link ModePreset.launch}. */
+  const launchPreset = (preset: ModePreset) => {
+    const launch = preset.launch
+    if (launch.kind === 'quickGame') {
+      createQuickGameLobby(launch.vsAi, undefined, false, undefined, launch.momirBasic ?? false)
+    } else {
+      // Sets are configured inside the lobby; ECL is only the starting selection, and is ignored
+      // entirely by PREMADE_DECKS (which generates no boosters).
+      createTournamentLobby(['ECL'], launch.format, 6, 8, 45, false, launch.gameMode)
+    }
+  }
+
+  // Replay a join that was queued while disconnected.
+  useEffect(() => {
+    if (!pendingJoinCode || status !== 'connected') return
+    setPendingJoinCode(null)
+    joinQuickGameLobby(pendingJoinCode)
+  }, [pendingJoinCode, status, joinQuickGameLobby])
 
   useEffect(() => {
     if (sessionId || lobbyState) {
@@ -260,6 +282,7 @@ export function HomeScreen({
 
   const showPublicLobbies = !sessionId && !lobbyState && (publicLobbies.length > 0 || publicLobbiesError || (onlinePlayers ?? 0) > 0)
   const showLiveGames = !sessionId && !lobbyState && liveGames.length > 0
+  const signedIn = authStatus === 'authenticated'
 
   const handleSpectate = (gameSessionId: string) => {
     if (status === 'connected') {
@@ -275,7 +298,17 @@ export function HomeScreen({
 
   return (
     <div className={styles.connectionOverlay} style={{ backgroundImage: `url(${randomBackground})` }}>
-      <FullscreenButton />
+      <div className={styles.cornerControls}>
+        <FullscreenButton />
+        <button
+          type="button"
+          onClick={() => navigate('/help')}
+          className={styles.fullscreenButton}
+          title="How Argentum works — modes, priority, shortcuts"
+        >
+          ? Help
+        </button>
+      </div>
       <div className={styles.landingLayout}>
         <div className={styles.contentBackdrop}>
           <h1 className={styles.title}>Argentum Engine</h1>
@@ -287,7 +320,7 @@ export function HomeScreen({
 
           {!nameConfirmed && (
             <div className={styles.inputGroup}>
-              <label className={styles.inputLabel}>{gameMode === 'tournament' && joinSessionId ? 'Enter your name to join' : 'Enter your name'}</label>
+              <label className={styles.inputLabel}>{joinSessionId ? 'Enter your name to join' : 'Enter your name'}</label>
               <input
                 type="text"
                 value={playerName}
@@ -323,122 +356,110 @@ export function HomeScreen({
           )}
 
           {status === 'connected' && !sessionId && (
-            <div className={styles.inputGroup}>
-              {/* Game Mode Toggle */}
-              <div className={styles.modeToggle}>
-                <ModeButton
-                  label="Quick Game"
-                  active={gameMode === 'normal'}
-                  onClick={() => setGameMode('normal')}
-                  title="Play with a random deck"
-                />
-                <ModeButton
-                  label="Tournament"
-                  active={gameMode === 'tournament'}
-                  onClick={() => setGameMode('tournament')}
-                  title="Sealed or Draft with up to 8 players"
-                />
-              </div>
+            <div className={styles.homeTiers}>
+              {/* ── PLAY ─────────────────────────────────────────────── */}
+              <section className={styles.homeTier}>
+                <SectionHeading label="Play" />
+                <div className={styles.presetGrid}>
+                  {MODE_PRESETS.map((preset) => (
+                    <ModePresetCard
+                      key={preset.id}
+                      preset={preset}
+                      disabled={preset.launch.kind === 'quickGame' && preset.launch.vsAi && !aiEnabled}
+                      onSelect={() => launchPreset(preset)}
+                    />
+                  ))}
+                </div>
 
-              {/* Game mode description */}
-              {gameMode === 'normal' && (
-                <p className={styles.modeDescription}>
-                  Pick a deck inside the lobby, then play 1v1 with a friend or against the AI.
-                </p>
-              )}
-              {gameMode === 'tournament' && (
-                <p className={styles.modeDescription}>
-                  Create a lobby for Sealed or Draft. Configure format and set after creating.
-                </p>
-              )}
-
-              {gameMode !== 'tournament' ? (
-                <div className={styles.createButtonRow}>
+                <div className={styles.joinRow}>
+                  <input
+                    type="text"
+                    value={joinSessionId}
+                    onChange={(e) => setJoinSessionId(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
+                    placeholder="Have an invite code? Paste it here"
+                    className={styles.sessionInput}
+                  />
                   <button
-                    onClick={handleCreate}
-                    className={styles.primaryButton}
+                    onClick={handleJoin}
+                    disabled={!joinSessionId.trim()}
+                    className={styles.joinButton}
                   >
-                    Create Quick Game
+                    Join
                   </button>
-                  {aiEnabled && (
+                </div>
+
+                {resumableLobbyId && (
+                  <div className={styles.continueChip}>
                     <button
-                      onClick={handlePlayVsAi}
-                      className={styles.aiButton}
+                      type="button"
+                      className={styles.continueChipButton}
+                      onClick={() => joinQuickGameLobby(resumableLobbyId)}
                     >
-                      Play vs AI
+                      Continue → lobby <span className={styles.continueChipCode}>{resumableLobbyId}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.continueChipDismiss}
+                      aria-label="Dismiss"
+                      title="I'm done with that lobby"
+                      onClick={() => { clearLobbyId(); setResumableLobbyId(null) }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+
+                <AccountBenefitsCallout onCreateAccount={() => setLoginOpen(true)} />
+                <DeckMigrationPrompt />
+              </section>
+
+              {/* ── BUILD & BROWSE ───────────────────────────────────── */}
+              <section className={styles.homeTier}>
+                <SectionHeading label="Build & Browse" />
+                <div className={styles.secondaryButtonRow}>
+                  <button onClick={() => navigate('/deckbuilder')} className={styles.secondaryButton}>
+                    Deckbuilder
+                  </button>
+                  <button onClick={() => setShowReplays(true)} className={styles.secondaryButton}>
+                    Replays
+                  </button>
+                  {signedIn && (
+                    <>
+                      <button onClick={() => navigate('/stats')} className={styles.secondaryButton}>
+                        Stats
+                      </button>
+                      <button onClick={() => navigate('/friends')} className={styles.secondaryButton}>
+                        Friends
+                      </button>
+                      <button onClick={() => navigate('/profile')} className={styles.secondaryButton}>
+                        Profile
+                      </button>
+                    </>
+                  )}
+                </div>
+              </section>
+
+              {/* ── LAB ──────────────────────────────────────────────── */}
+              <section className={styles.homeTier}>
+                <SectionHeading label="Lab" hint="advanced" />
+                <div className={styles.secondaryButtonRow}>
+                  <button onClick={() => navigate('/scenario')} className={styles.secondaryButton}>
+                    Scenario Builder
+                  </button>
+                  <button onClick={() => navigate('/set-completion')} className={styles.secondaryButton}>
+                    Set Completion
+                  </button>
+                  {import.meta.env.DEV && (
+                    <button onClick={() => navigate('/llm-tournament')} className={styles.secondaryButton}>
+                      LLM Tournament
                     </button>
                   )}
                 </div>
-              ) : (
-                <button
-                  onClick={handleCreate}
-                  className={styles.tournamentButton}
-                >
-                  Create Lobby
-                </button>
-              )}
-
-              <div className={styles.divider}>
-                <div className={styles.dividerLine} />
-                <span className={styles.dividerText}>or join existing</span>
-                <div className={styles.dividerLine} />
-              </div>
-
-              <div className={styles.joinRow}>
-                <input
-                  type="text"
-                  value={joinSessionId}
-                  onChange={(e) => setJoinSessionId(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-                  placeholder="Enter Lobby Code"
-                  className={styles.sessionInput}
-                />
-                <button
-                  onClick={handleJoin}
-                  disabled={!joinSessionId.trim()}
-                  className={styles.joinButton}
-                >
-                  Join
-                </button>
-              </div>
-
-              <AccountBenefitsCallout onCreateAccount={() => setLoginOpen(true)} />
-              <DeckMigrationPrompt />
-
-              <div className={styles.secondaryButtonRow}>
-                <button
-                  onClick={() => navigate('/deckbuilder')}
-                  className={styles.secondaryButton}
-                >
-                  Deckbuilder
-                </button>
-                <button
-                  onClick={() => navigate('/scenario')}
-                  className={styles.secondaryButton}
-                >
-                  Scenario Builder
-                </button>
-                <button
-                  onClick={() => navigate('/set-completion')}
-                  className={styles.secondaryButton}
-                >
-                  Set Completion
-                </button>
-                {import.meta.env.DEV && (
-                  <button
-                    onClick={() => navigate('/llm-tournament')}
-                    className={styles.secondaryButton}
-                  >
-                    LLM Tournament
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowReplays(true)}
-                  className={styles.secondaryButton}
-                >
-                  Game Replays
-                </button>
-              </div>
+                <p className={styles.tierCaption}>
+                  Debugging and content tools, not part of normal play.
+                </p>
+              </section>
             </div>
           )}
 
@@ -457,14 +478,12 @@ export function HomeScreen({
                 onlinePlayers={onlinePlayers}
                 onJoin={(entry) => {
                   setJoinSessionId(entry.lobbyId)
-                  if (entry.kind === 'tournament') setGameMode('tournament')
                   if (status === 'connected') {
                     // QuickGameLobbyHandler routes by lobby kind — works for both.
                     joinQuickGameLobby(entry.lobbyId)
                   } else if (playerName.trim()) {
                     localStorage.setItem('argentum-player-name', playerName.trim())
-                    // pendingTournamentId triggers a JoinLobby on connect — works only for tournaments.
-                    if (entry.kind === 'tournament') setPendingTournamentId(entry.lobbyId)
+                    setPendingJoinCode(entry.lobbyId)
                     setNameConfirmed(true)
                     connect(playerName.trim())
                   }
@@ -492,6 +511,63 @@ export function HomeScreen({
         </span>
       </div>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+    </div>
+  )
+}
+
+/** Rule-and-label heading separating the landing screen's tiers. */
+function SectionHeading({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <div className={styles.tierHeading}>
+      <span className={styles.tierHeadingLabel}>
+        {label}
+        {hint && <span className={styles.tierHeadingHint}>{hint}</span>}
+      </span>
+      <span className={styles.tierHeadingRule} />
+    </div>
+  )
+}
+
+/**
+ * One entry point in the PLAY tier. Every card carries the same metadata — seats, rough duration,
+ * whether you need a deck, and the axis triple the lobby will open with — so the six can be
+ * compared rather than guessed at.
+ */
+function ModePresetCard({
+  preset,
+  disabled,
+  onSelect,
+}: {
+  preset: ModePreset
+  disabled: boolean
+  onSelect: () => void
+}) {
+  // A wrapper div rather than one big button: the HelpTip is itself a button, and nesting
+  // interactive elements is invalid HTML (and unreachable by keyboard).
+  return (
+    <div className={`${styles.presetCard} ${styles[`presetCard_${preset.accent}`] ?? ''}`}>
+      <span className={styles.presetCardHelp}>
+        <HelpTip topicId={preset.helpTopicId} label={`What is ${preset.title}?`} size="sm" />
+      </span>
+      <button
+        type="button"
+        onClick={onSelect}
+        disabled={disabled}
+        data-testid={`mode-preset-${preset.id}`}
+        className={styles.presetCardButton}
+        {...(disabled ? { title: 'The AI player is disabled on this server' } : {})}
+      >
+        <span className={styles.presetCardTitle}>{preset.title}</span>
+        <span className={styles.presetCardTagline}>{preset.tagline}</span>
+        <span className={styles.presetCardMeta}>
+          <span>{preset.players}</span>
+          <span className={styles.presetCardMetaDot}>·</span>
+          <span>{preset.duration}</span>
+          <span className={styles.presetCardMetaDot}>·</span>
+          <span>{preset.needsDeck ? 'Bring a deck' : 'No deck needed'}</span>
+        </span>
+        <span className={styles.presetCardAxes}>{axisSummary(preset.defaults)}</span>
+      </button>
     </div>
   )
 }
@@ -640,31 +716,6 @@ function formatTournamentFormat(format: PublicTournamentSummary['format']): stri
     case 'PREMADE_DECKS':
       return 'Premade Decks'
   }
-}
-
-/**
- * Mode toggle button.
- */
-function ModeButton({
-  label,
-  active,
-  onClick,
-  title,
-}: {
-  label: string
-  active: boolean
-  onClick: () => void
-  title?: string
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className={`${styles.modeButton} ${active ? styles.modeButtonActive : ''}`}
-    >
-      {label}
-    </button>
-  )
 }
 
 /**

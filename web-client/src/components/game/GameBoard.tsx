@@ -27,6 +27,7 @@ import { Battlefield, CardRow, CommandZone, OpponentBoardArea, CollapsedBoardTab
 import { RenderProfiler } from '@/utils/renderProfiler'
 import { CardPreview } from './card'
 import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, ConcedeButton, FullscreenButton, SpectatorCountBadge } from './overlay'
+import { HelpDrawer, HelpDrawerButton } from '../help/HelpDrawer'
 import { styles } from './board/styles'
 
 /**
@@ -1446,6 +1447,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
              serverPriorityMode === 'stops' ? 'Stops' :
              'Auto'}
           </button>
+          {/* The in-game help entry. Opens a drawer rather than navigating — leaving `/` would
+              unmount the app and drop the WebSocket. */}
+          <HelpDrawerButton />
         </div>
       )}
 
@@ -2003,6 +2007,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         </div>
       )}
     </div>
+    <HelpDrawer />
     </ResponsiveContext.Provider>
     </RenderProfiler>
   )
