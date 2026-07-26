@@ -16,6 +16,7 @@ import { teamColor, type SeatColor } from '@/styles/seatColors'
 import type { ClientCard, ClientPlayer, EntityId } from '@/types'
 import { useResponsiveContext } from './board/shared'
 import { SpeedGauge } from './overlay'
+import { HelpTip } from '../help/HelpTip'
 
 /**
  * Total viewport width claimed by the fixed rail column (chip width + left offset + a
@@ -285,6 +286,9 @@ export function OpponentRail({
               {followAction ? 'On' : 'Off'}
             </span>
           </button>
+          <span style={{ alignSelf: 'flex-start', pointerEvents: 'auto', paddingLeft: 2 }}>
+            <HelpTip topicId="multiplayer-camera" label="How the multiplayer camera works" size="sm" />
+          </span>
         </>
       )}
     </div>

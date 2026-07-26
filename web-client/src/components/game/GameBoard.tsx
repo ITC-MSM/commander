@@ -27,6 +27,7 @@ import { Battlefield, CardRow, CommandZone, OpponentBoardArea, CollapsedBoardTab
 import { RenderProfiler } from '@/utils/renderProfiler'
 import { CardPreview } from './card'
 import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, ConcedeButton, FullscreenButton, SpectatorCountBadge } from './overlay'
+import { HelpDrawer, HelpDrawerButton } from '../help/HelpDrawer'
 import { styles } from './board/styles'
 
 /**
@@ -422,36 +423,6 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     return ids
   }, [expandedStripIds, eliminatedBottomSeat, bottomStripActive, bottomRowOrdered, bottomCollapsedIds])
 
-  if (!gameState || (!spectatorMode && (!playerId || !viewingPlayer))) {
-    return null
-  }
-
-  // In spectator mode: disable all interaction. In hotseat the single connection controls
-  // whichever seat holds priority, so it can always act on a live priority window.
-  const hasPriority = spectatorMode
-    ? false
-    : hotseat
-      ? gameState.priorityPlayerId != null
-      : (gameState.priorityPlayerId === viewingPlayer?.playerId ||
-        // Mindslaver-style hijack: this client drives the controlled opponent, so it holds
-        // priority whenever that opponent does (enables Pass, casting, ability activation).
-        (youAreHijacking != null && gameState.priorityPlayerId === youAreHijacking))
-  const canAct = hasPriority && !opponentDecisionStatus
-  const isMyTurn = spectatorMode
-    ? false
-    : (gameState.activePlayerId === viewingPlayer?.playerId ||
-      // During a hijack of the opponent's turn, treat it as "my turn" so the active-player
-      // controls (combat declaration, sorcery-speed plays) light up for the driving client.
-      (youAreHijacking != null && gameState.activePlayerId === youAreHijacking))
-  const isInCombatMode = spectatorMode ? false : (combatState !== null)
-  const isInDistributeMode = !spectatorMode && distributeState !== null
-  const distributeTotalAllocated = distributeState
-    ? Object.values(distributeState.distribution).reduce((sum, v) => sum + v, 0)
-    : 0
-  const distributeRemaining = distributeState ? distributeState.totalAmount - distributeTotalAllocated : 0
-  const isInCounterDistMode = !spectatorMode && counterDistributionState !== null
-  const isInManaSelectionMode = !spectatorMode && manaSelectionState !== null
-
   // Compute mana selection progress using most-constrained-first matching
   const manaProgress = useMemo(() => {
     if (!manaSelectionState) return null
@@ -579,6 +550,42 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
 
     return { satisfied, total, entries, colorSatisfied }
   }, [manaSelectionState, viewingPlayer?.manaPool])
+
+  // ⚠ Every hook must sit ABOVE this line. This is the component's only early return, and it fires
+  // whenever the store has no game state yet — which is exactly how a replay or spectator surface
+  // mounts the board, before frame 0 lands. A hook below here would run on the second render and
+  // not the first, and React aborts the tree with "Rendered more hooks than during the previous
+  // render". `manaProgress` used to be below it, and `ReplayPlayer` only avoided the crash by
+  // gating the mount; the guard belongs here so the next caller doesn't have to know that.
+  if (!gameState || (!spectatorMode && (!playerId || !viewingPlayer))) {
+    return null
+  }
+
+  // In spectator mode: disable all interaction. In hotseat the single connection controls
+  // whichever seat holds priority, so it can always act on a live priority window.
+  const hasPriority = spectatorMode
+    ? false
+    : hotseat
+      ? gameState.priorityPlayerId != null
+      : (gameState.priorityPlayerId === viewingPlayer?.playerId ||
+        // Mindslaver-style hijack: this client drives the controlled opponent, so it holds
+        // priority whenever that opponent does (enables Pass, casting, ability activation).
+        (youAreHijacking != null && gameState.priorityPlayerId === youAreHijacking))
+  const canAct = hasPriority && !opponentDecisionStatus
+  const isMyTurn = spectatorMode
+    ? false
+    : (gameState.activePlayerId === viewingPlayer?.playerId ||
+      // During a hijack of the opponent's turn, treat it as "my turn" so the active-player
+      // controls (combat declaration, sorcery-speed plays) light up for the driving client.
+      (youAreHijacking != null && gameState.activePlayerId === youAreHijacking))
+  const isInCombatMode = spectatorMode ? false : (combatState !== null)
+  const isInDistributeMode = !spectatorMode && distributeState !== null
+  const distributeTotalAllocated = distributeState
+    ? Object.values(distributeState.distribution).reduce((sum, v) => sum + v, 0)
+    : 0
+  const distributeRemaining = distributeState ? distributeState.totalAmount - distributeTotalAllocated : 0
+  const isInCounterDistMode = !spectatorMode && counterDistributionState !== null
+  const isInManaSelectionMode = !spectatorMode && manaSelectionState !== null
 
   // Attack restriction ("can only attack left/right", 2HG, …): during declare-attackers,
   // some living non-ally opponent is not a legal attack target. Drives the explainer
@@ -1446,6 +1453,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
              serverPriorityMode === 'stops' ? 'Stops' :
              'Auto'}
           </button>
+          {/* The in-game help entry. Opens a drawer rather than navigating — leaving `/` would
+              unmount the app and drop the WebSocket. */}
+          <HelpDrawerButton />
         </div>
       )}
 
@@ -2003,6 +2013,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         </div>
       )}
     </div>
+    <HelpDrawer />
     </ResponsiveContext.Provider>
     </RenderProfiler>
   )
