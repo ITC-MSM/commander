@@ -35,7 +35,6 @@
  */
 import type { LobbyGameMode, TournamentFormat } from '@/types'
 import {
-  COMMANDER_LIMITED_HAS_NO_AI,
   COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
   cardsKindLabel,
   cardsLabel,
@@ -227,73 +226,6 @@ export function cardsChoices(roster: Roster): Choice<CardsKind>[] {
     ...(roster === 'GROUP' && kind === 'RANDOM' ? { disabledReason: RANDOM_IS_A_1V1_SINGLE_GAME } : {}),
     ...(roster === 'GROUP' && kind === 'MOMIR' ? { disabledReason: MOMIR_IS_A_1V1_SINGLE_GAME } : {}),
   }))
-}
-
-/**
- * The Cards sub-shape row under a selected Sealed or Draft, or null for the three values that have
- * none. Seat caps come from {@link cardsSeatCap}, so a shape that cannot fit the roster is disabled
- * here rather than silently capping the seat control two steps later.
- */
-export function subShapeChoices(roster: Roster, kind: CardsKind): Choice<CardsAxis>[] | null {
-  const options: CardsAxis[] =
-    kind === 'SEALED'
-      ? [{ kind: 'SEALED', shape: 'STANDARD' }, { kind: 'SEALED', shape: 'COMMANDER' }]
-      : kind === 'DRAFT'
-        ? [
-            { kind: 'DRAFT', shape: 'BOOSTER' },
-            { kind: 'DRAFT', shape: 'WINSTON' },
-            { kind: 'DRAFT', shape: 'GRID' },
-            { kind: 'DRAFT', shape: 'COMMANDER' },
-          ]
-        : []
-  if (options.length === 0) return null
-
-  return options.map((cards) => {
-    const cap = cardsSeatCap(cards)
-    // A group is three at minimum, so a two- or (for Grid) four-seat shape may not fit it. Solo pods
-    // and 1v1 always fit, since their seat control is bounded by the cap instead.
-    const tooSmall = roster === 'GROUP' && cap < 3
-    // The AI can't build a Commander deck, so a solo pod can't play these at all.
-    const noAi = roster === 'SOLO' && isCommanderLimited(cards)
-    const disabledReason = noAi
-      ? COMMANDER_LIMITED_HAS_NO_AI
-      : tooSmall
-        ? `${subShapeLabel(cards)} is ${cap === 2 ? 'exactly two players' : `at most ${cap} players`}.`
-        : null
-    return {
-      value: cards,
-      label: subShapeLabel(cards),
-      caption: subShapeCaption(cards),
-      topicId: kind === 'SEALED' ? 'cards-sealed' : 'cards-draft',
-      ...(disabledReason ? { disabledReason } : {}),
-    }
-  })
-}
-
-function subShapeLabel(cards: CardsAxis): string {
-  if (cards.kind === 'SEALED') return cards.shape === 'COMMANDER' ? 'Commander Sealed' : 'Standard'
-  if (cards.kind !== 'DRAFT') return cardsKindLabel(cards.kind)
-  switch (cards.shape) {
-    case 'BOOSTER': return 'Booster'
-    case 'WINSTON': return 'Winston'
-    case 'GRID': return 'Grid'
-    case 'COMMANDER': return 'Commander'
-  }
-}
-
-function subShapeCaption(cards: CardsAxis): string {
-  if (cards.kind === 'SEALED') {
-    return cards.shape === 'COMMANDER'
-      ? 'Commander-shaped packs; build a 60-card deck around a commander from your pool. Up to 8 in the pool; every match is 1v1.'
-      : 'Open 6 boosters and build a 40-card deck.'
-  }
-  if (cards.kind !== 'DRAFT') return ''
-  switch (cards.shape) {
-    case 'BOOSTER': return 'Pass packs around the table. Up to 8 drafters.'
-    case 'WINSTON': return 'Pick from 3 face-down piles. Exactly 2 drafters.'
-    case 'GRID': return 'Pick a row or column from a 3×3 grid. Up to 4 drafters.'
-    case 'COMMANDER': return 'Commander-shaped 20-card packs; pick a commander from your pool. Up to 8 drafters; every match is 1v1.'
-  }
 }
 
 /** The default sub-shape when a Cards value is first selected. */

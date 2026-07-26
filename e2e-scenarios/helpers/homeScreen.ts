@@ -10,7 +10,11 @@ import { expect, type Page } from '@playwright/test'
  *
  * The wizard asks three questions (`components/ui/PlayWizard.tsx`): who is playing, what with, and
  * how it is played. A step whose options collapse to one answer is skipped, so `createLobby` only
- * clicks the shape tile when it is actually rendered.
+ * clicks the shape tile when it is actually rendered. There is no sub-shape step — which sealed or
+ * draft shape it is is a lobby sub-option, set on the lobby's own `Sealed shape` / `Draft shape` row.
+ *
+ * Each answer is also a URL segment (`components/ui/wizardUrl.ts`), so a spec that wants a specific
+ * selection without clicking can `page.goto('/play/group/draft/bracket')` instead.
  */
 
 export type Roster = 'solo' | 'friend' | 'group'
@@ -23,8 +27,6 @@ export const JOIN_PLACEHOLDER = 'Been invited? Paste the code here'
 export interface WizardChoice {
   roster: Roster
   cards: Cards
-  /** Sealed / Draft only — e.g. `draft-booster`, `sealed-standard`. */
-  subShape?: string
   shape?: Shape
   /** Seat count, when the shape offers a choice. */
   seats?: number
@@ -47,10 +49,6 @@ export async function enterName(page: Page, name: string): Promise<void> {
 export async function createLobby(page: Page, choice: WizardChoice): Promise<string> {
   await page.getByTestId(`wizard-roster-${choice.roster}`).click()
   await page.getByTestId(`wizard-cards-${choice.cards}`).click()
-
-  if (choice.subShape) {
-    await page.getByTestId(`wizard-subshape-${choice.subShape}`).click()
-  }
 
   // Step 3 is only rendered when there is more than one reachable shape.
   if (choice.shape) {
@@ -80,7 +78,6 @@ export async function joinLobby(page: Page, lobbyId: string): Promise<void> {
 export const GROUP_SEALED: WizardChoice = {
   roster: 'group',
   cards: 'sealed',
-  subShape: 'sealed-standard',
   shape: 'bracket',
 }
 
@@ -88,6 +85,5 @@ export const GROUP_SEALED: WizardChoice = {
 export const GROUP_DRAFT: WizardChoice = {
   roster: 'group',
   cards: 'draft',
-  subShape: 'draft-booster',
   shape: 'bracket',
 }

@@ -30,7 +30,7 @@
  *
  * Everything selectable comes from `lobby/modeMatrix.ts`; this file only renders it.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { HelpTip } from '@/components/help/HelpTip'
 import {
@@ -45,14 +45,13 @@ import {
   selectionSummary,
   shapeChoices,
   shapeLabel,
-  subShapeChoices,
   type Choice,
   type LaunchSpec,
   type Roster,
   type Selection,
   type ShapeId,
 } from '../lobby/modeMatrix'
-import { cardsLabel, type CardsAxis, type CardsKind } from '../lobby/axes'
+import { cardsLabel, type CardsAxis } from '../lobby/axes'
 import {
   EMPTY_DRAFT as EMPTY,
   WIZARD_PREFIX,
@@ -151,7 +150,16 @@ export function PlayWizard({
   /** Answer step 1. Cards and shape are re-asked, since both depend on the roster. */
   const pickRoster = (roster: Roster) => setDraft({ ...EMPTY, roster })
 
-  /** Answer step 2. Skips step 3 when the roster and Cards value leave only one shape. */
+  /**
+   * Answer step 2. Skips step 3 when the roster and Cards value leave only one shape.
+   *
+   * The answer is a Cards *kind* at its default shape. Which sealed or draft shape it is stays a
+   * lobby sub-option, in the same category as deck legality: it hangs off the Cards axis rather than
+   * being one of the three questions, the lobby already owns a row for it (`LobbyAxes`), and asking
+   * "Booster, Winston, Grid or Commander?" before someone has said who they are playing with is a
+   * question only a drafter can have an opinion about. It also keeps one segment per answer in the
+   * URL, which is what `wizardUrl` is built on.
+   */
   const pickCards = (cards: CardsAxis) => {
     const roster = draft.roster
     if (roster === null) return
@@ -233,7 +241,16 @@ export function PlayWizard({
       )}
 
       {step === 'cards' && draft.roster !== null && (
-        <CardsStep roster={draft.roster} onPick={pickCards} />
+        <OptionGrid
+          choices={cardsChoices(draft.roster)}
+          selected={null}
+          testIdPrefix="wizard-cards"
+          testId={(k) => k.toLowerCase().replace(/_/g, '-')}
+          // Sealed and Draft commit on their *kind* and open at the default shape. Which sealed or
+          // draft shape it is stays a lobby sub-option, alongside deck legality — see the note above
+          // `pickCards`.
+          onPick={(kind) => pickCards(defaultCardsAxis(kind))}
+        />
       )}
 
       {step === 'shape' && draft.roster !== null && draft.cards !== null && (
@@ -393,67 +410,6 @@ function WizardStepper({
       ))}
     </div>
   )
-}
-
-/**
- * Step 2, plus the sub-shape row Sealed and Draft need.
- *
- * The sub-shape is a second click rather than eight top-level tiles, because "Winston or Grid" is a
- * question only someone who has already chosen to draft can have an opinion about — and its seat
- * limits are what bound step 3.
- */
-function CardsStep({ roster, onPick }: { roster: Roster; onPick: (cards: CardsAxis) => void }) {
-  const [expanded, setExpanded] = useState<CardsKind | null>(null)
-  const subChoices = expanded === null ? null : subShapeChoices(roster, expanded)
-
-  return (
-    <>
-      <OptionGrid
-        choices={cardsChoices(roster)}
-        selected={expanded}
-        testIdPrefix="wizard-cards"
-        testId={(k) => k.toLowerCase().replace(/_/g, '-')}
-        onPick={(kind) => {
-          const subs = subShapeChoices(roster, kind)
-          if (subs === null) {
-            onPick(defaultCardsAxis(kind))
-            return
-          }
-          // Sealed and Draft open their sub-shape row instead of committing.
-          setExpanded(kind)
-        }}
-      />
-      {subChoices !== null && (
-        <div className={styles.wizardSubRow}>
-          <span className={styles.wizardSubLabel}>
-            {expanded === 'SEALED' ? 'Sealed shape' : 'Draft shape'}
-          </span>
-          <div className={styles.settingsButtons}>
-            {subChoices.map((choice) => (
-              <button
-                key={subShapeKey(choice.value)}
-                type="button"
-                disabled={!!choice.disabledReason}
-                className={styles.settingsButton}
-                title={choice.disabledReason ?? choice.caption}
-                data-testid={`wizard-subshape-${subShapeKey(choice.value)}`}
-                onClick={() => onPick(choice.value)}
-              >
-                {choice.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-function subShapeKey(cards: CardsAxis): string {
-  if (cards.kind === 'SEALED' || cards.kind === 'DRAFT') {
-    return `${cards.kind}-${cards.shape}`.toLowerCase()
-  }
-  return cards.kind.toLowerCase()
 }
 
 /**

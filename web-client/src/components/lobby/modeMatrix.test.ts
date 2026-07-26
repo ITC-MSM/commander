@@ -16,7 +16,6 @@ import {
   CARDS_KINDS,
   axesFromLobbySettings,
   axesFromQuickGameLobby,
-  type CardsAxis,
 } from './axes'
 import {
   cardsChoices,
@@ -27,23 +26,24 @@ import {
   seatRule,
   shapeAxes,
   shapeChoices,
-  subShapeChoices,
   ROSTERS,
   type Roster,
   type Selection,
 } from './modeMatrix'
 
-/** Every selection the wizard can reach: roster × enabled cards (incl. sub-shapes) × open shapes. */
+/**
+ * Every selection the wizard can reach: roster × enabled Cards kind × open shapes × seat counts.
+ *
+ * Cards is a *kind* at its default sub-shape, because that is all the wizard commits to — which sealed
+ * or draft shape it is stays a lobby sub-option, alongside deck legality. The lobby's own reachability
+ * for the non-default shapes lives in `axisChoices`/`LobbyAxes.shapeBlock`, not here.
+ */
 function everySelection(): Selection[] {
   const out: Selection[] = []
   for (const roster of ROSTERS) {
     for (const cardsChoice of cardsChoices(roster)) {
       if (cardsChoice.disabledReason) continue
-      const subs = subShapeChoices(roster, cardsChoice.value)
-      const cardsOptions: CardsAxis[] = subs === null
-        ? [defaultCardsAxis(cardsChoice.value)]
-        : subs.filter((s) => !s.disabledReason).map((s) => s.value)
-      for (const cards of cardsOptions) {
+      for (const cards of [defaultCardsAxis(cardsChoice.value)]) {
         for (const shapeChoice of shapeChoices(roster, cards)) {
           if (shapeChoice.disabledReason) continue
           const rule = seatRule(roster, cards, shapeChoice.value)

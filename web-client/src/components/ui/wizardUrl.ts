@@ -9,11 +9,11 @@
  * present, exactly as `PlayWizard` already derives it from its draft — so there is still one source
  * of truth, and `history.back()` is by construction "drop the last answer".
  *
- *     /                                         who with?
- *     /play/group                               what with?
- *     /play/group/draft-booster                 how?
- *     /play/group/draft-booster/bracket         ready
- *     /play/group/draft-booster/bracket?seats=4 ready, narrowed
+ *     /                                  who with?
+ *     /play/group                        what with?
+ *     /play/group/draft                  how?
+ *     /play/group/draft/bracket          ready
+ *     /play/group/draft/bracket?seats=4  ready, narrowed
  *
  * Two consequences worth naming:
  *
@@ -37,13 +37,12 @@ import {
   defaultSeats,
   seatRule,
   shapeChoices,
-  subShapeChoices,
   cardsChoices,
   defaultCardsAxis,
   type Roster,
   type ShapeId,
 } from '../lobby/modeMatrix'
-import { CARDS_KINDS, type CardsAxis } from '../lobby/axes'
+import { CARDS_KINDS, type CardsAxis, type CardsKind } from '../lobby/axes'
 
 /** Where the wizard's URLs live. Everything under it is answers. */
 export const WIZARD_PREFIX = '/play'
@@ -83,18 +82,18 @@ function shapeSlug(shape: ShapeId): string {
 }
 
 /**
- * A Cards value, including its sub-shape when it has one.
- *
- * `BRING_A_DECK`'s `legality` is deliberately *not* encoded: the wizard never sets it (it is a lobby
- * sub-option), so putting it in the path would invent a distinction the wizard cannot make.
+ * A Cards *kind*. Sub-options are deliberately not encoded — neither `BRING_A_DECK`'s `legality` nor
+ * the sealed/draft shape, because the wizard sets neither: both hang off the Cards axis and are picked
+ * in the lobby. Putting them in the path would invent an answer nobody gave, and the whole scheme
+ * rests on one segment per answer.
  */
-function cardsSlug(cards: CardsAxis): string {
-  switch (cards.kind) {
+function cardsSlug(kind: CardsKind): string {
+  switch (kind) {
     case 'BRING_A_DECK': return 'bring-a-deck'
     case 'RANDOM': return 'random'
     case 'MOMIR': return 'momir'
-    case 'SEALED': return cards.shape === 'COMMANDER' ? 'sealed-commander' : 'sealed-standard'
-    case 'DRAFT': return `draft-${cards.shape.toLowerCase()}`
+    case 'SEALED': return 'sealed'
+    case 'DRAFT': return 'draft'
   }
 }
 
@@ -102,7 +101,7 @@ function cardsSlug(cards: CardsAxis): string {
 export function draftToPath(draft: WizardDraft): string {
   if (draft.roster === null) return '/'
   const parts = [WIZARD_PREFIX, rosterSlug(draft.roster)]
-  if (draft.cards !== null) parts.push(cardsSlug(draft.cards))
+  if (draft.cards !== null) parts.push(cardsSlug(draft.cards.kind))
   if (draft.cards !== null && draft.shape !== null) parts.push(shapeSlug(draft.shape))
   const path = parts.join('/')
 
@@ -150,25 +149,11 @@ export function pathToDraft(pathname: string, search: string, aiEnabled: boolean
   return { roster, cards, shape, seats }
 }
 
-/** A Cards slug, checked against what this roster can actually pick. */
+/** A Cards slug, checked against what this roster can actually pick, at its default sub-shape. */
 function decodeCards(roster: Roster, slug: string | undefined): CardsAxis | null {
   if (!slug) return null
-
-  const kind = CARDS_KINDS.find((k) => {
-    const subs = subShapeChoices(roster, k)
-    return subs === null
-      ? cardsSlug(defaultCardsAxis(k)) === slug
-      : subs.some((c) => cardsSlug(c.value) === slug)
-  })
+  const kind = CARDS_KINDS.find((k) => cardsSlug(k) === slug)
   if (kind === undefined) return null
   if (cardsChoices(roster).some((c) => c.value === kind && c.disabledReason)) return null
-
-  const subs = subShapeChoices(roster, kind)
-  if (subs === null) return defaultCardsAxis(kind)
-
-  const sub = subs.find((c) => cardsSlug(c.value) === slug)
-  // A sub-shape blocked for this roster (Winston at a group is exactly two players) truncates, so the
-  // player sees the reason on the sub-shape row instead of a lobby that quietly ignored the request.
-  if (sub === undefined || sub.disabledReason) return null
-  return sub.value
+  return defaultCardsAxis(kind)
 }

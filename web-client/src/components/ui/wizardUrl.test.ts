@@ -12,22 +12,22 @@ import {
   defaultSeats,
   seatRule,
   shapeChoices,
-  subShapeChoices,
   type Roster,
   type ShapeId,
 } from '../lobby/modeMatrix'
 import type { CardsAxis } from '../lobby/axes'
 import { EMPTY_DRAFT, draftToPath, pathToDraft, type WizardDraft } from './wizardUrl'
 
-/** Every (roster, cards) the wizard actually offers, sub-shapes expanded. */
+/**
+ * Every (roster, cards) the wizard actually offers.
+ *
+ * A Cards answer is a *kind* at its default sub-shape — the sealed/draft shape is a lobby sub-option,
+ * so it is deliberately not in the URL and not in this walk.
+ */
 function offeredCards(roster: Roster): CardsAxis[] {
   return cardsChoices(roster)
     .filter((c) => !c.disabledReason)
-    .flatMap((c) => {
-      const subs = subShapeChoices(roster, c.value)
-      if (subs === null) return [defaultCardsAxis(c.value)]
-      return subs.filter((s) => !s.disabledReason).map((s) => s.value)
-    })
+    .map((c) => defaultCardsAxis(c.value))
 }
 
 /** Every complete selection reachable through the wizard. */
@@ -139,14 +139,19 @@ describe('wizard URL decoding is defensive', () => {
     }
   })
 
-  it('truncates to the roster when a sub-shape is unreachable for it', () => {
-    // Winston is exactly two players, so a group cannot have it.
+  it('does not encode the sealed or draft sub-shape', () => {
+    // It is a lobby sub-option, like deck legality — the wizard commits to the kind at its default.
+    expect(draftToPath({ roster: 'GROUP', cards: { kind: 'DRAFT', shape: 'WINSTON' }, shape: 'BRACKET', seats: null }))
+      .toBe('/play/group/draft/bracket')
+    expect(pathToDraft('/play/group/draft', '', true).cards).toEqual({ kind: 'DRAFT', shape: 'BOOSTER' })
+    expect(pathToDraft('/play/friend/sealed', '', true).cards).toEqual({ kind: 'SEALED', shape: 'STANDARD' })
+    // A slug that spells one out is simply not a Cards value, so it truncates to the roster.
     expect(pathToDraft('/play/group/draft-winston', '', true))
       .toEqual({ ...EMPTY_DRAFT, roster: 'GROUP' })
   })
 
   it('drops an unknown or unreachable shape but keeps the answers before it', () => {
-    const back = pathToDraft('/play/group/draft-booster/not-a-shape', '', true)
+    const back = pathToDraft('/play/group/draft/not-a-shape', '', true)
     expect(back.roster).toBe('GROUP')
     expect(back.cards).toEqual({ kind: 'DRAFT', shape: 'BOOSTER' })
     expect(back.shape).toBeNull()
@@ -160,13 +165,13 @@ describe('wizard URL decoding is defensive', () => {
 
   it('falls back to the default seat count for a nonsense one', () => {
     for (const seats of ['0', '99', 'abc', '']) {
-      const back = pathToDraft('/play/group/draft-booster/bracket', `?seats=${seats}`, true)
+      const back = pathToDraft('/play/group/draft/bracket', `?seats=${seats}`, true)
       expect(back.seats, seats).toBe(defaultSeats(seatRule('GROUP', { kind: 'DRAFT', shape: 'BOOSTER' }, 'BRACKET')))
     }
   })
 
   it('honours a seat count the rule allows', () => {
-    const back = pathToDraft('/play/group/draft-booster/bracket', '?seats=4', true)
+    const back = pathToDraft('/play/group/draft/bracket', '?seats=4', true)
     expect(back.seats).toBe(4)
   })
 
