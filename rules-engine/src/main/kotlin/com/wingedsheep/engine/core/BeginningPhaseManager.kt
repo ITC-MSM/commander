@@ -478,6 +478,7 @@ class BeginningPhaseManager(
         StatePredicate.HasLeastPowerAmongAllCreatures,
         StatePredicate.HasLeastPower,
         StatePredicate.IsEquipped,
+        StatePredicate.IsEnchanted,
         StatePredicate.IsModified,
         StatePredicate.IsSaddled,
         StatePredicate.HasLockedDoor,

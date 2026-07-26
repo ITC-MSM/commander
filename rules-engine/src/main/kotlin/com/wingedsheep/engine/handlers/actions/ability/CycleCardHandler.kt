@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.actions.ability
 
 import com.wingedsheep.engine.core.CardCycledEvent
+import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.CycleCard
 import com.wingedsheep.engine.core.CycleDrawContinuation
 import com.wingedsheep.engine.core.ExecutionResult
@@ -190,6 +191,19 @@ class CycleCardHandler(
         val graveyardZone = ZoneKey(ownerId, Zone.GRAVEYARD)
         currentState = currentState.removeFromZone(handZone, action.cardId)
         currentState = currentState.addToZone(graveyardZone, action.cardId)
+
+        // The card is discarded to pay the cycling cost (CR 702.29a: "Cycling [cost]" means
+        // "[Cost], Discard this card: Draw a card."), so "whenever you discard" payoffs see it —
+        // Magmakin Artillerist. Emitted alongside the zone change, before CardCycledEvent, so a
+        // card that triggers on both (CR 702.29d) sees them in the order they happened.
+        events.add(
+            CardsDiscardedEvent(
+                playerId = action.playerId,
+                cardIds = listOf(action.cardId),
+                cardNames = listOf(cardComponent.name),
+                asCyclingCost = true,
+            )
+        )
 
         events.add(
             ZoneChangeEvent(

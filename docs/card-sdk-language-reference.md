@@ -1869,6 +1869,12 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   so the count is readable downstream as `DynamicAmount.VariableReference("${storeAs}_count")` — e.g.
   Miasma Demon wires this as the `ReflexiveTriggerEffect` action and reads `discarded_count` as the
   reflexive targets' `dynamicMaxCount` ("up to that many target creatures").
+- `discardUpToThenDraw(max, draw?, storeAs?, prompt?)` — "discard up to N cards, then draw that many
+  cards" (Tersa Lightshatter, Sokka, Bold Boomeranger, Greasewrench Goblin). Loot backwards: the
+  selection is `SelectionMode.ChooseUpTo(max)` so declining entirely is legal and then nothing is drawn,
+  and the draw defaults to `DynamicAmount.VariableReference("${storeAs}_count")` — the number *actually*
+  discarded, not `max`. `max` takes an `Int` or a `DynamicAmount` ("discard up to X cards"); pass `draw`
+  to decouple the payoff from the discard ("discard up to two cards, then draw three").
 - `discardRandom(count, target)` — random discards.
 - `discardHand(target)` — discard entire hand.
 - `eachOpponentDiscards(count, controllerDrawsPerDiscard?)` — Mind Twist-style.
@@ -2880,6 +2886,18 @@ work for abilities-on-stack (which carry no `CardComponent`).
   your Ring-bearer" use the existing `Conditions.SourceIsRingBearer`.
 - `IsFaceDown` — currently face-down.
 - `HasCounter(type)` — has at least one counter of `type`.
+- `IsEquipped` (filter builder `equipped()`) — has at least one Equipment attached.
+- `IsEnchanted` (filter builder `enchanted()`) — has at least one **Aura** attached, i.e. the MTG
+  adjective "enchanted" (CR 303.4). The Aura mirror of `IsEquipped`, and strictly narrower than
+  `SourceIsModified` / `IsModified`: Equipment attached or counters on the permanent do *not* make it
+  enchanted. Control of the Aura is irrelevant — an opponent's Aura still enchants your creature — so
+  "enchanted creatures you control" is two predicates that bind to different objects:
+  `GameObjectFilter.Creature.youControl().enchanted()` (A Tale for the Ages' +2/+2 anthem, Lord
+  Skitter's Blessing's `Conditions.YouControlAtLeast(1, …)` draw-step gate). Role tokens are Auras
+  (CR 113.2c), which makes this the Wilds of Eldraine Roles payoff predicate. Resolves in both
+  `PredicateEvaluator` (targets/conditions) and `AffectsFilterResolver` (layer-7c group projection).
+- `IsModified` — has an Equipment attached, an Aura attached, **or** any counter (the MTG "modified"
+  definition). For the source-relative form use `Conditions.SourceIsModified`.
 - `AttachedToCardType(cardType)` — Aura/Equipment whose `AttachedToComponent` points to a
   permanent that currently has the given top-level [`CardType`] in its **projected** type
   set. Used by filters like "Aura attached to a land" (Pyramids) or "Equipment attached
@@ -3313,6 +3331,8 @@ single "it" for "one or more cards".
   (CR 603.2c): fires once per discard event no matter how many cards it contained
   (Inti, Seneschal of the Sun). Sequential discards in the same resolution ("discard a
   card, then discard a card") are separate `CardsDiscardedEvent`s and fire separately.
+  Read the batch size ("that much" / "that many") via
+  `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DISCARD_COUNT)` — Magmakin Artillerist.
 
 **Factory** — `discards(player?, cardFilter?, batch?)` — generic shape. `player = Player.Each`
 matches any player; `cardFilter` narrows the fan-out to matching cards, so a batch that
@@ -6598,6 +6618,11 @@ Army just amassed by a sibling/action effect, or any cost-chosen entity. The plu
   - `TRIGGER_SCRY_COUNT` — cards looked at by the scry **or surveil** that fired the trigger
     (Celeborn the Wise, Elrond Master of Healing). Equals the scry/surveil N parameter unless the
     library held fewer cards.
+  - `TRIGGER_DISCARD_COUNT` — cards discarded in the batch that fired the trigger (CR 603.2c) —
+    Magmakin Artillerist's "whenever you discard one or more cards, this creature deals **that much**
+    damage to each opponent." Populated from `CardsDiscardedEvent.cardIds.size`, so one event of
+    three cards reports `3` while three sequential single discards fire three triggers reporting `1`.
+    Pair with `Triggers.YouDiscardOneOrMore`; `0` for non-discard triggers.
   - `TRIGGER_DISCOVER_VALUE` — the discover value N (mana-value threshold) of the discover that
     fired the trigger (CR 701.57) — Curator of Sun's Creation's "discover again for the same value."
     Pair with `Triggers.WheneverYouDiscover`; `0` for non-discover triggers.
