@@ -34,6 +34,7 @@ class LegalActionEnumerator(
         MorphCastEnumerator(),
         CastSpellEnumerator(),
         SneakCastEnumerator(),
+        WebSlingingCastEnumerator(),
         CyclingEnumerator(),
         PlotEnumerator(),
         ForetellEnumerator(),

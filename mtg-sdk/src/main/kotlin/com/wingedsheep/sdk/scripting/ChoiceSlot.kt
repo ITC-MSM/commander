@@ -68,6 +68,26 @@ enum class ChoiceSlot {
      */
     SNEAK,
 
+    /**
+     * Whether the spell's web-slinging cost was paid when cast (CR 702.188, Marvel's Spider-Man —
+     * e.g. Spiders-Man, Heroic Horde). A present value means "cast for its web-slinging cost". Read
+     * back through [com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid]. Pairs with
+     * [WEB_SLUNG_RETURNED_MV], which carries the returned creature's mana value. Deliberately
+     * distinct from [SNEAK] even though both are "alt cost + return a creature you control": CR
+     * 702.188 links a card's "if it was cast using web-slinging" abilities to its own web-slinging
+     * ability, so a web-slung spell must not read as sneaked to unrelated payoffs.
+     */
+    WEB_SLUNG,
+
+    /**
+     * The mana value of the creature returned to pay a web-slinging cost (CR 702.188 / 118.9c —
+     * the returned creature's own mana value, not the spell's). Stored as a
+     * [com.wingedsheep.engine.state.components.battlefield.ChoiceValue.NumberChoice] and read back
+     * through [com.wingedsheep.sdk.scripting.values.DynamicAmount.CastChoice] — e.g. Scarlet Spider,
+     * Ben Reilly enters with this many +1/+1 counters. Present only when [WEB_SLUNG] is.
+     */
+    WEB_SLUNG_RETURNED_MV,
+
     /** The X declared for a `blight X` additional cost when cast (e.g. Soul Immolation). */
     BLIGHT_AMOUNT,
 

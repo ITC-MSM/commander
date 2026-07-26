@@ -211,6 +211,12 @@ enum class AlternativeCostType {
      * ([CastSpell.additionalCostPayment] `bouncedPermanents`).
      */
     SNEAK,
+    /**
+     * Web-slinging ([com.wingedsheep.sdk.scripting.KeywordAbility.WebSlinging], CR 702.188) — hand,
+     * at the spell's normal timing. Pays the web-slinging mana plus returns a tapped creature you
+     * control to its owner's hand ([CastSpell.additionalCostPayment] `bouncedPermanents`).
+     */
+    WEB_SLINGING,
     /** Impending ([com.wingedsheep.sdk.scripting.KeywordAbility.Impending]) — hand. */
     IMPENDING,
     /**

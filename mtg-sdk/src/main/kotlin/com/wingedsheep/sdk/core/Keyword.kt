@@ -158,6 +158,24 @@ enum class Keyword(val displayName: String) {
     NINJUTSU("Ninjutsu"),
 
     /**
+     * Web-slinging [cost] (CR 702.188, Marvel's Spider-Man).
+     * "You may cast this spell by paying [cost] and returning a tapped creature you control to
+     * its owner's hand rather than paying its mana cost." (CR 702.188a)
+     *
+     * Modelled as a hand-timed alternative cost ([KeywordAbility.WebSlinging]) bundling a
+     * return-a-tapped-creature additional cost — casting follows the alternative-cost rules
+     * (CR 601.2b / 601.2f–h). Unlike [SNEAK]/[NINJUTSU] it grants no timing permission: the spell
+     * is web-slung at its normal timing (sorcery speed for creatures, instant speed for
+     * Spider-Sense). The "cast using web-slinging" fact rides the resulting permanent durably
+     * ([com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG], read via
+     * [com.wingedsheep.sdk.dsl.Conditions.WebSlungCostWasPaid]) alongside the returned creature's
+     * mana value ([com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG_RETURNED_MV], read via
+     * [com.wingedsheep.sdk.scripting.values.DynamicAmount.CastChoice]). Wired by the
+     * `webSlinging(cost)` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+     */
+    WEB_SLINGING("Web-slinging"),
+
+    /**
      * Impending N—[cost] (CR 702.175, Duskmourn: House of Horror).
      * "If you cast this spell for its impending cost, it enters with N time counters
      * and isn't a creature until the last is removed. At the beginning of your end step,

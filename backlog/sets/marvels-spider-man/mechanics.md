@@ -6,35 +6,56 @@ keyword, or engine capability) — not pure card authoring.
 
 Supported today (confirmed against the `Keyword` enum + SDK): connive, saga, convoke, kicker,
 vehicles/crew, surveil, fight, copy-spell, copy-ability, play-from-top-of-library, impulse
-exile-and-play, max-hand-size modification, transform DFCs, Food/Treasure. This file is updated
-as the loop discovers new blockers.
+exile-and-play, max-hand-size modification, transform DFCs, Food/Treasure, **web-slinging**
+(CR 702.188 — implemented). This file is updated as the loop discovers new blockers.
 
 ---
 
-## Web-slinging (new alternative cost + additional return-a-tapped-creature cost)
+## Web-slinging (new alternative cost + additional return-a-tapped-creature cost) — ✅ IMPLEMENTED
 
 > Web-slinging {cost} *(You may cast this spell for {cost} if you also return a tapped
 > creature you control to its owner's hand.)*
 
-A brand-new keyword: an **alternative mana cost** bundled with an **additional cost**
-("return a tapped creature you control to its owner's hand"). Not implemented — no card in
-the corpus uses it, and there is no `KeywordAbility.WebSlinging` / alternative-cost-with-
-creature-return primitive. Several cards further **key off** having been cast with web-slinging
-(Scarlet Spider gains counters equal to the returned creature's mana value; Spiders-Man's ETB
-checks "if they were cast using web-slinging"), which needs a "was-cast-with-web-slinging"
-spell-cast flag the ETB/enters triggers can read.
+**Implemented** (CR 702.188). A new keyword modeled as a hand-timed **alternative cost** bundling a
+non-mana portion (return a tapped creature you control to its owner's hand). SDK: `Keyword.WEB_SLINGING`,
+`KeywordAbility.WebSlinging`, the `webSlinging("{cost}")` DSL helper, the durable
+`ChoiceSlot.WEB_SLUNG` flag (read via `Conditions.WebSlungCostWasPaid`) and
+`ChoiceSlot.WEB_SLUNG_RETURNED_MV` (the returned creature's mana value, read via
+`DynamicAmount.CastChoice`). Engine: `AlternativeCostType.WEB_SLINGING`, `WebSlingingCastEnumerator`,
+`WebSlinging` mechanics helper, and the `CastSpellHandler` / `StackResolver` / `ConditionEvaluator`
+wiring. Unlike Sneak/Ninjutsu it grants no timing permission (normal timing).
+
+Implemented cards (8): **Spider-Man, Web-Slinger** [16] · **Spider-UK** [17] · **Spider-Man,
+Brooklyn Visionary** [115] · **Spiders-Man, Heroic Horde** [117] · **Scarlet Spider, Ben Reilly**
+[142] · **Silk, Web Weaver** [145] · **Spider-Man India** [151] · **Spider-Sense** [46]. (Spider-UK's
+end-step clause drove a small reusable addition — the `CREATURES_ENTERED_UNDER_CONTROL` turn tracker
++ `Conditions.CreaturesEnteredThisTurn`; Spider-Sense drove `Targets.InstantSorceryOrTriggeredAbility`.)
+
+Still blocked (not on web-slinging itself):
+- **Arachne, Psionic Weaver** [2] — `{2}{W}`, Web-slinging `{W}` implemented, but the ETB "look at an
+  opponent's hand, then choose a card type other than creature; spells of the chosen type cost {1}
+  more to cast" needs a **durable card-type enters-choice + a chosen-card-type spell-tax static**
+  (see the new section below). Deferred rather than approximated.
+- **Peter Parker // Amazing Spider-Man** [10] — transform DFC whose *back face grants* web-slinging to
+  your legendary spells; blocked on transform + a **grant-web-slinging-to-your-spells** static (the
+  keyword is now grantable in principle, but the "your legendary spells have web-slinging" grant is
+  not yet wired — separate follow-up).
+
+## "Choose a card type" durable enters-choice + "spells of the chosen type cost {1} more" static
+
+> As Arachne enters, look at an opponent's hand, then **choose a card type** other than creature.
+> **Spells of the chosen type cost {1} more to cast.**
+
+No durable **card-type** enters-choice exists (`ChoiceSlot` has COLOR / CREATURE_TYPE / LAND_TYPE /
+CARD_NAME / MODE, but not a general card type), and there is no static that reads such a choice to
+**increase the cost of spells of the chosen card type** (the nearest neighbor,
+`GrantProtectionFromChosenCardType`, chooses a card type transiently for protection, not a durable
+stored choice feeding a cost-increase). "Look at an opponent's hand" is informational. Fix
+(add-feature): a `ChoiceSlot.CARD_TYPE` written by an `EntersWithChoice(ChoiceType.CARD_TYPE)` resumer
++ a `SpellsOfChosenCardTypeCostMore(amount)` static reading it in the cost pipeline.
 
 Blocked cards:
-- **Arachne, Psionic Weaver** [2] — `{2}{W}`, Web-slinging `{W}` (also: look at opp hand, choose a card type, that type costs {1} more)
-- **Spider-Man, Web-Slinger** [16] — `{2}{W}`, Web-slinging `{W}` (vanilla otherwise)
-- **Spider-UK** [17] — `{3}{W}`, Web-slinging `{2}{W}`
-- **Spider-Man, Brooklyn Visionary** [115] — `{4}{G}`, Web-slinging `{2}{G}`
-- **Spiders-Man, Heroic Horde** [117] — `{1}{G}`, Web-slinging `{4}{G}{G}`; ETB checks "if cast using web-slinging"
-- **Scarlet Spider, Ben Reilly** [142] — `{1}{R}{G}`, Web-slinging `{R}{G}`; enters with X counters = returned creature's mana value
-- **Silk, Web Weaver** [145] — `{2}{G}{W}`, Web-slinging `{1}{G}{W}`
-- **Spider-Man India** [151] — `{3}{G}{W}`, Web-slinging `{1}{G}{W}`
-- **Spider-Sense** [46] — `{1}{U}`, Web-slinging `{U}` (counter instant/sorcery/triggered ability)
-- **Peter Parker // Amazing Spider-Man** [10] — transform DFC whose *back face grants* web-slinging to your legendary spells (also blocked on this)
+- **Arachne, Psionic Weaver** [2] — web-slinging implemented; the choose-a-card-type tax is the blocker.
 
 ## Harness / Infinity Stone ∞ ability
 

@@ -122,6 +122,7 @@ import com.wingedsheep.sdk.scripting.conditions.NoManaSpentToCastEntered
 import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid
 import com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid
+import com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid
 import com.wingedsheep.sdk.scripting.conditions.WaterbendWasPaid
 import com.wingedsheep.sdk.scripting.conditions.SourceIsRingBearer
 import com.wingedsheep.sdk.scripting.conditions.YouChoseOtherCreatureAsRingBearer
@@ -444,6 +445,7 @@ class ConditionEvaluator(
             is WasCastFromZone -> ifResolution { evaluateWasCastFromZone(state, condition, it) }
             is WasKicked -> ifResolution { evaluateWasKicked(state, it) }
             is SneakCostWasPaid -> ifResolution { evaluateSneakCostWasPaid(state, it) }
+            is WebSlungCostWasPaid -> ifResolution { evaluateWebSlungCostWasPaid(state, it) }
             is BlightWasPaid -> ifResolution { it.wasBlightPaid }
             is WaterbendWasPaid -> ifResolution { evaluateWaterbendWasPaid(state, it) }
             is ManaSpentToCastIncludes -> ifResolution { evaluateManaSpentToCastIncludes(state, condition, it) }
@@ -1155,6 +1157,19 @@ class ConditionEvaluator(
         // Fall back to the resolution context (a non-permanent spell's own resolving effect,
         // e.g. The Last Ronin's Technique reading "if this spell's sneak cost was paid").
         return context.wasSneaked
+    }
+
+    private fun evaluateWebSlungCostWasPaid(state: GameState, context: EffectContext): Boolean {
+        // Durable bag on the resolved permanent first (ETB / ongoing reads, e.g. Spiders-Man's
+        // "if they were cast using web-slinging" enters trigger).
+        val sourceId = context.sourceId ?: return context.wasWebSlung
+        val flagged = state.getEntity(sourceId)
+            ?.get<CastChoicesComponent>()
+            ?.chosen
+            ?.containsKey(ChoiceSlot.WEB_SLUNG) == true
+        if (flagged) return true
+        // Fall back to the resolution context for a non-permanent spell's own resolving effect.
+        return context.wasWebSlung
     }
 
     private fun evaluateWaterbendWasPaid(state: GameState, context: EffectContext): Boolean {

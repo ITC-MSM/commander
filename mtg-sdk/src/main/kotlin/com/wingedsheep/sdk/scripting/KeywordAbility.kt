@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.dsl.firebending
 import com.wingedsheep.sdk.dsl.impending
 import com.wingedsheep.sdk.dsl.mobilize
 import com.wingedsheep.sdk.dsl.sneak
+import com.wingedsheep.sdk.dsl.webSlinging
 
 /**
  * Represents a keyword ability, which may be simple (Flying) or parameterized (Ward {2}).
@@ -715,6 +716,40 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Web-slinging
+    // =========================================================================
+
+    /**
+     * Web-slinging [cost] (CR 702.188, Marvel's Spider-Man).
+     * "Web-slinging [cost]" means "You may cast this spell by paying [cost] and returning a tapped
+     * creature you control to its owner's hand rather than paying its mana cost." (CR 702.188a)
+     *
+     * An alternative cost (like [Evoke]) whose payment bundles a non-mana portion — returning one
+     * tapped creature you control to its owner's hand — alongside the [cost] mana. Unlike the
+     * ninjutsu family ([Sneak] / [Ninjutsu]) it carries **no** timing permission: the spell is
+     * web-slung at its normal timing, so this is not routed through [ninjutsuStyleCost]. The mana
+     * value is unchanged by web-slinging (CR 118.9c) and any cost increases/reductions still apply
+     * on top (CR 118.9d).
+     *
+     * A permanent spell whose web-slinging cost was paid carries two durable facts merged into its
+     * [com.wingedsheep.engine…CastChoicesComponent]: the flag
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG] (readable via
+     * [com.wingedsheep.sdk.dsl.Conditions.WebSlungCostWasPaid], used by Spiders-Man, Heroic Horde)
+     * and the returned creature's mana value under
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG_RETURNED_MV] (read via
+     * [com.wingedsheep.sdk.scripting.values.DynamicAmount.CastChoice], used by Scarlet Spider,
+     * Ben Reilly to enter with that many +1/+1 counters).
+     *
+     * Attach via the `webSlinging("{cost}")` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+     */
+    @SerialName("WebSlinging")
+    @Serializable
+    data class WebSlinging(val cost: ManaCost) : KeywordAbility {
+        override val keyword: Keyword = Keyword.WEB_SLINGING
+        override val description: String = "Web-slinging $cost"
+    }
+
+    // =========================================================================
     // Cleave
     // =========================================================================
 
@@ -1051,6 +1086,12 @@ sealed interface KeywordAbility {
          * which also wires the associated static ability and end-step trigger.
          */
         fun impending(time: Int, cost: String): KeywordAbility = Impending(time, ManaCost.parse(cost))
+
+        /**
+         * Create Web-slinging with a mana cost from string (CR 702.188). Prefer the
+         * `webSlinging(cost)` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+         */
+        fun webSlinging(cost: String): KeywordAbility = WebSlinging(ManaCost.parse(cost))
 
         /**
          * Create Cleave with a cleave mana cost (CR 702.148). Declared on the card via
