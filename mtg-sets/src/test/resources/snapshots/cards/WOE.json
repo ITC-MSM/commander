@@ -4602,6 +4602,93 @@
     ]
 }
 
+// Living Lectern
+{
+    "name": "Living Lectern",
+    "manaCost": "{1}{U}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "{1}, Sacrifice this creature: Draw a card. Create a Sorcerer Role token attached to up to one other target creature you control. Activate only as a sorcery. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1 and has \"Whenever this creature attacks, scry 1.\")",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "CreateRoleToken",
+                            "roleName": "Sorcerer Role",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one other target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:you",
+                            "excludeSelf": true
+                        },
+                        "id": "up to one other target creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Draw a card. Create a Sorcerer Role token attached to up to one other target creature you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "artist": "Chris Seaman",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/6/169afcaf-7ebf-4590-9e51-2a1a5eb3ac76.jpg?1783915118",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You can activate Living Lectern's ability without a target just to draw a card. However, if you do choose a target, and that target is illegal at the time the ability tries to resolve, the ability won't resolve and none of its effects will happen. You won't draw a card."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you don't choose a target creature, the Sorcerer Role token won't be created."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Roles are colorless enchantment tokens. Each one has the Aura and Role subtypes and the enchant creature ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Lord Skitter's Butcher
 {
     "name": "Lord Skitter's Butcher",
@@ -8585,6 +8672,120 @@
     ]
 }
 
+// Tempest Hart
+{
+    "name": "Tempest Hart",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Elemental Elk",
+    "oracleText": "Trample\nWhenever you cast a spell with mana value 5 or greater, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "ManaValueAtLeast",
+                                "min": 5
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "rarity": "UNCOMMON",
+        "artist": "Aldo Domínguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/5/559bacc8-facc-4d93-90b5-8ac21d3246f5.jpg?1783915060",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If a spell has {X} in its mana cost, use the value chosen for that X to determine the mana value of that spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Scan the Clouds",
+            "manaCost": "{1}{U}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Draw two cards, then discard two cards. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 2 cards to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Territorial Witchstalker
 {
     "name": "Territorial Witchstalker",
@@ -8641,6 +8842,61 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Threadbind Clique
+{
+    "name": "Threadbind Clique",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Faerie",
+    "oracleText": "Flying",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "239",
+        "rarity": "UNCOMMON",
+        "artist": "Michal Ivan",
+        "flavorText": "Giggles of delight may be the last thing you hear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/dd6ed252-c262-4062-97ba-75c50d6b5579.jpg?1783915061"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Rip the Seams",
+            "manaCost": "{2}{W}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Destroy target tapped creature. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target tapped creature"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature tapped"
+                        },
+                        "id": "target tapped creature"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -9143,6 +9399,87 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Twisted Sewer-Witch
+{
+    "name": "Twisted Sewer-Witch",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Human Warlock",
+    "oracleText": "When this creature enters, create a 1/1 black Rat creature token with \"This creature can't block.\" Then for each Rat you control, create a Wicked Role token attached to that Rat. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1. When this token is put into a graveyard, each opponent loses 1 life.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [
+                                "BLACK"
+                            ],
+                            "creatureTypes": [
+                                "Rat"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e0205f2-25c1-403b-b408-56e3f2d63b4d.jpg?1783915000",
+                            "staticAbilities": [
+                                "CantBlock"
+                            ]
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature Rat ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "CreateRoleToken",
+                                "roleName": "Wicked Role",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, create a 1/1 black Rat creature token with \"This creature can't block.\" Then for each Rat you control, create a Wicked Role token attached to that Rat."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "rarity": "UNCOMMON",
+        "artist": "Scott Murphy",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6e3ddf7-582d-4923-be30-8428e52237e4.jpg?1783915101",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Roles are colorless enchantment tokens. Each one has the Aura and Role subtypes and the enchant creature ability."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a permanent has more than one Role attached to it controlled by the same player, each of those Roles except the one with the most recent timestamp is put into its owner's graveyard. This is a state-based action."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "A permanent can have multiple Roles attached to it if each one is controlled by a different player."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -9947,5 +10284,83 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Woodland Acolyte
+{
+    "name": "Woodland Acolyte",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "When this creature enters, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "When this creature enters, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "241",
+        "rarity": "UNCOMMON",
+        "artist": "Steve Prescott",
+        "flavorText": "He left knighthood behind to heal the scars of the invasion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b9f10623-4783-4773-b9c8-a5a2bcfdb5d9.jpg?1783915061",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "An adventurer card is a permanent card in every zone except the stack, as well as while on the stack if not cast as an Adventure. Ignore its alternative characteristics in those cases."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Mend the Wilds",
+            "manaCost": "{G}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Put target permanent card from your graveyard on top of your library. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target permanent card from your graveyard"
+                    },
+                    "destination": "Library",
+                    "placement": "Top"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target permanent card from your graveyard"
+                    }
+                ]
+            }
+        }
     ]
 }
