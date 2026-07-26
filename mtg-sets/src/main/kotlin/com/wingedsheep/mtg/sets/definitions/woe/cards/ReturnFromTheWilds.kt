@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.woe.cards
 
-import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.card
@@ -44,16 +43,7 @@ val ReturnFromTheWilds = card("Return from the Wilds") {
                     entersTapped = true
                 )
             )
-            mode(
-                "Create a 1/1 white Human creature token",
-                Effects.CreateToken(
-                    power = 1,
-                    toughness = 1,
-                    colors = setOf(Color.WHITE),
-                    creatureTypes = setOf("Human"),
-                    imageUri = "https://cards.scryfall.io/normal/front/5/0/50240867-3a3e-4a8d-9569-816ab4a3671a.jpg?1783914992"
-                )
-            )
+            mode("Create a 1/1 white Human creature token", woeHumanToken())
             mode("Create a Food token", Effects.CreateFood())
         }
     }
