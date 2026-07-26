@@ -9,6 +9,7 @@ import type {
   ZoneId,
 } from '@/types'
 import { ZoneType, zoneIdEquals, graveyard, library } from '@/types'
+import { isViewerEliminated } from './slices/ui/boardViewSlice'
 import { seatColor, teamColor, type SeatColor } from '@/styles/seatColors'
 import {
   type GroupedCard,
@@ -239,6 +240,15 @@ export function useOpponents(): readonly ClientPlayer[] {
 }
 
 /**
+ * True when the local player's seat is out of a multiplayer game the others are still playing.
+ * See [isViewerEliminated] — derived from the roster, not from the elimination message, so it
+ * is right however the seat died.
+ */
+export function useViewerEliminated(): boolean {
+  return useGameStore(isViewerEliminated)
+}
+
+/**
  * The living seat that holds the bottom half of the table for an eliminated spectator.
  * A dead player has no board of their own to sit there, so the bottom side of the table
  * belongs to a survivor: their explicit pick from the spectating banner, or — by default —
@@ -246,19 +256,19 @@ export function useOpponents(): readonly ClientPlayer[] {
  * that seat dies. Null outside the eliminated-spectator layout, or when nobody is left.
  */
 export function useEliminatedBottomSeatId(): EntityId | null {
-  const eliminatedSpectating = useGameStore((state) => state.eliminatedSpectating)
+  const eliminated = useGameStore(isViewerEliminated)
   const pickedSeatId = useGameStore((state) => state.eliminatedBottomSeatId)
   const opponents = useOpponents()
   const teamMap = useGameStore(selectTeamMap)
   const viewerTeam = useViewerTeamIndex()
   return useMemo(() => {
-    if (!eliminatedSpectating) return null
+    if (!eliminated) return null
     const living = opponents.filter((p) => !p.hasLost)
     const picked = living.find((p) => p.playerId === pickedSeatId)
     if (picked) return picked.playerId
     const ally = viewerTeam != null ? living.find((p) => teamMap[p.playerId] === viewerTeam) : undefined
     return (ally ?? living[0])?.playerId ?? null
-  }, [eliminatedSpectating, pickedSeatId, opponents, teamMap, viewerTeam])
+  }, [eliminated, pickedSeatId, opponents, teamMap, viewerTeam])
 }
 
 /**
