@@ -46,7 +46,8 @@ val SpidersManHeroicHorde = card("Spiders-Man, Heroic Horde") {
                 colors = setOf(Color.GREEN),
                 creatureTypes = setOf("Spider"),
                 keywords = setOf(Keyword.REACH),
-                count = 2
+                count = 2,
+                imageUri = "https://cards.scryfall.io/normal/front/4/a/4a40f6e1-3545-4503-af3e-f0acfb735e3a.jpg?1783905184"
             )
         )
         description = "When Spiders-Man enters, if they were cast using web-slinging, you gain 3 " +
