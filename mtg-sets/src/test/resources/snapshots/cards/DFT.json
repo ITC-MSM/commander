@@ -61,6 +61,83 @@
     "colorIdentityOverride": []
 }
 
+// Agonasaur Rex
+{
+    "name": "Agonasaur Rex",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Trample\nCycling {2}{G} ({2}{G}, Discard this card: Draw a card.)\nWhen you cycle this card, put two +1/+1 counters on up to one target creature or Vehicle. It gains trample and indestructible until end of turn.",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 8
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}{G}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CycleEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 2,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature or Vehicle"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "TRAMPLE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature or Vehicle"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "INDESTRUCTIBLE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature or Vehicle"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature|Vehicle"
+                    },
+                    "id": "up to one target creature or Vehicle"
+                },
+                "descriptionOverride": "When you cycle this card, put two +1/+1 counters on up to one target creature or Vehicle. It gains trample and indestructible until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "rarity": "RARE",
+        "artist": "Lucas Graciano",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5b11ec26-9e07-45e1-bcaa-5d44d1231586.jpg?1783907875"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Air Response Unit
 {
     "name": "Air Response Unit",
@@ -2721,6 +2798,114 @@
     ]
 }
 
+// Gastal Thrillseeker
+{
+    "name": "Gastal Thrillseeker",
+    "manaCost": "{B}{R}",
+    "typeLine": "Creature — Lizard Berserker",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nWhen this creature enters, it deals 1 damage to target opponent and you gain 1 life.\nMax speed — This creature has deathtouch and haste.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target opponent"
+                            },
+                            "damageSource": "Self"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When this creature enters, it deals 1 damage to target opponent and you gain 1 life."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "DEATHTOUCH",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "rarity": "UNCOMMON",
+        "artist": "Olivier Bernard",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8e5205d-d734-4292-a3c8-70cf5f131289.jpg?1783907857"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Gilded Ghoda
 {
     "name": "Gilded Ghoda",
@@ -4105,6 +4290,56 @@
         "collectorNumber": "137",
         "artist": "Madeline Boni",
         "imageUri": "https://cards.scryfall.io/normal/front/2/a/2ac26341-a100-424d-be84-33fbbf1b4078.jpg?1783907878"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Marauding Mako
+{
+    "name": "Marauding Mako",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Shark Pirate",
+    "oracleText": "Whenever you discard one or more cards, put that many +1/+1 counters on this creature.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DiscardEvent",
+                    "batch": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DISCARD_COUNT"
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you discard one or more cards, put that many +1/+1 counters on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "138",
+        "rarity": "UNCOMMON",
+        "artist": "Alix Branwyn",
+        "flavorText": "\"What a bunch of junk. I'll take the lot.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9efbfd67-e0f5-43e0-9fff-1eb4a2bed0d8.jpg?1783907879"
     },
     "colorIdentityOverride": [
         "RED"
@@ -7345,6 +7580,72 @@
     ]
 }
 
+// Tune Up
+{
+    "name": "Tune Up",
+    "manaCost": "{3}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return target artifact card from your graveyard to the battlefield. If it's a Vehicle, it becomes an artifact creature.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact card in your graveyard"
+                    },
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": "permanent Vehicle"
+                        }
+                    },
+                    "then": {
+                        "type": "AddCardType",
+                        "cardType": "Creature",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target artifact card in your graveyard"
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "artifact own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target artifact card in your graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Rallis",
+        "flavorText": "\"For most people? The odds would be insurmountable,\" Daretti said.\n\"But we're not most people,\" Pia replied.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8bddc5f-8f25-4313-b5bb-e5eae2923878.jpg?1783907912"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Tyrox, Saurid Tyrant
 {
     "name": "Tyrox, Saurid Tyrant",
@@ -7363,6 +7664,51 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Unstoppable Plan
+{
+    "name": "Unstoppable Plan",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your end step, untap all nonland permanents you control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "nonland permanent ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "TapUntap",
+                        "target": "Self",
+                        "tap": false
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, untap all nonland permanents you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "RARE",
+        "artist": "Borja Pindado",
+        "flavorText": "Jace knew that if he just had time to explain his plan, he would find support. Unfortunately, time was in short supply.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aaeb5981-7e6a-4ffd-bb02-4757b2e92f08.jpg?1783907901"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
