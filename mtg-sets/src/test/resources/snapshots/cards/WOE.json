@@ -1311,6 +1311,85 @@
     "colorIdentityOverride": []
 }
 
+// Charging Hooligan
+{
+    "name": "Charging Hooligan",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Human Peasant",
+    "oracleText": "Whenever this creature attacks, it gets +1/+0 until end of turn for each attacking creature. If a Rat is attacking, this creature gains trample until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "AggregateBattlefield",
+                                "player": "Each",
+                                "filter": "creature attacking"
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "AggregateBattlefield",
+                                        "player": "Each",
+                                        "filter": "creature Rat attacking"
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "GrantKeyword",
+                                "keyword": "TRAMPLE",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks, it gets +1/+0 until end of turn for each attacking creature. If a Rat is attacking, this creature gains trample until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "318",
+        "rarity": "UNCOMMON",
+        "artist": "Tomas Duchek",
+        "flavorText": "\"Soon the rats are gonna run this town, so I'm gonna run with them!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fddc6f47-202d-4764-abc1-ee453a8917c2.jpg?1783915039",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Count the number of attacking creatures when Charging Hooligan's ability resolves, including Charging Hooligan itself, to determine the increase to its power."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Charmed Clothier
 {
     "name": "Charmed Clothier",
@@ -6396,6 +6475,101 @@
     ]
 }
 
+// Old Flitterfang
+{
+    "name": "Old Flitterfang",
+    "manaCost": "{4}{B}",
+    "typeLine": "Legendary Creature — Rat Faerie",
+    "oracleText": "Flying\nAt the beginning of each end step, if a creature died this turn, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\n{2}{B}, Sacrifice another creature or artifact: Old Flitterfang gets +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                },
+                "triggerCondition": "CreatureDiedThisTurn",
+                "descriptionOverride": "At the beginning of each end step, if a creature died this turn, create a Food token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature|artifact",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{2}{B}, Sacrifice another creature or artifact: Old Flitterfang gets +2/+2 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "316",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Seaman",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67c77d6f-de14-423c-bf55-0fb289171004.jpg?1783915039",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Old Flitterfang's triggered ability will check as the end step starts to see if a creature died this turn. If none did, the ability won't trigger at all."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "Food is an artifact type. Even though it appears on some creatures, it's never a creature type."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "You can't sacrifice a Food to pay multiple costs. For example, you can't sacrifice a Food token to activate its own ability and also to activate Maraleaf Rider's ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Pests of Honor
 {
     "name": "Pests of Honor",
@@ -8445,6 +8619,109 @@
     ]
 }
 
+// Specter of Mortality
+{
+    "name": "Specter of Mortality",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Specter",
+    "oracleText": "Flying\nWhen this creature enters, you may exile one or more creature cards from your graveyard. When you do, each other creature gets -X/-X until end of turn, where X is the number of cards exiled this way.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "creature"
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": "ChooseAnyNumber",
+                            "storeSelected": "selected1",
+                            "prompt": "Exile any number of creature cards from your graveyard",
+                            "selectedLabel": "Exile",
+                            "remainderLabel": "Leave in graveyard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "storeMovedAs": "exiledCreatures"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "exiledCreatures",
+                            "ifNotEmpty": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature",
+                                        "excludeSelf": true
+                                    }
+                                },
+                                "body": {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Multiply",
+                                        "amount": {
+                                            "type": "VariableReference",
+                                            "variableName": "exiledCreatures_count"
+                                        },
+                                        "multiplier": -1
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Multiply",
+                                        "amount": {
+                                            "type": "VariableReference",
+                                            "variableName": "exiledCreatures_count"
+                                        },
+                                        "multiplier": -1
+                                    },
+                                    "target": "Self"
+                                }
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "You may exile one or more creature cards from your graveyard. When you do, each other creature gets -X/-X until end of turn, where X is the number of cards exiled this way."
+                },
+                "descriptionOverride": "When this creature enters, you may exile one or more creature cards from your graveyard. When you do, each other creature gets -X/-X until end of turn, where X is the number of cards exiled this way."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "rarity": "RARE",
+        "artist": "Daarken",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5e4c00b5-f6d6-4fbd-828f-ad30321f2cd9.jpg?1783915102"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Spell Stutter
 {
     "name": "Spell Stutter",
@@ -10274,6 +10551,97 @@
     ]
 }
 
+// Twisted Fealty
+{
+    "name": "Twisted Fealty",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn.\nCreate a Wicked Role token attached to up to one target creature. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1. When this token is put into a graveyard, each opponent loses 1 life.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GainControl",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "duration": "EndOfTurn"
+                },
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "tap": false
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "CreateRoleToken",
+                    "roleName": "Wicked Role",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "up to one target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "154",
+        "rarity": "UNCOMMON",
+        "artist": "Mila Pesic",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/382d6085-79b9-48f7-8949-9f44dde2c753.jpg?1783915087",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If you don't choose a second target for Twisted Fealty or that target is illegal as the spell resolves, the Wicked Role token won't be created."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Roles are colorless enchantment tokens. Each one has the Aura and Role subtypes and the enchant creature ability."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a permanent has more than one Role attached to it controlled by the same player, each of those Roles except the one with the most recent timestamp is put into its owner's graveyard. This is a state-based action."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "A permanent can have multiple Roles attached to it if each one is controlled by a different player."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Twisted Sewer-Witch
 {
     "name": "Twisted Sewer-Witch",
@@ -11048,6 +11416,78 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Wildwood Mentor
+{
+    "name": "Wildwood Mentor",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Treefolk",
+    "oracleText": "Whenever a token you control enters, put a +1/+1 counter on this creature.\nWhenever this creature attacks, another target attacking creature gets +X/+X until end of turn, where X is this creature's power.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "token ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever a token you control enters, put a +1/+1 counter on this creature."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "toughnessModifier": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "another target attacking creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature attacking",
+                        "excludeSelf": true
+                    },
+                    "id": "another target attacking creature"
+                },
+                "descriptionOverride": "Whenever this creature attacks, another target attacking creature gets +X/+X until end of turn, where X is this creature's power."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "322",
+        "rarity": "RARE",
+        "artist": "Piotr Foksowicz",
+        "flavorText": "\"Not bad. If only you had branches.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96c247f4-06cf-4c41-8285-d44d40f4130c.jpg?1783915037"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
