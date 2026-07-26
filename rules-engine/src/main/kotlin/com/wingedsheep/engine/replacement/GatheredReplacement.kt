@@ -1,6 +1,5 @@
 package com.wingedsheep.engine.replacement
 
-import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.ReplacementEffect
@@ -37,9 +36,7 @@ fun GatheredReplacement.sourceEntityId(state: GameState): EntityId? {
         is ReplacementEffectIdentity.FloatingIdentity -> {
             state.floatingEffects.getOrNull(id.floatingIndex)
                 ?.effect?.modification
-                ?.let { mod ->
-                    (mod as? SerializableModification.ReplaceDrawWithEffect)?.sourceId
-                }
+                ?.sourceEntityId
         }
         is ReplacementEffectIdentity.GrantedIdentity -> {
             state.grantedReplacementEffects.getOrNull(id.grantedIndex)?.entityId

@@ -60,21 +60,13 @@ class ReplacementContinuationResumer(
         // Pass continuation.context for condition evaluation during recursive processing.
         val context = continuation.context
 
-        // Push remaining-draws continuation before the replacement resolves,
-        // so the draw loop (which sits below any ReplacementResolveContinuation in the
-        // continuation stack) can resume after the replacement effect resolves.
-        val stateWithRemaining = run {
-            val pendingEvent = continuation.pendingEvent
-            if (pendingEvent is PendingGameEvent.DrawPending && pendingEvent.remainingDraws > 0) {
-                state.pushContinuation(
-                    DrawReplacementRemainingDrawsContinuation(
-                        drawingPlayerId = pendingEvent.playerId,
-                        remainingDraws = pendingEvent.remainingDraws,
-                        isDrawStep = pendingEvent.isDrawStep
-                    )
-                )
-            } else state
-        }
+        // Push domain-specific remainder continuation (e.g. remaining draws
+        // in the draw loop) before the replacement resolves, so it sits below
+        // any ReplacementResolveContinuation in the stack and can resume after
+        // the replacement effect completes.
+        val stateWithRemaining = continuation.pendingEvent.remainderContinuation(state)
+            ?.let { state.pushContinuation(it) }
+            ?: state
 
         // Compute the outcome.
         val result = processor.applySingle(
@@ -144,8 +136,7 @@ class ReplacementContinuationResumer(
     ): ExecutionResult {
         val resumeContinuation = ReplacementResolveContinuation(
             decisionId = "pending",
-            originalEvent = continuation?.pendingEvent
-                ?: PendingGameEvent.DrawPending(EntityId(""), 0),
+            originalEvent = continuation?.pendingEvent,
             finalOutcome = outcome,
             originalContext = context
         )

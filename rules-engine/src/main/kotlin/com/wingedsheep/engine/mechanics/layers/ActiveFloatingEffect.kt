@@ -108,6 +108,14 @@ sealed interface SerializableModification {
     fun toEffectContext(controllerId: EntityId): EffectContext? = null
 
     /**
+     * The permanent/card entity that created this floating-effect shield, if any.
+     * Override in concrete subtypes that carry a source entity reference, so
+     * [GatheredReplacement.sourceEntityId] can resolve the source without
+     * per-subtype casts.
+     */
+    val sourceEntityId: EntityId? get() = null
+
+    /**
      * Convert this floating-effect shield modification into an SDK [ReplacementEffect]
      * for matching and outcome processing by the [ReplacementEffectProcessor].
      *
@@ -444,6 +452,8 @@ sealed interface SerializableModification {
          */
         val xValue: Int? = null
     ) : SerializableModification {
+        override val sourceEntityId: EntityId? get() = sourceId
+
         override fun toEffectContext(controllerId: EntityId): EffectContext = EffectContext(
             controllerId = controllerId,
             sourceId = sourceId,

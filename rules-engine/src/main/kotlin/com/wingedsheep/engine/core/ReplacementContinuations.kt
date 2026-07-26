@@ -49,7 +49,7 @@ data class ReplacementChoiceContinuation(
 @Serializable
 data class ReplacementResolveContinuation(
     override val decisionId: String,
-    val originalEvent: PendingGameEvent,
+    val originalEvent: PendingGameEvent? = null,
     val finalOutcome: ReplacementOutcome,
     val originalContext: EffectContext? = null
 ) : ContinuationFrame

@@ -83,6 +83,17 @@ sealed interface PendingGameEvent {
     ): OptionalPromptResult? = null
 
     /**
+     * Return a continuation frame for any remaining work after a replacement
+     * effect has been applied to this event, or null if none is needed.
+     *
+     * For [DrawPending] with remaining draws, this returns a
+     * [DrawReplacementRemainingDrawsContinuation] so the draw loop can
+     * continue after an optional or competing replacement resolves.
+     * Most event domains return null (no remainder concept).
+     */
+    fun remainderContinuation(state: GameState): ContinuationFrame? = null
+
+    /**
      * Draw event: a player is about to draw cards from their library.
      */
     @Serializable
@@ -119,6 +130,17 @@ sealed interface PendingGameEvent {
                 is ReplaceDrawWithEffect -> ReplacementOutcome.Replaced(effect.replacementEffect)
                 else -> error("Unsupported replacement effect type '${effect::class.simpleName}' for ${this::class.simpleName}")
             }
+        }
+
+        override fun remainderContinuation(state: GameState): ContinuationFrame? {
+            if (remainingDraws > 0) {
+                return DrawReplacementRemainingDrawsContinuation(
+                    drawingPlayerId = playerId,
+                    remainingDraws = remainingDraws,
+                    isDrawStep = isDrawStep
+                )
+            }
+            return null
         }
 
         override fun createOptionalPrompt(
