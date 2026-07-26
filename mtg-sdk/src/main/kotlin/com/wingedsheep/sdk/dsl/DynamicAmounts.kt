@@ -557,6 +557,14 @@ object DynamicAmounts {
     fun countersOnTarget(type: CounterTypeFilter, index: Int = 0): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Target(index), EntityNumericProperty.CounterCount(type))
 
+    /**
+     * Number of counters (of [type]; defaults to counters of every kind) on the triggering
+     * permanent — "X is the number of counters on it" for an ANY-bound triggered ability such as
+     * Spider-Man Noir's "whenever a creature you control attacks alone."
+     */
+    fun countersOnTriggering(type: CounterTypeFilter = CounterTypeFilter.Any): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.CounterCount(type))
+
     fun attachmentsOnSelf(): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.AttachmentCount())
 

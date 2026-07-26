@@ -79,6 +79,17 @@ data class MayPlayPermission(
      * makes the cleanup expiry key off that player's turn instead of each owner's.
      */
     val expiryControllerId: EntityId? = null,
+    /**
+     * When true, this permission is revoked as soon as its [sourceId] grants another
+     * `supersededBySameSource` permission — i.e. the source exiles another card. Models
+     * "you may play that card until you exile another card with this [permanent]" (Superior
+     * Foes of Spider-Man): only the source's most-recently-exiled card stays playable, and
+     * the superseded card remains in exile but can no longer be played. Set together with
+     * [permanent] = true (the window otherwise persists across turns) by
+     * [com.wingedsheep.engine.handlers.effects.library.GrantMayPlayFromExileExecutor] when the
+     * grant carries `MayPlayExpiry.UntilSourceExilesAnother`.
+     */
+    val supersededBySameSource: Boolean = false,
     val timestamp: Long
 ) {
     init {

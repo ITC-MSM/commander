@@ -532,6 +532,13 @@ object Effects {
     fun Surveil(count: Int): Effect = LibraryPatterns.surveil(count)
 
     /**
+     * "Surveil X" with a dynamic count (CR 701.25) — X resolved at resolution time, e.g.
+     * "surveil X, where X is the number of counters on it" (Spider-Man Noir). Expands to the
+     * dynamic surveil pipeline; see [LibraryPatterns.surveil].
+     */
+    fun Surveil(amount: DynamicAmount): Effect = LibraryPatterns.surveil(amount)
+
+    /**
      * Target player discards N cards (controller chooses, mandatory).
      * Delegates to the LibraryPatterns/HandPatterns pipeline: Gather → Select → Move (Discard).
      */

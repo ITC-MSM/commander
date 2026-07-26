@@ -914,7 +914,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   dies trigger reads the last-known count to come back with one fewer),
   `Counters.NET`, `Counters.FIRE`, `Counters.CONQUEROR`, `Counters.POINT` (Contested Game Ball — its
   `{2}, {T}` ability adds one per activation and, when five or more are present, sacrifices the artifact and
-  creates a Treasure), `Counters.WISH` (Wishclaw Talisman — see below).
+  creates a Treasure), `Counters.WISH` (Wishclaw Talisman — see below), `Counters.INGENUITY` (Lady Octopus,
+  Inspired Inventor — her first/second-draw triggers each add one and her `{T}` ability caps the mana value of
+  the hand artifact she free-casts at the count via `CollectionFilter.ManaValueAtMost(DynamicAmounts.countersOnSelf(
+  CounterTypeFilter.Named(Counters.INGENUITY)))`), `Counters.FILM` (Peter Parker's Camera — enters with
+  three via `EntersWithCounters(CounterTypeFilter.Named(Counters.FILM), count = 3, selfOnly = true)` and its
+  `{2}, {T}` copy ability spends one per activation via `Costs.RemoveCounterFromSelf(Counters.FILM, 1)`).
 - `DistributeCountersFromSelf(type?, count?)` — split source's counters among creatures you control.
 - `DistributeCountersAmongTargets(total, type?, minPerTarget?)` — divvy N counters among chosen targets.
 - `DistributeCountersAmongFiltered(total, type?, filter, minPerTarget?)` — distribute N **new** counters among permanents matching `filter`, chosen at resolution (not the spell's targets); `minPerTarget = 0` models "among any number of". Unlike `DistributeCountersFromSelf` nothing is removed from a source. Crashing Wave: `DistributeCountersAmongFiltered(3, Counters.STUN, Filters.Creature.tapped().opponentControls())` — "distribute three stun counters among any number of tapped creatures your opponents control."
@@ -1824,6 +1829,12 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
     node keeps the per-card snapshot goldens one line and stops them churning when the shared
     pipeline internals change. Any effect-tree walker that needs the inner nodes expands through the
     single `LibraryPatterns.expandMacro(effect)` helper.
+  - **Dynamic count.** `surveil(count: DynamicAmount)` / `Effects.Surveil(amount: DynamicAmount)` —
+    "surveil X" where X is only known at resolution (e.g. Spider-Man Noir: "surveil X, where X is the
+    number of counters on it", `DynamicAmounts.countersOnTriggering()`). There is no compact macro for
+    a dynamic surveil (the marker only carries a literal), so this expands straight to
+    `surveilPipeline(count)` and always emits `SurveiledEvent` (the real gathered size drives the event,
+    handling library-smaller-than-X and X = 0). Twin of the dynamic `lookAtTopAndReorder(count)`.
 - `mill(count)` — top N cards into graveyard.
 - `exileTop(count, target = Controller)` — top N cards of a player's library into exile (Malboro's
   "exiles the top three cards of their library"). Same Gather → Move pipeline as `mill`, destination
@@ -1948,7 +1959,7 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   player), e.g. Shadowfax, Lord of Horses ("put a creature card with lesser power from your hand onto
   the battlefield tapped and attacking").
 - `incubate(n)` — make an Incubator token with N counters.
-- `impulse(count?, expiry?)` — impulse draw: exile the top N of your library, may play those cards until `expiry` (default end of turn); played cards still pay their mana. For the play-free variant compose with `GrantPlayWithoutPayingCostEffect` (cf. `shuffleAndExileTopPlayFree`). Irascible Wolverine (1), Annie Flash, the Veteran (2).
+- `impulse(count?, expiry?)` — impulse draw: exile the top N of your library, may play those cards until `expiry` (default end of turn); played cards still pay their mana. For the play-free variant compose with `GrantPlayWithoutPayingCostEffect` (cf. `shuffleAndExileTopPlayFree`). Irascible Wolverine (1), Annie Flash, the Veteran (2). `MayPlayExpiry` options: `EndOfTurn` (default), `Permanent` ("for as long as it remains exiled"), `UntilControllerStep(step, includeCurrentTurn?)` / the `UntilEndOfNextTurn` + `UntilNextEndStep` shorthands (turn-keyed, cleaned up at the matching cleanup), and `UntilSourceExilesAnother` — a **self-superseding** permission that persists across turns (and survives the granting source leaving play) but is revoked the moment that *same source* grants another such permission (exiles another card), so only the source's most-recently-exiled card stays playable and the earlier one remains in exile but unplayable. Requires the grant to carry a source id (falls back to `Permanent` behaviour without one); models "you may play that card until you exile another card with this creature" (**Superior Foes of Spider-Man**).
 - `returnLinkedExile(underOwnersControl?)` — bring back linked exile pile.
 - `takeFromLinkedExile()` — pull one card from linked exile.
 - `shuffleGraveyardIntoLibrary(target?)` — Elixir of Immortality shape.
@@ -6500,8 +6511,11 @@ For triggered abilities whose effect reads a property of the entity that caused 
   "it deals damage equal to its power").
 - `DynamicAmounts.triggeringToughness()` — toughness of the triggering entity.
 - `DynamicAmounts.triggeringManaValue()` — mana value of the triggering entity.
+- `DynamicAmounts.countersOnTriggering(type = CounterTypeFilter.Any)` — number of counters (of `type`,
+  default every kind) on the triggering permanent (e.g. Spider-Man Noir: "surveil X, where X is the
+  number of counters on it").
 
-All three desugar to `EntityProperty(EntityReference.Triggering, …)`.
+All desugar to `EntityProperty(EntityReference.Triggering, …)`.
 
 ### Death-batch total-power shortcut (`DynamicAmounts.*` facade)
 
@@ -7520,6 +7534,15 @@ substitution.
   DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withChosenSubtype()))`; a
   `GrantDynamicStatsEffect` sized by `DynamicAmounts.countersOnSelf(...)` reads the count back) — a pure
   passive resource counter with no inherent rule.
+  `ingenuity` (`Counters.INGENUITY`): SPM — Lady Octopus, Inspired Inventor (two `Triggers.NthCardDrawn`
+  triggers — first and second draw each turn — each add one via `AddCounters(Counters.INGENUITY, 1, EffectTarget.Self)`;
+  her `{T}` ability reads the count via `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.INGENUITY))`
+  inside a `CollectionFilter.ManaValueAtMost` to gate which hand artifact she can free-cast) — a pure passive
+  resource counter with no inherent rule.
+  `film` (`Counters.FILM`): SPM — Peter Parker's Camera (enters with three via an `EntersWithCounters(
+  CounterTypeFilter.Named(Counters.FILM), count = 3, selfOnly = true)` replacement; each activation of its
+  `{2}, {T}` copy ability spends one via `Costs.RemoveCounterFromSelf(Counters.FILM, 1)`). A pure "uses left"
+  counter with no inherent rule — when it hits zero the activation cost is simply unpayable.
   `wish` (`Counters.WISH`): ELD — Wishclaw Talisman (enters with three via an `EntersWithCounters(
   CounterTypeFilter.Named(Counters.WISH), count = 3, selfOnly = true)` replacement; each activation of its
   tutor ability spends one via `Costs.RemoveCounterFromSelf(Counters.WISH, 1)`). A pure "uses left" counter

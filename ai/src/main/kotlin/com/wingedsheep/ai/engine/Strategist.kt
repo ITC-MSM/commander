@@ -9,6 +9,7 @@ import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Format
@@ -324,19 +325,45 @@ class Strategist(
         "STACK" -> ChosenTarget.Spell(entityId)
         else -> {
             // `targetZone` is only populated for multi-requirement spells; a single-target
-            // spell (Reprieve, a counterspell, …) surfaces `validTargets` with `targetZone = null`.
-            // So fall back to authoritative game state: a target that is a spell on the stack must
-            // become a `ChosenTarget.Spell`, not a `Permanent`. Wrapping it as a `Permanent` here
-            // made the engine reject the cast ("Target must be a spell on the stack"), and the AI
-            // re-picked the same failing action forever.
+            // spell/ability (Reprieve, or Sandman's "target land card from your graveyard")
+            // surfaces `validTargets` with `targetZone = null`. So fall back to authoritative
+            // game state and build the variant the target's actual zone demands:
+            //  - a spell on the stack must become a `ChosenTarget.Spell`, not a `Permanent`
+            //    (else the engine rejects the cast, "Target must be a spell on the stack");
+            //  - a card in a non-battlefield zone (graveyard/exile/hand/library/command) must
+            //    become a `ChosenTarget.Card` carrying that zone, not a `Permanent` (else the
+            //    engine rejects it — e.g. Sandman's graveyard land — and the AI re-picks the
+            //    same failing activation forever).
+            // Mirrors the web client's target-payload builder (pipelinePhases.ts).
             val isSpell = state.isSpellOnStack(entityId)
             val isPlayer = state.getEntity(entityId)
                 ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
+            val cardZone = zoneOfCardTarget(state, entityId)
             when {
                 isSpell -> ChosenTarget.Spell(entityId)
                 isPlayer -> ChosenTarget.Player(entityId)
+                cardZone != null -> {
+                    val ownerId = state.getEntity(entityId)
+                        ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()?.playerId
+                        ?: cardZone.ownerId
+                    ChosenTarget.Card(entityId, ownerId, cardZone.zoneType)
+                }
                 else -> ChosenTarget.Permanent(entityId)
             }
+        }
+    }
+
+    /**
+     * The [ZoneKey] of [entityId] when it is a card in a non-battlefield "card target" zone
+     * (graveyard, exile, hand, library, command) — the zones a `ChosenTarget.Card` addresses.
+     * Returns `null` for battlefield permanents and the stack, which are handled by the
+     * `Permanent`/`Spell` variants. Mirrors the client's `CARD_TARGET_ZONES` set.
+     */
+    private fun zoneOfCardTarget(state: GameState, entityId: EntityId): ZoneKey? {
+        val key = state.zones.entries.firstOrNull { entityId in it.value }?.key ?: return null
+        return when (key.zoneType) {
+            Zone.GRAVEYARD, Zone.EXILE, Zone.HAND, Zone.LIBRARY, Zone.COMMAND -> key
+            else -> null
         }
     }
 

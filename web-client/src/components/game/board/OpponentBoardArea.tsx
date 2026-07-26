@@ -9,6 +9,7 @@ import { CardRow } from './HandZone'
 import { CommandZone } from './CommandZone'
 import { ZonePile } from './ZonePiles'
 import { styles } from './styles'
+import { isLoneTargetRequirement } from '@/utils/targeting.ts'
 
 /**
  * One opponent's half of the board: hand fan (top), command zone | battlefield |
@@ -434,9 +435,12 @@ function BoardNamePlate({
   const isTargetingSelected = targetingState?.selectedTargets.includes(playerId) ?? false
   const isValidTargetingTarget = targetingState?.validTargets.includes(playerId) ?? false
   const isChooseTargetsDecision = pendingDecision?.type === 'ChooseTargetsDecision'
+  // Only a lone single-target requirement uses the immediate click-to-submit path; a multi-target
+  // player slot (e.g. Parker Luck's "two target players") is picked via the decisionSelectionState
+  // toggle path (isValidDecisionSelection) instead, so it must NOT match here.
   const isValidDecisionTarget =
     isChooseTargetsDecision &&
-    pendingDecision.targetRequirements.length === 1 &&
+    isLoneTargetRequirement(pendingDecision) &&
     (pendingDecision.legalTargets[0] ?? []).includes(playerId)
   const isValidDecisionSelection = decisionSelectionState?.validOptions.includes(playerId) ?? false
   const isSelectedDecisionOption = decisionSelectionState?.selectedOptions.includes(playerId) ?? false
