@@ -25,12 +25,14 @@
 import type { DeckFormat, LobbyGameMode, TournamentFormat } from '@/types'
 import {
   CARDS_KINDS,
+  COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
   TABLE_VALUES,
   cardsFromTournamentFormat,
   cardsKindLabel,
   eventFromGameMode,
   eventLabel,
   gameModeForTable,
+  isCommanderLimited,
   tableFromGameMode,
   tableLabel,
   tournamentFormatForCards,
@@ -170,6 +172,11 @@ function tableAvailability(view: UnifiedLobbyView, table: TableAxis): ChoiceAvai
   if (table === view.axes.table) return DIRECT
   if (view.players.length > TABLE_SEAT_CAP[table]) {
     return blocked(tooManySeats(table, view.players.length))
+  }
+  // A Commander pool can be shared by eight, but a Commander *game* is 1v1 — the bracket is fine,
+  // one shared table is not.
+  if (table !== 'ONE_V_ONE' && isCommanderLimited(view.axes.cards)) {
+    return blocked(COMMANDER_LIMITED_NEEDS_A_1V1_TABLE)
   }
 
   if (view.kind === 'TOURNAMENT') return DIRECT

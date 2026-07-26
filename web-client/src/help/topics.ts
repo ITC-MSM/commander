@@ -49,7 +49,7 @@ export const HELP_SECTIONS: readonly { id: HelpSection; title: string; blurb: st
   {
     id: 'modes',
     title: 'Game modes',
-    blurb: 'Three independent choices — Cards, Table, Event — and the six presets that set them.',
+    blurb: 'Three independent choices — Cards, Table, Event — and the three questions that set them.',
   },
   {
     id: 'playing',
@@ -103,12 +103,12 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'getting-started',
     title: 'Starting your first game',
     summary:
-      'Pick one of the six cards under PLAY. Each one opens the same lobby with different defaults — you can change them once you are inside.',
+      'Answer the three questions under PLAY — who with, what with, how — and you land in a lobby set up that way. You can change all of it once you are inside.',
     body: [
-      { kind: 'p', text: '“vs AI” is the shortest path: pick a deck, ready up, play. “vs Friend” is the same thing with an invite code to share.' },
+      { kind: 'p', text: '“Just me” plus “Bring a deck” is the shortest path: two clicks, then pick a deck and ready up. The third question is skipped whenever there is only one possible answer.' },
       { kind: 'p', text: 'Everything you start ends in a lobby, and every lobby shows the same three settings. Nothing is a dead end — a lobby you opened as a 1v1 can become a four-player game without going back to the menu.' },
     ],
-    related: ['axes', 'invite-codes'],
+    related: ['play-wizard', 'axes', 'invite-codes'],
   },
   {
     id: 'invite-codes',
@@ -143,7 +143,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         'Event — a single game, or a round-robin bracket with standings.',
       ] },
       { kind: 'p', text: 'They are independent: “Sealed” is not an alternative to “Tournament”, it is an alternative to “Draft”. A tournament is an alternative to a single game. That is why a 1v1 sealed game with one friend and an eight-player bracket are the same screen with different settings.' },
-      { kind: 'p', text: 'The six cards on the home screen are named starting points, not six separate systems. Each sets the three values; the lobby lets you change any of them.' },
+      { kind: 'p', text: 'The home screen asks for them one at a time and only offers what is actually reachable; the lobby then lets you change any of them.' },
     ],
     related: ['cards-sealed', 'table-free-for-all', 'event-round-robin', 'axis-limits', 'lobby-switching'],
   },
@@ -180,7 +180,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'modes',
     title: 'Cards: Sealed',
     summary:
-      'Open boosters and build a 40-card deck from what you got. Standard sealed uses 6 boosters by default; Commander Sealed opens Commander-shaped packs and builds a 60-card deck around a commander from your pool.',
+      'Open boosters and build a 40-card deck from what you got. Standard sealed uses 6 boosters by default; Commander Sealed opens Commander-shaped packs and builds a 60-card deck around a commander from your pool — up to 8 players share the pool and play the bracket out as 1v1 matches.',
     body: [
       { kind: 'p', text: 'The host picks the sets (mix several, or add a deferred “Random Set” that stays hidden until the game starts), how many boosters each player opens, and whether boosters are per-set or “chaos” — each pack mixing every selected set.' },
     ],
@@ -191,7 +191,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'modes',
     title: 'Cards: Draft',
     summary:
-      'Four shapes: Booster (pass packs, 3–8 players), Winston (three face-down piles, exactly 2), Grid (pick a row or column from a 3×3 grid, 2–4) and Commander (Commander-shaped packs, 1v1).',
+      'Four shapes: Booster (pass packs, 3–8 players), Winston (three face-down piles, exactly 2), Grid (pick a row or column from a 3×3 grid, 2–4) and Commander (Commander-shaped packs, up to 8 drafters).',
     body: [
       { kind: 'p', text: 'The host sets a pick timer and, for Booster and Commander drafts, whether each pick takes one card or two.' },
     ],
@@ -276,6 +276,8 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         'A limited pool always runs as a bracket. Sealed and draft build a pool that is meant to be played more than once; with two players and one game per matchup, that is a single game anyway.',
         'Ranked is 1v1 only. Multiplayer tables are always casual.',
         'The AI can only be added to a 1v1 lobby. It cannot take a seat in a Free-for-All or a team game, or bring a deck to a “Bring a deck” lobby.',
+        'The AI cannot play the Commander limited formats at all: its automatic deckbuilding never picks a commander, so it would sit down without one.',
+        'Commander Draft and Commander Sealed have no multiplayer table. Up to eight players can share the pool, but every game is 1v1 — so they run as a bracket. Commander in a Free-for-All or team game is a separate project.',
         'Momir Basic and a rolled random pool are 1v1 single games only. Neither exists at a multiplayer table or in a bracket.',
       ] },
     ],
@@ -298,52 +300,58 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     related: ['axes', 'axis-limits', 'invite-codes'],
   },
   {
-    id: 'preset-vs-ai',
+    id: 'play-wizard',
     section: 'modes',
-    title: 'Preset: vs AI',
+    title: 'Starting a game: three questions',
     summary:
-      'A 1v1 game against the built-in AI. Pick a deck, ready up, and it starts immediately — nobody else has to show up.',
-    related: ['axes', 'cards-bring-a-deck'],
+      'The home screen asks who you are playing with, what you are playing with, and how it is played. The answers decide which lobby you get; everything stays changeable once you are in it.',
+    body: [
+      { kind: 'p', text: 'Who you are playing with comes first because it rules out the most: the AI cannot sit at a multiplayer table yet, and a rolled random pool or a Momir game only exists as a 1v1.' },
+      { kind: 'p', text: 'All three questions stay on screen, numbered, with your answer under each. Click an answer to go back and change it; the answers after it are re-checked against the change.' },
+      { kind: 'ul', items: [
+        'A question with only one possible answer is decided for you and marked “auto”.',
+        'Each option says whether it is one game or an event with steps — “Play right away” and “One game” versus “Build a deck first” and “Several rounds · standings”. Once everything is answered, the line above the button spells the whole sequence out.',
+        'Greyed-out options are combinations nothing implements yet — hover for the reason.',
+        'Options that are simply missing would contradict an earlier answer. A group of five is not offered a 1v1 single game.',
+        'The seat count is a limit, not a requirement: start whenever everyone has arrived, and change it in the lobby.',
+        'The lobby you land in can change all of it, so a wrong turn costs nothing.',
+        '“Play again” repeats your last setup in one click.',
+      ] },
+    ],
+    related: ['axes', 'axis-limits', 'roster-solo', 'roster-friend', 'roster-group'],
   },
   {
-    id: 'preset-vs-friend',
+    id: 'roster-solo',
     section: 'modes',
-    title: 'Preset: vs Friend',
+    title: 'Just me',
     summary:
-      'A 1v1 lobby with an invite code. Share the code or QR, both players pick a deck, both ready up.',
-    related: ['invite-codes', 'ranked'],
+      'You and the built-in AI. Nobody else has to show up, and the game starts as soon as you have picked a deck.',
+    body: [
+      { kind: 'p', text: 'At 1v1 the AI can play any of the card sources — your own deck, a rolled pool, or Momir Basic.' },
+      { kind: 'p', text: 'Sealed and draft go further: the lobby fills with AI seats, so you can draft a full pod on your own and play the bracket out. Pick the pod size on the last step.' },
+      { kind: 'p', text: 'What the AI cannot do yet is take a seat at a multiplayer table, or bring its own deck to a bracket.' },
+    ],
+    related: ['axis-limits', 'cards-draft', 'event-round-robin'],
   },
   {
-    id: 'preset-draft-sealed',
+    id: 'roster-friend',
     section: 'modes',
-    title: 'Preset: Draft & Sealed',
+    title: 'A friend',
     summary:
-      'Limited play. Opens a lobby set to Sealed; switch it to any of the four draft shapes in the same screen. 2–8 players, and by default a round-robin bracket afterwards.',
-    related: ['cards-sealed', 'cards-draft', 'event-round-robin'],
+      'One human opponent. You get an invite code and a QR code to share; when they join, both of you pick a deck and ready up.',
+    related: ['invite-codes', 'ranked', 'event-single-game'],
   },
   {
-    id: 'preset-multiplayer',
+    id: 'roster-group',
     section: 'modes',
-    title: 'Preset: Multiplayer',
+    title: 'A group',
     summary:
-      'One shared game with 3–8 players, everyone bringing their own deck. Opens as Free-for-All; switch the table to Two-Headed Giant or Team vs. Team in the lobby.',
-    related: ['table-free-for-all', 'table-two-headed-giant', 'table-team-vs-team'],
-  },
-  {
-    id: 'preset-tournament',
-    section: 'modes',
-    title: 'Preset: Tournament',
-    summary:
-      'A round-robin bracket of 1v1 matches where everyone brings a constructed deck. The host can restrict the field to a format and set how many games each matchup plays.',
-    related: ['event-round-robin', 'cards-bring-a-deck'],
-  },
-  {
-    id: 'preset-variants',
-    section: 'modes',
-    title: 'Preset: Variants',
-    summary:
-      'The modes that do not involve deckbuilding. Currently Momir Basic — 60 basics and a random creature per turn.',
-    related: ['cards-momir'],
+      'Three to eight players. Either one shared game — Free-for-All, Two-Headed Giant or Team vs. Team — or a round-robin bracket of 1v1 matches with standings.',
+    body: [
+      { kind: 'p', text: 'Everyone joins with the same invite code. The host sets the number of seats and can start once they are filled.' },
+      { kind: 'p', text: 'A group can bring their own decks or share a limited pool: sealed and draft both work at a multiplayer table as well as in a bracket.' },
+    ],
+    related: ['table-free-for-all', 'table-two-headed-giant', 'table-team-vs-team', 'event-round-robin'],
   },
 
   // ── Playing a game ─────────────────────────────────────────────────────

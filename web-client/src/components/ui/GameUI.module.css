@@ -3064,12 +3064,15 @@
  *
  * The glass card stays a single centred panel; only its contents are tiered.
  * ========================================================================= */
+/* Narrower than the six-preset grid needed (was 760px): the panel is the only thing standing between
+   the player and the artwork, so it gives back what the wizard doesn't use. The glass itself is
+   deliberately unchanged — reducing its footprint shows the painting without washing the panel out. */
 .homeTiers {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-5);
   width: 100%;
-  max-width: 760px;
+  max-width: 660px;
 }
 
 .homeTier {
@@ -3119,7 +3122,305 @@
 }
 
 /* =========================================================================
- * Mode preset cards
+ * Play wizard — the three questions in the PLAY tier.
+ *
+ * The option tiles are the `presetCard*` block below, which the six mode
+ * presets used before it; only the chrome around them is new.
+ * ========================================================================= */
+.wizardStepper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* All three questions, always visible and numbered, so the order is legible and an answer reads as
+   something you can go back to rather than as decoration. */
+.wizardStepperTrack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 640px) {
+  .wizardStepperTrack {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.wizardStepSlot {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+  min-width: 0;
+}
+
+.wizardStepSlotCurrent {
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.wizardStepSlotDone {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.wizardStepNum {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.wizardStepSlotCurrent .wizardStepNum {
+  color: #ede9fe;
+  background: rgba(139, 92, 246, 0.55);
+}
+
+.wizardStepSlotDone .wizardStepNum {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.wizardStepBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.wizardStepWord {
+  font-size: 9px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+/* An answered step is a button with a pencil: the affordance *is* the answer. */
+.wizardStepChange {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.22);
+  align-self: flex-start;
+}
+
+.wizardStepChange:hover {
+  color: var(--text-primary);
+  border-bottom-color: rgba(255, 255, 255, 0.55);
+}
+
+.wizardStepPencil {
+  font-size: 10px;
+  color: var(--text-disabled);
+}
+
+.wizardStepChange:hover .wizardStepPencil {
+  color: #c4b5fd;
+}
+
+/* Decided because it was the only possibility — stated, not offered. */
+.wizardStepAuto {
+  font-size: var(--font-sm);
+  color: var(--text-tertiary);
+  cursor: help;
+}
+
+.wizardStepAutoMark {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+/* The answer on the step you are standing on: stated, no pencil — the tiles below are the control. */
+.wizardStepCurrentValue {
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  color: #ede9fe;
+}
+
+.wizardStepPending {
+  font-size: var(--font-sm);
+  color: var(--text-disabled);
+  font-style: italic;
+}
+
+.wizardStepTitle {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+/* Why the alternatives to an auto-resolved answer aren't available. Skipping a one-answer step
+   otherwise hides the disabled tiles, and with them the only place the reason was stated. */
+.wizardAutoNote {
+  margin: 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid rgba(245, 158, 11, 0.35);
+  font-size: var(--font-xs, 0.75rem);
+  line-height: 1.45;
+  color: var(--text-tertiary);
+}
+
+/* Sealed / Draft sub-shape, and the seat count — both are refinements of a
+   tile that has already been picked, so they use the lobby's button row. */
+.wizardSubRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+.wizardSubLabel {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.wizardFooter {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-top: var(--space-1, 4px);
+}
+
+.wizardSeats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.wizardSeatsRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.wizardSeatsCaption {
+  margin: 0;
+  max-width: 44ch;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-disabled);
+}
+
+.wizardRecap {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-xs, 0.75rem);
+  font-family: ui-monospace, monospace;
+  color: var(--text-disabled);
+  letter-spacing: 0.02em;
+}
+
+/* What will actually happen, stage by stage: "Open boosters → Build a deck → Standings". The one
+   thing none of the names on the tiles can tell you. Inline text on its own row, not a flex row:
+   nested flex boxes at this width broke every stage onto its own line. */
+.wizardFlow {
+  margin: 0;
+  font-size: var(--font-xs, 0.75rem);
+  line-height: 1.6;
+}
+
+.wizardFlowStage {
+  color: var(--text-tertiary);
+}
+
+.wizardFlowArrow {
+  color: var(--text-disabled);
+}
+
+/* Tile badge: is this one game, or an event with steps? */
+.presetCardBadge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 9px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.presetCardBadge_quick {
+  color: #9fd8c4;
+  border-color: rgba(111, 211, 192, 0.3);
+  background: rgba(111, 211, 192, 0.1);
+}
+
+.presetCardBadge_event {
+  color: #f0c479;
+  border-color: rgba(245, 158, 11, 0.32);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* Last completed selection, replayable in one click. */
+.playAgainChip {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  text-align: left;
+}
+
+.playAgainChip:hover {
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.16);
+}
+
+.playAgainChipLead {
+  font-weight: var(--font-weight-semibold);
+  color: #c4b5fd;
+  flex-shrink: 0;
+}
+
+.playAgainChipBody {
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--text-tertiary);
+}
+
+/* =========================================================================
+ * Option tiles (the wizard's steps; previously the mode preset cards)
  * ========================================================================= */
 .presetGrid {
   display: grid;
@@ -3158,9 +3459,9 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 3px;
   text-align: left;
-  padding: var(--space-3) var(--space-4) var(--space-3);
+  padding: var(--space-2) var(--space-3);
   background: none;
   border: none;
   color: inherit;
@@ -3205,12 +3506,14 @@
   cursor: not-allowed;
 }
 
-.presetCard_ai { --preset-accent: #8b5cf6; }
-.presetCard_friend { --preset-accent: #2563eb; }
-.presetCard_limited { --preset-accent: #f59e0b; }
-.presetCard_multiplayer { --preset-accent: #22c55e; }
-.presetCard_tournament { --preset-accent: #f97316; }
-.presetCard_variant { --preset-accent: #6fd3c0; }
+/* The tile whose sub-shape row is open (Sealed / Draft), or the shape picked
+   while the footer is showing. */
+.presetCardSelected {
+  --preset-accent: #8b5cf6;
+  border-color: rgba(139, 92, 246, 0.45);
+  background:
+    linear-gradient(180deg, rgba(139, 92, 246, 0.14) 0%, rgba(139, 92, 246, 0.04) 100%);
+}
 
 .presetCardTitle {
   font-size: var(--font-md);
@@ -3222,30 +3525,6 @@
   font-size: var(--font-xs, 0.75rem);
   line-height: 1.35;
   color: var(--text-tertiary);
-}
-
-.presetCardMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.presetCardMetaDot {
-  color: var(--text-disabled);
-}
-
-/* The Cards · Table · Event triple the lobby will open with — the taxonomy made visible. */
-.presetCardAxes {
-  font-size: 10px;
-  color: var(--text-disabled);
-  font-family: ui-monospace, monospace;
-  letter-spacing: 0.02em;
 }
 
 /* =========================================================================

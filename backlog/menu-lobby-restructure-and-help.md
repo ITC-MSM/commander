@@ -23,10 +23,11 @@ a phase or the stack is. Explicitly out of scope at the bottom.
 | Phase | State |
 |---|---|
 | 0 — split `GameUI.tsx` | **done** |
-| 1 — landing restructure | **done** |
+| 1 — landing restructure | **done** — but its six-card grid is superseded by Phase 7; see Part 3 |
 | 2 — axis renaming in both lobbies | **done** |
 | 3 — help (`topics.ts`, `/help`, `HelpTip`, `shortcuts.ts`) | **done** |
 | 4 — unified lobby over a view model | **done** |
+| 7 — landing wizard: three questions, not six cards | **done** |
 | 5 — server gaps (4c) | not started |
 | 6 — `convertLobby`, real URLs | not started |
 
@@ -229,56 +230,186 @@ Phase 5.
 
 ## Part 3 — Landing screen
 
-Keep the centred glass card. Restructure its contents into three labelled tiers.
+Keep the centred glass card. Three labelled tiers: **PLAY**, **BUILD & BROWSE**, **LAB**.
+
+```
+  ── BUILD & BROWSE ──────────────────────────────────
+  Deckbuilder · Replays · Stats · Friends · Profile
+
+  ── LAB (advanced) ──────────────────────────────────
+  Scenario Builder[dev] · Set Completion · LLM Tournament[dev]
+  "Debugging and content tools, not part of normal play."
+```
+
+- **BUILD & BROWSE finally gives `/stats` and `/profile` a home-screen entry.** They were orphaned
+  — `/stats` was two clicks deep behind a non-obvious affordance.
+- **Continue chip** — if a lobby is still live from a previous page load, surface it. Before this a
+  refresh mid-lobby dumped you on `/tournament/:lobbyId` with no indication that's what happened.
+- Unchanged and staying where they are: guest name entry, `AccountBenefitsCallout`,
+  `DeckMigrationPrompt`, `AuthWidget`, `PublicLobbyList`, `LiveGameList`, the Scryfall / Mana Font
+  attribution and the WotC fan-project disclaimer.
+
+The PLAY tier is Phase 7 and the rest of this section.
+
+### 3a. Why the six-card grid failed — Phase 1's own axis-mixing bug
+
+Phase 1 shipped a PLAY tier of six preset cards: `vs AI · vs Friend · Draft & Sealed ·
+Multiplayer · Tournament · Variants`. Reported unclear by Vincent on 2026-07-26 — *"the
+distinctions are not clear… vs AI vs a friend: you can add AI to 1v1 single games, Momir, or
+brackets… draft, multiplayer and tournament all seem to overlap."* Correct on both counts, and the
+cause is exactly the mistake Part 2 diagnoses, reproduced one level down:
+
+| Card | Question it actually answers |
+|---|---|
+| vs AI · vs Friend | who fills the other **seats** |
+| Draft & Sealed · Variants | **Cards** |
+| Multiplayer | **Table** |
+| Tournament | **Event** |
+
+Six cards drawn from four different questions. Because the three axes are *independent*, the
+overlaps a player notices are real product truths rather than wording problems: AI can sit in a
+bracket, a draft **is** a round-robin event, "Multiplayer" and "Tournament" differ only in Event,
+and Momir is a Cards value that merely happens to be 1v1 today.
+
+Two further diagnoses follow, and they're what the new design is built on.
+
+**Seats are not a fourth axis — they aren't a mode dimension at all.** Who fills a seat is per
+seat, decided by *Add AI* / an invite, and any Cards × Table × Event point can in principle be
+played by any roster. `vs AI` and `vs Friend` were roster shortcuts wearing mode-card clothing,
+which is why they read as peers of `Sealed` and aren't. The taxonomy was right to have three axes;
+Part 2's rule (a new mode adds a *value*, never an axis) stands.
+
+**Since Phase 4 the lobby already is the mode picker** — all three axes, all five Cards values, on
+both backing kinds, with `HelpTip`s and `⇄` cross-kind switching. Six cards in front of that screen
+were a second, worse mode picker speaking a different vocabulary. Deleting them removes a competing
+taxonomy rather than a feature.
+
+### 3b. What replaces it: three questions, asked one at a time
+
+Decided 2026-07-26 (options weighed: a three-tile "how do the other seats get filled" grid; a
+Cards-only grid with AI as a toggle; this). The landing screen asks the three questions a player can
+actually answer, in the order that prunes hardest, and the *answers* compose into one
+`(roster, Cards, Table, Event)` point that creates the right lobby kind first time.
 
 ```
                     Argentum Engine
 
   ── PLAY ────────────────────────────────────────────
-  ┌────────────┬────────────┬────────────┬───────────┐
-  │ vs AI      │ vs Friend  │ Draft/Seal │ Multiplyr │
-  │ 1v1 · now  │ 1v1 · code │ 2–8 · packs│ 3–8 · FFA │
-  └────────────┴────────────┴────────────┴───────────┘
-  ┌────────────┬────────────┐
-  │ Tournament │ Variants   │
-  │ bracket    │ Momir      │
-  └────────────┴────────────┘
-  join code: [________] (Join)
+  Play again → [Booster Draft · 8-player pod · bracket]   ← if there is a last time
+
+  Step 1 of 3 — Who are you playing with?
+  ┌──────────────┬──────────────┬──────────────┐
+  │ Just me      │ A friend     │ A group      │
+  │ you + the    │ one opponent,│ 3–8 players, │
+  │ built-in AI  │ invite code  │ invite codes │
+  └──────────────┴──────────────┴──────────────┘
+  Been invited?  [invite code____] (Join)
   Continue → [Sealed lobby ABC12]        ← only if one is live
 
-  ── BUILD & BROWSE ──────────────────────────────────
-  Deckbuilder · Replays · Stats · Friends · Profile
+  Step 2 of 3 — What are you playing with?      Just me · ✎
+  ┌────────────┬────────────┬────────────┬────────────┬────────────┐
+  │ Bring a    │ Random     │ Momir      │ Sealed     │ Draft      │
+  │ deck       │ pool       │ Basic      │            │            │
+  └────────────┴────────────┴────────────┴────────────┴────────────┘
+       └ Booster · Winston(2 only) · Grid(2–4) · Commander   ← sub-shape row
+  [← Back]
 
-  ── LAB (advanced) ──────────────────────────────────
-  Scenario Builder · Set Completion · LLM Tournament[dev]
-  "Debugging and content tools, not part of normal play."
+  Step 3 of 3 — How do you play it?     Just me · Booster Draft · ✎
+  ┌──────────────────────┬──────────────────────┐
+  │ Round-robin bracket  │ Free-for-All  ⃠      │
+  │ 1v1 matches          │ AI can't sit in a    │
+  │ pod of [8 ▾]         │ multiplayer pod yet  │
+  └──────────────────────┴──────────────────────┘
+  [← Back]                                  [Create lobby →]
 ```
 
-Implementation rules:
+**Each step offers only what is reachable, and says why for the rest.** Options nothing implements
+render disabled with the reason attached — the same rule the lobby follows, for the same reason
+(§ 4a). This is the first surface that shows a Phase 5 hole *at the moment the player asks the
+question*, instead of after they've committed to a lobby.
 
-- **One source of truth for the cards.** `src/components/ui/modePresets.ts`:
-  ```ts
-  interface ModePreset {
-    id: string
-    title: string
-    tagline: string          // "Open packs and build a 40-card deck"
-    players: string          // "2–8"
-    duration: string         // "~40 min"
-    needsDeck: boolean
-    helpTopicId: string
-    defaults: { cards: CardsAxis; table: TableAxis; event: EventAxis }
-  }
-  ```
-  Consistent metadata on every card is what lets a newcomer *compare* modes instead of guessing.
-  `defaults` is the axis triple the lobby opens with.
-- Every card carries a `⃝?` bound to its `helpTopicId` (Part 5).
-- **BUILD & BROWSE finally gives `/stats` and `/profile` a home-screen entry.** They are orphaned
-  today — `/stats` is two clicks deep behind a non-obvious affordance.
-- **Continue chip** — if a lobby or game is live, surface it. Today a refresh mid-lobby dumps you on
-  `/tournament/:lobbyId` with no indication that's what happened.
-- Unchanged and staying where they are: guest name entry, `AccountBenefitsCallout`,
-  `DeckMigrationPrompt`, `AuthWidget`, `PublicLobbyList`, `LiveGameList`, the Scryfall / Mana Font
-  attribution and the WotC fan-project disclaimer.
+**A step whose options collapse to one answer is skipped**, and the resolved value appears in the
+recap line with its `HelpTip` so it is decided-and-visible rather than silently assumed. That is
+what keeps the fast paths fast: `Just me → Bring a deck` skips step 3 entirely (a premade table
+can't hold AI in a bracket or a pod, so "one game" is the only answer) — two clicks to a vs-AI
+lobby, which is what the old `vs AI` card cost.
+
+**The recap line is the Back button.** Every answered step shows as a chip; clicking one returns to
+that step with later answers re-validated against the change.
+
+**Nothing is final.** Create lands in the Phase 4 lobby with all three axes still editable, so the
+wizard is a *creation* path, not a mode gate — and because it collects the whole triple before the
+lobby exists, the initial setup never pays the `⇄` recreate the six presets forced (pick `vs
+Friend`, then want Free-for-All → tear down and recreate).
+
+### 3c. What is reachable today — the wizard's load-bearing data
+
+Verified against the server, not inferred. Every ✗ is a Phase 5 gap in § 4c, and the wizard is
+where each one now becomes visible.
+
+| Cards | Just me (AI) | A friend | A group (3–8) |
+|---|---|---|---|
+| Bring a deck | 1v1, one game | 1v1 one game · 1v1 bracket | FFA · 2HG · Teams · bracket |
+| Random pool | 1v1, one game | 1v1, one game | ✗ quick lobby is 2 seats (gap #3) |
+| Momir Basic | 1v1, one game | 1v1, one game | ✗ no tournament-side Momir (gap #2) |
+| Sealed | 1v1 bracket vs AI | 1v1 bracket | bracket · FFA · 2HG · Teams |
+| Draft | **pod of up to 7 AI**, 1v1 bracket | 1v1 bracket | bracket · FFA · 2HG · Teams |
+
+Three things this table settles that were guesses before:
+
+- **Solo is 1v1-only, and that is gap #1, not a design choice.** `handleAddAiToLobby` rejects
+  `PREMADE_DECKS` (`LobbyHandler.kt:1387`) and rejects `isFreeForAll`, which covers Free-for-All
+  **and** Two-Headed Giant **and** Team vs. Team (`TournamentLobby.kt:343`). Same guard on the
+  settings-update path at `:2080–2088`. So "Bring a deck vs AI" can only be the quick lobby's single
+  game, and no AI can sit at any multiplayer table.
+- **A solo draft pod against 7 AI drafters is fully supported and currently near-undiscoverable.**
+  `handleAddAiToLobby` caps only on `isFull`, so a host can fill a `DRAFT` lobby with AI and play the
+  bracket out. This is the same class of finding as Part 2's "4-player FFA with my own deck":
+  implemented, reachable only by accident. The wizard's step 3 offers it as a pod-size control.
+- **Limited at a multiplayer table works.** `SEALED` + `gameMode = FREE_FOR_ALL` is a legal
+  tournament lobby, so Phase 4's note that "a limited pool always runs as a bracket" is only true at
+  a *1v1* table, where the sole single-game path is the quick lobby and it can't do limited.
+
+Sub-shape reachability, same treatment: Winston is exactly 2 players, Grid is 2–4, so both are
+blocked-with-reason under **A group** and Winston under a solo pod larger than 2.
+
+### 3d. Implementation rules
+
+- **`src/components/lobby/modeMatrix.ts` — the cold-start reachability model.** The pre-lobby twin of
+  `axisChoices.ts`: same question ("can I have this combination?"), different starting point (no
+  lobby exists yet, so the answer is never `RECREATE`). Exports the `Roster` type, the reachable
+  `Table × Event` shapes as one list of concrete named shapes rather than two dropdowns with dead
+  combinations, per-value `disabledReason`s, and `resolveLaunch(roster, cards, shape, seats)` →
+  the lobby-creation spec plus how many AI seats to add.
+- **`lobbyKindFor(triple)` is the one fact both surfaces need.** `axisChoices.ts` currently
+  re-derives it inside three hand-written switches; it should ask `modeMatrix` and compare the
+  answer with the lobby's current kind (same kind → `DIRECT`, other kind → `RECREATE`, neither →
+  `BLOCKED`). Do this only if it comes out genuinely smaller — the two surfaces legitimately phrase
+  the *reasons* differently ("Switch the Table to 1v1 first" is meaningless in a wizard with no
+  table yet), so the shared thing is the predicate, not the copy. If the phrasing split makes the
+  unification worse than the duplication, leave the modules separate and cross-reference them in a
+  comment. Either way there is a test asserting the two agree on every triple.
+- **`src/components/ui/PlayWizard.tsx`** renders the steps in place inside `contentBackdrop` — no
+  navigation, no route (home still has no URL; that's Phase 6). Reuses `presetCard*` styling for the
+  option tiles, `SettingsLabel`, `axisSummary` for the recap, and the existing `cards-*` / `table-*`
+  / `event-*` help topics, which already exist from Phase 2 and need no rewrite.
+- **Repeat players skip the wizard.** `localStorage['argentum-last-launch']` feeds a `Play again →
+  <recap>` chip above step 1 — one click, same lobby as last time. This is the honest answer to a
+  wizard's real cost: it is excellent once and tedious the fifth time. Sits next to the Continue
+  chip, which answers a different question (a lobby you are *already* in).
+- **Join code, `PublicLobbyList` and `LiveGameList` sit outside the wizard.** Someone else already
+  answered the three questions; the join row is not a step. Keep it visible under step 1 rather than
+  gating it behind one.
+- **Deleted:** `components/ui/modePresets.ts`, `ModePresetCard`, and the six `preset-*` help topics.
+  `ModePreset.launch` — the six-way mapping onto the two server lobby kinds — is subsumed by
+  `resolveLaunch`, which is the same seam with a smaller surface.
+- **Test ids:** `wizard-roster-{solo,friend,group}`, `wizard-cards-{bring-a-deck,random,momir,sealed,draft}`,
+  `wizard-shape-<id>`, `wizard-back`, `wizard-create`, `wizard-play-again`. The two e2e specs that
+  click `mode-preset-draft-sealed` (`sealed-tournament.spec.ts`, `draft-tournament.spec.ts`) move
+  onto a shared fixture helper — they have now been rewritten by two consecutive landing changes,
+  which is the argument for the helper.
+- **Help:** new topics for the three roster values and for the wizard itself; `/help` § Game modes
+  reorganised around the three questions; every disabled option's reason cross-links `axis-limits`.
 
 ---
 
@@ -434,12 +565,13 @@ Resolve the phantom number-key comment (`useMultiplayerView.ts:64`) while doing 
 | Phase | Work | Ships value alone? |
 |---|---|---|
 | ~~**0**~~ | ~~Split `GameUI.tsx`~~ — **done.** `HomeScreen.tsx` (709), `components/lobby/LobbyOverlay.tsx` (1123), `components/tournament/{TournamentOverlay,FreeForAllOverlay}.tsx`, shared `FullscreenButton.tsx`. `GameUI.tsx` is now a 34-line router. | no — enabler |
-| ~~**1**~~ | ~~Landing restructure~~ — **done.** `axes.ts` + `modePresets.ts`, three tiers, Lab caption, Continue chip, `/stats` `/friends` `/profile` surfaced. | **yes** |
+| ~~**1**~~ | ~~Landing restructure~~ — **done.** `axes.ts` + `modePresets.ts`, three tiers, Lab caption, Continue chip, `/stats` `/friends` `/profile` surfaced. Its six-card PLAY grid is superseded by Phase 7; the tiers, chip and account entries stand. | **yes** |
 | ~~**2**~~ | ~~Axis renaming across both lobbies~~ — **done.** `axes.ts` gained the server-mapping half; both lobbies show a `LobbyAxisSummary`; the tournament lobby's Format/Mode/Variant rows became Cards (+ sub-options) / Table / Event. | **yes** — kills the Format/Mode overloading |
 | ~~**3**~~ | ~~Help~~ — **done.** `src/help/{topics,shortcuts,helpStore}.ts`, `/help/:section`, portal `HelpTip`, in-game drawer, `?` on home. | **yes** |
 | ~~**4**~~ | ~~Unified lobby~~ — **done.** `lobbyViewModel.ts` + `axisChoices.ts` + `useLobbyCommands.ts` behind one `LobbyScreen`; both old overlays deleted; v1 recreate-on-switch confirm. | **yes** |
-| **5** | Server gaps from 4c, in the numbered order. | yes, each |
-| **6** | Optional: `convertLobby` preserving the invite code; real URLs for in-`/` screens so Back works. | yes |
+| ~~**7**~~ | ~~Landing wizard~~ — **done.** `modeMatrix.ts` + `PlayWizard.tsx` replace the six preset cards; `modePresets.ts` and the `preset-*` topics deleted; numbered stepper, commitment badges, flow line, open-by-default seats, `Play again` chip, `Seats` in the lobby, e2e fixture helper. | **yes** |
+| **5** | Server gaps from 4c, in the numbered order. Each one deletes a disabled option from the wizard. | yes, each |
+| **6** | Optional: `convertLobby` preserving the invite code; real URLs for in-`/` screens so Back works — including a URL per wizard step, which is the point at which the wizard's Back and the browser's Back can finally agree. | yes |
 
 ### What Phases 0/1/3 actually shipped
 
@@ -597,6 +729,99 @@ console errors.
 **Deviation from the plan's naming:** the descriptor module is `axisChoices.ts`, not `lobbyAxes.ts`
 — sitting next to the existing `axes.ts`, a name differing only by a prefix would have been a
 coin-flip every time you went looking for one of them.
+
+### What Phase 7 actually shipped
+
+**Two modules.** [`components/lobby/modeMatrix.ts`](../web-client/src/components/lobby/modeMatrix.ts)
+is the cold-start reachability model — the pre-lobby twin of `axisChoices.ts`, with `RECREATE`
+replaced by "create the right kind first time". [`components/ui/PlayWizard.tsx`](../web-client/src/components/ui/PlayWizard.tsx)
+only renders it. `modePresets.ts` and the six `preset-*` topics are deleted: `ModePreset.launch`'s
+six hand-written server mappings became one `resolveLaunch` derivation, so a new Cards or Table value
+no longer needs a home-screen change.
+
+**A test asserts the two surfaces agree.** `modeMatrix.test.ts` walks every selection the wizard can
+offer — roster × Cards × sub-shape × shape × seat count — resolves each one, and checks the lobby's
+own projection (`axesFromLobbySettings` / `axesFromQuickGameLobby`) reads back the triple that was
+asked for. It also asserts no selection asks for AI seats where `handleAddAiToLobby` would reject
+them. This is the safeguard the plan called for in § 3d, and it is what makes keeping the two
+modules separate safe.
+
+**Refinements after seeing it running** (all four reported by Vincent):
+
+- **The answers are a numbered stepper, not chips.** The first cut floated small chips to the right
+  of the step title; nothing said they were previous answers, that they were revisitable, or what
+  order they came in. Now all three questions are always on screen as `1 WHO WITH · 2 WHAT WITH ·
+  3 HOW`, each with its answer underneath — a dashed-underlined button with a pencil when it can be
+  changed, plain text when it is the step you are on, and `auto` when it was decided for you.
+- **Every option says whether it is one game or an event.** Cards tiles carry `Play right away` or
+  `Build a deck first`; shape tiles carry `One game` or `Several rounds · standings` — the
+  distinction the old `Multiplayer | Tournament` pair blurred, since both were "multiplayer" and only
+  one was multi-game. Once the selection is complete a flow line spells the whole thing out:
+  *Open boosters → Build a deck → Everyone plays everyone (8 players) → Standings*. Naming a mode
+  cannot tell you how many steps it has; this can.
+- **Seats are open by default.** `maxPlayers` is a cap, not a quorum — `startBlockReason` only ever
+  counts the players actually present — so the wizard defaults to the maximum, captions it as a
+  limit you can start before reaching, and offers the numbers as an optional narrowing. To make
+  "changeable in the lobby" true, `TournamentLobbySettings` gained a **Seats** row: the server has
+  always accepted `maxPlayers` on `updateLobbySettings` and no client could send it.
+- **The landing panel gives space back to the artwork.** `.homeTiers` is 760px → 660px with tighter
+  tile padding. An earlier attempt made the glass itself translucent; that washed the panel out
+  against a bright background and was reverted — the style is unchanged, only the footprint.
+
+**One latent bug fixed on the way past.** `useLobbyCommands.recreate`'s `setDeckTab(spec.deckTab)`
+was a no-op. Leaving nulls the store slice synchronously while the create only sends a message, so
+`LobbyScreen` unmounts in between and the promised Random tab never arrived — "Random pool ⇄" landed
+on a lobby reading "Bring a deck". Both the recreate and the wizard now hand the tab to the *next*
+screen through `pendingDeckTab.ts`, consumed in `LobbyScreen`'s `useState` initialiser.
+
+**Commander limited was capped at two players for no reason.** Reported by Vincent, who asked why. The
+client had required exactly two since the formats shipped (`06d8df91b5`, comment: *"multiplayer
+commander is a separate project"*), and that conflated sharing a **pool** with sharing a **game** —
+an eight-player Commander Draft is a bracket of 1v1 Commander matches, which has always worked. The
+server never had the restriction: `LobbyHandler.kt:605-616` caps Winston, Grid, 2HG, Teams and FFA and
+puts everything else at 2–8, its start guard only asks for two players, and Commander Draft runs
+through the plain draft path. So `cardsSeatCap` now reads 8 for both Commander shapes.
+
+The two things that genuinely *aren't* supported now say so instead, which is the point:
+
+- **Commander at a multiplayer table** — `COMMANDER_LIMITED_NEEDS_A_1V1_TABLE`, blocked on the Table
+  axis and on the wizard's shape step. The plumbing accepts it (`FreeForAllHandler.kt:64,84` stamps
+  the Commander engine format for a pod) but the rules work is `commander-format.md` Phase 3.
+- **Commander with AI seats** — `COMMANDER_LIMITED_HAS_NO_AI`. `buildAiSealedDeck` builds a 40-card
+  deck and calls `submitDeck` with no commander, and `TournamentLobby.validateDeck` doesn't check for
+  one, so the AI wouldn't be rejected — it would sit down in a Commander game *without a commander*.
+  Silently wrong is worse than blocked, so `canAddAi` excludes it and the wizard disables the
+  Commander sub-shapes under "Just me".
+
+**This exposed a gap in the skip rule.** Auto-resolving a one-answer step hides the disabled tiles and
+with them their reasons — fine for "a solo pod plays a bracket", not fine here, where the reason *is*
+the answer to "why can't eight of us play Commander together". The stepper now prints the skipped
+step's reasons under the title (`wizardAutoNote`) rather than leaving them in a tooltip on a tile that
+is no longer rendered.
+
+**Two capabilities became reachable that were implemented but effectively hidden:**
+
+- **A solo draft pod against up to 7 AI drafters.** `handleAddAiToLobby` caps only on `isFull`, so
+  the wizard's `Just me → Draft` fills the pod and plays the bracket out. Same class of finding as
+  Part 2's "4-player FFA with my own deck". Verified: a 4-seat pod created 3 AI drafters and offered
+  Start Draft.
+- **Limited at a multiplayer table.** `SEALED` + `gameMode = FREE_FOR_ALL` is a legal lobby, so
+  Phase 4's "a limited pool always runs as a bracket" is only true at a *1v1* table.
+
+**Verified against the running stack.** `Just me → Draft → Booster` (step 3 auto-skipped, pod size 4
+→ real lobby with 3 AI seats, Start Draft live) · `A group → Bring a deck → Free-for-All` (seats 3–6)
+· `A group → Sealed → Standard → bracket` (Commander Sealed correctly disabled at a group;
+`Seats 8 → 4` in the lobby moved the player count to 1/4) · `A friend → Random pool` (step 3 skipped;
+quick lobby opens with the Cards chip on **Random pool** and the deck picker on its Random tab) ·
+`Play again` chip replays the last selection. `npm run typecheck`, `npm run build` and all 189 unit
+tests clean; no console errors.
+
+**e2e.** The three tournament specs moved onto
+[`e2e-scenarios/helpers/homeScreen.ts`](../e2e-scenarios/helpers/homeScreen.ts) — `enterName`,
+`createLobby(choice)`, `joinLobby` — rather than each hard-coding the landing screen's test ids and
+placeholder copy. Two consecutive landing changes had already rewritten them; a third should be one
+edit. `draft-tournament.spec.ts` also stopped creating a sealed lobby and switching the format,
+which was only ever a workaround for the old "Draft & Sealed" card.
 
 ### Part 1 duplication, closed
 

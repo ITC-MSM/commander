@@ -17,7 +17,13 @@
 import type { LobbyState } from '@/store/slices/types'
 import type { QuickGameLobbyStateMessage } from '@/types'
 import type { DeckPickerTab } from '../ui/DeckPicker'
-import { axesFromLobbySettings, axesFromQuickGameLobby, type AxisTriple } from './axes'
+import {
+  COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
+  axesFromLobbySettings,
+  axesFromQuickGameLobby,
+  isCommanderLimited,
+  type AxisTriple,
+} from './axes'
 
 /** Which server implementation is backing this lobby. */
 export type LobbyKind = 'QUICK' | 'TOURNAMENT'
@@ -92,8 +98,6 @@ export interface UnifiedLobbyView {
   canAddAi: boolean
   ranked: { available: boolean; on: boolean }
   teams: LobbyTeams
-  /** The `?` topic for the whole screen's "what kind of lobby is this" question. */
-  helpTopicId: string
 }
 
 /* ── Quick game ─────────────────────────────────────────────────────────── */
@@ -167,7 +171,6 @@ export function fromQuickGameLobby(
     // The server's `QuickGameLobby.twoHeadedGiant` exists but no client has ever reached it (gap
     // #6): it isn't in `QuickGameLobbyStateMessage` at all, so there is nothing here to read.
     teams: { mode: 'NONE' },
-    helpTopicId: lobby.vsAi ? 'preset-vs-ai' : 'preset-vs-friend',
   }
 }
 
@@ -181,7 +184,6 @@ export function fromTournamentLobby(
   const isWaiting = lobbyState.state === 'WAITING_FOR_PLAYERS'
   const axes = axesFromLobbySettings(s)
   const playerCount = lobbyState.players.length
-  const isPremade = s.format === 'PREMADE_DECKS'
   const isWinston = s.format === 'WINSTON_DRAFT'
   const isGridDraft = s.format === 'GRID_DRAFT'
   const isFfa = s.gameMode === 'FREE_FOR_ALL'
@@ -222,11 +224,14 @@ export function fromTournamentLobby(
         }
       : null,
     isPublic: s.isPublic,
-    canAddAi: isWaiting && lobbyState.isHost && opts.aiEnabled && !isFfa && playerCount < maxPlayers,
+    // Commander limited excluded: `buildAiSealedDeck` submits a 40-card deck with no commander, and
+    // `TournamentLobby.validateDeck` doesn't check for one — so the AI would sit down without a
+    // commander rather than be rejected. `LobbyScreen` hides the button; the wizard says why.
+    canAddAi: isWaiting && lobbyState.isHost && opts.aiEnabled && !isFfa
+      && !isCommanderLimited(axes.cards) && playerCount < maxPlayers,
     // Ranked is a 1v1-bracket-only concept server-side (`TournamentLobby.rankedEligible`).
     ranked: { available: axes.table === 'ONE_V_ONE', on: s.ranked ?? false },
     teams: tournamentTeams(lobbyState),
-    helpTopicId: isPremade ? 'preset-tournament' : 'preset-draft-sealed',
   }
 }
 
@@ -337,7 +342,12 @@ function startBlockReason(lobbyState: LobbyState): string | null {
       break
     case 'COMMANDER_DRAFT':
     case 'COMMANDER_SEALED':
-      if (n !== 2) return `Commander limited is 1v1 — this lobby has ${n}`
+      // Not a seat limit. The client used to require exactly two here, which conflated sharing a
+      // *pool* with sharing a *game*: eight people can draft Commander and play the bracket out as
+      // 1v1 matches, and the server never restricted it (`LobbyHandler.kt:605-616`). What is
+      // genuinely missing is Commander at a multiplayer table — blocked on the Table axis — and
+      // Commander with AI seats, whose auto-deckbuild never picks a commander.
+      if (s.gameMode !== 'TOURNAMENT') return COMMANDER_LIMITED_NEEDS_A_1V1_TABLE
       break
     default:
       break

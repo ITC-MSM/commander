@@ -16,10 +16,16 @@
  */
 import { SettingsLabel } from '../ui/SettingsLabel'
 import {
+  COMMANDER_LIMITED_HAS_NO_AI,
+  COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
   LEGALITY_OPTIONS,
   cardsKindTopicId,
+  cardsLabel,
+  cardsSeatCap,
+  isCommanderLimited,
   eventTopicId,
   tableTopicId,
+  type CardsAxis,
   type CardsKind,
   type EventAxis,
   type TableAxis,
@@ -115,13 +121,13 @@ export function LobbyAxes({
               <ShapeButton
                 label="Commander"
                 active={cards.shape === 'COMMANDER'}
-                blocked={seatsBlock(view, 2, 'Commander Sealed')}
+                blocked={shapeBlock(view, { kind: 'SEALED', shape: 'COMMANDER' })}
                 onClick={() => commands.setCardsShape('COMMANDER_SEALED')}
               />
             </div>
             <div className={styles.variantCaption}>
               {cards.shape === 'COMMANDER'
-                ? 'Open Commander-shaped packs and build a 60-card deck around a commander from your pool. 1v1.'
+                ? 'Open Commander-shaped packs and build a 60-card deck around a commander from your pool. Up to 8 players; every match is 1v1.'
                 : 'Open 6 boosters and build a 40-card deck.'}
             </div>
           </div>
@@ -138,34 +144,34 @@ export function LobbyAxes({
                 label="Booster"
                 draft
                 active={cards.shape === 'BOOSTER'}
-                blocked={seatsBlock(view, 8, 'Booster Draft')}
+                blocked={shapeBlock(view, { kind: 'DRAFT', shape: 'BOOSTER' })}
                 onClick={() => commands.setCardsShape('DRAFT')}
               />
               <ShapeButton
                 label="Winston"
                 draft
                 active={cards.shape === 'WINSTON'}
-                blocked={seatsBlock(view, 2, 'Winston Draft')}
+                blocked={shapeBlock(view, { kind: 'DRAFT', shape: 'WINSTON' })}
                 onClick={() => commands.setCardsShape('WINSTON_DRAFT')}
               />
               <ShapeButton
                 label="Grid"
                 draft
                 active={cards.shape === 'GRID'}
-                blocked={seatsBlock(view, 4, 'Grid Draft')}
+                blocked={shapeBlock(view, { kind: 'DRAFT', shape: 'GRID' })}
                 onClick={() => commands.setCardsShape('GRID_DRAFT')}
               />
               <ShapeButton
                 label="Commander"
                 draft
                 active={cards.shape === 'COMMANDER'}
-                blocked={seatsBlock(view, 2, 'Commander Draft')}
+                blocked={shapeBlock(view, { kind: 'DRAFT', shape: 'COMMANDER' })}
                 onClick={() => commands.setCardsShape('COMMANDER_DRAFT')}
               />
             </div>
             <div className={styles.variantCaption}>
               {cards.shape === 'COMMANDER'
-                ? 'Commander-shaped 20-card packs; pick a commander from your pool. 1v1.'
+                ? 'Commander-shaped 20-card packs; pick a commander from your pool. Up to 8 drafters; every match is 1v1.'
                 : cards.shape === 'WINSTON' ? 'Pick from 3 face-down piles. 2 players.'
                 : cards.shape === 'GRID' ? 'Pick a row or column from a 3×3 grid. 2-4 players.'
                 : 'Pass packs around the table. 3-8 players.'}
@@ -265,11 +271,27 @@ function AxisButtons<V extends CardsKind | TableAxis | EventAxis>({
   )
 }
 
-/** A Cards sub-shape that this many players can't fit into, or null. */
-function seatsBlock(view: UnifiedLobbyView, maxPlayers: number, name: string): string | null {
-  return view.players.length > maxPlayers
-    ? `${name} seats at most ${maxPlayers} — this lobby has ${view.players.length}`
-    : null
+/**
+ * Why a Cards sub-shape can't be picked here, or null.
+ *
+ * Two reasons, both facts shared with the landing wizard rather than numbers written at the call
+ * site: the shape seats fewer players than this lobby is holding ({@link cardsSeatCap}), or it is a
+ * Commander shape at a multiplayer table, which nothing implements. Note the second is about the
+ * *table*, not the seat count — a Commander pool can be shared by eight, since the bracket plays it
+ * out as 1v1 matches.
+ */
+function shapeBlock(view: UnifiedLobbyView, cards: CardsAxis): string | null {
+  const cap = cardsSeatCap(cards)
+  if (view.players.length > cap) {
+    return `${cardsLabel(cards)} seats at most ${cap} — this lobby has ${view.players.length}`
+  }
+  if (isCommanderLimited(cards) && view.axes.table !== 'ONE_V_ONE') {
+    return COMMANDER_LIMITED_NEEDS_A_1V1_TABLE
+  }
+  if (isCommanderLimited(cards) && view.players.some((p) => p.isAi)) {
+    return COMMANDER_LIMITED_HAS_NO_AI
+  }
+  return null
 }
 
 function ShapeButton({

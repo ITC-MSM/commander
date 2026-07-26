@@ -87,6 +87,68 @@ export function cardsKindLabel(kind: CardsKind): string {
   }
 }
 
+/**
+ * Upper seat bound for a Cards value, which is really a property of its *sub-shape*: Winston passes
+ * three piles between exactly two players and Grid deals a 3×3 grid to at most four. Booster draft,
+ * sealed and both Commander shapes take a full eight.
+ *
+ * One function rather than a number repeated at each call site, because two surfaces need the same
+ * fact and phrase it differently: the lobby says "this lobby has 5 players", the landing wizard says
+ * "pick 'A friend' instead".
+ *
+ * The Commander shapes read 8 rather than 2 deliberately. The client capped them at two from the day
+ * they shipped, with the comment "multiplayer commander is a separate project", but that conflated
+ * how many people share a *pool* with how many share a *game*: an eight-player Commander Draft is a
+ * bracket of 1v1 Commander matches, which is exactly what has always been supported. The server
+ * never had the restriction — `LobbyHandler.kt:605-616` caps Winston, Grid, 2HG, Teams and FFA and
+ * puts everything else at 2–8, and its start guard only asks for two players. What genuinely is
+ * missing is Commander at a multiplayer *table* and Commander with AI seats; both are stated where
+ * they apply — see {@link COMMANDER_LIMITED_NEEDS_A_1V1_TABLE} and {@link COMMANDER_LIMITED_HAS_NO_AI}.
+ */
+export function cardsSeatCap(cards: CardsAxis): number {
+  switch (cards.kind) {
+    case 'BRING_A_DECK': return 8
+    // Both live only on the two-seat quick-game lobby.
+    case 'RANDOM':
+    case 'MOMIR': return 2
+    case 'SEALED': return 8
+    case 'DRAFT':
+      switch (cards.shape) {
+        case 'BOOSTER': return 8
+        case 'WINSTON': return 2
+        case 'GRID': return 4
+        case 'COMMANDER': return 8
+      }
+  }
+}
+
+/** The drafted / sealed Commander formats — `TournamentFormat.isCommanderFormat` on the server. */
+export function isCommanderLimited(cards: CardsAxis): boolean {
+  return (cards.kind === 'SEALED' || cards.kind === 'DRAFT') && cards.shape === 'COMMANDER'
+}
+
+/**
+ * Commander at a Free-for-All / Two-Headed Giant / Team table.
+ *
+ * The plumbing accepts it — `FreeForAllHandler.kt:64,84` stamps the Commander engine format for a
+ * pod — but the rules work it needs is its own project: range of influence, commander damage per
+ * opponent, and the politics audit in `backlog/commander-format.md` § Phase 3. A bracket is fine,
+ * because every game in it has two players.
+ */
+export const COMMANDER_LIMITED_NEEDS_A_1V1_TABLE =
+  'Commander isn’t implemented at a multiplayer table yet — only in 1v1 games. A bracket works: every match in it is 1v1.'
+
+/**
+ * AI seats in a Commander limited lobby.
+ *
+ * `LobbyHandler.buildAiSealedDeck` builds a 40-card sealed deck and calls `submitDeck` without a
+ * commander, and `TournamentLobby.validateDeck` doesn't check for one — so the AI would not be
+ * rejected, it would sit down in a Commander game with no commander and a 40-card deck. Silently
+ * wrong is worse than blocked.
+ */
+export const COMMANDER_LIMITED_HAS_NO_AI =
+  'The AI can’t build a Commander deck — its automatic deckbuilding never picks a commander, so it would sit down without one. Play these with people.'
+
 export function tableLabel(table: TableAxis): string {
   switch (table) {
     case 'ONE_V_ONE': return '1v1'

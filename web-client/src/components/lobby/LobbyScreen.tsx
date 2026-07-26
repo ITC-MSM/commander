@@ -32,6 +32,7 @@ import { LobbyAxisSummary } from './LobbyAxisSummary'
 import { TeamChip, TournamentLobbySettings } from './TournamentLobbySettings'
 import { recreateTargetLabel, type RecreateSpec } from './axisChoices'
 import { fromQuickGameLobby, fromTournamentLobby, type UnifiedLobbyView } from './lobbyViewModel'
+import { takePendingDeckTab } from './pendingDeckTab'
 import { useLobbyCommands } from './useLobbyCommands'
 import styles from '../ui/GameUI.module.css'
 
@@ -44,7 +45,9 @@ export function LobbyScreen() {
   // Deck-picker state the Cards axis needs to read: its validity gates the ready button, and its
   // tab *is* the Cards value on a quick lobby (Random pool is the Random tab).
   const [deckValid, setDeckValid] = useState(true)
-  const [deckTab, setDeckTab] = useState<DeckPickerTab | undefined>(undefined)
+  // Seeded from whatever created this lobby: the landing wizard and the cross-kind recreate both
+  // promise a Random pool from outside any mounted lobby screen. See `pendingDeckTab.ts`.
+  const [deckTab, setDeckTab] = useState<DeckPickerTab | undefined>(takePendingDeckTab)
   const [copied, setCopied] = useState(false)
   const [pendingRecreate, setPendingRecreate] = useState<RecreateSpec | null>(null)
 

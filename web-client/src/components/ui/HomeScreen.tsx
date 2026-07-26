@@ -3,13 +3,14 @@
  *
  * Three labelled tiers instead of one `Quick Game | Tournament` toggle:
  *
- * - **PLAY** — the six {@link MODE_PRESETS} cards, a join-code row, and a Continue chip when a
+ * - **PLAY** — the {@link PlayWizard}'s three questions, a join-code row, and a Continue chip when a
  *   lobby is still live from a previous page load.
  * - **BUILD & BROWSE** — deckbuilder, replays and the account pages (`/stats`, `/friends`,
  *   `/profile`), which had no home-screen entry at all before.
  * - **LAB** — debugging and content tools, explicitly captioned as not part of normal play.
  *
- * The presets are declarative (`modePresets.ts`); this file only knows how to *launch* one.
+ * What is playable is declarative (`lobby/modeMatrix.ts`) and the wizard only renders it; this file
+ * only knows how to turn a finished selection into lobby-creation messages.
  */
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -25,9 +26,9 @@ import { LoginModal } from '@/components/auth/LoginModal'
 import { DeckMigrationPrompt } from '@/components/auth/DeckMigrationPrompt'
 import { AccountBenefitsCallout } from '@/components/auth/AccountBenefitsCallout'
 import { FullscreenButton } from './FullscreenButton'
-import { HelpTip } from '@/components/help/HelpTip'
-import { MODE_PRESETS, type ModePreset } from './modePresets'
-import { axisSummary } from '../lobby/axes'
+import { PlayWizard } from './PlayWizard'
+import type { LaunchSpec } from '../lobby/modeMatrix'
+import { setPendingDeckTab } from '../lobby/pendingDeckTab'
 import { DEFAULT_LOBBY_SET_CODE } from '../lobby/useLobbyCommands'
 import { loadLobbyId, clearLobbyId } from '@/store/slices/shared'
 import styles from './GameUI.module.css'
@@ -96,6 +97,7 @@ export function HomeScreen({
   const aiEnabled = useGameStore((state) => state.aiEnabled)
   const createTournamentLobby = useGameStore((state) => state.createTournamentLobby)
   const createQuickGameLobby = useGameStore((state) => state.createQuickGameLobby)
+  const addAiToLobby = useGameStore((state) => state.addAiToLobby)
   const joinQuickGameLobby = useGameStore((state) => state.joinQuickGameLobby)
   const lobbyState = useGameStore((state) => state.lobbyState)
   const [joinSessionId, setJoinSessionId] = useState('')
@@ -144,16 +146,30 @@ export function HomeScreen({
     }
   }
 
-  /** Open the lobby a preset describes. See {@link ModePreset.launch}. */
-  const launchPreset = (preset: ModePreset) => {
-    const launch = preset.launch
-    if (launch.kind === 'quickGame') {
-      createQuickGameLobby(launch.vsAi, undefined, false, undefined, launch.momirBasic ?? false)
-    } else {
-      // Sets are configured inside the lobby; this is only the starting selection, and is ignored
-      // entirely by PREMADE_DECKS (which generates no boosters).
-      createTournamentLobby([DEFAULT_LOBBY_SET_CODE], launch.format, 6, 8, 45, false, launch.gameMode)
+  /**
+   * Create the lobby a completed wizard selection describes.
+   *
+   * The only place that talks to the store about lobby creation. `resolveLaunch` derived the spec;
+   * this turns it into messages, which is the whole of what used to be `ModePreset.launch`'s
+   * six hand-written cases.
+   */
+  const launch = (spec: LaunchSpec) => {
+    if (spec.kind === 'QUICK') {
+      // Random pool is the deck picker's Random tab, not a lobby flag, so it is handed to the lobby
+      // screen that has not mounted yet. See `pendingDeckTab.ts`.
+      setPendingDeckTab(spec.deckTab)
+      createQuickGameLobby(spec.vsAi, undefined, false, undefined, spec.momirBasic)
+      return
     }
+    // Sets are configured inside the lobby; this is only the starting selection, and is ignored
+    // entirely by PREMADE_DECKS (which generates no boosters).
+    createTournamentLobby(
+      [DEFAULT_LOBBY_SET_CODE], spec.format, 6, spec.maxPlayers, 45, false, spec.gameMode,
+    )
+    // Fill the AI seats of a solo pod. Sent straight after the create rather than on the lobby
+    // update, because the screen that would observe that update is not this one — and messages go
+    // out over one socket in order, the same assumption `useLobbyCommands.recreate` already makes.
+    for (let i = 0; i < spec.aiSeats; i += 1) addAiToLobby()
   }
 
   // Replay a join that was queued while disconnected.
@@ -344,24 +360,17 @@ export function HomeScreen({
               {/* ── PLAY ─────────────────────────────────────────────── */}
               <section className={styles.homeTier}>
                 <SectionHeading label="Play" />
-                <div className={styles.presetGrid}>
-                  {MODE_PRESETS.map((preset) => (
-                    <ModePresetCard
-                      key={preset.id}
-                      preset={preset}
-                      disabled={preset.launch.kind === 'quickGame' && preset.launch.vsAi && !aiEnabled}
-                      onSelect={() => launchPreset(preset)}
-                    />
-                  ))}
-                </div>
+                <PlayWizard aiEnabled={aiEnabled} onLaunch={launch} />
 
+                {/* Not a step. Someone who has a code has had the three questions answered for them,
+                    so the join row stays visible throughout rather than hiding behind step 1. */}
                 <div className={styles.joinRow}>
                   <input
                     type="text"
                     value={joinSessionId}
                     onChange={(e) => setJoinSessionId(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-                    placeholder="Have an invite code? Paste it here"
+                    placeholder="Been invited? Paste the code here"
                     className={styles.sessionInput}
                   />
                   <button
@@ -515,50 +524,6 @@ function SectionHeading({ label, hint }: { label: string; hint?: string }) {
         {hint && <span className={styles.tierHeadingHint}>{hint}</span>}
       </span>
       <span className={styles.tierHeadingRule} />
-    </div>
-  )
-}
-
-/**
- * One entry point in the PLAY tier. Every card carries the same metadata — seats, rough duration,
- * whether you need a deck, and the axis triple the lobby will open with — so the six can be
- * compared rather than guessed at.
- */
-function ModePresetCard({
-  preset,
-  disabled,
-  onSelect,
-}: {
-  preset: ModePreset
-  disabled: boolean
-  onSelect: () => void
-}) {
-  // A wrapper div rather than one big button: the HelpTip is itself a button, and nesting
-  // interactive elements is invalid HTML (and unreachable by keyboard).
-  return (
-    <div className={`${styles.presetCard} ${styles[`presetCard_${preset.accent}`] ?? ''}`}>
-      <span className={styles.presetCardHelp}>
-        <HelpTip topicId={preset.helpTopicId} label={`What is ${preset.title}?`} size="sm" />
-      </span>
-      <button
-        type="button"
-        onClick={onSelect}
-        disabled={disabled}
-        data-testid={`mode-preset-${preset.id}`}
-        className={styles.presetCardButton}
-        {...(disabled ? { title: 'The AI player is disabled on this server' } : {})}
-      >
-        <span className={styles.presetCardTitle}>{preset.title}</span>
-        <span className={styles.presetCardTagline}>{preset.tagline}</span>
-        <span className={styles.presetCardMeta}>
-          <span>{preset.players}</span>
-          <span className={styles.presetCardMetaDot}>·</span>
-          <span>{preset.duration}</span>
-          <span className={styles.presetCardMetaDot}>·</span>
-          <span>{preset.needsDeck ? 'Bring a deck' : 'No deck needed'}</span>
-        </span>
-        <span className={styles.presetCardAxes}>{axisSummary(preset.defaults)}</span>
-      </button>
     </div>
   )
 }

@@ -17,6 +17,7 @@ import type { DeckFormat, TournamentFormat } from '@/types'
 import { gameModeForTable, type CardsKind, type TableAxis } from './axes'
 import type { RecreateSpec } from './axisChoices'
 import type { UnifiedLobbyView } from './lobbyViewModel'
+import { setPendingDeckTab } from './pendingDeckTab'
 import type { DeckPickerTab } from '../ui/DeckPicker'
 
 /**
@@ -90,10 +91,12 @@ export function useLobbyCommands(
       else s().leaveLobby()
 
       if (spec.to === 'QUICK') {
-        s().createQuickGameLobby(false, undefined, view.isPublic, spec.format ?? undefined, spec.momirBasic)
         // Random pool is the picker's Random tab, not a lobby flag, so a switch that promised one
-        // has to move the picker itself — otherwise the new lobby opens on "Bring a deck".
-        setDeckTab(spec.deckTab)
+        // has to move the picker itself — otherwise the new lobby opens on "Bring a deck". Leaving
+        // has already unmounted this screen (both slices are null until the new lobby arrives), so
+        // the tab is handed to the *next* one rather than set on this one.
+        setPendingDeckTab(spec.deckTab)
+        s().createQuickGameLobby(false, undefined, view.isPublic, spec.format ?? undefined, spec.momirBasic)
       } else {
         s().createTournamentLobby(
           [DEFAULT_LOBBY_SET_CODE], spec.format, 6, 8, 45, view.isPublic, spec.gameMode,
