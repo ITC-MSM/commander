@@ -502,6 +502,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         G: floatingPool.green,
         C: floatingPool.colorless,
       }
+      // Restricted ("spend this mana only to …") mana counts too, but only the units the server
+      // judged eligible for this action — Ashling, Rimebound's MV4+ mana on an MV4+ spell.
+      for (const entry of manaSelectionState.actionInfo.eligibleRestrictedMana ?? []) {
+        const pip = entry.color ?? 'C'
+        if (pip in poolByPip) poolByPip[pip]!++
+      }
       // Spend exact-color pool first against colored pips
       for (const pip of Object.keys(poolByPip)) {
         while ((poolByPip[pip] ?? 0) > 0 && (remainingColorReqs[pip] ?? 0) > 0) {

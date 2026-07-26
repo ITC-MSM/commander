@@ -40,8 +40,7 @@ import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.WarpGrants
-import com.wingedsheep.engine.mechanics.mana.paymentSubtypesOf
-import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
+import com.wingedsheep.engine.mechanics.mana.spellPaymentContextFor
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 
 /**
@@ -457,13 +456,22 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     // affordability (CR 701.67); the tap metadata is attached to the emitted actions
                     // by the post-pass at the end of this method.
                     val fixedAltWaterbend = runtimeFixedAltCost?.takeIf { !playForFree && it.waterbend }
+                    val spellContext = spellPaymentContextFor(
+                        cardComponent,
+                        isFromExile = sourceZoneLabel == "EXILE",
+                        isFromHand = false
+                    )
                     val canAfford = playForFree ||
-                        context.manaSolver.canPay(state, playerId, effectiveCost, precomputedSources = context.availableManaSources) ||
+                        context.manaSolver.canPay(
+                            state, playerId, effectiveCost,
+                            precomputedSources = context.availableManaSources, spellContext = spellContext
+                        ) ||
                         (fixedAltWaterbend != null && context.costUtils.canAffordWithWaterbend(
                             state, playerId, effectiveCost,
                             context.costUtils.findWaterbendPermanents(state, playerId)
                                 .take(fixedAltWaterbend.fixedCost.genericAmount),
-                            precomputedSources = context.availableManaSources
+                            precomputedSources = context.availableManaSources,
+                            spellContext = spellContext
                         ))
 
                     // Calculate X cost info if the spell has X in its cost (cost still paid even with may-play)
@@ -1361,8 +1369,12 @@ class CastFromZoneEnumerator : ActionEnumerator {
             )
             val costString = effectiveCost.toString()
             val harmonizeCreatures = context.costUtils.findHarmonizeCreatures(state, playerId)
+            // Harmonize casts from the graveyard, so eligible conditional mana is judged with
+            // isFromHand = false (a "cast from a non-hand zone only" restriction applies here).
+            val harmonizeSpellContext = spellPaymentContextFor(cardComponent, isFromHand = false)
             val canAfford = context.costUtils.canAffordWithHarmonize(
-                state, playerId, effectiveCost, harmonizeCreatures, precomputedSources = context.availableManaSources
+                state, playerId, effectiveCost, harmonizeCreatures,
+                precomputedSources = context.availableManaSources, spellContext = harmonizeSpellContext
             )
             // X-cost Harmonize (e.g. Nature's Rhythm {X}{G}{G}{G}{G}): advertise X so the
             // client prompts for it. maxAffordableX folds in the best single-creature tap
@@ -1371,7 +1383,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             val maxAffordableX: Int? = if (hasXCost) {
                 context.costUtils.maxAffordableXWithHarmonize(
                     state, playerId, effectiveCost, harmonizeCreatures,
-                    precomputedSources = context.availableManaSources
+                    precomputedSources = context.availableManaSources, spellContext = harmonizeSpellContext
                 )
             } else null
 
@@ -1988,18 +2000,14 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 )
                 val kickedManaCost = manaKicker?.manaCost ?: offspringAbility?.manaCost
                 val kickedCost = if (kickedManaCost != null) baseCost + kickedManaCost else baseCost
-                val kickedSpellContext = SpellPaymentContext(
-                    isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
+                // This enumerator only enumerates non-hand-zone casts (command, library, exile,
+                // graveyard, …) — `sourceZone` is never "HAND" here. Mark accordingly so
+                // [ManaRestriction.CastFromNonHandOnly] mana is eligible for the kicked variant.
+                val kickedSpellContext = spellPaymentContextFor(
+                    cardComponent,
                     isKicked = declaredSlot == ChoiceSlot.KICKED,
-                    isCreature = cardComponent.typeLine.isCreature,
-                    manaValue = cardComponent.manaCost.cmc,
-                    hasXInCost = cardComponent.manaCost.hasX,
-                    subtypes = paymentSubtypesOf(cardComponent),
-                    cardTypes = cardComponent.typeLine.cardTypes,
-                    // This enumerator only enumerates non-hand-zone casts (command, library, exile,
-                    // graveyard, …) — `sourceZone` is never "HAND" here. Mark accordingly so
-                    // [ManaRestriction.CastFromNonHandOnly] mana is eligible for the kicked variant.
-                    isFromHand = false,
+                    isFromExile = sourceZone == "EXILE",
+                    isFromHand = false
                 )
                 val canAffordKickedMana = context.manaSolver.canPay(
                     state, playerId, kickedCost,

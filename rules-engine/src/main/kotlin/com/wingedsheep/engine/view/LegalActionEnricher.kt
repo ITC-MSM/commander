@@ -1,11 +1,19 @@
 package com.wingedsheep.engine.view
 
+import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.*
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext
+import com.wingedsheep.engine.mechanics.mana.isSatisfiedBy
+import com.wingedsheep.engine.mechanics.mana.spellPaymentContextFor
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.player.ManaPoolComponent
+import com.wingedsheep.engine.state.components.player.RestrictedManaEntry
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 
 /**
  * Thin mapping layer from engine [LegalAction] to server [LegalActionInfo] DTO.
@@ -19,12 +27,53 @@ class LegalActionEnricher(
 ) {
     fun enrich(actions: List<LegalAction>, state: GameState, playerId: EntityId): List<LegalActionInfo> {
         val manaSourceInfos = buildManaSourceInfos(state, playerId)
-        return actions.map { action -> toLegalActionInfo(action, manaSourceInfos) }
+        val restrictedMana = state.getEntity(playerId)?.get<ManaPoolComponent>()?.restrictedMana ?: emptyList()
+        return actions.map { action ->
+            toLegalActionInfo(
+                action,
+                manaSourceInfos,
+                eligibleRestrictedMana = if (restrictedMana.isEmpty() || !shouldExposeManaSources(action)) null
+                else buildEligibleRestrictedMana(state, action, restrictedMana)
+            )
+        }
+    }
+
+    /**
+     * The subset of [restrictedMana] whose restriction is satisfied by this action's payment —
+     * the mana the client may count as spendable while it does its own cost math (convoke bar,
+     * waterbend/harmonize selectors). Returns null when the action isn't a cast/activation we can
+     * build a payment context for, so the client falls back to unrestricted mana only.
+     */
+    private fun buildEligibleRestrictedMana(
+        state: GameState,
+        action: LegalAction,
+        restrictedMana: List<RestrictedManaEntry>
+    ): List<ClientRestrictedManaEntry>? {
+        val paymentContext = when (val gameAction = action.action) {
+            is CastSpell -> state.getEntity(gameAction.cardId)?.get<CardComponent>()?.let { card ->
+                spellPaymentContextFor(
+                    card,
+                    isKicked = gameAction.declaredCostSlot == ChoiceSlot.KICKED,
+                    isFromExile = action.sourceZone == "EXILE",
+                    // Null sourceZone means the standard hand cast.
+                    isFromHand = action.sourceZone == null || action.sourceZone == "HAND"
+                )
+            }
+            is ActivateAbility -> state.getEntity(gameAction.sourceId)?.get<CardComponent>()?.let { card ->
+                buildAbilityPaymentContext(card, state.projectedState, gameAction.sourceId)
+            }
+            else -> null
+        } ?: return null
+
+        return restrictedMana
+            .filter { it.restriction.isSatisfiedBy(paymentContext) }
+            .map { ClientRestrictedManaEntry(it.color?.symbol?.toString(), it.restriction.description) }
     }
 
     private fun toLegalActionInfo(
         action: LegalAction,
-        manaSourceInfos: List<ManaSourceInfo>?
+        manaSourceInfos: List<ManaSourceInfo>?,
+        eligibleRestrictedMana: List<ClientRestrictedManaEntry>?
     ): LegalActionInfo {
         return LegalActionInfo(
             actionType = action.actionType,
@@ -69,6 +118,7 @@ class LegalActionEnricher(
             minDamagePerTarget = action.minDamagePerTarget,
             autoTapPreview = action.autoTapPreview,
             availableManaSources = if (shouldExposeManaSources(action)) manaSourceInfos else null,
+            eligibleRestrictedMana = eligibleRestrictedMana,
             sourceZone = action.sourceZone,
             tapForPower = action.tapForPower,
             tapForPowerRequired = action.tapForPowerRequired,

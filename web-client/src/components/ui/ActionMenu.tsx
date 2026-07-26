@@ -643,7 +643,13 @@ function ActionOptionButton({
         </span>
         {showSeparateCost && (
           hasFloatingMana && manaPool
-            ? <ManaCostProgress cost={option.manaCost} manaPool={manaPool} size={16} gap={2} />
+            ? <ManaCostProgress
+                cost={option.manaCost}
+                manaPool={manaPool}
+                eligibleRestrictedMana={option.action?.eligibleRestrictedMana ?? []}
+                size={16}
+                gap={2}
+              />
             : <ManaCost cost={option.manaCost} size={16} gap={2} />
         )}
       </button>

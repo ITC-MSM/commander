@@ -104,6 +104,17 @@ data class LegalActionInfo(
     val minDamagePerTarget: Int? = null,
     val autoTapPreview: List<EntityId>? = null,
     val availableManaSources: List<ManaSourceInfo>? = null,
+    /**
+     * The player's floating *restricted* ("spend this mana only to …") mana that is eligible to
+     * pay for **this** action, one entry per mana unit. Populated alongside
+     * [availableManaSources] — i.e. for the surfaces where the client does its own cost math
+     * (convoke / waterbend / harmonize / delve selectors, X-cost picker).
+     *
+     * The client can't judge eligibility itself: the pool payload only carries a human-readable
+     * restriction string. Without this, a convoke bar (say) would ignore Ashling, Rimebound's
+     * MV4+ mana and grey out a cast the server would happily accept.
+     */
+    val eligibleRestrictedMana: List<ClientRestrictedManaEntry>? = null,
     val requiresManaColorChoice: Boolean = false,
     /**
      * Restricted color names ("WHITE", "BLUE", ...) when the ability can only produce a

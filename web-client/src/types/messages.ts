@@ -2,7 +2,7 @@ import { ErrorCode, GameOverReason } from './enums'
 import { EntityId } from './entities'
 import { GameAction } from './actions'
 import { ClientEvent } from './events'
-import { ClientGameState, ClientCard, ClientZone, ClientPlayer, ClientCombatState, ClientCommanderDamage, ClientDeckCard } from './gameState'
+import { ClientGameState, ClientCard, ClientZone, ClientPlayer, ClientCombatState, ClientCommanderDamage, ClientDeckCard, ClientRestrictedManaEntry } from './gameState'
 
 // ============================================================================
 // Server Messages (received from server)
@@ -885,6 +885,14 @@ export interface LegalActionInfo {
   readonly autoTapPreview?: readonly EntityId[]
   /** Available mana sources for pre-cast selection */
   readonly availableManaSources?: readonly ManaSourceInfo[]
+  /**
+   * Floating restricted ("spend this mana only to …") mana that the server has determined is
+   * eligible to pay for *this* action — one entry per mana unit. Sent alongside
+   * `availableManaSources`. The client must count these as spendable when it does its own cost
+   * math (convoke / waterbend / harmonize bars); it cannot judge eligibility itself, since the
+   * mana pool payload carries only a human-readable restriction string.
+   */
+  readonly eligibleRestrictedMana?: readonly ClientRestrictedManaEntry[]
   /** Whether this ability produces mana of any color and needs a color choice from the player */
   readonly requiresManaColorChoice?: boolean
   /**
