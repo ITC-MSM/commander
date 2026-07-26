@@ -916,6 +916,57 @@
     ]
 }
 
+// Moonlight Hunt
+{
+    "name": "Moonlight Hunt",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Choose target creature you don't control. Each creature you control that's a Wolf or a Werewolf deals damage equal to its power to that creature.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature Wolf|Werewolf ctrl:you"
+                }
+            },
+            "body": {
+                "type": "DealDamage",
+                "amount": {
+                    "type": "EntityProperty",
+                    "entity": "IterationEntity",
+                    "numericProperty": "Power"
+                },
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                },
+                "damageSource": "Self"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "creature you don't control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "UNCOMMON",
+        "artist": "Joseph Meehan",
+        "flavorText": "Courage alone won't keep you alive.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d9633603-a80f-448d-98d9-00064d379c26.jpg?1783937725"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Open the Armory
 {
     "name": "Open the Armory",

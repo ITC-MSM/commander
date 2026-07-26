@@ -243,6 +243,14 @@ excluded.
   cost is unpayable when the controller has not drawn a card this turn or the tracked card has
   since left their hand (matches the Scryfall ruling: "If you do not have the card still in your
   hand, you can't pay the cost").
+- `Costs.MillCard` / `Costs.Mill(count)` — mill a card / `count` cards as a cost ("{T}, Mill a card:
+  Add {C}" — Deranged Assistant). No player selection: the milled cards are the top of the library.
+  Per **CR 701.17b** a player *can't pay a cost that includes milling more cards than their library
+  holds*, so — unlike the mill *effect*, which mills as many as possible — the cost is **unpayable**
+  on a short library and gates legal-action enumeration (including mana-ability enumeration). A
+  `ModifyMillAmount` replacement (Bruvac) still applies to the announced count when the cost is
+  actually paid, and the library→graveyard moves go through `ZoneTransitionService`, so mill triggers
+  fire exactly as they do for an effect's mill.
 - `Costs.ExileSelf` — exile this permanent (or graveyard card, for graveyard-activated abilities).
 - `Costs.ReturnSelfToHand` — return this permanent to its owner's hand (Maze's End: "{3}, {T},
   Return this land to its owner's hand: …"). The bounce-to-hand sibling of `Costs.SacrificeSelf` /
@@ -7278,7 +7286,7 @@ replacementEffect {
   `Effects.MayRevealCardFromHand` to build SOI shadow lands or other "as ~ enters" choices.
   **Scope today:** only wired into the land-play path (`PlayLandHandler`). When the first non-land
   permanent needs this, also wire it into `StackResolver.enterPermanentOnBattlefield`.
-- `EntersWithCounters(counterType?, count, selfOnly?, condition?, appliesTo?)` /
+- `EntersWithCounters(counterType?, count, selfOnly?, condition?, otherOnly?, appliesTo?)` /
   `EntersWithDynamicCounters(counterType?, count, otherOnly?, appliesTo?)` — "[permanent] enters with
   N counters." `EntersWithCounters` takes a fixed `count: Int` (Master Biomancer, Metallic Mimic);
   `EntersWithDynamicCounters` takes a `count: DynamicAmount` (Stag Beetle; the SOS Converge "Archaic"
@@ -7287,14 +7295,21 @@ replacementEffect {
   - **Self** (default) — applies to the permanent that owns the replacement. Reserve a *dynamic* count
     for "this creature enters with a counter for each color of mana spent to cast **it**" / "for each X
     it has".
-  - **`otherOnly = true`** — applies to *other* matching creatures entering (Gev, Scaled Scorch:
+  - **`otherOnly = true`** (both variants) — applies to *other* matching creatures entering (Metallic
+    Mimic: "each **other** creature you control of the chosen type enters with an additional +1/+1
+    counter"; Gev, Scaled Scorch:
     "Other creatures you control enter with additional counters"; Wildgrowth Archaic: "whenever you
     cast a creature spell, that creature enters with X additional +1/+1 counters … where X is the
     number of colors of mana spent to cast **it**"). The `count` is always evaluated against the
     **entering object**, not the replacement source — so an entering-object amount like
     `DistinctColorsManaSpent` reads the new creature's own cast (and a token / reanimated creature that
     wasn't cast spent no mana → 0). Player-scoped counts (`TurnTracking(Player.You)`, Gev) still read
-    the replacement source's controller.
+    the replacement source's controller. **Set `otherOnly` on any "each *other* …" wording** — the
+    entering permanent's own entry path applies its printed enters-with effects regardless of
+    `appliesTo` (that's how plain self-counter cards work), so without the flag a group effect also
+    counters its own source as it enters. Source-relative predicates in `appliesTo` (notably
+    `withChosenSubtype()`) resolve against the **replacement source**, so Metallic Mimic's filter reads
+    the type chosen as the Mimic entered, not anything on the entering creature.
 - `EntersWithKeywords(keywords, condition?, selfOnly?, appliesTo?)` — "[permanent] enters with
   [keywords]" (CR 614.1c), the keyword counterpart of `EntersWithCounters`. The grant happens as the
   permanent enters — no trigger, no stack, no response window — as a permanent, entry-timestamped

@@ -280,6 +280,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         // fall-through behavior for these costs). Putting counters on the source
                         // costs nothing the player must have, so it never gates enumeration either.
                         is CostAtom.PayLife, is CostAtom.RevealFromHand, is CostAtom.PutCountersOnSelf -> {}
+                        // CR 701.17b — a mill cost is unpayable when the library holds fewer cards.
+                        // No selection: the milled cards are the top of the library.
+                        is CostAtom.Mill -> {
+                            if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) continue
+                        }
                         is CostAtom.RemoveCounters -> {
                             val needed = when (val count = atom.count) {
                                 is com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed -> count.amount
@@ -442,6 +447,14 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     // gate here (matching the prior else fall-through for these sub-costs).
                                     is CostAtom.PayLife, is CostAtom.RevealFromHand,
                                     is CostAtom.PutCountersOnSelf -> {}
+                                    // CR 701.17b — a mill cost is unpayable when the library holds
+                                    // fewer cards. No selection: the milled cards are the top.
+                                    is CostAtom.Mill -> {
+                                        if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) {
+                                            costCanBePaid = false
+                                            break
+                                        }
+                                    }
                                     is CostAtom.RemoveCounters -> {
                                         val needed = when (val count = atom.count) {
                                             is com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed -> count.amount

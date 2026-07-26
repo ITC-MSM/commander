@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+import com.wingedsheep.engine.handlers.effects.library.MillAmountModifier
 import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType
 import com.wingedsheep.engine.mechanics.cost.CostPaymentService
 import com.wingedsheep.engine.mechanics.mana.ManaPool
@@ -576,6 +577,10 @@ class CostHandler {
             val zone = ZoneKey(controllerId, atom.zone)
             findMatchingCardsUnified(state, state.getZone(zone), atom.filter, controllerId).size >= atom.count
         }
+        // CR 701.17b — a player can't pay a cost that includes milling more cards than their
+        // library holds. Checked against the printed count; a ModifyMillAmount replacement only
+        // enlarges the mill once the cost is actually being paid.
+        is CostAtom.Mill -> state.getZone(ZoneKey(controllerId, Zone.LIBRARY)).size >= atom.count
         is CostAtom.TapPermanents -> {
             val candidates = findUntappedMatchingPermanentsUnified(state, controllerId, atom.filter)
                 .let { targets -> if (atom.excludeSelf) targets.filter { it != sourceId } else targets }
@@ -669,6 +674,18 @@ class CostHandler {
         }
         is CostAtom.ExileFrom ->
             exileCardsFromZone(state, controllerId, atom.zone, atom.count, atom.filter, choices.exileChoices, manaPool)
+        is CostAtom.Mill -> {
+            // Same announcement semantics as the mill effect (GatherCardsExecutor): apply
+            // ModifyMillAmount replacements once to the announced count (CR 616), then take that
+            // many off the top. `take` clamps, so a replacement that enlarges the mill past the
+            // library mills as many as possible — the affordability check above already guaranteed
+            // the printed count is available. Emits plain library→graveyard zone changes, which is
+            // what mill triggers match on.
+            val effectiveCount = MillAmountModifier.apply(state, controllerId, atom.count)
+            val milled = state.getZone(ZoneKey(controllerId, Zone.LIBRARY)).take(effectiveCount)
+            val result = ZoneTransitionService.moveToZoneBatch(state, milled, Zone.GRAVEYARD)
+            CostPaymentResult.success(result.state, manaPool, result.events)
+        }
         is CostAtom.TapPermanents -> payTapPermanents(state, atom, sourceId, controllerId, manaPool, choices)
         is CostAtom.ReturnToHand -> payReturnToHand(state, atom, controllerId, manaPool, choices)
         is CostAtom.RevealFromHand ->
@@ -1044,12 +1061,12 @@ class CostHandler {
                         total >= needed
                     }
                 }
-                // Mana / return-to-hand / reveal / put-counters-on-self / exile-permanents are not
-                // produced as spell additional costs today (put-counters-on-self is inherently
-                // ability-scoped — a spell on the stack has no permanent to put the counters on; and
-                // ExilePermanents is an activated-ability cost only).
+                // Mana / return-to-hand / reveal / put-counters-on-self / exile-permanents / mill
+                // are not produced as spell additional costs today (put-counters-on-self is
+                // inherently ability-scoped — a spell on the stack has no permanent to put the
+                // counters on; and ExilePermanents is an activated-ability cost only).
                 is CostAtom.Mana, is CostAtom.ReturnToHand, is CostAtom.RevealFromHand,
-                is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents -> false
+                is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents, is CostAtom.Mill -> false
             }
             is AdditionalCost.PayLifePerTarget -> {
                 // Always payable: choosing zero targets pays zero life. Per-target life
