@@ -18,7 +18,7 @@ This is an `add-feature` project (client capability, plus a tail of server work 
 **Audience we optimise for: knows Magic, new to Argentum.** Not a rules tutorial — no teaching what
 a phase or the stack is. Explicitly out of scope at the bottom.
 
-## Status: **in progress** (2026-07-26) — Phases 0, 1, 2, 3, 4 landed
+## Status: **in progress** (2026-07-26) — Phases 0, 1, 2, 3, 4, 7 landed and polished; PR #1421 ready
 
 | Phase | State |
 |---|---|
@@ -28,8 +28,13 @@ a phase or the stack is. Explicitly out of scope at the bottom.
 | 3 — help (`topics.ts`, `/help`, `HelpTip`, `shortcuts.ts`) | **done** |
 | 4 — unified lobby over a view model | **done** |
 | 7 — landing wizard: three questions, not six cards | **done** |
-| 5 — server gaps (4c) | not started |
+| — polish pass | **done** — see § *Polish pass* |
+| 5 — server gaps (4c) | not started — **next**, in the numbered order |
 | 6 — `convertLobby`, real URLs | not started |
+
+Everything landed so far is **client-only**. Phase 5 is where this project first touches the server,
+and it is deliberately a separate PR: each of the seven gaps stands alone and each one deletes a
+disabled option from the wizard.
 
 Phase 1 landed the **Cards / Table / Event** vocabulary as
 [`web-client/src/components/lobby/axes.ts`](../web-client/src/components/lobby/axes.ts) and the six
@@ -476,9 +481,25 @@ Each is independent. Ordered by value.
 | 2 | **Momir exists only on quick lobbies** | `lobby/MomirBasicSetup.kt`, `QuickGameLobbyHandler`; `grep -i momir` over `TournamentLobby.kt` / `LobbyHandler.kt` / `FreeForAllHandler.kt` / `PersistentLobby.kt` = **zero hits** | Momir can't be a Cards value on the unified lobby until it exists tournament-side. Needs the flag, the `MomirBasicSetup` wiring in `TournamentMatchHandler` / `FreeForAllHandler`, and a `Ranked.modeForQuickGame` equivalent. |
 | 3 | **No per-player "random pool" in premade** | `QuickGameLobbyPlayer.setCode` (empty `deckList` = server picks); tournament SEALED forces a `DECK_BUILDING` phase | "Random" is the zero-prep on-ramp — the fastest path from cold open to playing. It must survive the merge. |
 | 4 | **No per-player ready in tournament `WAITING_FOR_PLAYERS`** | host presses `startTournamentLobby`; there is no per-player ready toggle | The 2-player "both ready → go" flow is what makes a quick game *feel* quick. |
-| 5 | **Ranked gated to `gameMode == TOURNAMENT`** | `TournamentLobby.rankedEligible` (`:335–358`) vs `QuickGameLobby.rankedEligible` + `Ranked.modeForQuickGame` | Two different ranked paths need reconciling before ranked can appear on one axis panel. Both already silently downgrade to unranked at start, so the failure mode is safe but confusing. |
+| 5 | **Ranked gated to `gameMode == TOURNAMENT`, and the two kinds default it differently** | `TournamentLobby.rankedEligible` (`:335–358`) vs `QuickGameLobby.rankedEligible` + `Ranked.modeForQuickGame`; defaults at `ClientMessage.CreateTournamentLobby.ranked = true` vs `TournamentLobby.ranked = false` | Two different ranked paths need reconciling before ranked can appear on one axis panel. Both already silently downgrade to unranked at start, so the failure mode is safe but confusing. **See the note below** — the defaults disagreeing is now visible on the shared panel. |
 | 6 | **Quick-lobby 2HG is phantom capability** | `QuickGameLobby.twoHeadedGiant` + `TWO_HEADED_GIANT_PLAYERS = 4` are implemented; `grep -rn twoHeadedGiant web-client/` = **0 hits**, and it's missing from `QuickGameLobbyStateMessage` (`types/messages.ts:2711–2727`) along with `maxPlayers` and `QuickGameLobbyPlayerView.teamIndex` | Either wire it up or delete it. Right now it's server capability no client can reach. |
 | 7 | **`PersistentTournamentLobby` missing fields** | `persistence/LobbyConverter.kt` — lacks `deckFormat`, `ranked`, `bannedCardNames`, `deckSizeMin`, `allowDuplicates`, `commanderPreset`, `ffaLastStandings` | Any new unified setting needs a converter pass or it won't survive a restart. Pre-existing bug, worth fixing while in here. |
+
+**Gap #5, sharpened — the two ranked defaults disagree, and it now shows.** Found while verifying the
+wizard against the running stack. `ClientMessage.CreateTournamentLobby.ranked` defaults to **`true`**
+(`ClientMessage.kt:179`) while the model's own `TournamentLobby.ranked` defaults to **`false`**
+(`TournamentLobby.kt:331`); the client has never sent the field on create, on this branch or on main.
+So every tournament-backed lobby opens on **Ranked** and every quick-backed lobby opens on **Casual**
+— for the same "a friend, bring a deck" intent, decided only by which Event you picked. Before Phase 4
+that was invisible, because the two kinds had different panels; now it is one shared Ranked row that
+changes its own default when you cross the `⇄`.
+
+Deliberately **not** fixed in the phase-0–7 PR. The one-line client fix (send `ranked: false`) and the
+one-line server fix (flip the message default) are opposite product calls about whether ranked is
+opt-in or opt-out, and that decision belongs with the rest of gap #5 rather than to a polish pass. It
+is safe today either way: `LobbyHandler.kt:1202–1211` downgrades to unranked at start unless every
+seat is a signed-in human, so nothing incorrect is recorded — the lobby just says something it may
+not honour.
 
 ---
 
@@ -822,6 +843,47 @@ tests clean; no console errors.
 placeholder copy. Two consecutive landing changes had already rewritten them; a third should be one
 edit. `draft-tournament.spec.ts` also stopped creating a sealed lobby and switching the format,
 which was only ever a workaround for the old "Draft & Sealed" card.
+
+### Polish pass
+
+Closing the loose ends the phases left behind, so the PR lands clean rather than carrying a tail of
+"noticed but not touched". No new features; four things.
+
+**The help registry now has an integrity test.** `topicById` returns `undefined` for an unknown id and
+`HelpTip` then renders *nothing* — so a typo or a renamed topic silently deletes the `?` button
+instead of failing. "One content source, two surfaces" only holds if something enforces it, and
+nothing did. [`help/topics.test.ts`](../web-client/src/help/topics.test.ts) asserts unique ids, every
+topic in a declared section *and* rendered by some `/help` section, every `related` and `shortcuts`
+cross-reference resolving, no self-relation, and — the part that matters for the axes — that all six
+`*TopicId` helpers land on a real topic for **every value in their closed domain**. `modeMatrix`
+gained `SHAPE_IDS` so the test walks the domain rather than restating it. All 12 assertions pass
+today: this is a guard, not a bug fix.
+
+**`GameBoard`'s conditional hook is fixed at source**, which Part 1 flagged twice as worth doing. Its
+one early return sat *above* the `manaProgress` `useMemo`, so mounting the board against an empty
+store ran one fewer hook on the first render and React aborted the tree with *"Rendered more hooks
+than during the previous render"*. Both old call sites dodged it by accident and `ReplayPlayer` had to
+gate its mount explicitly. The memo only ever read `manaSelectionState` and `viewingPlayer?.manaPool`,
+both resolved well above the guard, so the move is mechanical — and the guard now carries a comment
+saying why nothing may go below it.
+
+**The lobby's Cards row stopped orphaning its last value.** Phase 4 put all five Cards values on both
+kinds, making that row the widest control in the panel: it wants 441px next to a 46px label inside
+508px, and misses by 11. `.settingsRow` was a single unbreakable flex line, so flex *shrank* the group
+instead of breaking it — and since `.settingsButtons` is right-aligned, the overflow landed alone on a
+second line. A five-value row rendering as 4 + 1 reads as a bug, not a wrap. `flex-wrap: wrap` fixes
+it, because flex breaks lines on base sizes *before* it shrinks; it also degrades properly, dropping
+the group to its own full-width line if the row ever genuinely outgrows the panel — which it will,
+since Cube adds a sixth Cards value.
+
+**151 lines of CSS this branch orphaned, deleted.** `customFormat*` (8 keys) and `formatSelector*` /
+`formatOrDivider` / `formatDropdownInactive` went with `QuickGameLobbyOverlay`; `statusBox` with the
+old tournament status panel; `wizardRecap` is Phase 7's own leftover from the chips-to-stepper change.
+Each was confirmed dead by scanning every `styles.<key>` in the tree *and* confirmed live on `main`,
+so only this branch's litter is removed — the ~13 keys that were already dead before it are left
+alone. Two `className` references that resolved to `undefined` and rendered a literal `"undefined"`
+class went too: `standingsReady` (the cell styles itself inline) and `setPickerMinCardsLabel`. Both
+predate the branch; the PR body had listed the first as untouched.
 
 ### Part 1 duplication, closed
 
