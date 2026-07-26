@@ -48,13 +48,10 @@ test.describe('Draft Tournament with 4 Players', () => {
     await host.page.getByRole('button', { name: 'Continue' }).click()
 
     // Wait for connection
-    await expect(host.page.getByRole('button', { name: 'Tournament' })).toBeVisible({ timeout: 10000 })
+    await expect(host.page.getByTestId('mode-preset-draft-sealed')).toBeVisible({ timeout: 10000 })
 
-    // Select Tournament mode
-    await host.page.getByRole('button', { name: 'Tournament' }).click()
-
-    // Create lobby
-    await host.page.getByRole('button', { name: 'Create Lobby' }).click()
+    // Open the Draft & Sealed preset (creates a sealed lobby)
+    await host.page.getByTestId('mode-preset-draft-sealed').click()
 
     // Wait for lobby to be created
     await expect(host.page.getByText('Invite Code')).toBeVisible({ timeout: 10000 })
@@ -76,13 +73,10 @@ test.describe('Draft Tournament with 4 Players', () => {
       await player.page.getByRole('button', { name: 'Continue' }).click()
 
       // Wait for connection
-      await expect(player.page.getByRole('button', { name: 'Tournament' })).toBeVisible({ timeout: 10000 })
-
-      // Select Tournament mode
-      await player.page.getByRole('button', { name: 'Tournament' }).click()
+      await expect(player.page.getByTestId('mode-preset-draft-sealed')).toBeVisible({ timeout: 10000 })
 
       // Enter lobby ID and join
-      await player.page.getByPlaceholder('Enter Lobby ID').fill(lobbyId)
+      await player.page.getByPlaceholder('Have an invite code? Paste it here').fill(lobbyId)
       await player.page.getByRole('button', { name: 'Join' }).click()
 
       // Wait for lobby view
@@ -223,12 +217,11 @@ test.describe('Draft Tournament with 4 Players', () => {
       await pg.goto('/')
       await pg.getByPlaceholder('Your name').fill(name)
       await pg.getByRole('button', { name: 'Continue' }).click()
-      await expect(pg.getByRole('button', { name: 'Tournament' })).toBeVisible({ timeout: 10000 })
+      await expect(pg.getByTestId('mode-preset-draft-sealed')).toBeVisible({ timeout: 10000 })
     }
 
     // Host creates draft lobby
-    await pages[0].getByRole('button', { name: 'Tournament' }).click()
-    await pages[0].getByRole('button', { name: 'Create Lobby' }).click()
+    await pages[0].getByTestId('mode-preset-draft-sealed').click()
     await expect(pages[0].getByText('Invite Code')).toBeVisible({ timeout: 10000 })
 
     // Switch to Draft
@@ -237,8 +230,7 @@ test.describe('Draft Tournament with 4 Players', () => {
     const lid = await pages[0].getByTestId('invite-code').textContent() ?? ''
 
     // Guest joins
-    await pages[1].getByRole('button', { name: 'Tournament' }).click()
-    await pages[1].getByPlaceholder('Enter Lobby ID').fill(lid)
+    await pages[1].getByPlaceholder('Have an invite code? Paste it here').fill(lid)
     await pages[1].getByRole('button', { name: 'Join' }).click()
     await expect(pages[1].getByText('Invite Code')).toBeVisible({ timeout: 10000 })
 

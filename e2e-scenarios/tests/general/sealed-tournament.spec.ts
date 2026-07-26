@@ -23,9 +23,8 @@ async function createLobbyWithPlayers(players: PlayerPage[]): Promise<string> {
   await host.page.goto('/')
   await host.page.getByPlaceholder('Your name').fill(host.name)
   await host.page.getByRole('button', { name: 'Continue' }).click()
-  await expect(host.page.getByRole('button', { name: 'Tournament' })).toBeVisible({ timeout: 10000 })
-  await host.page.getByRole('button', { name: 'Tournament' }).click()
-  await host.page.getByRole('button', { name: 'Create Lobby' }).click()
+  await expect(host.page.getByTestId('mode-preset-draft-sealed')).toBeVisible({ timeout: 10000 })
+  await host.page.getByTestId('mode-preset-draft-sealed').click()
   await expect(host.page.getByText('Invite Code')).toBeVisible({ timeout: 10000 })
 
   const lobbyId = await host.page.getByTestId('invite-code').textContent() ?? ''
@@ -37,9 +36,8 @@ async function createLobbyWithPlayers(players: PlayerPage[]): Promise<string> {
     await player.page.goto('/')
     await player.page.getByPlaceholder('Your name').fill(player.name)
     await player.page.getByRole('button', { name: 'Continue' }).click()
-    await expect(player.page.getByRole('button', { name: 'Tournament' })).toBeVisible({ timeout: 10000 })
-    await player.page.getByRole('button', { name: 'Tournament' }).click()
-    await player.page.getByPlaceholder('Enter Lobby ID').fill(lobbyId)
+    await expect(player.page.getByTestId('mode-preset-draft-sealed')).toBeVisible({ timeout: 10000 })
+    await player.page.getByPlaceholder('Have an invite code? Paste it here').fill(lobbyId)
     await player.page.getByRole('button', { name: 'Join' }).click()
     await expect(player.page.getByText('Invite Code')).toBeVisible({ timeout: 10000 })
   }
@@ -399,9 +397,8 @@ test.describe('Sealed Tournament with 5 Players', () => {
     await page.goto('/')
     await page.getByPlaceholder('Your name').fill('Host')
     await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(page.getByRole('button', { name: 'Tournament' })).toBeVisible({ timeout: 10000 })
-    await page.getByRole('button', { name: 'Tournament' }).click()
-    await page.getByRole('button', { name: 'Create Lobby' }).click()
+    await expect(page.getByTestId('mode-preset-draft-sealed')).toBeVisible({ timeout: 10000 })
+    await page.getByTestId('mode-preset-draft-sealed').click()
     await expect(page.getByText('Invite Code')).toBeVisible({ timeout: 10000 })
 
     const settingsText = await page.locator('body').textContent() ?? ''
@@ -433,18 +430,16 @@ test.describe('Sealed Tournament with 5 Players', () => {
       await pg.goto('/')
       await pg.getByPlaceholder('Your name').fill(name)
       await pg.getByRole('button', { name: 'Continue' }).click()
-      await expect(pg.getByRole('button', { name: 'Tournament' })).toBeVisible({ timeout: 10000 })
+      await expect(pg.getByTestId('mode-preset-draft-sealed')).toBeVisible({ timeout: 10000 })
     }
 
-    await pages[0].getByRole('button', { name: 'Tournament' }).click()
-    await pages[0].getByRole('button', { name: 'Create Lobby' }).click()
+    await pages[0].getByTestId('mode-preset-draft-sealed').click()
     await expect(pages[0].getByText('Invite Code')).toBeVisible({ timeout: 10000 })
 
     const lid = await pages[0].getByTestId('invite-code').textContent() ?? ''
 
     for (let i = 1; i < 3; i++) {
-      await pages[i].getByRole('button', { name: 'Tournament' }).click()
-      await pages[i].getByPlaceholder('Enter Lobby ID').fill(lid)
+      await pages[i].getByPlaceholder('Have an invite code? Paste it here').fill(lid)
       await pages[i].getByRole('button', { name: 'Join' }).click()
       await expect(pages[i].getByText('Invite Code')).toBeVisible({ timeout: 10000 })
     }
