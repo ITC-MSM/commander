@@ -95,6 +95,28 @@ class GameSession(
     /** Players in the order they lost (first eliminated first). Empty while everyone is alive. */
     fun getEliminationOrder(): List<EntityId> = eliminationOrder.toList()
 
+    /**
+     * Seats already sent their personal [ServerMessage.PlayerEliminated]. A seat is told exactly
+     * once, however it died — conceding, damage, decking out — so its client shows the "you're out,
+     * the table plays on" overlay a single time.
+     */
+    private val eliminationNotified = ConcurrentHashMap.newKeySet<EntityId>()
+
+    /** Eliminated seats that haven't been told yet, in elimination order. */
+    fun unnotifiedEliminations(): List<EntityId> = eliminationOrder.filter { it !in eliminationNotified }
+
+    /** Record that [playerId] has been told they're out, so it isn't told again. */
+    fun markEliminationNotified(playerId: EntityId) {
+        eliminationNotified.add(playerId)
+    }
+
+    /**
+     * Why [playerId] is out of the game, in client terms. Falls back to [GameOverReason.LIFE_ZERO]
+     * for a seat with no loss marker — same fallback [getGameOverReason] uses.
+     */
+    fun getEliminationReason(playerId: EntityId): GameOverReason =
+        gameOverReasonFor(gameState?.getEntity(playerId)?.get<PlayerLostComponent>()?.reason)
+
     /** Checkpoint for undoing the last non-respondable action (e.g., play land, declare attackers) */
     @Volatile
     private var undoCheckpoint: GameState? = null
@@ -1248,16 +1270,19 @@ class GameSession(
         val reason = lostReasons.firstOrNull { it != LossReason.TEAM_DEFEATED }
             ?: lostReasons.firstOrNull()
 
-        return when (reason) {
-            LossReason.LIFE_ZERO -> GameOverReason.LIFE_ZERO
-            LossReason.EMPTY_LIBRARY -> GameOverReason.DECK_OUT
-            LossReason.POISON_COUNTERS -> GameOverReason.POISON_COUNTERS
-            LossReason.CONCESSION -> GameOverReason.CONCESSION
-            LossReason.CARD_EFFECT -> GameOverReason.CARD_EFFECT
-            LossReason.COMMANDER_DAMAGE -> GameOverReason.COMMANDER_DAMAGE
-            LossReason.TEAM_DEFEATED -> GameOverReason.CARD_EFFECT
-            null -> GameOverReason.LIFE_ZERO // Fallback
-        }
+        return gameOverReasonFor(reason)
+    }
+
+    /** Engine loss reason → the client-facing reason code. */
+    private fun gameOverReasonFor(reason: LossReason?): GameOverReason = when (reason) {
+        LossReason.LIFE_ZERO -> GameOverReason.LIFE_ZERO
+        LossReason.EMPTY_LIBRARY -> GameOverReason.DECK_OUT
+        LossReason.POISON_COUNTERS -> GameOverReason.POISON_COUNTERS
+        LossReason.CONCESSION -> GameOverReason.CONCESSION
+        LossReason.CARD_EFFECT -> GameOverReason.CARD_EFFECT
+        LossReason.COMMANDER_DAMAGE -> GameOverReason.COMMANDER_DAMAGE
+        LossReason.TEAM_DEFEATED -> GameOverReason.CARD_EFFECT
+        null -> GameOverReason.LIFE_ZERO // Fallback
     }
 
 

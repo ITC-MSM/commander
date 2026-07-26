@@ -267,12 +267,17 @@ are gated on `players.length > 2`).
   priority seat in hotseat — and is refused inside `followViewTo` while any input is
   pending (the camera never moves under an in-progress selection).
 - **Table overview** (`boardView.overviewMode`, rail toggle or key `0`; desktop/tablet
-  only — phones keep the focused camera): every living opponent's board shares the strip
+  only — phones keep the focused camera). **Every 3+ player game opens on it** — the
+  one-board camera hides most of a pod — and `GameBoard` re-defaults once per game
+  (keyed on the session id), so focusing a single board sticks for the rest of that game
+  but the next one starts on the overview again. Every living opponent's board shares the strip
   side-by-side instead of the one-board camera — cells split the width evenly (padded
   clear of the fixed rail via `railReservedWidth` and of the Fullscreen/Concede row),
   hand fans hide (chips carry the counts), and the per-slot card sizer shrinks cards to
   fit. Each visible cell gets a seat-colored **name plate** (`BoardNamePlate` — the
-  board's "face": name + life) and the viewed cell a subtle seat-colored inset ring.
+  board's "face": name + life), and the **active player's** cell a subtle seat-colored inset
+  ring (`activeTurnRingColor` — on the top row, the bottom row, and your own cell): with every
+  board on screen at once, whose turn it is is the thing worth highlighting.
   Hidden boards stay mounted after the visible cells at full width, overflowing
   off-screen right, so their card anchors keep remapping to rail chips. Selecting a
   single board (chip click / `1`-`9`) exits back to the focused camera. Each cell can
@@ -294,10 +299,15 @@ are gated on `players.length > 2`).
   arrow onto a rail chip. Entering the split respects the camera guards (follow on,
   unpinned, no pending input — `hasPendingInputSelection`); once active it holds for the
   whole combat so boards don't shift mid-fight.
-- **Eliminated spectator** (`boardView.eliminatedSpectating`): a personal
-  `PlayerEliminatedMessage` marks the defeat overlay `GameOverState.eliminated`, which
-  adds a "Keep Watching" button. It dismisses the overlay, turns on the table overview,
-  and hides all action UI (hand/pass/undo/concede) behind a "spectating" banner + Leave
+- **Eliminated spectator** (`isViewerEliminated`, in the `boardView` slice): the layout is
+  **derived from the roster** — the local seat is `hasLost` while two or more seats are still
+  standing, in a non-hotseat 3+ player game — not from any message or click, so it holds
+  however the seat died (conceding, damage, decking out, poison) and survives a reconnect.
+  Alongside it the server sends a personal `PlayerEliminatedMessage` (from
+  `GamePlayHandler.notifyEliminatedSeats`, once per seat, for *every* loss reason) which marks
+  the defeat overlay `GameOverState.eliminated` and adds a "Keep Watching" button;
+  `boardView.eliminatedSpectating` records only that the player took it, dismissing the overlay.
+  The layout hides all action UI (hand/pass/undo/concede) behind a "spectating" banner + Leave
   Game button. An eliminated player is just an observer without a board of their own
   (`viewerIsObserver` = spectating ‖ eliminated), so they get the same two-row overview a
   spectator gets: the survivors face each other across the table, with a survivor's board
