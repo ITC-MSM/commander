@@ -215,7 +215,9 @@ class StackResolver(
                 castTimeFlags = castTimeFlags
             ))
             if (effectiveTargets.isNotEmpty()) {
-                updated = updated.with(TargetsComponent(effectiveTargets, effectiveTargetRequirements))
+                updated = updated.with(
+                    TargetsComponent.capture(state, effectiveTargets, effectiveTargetRequirements)
+                )
             }
             // Add morph data for creatures with morph (needed for face-down casting and
             // for effects like Backslide that target "creature with a morph ability")
@@ -471,7 +473,7 @@ class StackResolver(
 
         var container = ComponentContainer.of(ability)
         if (targets.isNotEmpty()) {
-            container = container.with(TargetsComponent(targets, targetRequirements))
+            container = container.with(TargetsComponent.capture(state, targets, targetRequirements))
         }
 
         var newState = stateWithId.withEntity(abilityId, container)
@@ -588,7 +590,7 @@ class StackResolver(
 
         var container = ComponentContainer.of(copiedCardComp, copiedSpellComp)
         if (effectiveTargets.isNotEmpty()) {
-            container = container.with(TargetsComponent(effectiveTargets, effectiveRequirements))
+            container = container.with(TargetsComponent.capture(state, effectiveTargets, effectiveRequirements))
         }
         container = container.with(
             CopyOfComponent(
@@ -643,7 +645,7 @@ class StackResolver(
 
         var container = ComponentContainer.of(ability)
         if (targets.isNotEmpty()) {
-            container = container.with(TargetsComponent(targets, targetRequirements))
+            container = container.with(TargetsComponent.capture(state, targets, targetRequirements))
         }
         // CR 707.10e — "This ability can't be copied": tag the ability instance on the stack so a
         // copy-ability effect (e.g. Gogo, Master of Mimicry) makes no copy of it.
@@ -760,7 +762,8 @@ class StackResolver(
                 spellComponent.casterId, targetsComponent.targetRequirements,
                 sourceId = spellId,
                 targetingSourceType = TargetingSourceType.SPELL,
-                xValue = spellComponent.xValue
+                xValue = spellComponent.xValue,
+                targetEntryStamps = targetsComponent.targetEntryStamps
             )
             if (validTargets.isEmpty()) {
                 // All targets invalid - spell fizzles
@@ -2269,6 +2272,7 @@ class StackResolver(
                 xValue = abilityComponent.xValue,
                 triggeringEntityId = abilityComponent.triggeringEntityId,
                 triggeringPlayerId = abilityComponent.triggeringPlayerId,
+                targetEntryStamps = targetsComponent.targetEntryStamps,
             )
             if (validTargets.isEmpty()) {
                 // Fizzle - remove ability entity
@@ -2406,7 +2410,8 @@ class StackResolver(
                 state, targetsComponent.targets, sourceColors, sourceSubtypes,
                 abilityComponent.controllerId, targetsComponent.targetRequirements,
                 sourceId = abilityComponent.sourceId,
-                xValue = abilityComponent.xValue
+                xValue = abilityComponent.xValue,
+                targetEntryStamps = targetsComponent.targetEntryStamps
             )
             if (validTargets.isEmpty()) {
                 val newState = state.removeEntity(abilityId)
@@ -2862,7 +2867,13 @@ class StackResolver(
         targetingSourceType: TargetingSourceType = TargetingSourceType.ANY,
         xValue: Int? = null,
         triggeringEntityId: EntityId? = null,
-        triggeringPlayerId: EntityId? = null
+        triggeringPlayerId: EntityId? = null,
+        /**
+         * The object-identity stamps captured when these targets were chosen
+         * ([TargetsComponent.targetEntryStamps]) — a permanent that left the battlefield and came
+         * back in the meantime is a different object and no longer a legal target (CR 400.7).
+         */
+        targetEntryStamps: Map<EntityId, Long> = emptyMap()
     ): List<ChosenTarget> {
         // Always project state for shroud/hexproof checks (Rule 702.18, 702.11)
         val projected = state.projectedState
@@ -2894,6 +2905,13 @@ class StackResolver(
                 is ChosenTarget.Permanent -> {
                     // Permanent is valid if still on battlefield
                     if (target.entityId !in state.getBattlefield()) return@filterIndexed false
+
+                    // ...and if it's still the same object. A permanent blinked in response
+                    // (Personify, Cloudshift) reuses its entity id here, but it returned as a new
+                    // object (CR 400.7) that was never targeted, so the target is illegal.
+                    if (TargetsComponent.isDifferentObject(state, target.entityId, targetEntryStamps)) {
+                        return@filterIndexed false
+                    }
 
                     // Check shroud — can't be targeted by anyone (Rule 702.18)
                     if (projected.hasKeyword(target.entityId, "SHROUD")) return@filterIndexed false

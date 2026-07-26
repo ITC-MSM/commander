@@ -689,7 +689,7 @@ class ManaPaymentContinuationResumer(
 
         val newTargets = listOf(newTarget)
         val updatedState = state.updateEntity(continuation.spellEntityId) { container ->
-            container.with(TargetsComponent(newTargets, targetsComponent.targetRequirements))
+            container.with(TargetsComponent.capture(state, newTargets, targetsComponent.targetRequirements))
         }
 
         return checkForMore(updatedState, emptyList())

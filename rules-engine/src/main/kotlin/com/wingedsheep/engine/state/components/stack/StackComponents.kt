@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.state.components.stack
 
 import com.wingedsheep.engine.state.Component
+import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
@@ -301,12 +302,74 @@ data class AbilityOnStackComponent(
  * @property targets The chosen targets
  * @property targetRequirements The original target requirements, used for re-validation
  *           on resolution (Rule 608.2b — targets must still be legal when the spell/ability resolves)
+ * @property targetEntryStamps Object-identity stamps for the permanent targets (CR 400.7),
+ *           captured when the targets were chosen — see [capture].
  */
 @Serializable
 data class TargetsComponent(
     val targets: List<ChosenTarget>,
-    val targetRequirements: List<TargetRequirement> = emptyList()
-) : Component
+    val targetRequirements: List<TargetRequirement> = emptyList(),
+    val targetEntryStamps: Map<EntityId, Long> = emptyMap()
+) : Component {
+
+    companion object {
+        /**
+         * Build the component, snapshotting each permanent target's
+         * [com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent]
+         * as it is targeted.
+         *
+         * Entity ids survive zone round-trips in this engine, so "that id is still a creature on
+         * the battlefield" doesn't prove the target is still the object that was targeted: a
+         * permanent blinked in response (Personify, Cloudshift, bounce-and-recast) comes back as a
+         * *new object* (CR 400.7), and a spell or ability that targeted the old one has an illegal
+         * target — if that's its only target, it doesn't resolve (CR 608.2b). Comparing the entry
+         * stamp at resolution is what makes that visible; see [isDifferentObject].
+         *
+         * Every path that chooses or *re-*chooses targets for a stack object goes through here
+         * (putting a spell / triggered / activated ability on the stack, and the retarget
+         * executors) — a target changed by Misdirection or Grip of Chaos is stamped at the moment
+         * it becomes the new target. Copies inherit their source's stamps along with its targets.
+         */
+        fun capture(
+            state: GameState,
+            targets: List<ChosenTarget>,
+            targetRequirements: List<TargetRequirement> = emptyList()
+        ): TargetsComponent = TargetsComponent(
+            targets = targets,
+            targetRequirements = targetRequirements,
+            targetEntryStamps = targets.filterIsInstance<ChosenTarget.Permanent>()
+                .filter { it.entityId in state.getBattlefield() }
+                .associate { it.entityId to entryStamp(state, it.entityId) }
+        )
+
+        /**
+         * True when [entityId] is no longer the object that was targeted — it left the battlefield
+         * and returned between targeting and now (CR 400.7). Ids with no captured stamp (targets
+         * chosen off the battlefield, or a stack object built before the stamps existed) are
+         * treated as unchanged.
+         */
+        fun isDifferentObject(
+            state: GameState,
+            entityId: EntityId,
+            capturedStamps: Map<EntityId, Long>
+        ): Boolean {
+            val captured = capturedStamps[entityId] ?: return false
+            return entryStamp(state, entityId) != captured
+        }
+
+        /**
+         * The permanent's battlefield-entry stamp, or 0 for a permanent that never got one —
+         * boards assembled directly (test fixtures) rather than through a real ETB. Capture and
+         * comparison read it the same way, so an unstamped permanent still registers as a new
+         * object once it re-enters for real.
+         */
+        private fun entryStamp(state: GameState, entityId: EntityId): Long =
+            state.getEntity(entityId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()
+                ?.timestamp
+                ?: 0L
+    }
+}
 
 /**
  * Represents a chosen target for a spell or ability.
