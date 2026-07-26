@@ -16,35 +16,44 @@ import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.TimingRule
 
 /**
- * Enumerates activated abilities on cards in the player's graveyard.
+ * Enumerates activated abilities on cards in a non-battlefield [zone] the player owns —
+ * one instance per zone (registered for [Zone.GRAVEYARD] and [Zone.HAND]).
  *
- * Cards like Undead Gladiator have activated abilities that can be used
- * from the graveyard (activateFromZone == Zone.GRAVEYARD). This handles
- * cost checking for Mana, Discard, Composite (with ReturnToHand), and
- * target requirements.
+ * The abilities surfaced are those whose `activateFromZone` matches this enumerator's [zone]:
+ * - **Graveyard** — Undead Gladiator ({1}{B}, Discard a card: Return this from your graveyard…),
+ *   Renew, and the Blight/return-to-hand graveyard shells.
+ * - **Hand** — the "discard this card from hand" activated abilities such as Steel Wrecking Ball
+ *   ({1}{R}, Discard this card: Destroy target artifact) and Stegron the Dinosaur Man, plus
+ *   Urban Retreat's "{2}, Return a tapped creature you control: put this onto the battlefield".
+ *
+ * Handles cost checking for Mana, Discard, DiscardSelf, ExileSelf, Blight, and Composite (with
+ * ReturnToHand), plus target requirements and X/auto-tap info.
+ * [com.wingedsheep.engine.handlers.actions.ability.ActivateAbilityHandler] already accepts any
+ * non-battlefield `activateFromZone` generically (owner + zone-membership check), so no handler
+ * change is needed.
  */
-class GraveyardAbilityEnumerator : ActionEnumerator {
+class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator {
 
     override fun enumerate(context: EnumerationContext): List<LegalAction> {
         val result = mutableListOf<LegalAction>()
         val state = context.state
         val playerId = context.playerId
 
-        val graveyardCards = state.getGraveyard(playerId)
-        for (entityId in graveyardCards) {
+        val zoneCards = state.getZone(playerId, zone)
+        for (entityId in zoneCards) {
             val container = state.getEntity(entityId) ?: continue
             val cardComponent = container.get<CardComponent>() ?: continue
 
             val cardDef = context.cardRegistry.getCard(cardComponent.name) ?: continue
-            val graveyardAbilities = cardDef.script.activatedAbilities.filter {
-                it.activateFromZone == Zone.GRAVEYARD
+            val zoneAbilities = cardDef.script.activatedAbilities.filter {
+                it.activateFromZone == zone
             }
 
-            for (ability in graveyardAbilities) {
-                // "Activate only as a sorcery" — Renew and similar graveyard-activated abilities
-                // are gated to sorcery timing. Mirrors ActivatedAbilityEnumerator's battlefield
-                // check so the action is never offered at instant speed (where the handler would
-                // reject it anyway).
+            for (ability in zoneAbilities) {
+                // "Activate only as a sorcery" — Renew and similar zone-activated abilities are
+                // gated to sorcery timing. Mirrors ActivatedAbilityEnumerator's battlefield check
+                // so the action is never offered at instant speed (where the handler would reject
+                // it anyway).
                 if (ability.timing == TimingRule.SorcerySpeed && !context.canPlaySorcerySpeed) continue
 
                 // Check activation restrictions
@@ -114,9 +123,8 @@ class GraveyardAbilityEnumerator : ActionEnumerator {
                                     // Other atoms — engine validates at payment.
                                     else -> {}
                                 }
-                                is AbilityCost.ExileSelf -> {
-                                    // Always payable — the card is in the graveyard
-                                }
+                                // Self-removal costs are always payable — the card is in [zone].
+                                is AbilityCost.ExileSelf, is AbilityCost.DiscardSelf -> {}
                                 is AbilityCost.Blight -> {
                                     blightCost = subCost
                                     blightCreatures = context.projected.getBattlefieldControlledBy(playerId)
@@ -134,21 +142,21 @@ class GraveyardAbilityEnumerator : ActionEnumerator {
                 if (!costCanBePaid) continue
 
                 // Build cost info for bounce or discard costs
-                val bounceCostFromGraveyard: CostAtom.ReturnToHand? = when (effectiveCost) {
+                val bounceCostFromZone: CostAtom.ReturnToHand? = when (effectiveCost) {
                     is AbilityCost.Composite -> effectiveCost.costs
                         .firstNotNullOfOrNull { (it as? AbilityCost.Atom)?.atom as? CostAtom.ReturnToHand }
                     is AbilityCost.Atom -> effectiveCost.atom as? CostAtom.ReturnToHand
                     else -> null
                 }
-                val costInfo = if (bounceCostFromGraveyard != null) {
+                val costInfo = if (bounceCostFromZone != null) {
                     val bounceTargets = context.costUtils.findAbilityBounceTargets(
-                        state, playerId, bounceCostFromGraveyard.filter
+                        state, playerId, bounceCostFromZone.filter
                     )
                     AdditionalCostData(
-                        description = bounceCostFromGraveyard.description.replaceFirstChar { it.uppercase() },
+                        description = bounceCostFromZone.description.replaceFirstChar { it.uppercase() },
                         costType = "BouncePermanent",
                         validBounceTargets = bounceTargets,
-                        bounceCount = bounceCostFromGraveyard.count
+                        bounceCount = bounceCostFromZone.count
                     )
                 } else if (blightCost != null) {
                     AdditionalCostData(
@@ -172,7 +180,7 @@ class GraveyardAbilityEnumerator : ActionEnumerator {
                     is AbilityCost.Composite -> c.costs.firstNotNullOfOrNull { it.manaCostOrNull }
                     else -> null
                 }
-                val graveyardManaCostString = abilityManaCost?.toString()
+                val zoneManaCostString = abilityManaCost?.toString()
                 val abilityHasXCost = abilityManaCost?.hasX == true
                 val abilityMaxAffordableX: Int? = if (abilityHasXCost) {
                     val availableSources = context.manaSolver.getAvailableManaCount(state, playerId, precomputedSources = context.availableManaSources)
@@ -210,7 +218,7 @@ class GraveyardAbilityEnumerator : ActionEnumerator {
                                 hasXCost = abilityHasXCost,
                                 maxAffordableX = abilityMaxAffordableX,
                                 autoTapPreview = abilityAutoTapPreview,
-                                manaCostString = graveyardManaCostString
+                                manaCostString = zoneManaCostString
                             )
                         )
                     } else {
@@ -229,7 +237,7 @@ class GraveyardAbilityEnumerator : ActionEnumerator {
                                 hasXCost = abilityHasXCost,
                                 maxAffordableX = abilityMaxAffordableX,
                                 autoTapPreview = abilityAutoTapPreview,
-                                manaCostString = graveyardManaCostString
+                                manaCostString = zoneManaCostString
                             )
                         )
                     }
@@ -243,7 +251,7 @@ class GraveyardAbilityEnumerator : ActionEnumerator {
                             hasXCost = abilityHasXCost,
                             maxAffordableX = abilityMaxAffordableX,
                             autoTapPreview = abilityAutoTapPreview,
-                            manaCostString = graveyardManaCostString
+                            manaCostString = zoneManaCostString
                         )
                     )
                 }

@@ -8,6 +8,7 @@ import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 
 /**
@@ -43,7 +44,8 @@ class LegalActionEnumerator(
         ActivatedAbilityEnumerator(),
         CrewEnumerator(),
         SaddleEnumerator(),
-        GraveyardAbilityEnumerator(),
+        ZoneActivatedAbilityEnumerator(Zone.GRAVEYARD),
+        ZoneActivatedAbilityEnumerator(Zone.HAND),
         CommandZoneAbilityEnumerator()
     )
 

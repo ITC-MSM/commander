@@ -4944,6 +4944,22 @@ activatedAbility {
 }
 ```
 
+**`activateFromZone` — where the ability can be activated (default `Zone.BATTLEFIELD`).** An ability
+whose source functions from another zone sets `activateFromZone` to that zone. Four zones are
+enumerated as legal actions today, each by its own `ActionEnumerator`:
+- `Zone.BATTLEFIELD` — `ActivatedAbilityEnumerator` (the default).
+- `Zone.GRAVEYARD` and `Zone.HAND` — `ZoneActivatedAbilityEnumerator` (one instance per zone).
+  The **hand** case covers the "{cost}, Discard this card: …" abilities that work while the card is
+  stranded in hand — Steel Wrecking Ball, Stegron the Dinosaur Man, Spinewoods Armadillo, Harvester
+  of Misery, Urban Retreat's return-a-creature put-onto-battlefield, etc. Pair `activateFromZone =
+  Zone.HAND` with a `Costs.Composite(Costs.Mana(…), Costs.DiscardSelf)` (or a `ReturnToHand` cost)
+  — `Costs.DiscardSelf` is always payable because the source card is the object being discarded.
+- `Zone.COMMAND` — `CommandZoneAbilityEnumerator` (Momir Basic avatar).
+
+`ActivateAbilityHandler` accepts any non-battlefield `activateFromZone` generically (it just checks
+the source is in that zone), so adding an ability in an already-enumerated zone needs no engine
+change. Gate a from-zone ability to sorcery timing with `timing = TimingRule.SorcerySpeed`.
+
 **`genericCostReduction` — "this ability costs {N} less to activate for each …".** The
 `activatedAbility { }` builder exposes `genericCostReduction: DynamicAmount?`. When set, the engine
 reduces the generic-mana portion of the ability's `cost` by that amount at activation time (floored
