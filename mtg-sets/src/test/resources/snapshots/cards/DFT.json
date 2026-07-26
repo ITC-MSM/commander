@@ -1377,6 +1377,110 @@
     "colorIdentityOverride": []
 }
 
+// Carrion Cruiser
+{
+    "name": "Carrion Cruiser",
+    "manaCost": "{2}{B}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "When this Vehicle enters, mill two cards. Then return a creature or Vehicle card from your graveyard to your hand. (To mill two cards, put the top two cards of your library into your graveyard.)\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        },
+                                        "isMill": true
+                                    },
+                                    "storeAs": "milled"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "milled",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "creature|Vehicle"
+                            },
+                            "storeAs": "gathered1"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered1",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected2",
+                            "prompt": "Return a creature or Vehicle card from your graveyard to your hand",
+                            "selectedLabel": "Return to hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected2",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Mill two cards. Then return a creature or Vehicle card from your graveyard to your hand."
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "rarity": "UNCOMMON",
+        "artist": "Mathias Kollros",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/c/dc00fdee-3d24-4360-a4d2-ffd3c08a462d.jpg?1783907898"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Chitin Gravestalker
 {
     "name": "Chitin Gravestalker",
@@ -2019,6 +2123,67 @@
     ]
 }
 
+// Diversion Unit
+{
+    "name": "Diversion Unit",
+    "manaCost": "{1}{U}",
+    "typeLine": "Artifact Creature — Robot",
+    "oracleText": "Flying\n{U}, Sacrifice this creature: Counter target instant or sorcery spell unless its controller pays {3}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Counter",
+                    "condition": {
+                        "type": "CounterCondition.UnlessPaysMana",
+                        "cost": "{3}"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "instant|sorcery",
+                            "zone": "Stack"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "41",
+        "rarity": "UNCOMMON",
+        "artist": "Xabi Gaztelua",
+        "flavorText": "\"Declarative: Goodbye.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e04d4fa6-1fa3-4bfd-a462-47c23ccf9124.jpg?1783907910"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Draconautics Engineer
 {
     "name": "Draconautics Engineer",
@@ -2257,6 +2422,62 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Earthrumbler
+{
+    "name": "Earthrumbler",
+    "manaCost": "{4}{G}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Vigilance, trample\nExile an artifact or creature card from your graveyard: This Vehicle becomes an artifact creature until end of turn.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 6
+    },
+    "keywords": [
+        "VIGILANCE",
+        "TRAMPLE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 3
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomExileFrom",
+                        "zone": "Graveyard",
+                        "filter": "creature|artifact"
+                    }
+                },
+                "effect": {
+                    "type": "AddCardType",
+                    "cardType": "Creature",
+                    "target": "Self",
+                    "duration": "EndOfTurn"
+                },
+                "descriptionOverride": "Exile an artifact or creature card from your graveyard: This Vehicle becomes an artifact creature until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "rarity": "UNCOMMON",
+        "artist": "J.P. Targete",
+        "flavorText": "The Brood aspires to become speed itself.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee386cd0-934a-4b33-9db3-0a9033ab577e.jpg?1783907872"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -3491,6 +3712,109 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Guidelight Matrix
+{
+    "name": "Guidelight Matrix",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact enters, draw a card.\n{2}, {T}: Target Mount you control becomes saddled until end of turn. Activate only as a sorcery.\n{2}, {T}: Target Vehicle you control becomes an artifact creature until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "BecomeSaddled",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Mount you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Mount ctrl:you"
+                        },
+                        "id": "target Mount you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{2}, {T}: Target Mount you control becomes saddled until end of turn. Activate only as a sorcery."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "AddCardType",
+                    "cardType": "Creature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Vehicle you control"
+                    },
+                    "duration": "EndOfTurn"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Vehicle ctrl:you"
+                        },
+                        "id": "target Vehicle you control"
+                    }
+                ],
+                "descriptionOverride": "{2}, {T}: Target Vehicle you control becomes an artifact creature until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "233",
+        "artist": "Eli Minaya",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cccf7fb5-c043-4a1f-ad2f-edb280cb5037.jpg?1783907849"
+    },
+    "colorIdentityOverride": []
 }
 
 // Guidelight Synergist
@@ -6460,6 +6784,104 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Skyserpent Seeker
+{
+    "name": "Skyserpent Seeker",
+    "manaCost": "{G}{U}",
+    "typeLine": "Creature — Snake",
+    "oracleText": "Flying, deathtouch\nExhaust — {4}: Reveal cards from the top of your library until you reveal two land cards. Put those land cards onto the battlefield tapped and the rest on the bottom of your library in a random order. Put a +1/+1 counter on this creature. (Activate each exhaust ability only once.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherUntilMatch",
+                            "filter": "land",
+                            "storeMatch": "matched0",
+                            "storeRevealed": "revealed0",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "revealed0"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "matched0",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "revealed0",
+                            "filter": {
+                                "type": "ExcludeOtherCollection",
+                                "otherCollectionName": "matched0"
+                            },
+                            "storeMatching": "matching3"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "matching3",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ],
+                    "descriptionOverride": "Reveal cards from the top of your library until you reveal two land cards. Put those land cards onto the battlefield tapped and the rest on the bottom of your library in a random order. Put a +1/+1 counter on this creature."
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "UNCOMMON",
+        "artist": "Johan Grenier",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8dbd9fc0-c0df-4119-a0d3-2e1790998c21.jpg?1783907852"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
     ]
 }
 
