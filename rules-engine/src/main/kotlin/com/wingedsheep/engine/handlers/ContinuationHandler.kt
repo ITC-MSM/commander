@@ -2,7 +2,6 @@ package com.wingedsheep.engine.handlers
 
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.continuations.*
-import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.state.GameState
 
 /**
@@ -59,7 +58,7 @@ class ContinuationHandler(
 
         // Replacement effect system
         val replacementResumer = ReplacementContinuationResumer(
-            ReplacementEffectProcessor(),
+            services.replacementEffectProcessor,
             services
         )
         registerModule(replacementResumer)

@@ -4,7 +4,6 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.replacement.GatheredReplacement
 import com.wingedsheep.engine.replacement.PendingGameEvent
 import com.wingedsheep.engine.replacement.ReplacementEffectIdentity
-import com.wingedsheep.engine.replacement.ReplacementOutcome
 import kotlinx.serialization.Serializable
 
 /**
@@ -41,15 +40,8 @@ data class ReplacementChoiceContinuation(
  * context forward so the caller can continue.
  *
  * This uses decisionId = "pending" for auto-resumption.
- *
- * @property originalEvent The event that started the replacement chain
- * @property finalOutcome The final outcome after all replacements applied
- * @property originalContext The original execution context to resume with
  */
 @Serializable
 data class ReplacementResolveContinuation(
-    override val decisionId: String,
-    val originalEvent: PendingGameEvent? = null,
-    val finalOutcome: ReplacementOutcome,
-    val originalContext: EffectContext? = null
+    override val decisionId: String
 ) : ContinuationFrame

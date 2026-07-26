@@ -172,7 +172,8 @@ class ReplacementEffectProcessor {
             return applySingle(state, groupEffects.first(), event, alreadyApplied, context)
         }
 
-        return ProcessorResult.Pass
+        // Unreachable: mandatory was non-empty, so at least one group matched.
+        error("unreachable: mandatory effects exist but no priority group matched")
     }
 
     /**
@@ -368,9 +369,10 @@ class ReplacementEffectProcessor {
         context: EffectContext? = null
     ): List<GatheredReplacement> {
         val results = mutableListOf<GatheredReplacement>()
+        val battlefieldSet = state.getBattlefield().toSet()
 
         // 1. Battlefield permanents with ReplacementEffectSourceComponent
-        for (entityId in state.getBattlefield()) {
+        for (entityId in battlefieldSet) {
             val container = state.getEntity(entityId) ?: continue
             val replacementSource = container.get<ReplacementEffectSourceComponent>() ?: continue
             val controllerId = container.get<ControllerComponent>()?.playerId ?: continue
@@ -440,7 +442,6 @@ class ReplacementEffectProcessor {
         //    (Darksteel Colossus, Progenitus). These function in every zone (CR 614.12).
         //    Skip entities on the battlefield since their effects are already gathered
         //    via ReplacementEffectSourceComponent above (source 1).
-        val battlefieldSet = state.getBattlefield().toSet()
         for ((entityId, container) in state.entities) {
             if (entityId in battlefieldSet) continue
             val selfRedirect = container.get<SelfZoneRedirectComponent>() ?: continue

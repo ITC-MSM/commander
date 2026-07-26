@@ -207,7 +207,7 @@ class CycleCardHandler(
         currentState = currentState.tick()
 
         // Detect and process triggers from discard + cycling events before drawing,
-        // since the draw may pause for promptOnDraw abilities (e.g., Words of War)
+        // since the draw may pause for replacement effects (e.g., Words cycle)
         val preTriggers = triggerDetector.detectTriggers(currentState, events)
         if (preTriggers.isNotEmpty()) {
             // Push draw continuation BEFORE processing triggers, so it ends up below
@@ -232,7 +232,7 @@ class CycleCardHandler(
             events.addAll(triggerResult.events)
         }
 
-        // Draw a card using DrawCardsExecutor (checks replacement shields and promptOnDraw).
+        // Draw a card using DrawCardsExecutor (checks replacement shields).
         // Cycling is "Discard this card: Draw a card" (CR 702.29a). The announcement-site
         // modifier (CR 121.2a) fires via executeDraws → checkDrawAmount before the per-card loop.
         val drawExecutor = DrawCardsExecutor(cardRegistry = cardRegistry)

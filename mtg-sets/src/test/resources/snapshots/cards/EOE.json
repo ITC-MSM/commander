@@ -11895,7 +11895,8 @@
                             "amount": 1
                         }
                     }
-                ]
+                ],
+                "appliesTo": "DrawCardsEvent"
             }
         ]
     },

@@ -5,6 +5,11 @@ package com.wingedsheep.sdk.scripting
  *
  * Each [ReplacementEffect] subtype declares its own [ReplacementEffect.priorityGroup]
  * so the engine processor never needs to pattern-match on SDK types.
+ *
+ * WARNING: declaration order is load-bearing — [enumEntries] drives
+ * CR 616.1a→e processing in [com.wingedsheep.engine.replacement.ReplacementEffectProcessor].
+ * Do not reorder entries. Insert new entries in their correct priority
+ * position per the CR rule number (a → e).
  */
 enum class ReplacementPriorityGroup {
     /** Self-replacement effects (CR 616.1a) — must be chosen first */

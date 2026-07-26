@@ -25,13 +25,10 @@ import com.wingedsheep.sdk.scripting.effects.Effect
  *
  * The dispatcher is called by [DrawLoop] during each iteration of a multi-draw
  * sequence, shared by both [DrawCardsExecutor] and [DrawPhaseManager].
- *
- * Prompt-on-draw activated abilities (`promptOnDraw = true`) are no longer
- * supported by the engine. Words cycle cards use the floating-shield mechanism
- * via manual activation instead.
  */
 class DrawReplacementDispatcher(
-    private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)?
+    private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)?,
+    private val processor: ReplacementEffectProcessor = ReplacementEffectProcessor()
 ) {
     /**
      * The outcome of [checkBeforeDraw].
@@ -287,5 +284,4 @@ class DrawReplacementDispatcher(
         return DispatchResult.Replaced(resultState, pipelineResult.events)
     }
 
-    private val processor = ReplacementEffectProcessor()
 }

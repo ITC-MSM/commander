@@ -19,7 +19,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GatheredReplacement(
     val identity: ReplacementEffectIdentity,
-    @kotlinx.serialization.Contextual
     val effect: ReplacementEffect,
     val sourceControllerId: EntityId,
     val description: String

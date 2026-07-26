@@ -9,6 +9,7 @@ import com.wingedsheep.engine.handlers.EffectHandler
 import com.wingedsheep.engine.handlers.MulliganHandler
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.TargetFinder
+import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.legalactions.utils.CastPermissionUtils
 import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
@@ -74,6 +75,7 @@ class EngineServices(
     val targetFinder = TargetFinder()
     val predicateEvaluator = PredicateEvaluator()
     val castPermissionUtils = CastPermissionUtils(cardRegistry, predicateEvaluator, conditionEvaluator)
+    val replacementEffectProcessor = ReplacementEffectProcessor()
     val sbaChecker = StateBasedActionChecker(cardRegistry = cardRegistry)
     val turnManager = TurnManager(
         cardRegistry = cardRegistry,

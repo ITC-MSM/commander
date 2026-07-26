@@ -68,7 +68,7 @@ class DrawReplacementContinuationResumer(
             // replacements (if any) can still prompt for the current draw.
             val declinedId = continuation.declinedIdentity
             val stateWithDeclined = if (declinedId != null) {
-                newState.copy(activeReplacementChain = setOf(declinedId))
+                newState.copy(activeReplacementChain = (newState.activeReplacementChain ?: emptySet()) + declinedId)
             } else {
                 newState
             }

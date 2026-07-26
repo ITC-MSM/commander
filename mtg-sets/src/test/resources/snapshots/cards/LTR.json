@@ -12912,15 +12912,14 @@
                         "amount": 2
                     }
                 },
-                "appliesTo": {
-                    "type": "DrawEvent",
-                    "condition": {
+                "restrictions": [
+                    {
                         "type": "Exists",
                         "player": "You",
                         "zone": "Hand",
                         "negate": true
                     }
-                }
+                ]
             },
             {
                 "type": "ModifyLifeGain",

@@ -116,6 +116,7 @@ sealed interface PendingGameEvent {
             context: EffectContext?
         ): Boolean {
             val drawEvent = pattern as? EventPattern.DrawEvent ?: return false
+            if (drawEvent.exceptFirstInDrawStep && drawnCardsSoFar.isEmpty()) return false
             return matchesPlayerFilter(drawEvent.player, playerId, sourceControllerId)
         }
 

@@ -88,11 +88,11 @@ class ReplacementContinuationResumer(
                 when (val outcome = result.outcome) {
                     is ReplacementOutcome.Replaced -> {
                         val execCtx = result.executionContext ?: context
-                        handleReplacedOutcome(stateAfterLifecycle, outcome, continuation, execCtx, checkForMore)
+                        handleReplacedOutcome(stateAfterLifecycle, outcome, execCtx, checkForMore)
                     }
                     is ReplacementOutcome.Consumed -> checkForMore(stateAfterLifecycle, emptyList())
                     is ReplacementOutcome.Modified -> {
-                        handleReplacedOutcome(stateAfterLifecycle, outcome, continuation, context, checkForMore)
+                        handleReplacedOutcome(stateAfterLifecycle, outcome, context, checkForMore)
                     }
                 }
             }
@@ -130,15 +130,11 @@ class ReplacementContinuationResumer(
     private fun handleReplacedOutcome(
         state: GameState,
         outcome: ReplacementOutcome,
-        continuation: ReplacementChoiceContinuation?,
         context: EffectContext?,
         checkForMore: CheckForMore
     ): ExecutionResult {
         val resumeContinuation = ReplacementResolveContinuation(
-            decisionId = "pending",
-            originalEvent = continuation?.pendingEvent,
-            finalOutcome = outcome,
-            originalContext = context
+            decisionId = "pending"
         )
 
         val stateWithResumeFrame = state.pushContinuation(resumeContinuation)
