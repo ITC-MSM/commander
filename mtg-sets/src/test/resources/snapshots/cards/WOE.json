@@ -1,3 +1,89 @@
+// Agatha's Champion
+{
+    "name": "Agatha's Champion",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nTrample\nWhen this creature enters, if it was bargained, it fights up to one target creature you don't control. (Each deals damage equal to its power to the other.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE",
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Fight",
+                    "target1": "Self",
+                    "target2": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature you don't control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "up to one target creature you don't control"
+                },
+                "triggerCondition": {
+                    "type": "CastChoiceMade",
+                    "slot": "BARGAINED"
+                },
+                "descriptionOverride": "When this creature enters, if it was bargained, it fights up to one target creature you don't control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "rarity": "UNCOMMON",
+        "artist": "Jason A. Engle",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/92652c41-1239-4299-a486-11fe1a96e912.jpg?1783915084",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You can bargain a permanent spell even if you won't be able to choose targets for an enters-the-battlefield ability of that permanent once the spell resolves."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a card or token enters the battlefield as a copy of a permanent that's already on the battlefield, the new permanent isn't bargained, even if the original was."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Agatha's Soul Cauldron
 {
     "name": "Agatha's Soul Cauldron",
@@ -3335,6 +3421,168 @@
     ]
 }
 
+// Grand Ball Guest
+{
+    "name": "Grand Ball Guest",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Peasant",
+    "oracleText": "Celebration — This creature gets +1/+1 and has trample as long as two or more nonland permanents entered the battlefield under your control this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "CompositeStaticAbility",
+                    "abilities": [
+                        {
+                            "type": "ModifyStats",
+                            "powerBonus": 1,
+                            "toughnessBonus": 1,
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "TRAMPLE",
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        }
+                    ]
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "NONLAND_PERMANENTS_ENTERED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "artist": "Leanna Crossan",
+        "flavorText": "It takes a lot to pull a master blacksmith from their work, but Maurice couldn't pass up an invitation to a lavish Delverhaugh feast.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6e75228-16af-42b0-8441-ed253a660cc9.jpg?1783915093",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Celebration abilities only care if two or more nonland permanents entered the battlefield under your control in a turn. They won't get more powerful if more than two permanents entered the battlefield under your control in a turn."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "The permanents that entered the battlefield don't need to remain on the battlefield or under your control. Celebration abilities are checking for past events, not the current game state."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Hamlet Glutton
+{
+    "name": "Hamlet Glutton",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Creature — Giant",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nThis spell costs {2} less to cast if it's bargained.\nTrample\nWhen this creature enters, you gain 3 life.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "TRAMPLE",
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you gain 3 life."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 2
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "CastChoiceMade",
+                        "slot": "BARGAINED"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "artist": "Edgar Sánchez Hidalgo",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4ec5544-c138-44bb-a807-5798313c9a50.jpg?1783915080",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You can bargain a permanent spell even if you won't be able to choose targets for an enters-the-battlefield ability of that permanent once the spell resolves."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a card or token enters the battlefield as a copy of a permanent that's already on the battlefield, the new permanent isn't bargained, even if the original was."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Harried Spearguard
 {
     "name": "Harried Spearguard",
@@ -3894,6 +4142,103 @@
         "artist": "Anna Steinbauer",
         "flavorText": "Kellan stepped from his village into a strange world where trees bore jeweled fruit. A regal, inhuman voice rang in his ears: \"Tell me, brave hero, are you true of heart?\"",
         "imageUri": "https://cards.scryfall.io/normal/front/9/6/969b13bb-6411-41f9-b6b4-af4ffca62e17.jpg?1783915119"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Johann's Stopgap
+{
+    "name": "Johann's Stopgap",
+    "manaCost": "{3}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nThis spell costs {2} less to cast if it's bargained.\nReturn target nonland permanent to its owner's hand. Draw a card.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nonland permanent"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "nonland permanent"
+                },
+                "id": "target nonland permanent"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 2
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "CastChoiceMade",
+                        "slot": "BARGAINED"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "artist": "Christina Kraus",
+        "flavorText": "\"Just ... stay in there ... for one ... second!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/31408397-36f5-479f-b822-fa97411b7872.jpg?1783915118",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The cost-reduction ability of Johann's Stopgap doesn't change its mana cost or mana value, only the total cost you pay. Specifically, the mana value of Johann's Stopgap is always 4."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the permanent is an illegal target as Johann's Stopgap tries to resolve, Johann's Stopgap is removed from the stack and you won't draw a card."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -6937,6 +7282,53 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Spell Stutter
+{
+    "name": "Spell Stutter",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell unless its controller pays {2} plus an additional {1} for each Faerie you control.",
+    "script": {
+        "spellEffect": {
+            "type": "Counter",
+            "condition": {
+                "type": "CounterCondition.UnlessPaysDynamic",
+                "amount": {
+                    "type": "Add",
+                    "left": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "right": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "Faerie"
+                    }
+                }
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "artist": "Liiga Smilshkalne",
+        "flavorText": "\"You are but learning to walk in a world where I fly, mortal.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/24447e36-a42f-40a9-ad44-e904b6f9b276.jpg?1783915115"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
