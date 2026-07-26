@@ -18,7 +18,7 @@ This is an `add-feature` project (client capability, plus a tail of server work 
 **Audience we optimise for: knows Magic, new to Argentum.** Not a rules tutorial — no teaching what
 a phase or the stack is. Explicitly out of scope at the bottom.
 
-## Status: **in progress** (2026-07-26) — Phases 0, 1, 2, 3 landed
+## Status: **in progress** (2026-07-26) — Phases 0, 1, 2, 3, 4 landed
 
 | Phase | State |
 |---|---|
@@ -26,7 +26,7 @@ a phase or the stack is. Explicitly out of scope at the bottom.
 | 1 — landing restructure | **done** |
 | 2 — axis renaming in both lobbies | **done** |
 | 3 — help (`topics.ts`, `/help`, `HelpTip`, `shortcuts.ts`) | **done** |
-| 4 — unified lobby over a view model | not started |
+| 4 — unified lobby over a view model | **done** |
 | 5 — server gaps (4c) | not started |
 | 6 — `convertLobby`, real URLs | not started |
 
@@ -437,7 +437,7 @@ Resolve the phantom number-key comment (`useMultiplayerView.ts:64`) while doing 
 | ~~**1**~~ | ~~Landing restructure~~ — **done.** `axes.ts` + `modePresets.ts`, three tiers, Lab caption, Continue chip, `/stats` `/friends` `/profile` surfaced. | **yes** |
 | ~~**2**~~ | ~~Axis renaming across both lobbies~~ — **done.** `axes.ts` gained the server-mapping half; both lobbies show a `LobbyAxisSummary`; the tournament lobby's Format/Mode/Variant rows became Cards (+ sub-options) / Table / Event. | **yes** — kills the Format/Mode overloading |
 | ~~**3**~~ | ~~Help~~ — **done.** `src/help/{topics,shortcuts,helpStore}.ts`, `/help/:section`, portal `HelpTip`, in-game drawer, `?` on home. | **yes** |
-| **4** | Unified lobby: view model + `LobbyScreen` + `LobbyAxes`, with the v1 recreate-on-switch confirm. | yes |
+| ~~**4**~~ | ~~Unified lobby~~ — **done.** `lobbyViewModel.ts` + `axisChoices.ts` + `useLobbyCommands.ts` behind one `LobbyScreen`; both old overlays deleted; v1 recreate-on-switch confirm. | **yes** |
 | **5** | Server gaps from 4c, in the numbered order. | yes, each |
 | **6** | Optional: `convertLobby` preserving the invite code; real URLs for in-`/` screens so Back works. | yes |
 
@@ -514,6 +514,89 @@ Two things fixed on the way past, both reported by Vincent:
 - **Scenario Builder is now dev-only** on the home screen, alongside LLM Tournament — it drives
   `/api/dev/scenarios/*`, which a production server does not expose. The *route* stays open in both
   builds, because a replay's "share as scenario" link is a real `/scenario?s=` deep link.
+
+### What Phase 4 actually shipped
+
+**One screen.** `QuickGameLobbyOverlay` (454) and `LobbyOverlay` (1131) are deleted; every lobby is
+[`components/lobby/LobbyScreen.tsx`](../web-client/src/components/lobby/LobbyScreen.tsx). They
+already shared a stylesheet — `QuickGameLobbyOverlay`'s header comment said so — but not a line of
+structure, and the behaviour had quietly diverged: only one had a fullscreen button, only one showed
+a QR code, they disagreed about who could see the settings, and the axes were editable on one of
+them. All of that is now one answer.
+
+Three new modules, one job each:
+
+- **`lobbyViewModel.ts`** — `UnifiedLobbyView` plus `fromQuickGameLobby` / `fromTournamentLobby`.
+  Pure. Everything the two kinds genuinely disagree about is a *field* (`startModel`,
+  `primaryAction`, `invitable`, `canAddAi`, `teams`, `ranked.available`) rather than a branch at
+  every call site — which is what lets Phase 5 close the server gaps without touching the screen.
+- **`axisChoices.ts`** — for every Cards / Table / Event value on *this* lobby: `DIRECT`,
+  `RECREATE` onto the other backing kind, or `BLOCKED` with the reason. This supersedes `axes.ts`'s
+  kind-blind `eventUnavailableReason`, which was removed.
+- **`useLobbyCommands.ts`** — the write side of the same seam, including the recreate.
+
+**The axes are now the lobby's primary control, on both kinds.** Before, a quick lobby had a
+`Cards` dropdown and nothing else; the tournament lobby had all three rows. Now both show all three
+rows and all five Cards values.
+
+**Cross-kind switching (4b v1).** Values the current implementation can't express are marked `⇄`
+and, on click, confirm before tearing the lobby down and recreating it on the other kind. The
+confirm counts what is actually lost — the invite code always, joined humans and AI seats and
+submitted decks only when there are any — rather than warning in the abstract. Two combinations
+become reachable for the first time:
+
+- **quick → tournament**: turn a vs-Friend game into a draft, a Free-for-All or a bracket without
+  backing out to the home screen.
+- **tournament → quick**: `Event: Single game` at a 1v1 bring-a-deck table, and `Cards: Momir Basic`
+  / `Random pool`. Previously the only route to a 1v1 single game was knowing that the *home screen*
+  button, not the lobby, was the way to get one.
+
+Everything else stays visible and disabled with its reason attached, which is where the Phase 5
+holes now show up: Momir and random pools are 1v1-single-game only, bracket play is 1v1 only, a
+limited pool always runs as a bracket.
+
+**`Random pool` is a real Cards value now, not just a chip.** It is the deck picker's Random tab —
+per player, not a lobby setting — so `DeckPicker` grew an optional controlled `tab` / `onTabChange`
+pair and the lobby hoists it. Selecting Random on the Cards row moves the picker; the picker moving
+updates the row and the header chip. Phase 2 had to infer this from the server echoing back an empty
+deck; now there is one source of truth. `RecreateSpec` carries a `deckTab` for the same reason —
+without it, "Random pool ⇄" would land you on a lobby reading "Bring a deck".
+
+**Also folded in:**
+
+- `TournamentLobbySettings.tsx` holds what is genuinely tournament-only (sets, boosters, timers,
+  commander preset, ban list, teams, attack mode, AI assist), ordered by what it belongs to rather
+  than by when it was added.
+- **The disabled start button explains itself.** The old reason string fell through to a bare "Need
+  at least 2 players" for the exact-count shapes, so a Two-Headed Giant lobby holding three players
+  offered a dead button and no explanation. Every branch of the seat rule now has a sentence.
+- **Winston's booster cap was about to break.** Winston is a draft everywhere else but counts
+  *boosters* capped at 16, not *packs* capped at 6; the extraction nearly folded it in with the
+  drafts. Called out in a comment at the one place that cares.
+- **The routing either/or is gone.** `GameUI.tsx` has one lobby branch (`quickGameLobbyState ||
+  lobbyState`), and `HomeScreen` no longer routes to any overlay.
+- Two new help topics' worth of change: `lobby-switching` explains `⇄`, and `axis-limits` was
+  rewritten — "Event follows Table" stopped being true the moment 1v1 single game became reachable.
+- `DEFAULT_LOBBY_SET_CODE` replaces the `'ECL'` that was hardcoded in `HomeScreen.launchPreset` and
+  would have been hardcoded a second time in the recreate path.
+
+**One honest bug fixed on the way past.** The server broadcasts a lobby closure to everyone still
+listed in it, *including the host who closed it by leaving* — so a recreate landed you in a working
+new lobby underneath a red "Host left the lobby" banner. `onQuickGameLobbyClosed` now ignores a
+closure for a lobby the client has already cleared. This was always wrong (pressing Leave did it
+too); the recreate just made it impossible to miss.
+
+**Verified against the running stack**, walking: vs Friend → Cards Random↔Bring a deck (picker
+follows) → Table Free-for-All (confirm → premade FFA lobby) → Table 1v1 (direct; Ranked and Games
+per matchup appear, Attack disappears) → Event Single game (confirm → quick lobby) → Cards Sealed
+(confirm → sealed lobby, shape sub-row, set chips, ban list) → Cards Random pool (confirm → quick
+lobby *on the Random tab*) → vs AI → Cards Momir Basic → started a real Momir game. Reload mid-lobby
+rejoins into the unified screen on both kinds. `npm run typecheck` and `npm run build` clean; no
+console errors.
+
+**Deviation from the plan's naming:** the descriptor module is `axisChoices.ts`, not `lobbyAxes.ts`
+— sitting next to the existing `axes.ts`, a name differing only by a prefix would have been a
+coin-flip every time you went looking for one of them.
 
 ### Part 1 duplication, closed
 

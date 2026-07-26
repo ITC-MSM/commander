@@ -145,7 +145,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       { kind: 'p', text: 'They are independent: “Sealed” is not an alternative to “Tournament”, it is an alternative to “Draft”. A tournament is an alternative to a single game. That is why a 1v1 sealed game with one friend and an eight-player bracket are the same screen with different settings.' },
       { kind: 'p', text: 'The six cards on the home screen are named starting points, not six separate systems. Each sets the three values; the lobby lets you change any of them.' },
     ],
-    related: ['cards-sealed', 'table-free-for-all', 'event-round-robin', 'axis-limits'],
+    related: ['cards-sealed', 'table-free-for-all', 'event-round-robin', 'axis-limits', 'lobby-switching'],
   },
   {
     id: 'cards-bring-a-deck',
@@ -272,13 +272,30 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     body: [
       { kind: 'p', text: 'Everything below is a gap in the plumbing, not a rules decision — an option you can see and can’t use tells you the shape of the system; one that isn’t rendered just looks like nobody thought of it.' },
       { kind: 'ul', items: [
-        'Event follows Table. A 1v1 lobby always runs as a bracket (with two players and one game per matchup, that is a single game); every multiplayer table plays exactly one shared game.',
+        'Bracket play is 1v1 only. Every multiplayer table plays exactly one shared game.',
+        'A limited pool always runs as a bracket. Sealed and draft build a pool that is meant to be played more than once; with two players and one game per matchup, that is a single game anyway.',
         'Ranked is 1v1 only. Multiplayer tables are always casual.',
         'The AI can only be added to a 1v1 lobby. It cannot take a seat in a Free-for-All or a team game, or bring a deck to a “Bring a deck” lobby.',
-        'Momir Basic is a quick-lobby variant only — it is not yet a Cards value in the lobby that seats more than two.',
+        'Momir Basic and a rolled random pool are 1v1 single games only. Neither exists at a multiplayer table or in a bracket.',
       ] },
     ],
-    related: ['axes', 'ranked'],
+    related: ['axes', 'ranked', 'lobby-switching'],
+  },
+  {
+    id: 'lobby-switching',
+    section: 'modes',
+    title: 'Changing an axis can start a new lobby',
+    summary:
+      'Some axis values live on a different kind of lobby. Picking one (they are marked ⇄) opens a fresh lobby, so your invite code changes and anyone who has joined is dropped. You are asked first.',
+    body: [
+      { kind: 'p', text: 'Behind the scenes there are two lobby implementations: a small one for a single 1v1 game, and a larger one for limited pools, multiplayer tables and brackets. The lobby screen is the same either way, but a value only the other one can express means starting over on that one.' },
+      { kind: 'ul', items: [
+        'Marked ⇄ — selectable, but opens a new lobby. You get a confirmation listing exactly what is lost.',
+        'Greyed out — nothing implements the combination yet. Hover for the reason.',
+        'It is cheapest to change these before you share the invite code, which is the usual case.',
+      ] },
+    ],
+    related: ['axes', 'axis-limits', 'invite-codes'],
   },
   {
     id: 'preset-vs-ai',

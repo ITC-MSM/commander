@@ -25,12 +25,10 @@ import { LoginModal } from '@/components/auth/LoginModal'
 import { DeckMigrationPrompt } from '@/components/auth/DeckMigrationPrompt'
 import { AccountBenefitsCallout } from '@/components/auth/AccountBenefitsCallout'
 import { FullscreenButton } from './FullscreenButton'
-import { LobbyOverlay } from '../lobby/LobbyOverlay'
-import { TournamentOverlay } from '../tournament/TournamentOverlay'
-import { FreeForAllOverlay } from '../tournament/FreeForAllOverlay'
 import { HelpTip } from '@/components/help/HelpTip'
 import { MODE_PRESETS, type ModePreset } from './modePresets'
 import { axisSummary } from '../lobby/axes'
+import { DEFAULT_LOBBY_SET_CODE } from '../lobby/useLobbyCommands'
 import { loadLobbyId, clearLobbyId } from '@/store/slices/shared'
 import styles from './GameUI.module.css'
 
@@ -152,9 +150,9 @@ export function HomeScreen({
     if (launch.kind === 'quickGame') {
       createQuickGameLobby(launch.vsAi, undefined, false, undefined, launch.momirBasic ?? false)
     } else {
-      // Sets are configured inside the lobby; ECL is only the starting selection, and is ignored
+      // Sets are configured inside the lobby; this is only the starting selection, and is ignored
       // entirely by PREMADE_DECKS (which generates no boosters).
-      createTournamentLobby(['ECL'], launch.format, 6, 8, 45, false, launch.gameMode)
+      createTournamentLobby([DEFAULT_LOBBY_SET_CODE], launch.format, 6, 8, 45, false, launch.gameMode)
     }
   }
 
@@ -252,22 +250,8 @@ export function HomeScreen({
     return await res.json() as ReplayData
   }, [])
 
-  // Show tournament UI if we're in a tournament (even without lobbyState)
-  const tournamentState = useGameStore((state) => state.tournamentState)
-  const ffaState = useGameStore((state) => state.ffaState)
-  if (tournamentState) {
-    return <TournamentOverlay tournamentState={tournamentState} />
-  }
-
-  // Show Free-for-All standings UI if the pod has started a game
-  if (ffaState) {
-    return <FreeForAllOverlay ffaState={ffaState} />
-  }
-
-  // Show lobby UI if we're in a lobby
-  if (lobbyState) {
-    return <LobbyOverlay lobbyState={lobbyState} />
-  }
+  // Lobby, tournament standings and FFA standings are routed in `GameUI.tsx`, which never mounts
+  // this screen while any of them is live.
 
   // Show replay viewer overlay
   if (showReplays) {

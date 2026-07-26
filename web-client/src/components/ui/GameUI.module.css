@@ -1215,6 +1215,69 @@
   background-color: var(--color-accent-dark);
 }
 
+/* An axis value the *other* server lobby implementation is the one that can express, so picking it
+   recreates the lobby on that kind (and changes the invite code). Marked before the click rather
+   than only in the confirm dialog, so the cost is visible while you are deciding. */
+.settingsButtonRecreate {
+  border-style: dashed;
+}
+
+.settingsButtonRecreateMark {
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+/* Confirm dialog for a recreate. Deliberately plain: it is a stop sign, not a screen. */
+.confirmBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background-color: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.confirmPanel {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface-2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.confirmTitle {
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.confirmBody {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.confirmCosts {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: var(--font-sm);
+  color: var(--text-disabled);
+  line-height: 1.5;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
 .variantGroup {
   display: flex;
   flex-direction: column;

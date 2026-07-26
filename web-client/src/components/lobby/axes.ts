@@ -28,8 +28,16 @@ export type CardsAxis =
   | { kind: 'SEALED'; shape: 'STANDARD' | 'COMMANDER' }
   | { kind: 'DRAFT'; shape: 'BOOSTER' | 'WINSTON' | 'GRID' | 'COMMANDER' }
 
+/** The five top-level Cards values, without their sub-options. One button each in the lobby. */
+export type CardsKind = CardsAxis['kind']
+
+export const CARDS_KINDS: readonly CardsKind[] = ['BRING_A_DECK', 'RANDOM', 'MOMIR', 'SEALED', 'DRAFT']
+
 /** Who is at the table. */
 export type TableAxis = 'ONE_V_ONE' | 'FREE_FOR_ALL' | 'TWO_HEADED_GIANT' | 'TEAM_VS_TEAM'
+
+export const TABLE_VALUES: readonly TableAxis[] =
+  ['ONE_V_ONE', 'FREE_FOR_ALL', 'TWO_HEADED_GIANT', 'TEAM_VS_TEAM']
 
 /** One game, or a series. */
 export type EventAxis = 'SINGLE_GAME' | 'ROUND_ROBIN'
@@ -68,6 +76,17 @@ export function cardsLabel(cards: CardsAxis): string {
   }
 }
 
+/** The bare name of a Cards value, without the sub-option {@link cardsLabel} folds in. */
+export function cardsKindLabel(kind: CardsKind): string {
+  switch (kind) {
+    case 'BRING_A_DECK': return 'Bring a deck'
+    case 'RANDOM': return 'Random pool'
+    case 'MOMIR': return 'Momir Basic'
+    case 'SEALED': return 'Sealed'
+    case 'DRAFT': return 'Draft'
+  }
+}
+
 export function tableLabel(table: TableAxis): string {
   switch (table) {
     case 'ONE_V_ONE': return '1v1'
@@ -91,7 +110,11 @@ export function axisSummary(axes: AxisTriple): string {
 
 /** The help topic that explains an axis value, so a control can bind its `?` to what is selected. */
 export function cardsTopicId(cards: CardsAxis): string {
-  switch (cards.kind) {
+  return cardsKindTopicId(cards.kind)
+}
+
+export function cardsKindTopicId(kind: CardsKind): string {
+  switch (kind) {
     case 'BRING_A_DECK': return 'cards-bring-a-deck'
     case 'RANDOM': return 'cards-random'
     case 'MOMIR': return 'cards-momir'
@@ -151,21 +174,31 @@ export function eventFromGameMode(gameMode: LobbyGameMode): EventAxis {
 }
 
 /**
- * Why this Event value can't be picked at this Table, or null when it can.
+ * The tournament format that expresses a Cards value, or null when no tournament lobby can.
  *
- * Rendered as a disabled control with the reason attached rather than hidden: an option you can
- * see and can't use teaches the shape of the system; an option that isn't there just looks like
- * the combination was never considered.
+ * The inverse of {@link cardsFromTournamentFormat}. Random pool folds onto `PREMADE_DECKS`: it is
+ * a per-player choice inside the deck picker, not a lobby setting, so it doesn't change the
+ * lobby's shape. Momir Basic has no tournament-side implementation at all — `grep -i momir` over
+ * `TournamentLobby.kt` / `LobbyHandler.kt` / `FreeForAllHandler.kt` is zero hits — which is gap #2
+ * in the plan's Phase 5 list, and why this returns null rather than guessing.
  */
-export function eventUnavailableReason(table: TableAxis, event: EventAxis): string | null {
-  if (table === 'ONE_V_ONE') {
-    return event === 'SINGLE_GAME'
-      ? 'A 1v1 lobby always runs as a bracket. With two players that is one matchup — set “Games per matchup” to 1 and it is a single game.'
-      : null
+export function tournamentFormatForCards(cards: CardsAxis): TournamentFormat | null {
+  switch (cards.kind) {
+    case 'BRING_A_DECK':
+    case 'RANDOM':
+      return 'PREMADE_DECKS'
+    case 'MOMIR':
+      return null
+    case 'SEALED':
+      return cards.shape === 'COMMANDER' ? 'COMMANDER_SEALED' : 'SEALED'
+    case 'DRAFT':
+      switch (cards.shape) {
+        case 'WINSTON': return 'WINSTON_DRAFT'
+        case 'GRID': return 'GRID_DRAFT'
+        case 'COMMANDER': return 'COMMANDER_DRAFT'
+        case 'BOOSTER': return 'DRAFT'
+      }
   }
-  return event === 'ROUND_ROBIN'
-    ? 'Bracket play is 1v1 only today. A multiplayer table plays one shared game.'
-    : null
 }
 
 export function cardsFromTournamentFormat(
@@ -198,14 +231,24 @@ export function axesFromLobbySettings(settings: LobbySettings): AxisTriple {
  * Random pool is *per player*, not a lobby setting: it is the deck picker's Random tab, so one
  * player can roll a pool while the other brings a deck. It is still reported as this viewer's
  * Cards value, because a chip reading "Bring a deck" over a picker sitting on Random is exactly
- * the drift this vocabulary exists to remove. An empty submitted deck is the server's own signal
- * for "roll me one" (`QuickGameLobbyHandler.toView` labels it "Random Pool").
+ * the drift this vocabulary exists to remove.
+ *
+ * @param deckTab the deck picker's live tab, when the lobby is hoisting it (the unified lobby
+ *   does, so its Cards axis and the picker are one control). When it isn't known yet — the first
+ *   render, or a reconnect before the picker has mounted — we fall back to the server's own
+ *   "roll me one" signal, an empty submitted deck (`QuickGameLobbyHandler.toView` labels it
+ *   "Random Pool").
  */
 export function axesFromQuickGameLobby(
   lobby: { readonly momirBasic?: boolean | null; readonly format?: DeckFormat | null },
   you?: { readonly deckSelected: boolean; readonly deckCardCount: number } | undefined,
+  deckTab?: 'saved' | 'examples' | 'paste' | 'random' | undefined,
 ): AxisTriple {
-  const rollsAPool = !lobby.momirBasic && you?.deckSelected === true && you.deckCardCount === 0
+  const rollsAPool = !lobby.momirBasic && (
+    deckTab !== undefined
+      ? deckTab === 'random'
+      : you?.deckSelected === true && you.deckCardCount === 0
+  )
   return {
     cards: lobby.momirBasic
       ? { kind: 'MOMIR' }

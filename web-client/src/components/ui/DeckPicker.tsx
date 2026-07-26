@@ -19,7 +19,7 @@
  *   GET  /api/decks/examples   — the starter decks shown in the Examples tab
  *   POST /api/decks/validate   — authoritative validation pass when a list is non-empty
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PrintingRef } from '@/types'
 import type { AvailableSet } from '@/types/messages'
 import {
@@ -50,7 +50,8 @@ import { SetPickerModal } from './SetPickerModal'
 import styles from './DeckPicker.module.css'
 import lobbyStyles from './GameUI.module.css'
 
-type Tab = 'saved' | 'examples' | 'paste' | 'random'
+export type DeckPickerTab = 'saved' | 'examples' | 'paste' | 'random'
+type Tab = DeckPickerTab
 
 export interface DeckPickerProps {
   /**
@@ -89,6 +90,15 @@ export interface DeckPickerProps {
    * Null/undefined = no restriction.
    */
   format?: string | null
+  /**
+   * Optional controlled tab. Pass it together with {@link onTabChange} to hoist the picker's tab
+   * out of the picker — the unified lobby does this so that "Random pool" on its **Cards** axis
+   * and the picker's Random tab are the same control rather than two things that can disagree.
+   * Leave both undefined and the picker owns its tab as before.
+   */
+  tab?: DeckPickerTab | undefined
+  /** Fired for every tab change, whether the user clicked it or the picker moved itself. */
+  onTabChange?: (tab: DeckPickerTab) => void
 }
 
 interface ExampleDeck {
@@ -146,6 +156,8 @@ export function DeckPicker({
   disabled = false,
   tabs = ALL_TABS,
   format = null,
+  tab: controlledTab,
+  onTabChange,
 }: DeckPickerProps) {
   // Unified library: cloud decks (when signed in) + browser-only decks, each tagged with where it
   // lives. Selecting a cloud deck works the same as a local one because both carry their card list.
@@ -165,7 +177,12 @@ export function DeckPicker({
       : showPaste
         ? 'paste'
         : (tabs[0] ?? 'paste')
-  const [tab, setTab] = useState<Tab>(() => initialTab)
+  const [uncontrolledTab, setUncontrolledTab] = useState<Tab>(() => initialTab)
+  const tab = controlledTab ?? uncontrolledTab
+  const setTab = useCallback((next: Tab) => {
+    setUncontrolledTab(next)
+    onTabChange?.(next)
+  }, [onTabChange])
   const [pasteText, setPasteText] = useState('')
   // Commander designation that rides along with the Paste tab. The paste textarea has no
   // commander UI of its own — loading a commander-shape example is the only way this gets
@@ -186,7 +203,16 @@ export function DeckPicker({
     setRandomSetCode(initialSetCode)
   }, [initialSetCode])
 
-  // Move off `random` to `saved` once decks are hydrated, so users land on their own list.
+  // Tell a controlling parent which tab we resolved to, so it starts in sync rather than having
+  // to guess the default. Fires once; every later change goes through `setTab`.
+  useEffect(() => {
+    onTabChange?.(tab)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Move off `random` to `saved` once decks are hydrated, so users land on their own list. Keyed
+  // on `decks.length`, so this only fires as the deck list arrives — a user who picks Random later
+  // stays on it.
   useEffect(() => {
     if (decks.length > 0 && tab === 'random' && showSaved) {
       setTab('saved')
