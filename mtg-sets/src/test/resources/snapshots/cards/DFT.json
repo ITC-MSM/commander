@@ -2543,6 +2543,142 @@
     ]
 }
 
+// Gastal Raider
+{
+    "name": "Gastal Raider",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Vampire Rogue",
+    "oracleText": "Start your engines!\nWhen this creature enters, target opponent reveals their hand. You choose an instant or sorcery card from it. That player discards that card.\nMax speed — This creature gets +1/+1 and has menace.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "RevealHand",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target opponent"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "filter": "instant|sorcery"
+                            },
+                            "storeAs": "revealedInstantsAndSorceries"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "revealedInstantsAndSorceries",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toDiscard",
+                            "prompt": "Choose an instant or sorcery card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toDiscard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When this creature enters, target opponent reveals their hand. You choose an instant or sorcery card from it. That player discards that card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "MENACE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "86",
+        "rarity": "UNCOMMON",
+        "artist": "Lorenzo Mastroianni",
+        "flavorText": "Win or lose, she will sate her hunger.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/e/6e4877b5-4ce5-466a-810f-6501f2a0f217.jpg?1783907897"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Gilded Ghoda
 {
     "name": "Gilded Ghoda",
@@ -2677,6 +2813,74 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Goblin Surveyor
+{
+    "name": "Goblin Surveyor",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin Scout",
+    "oracleText": "Trample\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — {3}, Exile this card from your graveyard: Draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "TRAMPLE",
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostExileSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "Max speed — {3}, Exile this card from your graveyard: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "artist": "Pete Venters",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1efffe9-00f8-4177-a9e6-4ad62887d32f.jpg?1783907881"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -3092,6 +3296,64 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Howler's Heavy
+{
+    "name": "Howler's Heavy",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Seal Pirate",
+    "oracleText": "Cycling {1}{U} ({1}{U}, Discard this card: Draw a card.)\nWhen you cycle this card, target creature or Vehicle an opponent controls gets -3/-0 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{1}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CycleEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or Vehicle an opponent controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature|Vehicle ctrl:opponent"
+                    },
+                    "id": "target creature or Vehicle an opponent controls"
+                },
+                "descriptionOverride": "When you cycle this card, target creature or Vehicle an opponent controls gets -3/-0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "artist": "Borja Pindado",
+        "flavorText": "\"It takes a thick skin to ride among the Keelhaulers.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8bbd7758-59c7-4ae1-9af8-c3580f4aa958.jpg?1783907909"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -4342,6 +4604,81 @@
         "artist": "Brian Valeza",
         "flavorText": "Like most goblins, Rocketeers value nothing more than a good old-fashioned near-death experience.",
         "imageUri": "https://cards.scryfall.io/normal/front/a/3/a311d4b3-ab2a-43c2-8480-6c5daac41178.jpg?1782687824"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Point the Way
+{
+    "name": "Point the Way",
+    "manaCost": "{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{3}{G}, Sacrifice this enchantment: Search your library for up to X basic land cards, where X is your speed. Put those cards onto the battlefield tapped, then shuffle.",
+    "keywords": [
+        "START_YOUR_ENGINES"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{G}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": "Speed"
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "descriptionOverride": "{3}{G}, Sacrifice this enchantment: Search your library for up to X basic land cards, where X is your speed. Put those cards onto the battlefield tapped, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "rarity": "UNCOMMON",
+        "artist": "Izzy",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8fd4c73d-0e9a-4ffe-8062-f2f4d0e601fe.jpg?1783907867"
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -6166,6 +6503,76 @@
     ]
 }
 
+// Swiftwing Assailant
+{
+    "name": "Swiftwing Assailant",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Bird Warrior",
+    "oracleText": "Flying\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — This creature gets +0/+1 and has vigilance.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 0,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "artist": "Pig Hands",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72db9bb9-d930-40e5-b144-01ebfd377996.jpg?1783907913"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Syphon Fuel
 {
     "name": "Syphon Fuel",
@@ -6544,6 +6951,47 @@
         "artist": "Mark Poole",
         "flavorText": "\"Remember: You can take the wheel if you want, but I choose the music.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/6/7/6727169f-c33a-4ca5-889d-a63bcfc5a3f0.jpg?1782687907"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Trip Up
+{
+    "name": "Trip Up",
+    "manaCost": "{3}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Target nonland permanent's owner puts it on their choice of the top or bottom of their library.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "PutOnLibraryPositionOfChoice",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target nonland permanent"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "nonland permanent"
+                },
+                "id": "target nonland permanent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "71",
+        "artist": "Josiah \"Jo\" Cameron",
+        "flavorText": "\"That net was made to hold skywhales. Good luck getting to the next checkpoint!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/273061f3-7aa7-4cb0-afd6-616252b88948.jpg?1783907901"
     },
     "colorIdentityOverride": [
         "BLUE"
