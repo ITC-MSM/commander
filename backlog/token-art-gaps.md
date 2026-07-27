@@ -15,11 +15,9 @@ Wizards printed no token cards before roughly Odyssey.
 
 | Set | Distinct tokens missing art |
 |-----|-----------------------------|
-| BIG | 2 |
 | DST | 2 |
 | JMP | 2 |
 | MRD | 2 |
-| BLC | 1 |
 | CHK | 1 |
 | DKA | 1 |
 | EMN | 1 |
@@ -36,20 +34,7 @@ Wizards printed no token cards before roughly Odyssey.
 | RIX | 1 |
 | SCG | 1 |
 
-**24 distinct tokens across 20 sets.**
-
-## BIG
-
-- **Clue** — created by 2 card(s): Hostile Investigator, Transmutation Font
-  - image: `web-client/public/images/tokens/big-clue.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Clue", imageUri = "/images/tokens/big-clue.jpeg"),
-    ```
-- **Treasure** — created by 2 card(s): Generous Plunderer, Sword of Wealth and Power
-  - image: `web-client/public/images/tokens/big-treasure.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Treasure", imageUri = "/images/tokens/big-treasure.jpeg"),
-    ```
+**21 distinct tokens across 18 sets.**
 
 ## DST
 
@@ -94,14 +79,6 @@ _No Scryfall token set (`tmrd`) — every token here needs self-hosted art._
   - image: `web-client/public/images/tokens/mrd-spirit.jpeg`
   - ```kotlin
     TokenPrinting(name = "Spirit", imageUri = "/images/tokens/mrd-spirit.jpeg", power = 1, toughness = 1, colors = setOf(Color.WHITE)),
-    ```
-
-## BLC
-
-- **Treasure** — created by 4 card(s): Alchemist's Talent, Big Score, Bootleggers' Stash, Prosperous Bandit
-  - image: `web-client/public/images/tokens/blc-treasure.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Treasure", imageUri = "/images/tokens/blc-treasure.jpeg"),
     ```
 
 ## CHK

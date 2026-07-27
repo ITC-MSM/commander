@@ -34,6 +34,24 @@ object TokenArtData {
     /** Token printings this set contributes, or empty when the set has none on Scryfall. */
     fun forSet(setCode: String): List<TokenPrinting> = bySet[setCode].orEmpty()
 
+    /**
+     * [donor]'s synced sheet minus every token name [setCode] prints itself — the `tokenArt` for a
+     * companion product that shares another set's token sheet.
+     *
+     * Bonus sheets and Commander decks mint tokens their own `t<code>` never printed, because the
+     * physical token came in the main set's boosters: The Big Score's Clue and Treasure are OTJ
+     * tokens, Bloomburrow Commander's Treasure is a Bloomburrow token. Those render with
+     * engine-wide generic art unless the companion set claims the main set's printings.
+     *
+     * Names the companion prints itself are dropped rather than shadowed: the wiring registers
+     * `set.tokenArt` *ahead* of `forSet(set.code)`, so a token on both sheets would otherwise show
+     * the donor's art on the companion's card.
+     */
+    fun borrowedFrom(donor: String, setCode: String): List<TokenPrinting> {
+        val own = forSet(setCode)
+        return forSet(donor).filterNot { borrowed -> own.any { it.matchesName(borrowed.name) } }
+    }
+
     /** Set codes carrying synced token art. */
     val setCodes: Set<String> get() = bySet.keys
 
