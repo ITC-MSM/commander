@@ -2,12 +2,12 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 148 / 272
+**Implemented:** 170 / 272
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
-- [ ] Alchemist's Gambit
-- [ ] Alchemist's Retrieval
+- [x] Alchemist's Gambit
+- [x] Alchemist's Retrieval
 - [ ] Alluring Suitor
 - [x] Ancestral Anger
 - [ ] Ancient Lumberknot
@@ -51,7 +51,7 @@
 - [ ] Child of the Pack
 - [ ] Chill of the Grave
 - [ ] Circle of Confinement
-- [ ] Cloaked Cadet
+- [x] Cloaked Cadet
 - [x] Cobbled Lancer
 - [ ] Concealing Curtains
 - [ ] Consuming Tide
@@ -69,16 +69,16 @@
 - [x] Deathcap Glade
 - [x] Demonic Bargain
 - [ ] Desperate Farmer
-- [ ] Dig Up
+- [x] Dig Up
 - [x] Diregraf Scavenger
 - [ ] Distracting Geist
-- [ ] Diver Skaab
+- [x] Diver Skaab
 - [ ] Dollhouse of Horrors
 - [x] Dominating Vampire
 - [x] Doomed Dissenter
 - [ ] Dormant Grove
 - [ ] Dorothea, Vengeful Victim
-- [ ] Dread Fugue
+- [x] Dread Fugue
 - [x] Dreadfeast Demon
 - [x] Dreadlight Monstrosity
 - [x] Dreamroot Cascade
@@ -96,8 +96,8 @@
 - [x] Falkenrath Forebear
 - [x] Fear of Death
 - [ ] Fearful Villager
-- [ ] Fell Stinger
-- [ ] Fierce Retribution
+- [x] Fell Stinger
+- [x] Fierce Retribution
 - [x] Flame-Blessed Bolt
 - [x] Fleeting Spirit
 - [x] Flourishing Hunter
@@ -109,11 +109,11 @@
 - [x] Gift of Fangs
 - [x] Glorious Sunrise
 - [x] Gluttonous Guest
-- [ ] Graf Reaver
+- [x] Graf Reaver
 - [x] Grisly Ritual
 - [ ] Grolnok, the Omnivore
 - [x] Groom's Finery
-- [ ] Gryff Rider
+- [x] Gryff Rider
 - [x] Gryffwing Cavalry
 - [ ] Gutter Skulker
 - [x] Halana and Alena, Partners
@@ -153,7 +153,7 @@
 - [x] Lantern Flare
 - [x] Lantern of the Lost
 - [x] Lightning Wolf
-- [ ] Lunar Rejection
+- [x] Lunar Rejection
 - [ ] Magma Pummeler
 - [ ] Manaform Hellkite
 - [x] Markov Purifier
@@ -161,7 +161,7 @@
 - [x] Markov Waltzer
 - [x] Massive Might
 - [x] Militia Rallier
-- [ ] Mindleech Ghoul
+- [x] Mindleech Ghoul
 - [ ] Mirrorhall Mimic
 - [ ] Mischievous Catgeist
 - [x] Moldgraf Millipede
@@ -177,13 +177,13 @@
 - [ ] Olivia's Attendants
 - [ ] Olivia, Crimson Bride
 - [x] Ollenbock Escort
-- [ ] Overcharged Amalgam
+- [x] Overcharged Amalgam
 - [x] Packsong Pup
 - [ ] Panicked Bystander
-- [ ] Parasitic Grasp
+- [x] Parasitic Grasp
 - [x] Parish-Blade Trainee
 - [ ] Patchwork Crawler
-- [ ] Path of Peril
+- [x] Path of Peril
 - [x] Persistent Specimen
 - [x] Piercing Light
 - [x] Plains
@@ -194,11 +194,11 @@
 - [x] Reckless Impulse
 - [x] Reclusive Taxidermist
 - [x] Rending Flame
-- [ ] Repository Skaab
+- [x] Repository Skaab
 - [x] Resistance Squad
 - [ ] Restless Bloodseeker
 - [x] Retrieve
-- [ ] Rot-Tide Gargantua
+- [x] Rot-Tide Gargantua
 - [x] Runebound Wolf
 - [ ] Runo Stromkirk
 - [x] Rural Recruit
@@ -216,7 +216,7 @@
 - [ ] Sigarda's Summons
 - [ ] Sigardian Paladin
 - [x] Skulking Killer
-- [ ] Skull Skaab
+- [x] Skull Skaab
 - [x] Skywarp Skaab
 - [x] Snarling Wolf
 - [ ] Sorin the Mirthless
@@ -227,7 +227,7 @@
 - [x] Sporeback Wolf
 - [x] Steelclad Spirit
 - [x] Stensia Uprising
-- [ ] Stitched Assistant
+- [x] Stitched Assistant
 - [x] Stormcarved Coast
 - [ ] Stormchaser Drake
 - [x] Sundown Pass
@@ -238,7 +238,7 @@
 - [x] Syphon Essence
 - [x] Thalia, Guardian of Thraben
 - [x] Thirst for Discovery
-- [ ] Torens, Fist of the Angels
+- [x] Torens, Fist of the Angels
 - [x] Toxic Scorpion
 - [ ] Toxrill, the Corrosive
 - [x] Traveling Minister
@@ -261,7 +261,7 @@
 - [ ] Voltaic Visionary
 - [x] Wandering Mind
 - [x] Wanderlight Spirit
-- [ ] Wash Away
+- [x] Wash Away
 - [ ] Weary Prisoner
 - [ ] Weaver of Blossoms
 - [ ] Wedding Announcement
@@ -269,7 +269,7 @@
 - [x] Wedding Security
 - [x] Welcoming Vampire
 - [x] Whispering Wizard
-- [ ] Winged Portent
+- [x] Winged Portent
 - [x] Witch's Web
 - [ ] Witness the Future
 - [ ] Wolf Strike
