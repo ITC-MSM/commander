@@ -55,11 +55,6 @@ internal class CombatDamageManager(
     private val damageCalculator: DamageCalculator,
 ) {
 
-    private companion object {
-        /** Generic label for a face-down (morph / manifest) creature; mirrors the client transformer. */
-        const val FACE_DOWN_CREATURE_NAME = "Face-down creature"
-    }
-
     private val damageModifiers: List<CombatDamageModifier> = listOf(
         PreventAllCombatDamageModifier(),
         PreventAllDamageFromSourceModifier(),
@@ -90,6 +85,11 @@ internal class CombatDamageManager(
             if (attackerId !in state.getBattlefield()) continue
             val attackerContainer = state.getEntity(attackerId) ?: continue
             val attackerCard = attackerContainer.get<CardComponent>() ?: continue
+
+            // A face-down permanent has no abilities (CR 708.2a), so this ability-gated pre-check
+            // must not read the face-up card's abilities off cardDef below — doing so would both
+            // mis-apply the ability and leak the hidden card's name into the decision prompt.
+            if (attackerContainer.has<FaceDownComponent>()) continue
 
             // Only relevant when blocked
             val blockedBy = attackerContainer.get<BlockedComponent>() ?: continue
@@ -144,6 +144,8 @@ internal class CombatDamageManager(
         for ((attackerId, attackingComponent) in attackers) {
             val attackerContainer = state.getEntity(attackerId) ?: continue
             val attackerCard = attackerContainer.get<CardComponent>() ?: continue
+            // CR 708.2a: a face-down permanent has no abilities, so it can't divide freely.
+            if (attackerContainer.has<FaceDownComponent>()) continue
             val cardDef = cardRegistry.getCard(attackerCard.cardDefinitionId) ?: continue
             val hasDivideDamageFreely = cardDef.staticAbilities.any { it is DivideCombatDamageFreely }
             if (!hasDivideDamageFreely) continue
@@ -348,8 +350,11 @@ internal class CombatDamageManager(
             val attackerCard = attackerContainer.get<CardComponent>() ?: continue
 
             val cardDef = cardRegistry.getCard(attackerCard.cardDefinitionId)
-            // DivideCombatDamageFreely (Butcher Orgg) keeps its own DistributeDecision pre-check.
-            if (cardDef?.staticAbilities?.any { it is DivideCombatDamageFreely } == true) continue
+            // DivideCombatDamageFreely (Butcher Orgg) keeps its own DistributeDecision pre-check —
+            // but only when face up. A face-down permanent has no abilities (CR 708.2a), so it takes
+            // part in the normal board here rather than being dropped from it.
+            if (!attackerContainer.has<FaceDownComponent>() &&
+                cardDef?.staticAbilities?.any { it is DivideCombatDamageFreely } == true) continue
             // AssignAsUnblocked, once answered, has written a DamageAssignmentComponent → skip.
             if (attackerContainer.get<DamageAssignmentComponent>() != null) continue
             if (!dealsDamageThisStep(projected, attackerId, firstStrike)) continue
@@ -399,16 +404,6 @@ internal class CombatDamageManager(
         return emitCombatResolutionDecision(state, projected, candidates, firstStrike)
     }
 
-    /**
-     * The name shown for a combat participant in the damage-assignment board. Face-down permanents
-     * (morph / manifest) are masked to a generic label so the board never leaks the hidden card's
-     * identity — the whole decision graph is shared across every chooser (including the opponent
-     * assigning blocker damage), so masking must be unconditional, not keyed on any one viewer. This
-     * mirrors the "Face-down creature" masking in the client state transformer.
-     */
-    private fun combatDisplayName(state: GameState, entityId: EntityId, realName: String): String =
-        if (state.getEntity(entityId)?.has<FaceDownComponent>() == true) FACE_DOWN_CREATURE_NAME else realName
-
     private fun emitCombatResolutionDecision(
         state: GameState,
         projected: ProjectedState,
@@ -424,7 +419,7 @@ internal class CombatDamageManager(
             val container = state.getEntity(c.attackerId)
             ResolutionAttacker(
                 id = c.attackerId,
-                name = combatDisplayName(state, c.attackerId, c.attackerName),
+                name = c.attackerName,
                 power = projected.getPower(c.attackerId) ?: c.availablePower,
                 toughness = projected.getToughness(c.attackerId) ?: 0,
                 hasTrample = c.hasTrample,
@@ -445,7 +440,7 @@ internal class CombatDamageManager(
             val blocking = container.get<BlockingComponent>()
             ResolutionBlocker(
                 id = blockerId,
-                name = combatDisplayName(state, blockerId, card.name),
+                name = card.name,
                 power = projected.getPower(blockerId) ?: 0,
                 toughness = projected.getToughness(blockerId) ?: 0,
                 hasDeathtouch = projected.hasKeyword(blockerId, Keyword.DEATHTOUCH),
@@ -575,11 +570,10 @@ internal class CombatDamageManager(
         val choosers = attackerChoosers + blockerChoosers
 
         val decisionId = UUID.randomUUID().toString()
-        // Mask face-down attackers in the prompt / source name too — otherwise a single face-down
-        // attacker's real name leaks through the decision text even when the board node is masked.
-        val firstAttackerName = candidates.firstOrNull()?.let { combatDisplayName(state, it.attackerId, it.attackerName) }
+        // Names here are the real card names; per-viewer face-down masking is applied downstream at
+        // delivery time (DecisionEnricher), since this one decision graph is shown to both choosers.
         val prompt = if (candidates.size == 1) {
-            "Assign $firstAttackerName's ${candidates[0].availablePower} combat damage"
+            "Assign ${candidates[0].attackerName}'s ${candidates[0].availablePower} combat damage"
         } else {
             "Assign combat damage for ${candidates.size} attackers"
         }
@@ -589,7 +583,7 @@ internal class CombatDamageManager(
             prompt = prompt,
             context = DecisionContext(
                 sourceId = candidates.firstOrNull()?.attackerId,
-                sourceName = if (candidates.size == 1) firstAttackerName ?: "Combat damage" else "Combat damage",
+                sourceName = if (candidates.size == 1) candidates[0].attackerName else "Combat damage",
                 phase = DecisionPhase.COMBAT,
             ),
             firstStrike = firstStrike,

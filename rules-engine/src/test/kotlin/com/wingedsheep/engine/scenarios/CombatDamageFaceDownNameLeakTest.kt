@@ -11,31 +11,52 @@ import com.wingedsheep.engine.state.components.identity.ManifestedComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.AssignCombatDamageAsUnblocked
+import com.wingedsheep.sdk.scripting.DivideCombatDamageFreely
 import com.wingedsheep.sdk.scripting.costs.PayCost
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
- * Regression test for a hidden-information leak: a morphed or manifested (face-down) creature must
- * not reveal the identity of the card it really is through the combat-damage-assignment board
- * ([CombatResolutionDecision]). The engine used to copy the raw [CardComponent] name straight into
- * the [com.wingedsheep.engine.core.ResolutionAttacker] / [com.wingedsheep.engine.core.ResolutionBlocker]
- * nodes (and into the decision prompt / source name), so the assigning player could read e.g.
- * "Unstoppable Slasher" off the assign-combat-damage GUI even though the card was face down.
+ * Engine-level combat-damage board contract plus a regression for CR 708.2a: a face-down (morph /
+ * manifest) permanent has no abilities, so the combat-damage-step pre-checks that key off a card's
+ * [AssignCombatDamageAsUnblocked] / [DivideCombatDamageFreely] static abilities must NOT fire for a
+ * face-down creature. Those pre-checks read the abilities off the *face-up* [CardDefinition], so
+ * firing them for a face-down morph both mis-applies the ability and leaks the hidden card's name
+ * into the decision prompt (a [CombatResolutionDecision] would never be reached).
  *
- * The whole decision graph is shared across every chooser (the attacker assigns its damage, the
- * defender assigns any blocker damage — opponents), so face-down names are masked to the generic
- * "Face-down creature" label unconditionally, mirroring the client state transformer.
+ * The names on the board nodes here are the *real* card names — per-viewer face-down masking is
+ * applied downstream at delivery time (game-server `DecisionEnricher`), covered by
+ * `CombatDamageMaskingEnricherTest`. This test locks that the engine itself does not mask, so there
+ * is a single masking point.
  */
 class CombatDamageFaceDownNameLeakTest : FunSpec({
+
+    // A creature whose face-up card carries BOTH combat-damage-assignment static abilities. Morphed,
+    // it is a vanilla 2/2, so neither ability may be offered.
+    val sneakyBrute = CardDefinition.creature(
+        name = "Sneaky Brute",
+        manaCost = ManaCost.parse("{3}{R}"),
+        subtypes = setOf(Subtype("Ogre")),
+        power = 3,
+        toughness = 3,
+        script = CardScript(
+            staticAbilities = listOf(AssignCombatDamageAsUnblocked(), DivideCombatDamageFreely()),
+        ),
+    )
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
         driver.registerCards(TestCards.all)
+        driver.registerCards(listOf(sneakyBrute))
         return driver
     }
 
@@ -68,7 +89,7 @@ class CombatDamageFaceDownNameLeakTest : FunSpec({
         }
     }
 
-    test("morphed attacker and manifested blocker do not leak their real names in the combat-damage board") {
+    test("a face-down attacker's face-up combat-damage abilities are not offered (CR 708.2a); board keeps real names") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Forest" to 40))
         val attacker = driver.activePlayer!!
@@ -76,13 +97,14 @@ class CombatDamageFaceDownNameLeakTest : FunSpec({
 
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
-        // Face-down morph attacker — really "Centaur Courser", shows as a 2/2 face-down creature.
-        val morphAttacker = driver.putCreatureOnBattlefield(attacker, "Centaur Courser")
+        // Face-down morph attacker — really "Sneaky Brute" (assign-as-unblocked + divide-freely),
+        // face down it is a vanilla 2/2. If either ability fired, the engine would pause on that
+        // ability's own decision (a YesNoDecision / DistributeDecision) instead of the board.
+        val morphAttacker = driver.putCreatureOnBattlefield(attacker, "Sneaky Brute")
         driver.morphFaceDown(morphAttacker)
         driver.removeSummoningSickness(morphAttacker)
 
         // Two blockers so the 2/2 attacker must assign combat damage (CR 510.1c) → board decision.
-        // One is a face-down manifested creature (really "Savannah Lions"), one is a plain creature.
         val manifestBlocker = driver.putCreatureOnBattlefield(defender, "Savannah Lions")
         driver.manifestFaceDown(manifestBlocker)
         val plainBlocker = driver.putCreatureOnBattlefield(defender, "Trample Beast")
@@ -106,22 +128,12 @@ class CombatDamageFaceDownNameLeakTest : FunSpec({
         advanceUntilDecision(driver)
         decision = driver.state.pendingDecision
 
+        // Reaching the board (rather than an ability decision) proves both CR 708.2a guards fired.
         decision.shouldBeInstanceOf<CombatResolutionDecision>()
 
-        // The morph attacker's node is masked, not its real card name.
-        val attackerNode = decision.attackers.single { it.id == morphAttacker }
-        attackerNode.name shouldBe "Face-down creature"
-
-        // The manifested blocker is masked; the plain blocker keeps its real name.
-        decision.blockers.single { it.id == manifestBlocker }.name shouldBe "Face-down creature"
+        // The engine keeps the real names; masking is per-viewer downstream.
+        decision.attackers.single { it.id == morphAttacker }.name shouldBe "Sneaky Brute"
+        decision.blockers.single { it.id == manifestBlocker }.name shouldBe "Savannah Lions"
         decision.blockers.single { it.id == plainBlocker }.name shouldBe "Trample Beast"
-
-        // The hidden real names appear nowhere in what the assigning player receives — not in the
-        // node names, the prompt, or the decision source name.
-        val displayedNames = decision.attackers.map { it.name } + decision.blockers.map { it.name }
-        (displayedNames.contains("Centaur Courser")) shouldBe false
-        (displayedNames.contains("Savannah Lions")) shouldBe false
-        decision.prompt.contains("Centaur Courser") shouldBe false
-        decision.context.sourceName shouldBe "Face-down creature"
     }
 })
