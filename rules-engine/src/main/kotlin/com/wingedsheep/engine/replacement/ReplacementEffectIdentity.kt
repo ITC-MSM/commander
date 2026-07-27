@@ -63,8 +63,7 @@ sealed interface ReplacementEffectIdentity {
 
     /**
      * A self-redirect replacement effect carried on a card entity via
-     * [SelfZoneRedirectComponent] — e.g. Darksteel Colossus's "from anywhere"
-     * shuffle effect. Functions in every zone (CR 614.12).
+     * [SelfZoneRedirectComponent].
      *
      * @property sourceEntityId The card entity carrying the self-redirect
      * @property effectIndex Which redirect within the component (0-based)
