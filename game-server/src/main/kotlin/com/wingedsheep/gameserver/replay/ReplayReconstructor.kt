@@ -83,6 +83,7 @@ class ReplayReconstructor(
     // Same registry the live game was created with, so re-stamped printing images match
     // byte-for-byte. Nullable to mirror GameInitializer / GameSession (tests pass null).
     private val printingRegistry: PrintingRegistry?,
+    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry? = null,
 ) {
     private val logger = LoggerFactory.getLogger(ReplayReconstructor::class.java)
 
@@ -158,7 +159,7 @@ class ReplayReconstructor(
      * costs a handful of map inserts rather than a copy of the corpus.
      */
     private fun engineFor(replay: CompactReplay): ReplayEngine =
-        ReplayEngine(ReplayCardPin.overlay(cardRegistry, replay.pinnedCards), printingRegistry)
+        ReplayEngine(ReplayCardPin.overlay(cardRegistry, replay.pinnedCards), printingRegistry, tokenArtRegistry)
 }
 
 /** Outcome of folding one recorded action: a new state, or the reason we can't trust it. */
@@ -171,8 +172,9 @@ private class StepResult(val state: GameState?, val failure: String?)
 private class ReplayEngine(
     cardRegistry: CardRegistry,
     printingRegistry: PrintingRegistry?,
+    tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry? = null,
 ) {
-    private val actionProcessor = ActionProcessor(EngineServices(cardRegistry, printingRegistry))
+    private val actionProcessor = ActionProcessor(EngineServices(cardRegistry, printingRegistry, tokenArtRegistry))
     private val gameInitializer = GameInitializer(cardRegistry, printingRegistry)
     val spectatorStateBuilder = SpectatorStateBuilder(cardRegistry, ClientStateTransformer(cardRegistry))
 

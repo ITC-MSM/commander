@@ -40,7 +40,8 @@ import kotlin.reflect.KClass
 class EffectExecutorRegistry(
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(),
     private val decisionHandler: DecisionHandler = DecisionHandler(),
-    private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry
+    private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
+    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry? = null
 ) {
     private val executors = mutableMapOf<KClass<out Effect>, EffectExecutor<*>>()
     private val compositeExecutors = CompositeExecutors(cardRegistry, TargetFinder(), decisionHandler)
@@ -66,7 +67,7 @@ class EffectExecutorRegistry(
         permanentExecutors.initializeRecursion(::recurse)
         registerModule(permanentExecutors)
         registerModule(ManaExecutors(amountEvaluator, cardRegistry))
-        registerModule(TokenExecutors(amountEvaluator, StaticAbilityHandler(cardRegistry), cardRegistry))
+        registerModule(TokenExecutors(amountEvaluator, StaticAbilityHandler(cardRegistry), cardRegistry, tokenArtRegistry))
         // The scry/surveil macro executors expand to a composite pipeline and delegate back through
         // [recurse]; wire it in before registering (the ref is read lazily, so order is not load-bearing).
         libraryExecutors.initializeRecursion(::recurse)

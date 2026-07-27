@@ -4,6 +4,7 @@ import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
 import com.wingedsheep.sdk.model.Printing
+import com.wingedsheep.sdk.model.TokenPrinting
 
 /**
  * Foundations (2024)
@@ -36,6 +37,18 @@ object FoundationsSet : MtgSet {
     override val printings: List<Printing> by lazy {
         CardDiscovery.findPrintingsIn(CARDS_PACKAGE)
     }
+
+    /**
+     * Foundations' own token printings (Scryfall set `tfdn`), so a token minted by an FDN card
+     * shows FDN art rather than the engine-wide generic art for its creature type.
+     */
+    override val tokenArt: List<TokenPrinting> = listOf(
+        // tfdn #1 — Arahbo, the First Fang's 1/1 white Cat (art by Leonardo Santanna).
+        TokenPrinting(
+            name = "Cat",
+            imageUri = "https://cards.scryfall.io/art_crop/front/2/8/2885d54c-9fb2-4f01-8937-54f8ac1ce5bc.jpg?1783908593",
+        ),
+    )
 
     private const val CARDS_PACKAGE = "com.wingedsheep.mtg.sets.definitions.fdn.cards"
 }

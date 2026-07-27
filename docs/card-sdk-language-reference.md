@@ -1139,13 +1139,53 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CreateMapToken(count?, imageUri?)` — Map artifact tokens. `count` accepts an `Int` or a `DynamicAmount`
   (the latter evaluated at resolution, e.g. Journey On's `CreateMapToken(Add(Fixed(1),
   CountPlayersWith(Player.EachOpponent, Conditions.ControlArtifact)))` — "X is one plus the number
-  of opponents who control an artifact"). `imageUri` overrides the token art (see below).
-- **Set-specific token art (`imageUri` override).** Predefined tokens carry one canonical printing in
-  `PredefinedTokens.kt`, shared engine-wide, but the same token (Treasure, Map, …) has different art in
-  every set. Pass `imageUri` to `CreateTreasure` / `CreateMapToken` (or `CreatePredefinedTokenEffect`
-  directly) so the created token shows that set's printing; `null` (the default) falls back to the
-  predefined token's own image. `CreatePredefinedTokenExecutor` resolves `effect.imageUri ?: cardDef.metadata.imageUri`.
-  Example: LCI cards pass `LciTokenArt.TREASURE` (Scryfall set `tlci`) so their Treasure shows the LCI printing.
+  of opponents who control an artifact"). `imageUri` overrides the token art, but prefer `MtgSet.tokenArt` (see below).
+- **Set-specific token art — declare it on the set, not on the card.** The same token (a 1/1 white Cat,
+  a Treasure, a Map) is printed with different art in every set, and a token has no `CardDefinition` and no
+  `Printing` row to hang that art on. Sets therefore declare their own token printings via
+  **`MtgSet.tokenArt`**, a `List<TokenPrinting>`; the token executors resolve art in three layers:
+
+  1. an explicit `imageUri` on the effect — a deliberate per-card override, always wins;
+  2. the `TokenPrinting` contributed by the set the *creating card was printed in*
+     (`TokenArtRegistry`, keyed off the entity's `Name#SET-CN` definition id), which is the set's own
+     hand-authored `tokenArt` first and then the bulk `TokenArtData` rows synced from Scryfall;
+  3. the engine-wide generic fallback — `TokenArt.IMAGES` by creature type for creature tokens, or the
+     canonical `PredefinedTokens.kt` printing for Treasure/Map/….
+
+  Layer 2's bulk half is `mtg-sets/src/main/resources/tokens.json`, one entry per token printing of every
+  set that has a Scryfall token set (`t<code>`), refreshed with **`just token-art-sync`**. You rarely
+  touch it: it is machine-owned and regenerated wholesale. Hand-authored `MtgSet.tokenArt` is registered
+  *ahead* of it, so declaring a row is how you override synced art or supply art Scryfall doesn't have.
+
+  ```kotlin
+  object FoundationsSet : MtgSet {
+      override val tokenArt = listOf(
+          // tfdn #1 — Arahbo, the First Fang's 1/1 white Cat.
+          TokenPrinting(name = "Cat", imageUri = "https://cards.scryfall.io/art_crop/front/2/8/2885d54c-….jpg"),
+      )
+  }
+  ```
+
+  `TokenPrinting` matches on `name`, plus `power` / `toughness` / `colors` when you pin them — only needed
+  when one set prints two tokens sharing a name. Use the Scryfall **`art_crop`** URL: the client renders a
+  token as a generated frame and drops this image into its art box, so a full-card `normal` image arrives
+  pre-framed and gets cropped to its middle band.
+
+  Prefer this over `imageUri` on the effect. A card that bakes art into its `CreateToken` mints the same
+  art from every printing, which is wrong the moment it is reprinted into a set with its own token —
+  keying on the minting set is what makes reprints come out right.
+
+  Roughly a third of the sets we implement predate token *cards* (Alpha through Invasion, Tempest,
+  Odyssey, Onslaught), so Scryfall has nothing to sync and their tokens fall back to generic art. Run
+  **`just token-art-gaps`** for the work list: it writes `backlog/token-art-gaps.md` naming every token
+  with no set-scoped art, the cards that create it, a suggested
+  `web-client/public/images/tokens/<set>-<token>.jpeg` path, and a paste-ready `TokenPrinting(...)` row.
+  Self-hosted art is served from that directory by relative URI — Invasion's Saproling and Reflection
+  are the worked example.
+
+  `TokenArtCoverageTest` walks every registered card and fails the build if any token it can create
+  resolves to no image at all; fix a failure by adding the creature type to `TokenArt.IMAGES`, or the
+  exact printing to the set's `tokenArt`.
 - `CreateDroneToken(count?)` — Drone tokens.
 - `CreateMunitionsToken(count?)` — Munitions noncreature artifact tokens (Weapons Manufacturing); the LTB damage
   trigger lives on the predefined `Munitions` `CardDefinition` and is picked up automatically by the engine's

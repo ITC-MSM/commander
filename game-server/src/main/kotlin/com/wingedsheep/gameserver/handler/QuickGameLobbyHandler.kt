@@ -53,6 +53,7 @@ class QuickGameLobbyHandler(
     private val sender: MessageSender,
     private val cardRegistry: CardRegistry,
     private val printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry,
+    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry,
     private val deckValidator: DeckValidator,
     private val deckGenerator: SealedDeckGenerator,
     private val gameProperties: GameProperties,
@@ -511,6 +512,7 @@ class QuickGameLobbyHandler(
             useHandSmoother = gameProperties.handSmoother.enabled,
             debugMode = gameProperties.debugMode,
             printingRegistry = printingRegistry,
+            tokenArtRegistry = tokenArtRegistry,
             // Four seats for Two-Headed Giant (CR 810), two otherwise.
             maxPlayers = lobby.maxPlayers,
         )

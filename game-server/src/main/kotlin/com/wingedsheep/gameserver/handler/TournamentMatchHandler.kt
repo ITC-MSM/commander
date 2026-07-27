@@ -26,6 +26,7 @@ class TournamentMatchHandler(
     private val spectatingHandler: SpectatingHandler,
     private val cardRegistry: CardRegistry,
     private val printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry,
+    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry,
     private val gamePlayHandler: GamePlayHandler,
     private val gameProperties: GameProperties,
     private val gameRepository: GameRepository,
@@ -469,6 +470,7 @@ class TournamentMatchHandler(
             useHandSmoother = gameProperties.handSmoother.enabled,
             debugMode = gameProperties.debugMode,
             printingRegistry = printingRegistry,
+            tokenArtRegistry = tokenArtRegistry,
         )
         if (isCommanderShape) {
             // Limited commander formats read life total / commander damage / deck size from the

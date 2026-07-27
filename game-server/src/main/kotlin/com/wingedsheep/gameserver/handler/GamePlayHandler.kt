@@ -38,6 +38,7 @@ class GamePlayHandler(
     private val sender: MessageSender,
     private val cardRegistry: CardRegistry,
     private val printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry,
+    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry,
     private val deckGenerator: SealedDeckGenerator,
     private val gameProperties: GameProperties,
     private val replayService: ReplayService,
@@ -129,6 +130,7 @@ class GamePlayHandler(
             useHandSmoother = gameProperties.handSmoother.enabled,
             debugMode = gameProperties.debugMode,
             printingRegistry = printingRegistry,
+            tokenArtRegistry = tokenArtRegistry,
         )
         gameSession.quickGameSetCode = quickGameSetCode
         // A generated random/quick deck has no sideboard; only a real submitted deck carries one.
@@ -332,6 +334,7 @@ class GamePlayHandler(
             useHandSmoother = gameProperties.handSmoother.enabled,
             debugMode = gameProperties.debugMode,
             printingRegistry = printingRegistry,
+            tokenArtRegistry = tokenArtRegistry,
         )
         gameSession.quickGameSetCode = setCode
 

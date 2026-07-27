@@ -3,7 +3,10 @@ package com.wingedsheep.engine.support
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.core.DistributionResponse
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.registry.TokenArtRegistry
+import com.wingedsheep.mtg.sets.MtgSetCatalog
 import com.wingedsheep.mtg.sets.tokens.PredefinedTokens
+import com.wingedsheep.mtg.sets.tokens.TokenArtData
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -61,7 +64,18 @@ abstract class ScenarioTestBase : FunSpec() {
         register(TestCards.all)
         register(PredefinedTokens.allTokens)
     }
-    protected val actionProcessor = ActionProcessor(cardRegistry)
+
+    /**
+     * Per-set token art, so a scenario test sees the same token images a real game would. Scenario
+     * entities are keyed by bare card name (not `Name#SET-CN`), which the registry resolves through
+     * its card-name index — see [TokenArtRegistry].
+     */
+    protected val tokenArtRegistry = TokenArtRegistry().apply {
+        for (set in MtgSetCatalog.all) {
+            register(set.code, set.tokenArt + TokenArtData.forSet(set.code), set.cards.map { it.name })
+        }
+    }
+    protected val actionProcessor = ActionProcessor(EngineServices(cardRegistry, tokenArtRegistry = tokenArtRegistry))
     protected val stateTransformer = ClientStateTransformer(cardRegistry)
 
     /**

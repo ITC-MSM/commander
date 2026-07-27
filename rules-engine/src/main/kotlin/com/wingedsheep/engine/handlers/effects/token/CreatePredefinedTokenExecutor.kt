@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.registry.TokenArtRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
@@ -35,7 +36,8 @@ import kotlin.reflect.KClass
 class CreatePredefinedTokenExecutor(
     private val cardRegistry: CardRegistry,
     private val staticAbilityHandler: StaticAbilityHandler? = null,
-    private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator()
+    private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(),
+    private val tokenArtRegistry: TokenArtRegistry? = null
 ) : EffectExecutor<CreatePredefinedTokenEffect> {
 
     override val effectType: KClass<CreatePredefinedTokenEffect> = CreatePredefinedTokenEffect::class
@@ -69,6 +71,20 @@ class CreatePredefinedTokenExecutor(
         )
         if (replacementResult != null) return replacementResult
 
+        // Art: an explicit per-card override wins, then the art printed by the set the creating
+        // card came from (so a reprint mints its own set's Treasure), then the one canonical
+        // printing shared engine-wide by PredefinedTokens.
+        val sourceCardDefinitionId = context.sourceId
+            ?.let { state.getEntity(it) }
+            ?.get<CardComponent>()
+            ?.cardDefinitionId
+        val resolvedImageUri = effect.imageUri
+            ?: tokenArtRegistry?.resolve(
+                sourceCardDefinitionId = sourceCardDefinitionId,
+                tokenName = effect.tokenType,
+            )
+            ?: cardDef.metadata.imageUri
+
         var newState = state
         val createdTokenIds = mutableListOf<EntityId>()
 
@@ -89,8 +105,7 @@ class CreatePredefinedTokenExecutor(
                 // Fall back to the mana-cost-derived colors for tokens without an override.
                 colors = cardDef.colorIdentityOverride ?: cardDef.colors,
                 ownerId = tokenControllerId,
-                // Set-specific token art when the effect overrides it, else the predefined printing.
-                imageUri = effect.imageUri ?: cardDef.metadata.imageUri
+                imageUri = resolvedImageUri
             )
 
             var container = ComponentContainer.of(
