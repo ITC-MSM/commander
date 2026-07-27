@@ -886,7 +886,7 @@ class GameSession(
         // decision to the controller, not the affected player.
         // Enrich with imageUri from card registry since engine doesn't have access to metadata
         val pendingDecision = state.pendingDecision?.takeIf { state.actorFor(it.playerId) == playerId }?.let {
-            decisionEnricher.enrich(it, state)
+            decisionEnricher.enrich(it, state, playerId)
         }
 
         // Calculate next stop point for the Pass button (only if player has priority,
@@ -908,7 +908,7 @@ class GameSession(
         // Include opponent decision status for the player who is NOT driving this
         // decision — i.e. when their seat is not the actor for the affected player.
         val opponentDecisionStatus = state.pendingDecision?.takeIf { state.actorFor(it.playerId) != playerId }?.let {
-            decisionEnricher.createOpponentDecisionStatus(it)
+            decisionEnricher.createOpponentDecisionStatus(it, state, playerId)
         }
 
         val stateWithLog = clientState.copy(gameLog = playerLog.toList())

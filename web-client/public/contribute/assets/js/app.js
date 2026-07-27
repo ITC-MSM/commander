@@ -62,14 +62,19 @@
   btnPrev.addEventListener('click', function(){ if(currentIndex > 0) goToSection(currentIndex - 1); });
   btnNext.addEventListener('click', function(){ if(currentIndex < sections.length - 1) goToSection(currentIndex + 1); });
 
+  /* Sticky-nav visibility is derived from geometry every scroll frame, not latched by an
+     IntersectionObserver on the TOC. An observer only fires when the sentinel *crosses* a
+     viewport edge, so jumping straight from deep in the page back to the top (Home key,
+     in-page anchor, scroll restored on reload) left the sentinel out of view both before
+     and after — no callback, the bar stayed visible, and it covered the masthead. */
   var tocSentinel = document.getElementById('toc-section');
-  if(tocSentinel && 'IntersectionObserver' in window){
-    var tocObserver = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        stickyNav.classList.toggle('visible', !entry.isIntersecting && window.scrollY > 200);
-      });
-    }, { threshold: 0 });
-    tocObserver.observe(tocSentinel);
+  var masthead = document.querySelector('.masthead');
+  function updateStickyVisibility(){
+    var pastSentinel = tocSentinel
+      ? tocSentinel.getBoundingClientRect().bottom < 0
+      : window.scrollY > 200;
+    var mastheadCleared = masthead ? masthead.getBoundingClientRect().bottom <= 0 : true;
+    stickyNav.classList.toggle('visible', pastSentinel && mastheadCleared);
   }
 
   if('IntersectionObserver' in window){
@@ -86,7 +91,7 @@
   var ticking = false;
   function onScroll(){
     if(!ticking){
-      window.requestAnimationFrame(function(){ updateProgress(); updateStepCounter(); ticking = false; });
+      window.requestAnimationFrame(function(){ updateStickyVisibility(); updateProgress(); updateStepCounter(); ticking = false; });
       ticking = true;
     }
   }
@@ -109,6 +114,10 @@
     stickyStep.textContent = n ? ('STEP ' + n + ' / ' + totalSteps) : '';
   }
   window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', updateStickyVisibility, { passive: true });
+  /* opening/collapsing a section reflows the page without scrolling it; `toggle` doesn't bubble */
+  document.addEventListener('toggle', updateStickyVisibility, true);
+  updateStickyVisibility();
   updateProgress();
 
   // ---- search index ----

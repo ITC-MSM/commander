@@ -86,6 +86,11 @@ internal class CombatDamageManager(
             val attackerContainer = state.getEntity(attackerId) ?: continue
             val attackerCard = attackerContainer.get<CardComponent>() ?: continue
 
+            // A face-down permanent has no abilities (CR 708.2a), so this ability-gated pre-check
+            // must not read the face-up card's abilities off cardDef below — doing so would both
+            // mis-apply the ability and leak the hidden card's name into the decision prompt.
+            if (attackerContainer.has<FaceDownComponent>()) continue
+
             // Only relevant when blocked
             val blockedBy = attackerContainer.get<BlockedComponent>() ?: continue
             if (blockedBy.blockerIds.isEmpty()) continue
@@ -139,6 +144,8 @@ internal class CombatDamageManager(
         for ((attackerId, attackingComponent) in attackers) {
             val attackerContainer = state.getEntity(attackerId) ?: continue
             val attackerCard = attackerContainer.get<CardComponent>() ?: continue
+            // CR 708.2a: a face-down permanent has no abilities, so it can't divide freely.
+            if (attackerContainer.has<FaceDownComponent>()) continue
             val cardDef = cardRegistry.getCard(attackerCard.cardDefinitionId) ?: continue
             val hasDivideDamageFreely = cardDef.staticAbilities.any { it is DivideCombatDamageFreely }
             if (!hasDivideDamageFreely) continue
@@ -343,8 +350,11 @@ internal class CombatDamageManager(
             val attackerCard = attackerContainer.get<CardComponent>() ?: continue
 
             val cardDef = cardRegistry.getCard(attackerCard.cardDefinitionId)
-            // DivideCombatDamageFreely (Butcher Orgg) keeps its own DistributeDecision pre-check.
-            if (cardDef?.staticAbilities?.any { it is DivideCombatDamageFreely } == true) continue
+            // DivideCombatDamageFreely (Butcher Orgg) keeps its own DistributeDecision pre-check —
+            // but only when face up. A face-down permanent has no abilities (CR 708.2a), so it takes
+            // part in the normal board here rather than being dropped from it.
+            if (!attackerContainer.has<FaceDownComponent>() &&
+                cardDef?.staticAbilities?.any { it is DivideCombatDamageFreely } == true) continue
             // AssignAsUnblocked, once answered, has written a DamageAssignmentComponent → skip.
             if (attackerContainer.get<DamageAssignmentComponent>() != null) continue
             if (!dealsDamageThisStep(projected, attackerId, firstStrike)) continue
@@ -560,6 +570,8 @@ internal class CombatDamageManager(
         val choosers = attackerChoosers + blockerChoosers
 
         val decisionId = UUID.randomUUID().toString()
+        // Names here are the real card names; per-viewer face-down masking is applied downstream at
+        // delivery time (DecisionEnricher), since this one decision graph is shown to both choosers.
         val prompt = if (candidates.size == 1) {
             "Assign ${candidates[0].attackerName}'s ${candidates[0].availablePower} combat damage"
         } else {
