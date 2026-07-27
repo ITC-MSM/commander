@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 148 / 272
+**Implemented:** 149 / 272
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -14,7 +14,7 @@
 - [x] Angelic Quartermaster
 - [x] Anje, Maid of Dishonor
 - [x] Apprentice Sharpshooter
-- [ ] Archghoul of Thraben
+- [x] Archghoul of Thraben
 - [x] Arm the Cathars
 - [x] Ascendant Packleader
 - [ ] Avabruck Caretaker
