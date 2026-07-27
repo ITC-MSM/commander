@@ -507,6 +507,99 @@
     "colorIdentityOverride": []
 }
 
+// Ancient Vendetta
+{
+    "name": "Ancient Vendetta",
+    "manaCost": "{3}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose a card name. Search target opponent's graveyard, hand, and library for up to four cards with that name and exile them. Then that player shuffles.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ChooseOption",
+                    "optionType": "CARD_NAME",
+                    "storeAs": "chosenName",
+                    "prompt": "Choose a card name"
+                },
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromMultipleZones",
+                        "zones": [
+                            "Graveyard",
+                            "Hand",
+                            "Library"
+                        ],
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        },
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "NameEqualsChosen",
+                                    "variableName": "chosenName"
+                                }
+                            ]
+                        }
+                    },
+                    "storeAs": "matches"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "matches",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 4
+                        }
+                    },
+                    "storeSelected": "toExile",
+                    "prompt": "Exile up to four cards with the chosen name"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toExile",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile",
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        }
+                    }
+                },
+                {
+                    "type": "ShuffleLibrary",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetOpponent",
+                "id": "opponent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "UNCOMMON",
+        "artist": "Tianxing Xu",
+        "flavorText": "\"Make peace with your end, for not even your legacy will remain.\"\n—Zahur",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/230301f2-f288-4b13-9f62-e649ad8357bb.jpg?1783907900"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Apocalypse Runner
 {
     "name": "Apocalypse Runner",
@@ -2259,6 +2352,69 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Cryptcaller Chariot
+{
+    "name": "Cryptcaller Chariot",
+    "manaCost": "{3}{B}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Menace\nWhenever you discard one or more cards, create that many tapped 2/2 black Zombie creature tokens.\nCrew 2",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "MENACE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DiscardEvent",
+                    "batch": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DISCARD_COUNT"
+                    },
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Zombie"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/b/8/b82be730-c63b-4c2b-99f4-476befdb95cb.jpg?1783907681",
+                    "tapped": true
+                },
+                "descriptionOverride": "Whenever you discard one or more cards, create that many tapped 2/2 black Zombie creature tokens."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "rarity": "RARE",
+        "artist": "Aaron Miller",
+        "flavorText": "\"They too deserve to witness Amonkhet's rebirth.\"\n—Zahur",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/0/a0c8259c-055e-4bff-b945-c0ecb057a8f0.jpg?1783907897"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -6820,6 +6976,130 @@
     ]
 }
 
+// Oildeep Gearhulk
+{
+    "name": "Oildeep Gearhulk",
+    "manaCost": "{U}{U}{B}{B}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Lifelink, ward {1}\nWhen this creature enters, look at target player's hand. You may choose a card from it. If you do, that player discards that card, then draws a card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "LIFELINK",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{1}"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LookAtTargetHand",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "targetHand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "targetHand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "chosenCard",
+                            "prompt": "You may choose a card for that player to discard",
+                            "showAllCards": true,
+                            "alwaysPrompt": true
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "chosenCard",
+                            "ifNotEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "chosenCard",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard",
+                                            "player": {
+                                                "type": "ContextPlayer",
+                                                "index": 0
+                                            }
+                                        },
+                                        "moveType": "Discard"
+                                    },
+                                    {
+                                        "type": "DrawCards",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        },
+                                        "target": {
+                                            "type": "BoundVariable",
+                                            "name": "target player"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "When this creature enters, look at target player's hand. You may choose a card from it. If you do, that player discards that card, then draws a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "215",
+        "rarity": "MYTHIC",
+        "artist": "Artur Nakhodkin",
+        "flavorText": "Oil-actuated inventions raised eyebrows after the Invasion, but no one could argue against the efficacy of the design.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a5e2d09e-b9f5-4a0d-96d3-984b5c2c387d.jpg?1783907855"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Ooze Patrol
 {
     "name": "Ooze Patrol",
@@ -7056,6 +7336,119 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Perilous Snare
+{
+    "name": "Perilous Snare",
+    "manaCost": "{2}{W}",
+    "typeLine": "Artifact",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nWhen this artifact enters, exile target nonland permanent an opponent controls until this artifact leaves the battlefield.\nMax speed — {T}: Put a +1/+1 counter on target creature or Vehicle you control. Activate only as a sorcery.",
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ExileUntilLeaves",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "exiled"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "nonland permanent ctrl:opponent"
+                    },
+                    "id": "exiled"
+                },
+                "descriptionOverride": "When this artifact enters, exile target nonland permanent an opponent controls until this artifact leaves the battlefield."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "boosted"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature|Vehicle ctrl:you"
+                        },
+                        "id": "boosted"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Max speed — Put a +1/+1 counter on target creature or Vehicle you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "rarity": "RARE",
+        "artist": "Chris Seaman",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/47f7e468-2196-4960-a612-37ab326e2a17.jpg?1783907916"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -10660,6 +11053,55 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Waxen Shapethief
+{
+    "name": "Waxen Shapethief",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Flash\nYou may have this creature enter as a copy of an artifact or creature you control.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersAsCopy",
+                "copyFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "Or",
+                            "predicates": [
+                                "IsCreature",
+                                "IsArtifact"
+                            ]
+                        }
+                    ],
+                    "controllerPredicate": "ControlledByYou"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "RARE",
+        "artist": "Helge C. Balzer",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/412aaa30-b9cd-4cf8-beb8-1c1229667b31.jpg?1783907899"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
