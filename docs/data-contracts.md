@@ -253,7 +253,7 @@ completionist extras are reported separately.
 [
   { "code": "BLB", "name": "Bloomburrow", "releaseDate": "2024-08-02", "setType": "expansion",
     "block": null, "implemented": 261, "total": 261, "extraImplemented": 18, "extraTotal": 18,
-    "percent": 100.0 }
+    "notPlanned": 0, "extraNotPlanned": 0, "percent": 100.0 }
 ]
 ```
 
@@ -263,11 +263,22 @@ the click-through detail view.
 
 ```json
 { "code": "BLB", "name": "Bloomburrow", "releaseDate": "2024-08-02", "block": null,
-  "implemented": 261, "total": 261, "extraImplemented": 18, "extraTotal": 18, "percent": 100.0,
+  "implemented": 261, "total": 261, "extraImplemented": 18, "extraTotal": 18,
+  "notPlanned": 0, "extraNotPlanned": 0, "percent": 100.0,
   "draft": [{ "name": "Agate Assault", "implemented": true,
-              "imageUri": "https://cards.scryfall.io/normal/front/…jpg" }, ...],
-  "extra": [{ "name": "...", "implemented": false, "imageUri": "…" }, ...] }
+              "imageUri": "https://cards.scryfall.io/normal/front/…jpg", "notPlanned": null }, ...],
+  "extra": [{ "name": "...", "implemented": false, "imageUri": "…", "notPlanned": null }, ...] }
 ```
+
+**Cards we won't implement.** A card needing a mechanic the engine will never carry (ante, subgames,
+physical dexterity) is listed in the repo-root `coverage/card-exclusions.json` manifest, keyed by name
+so one entry covers every set that prints it. `scripts/gen-set-totals` bakes the flag onto the card as
+`"notPlanned": { "kind": "ante", "why": "…" }` — exclusion is carried *as* its reason, so a not-planned
+card can never render as an unexplained gap. Those cards stay in `draft` / `extra` (the detail view
+lists them with a badge) but drop out of `total` / `extraTotal` while unimplemented and are counted in
+`notPlanned` / `extraNotPlanned` instead, so "complete" means *everything we intend to build is built*.
+Implementing one silently un-excludes it: the flag only ever moves a card out of the still-to-do
+bucket. `scripts/card-status` applies the same manifest in its `Skip` column.
 
 **Implementation progress** — `GET /api/sets/progress` → the distinct-implemented-cards-over-time
 series (one cumulative point per calendar day since the project began), `[{ date, added, total }]`.
