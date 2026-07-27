@@ -228,6 +228,19 @@ abstract class ScenarioTestBase : FunSpec() {
                             )
                         )
                     }
+                } else if (cardDef.isDoubleFaced) {
+                    // Rule 712.13 / StackResolver: a DFC entering the battlefield on its front face
+                    // gets a DoubleFacedComponent(currentFace = FRONT). Seeding the front face
+                    // directly must match, or TransformEffect has no component to flip and silently
+                    // no-ops (TransformEffectExecutor returns success without transforming).
+                    container = container.with(
+                        DoubleFacedComponent(
+                            frontCardDefinitionId = cardName,
+                            backCardDefinitionId = cardDef.backFace!!.name,
+                            currentFace = DoubleFacedComponent.Face.FRONT,
+                            frontFaceCard = null
+                        )
+                    )
                 }
             }
 
