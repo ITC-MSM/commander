@@ -11,6 +11,7 @@ import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
@@ -33,6 +34,27 @@ class CombatAdvisor(
     companion object {
         /** Max engine simulations for blocking local search. Keeps decision time bounded. */
         const val MAX_BLOCK_SIMULATIONS = 10
+    }
+
+    /**
+     * Sum of the [CardAdvisor.attackPenalty]s declared for the creatures in an attack plan.
+     *
+     * Advisors use this to discourage attacking with a specific creature (a wall you
+     * want back on defence, a creature whose value is its static ability). Returns 0.0
+     * when no attacker has an advisor, which is the case for every card today.
+     */
+    private fun attackPenaltyFor(
+        state: GameState,
+        projected: ProjectedState,
+        attackers: Collection<EntityId>,
+        playerId: EntityId
+    ): Double {
+        if (attackers.isEmpty()) return 0.0
+        return attackers.sumOf { entityId ->
+            val name = state.getEntity(entityId)?.get<CardComponent>()?.name ?: return@sumOf 0.0
+            val advisor = advisorRegistry.getAdvisor(name) ?: return@sumOf 0.0
+            advisor.attackPenalty(state, projected, entityId, playerId) ?: 0.0
+        }
     }
 
     /**
@@ -68,12 +90,19 @@ class CombatAdvisor(
         }
 
         // ── Heuristic seed: no-downside and clearly profitable attackers ──
+        // Creatures an advisor discourages from attacking are left out of the seed;
+        // the local search below can still add them back when it pays.
+        val discouraged = validAttackers.filter { entityId ->
+            entityId !in mandatory &&
+                attackPenaltyFor(state, projected, listOf(entityId), playerId) > 0.0
+        }.toSet()
+
         val seedMap = mutableMapOf<EntityId, EntityId>()
         for (entityId in mandatory) {
             seedMap[entityId] = opponentId
         }
         for (entityId in validAttackers) {
-            if (entityId in seedMap) continue
+            if (entityId in seedMap || entityId in discouraged) continue
             val power = projected.getPower(entityId) ?: 0
             if (power <= 0) continue
 
@@ -133,7 +162,7 @@ class CombatAdvisor(
                 // Sort remaining by value ascending — send cheapest creatures first,
                 // hold back the most valuable ones in case we need a blocker
                 val remaining = validAttackers
-                    .filter { it !in seedMap && (projected.getPower(it) ?: 0) > 0 }
+                    .filter { it !in seedMap && it !in discouraged && (projected.getPower(it) ?: 0) > 0 }
                     .sortedBy { CombatMath.creatureValue(state, projected, it) }
 
                 // Estimate opponent's crack-back damage through our optimal blocking.
@@ -958,6 +987,11 @@ class CombatAdvisor(
         val postProjected = postCombat.projectedState
         val baseScore = evaluator.evaluate(postCombat, postProjected, playerId)
 
+        // Per-card advisor penalties, read off the pre-combat state (the attackers may
+        // be dead by now). Deliberately not applied to the lethal alpha strike in
+        // [chooseAttackers] — a kill beats any advisor preference.
+        val advisorPenalty = attackPenaltyFor(state, state.projectedState, attackerMap.keys, playerId)
+
         // Estimate next-turn counter-attack: what damage can the opponent deal through our blocks?
         val myBlockers = postProjected.getBattlefieldControlledBy(playerId).filter { entityId ->
             postProjected.isCreature(entityId) &&
@@ -975,7 +1009,7 @@ class CombatAdvisor(
             0.0
         }
 
-        return baseScore + crackBackPenalty
+        return baseScore + crackBackPenalty - advisorPenalty
     }
 
     /**

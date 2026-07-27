@@ -48,6 +48,8 @@ rebless-cards:
 # CLASS options (all in :ai): AdvisorBenchmark   - AI advisor vs random, per-card timing
 #                             GameBenchmark      - full AI-vs-AI games, sealed decks
 #                             RandomActionBenchmark - raw engine throughput (see benchmark-random)
+#                             SimulationThroughputBenchmark - AI-game process/simulate/projection rates
+#                                                     and branching factor (see benchmark-throughput)
 #                             StateCloneBenchmark   - GameState clone speed (uses -DbenchmarkIterations, not GAMES)
 # Run an engine benchmark (e.g., just benchmark, just benchmark GameBenchmark 50)
 [group: 'build']
@@ -58,6 +60,13 @@ benchmark CLASS="AdvisorBenchmark" GAMES="100":
 [group: 'build']
 benchmark-random GAMES="100" SET="POR":
     ./gradlew :ai:test --tests "*.RandomActionBenchmark" -Dbenchmark=true -DbenchmarkGames={{GAMES}} -DbenchmarkSet={{SET}}
+
+# Measure what a rollout evaluator can afford: process()/simulate()/projection rates
+# and branching factor over real AI games (e.g., just benchmark-throughput 40 BLB).
+# Baseline numbers live in docs/ai/baseline-metrics.md.
+[group: 'build']
+benchmark-throughput GAMES="20" SET="BLB":
+    ./gradlew :ai:test --tests "*.SimulationThroughputBenchmark" -Dbenchmark=true -DbenchmarkGames={{GAMES}} -DbenchmarkSet={{SET}}
 
 # Clean build artifacts
 [group: 'build']

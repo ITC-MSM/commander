@@ -3,11 +3,18 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** Plan only, nothing implemented. Phases are individually shippable and ordered by
-dependency, not by appeal.
+**Status:** **Phase 0 shipped** (2026-07-27) — baseline in
+[`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md). Phases 1+ not started. Phases are
+individually shippable and ordered by dependency, not by appeal.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
 performance phase builds on. See "Cross-reference" below; parts of that doc are stale.
+
+> **Phase 0's measurements moved two later phases.** Simulation is ~3,400 `process()`/sec/thread,
+> already above Phase 5's 1,500–2,000 target, so **Phase 5 is no longer a gate on Phase 7**. And the
+> real branching factor is **1.75 candidates** on the 24% of priority windows that offer any (not the
+> ~8 this plan assumed), so **Phase 4a's value is skipping enumeration, not shrinking the candidate
+> list**. Details and the corrected budget arithmetic are in the baseline doc.
 
 ---
 
@@ -19,27 +26,30 @@ change helped. Three findings set the shape of the plan.
 
 ### 1. It is greedy 1-ply, and the search it appears to have is dead code
 
-`Strategist.chooseAction` (`Strategist.kt:38-107`) scores each candidate with one simulation and
-picks the max. `Searcher.kt` (alpha-beta, 315 L) is **unreachable**: `recommendDepth` (`:272`) bails
-because `canRespond(state, opponentId)` opens with
+> **Resolved in Phase 0** — `Searcher.kt` and the dead `CombatMath` helpers are deleted,
+> `CardAdvisor.attackPenalty` is wired in. The Strategist is now *honestly* greedy 1-ply.
+
+`Strategist.chooseAction` scored each candidate with one simulation and picked the max.
+`Searcher.kt` (alpha-beta, 315 L) was **unreachable**: `recommendDepth` bailed because
+`canRespond(state, opponentId)` opened with
 
 ```kotlin
 if (state.priorityPlayerId != playerId) return false
 ```
 
-and the Strategist only ever runs on *our* priority — so `canRespond(…, opponentId)` is always
-false and `recommendDepth` always returns 1. `deepSearch`, `opponentPly`, `ourPly` have never
-executed in production; only two tests reach them.
+and the Strategist only ever runs on *our* priority — so `canRespond(…, opponentId)` was always
+false and `recommendDepth` always returned 1. `deepSearch`, `opponentPly`, `ourPly` never
+executed in production; only two tests reached them.
 
-Latent behind that: the −∞ sentinel is `Double.MIN_VALUE / 2`, which is **`0.0`**
-(`Double.MIN_VALUE` is the smallest *positive* subnormal, 4.9E-324). If the reachability bug were
-fixed, `Searcher.kt:52` would score **illegal** actions above any position where we're behind
+Latent behind that: the −∞ sentinel was `Double.MIN_VALUE / 2`, which is **`0.0`**
+(`Double.MIN_VALUE` is the smallest *positive* subnormal, 4.9E-324). Had the reachability bug been
+fixed, the search would have scored **illegal** actions above any position where we're behind
 (board scores are signed differentials and routinely negative), and `opponentPly`'s
-`if (alpha >= currentBeta) break` would skip the whole opponent ply exactly when we're losing.
+`if (alpha >= currentBeta) break` would have skipped the whole opponent ply exactly when we're losing.
 
-Also dead: `CardAdvisor.attackPenalty` is never invoked — `CombatAdvisor.advisorRegistry`
-(`CombatAdvisor.kt:31`) is a write-only field. And `CombatMath.calculateAggressionLevel`,
-`turnsToKill`, `simulateAttritionalAttack` (~150 LOC) have no production callers.
+Also dead: `CardAdvisor.attackPenalty` was never invoked — `CombatAdvisor.advisorRegistry` was a
+write-only field. And `CombatMath.calculateAggressionLevel`, `turnsToKill`,
+`simulateAttritionalAttack` (~150 LOC) had no production callers.
 
 ### 2. The evaluator is blind to most of Magic
 
@@ -174,31 +184,44 @@ Games completed %, draw-reason histogram, stuck-game detection, and distinct eng
 
 ## Phases
 
-### Phase 0 — Instrumentation + honesty fixes · *2–3 d*
+### Phase 0 — Instrumentation + honesty fixes · *2–3 d* — ✅ **DONE 2026-07-27**
 
 Produce the numbers everything else is budgeted against, and kill the bugs a rollout engine would
 hit thousands of times more often than production does.
 
-**Create** `ai/src/test/.../engine/SimulationThroughputBenchmark.kt` — mirror
-`RandomActionBenchmark.kt`'s shape, `-Dbenchmark=true`. Reports per thread:
-`ActionProcessor.process` calls/sec · `GameSimulator.simulate` calls/sec (incl.
-`resolveToQuietState`) · mean ns in `StateProjector.project` · **mean legal-action count per
-priority window, pre- and post-filter** · mean priority windows per game.
+**Created** `ai/src/test/.../engine/SimulationThroughputBenchmark.kt` (`just benchmark-throughput`).
+It drives real `AIPlayer` games on both seats rather than random actions — branching factor and
+projection cost are state-dependent, so the state distribution has to be realistic — and discards
+`cores × 2` warmup games, without which the reported rate is measuring the JIT (838 → 1,299 → 2,332
+`process()`/sec at 20 → 40 → 200 games, same code).
 
-Also **re-run `just benchmark-random 200 BLB`** to refresh `engine-performance.md`'s baseline — its
-~404 actions/sec/thread number predates Steps 1–3, which have since landed (see Cross-reference).
+Reports per thread: `ActionProcessor.process` calls/sec at two action mixes (candidate and
+as-played) · `GameSimulator.simulate` calls/sec (incl. `resolveToQuietState`) · mean ns in
+`StateProjector.project`, timed cold on `state.copy()` · legal-action count per priority window pre-
+and post-filter, **plus the share of windows offering zero candidates** · priority windows per game.
 
-**Fix, in `:ai`:**
-- `CardAdvisorRegistry.register` — throw on collision instead of silently overwriting.
-- `DecisionResponder.kt:438` `respondBudgetModal` — `while (mode.cost <= remaining)` loops forever on
-  a zero-cost mode. Rare in production, **frequent under playouts**.
-- `LimitedCardRater.kt:39` `ratingsCache` is a plain `mutableMapOf` — not thread-safe, and the arena
-  will hammer it from N threads. Make it a `ConcurrentHashMap`.
-- `CombatAdvisor.kt:31` — wire `advisorRegistry` / `CardAdvisor.attackPenalty` in, or delete both.
-  Don't leave a dead knob.
-- **Do not fix** `Searcher.kt`'s sentinels. Mark `@Deprecated`; it is deleted in Phase 7.
+**Fixed, in `:ai`:**
+- `CardAdvisorRegistry.register` — now throws on collision. `Starfall Invocation` / `Wildfire Howl`
+  were claimed by both `BoardWipeAdvisor` and `GiftBoardWipeAdvisor`, and the later registration
+  won, so both cards had already lost their "only wipe when behind" logic. The two advisors are
+  merged; `Valley Rally`'s duplicate between `CombatTrickAdvisor` and `GiftCombatTrickAdvisor` is
+  resolved in favour of the gift advisor, which delegates its cast timing back.
+- `respondBudgetModal` — `while (mode.cost <= remaining)` spun forever on a zero-cost mode.
+- `LimitedCardRater.ratingsCache` → `ConcurrentHashMap` + `computeIfAbsent`.
+- `CombatAdvisor.advisorRegistry` / `CardAdvisor.attackPenalty` — wired into `evaluateAttackPlan`
+  (subtracted from the plan score) and the heuristic seed (a discouraged creature is left out of the
+  seed but can still be added back by the local search). The lethal alpha-strike path deliberately
+  ignores penalties. No advisor declares one today, so this is behaviour-neutral.
+- `Searcher.kt` **deleted** rather than deprecated, along with `Strategist.deepSearch`, its two
+  tests, and the ~150 LOC of unreachable `CombatMath` (`calculateAggressionLevel`, `turnsToKill`,
+  `simulateAttritionalAttack`, `simulateOneTrade`). The broken sentinels were not repaired — Phase 7
+  replaces the mechanism outright, and a repaired-but-untested alpha-beta is worse than none.
 
-**Exit:** `docs/ai/baseline-metrics.md` committed with throughput, projection share, branching factor.
+**Not done:** `just benchmark-random 200 BLB` was not re-run, so `engine-performance.md`'s
+`~404 actions/sec/thread` is still stale. It is one command; do it before Phase 5a.
+
+**Exit:** ✅ [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md) committed with
+throughput, projection share and branching factor — plus the three plan corrections they imply.
 
 ---
 
@@ -316,9 +339,17 @@ inline logic only once it's green.
 Route `Strategist.kt:57` and `GameSimulator.kt:63` through the filter, behind
 `AiProfile.useMeaningfulFilter` so V0 is preserved.
 
-The existing crude version — `Searcher.canRespond` (`:228`), "has an untapped land AND a non-empty
-hand" — is superseded. Note `LegalAction.holdPriority` (`LegalAction.kt:154`) is the engine's
-explicit "never auto-pass while this is available" flag; honour it.
+The crude version that used to live in `Searcher.canRespond` — "has an untapped land AND a non-empty
+hand" — went with the file in Phase 0; there is nothing to supersede. Note `LegalAction.holdPriority`
+(`LegalAction.kt:154`) is the engine's explicit "never auto-pass while this is available" flag;
+honour it.
+
+> **Re-scope this sub-phase against Phase 0's measurement.** The branching factor is **1.75
+> candidates** on the 24% of windows that offer any — `filterMeaningful` has almost nothing left to
+> cut, and the "branching factor down 30–50%" exit criterion below is not reachable because it was
+> written against an assumed ~8. The win is entirely `shouldAutoPass`: 76.2% of windows already
+> yield zero candidates and still pay `enumerate` (0.40 ms) first, which is ~148 ms per game of pure
+> waste and is paid again on every rollout crossing. Scope 4a as "skip the enumeration".
 
 #### 4b. `DecisionBudget`
 
@@ -346,9 +377,21 @@ agent *loses*, the filter is discarding a real option and you've found a bug for
 
 ---
 
-### Phase 5 — Simulation speed · *3–5 d, +4–6 d only if measurement demands*
+### Phase 5 — Simulation speed · *3–5 d* — **no longer a gate on Phase 7**
 
-**Budget the target explicitly:**
+> **Phase 0 measured this target as already met.** The budget below assumed ~8 candidates and a
+> ~404 actions/sec/thread engine. Reality: **~3,400 `process()`/sec/thread** (as-played mix,
+> ~2,400 at the candidate mix) and **1.75 candidates** per non-trivial window. A 2 s budget buys
+> ~6,800 `process()` calls ≈ **60 rollouts per decision, ~35 per candidate** — an order of magnitude
+> more than Phase 7's R = 3–4 × K = 1–2 needs. Steps 1–3 of `engine-performance.md`, which landed
+> after that baseline, evidently did the work.
+>
+> **Build Phase 7 without waiting on this.** 5a remains a genuine standing engine win (the O(n²)
+> scan is real and was 59% inclusive) — do it as an independent perf task, on the performance plan's
+> own validation loop, not as a rollout prerequisite. 5c stays profile-gated and is now unlikely to
+> be justified at all.
+
+**The original budget, kept for the record:**
 
 ```
 candidates after Phase 4 filter    ~8       determinizations   K = 1–2
@@ -357,8 +400,7 @@ rollouts per (candidate, world)     R = 3–4  actions/rollout   ~50 (post-auto-
 ```
 
 With sequential halving (Phase 7) the effective candidate count drops to ~3, so
-**1,500–2,000 `process()`/sec/thread is the target.** The last measured baseline is
-**~404 actions/sec/thread** (`engine-performance.md`, pre-Steps-1–3) — Phase 0 refreshes it.
+**1,500–2,000 `process()`/sec/thread was the target** — cleared today at ~3,400.
 
 #### 5a. Finish `engine-performance.md` Step 4 — hoist the O(n²) battlefield scans
 
@@ -376,7 +418,7 @@ suppressor set once per detection pass.
 `getBattlefield()`'s memoization (already landed) removed the *allocation* cost of these scans but
 not the *iteration*. This is the remaining half.
 
-#### 5b. Do **not** build a projection cache
+#### 5b. Do **not** build a projection cache — *confirmed by Phase 0*
 
 An earlier draft of this plan proposed caching `StateProjector.project` across rollout states, on the
 theory that `by lazy` per-instance never hits during a rollout. **The profile contradicts it:**
@@ -385,6 +427,10 @@ target." And critically, the profile was taken on `RandomActionBenchmark`, which
 exactly once — so it *already* reflects the zero-cache-hit case. A cross-state projection cache would
 buy ≤7%, not the 2–5× a rollout budget needs, and it would carry real silent-wrongness risk from a
 fingerprint that misses a layer input. **Dropped.**
+
+Phase 0 measured this independently: projection timed cold on a fresh `state.copy()` is **11.2–11.5%
+of one `process()` call**. Same verdict, from a different measurement — the ceiling on a perfect
+cache is ~12%.
 
 #### 5c. Persistent collections for `entities` / `zones` — profile-gated
 
@@ -419,8 +465,10 @@ Expect 1.5–3×. Add `kotlinx.collections.immutable` to `gradle/libs.versions.t
 **Incrementalizing `StateProjector`.** 2+ weeks, and the failure mode is silent rules bugs across the
 whole engine. The profile says it's 7.4%. Not worth it.
 
-**Exit:** `SimulationThroughputBenchmark` ≥1,500 `process()`/sec/thread; `just test-rules` and
-`:game-server:test` green.
+**Exit:** `SimulationThroughputBenchmark` ≥1,500 `process()`/sec/thread — **already true at ~3,400
+before any Phase 5 work**, so the meaningful exit for 5a is the performance plan's own loop: the
+targeted leaf shrank under the profiler and `just benchmark-random 200 BLB` improved against a
+freshly measured baseline. `just test-rules` and `:game-server:test` green.
 
 ---
 
@@ -553,7 +601,8 @@ Default horizon: **end of the opponent's next turn** — stop when the state nex
 `activePlayerId == playerId && step == UNTAP` after ≥2 turn transitions, or `gameOver`, or a 150-action
 safety cap. Depth schedule: after the first pass, if `|best − second| < ε` and budget remains, extend
 to two opponent turns **for survivors only** — the one good idea inside the dead
-`Searcher.recommendDepth`. **Delete `Searcher.kt` in this phase.**
+`Searcher.recommendDepth`, which was deleted in Phase 0. Reimplement the idea here; don't go
+looking for the file.
 
 #### Variance reduction — all four; they are the difference between working and not
 
@@ -738,8 +787,12 @@ but tanks a puzzle category, look hard before shipping.
 ## Recommended order
 
 ```
-0 → 1 → 2 → 3 → 4 → 5a → (5c if measurement demands) → 6 → 7 → 8 → 9 → 10
+0̶ → 1 → 2 → 3 → 4 → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
 ```
+
+Phase 0 is done. **Phase 5 has left the critical path** — simulation is already ~2× the speed the
+rollout budget needs, so 5a is now an independent engine-perf task and 5c is almost certainly not
+justified. Next up is **Phase 1, the arena**: nothing below is knowable without it.
 
 Ranked by strength-per-effort, independent of ordering:
 
@@ -747,18 +800,19 @@ Ranked by strength-per-effort, independent of ordering:
 |---|---|---|---|
 | 1 | **3** multiplayer eval | 1–2 d | AI is *evaluation-blind* in FFA/Commander/2HG today. Categorical fix. |
 | 2 | **6** CardIntent | 5–7 d | Removes flat-0.5 blindness to every artifact/enchantment/PW; feeds 4 other consumers. |
-| 3 | **4a** meaningful filter | 3–5 d | Improves the current AI *and* is the multiplier that makes rollouts affordable. |
-| 4 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones. Cheap once the arena exists. |
-| 5 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
-| 6 | **1 / 2** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. |
-| 7 | **5a** hoist O(n²) scans | 3–5 d | Pure speed; also a standing engine win independent of the AI. |
-| 8 | **4b** DecisionBudget | 2–3 d | Enabling infrastructure. |
-| 9 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
-| 10 | **5c** persistent collections | 4–6 d | Only if Phase 0 / 5a measurement demands it. |
-| — | projection incrementalization | 2+ wk | **Skip.** Profile says 7.4% and already cached. |
+| 3 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones. Cheap once the arena exists. |
+| 4 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
+| 5 | **1 / 2** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. |
+| 6 | **4a** auto-pass filter | 3–5 d | Demoted by Phase 0: at 1.75 candidates there is little to filter. Still saves ~148 ms/game of pointless enumeration, and a rollout pays it repeatedly. |
+| 7 | **4b** DecisionBudget | 2–3 d | Enabling infrastructure. |
+| 8 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
+| 9 | **5a** hoist O(n²) scans | 3–5 d | Demoted by Phase 0: no longer needed for rollouts. Still a standing engine win — `findAvailableManaSources` was 59% inclusive. |
+| — | **5c** persistent collections | 4–6 d | **Drop** unless a fresh profile demands it. Phase 0 measured throughput at ~2× the required rate. |
+| — | projection incrementalization | 2+ wk | **Skip.** 7.4% in the profile, 11% measured cold, and already cached. |
 
 Phases 0–2 are ~10 days of pure infrastructure before any strength lands. That is the correct trade:
-without them every subsequent claim is unfalsifiable.
+without them every subsequent claim is unfalsifiable. Phase 0 already earned its keep by deleting
+two phases' worth of assumed work.
 
 ---
 
@@ -776,8 +830,8 @@ without them every subsequent claim is unfalsifiable.
 | **`CardInstantiator` extraction produces malformed cards** | `DeterminizerInvariantsTest` + full engine suite | Reuse `GameInitializer`'s own construction path, don't hand-roll |
 | **Arena wall-clock makes the merge gate unaffordable** | Measured in Phase 1 | Reduced budget (~150 ms) for 1,000-game runs; 300-game full-budget cross-check; validate budget-monotonicity separately |
 | **`AiProfile.LEGACY_V0` silently drifts, moving the goalpost** | `FrozenBaselineTest` golden action-stream hash | Cheaper and more honest than a 5,575-LOC frozen copy |
-| **`respondBudgetModal` zero-cost infinite loop** | Arena stuck-game detector | Phase 0. Rare in production, *frequent* under playouts |
-| **`Searcher.kt`'s `Double.MIN_VALUE/2` gets accidentally revived** | — | Delete the file in Phase 7. Don't fix dead code |
+| ~~**`respondBudgetModal` zero-cost infinite loop**~~ | Arena stuck-game detector | **Closed in Phase 0** — free modes are taken once; regression test committed |
+| ~~**`Searcher.kt`'s `Double.MIN_VALUE/2` gets accidentally revived**~~ | — | **Closed in Phase 0** — file deleted rather than repaired |
 
 ---
 
@@ -816,8 +870,11 @@ on 2026-07-27:
 | 4 — hoist battlefield scans in ward / trigger / mana detection | **NOT done** — this plan's Phase 5a |
 | 5 — reduce component-map copy churn | **NOT done** — this plan's Phase 5c |
 
-So the `~404 actions/sec/thread` baseline is **pre-Steps-1–3** and the current number is unknown.
-Phase 0 refreshes it.
+So the `~404 actions/sec/thread` baseline is **pre-Steps-1–3** and the current number is still
+unknown — Phase 0 did *not* re-run `just benchmark-random 200 BLB`. What Phase 0 did measure is the
+AI-driven workload (`just benchmark-throughput`), which puts `ActionProcessor.process` at ~3,400/sec
+per thread. The two benchmarks use different action mixes and are not directly comparable, so the
+random-action baseline still needs one clean run before Step 4 / Phase 5a starts.
 
 Step 4 specifically, still live:
 - `ManaSolver.findAvailableManaSources` (`:916`) loops candidate entities and calls
