@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 147 / 272
+**Implemented:** 148 / 272
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -125,7 +125,7 @@
 - [ ] Heron of Hope
 - [x] Heron-Blessed Geist
 - [x] Hiveheart Shaman
-- [ ] Honeymoon Hearse
+- [x] Honeymoon Hearse
 - [x] Honored Heirloom
 - [ ] Hookhand Mariner
 - [x] Hopeful Initiate

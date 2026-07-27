@@ -3780,6 +3780,78 @@
     ]
 }
 
+// Skirsdag High Priest
+{
+    "name": "Skirsdag High Priest",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Morbid — {T}, Tap two untapped creatures you control: Create a 5/5 black Demon creature token with flying. Activate only if a creature died this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomTapPermanents",
+                                "count": 2,
+                                "filter": "creature ctrl:you",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 5,
+                    "toughness": 5,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Demon"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/7/771ae1f8-70b3-40da-8352-421a36c7abb5.jpg?1783940883"
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": "CreatureDiedThisTurn"
+                    }
+                ],
+                "descriptionOverride": "Create a 5/5 black Demon creature token with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "RARE",
+        "artist": "Jason A. Engle",
+        "flavorText": "\"Thraben's pleas fall on deaf ears. Ours do not.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/09aa6b66-f69b-4f89-b802-e30c247f90e3.jpg?1783940949",
+        "rulings": [
+            {
+                "date": "2020-08-07",
+                "text": "Unlike Skirsdag High Priest itself, the two other creatures you tap to activate its ability aren't required to have been under your control continuously since the beginning of your most recent turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Slayer of the Wicked
 {
     "name": "Slayer of the Wicked",
