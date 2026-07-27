@@ -236,3 +236,83 @@ Seat 0 (on the play) wins **46–51%** depending on the run — at 300 games it 
 was 51.0%. In BLB sealed against this AI, being on the play is close to neutral and may be slightly
 negative. It does not bias any result here (both agents sit in both seats), but it is a reminder
 that "on the play wins more" is an assumption about human play, not a property of the engine.
+
+---
+
+# Phase 2 — Puzzle baselines
+
+**Measured:** 2026-07-27, `just arena-puzzles` (the whole suite, ~15 s including Gradle startup).
+How to read one: [`measurement.md`](measurement.md#the-puzzle-suite).
+
+48 hand-authored positions, 8 categories × 6. Each asks the AI for exactly one move and asserts a
+*predicate* over it — "removal targets the 3/3 it can kill, not the 6/4 it bounces off" — never an
+exact `GameAction`.
+
+## Per-category baseline
+
+| Category | `v0` | `production` | `v0-blind` | What it catches |
+|---|---|---|---|---|
+| lethal | 6/6 | 6/6 | 6/6 | Missing an alpha strike / burn-to-face kill |
+| blocking | 6/6 | 6/6 | 6/6 | Chump vs trade vs no-block; deathtouch / first strike |
+| removal | 6/6 | 6/6 | 0/6 | Shooting the 1/1 instead of the bomb |
+| instants | 3/6 | 3/6 | 2/6 | Casting a combat trick in your own main phase |
+| sequencing | 5/6 | 5/6 | 0/6 | Land before spell; the land that unlocks the spell |
+| wipe | 6/6 | 6/6 | 3/6 | Wrathing while ahead |
+| race | 5/6 | 5/6 | 5/6 | Attack-vs-hold when both players are on a clock |
+| **noncreature** | **2/6** | **2/6** | 0/6 | Ignoring an opposing O-Ring / mana rock / anthem |
+| **total** | **39/48 (81%)** | **39/48 (81%)** | 22/48 (46%) | |
+
+`v0-blind` (every evaluation weight zeroed) is the discrimination control, the same one the arena
+uses. 22/48 versus 39/48 is the suite proving it measures something; the always-on
+`PuzzleSuiteTest` asserts that gap rather than leaving it to a manual run.
+
+## What Phase 2 found
+
+### 1. Non-creature blindness is real, and it is a *casting* failure before it is a targeting one
+
+The plan predicted ~0% here and named `heuristicTargetRank`'s `else -> 0.0` as the cause. The
+measurement is more specific: on all four failures the AI does not mis-target the Disenchant, **it
+never casts it at all**. Destroying an artifact moves `BoardPresence` by `permanentValue`'s flat
+`0.5` (weight 1.5, so +0.75) and costs a card (`CardAdvantage`, weight 1.0, −1.5 at a typical hand
+size). Passing scores higher, so the removal is held forever.
+
+That reframes Phase 6's exit criterion slightly: `staticPriorValue` has to be large enough to clear
+the *card-advantage* cost of casting, not merely to outrank a sibling target.
+
+The two that pass are the two whose effect shows up in **creature** stats, which the evaluator can
+already see: `noncreature-05` (an anthem pumping three creatures) and `noncreature-06` (Disenchant
+on a Pacifism that is holding down a 6/4). So the deficit is precisely "permanents whose value is
+not visible in someone's power and toughness."
+
+### 2. The last card in hand never gets played
+
+`sequencing-02` and `sequencing-04` are the same decision — play a land — with one card of
+difference in hand. 04 passes, 02 fails. The cause is `CardAdvantage.cardValue(0) = -3.0` against
+`cardValue(1) = 1.0`: emptying your hand reads as a 4-point disaster, which swamps the land drop's
+tempo and board gain, so the AI would rather hold its last land indefinitely. Land drops are free;
+this is a hand-drawn constant that Phase 9's logistic fit should remove.
+
+### 3. A one-ply evaluator cannot see a prevention effect
+
+`instants-05` — Fog at 2 life facing 9 power of attackers — is passed up. After the simulation
+resolves Fog, the state has the same life totals as passing did: the prevention only shows up when
+combat damage would be dealt, which is past the one-ply horizon. Fog therefore evaluates as "−1
+card" in every position, which is also why `instants-04` (hold Fog in your own main) *passes* —
+right answer, wrong reason. This is a Phase 7 rollout puzzle, not a weight-tuning one.
+
+### 4. Combat is carried by `CombatAdvisor`'s heuristics, not by the evaluator
+
+`v0-blind` scores 6/6 on lethal and 6/6 on blocking despite scoring every board identically. The
+combat categories are measuring `CombatAdvisor`'s seed heuristics, which are evaluator-independent.
+That is worth knowing before reading a future improvement: a change to `BoardFeatures.kt` will not
+move those two categories, and a change to `CombatAdvisor` will.
+
+The one combat position the evaluator does own is `race-03` (send the flier, keep the ground
+blocker home), and it fails for both — there is no model of holding a creature back at all.
+
+### 5. The card advisors are neutral here too
+
+`v0` and `production` score identically, 39/48, category for category. That is the same conclusion
+Phase 1's arena reached at 1,000 paired games (50.0%, CI [49.3%, 50.8%]), from a completely
+independent measurement. Two signals agreeing lowers the retirement bar for the 42 advisor entries
+further.

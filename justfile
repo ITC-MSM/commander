@@ -90,6 +90,18 @@ arena A B GAMES="300" SET="BLB" SEED="20260727":
     scripts/gradle-locked :ai:test --tests "*.ArenaBenchmark" -Dbenchmark=true -Darena=true \
         -DarenaA={{A}} -DarenaB={{B}} -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}}
 
+# Run the 48-puzzle tactical suite (8 categories x 6). Seconds, not minutes: the arena says *that*
+# the AI regressed, a puzzle category says *what*. The gate is "the failing set equals
+# KNOWN_FAILURES", so an unexpected fix fails the test too. Baseline: docs/ai/baseline-metrics.md.
+[group: 'ai']
+arena-puzzles:
+    scripts/gradle-locked :ai:test --tests "*.PuzzleSuiteTest"
+
+# Same 48 puzzles across AI profiles (v0, production) with a side-by-side per-category table.
+[group: 'ai']
+arena-puzzles-compare:
+    scripts/gradle-locked :ai:test --tests "*.PuzzleComparisonBenchmark" -Dbenchmark=true
+
 # Run every agent in ai/src/test/resources/arena/gauntlet.json against every other and print the
 # full pairwise matrix plus Bradley-Terry Elo. The matrix is the deliverable — MTG agents are
 # frequently non-transitive, and a single rating erases exactly that.
