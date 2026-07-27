@@ -2,12 +2,12 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 148 / 272
+**Implemented:** 153 / 272
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
 - [ ] Alchemist's Gambit
-- [ ] Alchemist's Retrieval
+- [x] Alchemist's Retrieval
 - [ ] Alluring Suitor
 - [x] Ancestral Anger
 - [ ] Ancient Lumberknot
@@ -78,7 +78,7 @@
 - [x] Doomed Dissenter
 - [ ] Dormant Grove
 - [ ] Dorothea, Vengeful Victim
-- [ ] Dread Fugue
+- [x] Dread Fugue
 - [x] Dreadfeast Demon
 - [x] Dreadlight Monstrosity
 - [x] Dreamroot Cascade
@@ -153,7 +153,7 @@
 - [x] Lantern Flare
 - [x] Lantern of the Lost
 - [x] Lightning Wolf
-- [ ] Lunar Rejection
+- [x] Lunar Rejection
 - [ ] Magma Pummeler
 - [ ] Manaform Hellkite
 - [x] Markov Purifier
@@ -180,7 +180,7 @@
 - [ ] Overcharged Amalgam
 - [x] Packsong Pup
 - [ ] Panicked Bystander
-- [ ] Parasitic Grasp
+- [x] Parasitic Grasp
 - [x] Parish-Blade Trainee
 - [ ] Patchwork Crawler
 - [ ] Path of Peril
@@ -269,7 +269,7 @@
 - [x] Wedding Security
 - [x] Welcoming Vampire
 - [x] Whispering Wizard
-- [ ] Winged Portent
+- [x] Winged Portent
 - [x] Witch's Web
 - [ ] Witness the Future
 - [ ] Wolf Strike
