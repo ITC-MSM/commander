@@ -24,6 +24,7 @@ import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.SneakWindow
+import com.wingedsheep.engine.mechanics.WebSlinging
 import com.wingedsheep.engine.mechanics.WarpGrants
 import com.wingedsheep.engine.mechanics.MiracleGrants
 import com.wingedsheep.engine.mechanics.mana.paymentSubtypesOf
@@ -336,6 +337,23 @@ class CastSpellHandler(
             }
             if (bounced.first() !in SneakWindow.unblockedAttackers(state, action.playerId)) {
                 return "The chosen creature is not an unblocked attacker you control"
+            }
+        }
+
+        // Web-slinging (CR 702.188a): the player must return exactly one tapped creature they
+        // control to its owner's hand as the non-mana portion of the alternative cost. Timing is
+        // the spell's normal timing (checked above) — web-slinging grants no extra permission.
+        val castingForWebSling = action.useAlternativeCost &&
+            action.altAllows(AlternativeCostType.WEB_SLINGING) &&
+            cardDef != null &&
+            WebSlinging.webSlingingAbility(cardDef) != null
+        if (castingForWebSling) {
+            val bounced = action.additionalCostPayment?.bouncedPermanents ?: emptyList()
+            if (bounced.size != 1) {
+                return "Web-slinging requires returning exactly one tapped creature you control to its owner's hand"
+            }
+            if (bounced.first() !in WebSlinging.tappedCreaturesYouControl(state, action.playerId)) {
+                return "The chosen creature is not a tapped creature you control"
             }
         }
 
@@ -799,10 +817,15 @@ class CastSpellHandler(
                     // The effective sneak cost is the printed Sneak, or a granted graveyard sneak
                     // (Ninja Teen: "creature cards in your graveyard have sneak {3}{B}").
                     val sneakCost = SneakWindow.effectiveSneakCost(state, cardDef, action.cardId, action.playerId, cardRegistry)
+                    // Check web-slinging cost (CR 702.188 — an alternative cost bundling a
+                    // return-a-tapped-creature payment, cast at the spell's normal timing).
+                    val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     if (action.altAllows(AlternativeCostType.SNEAK) && sneakCost != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, sneakCost, action.playerId)
+                    } else if (action.altAllows(AlternativeCostType.WEB_SLINGING) && webSlingingAbility != null) {
+                        costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, webSlingingAbility.cost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.EVOKE) && evokeAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, evokeAbility.cost, action.playerId)
                     } else {
@@ -1984,10 +2007,15 @@ class CastSpellHandler(
                     // Check sneak cost (CR 702.190 — mana portion; the bounce is paid separately).
                     // Printed Sneak, or a granted graveyard sneak (Ninja Teen).
                     val sneakCost = SneakWindow.effectiveSneakCost(currentState, cardDef, action.cardId, action.playerId, cardRegistry)
+                    // Check web-slinging cost (CR 702.188 — mana portion; the return-a-tapped-creature
+                    // bounce is paid separately, alongside).
+                    val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     if (action.altAllows(AlternativeCostType.SNEAK) && sneakCost != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, sneakCost, action.playerId)
+                    } else if (action.altAllows(AlternativeCostType.WEB_SLINGING) && webSlingingAbility != null) {
+                        costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, webSlingingAbility.cost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.EVOKE) && evokeAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, evokeAbility.cost, action.playerId)
                     } else {
@@ -2879,6 +2907,27 @@ class CastSpellHandler(
             }
         }
 
+        // Web-slinging (CR 702.188a): pay the alternative cost's non-mana portion by returning one
+        // tapped creature you control to its owner's hand. Capture that creature's mana value first
+        // (CR 118.9c — its own mana value, needed by Scarlet Spider, Ben Reilly) before it leaves.
+        val wasWebSlung = action.useAlternativeCost && cardDef != null &&
+            action.altAllows(AlternativeCostType.WEB_SLINGING) &&
+            WebSlinging.webSlingingAbility(cardDef) != null
+        var webSlungReturnedManaValue = 0
+        if (wasWebSlung) {
+            val bounceId = action.additionalCostPayment?.bouncedPermanents?.firstOrNull()
+            if (bounceId != null) {
+                webSlungReturnedManaValue = currentState.getEntity(bounceId)
+                    ?.get<CardComponent>()
+                    ?.manaValue ?: 0
+                val bounceResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                    currentState, bounceId, Zone.HAND
+                )
+                currentState = bounceResult.state
+                events.addAll(bounceResult.events)
+            }
+        }
+
         // Determine if this spell is being cast using warp. Gated by the chosen alternative-cost
         // type so that when warp collides with another alternative cost (e.g. a granted warp on a
         // card being evoked) only the chosen one drives its post-resolution behavior. With no
@@ -3037,6 +3086,8 @@ class CastSpellHandler(
             wasCleaved = wasCleaved,
             wasSneaked = wasSneaked,
             sneakAttackDefenderId = sneakAttackDefenderId,
+            wasWebSlung = wasWebSlung,
+            webSlungReturnedManaValue = webSlungReturnedManaValue,
             chosenModes = action.chosenModes,
             modeTargetsOrdered = effectiveModeTargetsOrdered,
             modeTargetRequirements = perModeTargetRequirements,

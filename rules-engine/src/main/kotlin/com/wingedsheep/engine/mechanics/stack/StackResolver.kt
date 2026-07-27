@@ -124,6 +124,8 @@ class StackResolver(
         wasCleaved: Boolean = false,
         wasSneaked: Boolean = false,
         sneakAttackDefenderId: EntityId? = null,
+        wasWebSlung: Boolean = false,
+        webSlungReturnedManaValue: Int = 0,
         chosenModes: List<Int> = emptyList(),
         modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),
         modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),
@@ -200,6 +202,8 @@ class StackResolver(
                 wasCleaved = wasCleaved,
                 wasSneaked = wasSneaked,
                 sneakAttackDefenderId = sneakAttackDefenderId,
+                wasWebSlung = wasWebSlung,
+                webSlungReturnedManaValue = webSlungReturnedManaValue,
                 beheldCards = beheldCards,
                 discardedAsCostCards = discardedAsCostCards,
                 chosenEntitySnapshots = chosenEntitySnapshots,
@@ -1201,6 +1205,21 @@ class StackResolver(
                         com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
                     )
                 }
+                // Web-slinging (CR 702.188): durably mark the permanent so Conditions.WebSlungCostWasPaid
+                // reads "it was cast using web-slinging" for its whole life, and carry the returned
+                // creature's mana value (CR 118.9c) so a rider like Scarlet Spider, Ben Reilly can enter
+                // with that many +1/+1 counters via DynamicAmount.CastChoice(WEB_SLUNG_RETURNED_MV).
+                if (spellComponent.wasWebSlung) {
+                    bag = bag.withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
+                    ).withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG_RETURNED_MV,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.NumberChoice(
+                            spellComponent.webSlungReturnedManaValue
+                        )
+                    )
+                }
                 // Waterbend (Avatar): durably mark a permanent cast with its (optional) waterbend
                 // cost paid so Conditions.WaterbendWasPaid reads it for the permanent's whole life.
                 if (spellComponent.wasWaterbendPaid) {
@@ -1718,6 +1737,7 @@ class StackResolver(
                 wasBlightPaid = spellComponent.wasBlightPaid,
                 wasWaterbendPaid = spellComponent.wasWaterbendPaid,
                 wasSneaked = spellComponent.wasSneaked,
+                wasWebSlung = spellComponent.wasWebSlung,
                 sacrificedPermanents = spellComponent.sacrificedPermanents,
                 discardedAsCostCards = spellComponent.discardedAsCostCards,
                 chosenEntitySnapshots = spellComponent.chosenEntitySnapshots,

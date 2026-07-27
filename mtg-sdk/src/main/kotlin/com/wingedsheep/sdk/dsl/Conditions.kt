@@ -26,6 +26,7 @@ import com.wingedsheep.sdk.scripting.conditions.WasKicked as WasKickedCondition
 import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid as BlightWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.WaterbendWasPaid as WaterbendWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid as SneakCostWasPaidCondition
+import com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid as WebSlungCostWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceMade as CastChoiceMadeCondition
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceIs as CastChoiceIsCondition
 import com.wingedsheep.sdk.scripting.conditions.CastTimeFlagSet as CastTimeFlagSetCondition
@@ -812,6 +813,15 @@ object Conditions {
         SneakCostWasPaidCondition
 
     /**
+     * If this spell was cast using web-slinging (CR 702.188 —
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.WebSlinging]). Used for riders like
+     * Spiders-Man, Heroic Horde and Scarlet Spider, Ben Reilly whose enters-the-battlefield
+     * behavior changes when the spell was cast for its web-slinging cost.
+     */
+    val WebSlungCostWasPaid: ConditionInterface =
+        WebSlungCostWasPaidCondition
+
+    /**
      * If this spell's blight additional cost was paid (`AdditionalCost.BlightOrPay`).
      * Used for cards like Cinder Strike whose effect changes when the optional
      * Blight path was chosen during casting.
@@ -1290,6 +1300,21 @@ object Conditions {
     ): ConditionInterface =
         trackerAtLeast(
             com.wingedsheep.sdk.scripting.values.TurnTracker.NONLAND_PERMANENTS_ENTERED,
+            atLeast,
+            player,
+        )
+
+    /**
+     * "If [atLeast] or more creatures entered the battlefield under [player]'s control this turn" —
+     * the creature-typed counterpart of [NonlandPermanentsEnteredThisTurn], e.g. Spider-UK's
+     * end-step "if two or more creatures entered the battlefield under your control this turn".
+     */
+    fun CreaturesEnteredThisTurn(
+        atLeast: Int = 1,
+        player: Player = Player.You
+    ): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.CREATURES_ENTERED_UNDER_CONTROL,
             atLeast,
             player,
         )

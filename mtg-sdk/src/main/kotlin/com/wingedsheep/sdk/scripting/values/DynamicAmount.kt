@@ -85,6 +85,16 @@ enum class TurnTracker {
      * `Conditions.Celebration`.
      */
     NONLAND_PERMANENTS_ENTERED,
+    /**
+     * The number of creatures that entered the battlefield under the player's control this turn —
+     * the creature-typed slice of the same per-player entry log behind [NONLAND_PERMANENTS_ENTERED]
+     * (an entry counts if it was a creature at the moment it entered). Entries are counted per entry
+     * event (a creature that leaves and re-enters counts twice, CR 400.7) and stay counted after the
+     * creature later leaves. `Compare(TurnTracking(You, CREATURES_ENTERED_UNDER_CONTROL), GTE,
+     * Fixed(2))` backs "two or more creatures entered the battlefield under your control this turn"
+     * (Spider-UK). Reach for the threshold form via `Conditions.CreaturesEnteredThisTurn`.
+     */
+    CREATURES_ENTERED_UNDER_CONTROL,
     /** Indicator (0 or 1) that the player sacrificed at least one Food this turn. */
     FOOD_SACRIFICED,
     /** Total cards that left the player's graveyard this turn (Bonecache Overseer). */
@@ -151,6 +161,7 @@ enum class TurnTracker {
         LANDS_PLAYED -> "the number of lands ${player.description} played this turn"
         LANDS_ENTERED_UNDER_CONTROL -> "the number of lands that entered the battlefield under ${player.possessive} control this turn"
         NONLAND_PERMANENTS_ENTERED -> "the number of nonland permanents that entered the battlefield under ${player.possessive} control this turn"
+        CREATURES_ENTERED_UNDER_CONTROL -> "the number of creatures that entered the battlefield under ${player.possessive} control this turn"
         FOOD_SACRIFICED -> "whether ${player.description} sacrificed a Food this turn"
         CARDS_LEFT_GRAVEYARD -> "the number of cards that left ${player.possessive} graveyard this turn"
         DESCENDED -> "the number of times ${player.description} descended this turn"

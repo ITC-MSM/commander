@@ -302,6 +302,9 @@ object CardLinter {
     private val slotDeclarers: Map<String, List<String>> = mapOf(
         "Sneak" to listOf("SNEAK"),
         "Ninjutsu" to listOf("SNEAK"),
+        // Web-slinging (CR 702.188): the engine stamps both the "was web-slung" flag and the
+        // returned creature's mana value when the web-slinging cost is paid (see StackResolver).
+        "WebSlinging" to listOf("WEB_SLUNG", "WEB_SLUNG_RETURNED_MV"),
         "BlightVariable" to listOf("BLIGHT_AMOUNT"),
         "BlightOrPay" to listOf("BLIGHT_AMOUNT"),
         // Resolution-time color choices: ChooseColorThen sets EffectContext.chosenColor for its

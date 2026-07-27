@@ -63,6 +63,15 @@ data class SpellOnStackComponent(
      * resolution, the resolver enters the creature not attacking (CR 506.3c) — no redirect.
      */
     val sneakAttackDefenderId: EntityId? = null,
+    /** For web-slinging (CR 702.188) - the web-slinging cost was paid; readable via WebSlungCostWasPaid. */
+    val wasWebSlung: Boolean = false,
+    /**
+     * For web-slinging (CR 702.188 / 118.9c): the mana value of the tapped creature returned to pay
+     * the web-slinging cost, captured before it left the battlefield. Stamped onto the resolving
+     * permanent under [com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG_RETURNED_MV] so a rider
+     * like Scarlet Spider, Ben Reilly can enter with that many +1/+1 counters. 0 when not web-slung.
+     */
+    val webSlungReturnedManaValue: Int = 0,
     val beheldCards: List<EntityId> = emptyList(),  // Cards chosen via Behold (stored in pipeline as named collection)
     /**
      * Entity ids of cards discarded to pay this spell's additional discard cost
