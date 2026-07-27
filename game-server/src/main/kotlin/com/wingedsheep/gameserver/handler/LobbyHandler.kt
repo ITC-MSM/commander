@@ -41,6 +41,7 @@ class LobbyHandler(
     private val sender: MessageSender,
     private val cardRegistry: CardRegistry,
     private val printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry,
+    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry,
     private val gamePlayHandler: GamePlayHandler,
     private val gameProperties: GameProperties,
     private val boosterGenerator: BoosterGenerator,
@@ -512,6 +513,7 @@ class LobbyHandler(
             useHandSmoother = gameProperties.handSmoother.enabled,
             debugMode = gameProperties.debugMode,
             printingRegistry = printingRegistry,
+            tokenArtRegistry = tokenArtRegistry,
         )
 
         sealedSession.players.forEach { (playerId, playerState) ->

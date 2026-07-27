@@ -6,6 +6,7 @@ import com.wingedsheep.ai.engine.deck.RandomDeckGenerator
 import com.wingedsheep.engine.limited.BoosterGenerator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.registry.PrintingRegistry
+import com.wingedsheep.engine.registry.TokenArtRegistry
 import com.wingedsheep.mtg.sets.MtgSetCatalog
 import com.wingedsheep.mtg.sets.definitions.custom.JustOneGlassToken
 import com.wingedsheep.mtg.sets.definitions.custom.SekshaasEarlySleeper
@@ -78,6 +79,18 @@ class GameBeansConfig(
         }
         for (set in MtgSetCatalog.all) {
             register(set.printings)
+        }
+    }
+
+    /**
+     * Per-set token art. A token has no `CardDefinition` and no `Printing` row, so this is the
+     * only place its art can be keyed to a set; the token executors consult it so a token shows
+     * the art of the set the card that created it was printed in.
+     */
+    @Bean
+    fun tokenArtRegistry(): TokenArtRegistry = TokenArtRegistry().apply {
+        for (set in MtgSetCatalog.all) {
+            register(set.code, set.tokenArt, set.cards.map { it.name })
         }
     }
 
