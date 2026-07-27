@@ -47,6 +47,9 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.bend.BendEvents
+import com.wingedsheep.engine.mechanics.layers.Layer
+import com.wingedsheep.engine.mechanics.layers.SerializableModification
+import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.mechanics.mana.AlternativePaymentHandler
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaPool
@@ -88,6 +91,7 @@ import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.CastRestriction
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.EventPattern as SdkGameEvent
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggeredAbility
@@ -4072,6 +4076,51 @@ class CastSpellHandler(
 
         is com.wingedsheep.sdk.scripting.effects.ManaSpellRider.CopySpellWhenSpent ->
             buildCopySpellRiderTrigger(state, action, cardComponent, rider.spellFilter)
+
+        is com.wingedsheep.sdk.scripting.effects.ManaSpellRider.GrantsKeywordWhenSpent ->
+            applyKeywordGrantRider(state, action, rider.keyword, rider.spellFilter) to emptyList()
+    }
+
+    /**
+     * Carnelian Orb of Dragonkind's rider: if the cast spell matches [spellFilter], float an
+     * end-of-turn grant of [keyword] keyed to the spell. Otherwise no-op (the mana paid for
+     * something else).
+     *
+     * Unlike the copy / scry riders this queues nothing onto the stack — "it gains haste until end
+     * of turn" is a continuous effect the printed card applies without a triggered ability. The
+     * grant is keyed to the spell's entity id, which a permanent spell keeps as it resolves onto the
+     * battlefield (see [com.wingedsheep.engine.mechanics.stack.StackResolver.resolvePermanentSpell]),
+     * so the keyword is live the instant the permanent exists — exactly what haste needs.
+     *
+     * The spell is matched with [PredicateEvaluator] against its stack characteristics, at payment
+     * time rather than at resolution. That's what the printed rulings require: mana spent on a
+     * non-Dragon spell that *becomes* a Dragon later in the turn grants nothing.
+     *
+     * The floating effect's source is the spell itself, not the mana's producer — the producer may
+     * already have left the battlefield, and the source is only read for the effect's display name.
+     */
+    private fun applyKeywordGrantRider(
+        state: GameState,
+        action: CastSpell,
+        keyword: String,
+        spellFilter: com.wingedsheep.sdk.scripting.GameObjectFilter,
+    ): GameState {
+        val matches = predicateEvaluator.matches(
+            state,
+            state.projectedState,
+            action.cardId,
+            spellFilter,
+            PredicateContext(controllerId = action.playerId)
+        )
+        if (!matches) return state
+
+        return state.addFloatingEffect(
+            layer = Layer.ABILITY,
+            modification = SerializableModification.GrantKeyword(keyword),
+            affectedEntities = setOf(action.cardId),
+            duration = Duration.EndOfTurn,
+            context = EffectContext(sourceId = action.cardId, controllerId = action.playerId)
+        )
     }
 
     /**
