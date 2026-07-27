@@ -138,7 +138,7 @@ class ReplacementEffectProcessor {
 
         // 4. If only one mandatory match, apply it directly
         if (mandatory.size == 1) {
-            return applySingle(state, mandatory[0], event, alreadyApplied, context)
+            return applySingle(state, mandatory[0], event, alreadyApplied)
         }
 
         // 5. Multiple mandatory matches — group by priority order (CR 616.1a-e)
@@ -148,11 +148,13 @@ class ReplacementEffectProcessor {
             val groupEffects = byGroup[group] ?: continue
             if (groupEffects.isEmpty()) continue
 
-            if (group == ReplacementPriorityGroup.ANY && groupEffects.size > 1) {
-                // CR 616.1e: player chooses. However, if all effects are structurally
-                // identical AND come from the same source entity (e.g. two copies of the
-                // same Words cycle ability on one card), auto-apply the first — there's
-                // no meaningful choice to present since they're fungible.
+            if (groupEffects.size > 1) {
+                // CR 616.1a–e: when multiple effects share the same priority group,
+                // the affected player chooses which to apply. However, if all effects
+                // are structurally identical AND come from the same source entity
+                // (e.g. two copies of the same Words cycle ability on one card),
+                // auto-apply the first — there's no meaningful choice to present
+                // since they're fungible.
                 val first = groupEffects.first()
                 val firstSourceId = first.sourceEntityId(state)
                 val isFungible = firstSourceId != null &&
@@ -162,14 +164,14 @@ class ReplacementEffectProcessor {
                         it.sourceEntityId(state) == firstSourceId
                     }
                 if (isFungible) {
-                    return applySingle(state, first, event, alreadyApplied, context)
+                    return applySingle(state, first, event, alreadyApplied)
                 }
-                // Different effects or different sources — player must choose (CR 616.1e)
+                // Different effects or different sources — player must choose (CR 616.1)
                 return presentChoice(state, event, groupEffects, alreadyApplied, context)
             }
 
-            // Single effect or higher-priority group — auto-apply
-            return applySingle(state, groupEffects.first(), event, alreadyApplied, context)
+            // Single effect — auto-apply
+            return applySingle(state, groupEffects.first(), event, alreadyApplied)
         }
 
         // Unreachable: mandatory was non-empty, so at least one group matched.
@@ -188,20 +190,20 @@ class ReplacementEffectProcessor {
         state: GameState,
         gathered: GatheredReplacement,
         event: PendingGameEvent,
-        alreadyApplied: Set<ReplacementEffectIdentity>,
-        context: EffectContext?
+        alreadyApplied: Set<ReplacementEffectIdentity>
     ): ProcessorResult {
         val outcome = createOutcome(gathered.effect, event, state)
 
         // Build execution context — prefer floating-shield context (Words cycle),
-        // fall back to any passed-in context, or build one from source data
-        // resolved via [GatheredReplacement.sourceEntityId].
+        // otherwise use the affected player as the controller so the replacement
+        // effect (e.g. DrawCardsEffect from Phial of Galadriel) resolves against
+        // the player the event affects, not whoever announced the draw.
         val execContext = when (val identity = gathered.identity) {
             is ReplacementEffectIdentity.FloatingIdentity -> {
                 buildContextFromShield(state, identity.floatingId, gathered.sourceControllerId)
             }
-            else -> context ?: EffectContext(
-                controllerId = gathered.sourceControllerId,
+            else -> EffectContext(
+                controllerId = event.affectedPlayerId,
                 sourceId = gathered.sourceEntityId(state)
             )
         }
@@ -328,7 +330,7 @@ class ReplacementEffectProcessor {
         val decisionId = UUID.randomUUID().toString()
         val promptResult = event.createOptionalPrompt(decisionId, gathered, state, context)
             ?: // Event doesn't support optional prompts — treat as mandatory
-            return applySingle(state, gathered, event, alreadyApplied, context)
+            return applySingle(state, gathered, event, alreadyApplied)
 
         val stateWithDecision = state.withPendingDecision(promptResult.decision)
         val stateWithContinuation = stateWithDecision.pushContinuation(promptResult.continuation)
@@ -490,12 +492,17 @@ class ReplacementEffectProcessor {
             return false
         }
 
-        // Evaluate the effect's restrictions (CR 614 — extra conditions)
+        // Evaluate the effect's restrictions (CR 614 — extra conditions).
+        // Restrictions are evaluated against the affected player, not against
+        // whoever announced the event (e.g. a spell's controller). Conditions
+        // like CardsInHandAtMost use Player.You → EffectContext.controllerId
+        // to determine whose hand to count, so the controller must be the
+        // player the event is happening to, not the caller's context.
         val restrictions = effect.restrictions
         if (restrictions.isNotEmpty()) {
-            val evalContext = context ?: EffectContext(
+            val evalContext = EffectContext(
                 sourceId = null,
-                controllerId = sourceControllerId
+                controllerId = event.affectedPlayerId
             )
             return restrictions.all { condition ->
                 conditionEvaluator.evaluate(state, condition, evalContext)
