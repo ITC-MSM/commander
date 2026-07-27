@@ -15,7 +15,6 @@ Wizards printed no token cards before roughly Odyssey.
 
 | Set | Distinct tokens missing art |
 |-----|-----------------------------|
-| APC | 4 |
 | ODY | 4 |
 | ARN | 2 |
 | BIG | 2 |
@@ -39,32 +38,7 @@ Wizards printed no token cards before roughly Odyssey.
 | RIX | 1 |
 | SCG | 1 |
 
-**34 distinct tokens across 23 sets.**
-
-## APC
-
-_No Scryfall token set (`tapc`) — every token here needs self-hosted art._
-
-- **2/1 black Cat** — created by 1 card(s): Penumbra Bobcat
-  - image: `web-client/public/images/tokens/apc-cat.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Cat", imageUri = "/images/tokens/apc-cat.jpeg", power = 2, toughness = 1, colors = setOf(Color.BLACK)),
-    ```
-- **1/1 white/red Goblin Soldier** — created by 1 card(s): Goblin Trenches
-  - image: `web-client/public/images/tokens/apc-goblin-soldier.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Goblin Soldier", imageUri = "/images/tokens/apc-goblin-soldier.jpeg", power = 1, toughness = 1, colors = setOf(Color.WHITE, Color.RED)),
-    ```
-- **3/3 black Kavu** — created by 1 card(s): Penumbra Kavu
-  - image: `web-client/public/images/tokens/apc-kavu.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Kavu", imageUri = "/images/tokens/apc-kavu.jpeg", power = 3, toughness = 3, colors = setOf(Color.BLACK)),
-    ```
-- **6/6 black Wurm** — created by 1 card(s): Penumbra Wurm
-  - image: `web-client/public/images/tokens/apc-wurm.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Wurm", imageUri = "/images/tokens/apc-wurm.jpeg", power = 6, toughness = 6, colors = setOf(Color.BLACK)),
-    ```
+**30 distinct tokens across 22 sets.**
 
 ## ODY
 
