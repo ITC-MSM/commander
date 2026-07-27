@@ -74,21 +74,26 @@ class CreatePredefinedTokenExecutor(
         // Art: an explicit per-card override wins, then the art printed by the set the creating
         // card came from (so a reprint mints its own set's Treasure), then the one canonical
         // printing shared engine-wide by PredefinedTokens.
+        //
+        // A list, because a set may have printed the same token with several illustrations: the
+        // batch is dealt out of it in order and wraps. Indexing by position in the batch keeps it
+        // deterministic, so a replay re-simulates the same board. See CreateTokenExecutor.
         val sourceCardDefinitionId = context.sourceId
             ?.let { state.getEntity(it) }
             ?.get<CardComponent>()
             ?.cardDefinitionId
-        val resolvedImageUri = effect.imageUri
-            ?: tokenArtRegistry?.resolve(
+        val resolvedImageUris = effect.imageUri?.let(::listOf)
+            ?: tokenArtRegistry?.resolveAll(
                 sourceCardDefinitionId = sourceCardDefinitionId,
                 tokenName = effect.tokenType,
-            )
-            ?: cardDef.metadata.imageUri
+            )?.takeIf { it.isNotEmpty() }
+            ?: listOf(cardDef.metadata.imageUri)
 
         var newState = state
         val createdTokenIds = mutableListOf<EntityId>()
 
-        repeat(com.wingedsheep.engine.core.GameLimits.cappedTokenCount(tokenCount, "predefined tokens")) {
+        repeat(com.wingedsheep.engine.core.GameLimits.cappedTokenCount(tokenCount, "predefined tokens")) { indexInBatch ->
+            val resolvedImageUri = resolvedImageUris[indexInBatch % resolvedImageUris.size]
             val (tokenId, stateWithId) = newState.newEntity()
             newState = stateWithId
             createdTokenIds.add(tokenId)
@@ -120,7 +125,7 @@ class CreatePredefinedTokenExecutor(
                 container = container.with(TappedComponent)
             }
 
-            // Transforming double-faced tokens (CR 701.53b — Incubator). The token
+            // Transforming double-faced tokens (CR 701.51b — Incubator). The token
             // enters with its front face up; the back face's CardDefinition is
             // already auto-registered in the CardRegistry by registry.register(...).
             cardDef.backFace?.let { backFace ->

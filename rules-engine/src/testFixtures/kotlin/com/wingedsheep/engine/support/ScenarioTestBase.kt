@@ -72,7 +72,7 @@ abstract class ScenarioTestBase : FunSpec() {
      */
     protected val tokenArtRegistry = TokenArtRegistry().apply {
         for (set in MtgSetCatalog.all) {
-            register(set.code, set.tokenArt + TokenArtData.forSet(set.code), set.cards.map { it.name })
+            register(set.code, TokenArtData.forSet(set), set.cards.map { it.name })
         }
     }
     protected val actionProcessor = ActionProcessor(EngineServices(cardRegistry, tokenArtRegistry = tokenArtRegistry))
