@@ -33,7 +33,7 @@ fun GatheredReplacement.sourceEntityId(state: GameState): EntityId? {
     return when (val id = identity) {
         is ReplacementEffectIdentity.BattlefieldIdentity -> id.sourceEntityId
         is ReplacementEffectIdentity.FloatingIdentity -> {
-            state.floatingEffects.getOrNull(id.floatingIndex)
+            state.floatingEffects.firstOrNull { it.id == id.floatingId }
                 ?.effect?.modification
                 ?.sourceEntityId
         }

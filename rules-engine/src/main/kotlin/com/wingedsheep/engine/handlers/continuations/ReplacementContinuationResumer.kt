@@ -4,7 +4,6 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.replacement.*
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.sdk.model.EntityId
 
 /**
  * Continuation resumers for the replacement effect system.
@@ -73,15 +72,14 @@ class ReplacementContinuationResumer(
             state = stateWithRemaining,
             gathered = chosen,
             event = continuation.pendingEvent,
-            alreadyApplied = continuation.alreadyApplied,
-            context = context
+            alreadyApplied = continuation.alreadyApplied
         )
 
         return when (result) {
             is ProcessorResult.Resolved -> {
                 // Consume NextUse floating-effect shield if applicable (caller's lifecycle responsibility).
                 val stateAfterLifecycle = if (result.identity is ReplacementEffectIdentity.FloatingIdentity) {
-                    processor.consumeFloatingEffect(result.state, result.identity.floatingIndex)
+                    processor.consumeFloatingEffect(result.state, result.identity.floatingId)
                 } else {
                     result.state
                 }

@@ -218,7 +218,7 @@ class DrawReplacementDispatcher(
         identity: ReplacementEffectIdentity?
     ): GameState {
         if (identity is ReplacementEffectIdentity.FloatingIdentity) {
-            return processor.consumeFloatingEffect(state, identity.floatingIndex)
+            return processor.consumeFloatingEffect(state, identity.floatingId)
         }
         return state
     }

@@ -40,12 +40,12 @@ sealed interface ReplacementEffectIdentity {
     /**
      * A replacement effect originating from a floating-effect.
      *
-     * @property floatingIndex Index into [GameState.floatingEffects]
+     * @property floatingId Index into [GameState.floatingEffects]
      */
     @SerialName("FloatingIdentity")
     @Serializable
     data class FloatingIdentity(
-        val floatingIndex: Int
+        val floatingId: EntityId
     ) : ReplacementEffectIdentity
 
     /**

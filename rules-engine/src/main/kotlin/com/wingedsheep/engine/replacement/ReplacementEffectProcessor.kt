@@ -198,7 +198,7 @@ class ReplacementEffectProcessor {
         // resolved via [GatheredReplacement.sourceEntityId].
         val execContext = when (val identity = gathered.identity) {
             is ReplacementEffectIdentity.FloatingIdentity -> {
-                buildContextFromShield(state, identity.floatingIndex, gathered.sourceControllerId)
+                buildContextFromShield(state, identity.floatingId, gathered.sourceControllerId)
             }
             else -> context ?: EffectContext(
                 controllerId = gathered.sourceControllerId,
@@ -247,10 +247,10 @@ class ReplacementEffectProcessor {
      */
     private fun buildContextFromShield(
         state: GameState,
-        floatingIndex: Int,
+        floatingId: EntityId,
         controllerId: EntityId
     ): EffectContext? {
-        val fe = state.floatingEffects.getOrNull(floatingIndex) ?: return null
+        val fe = state.floatingEffects.firstOrNull { it.id == floatingId } ?: return null
         return fe.effect.modification.toEffectContext(controllerId)
     }
 
@@ -260,11 +260,11 @@ class ReplacementEffectProcessor {
      * (EndOfTurn, Permanent, etc.) are managed by the turn/phase/condition
      * expiry machinery and must not be removed here.
      */
-    internal fun consumeFloatingEffect(state: GameState, floatingIndex: Int): GameState {
-        if (floatingIndex < 0 || floatingIndex >= state.floatingEffects.size) return state
-        if (state.floatingEffects[floatingIndex].duration !is Duration.NextUse) return state
+    internal fun consumeFloatingEffect(state: GameState, floatingId: EntityId): GameState {
+        val floatingEffect = state.floatingEffects.firstOrNull { it.id == floatingId }
+        if (floatingEffect == null || floatingEffect.duration !is Duration.NextUse) return state
         val updatedEffects = state.floatingEffects.toMutableList()
-        updatedEffects.removeAt(floatingIndex)
+        updatedEffects.remove(floatingEffect)
         return state.copy(floatingEffects = updatedEffects)
     }
 
@@ -400,7 +400,7 @@ class ReplacementEffectProcessor {
 
         // 2. Floating effects that carry replacement-effect modifications
         // (Words cycle shields stored here, not on battlefield permanents).
-        for ((index, fe) in state.floatingEffects.withIndex()) {
+        for ( fe in state.floatingEffects) {
             if (event.affectedPlayerId !in fe.effect.affectedEntities) continue
 
             val sdkEffect = fe.effect.modification.toReplacementEffect(fe.controllerId) ?: continue
@@ -415,7 +415,7 @@ class ReplacementEffectProcessor {
 
             results.add(
                 GatheredReplacement(
-                    identity = ReplacementEffectIdentity.FloatingIdentity(floatingIndex = index),
+                    identity = ReplacementEffectIdentity.FloatingIdentity(floatingId = fe.id),
                     effect = sdkEffect,
                     sourceControllerId = fe.controllerId,
                     description = desc
