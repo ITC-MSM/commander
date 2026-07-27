@@ -15,8 +15,9 @@ import com.wingedsheep.sdk.model.Printing
  * for Modern-legal staples referenced by MageZero training decks (see
  * backlog/magezero-coverage.md).
  *
- * All 262 booster cards are implemented, so the set is draftable (not `incomplete`).
- * The one gap is a starter-deck exclusive that never appears in a pack.
+ * All 262 booster cards are implemented, so the set is draftable (not `incomplete`). The remaining
+ * FDN cards are non-booster exclusives — Beginner Box, Starter Collection, and the 2026 set
+ * extension — which the coverage view counts separately from the headline draft pool.
  */
 object FoundationsSet : MtgSet {
 
