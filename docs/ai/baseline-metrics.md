@@ -145,7 +145,94 @@ Deliberately out of scope for Phase 0, each owned by a later phase:
 
 - **Puzzle pass rate per category** — Phase 2. The "non-creature valuation" category is expected to
   baseline near 0%.
-- **Arena win rate vs `LEGACY_V0`** — Phase 1. There is no scoreboard yet, so no strength claim in
-  this document is possible or intended.
+- ~~**Arena win rate vs `LEGACY_V0`**~~ — Phase 1, below.
 - **p50/p95 decision latency per budget tier** — Phase 4b, once `DecisionBudget` exists. The 2.6 ms
   mean above is the whole distribution's mean with no tiering.
+
+---
+
+# Phase 1 — Arena baselines
+
+**Measured:** 2026-07-27. Same hardware. How to run and read these:
+[`measurement.md`](measurement.md).
+
+All runs: BLB sealed, seed 20260727, mirror decklists, `skipMulligans`, `maxTurns = 50`.
+
+## The scoreboard's own calibration
+
+| Run | Result | What it proves |
+|---|---|---|
+| `just arena v0 v0 300` | **50.0%**, CI **[50.0%, 50.0%]**, 300/300 completed | No seat or seed leak. A mirror is exact, not merely "within the interval" |
+| `just arena v0 v0-blind 200` | **100.0%**, 200-0 | The harness **discriminates**. Without this, a 50% reading is indistinguishable from a broken harness |
+
+`v0-blind` is `LEGACY_V0` with every evaluation weight zeroed, so its Strategist can never prefer
+an action to passing. Losing 200-0 to a greedy 1-ply agent is the expected floor.
+
+## Reference-opponent baselines
+
+| Agent A | Agent B | Games | Pair win % | 95% CI | Verdict |
+|---|---|---|---|---|---|
+| `v0` | `v0` | 300 | 50.0% | [50.0%, 50.0%] | mirror (harness check) |
+| `v0` | `blb-advisors` | 1,000 | **50.0%** | **[49.3%, 50.8%]** | **not distinguishable** |
+| `v0` | `v0-blind` | 200 | 100.0% | [100.0%, 100.0%] | v0 wins |
+
+## Throughput
+
+**~5 games/sec on 8 threads** (~1.6 s of wall clock per game, ~11 turns, ~497 actions). A
+1,000-game merge gate is **3.5 minutes**, not the ~30–60 minutes the plan budgeted.
+
+The plan's 111-CPU-hour estimate assumed a 2 s `DecisionBudget` per decision. That budget does not
+exist yet — combat has a 1 s cap and nothing else is bounded at all. **So the plan's "run the arena
+at a reduced ~150 ms budget" mitigation is not needed in Phase 1, and Phase 4b must re-measure this
+table before it ships a budget**: it is the budget, not the game count, that decides whether a
+1,000-game gate is affordable.
+
+---
+
+## What Phase 1 found
+
+### 1. The BLB card advisors are not an improvement over generic `v0`
+
+1,000 paired games: **50.0%, CI [49.3%, 50.8%]**, 500W-500L-0D. Only ~3% of pairs came out
+differently at all, and those split evenly. The advisors change behaviour — the CI is non-degenerate,
+unlike the `v0` mirror's `[0.000, 0.000]` — they just do not change results.
+
+`AdvisorBenchmark`, run at the same 1,000 games for comparison, reports **46.1%** for the advised
+side. The two do not contradict each other so much as bracket the same conclusion: *advisors are
+not helping*. The difference is explained by `AdvisorBenchmark` being **unseeded** — it sets no
+`GameConfig.seed`, so the two games of its "pair" are different shuffles, and its estimator is
+therefore unpaired. On the same 1,000 games the arena's paired interval is **±0.8 pp** against the
+unpaired **±3.1 pp** — a **4× variance reduction**, well beyond the 15–30% the plan predicted,
+because mirror decklists plus an identical game seed make the pairing unusually tight.
+
+This is worth stating plainly because Phase 6 plans to retire advisors that `CardIntent` reproduces:
+**the retirement bar for the 42 BLB/ONS advisor entries is lower than it looked.** Two of them had
+already been silently overwritten before Phase 0 fixed the registry collision, and the module as a
+whole is measurably neutral.
+
+### 2. The AI proposes illegal actions roughly once per game
+
+The arena is a free bug finder at scale, and it found one immediately. Across the 1,000-game run:
+
+| Count | Rejection |
+|---|---|
+| 889 | `CastSpell: No valid targets available` |
+| 33 | `CastSpell: Not enough mana to cast this spell` |
+| 23 | `ActivateAbility: Must choose 1 card(s) to discard` |
+
+Every one of these is a defect — either the enumerator offered an action it should not have, or the
+Strategist mangled it on the way out. The runner recovers with a safe fallback and continues, so
+none of them break a game, but ~0.9 wasted decisions per game is real.
+
+The rate is **advisor-dependent**: 0.34/game in the `v0` mirror versus 0.95/game with
+`blb-advisors` on one side. That points at a `CardAdvisor` recommending a cast whose target
+selection then fails, and it is a concrete lead rather than a vague one. **Not fixed in Phase 1** —
+it is an AI/enumerator bug, not scoreboard work — but it is now measured, and any fix has a
+number to move.
+
+### 3. Seat 0 is not worth what you would guess
+
+Seat 0 (on the play) wins **46–51%** depending on the run — at 300 games it was 46.0%, at 1,000 it
+was 51.0%. In BLB sealed against this AI, being on the play is close to neutral and may be slightly
+negative. It does not bias any result here (both agents sit in both seats), but it is a reminder
+that "on the play wins more" is an assumption about human play, not a property of the engine.

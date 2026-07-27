@@ -192,3 +192,6 @@ CLAUDE.local.md
 
 # Bytecode from the shared modules the scripts/ tools import
 scripts/__pycache__/
+
+# Arena / benchmark run output (docs/ai/ carries the numbers worth keeping)
+/benchmarks/

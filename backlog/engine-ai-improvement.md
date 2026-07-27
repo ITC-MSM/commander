@@ -3,9 +3,10 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** **Phase 0 shipped** (2026-07-27) — baseline in
-[`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md). Phases 1+ not started. Phases are
-individually shippable and ordered by dependency, not by appeal.
+**Status:** **Phases 0 and 1 shipped** (2026-07-27) — baselines in
+[`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
+[`docs/ai/measurement.md`](../docs/ai/measurement.md). Next up is **Phase 2, the puzzle suite**.
+Phases are individually shippable and ordered by dependency, not by appeal.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
 performance phase builds on. See "Cross-reference" below; parts of that doc are stale.
@@ -225,7 +226,35 @@ throughput, projection share and branching factor — plus the three plan correc
 
 ---
 
-### Phase 1 — The Arena · *4–6 d*
+### Phase 1 — The Arena · *4–6 d* — ✅ **DONE 2026-07-27**
+
+> **Shipped.** Baselines and findings in
+> [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-1--arena-baselines); how to
+> run and read a report in [`docs/ai/measurement.md`](../docs/ai/measurement.md).
+>
+> Three corrections the build produced:
+>
+> 1. **The arena is ~100× cheaper than budgeted.** ~5 games/sec on 8 threads, so a 1,000-game
+>    merge gate is **3.5 minutes**, not 30–60. The 111-CPU-hour estimate assumed a 2 s
+>    `DecisionBudget` that does not exist yet, so **the "reduced ~150 ms budget" mitigation was not
+>    needed and was not built.** Phase 4b must re-measure before shipping a budget — the budget, not
+>    the game count, is what makes an arena expensive.
+> 2. **The v0-vs-v0 exit criterion was weaker than what is actually true.** With the same agent on
+>    both seats the two games of a pair are *literally the same game*, so the mirror is **exactly**
+>    50% with CI `[0.000, 0.000]`. That is asserted in the always-on suite rather than checked by
+>    hand. A control run (`v0` vs a zero-weight `v0-blind`) proves the harness discriminates: 200-0.
+> 3. **The BLB advisors are measurably neutral** — 1,000 paired games, 50.0%, CI [49.3%, 50.8%].
+>    `AdvisorBenchmark`'s 46.1% on the same game count is the *unpaired, unseeded* view of the same
+>    conclusion; the arena's paired interval is **4× tighter**. This lowers the retirement bar for
+>    the 42 advisor entries in Phase 6.
+>
+> Also found, and **not fixed** (an AI/enumerator bug, not scoreboard work): the AI proposes an
+> illegal action ~0.9 times per game, 889 of 945 being `CastSpell: No valid targets available`, at
+> ~3× the rate when a `CardAdvisor` is in play. Quantified in the baseline doc.
+>
+> **Deferred:** `arena-puzzles` ships with the puzzles in Phase 2 — a recipe pointing at a test
+> that does not exist is worse than no recipe. `ArenaBudgetScalingTest` stays in Phase 4b as
+> planned; there is no budget to scale yet.
 
 **Lives in `ai/src/test/kotlin/com/wingedsheep/ai/arena/`.** `:ai` already declares
 `testImplementation(testFixtures(project(":rules-engine")))` and `testImplementation(project(":mtg-sets"))`,
@@ -264,14 +293,16 @@ a `frozen/v0/` package.
 - `skipMulligans = true` for determinism — note this puts mulligan quality **out of test**; schedule
   a separate mulligan A/B later.
 
-**justfile:** `arena A B GAMES="300"`, `arena-gauntlet GAMES="200"`, `arena-puzzles`. Gauntlet
-membership in `ai/src/test/resources/arena/gauntlet.json`. Results append to
-`benchmarks/arena/<timestamp>/` (results.csv + summary.md), matching the existing
-`benchmarks/ai-benchmark-*` convention already committed at repo root.
+**justfile:** `arena A B GAMES="300"`, `arena-gauntlet GAMES="200"`. (`arena-puzzles` moved to
+Phase 2, with the puzzles it would run.) Gauntlet membership in
+`ai/src/test/resources/arena/gauntlet.json`. Results go to `benchmarks/arena/<timestamp>-<a>-vs-<b>/`
+(results.csv + summary.md) — **gitignored**; there was no committed `benchmarks/ai-benchmark-*`
+convention at the repo root, that claim was wrong.
 
-**Exit:** `just arena v0 v0 300` returns 50% with the CI **containing** 50% — a seat/seed-leak
-detector; if V0 vs V0 isn't ~50/50 the harness is biased. And `just arena v0 blb-advisors 1000`
-reproduces `AdvisorBenchmark`'s known result.
+**Exit:** ✅ `just arena v0 v0 300` returns exactly 50%, CI `[50.0%, 50.0%]` — a seat/seed-leak
+detector, asserted in the always-on suite rather than eyeballed. ✅ `just arena v0 blb-advisors 1000`
+returns 50.0% CI [49.3%, 50.8%] against `AdvisorBenchmark`'s unpaired 46.1% — the same conclusion
+(advisors are not an improvement) at 4× the precision.
 
 ---
 
@@ -787,12 +818,13 @@ but tanks a puzzle category, look hard before shipping.
 ## Recommended order
 
 ```
-0̶ → 1 → 2 → 3 → 4 → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
+0̶ → 1̶ → 2 → 3 → 4 → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
 ```
 
-Phase 0 is done. **Phase 5 has left the critical path** — simulation is already ~2× the speed the
-rollout budget needs, so 5a is now an independent engine-perf task and 5c is almost certainly not
-justified. Next up is **Phase 1, the arena**: nothing below is knowable without it.
+Phases 0 and 1 are done. **Phase 5 has left the critical path** — simulation is already ~2× the
+speed the rollout budget needs, so 5a is now an independent engine-perf task and 5c is almost
+certainly not justified. Next up is **Phase 2, the puzzle suite**: the arena says *that* something
+regressed, a puzzle says *what*.
 
 Ranked by strength-per-effort, independent of ordering:
 
@@ -802,7 +834,7 @@ Ranked by strength-per-effort, independent of ordering:
 | 2 | **6** CardIntent | 5–7 d | Removes flat-0.5 blindness to every artifact/enchantment/PW; feeds 4 other consumers. |
 | 3 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones. Cheap once the arena exists. |
 | 4 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
-| 5 | **1 / 2** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. |
+| 5 | **1̶ / 2** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Arena done. |
 | 6 | **4a** auto-pass filter | 3–5 d | Demoted by Phase 0: at 1.75 candidates there is little to filter. Still saves ~148 ms/game of pointless enumeration, and a rollout pays it repeatedly. |
 | 7 | **4b** DecisionBudget | 2–3 d | Enabling infrastructure. |
 | 8 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
@@ -825,11 +857,11 @@ two phases' worth of assumed work.
 | **Overfitting to self-play** | Held-out set + gauntlet + puzzles | ≥3 collecting agents; hold out by game *and* by set; arena is the arbiter, not log-loss |
 | **Non-transitive strength** | Full pairwise matrix, not just Elo | Must beat V0 *and* previous version; lose to no gauntlet member worse than 45% |
 | **Combat's 1 s cap fights the global budget** | Blocking puzzle category; per-tier latency logging | Combat declaration is always CRITICAL; keep `MAX_BLOCK_SIMULATIONS = 10` as a floor, not a ceiling |
-| **`GameSimulator.isResolving` / `decisionResolver` thread-safety** | Nondeterminism across arena reruns at the same seed | One `AIPlayer` per game, never shared; `PlayoutEngine` owns its own processor; determinism test at parallelism 1 vs N |
+| **`GameSimulator.isResolving` / `decisionResolver` thread-safety** | Nondeterminism across arena reruns at the same seed | One `AIPlayer` per *seat* per game, never shared. `ArenaHarnessTest` asserts identical outcomes at 8 threads and at 1 — **green as of Phase 1**, so the AI is deterministic today. `PlayoutEngine` must own its own processor when Phase 7 lands |
 | **Persistent collections break persisted sessions / committed replays** | `GameStateSerializationFormatStabilityTest` golden JSON | Serializers delegate to standard `MapSerializer`/`ListSerializer` ⇒ byte-identical wire format |
 | **`CardInstantiator` extraction produces malformed cards** | `DeterminizerInvariantsTest` + full engine suite | Reuse `GameInitializer`'s own construction path, don't hand-roll |
-| **Arena wall-clock makes the merge gate unaffordable** | Measured in Phase 1 | Reduced budget (~150 ms) for 1,000-game runs; 300-game full-budget cross-check; validate budget-monotonicity separately |
-| **`AiProfile.LEGACY_V0` silently drifts, moving the goalpost** | `FrozenBaselineTest` golden action-stream hash | Cheaper and more honest than a 5,575-LOC frozen copy |
+| ~~**Arena wall-clock makes the merge gate unaffordable**~~ | Measured in Phase 1 | **Not a risk today** — 1,000 games is 3.5 min, because no `DecisionBudget` exists yet. Re-opens in Phase 4b: re-measure before shipping a budget, and only then consider a reduced-budget arena mode |
+| ~~**`AiProfile.LEGACY_V0` silently drifts**~~ | `FrozenBaselineTest` golden action-stream hash | **Closed in Phase 1** — one fixed all-vanilla Portal game, SHA-256 over the action stream. All-vanilla so the hash tracks *AI* behaviour, not every card that ships |
 | ~~**`respondBudgetModal` zero-cost infinite loop**~~ | Arena stuck-game detector | **Closed in Phase 0** — free modes are taken once; regression test committed |
 | ~~**`Searcher.kt`'s `Double.MIN_VALUE/2` gets accidentally revived**~~ | — | **Closed in Phase 0** — file deleted rather than repaired |
 
@@ -847,13 +879,14 @@ Per phase, in addition to the exit criteria above:
   targeted leaf shrank.
 - **SDK docs:** no card-SDK surface changes are expected. If any phase adds an SDK primitive,
   `docs/card-sdk-language-reference.md` updates in the *same* change.
-- **New docs:** `docs/ai/baseline-metrics.md` (Phase 0, updated per phase) ·
-  `docs/ai/measurement.md` (how to read an arena report; the promotion rule) ·
+- **New docs:** `docs/ai/baseline-metrics.md` (Phase 0, appended per phase) ·
+  `docs/ai/measurement.md` (Phase 1 — how to read an arena report; the promotion rule) ·
   `docs/ai/architecture.md` (profile / budget / evaluator seams, once Phase 7 lands).
 - **End-to-end sanity:** after Phases 7 and 8, play a real game via `just server` and confirm decision
   latency feels right and the AI no longer plays around cards it shouldn't know about.
-- **Standing regression set** after each merge: `just arena-puzzles` (seconds) +
+- **Standing regression set** after each merge: `just arena-puzzles` (seconds, from Phase 2) +
   `just arena <prev> <new> 1000` (the gate) + `just arena <new> v0 1000` (the compounding check).
+  Both 1,000-game runs are ~3.5 min each today.
 
 ---
 

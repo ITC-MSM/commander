@@ -1,12 +1,8 @@
 package com.wingedsheep.ai.engine
 
 import com.wingedsheep.engine.core.ActionProcessor
-import com.wingedsheep.engine.core.DeclareAttackers
-import com.wingedsheep.engine.core.DeclareBlockers
-import com.wingedsheep.engine.core.GameAction
 import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.GameInitializer
-import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.core.SubmitDecision
 import com.wingedsheep.engine.legalactions.EnumerationMode
@@ -14,14 +10,9 @@ import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisCombatComponent
-import com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent
 import com.wingedsheep.mtg.sets.MtgSetCatalog
-import com.wingedsheep.sdk.core.Step
-import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
-import com.wingedsheep.sdk.model.Rarity
 import io.kotest.core.spec.style.FunSpec
 import java.util.Locale
 import java.util.concurrent.ExecutorCompletionService
@@ -93,8 +84,8 @@ class SimulationThroughputBenchmark : FunSpec({
             // Seeded per game so a rerun measures the same games.
             val rng = Random(gameId.toLong())
             completionService.submit {
-                val deck1 = buildRandomSealedDeck(set.cards, rng)
-                val deck2 = buildRandomSealedDeck(set.cards, rng)
+                val deck1 = buildSeededSealedDeck(set.cards, rng)
+                val deck2 = buildSeededSealedDeck(set.cards, rng)
                 measureGame(registry, deck1, deck2, seed = gameId.toLong()).also {
                     val n = finished.incrementAndGet()
                     if (n <= 3 || n % 5 == 0 || n == total) {
@@ -288,7 +279,7 @@ private fun measureGame(
             playedProcessCalls++
 
             state = if (r.error != null) {
-                val fallback = processor.process(state, safeFallback(state, priorityPlayer, enumerator)).result
+                val fallback = processor.process(state, safeFallbackAction(state, priorityPlayer, enumerator)).result
                 if (fallback.error != null) break
                 fallback.state
             } else {
@@ -331,37 +322,6 @@ private fun measureGame(
  */
 private fun strategistCandidateFilter(actions: List<LegalAction>): List<LegalAction> =
     actions.filter { it.affordable && !it.isManaAbility && it.actionType != "PassPriority" }
-
-/** Mirror of AIPlayer.playPriorityWindow's fallback: honour mandatory combat assignments. */
-private fun safeFallback(
-    state: GameState,
-    playerId: EntityId,
-    enumerator: LegalActionEnumerator
-): GameAction {
-    val attackersDeclared = state.getEntity(playerId)?.has<AttackersDeclaredThisCombatComponent>() == true
-    val blockersDeclared = state.getEntity(playerId)?.has<BlockersDeclaredThisCombatComponent>() == true
-    return when {
-        state.step == Step.DECLARE_ATTACKERS && state.activePlayerId == playerId && !attackersDeclared -> {
-            val la = enumerator.enumerate(state, playerId, EnumerationMode.ACTIONS_ONLY)
-                .find { it.actionType == "DeclareAttackers" }
-            val mandatory = la?.mandatoryAttackers ?: emptyList()
-            val opponentId = state.getOpponents(playerId).firstOrNull()
-            DeclareAttackers(
-                playerId,
-                if (mandatory.isNotEmpty() && opponentId != null) mandatory.associateWith { opponentId } else emptyMap()
-            )
-        }
-
-        state.step == Step.DECLARE_BLOCKERS && state.activePlayerId != playerId && !blockersDeclared -> {
-            val la = enumerator.enumerate(state, playerId, EnumerationMode.ACTIONS_ONLY)
-                .find { it.actionType == "DeclareBlockers" }
-            val mandatory = la?.mandatoryBlockerAssignments ?: emptyMap()
-            DeclareBlockers(playerId, mandatory.mapValues { (_, targets) -> targets.take(1) })
-        }
-
-        else -> PassPriority(playerId)
-    }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reporting
@@ -465,35 +425,5 @@ private fun printReport(samples: List<ThroughputSample>, numGames: Int) {
         "across the ${fmt(meanWhenNonEmpty, 1)} candidates a non-trivial window actually offers.")
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Deck generation (seeded — same games on every rerun)
-// ─────────────────────────────────────────────────────────────────────────────
-
-private fun buildRandomSealedDeck(allCards: List<CardDefinition>, rng: Random): Deck {
-    val pool = generateSealedPool(allCards, rng)
-    val deckMap = buildHeuristicSealedDeck(pool)
-    return Deck(deckMap.flatMap { (name, count) -> List(count) { name } })
-}
-
-private fun generateSealedPool(allCards: List<CardDefinition>, rng: Random): List<CardDefinition> {
-    val nonBasics = allCards.filter { !it.typeLine.isBasicLand }
-    val commons = nonBasics.filter { it.metadata.rarity == Rarity.COMMON }
-    val uncommons = nonBasics.filter { it.metadata.rarity == Rarity.UNCOMMON }
-    val rares = nonBasics.filter { it.metadata.rarity == Rarity.RARE }
-    val mythics = nonBasics.filter { it.metadata.rarity == Rarity.MYTHIC }
-
-    val pool = mutableListOf<CardDefinition>()
-    repeat(6) {
-        val usedNames = mutableSetOf<String>()
-        fun pick(from: List<CardDefinition>): CardDefinition? {
-            val available = from.filter { it.name !in usedNames }
-            if (available.isEmpty()) return null
-            return available[rng.nextInt(available.size)].also { usedNames.add(it.name) }
-        }
-        repeat(11) { pick(commons)?.let { pool.add(it) } }
-        repeat(3) { pick(uncommons)?.let { pool.add(it) } }
-        val rare = if (mythics.isNotEmpty() && rng.nextDouble() < 0.125) pick(mythics) else null
-        pool.add(rare ?: pick(rares) ?: pick(uncommons) ?: pick(commons)!!)
-    }
-    return pool
-}
+// Seeded deck generation and the illegal-action fallback live in `AiBenchmarkSupport.kt` — the
+// arena needs both, and two copies of either would silently drift apart.

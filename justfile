@@ -81,6 +81,23 @@ benchmark-random GAMES="100" SET="POR":
 benchmark-throughput GAMES="20" SET="BLB":
     ./gradlew :ai:test --tests "*.SimulationThroughputBenchmark" -Dbenchmark=true -DbenchmarkGames={{GAMES}} -DbenchmarkSet={{SET}}
 
+# Play two AI agents head-to-head over paired-swap games and report a win rate with a confidence
+# interval (e.g., just arena v0 blb-advisors 1000). Agents: v0, current, production, blb-advisors,
+# ons-advisors, v0-blind. 1000 games is the merge gate; 300 is directional; 100 is a smoke test.
+# Results land in benchmarks/arena/. How to read one: docs/ai/measurement.md.
+[group: 'ai']
+arena A B GAMES="300" SET="BLB" SEED="20260727":
+    scripts/gradle-locked :ai:test --tests "*.ArenaBenchmark" -Dbenchmark=true -Darena=true \
+        -DarenaA={{A}} -DarenaB={{B}} -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}}
+
+# Run every agent in ai/src/test/resources/arena/gauntlet.json against every other and print the
+# full pairwise matrix plus Bradley-Terry Elo. The matrix is the deliverable — MTG agents are
+# frequently non-transitive, and a single rating erases exactly that.
+[group: 'ai']
+arena-gauntlet GAMES="200" SET="BLB" SEED="20260727":
+    scripts/gradle-locked :ai:test --tests "*.ArenaBenchmark" -Dbenchmark=true -DarenaGauntlet=true \
+        -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}}
+
 # Clean build artifacts
 [group: 'build']
 clean:
