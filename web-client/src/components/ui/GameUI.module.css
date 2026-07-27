@@ -3011,6 +3011,20 @@
   text-align: center;
 }
 
+/*
+ * Community row: Discord + the contributing guide. Sits in the same glass panel as the credits
+ * rather than in a second one, divided off by a hairline — it is an invitation, not attribution,
+ * so it reads a step brighter than the lines below it.
+ */
+.communityLinks {
+  align-self: stretch;
+  text-align: center;
+  padding-bottom: 5px;
+  margin-bottom: 3px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .attributionDisclaimer {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.55);
@@ -3042,6 +3056,11 @@
     border-radius: 10px;
     background: rgba(8, 8, 16, 0.45);
     border-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .communityLinks {
+    padding-bottom: 4px;
+    margin-bottom: 2px;
   }
 
   .attributionDisclaimer {

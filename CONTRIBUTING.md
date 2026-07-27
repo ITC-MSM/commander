@@ -5,6 +5,12 @@ PRs, ideas, bug reports, forks, custom sets, agents trained against the gym.
 This document is the short version of "what makes a contribution likely to get
 merged" and "how I work on it myself, in case that's useful."
 
+**Never contributed to a project like this before?** Start with the
+[contributor guide](https://magic.wingedsheep.com/contribute) instead — a
+step-by-step walkthrough that assumes no prior programming experience, from
+installing the tools to opening your first card PR. Come back here once you're
+set up.
+
 Most day-to-day discussion happens in the [Discord](https://discord.gg/dy6eSRPWzu):
 
 - `#dev` — contribution chat, "would you accept a PR for X?", review pings,

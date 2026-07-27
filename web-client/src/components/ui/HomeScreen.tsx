@@ -34,6 +34,16 @@ import { DEFAULT_LOBBY_SET_CODE } from '../lobby/useLobbyCommands'
 import { loadLobbyId, clearLobbyId } from '@/store/slices/shared'
 import styles from './GameUI.module.css'
 
+/** Community invite, also linked from the contributing guide's "get help" section. */
+const DISCORD_INVITE_URL = 'https://discord.com/invite/dy6eSRPWzu'
+
+/**
+ * The contributing guide is a static page under `web-client/public/`, not an SPA route — it must be
+ * reached with a plain `<a href>` full navigation, never a react-router `Link`. Trailing slash so
+ * nginx serves the directory index directly instead of leaning on the SPA fallback.
+ */
+const CONTRIBUTING_GUIDE_URL = '/contribute/'
+
 interface PublicTournamentSummary {
   lobbyId: string
   state: string
@@ -503,6 +513,11 @@ export function HomeScreen({
         )}
       </div>
       <div className={styles.attribution}>
+        <span className={styles.communityLinks}>
+          Join us on <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={styles.attributionLink}>Discord</a>
+          {' · '}
+          New here? Read the <a href={CONTRIBUTING_GUIDE_URL} target="_blank" rel="noopener noreferrer" className={styles.attributionLink}>contributing guide</a>
+        </span>
         <span>
           Card images via <a href="https://scryfall.com" target="_blank" rel="noopener noreferrer" className={styles.attributionLink}>Scryfall</a>
           {' · '}
