@@ -99,7 +99,7 @@ class ReplacementContinuationResumer(
             }
             is ProcessorResult.Pass -> {
                 // Shouldn't happen — the chosen effect was matched
-                checkForMore(state, emptyList())
+                error("resumeReplacementChoice returned a Pass result")
             }
         }
     }
