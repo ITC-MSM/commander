@@ -27,22 +27,10 @@ object TheBigScoreSet : MtgSet {
     // together with at least one regular set.
     override val extensionSet = true
 
-    /**
-     * Tokens the bonus sheet mints that `tbig` doesn't print, borrowed from Outlaws of Thunder
-     * Junction.
-     *
-     * The Big Score was opened inside OTJ boosters and shares its token sheet: Scryfall's `tbig`
-     * lists only the tokens unique to the bonus sheet, so the Clue and Treasure its cards create
-     * live in `totj`. Taking OTJ's whole sheet minus what BIG prints itself means any token a
-     * later BIG card mints picks up the right art too, instead of the engine-wide generic.
-     *
-     * The filter matters because the wiring registers `tokenArt` *ahead* of the set's own synced
-     * rows — without it, a token both sheets print would render OTJ's art on a BIG card.
-     */
+    // The bonus sheet was opened inside OTJ boosters and shares its token sheet, so `tbig` lists
+    // only the tokens unique to BIG — the Clue and Treasure its cards mint are OTJ tokens.
     override val tokenArt: List<TokenPrinting> by lazy {
-        val own = TokenArtData.forSet(code)
-        TokenArtData.forSet(OutlawsOfThunderJunctionSet.code)
-            .filterNot { borrowed -> own.any { it.matchesName(borrowed.name) } }
+        TokenArtData.borrowedFrom(OutlawsOfThunderJunctionSet.code, code)
     }
 
     override val cards: List<CardDefinition> by lazy {

@@ -18,7 +18,6 @@ Wizards printed no token cards before roughly Odyssey.
 | DST | 2 |
 | JMP | 2 |
 | MRD | 2 |
-| BLC | 1 |
 | CHK | 1 |
 | DKA | 1 |
 | EMN | 1 |
@@ -35,7 +34,7 @@ Wizards printed no token cards before roughly Odyssey.
 | RIX | 1 |
 | SCG | 1 |
 
-**22 distinct tokens across 19 sets.**
+**21 distinct tokens across 18 sets.**
 
 ## DST
 
@@ -80,14 +79,6 @@ _No Scryfall token set (`tmrd`) — every token here needs self-hosted art._
   - image: `web-client/public/images/tokens/mrd-spirit.jpeg`
   - ```kotlin
     TokenPrinting(name = "Spirit", imageUri = "/images/tokens/mrd-spirit.jpeg", power = 1, toughness = 1, colors = setOf(Color.WHITE)),
-    ```
-
-## BLC
-
-- **Treasure** — created by 4 card(s): Alchemist's Talent, Big Score, Bootleggers' Stash, Prosperous Bandit
-  - image: `web-client/public/images/tokens/blc-treasure.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Treasure", imageUri = "/images/tokens/blc-treasure.jpeg"),
     ```
 
 ## CHK
