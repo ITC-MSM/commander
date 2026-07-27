@@ -16,7 +16,7 @@ import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.identity.CommanderZoneChoiceAskedComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
-import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardFromBattlefieldThisTurnMarker
+import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.ManifestedComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
@@ -629,24 +629,24 @@ object ZoneTransitionService {
             }
         }
 
-        // 8b3. Stamp "put into graveyard from battlefield this turn" on the card entity
-        // (Samwise the Stouthearted / Lobelia Sackville-Baggins, LTR). Overwrites any
-        // previous stamp so a card that bounces battlefield→graveyard twice in one turn
-        // still matches; a graveyard arrival via a different path (mill, exile→graveyard)
-        // doesn't trigger this branch, so it can't falsely match.
-        if (leavingBattlefield && actualDestZone == Zone.GRAVEYARD) {
+        // 8b3. Stamp "put into a graveyard this turn" on the card entity, recording whether
+        // the arrival came from the battlefield. Backs Abyssal Harvester (FDN, any origin
+        // zone) and Samwise the Stouthearted / Lobelia Sackville-Baggins (LTR, battlefield
+        // only). Overwrites any previous stamp so a card that bounces into a graveyard twice
+        // in one turn records its most recent origin.
+        if (actualDestZone == Zone.GRAVEYARD && fromZone != Zone.GRAVEYARD) {
             newState = newState.updateEntity(entityId) { c ->
-                c.with(PutIntoGraveyardFromBattlefieldThisTurnMarker)
+                c.with(PutIntoGraveyardThisTurnComponent(fromBattlefield = leavingBattlefield))
             }
         }
 
         // 8c. Track cards leaving the graveyard
         if (fromZone == Zone.GRAVEYARD) {
-            // Strip the "from battlefield this turn" stamp — the card is no longer in a
-            // graveyard, so the predicate must not carry over to a later graveyard
-            // arrival via a different path.
+            // Strip the "put into a graveyard this turn" stamp — the card is no longer in a
+            // graveyard, so neither predicate may carry over to a later graveyard arrival
+            // via a different path.
             newState = newState.updateEntity(entityId) { c ->
-                c.without<PutIntoGraveyardFromBattlefieldThisTurnMarker>()
+                c.without<PutIntoGraveyardThisTurnComponent>()
             }
             newState = newState.updateEntity(ownerId) { playerContainer ->
                 val existing = playerContainer.get<CardsLeftGraveyardThisTurnComponent>()

@@ -30,7 +30,7 @@ import com.wingedsheep.engine.state.components.identity.RoomComponent
 import com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
-import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardFromBattlefieldThisTurnMarker
+import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.CounterType
@@ -1095,15 +1095,20 @@ class PredicateEvaluator {
                 container.has<BlockedThisCombatComponent>()
             }
 
-            // "Put there from the battlefield this turn" filter for graveyard-zone targets
-            // (Samwise the Stouthearted, Lobelia Sackville-Baggins — LTR). Reads the marker
-            // set by ZoneTransitionService on battlefield→graveyard moves. The marker is
-            // stripped when the card leaves the graveyard (so a later mill→graveyard or
-            // exile→graveyard arrival doesn't falsely match) AND at the start of every
-            // turn by BeginningPhaseManager (so the "this turn" window matches MTG's
+            // "Put there this turn" filter for graveyard-zone targets (Abyssal Harvester — FDN).
+            // Reads the marker ZoneTransitionService stamps on every graveyard arrival,
+            // regardless of the zone it came from. The marker is stripped when the card leaves
+            // the graveyard (so it can't outlive the arrival it describes) AND at the start of
+            // every turn by BeginningPhaseManager (so the "this turn" window matches MTG's
             // per-turn semantics, not the engine's per-round turn counter).
+            StatePredicate.PutIntoGraveyardThisTurn -> {
+                container.has<PutIntoGraveyardThisTurnComponent>()
+            }
+
+            // The zone-restricted sibling: same marker, but the arrival must have been from
+            // the battlefield (Samwise the Stouthearted, Lobelia Sackville-Baggins — LTR).
             StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> {
-                container.has<PutIntoGraveyardFromBattlefieldThisTurnMarker>()
+                container.get<PutIntoGraveyardThisTurnComponent>()?.fromBattlefield == true
             }
 
             // "Blocked or was blocked by a legendary creature this turn" (You Cannot Pass! — LTR).
