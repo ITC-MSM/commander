@@ -117,7 +117,7 @@ sealed interface PendingGameEvent {
         ): Boolean {
             val drawEvent = pattern as? EventPattern.DrawEvent ?: return false
             if (drawEvent.exceptFirstInDrawStep && drawnCardsSoFar.isEmpty()) return false
-            return matchesPlayerFilter(drawEvent.player, playerId, sourceControllerId)
+            return matchesPlayerFilter(drawEvent.player, playerId, sourceControllerId, state)
         }
 
         override fun applyReplacement(effect: ReplacementEffect, state: GameState): ReplacementOutcome {
@@ -199,22 +199,20 @@ sealed interface PendingGameEvent {
          * Check whether a player filter matches the drawing player relative to
          * the replacement source's controller.
          *
-         * For [Player.EachOpponent], the check uses `!= sourceControllerId`, which
-         * correctly captures opponent relationships in both 2-player and 4+ player
-         * games — the draw event carries [affectedPlayerId] directly, and any player
-         * who is not the source controller is an opponent. This works because draw
-         * events are scoped to a single affected player; damage events with
-         * multi-opponent semantics may need additional relationship tracking.
+         * For [Player.EachOpponent], the check uses [GameState.getOpponents] so that
+         * in a team game (e.g. Two-Headed Giant) a teammate's draw do not
+         * match `EachOpponent`
          */
         private fun matchesPlayerFilter(
             player: Player,
             affectedPlayerId: EntityId,
-            sourceControllerId: EntityId
+            sourceControllerId: EntityId,
+            state: GameState
         ): Boolean {
             return when (player) {
                 Player.Each -> true
                 Player.You -> affectedPlayerId == sourceControllerId
-                Player.EachOpponent -> affectedPlayerId != sourceControllerId
+                Player.EachOpponent -> affectedPlayerId in state.getOpponents(sourceControllerId)
                 else -> false
             }
         }
@@ -247,7 +245,7 @@ sealed interface PendingGameEvent {
         ): Boolean {
             return pattern is EventPattern.DrawCardsEvent &&
                 totalCount >= pattern.amount &&
-                matchesPlayerFilter(pattern.player, playerId, sourceControllerId)
+                matchesPlayerFilter(pattern.player, playerId, sourceControllerId, state)
         }
 
         override fun applyReplacement(effect: ReplacementEffect, state: GameState): ReplacementOutcome {
@@ -264,12 +262,13 @@ sealed interface PendingGameEvent {
         private fun matchesPlayerFilter(
             player: Player,
             affectedPlayerId: EntityId,
-            sourceControllerId: EntityId
+            sourceControllerId: EntityId,
+            state: GameState
         ): Boolean {
             return when (player) {
                 Player.Each -> true
                 Player.You -> affectedPlayerId == sourceControllerId
-                Player.EachOpponent -> affectedPlayerId != sourceControllerId
+                Player.EachOpponent -> affectedPlayerId in state.getOpponents(sourceControllerId)
                 else -> false
             }
         }
