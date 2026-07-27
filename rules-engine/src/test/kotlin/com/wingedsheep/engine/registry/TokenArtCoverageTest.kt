@@ -35,7 +35,7 @@ class TokenArtCoverageTest : FunSpec({
 
     val tokenArtRegistry = TokenArtRegistry().apply {
         for (set in MtgSetCatalog.all) {
-            register(set.code, set.tokenArt + TokenArtData.forSet(set.code), set.cards.map { it.name })
+            register(set.code, TokenArtData.forSet(set), set.cards.map { it.name })
         }
     }
 

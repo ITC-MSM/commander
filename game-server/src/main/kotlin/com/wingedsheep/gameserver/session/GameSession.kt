@@ -1526,6 +1526,18 @@ class GameSession(
     fun getStateForTesting(): GameState? = gameState
 
     /**
+     * Whether this session resolves set-scoped token art, for testing assertions.
+     *
+     * [tokenArtRegistry] is an optional constructor argument, so a code path that builds a session
+     * and forgets it degrades silently: every token still gets *an* image, just the engine-wide
+     * generic one for its creature type. Nothing fails, the art is merely wrong — which is exactly
+     * how the scenario path shipped without it. Each site that creates a session should assert this.
+     *
+     * **WARNING:** This method is for testing only.
+     */
+    fun hasTokenArtForTesting(): Boolean = services.tokenArtRegistry != null
+
+    /**
      * Read-only snapshot of the current game state. Used by the engine AI controller
      * to evaluate board positions and simulate actions.
      *

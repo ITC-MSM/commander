@@ -24,6 +24,10 @@ import com.wingedsheep.sdk.model.TokenPrinting
  * 3. The engine-wide generic fallback keyed by creature type
  *    ([com.wingedsheep.engine.handlers.effects.token.TokenArt]).
  *
+ * A set may contribute several rows for one token — the same token printed with different
+ * illustrations. [resolveAll] returns them all so a batch of tokens created at once shows the whole
+ * run of arts; [resolve] takes the first for callers that only need one.
+ *
  * ## Usage
  * ```kotlin
  * val tokenArt = TokenArtRegistry()
@@ -73,10 +77,28 @@ class TokenArtRegistry {
         power: Int? = null,
         toughness: Int? = null,
         colors: Set<Color> = emptySet(),
-    ): String? {
-        val setCode = setCodeFor(sourceCardDefinitionId) ?: return null
-        val rows = bySet[setCode] ?: return null
-        return TokenPrinting.bestMatch(rows, tokenName, power, toughness, colors)?.imageUri
+    ): String? = resolveAll(sourceCardDefinitionId, tokenName, power, toughness, colors).firstOrNull()
+
+    /**
+     * Every art the creating card's set printed for this token, in declaration order; empty when
+     * the set prints none that match.
+     *
+     * A set that printed one token with several illustrations declares one row per art (Jumpstart's
+     * four Dogs). The token executors deal this list out across a batch created at once, so four
+     * Dogs made by one spell show the four printed arts rather than one repeated — hence plural
+     * here and [resolve] as the singular front door onto the same lookup.
+     */
+    fun resolveAll(
+        sourceCardDefinitionId: String?,
+        tokenName: String,
+        power: Int? = null,
+        toughness: Int? = null,
+        colors: Set<Color> = emptySet(),
+    ): List<String> {
+        val setCode = setCodeFor(sourceCardDefinitionId) ?: return emptyList()
+        val rows = bySet[setCode] ?: return emptyList()
+        return TokenPrinting.allMatches(rows, tokenName, power, toughness, colors)
+            .map { it.imageUri }
     }
 
     /** Set code that should supply token art for a creating entity, or null if unknown. */

@@ -2461,7 +2461,7 @@ object Effects {
         CreateRoleTokenEffect(roleName, target)
 
     /**
-     * Incubate N (CR 701.53). Create an Incubator token with N +1/+1 counters on it
+     * Incubate N (CR 701.51). Create an Incubator token with N +1/+1 counters on it
      * and "{2}: Transform this token." It transforms into a 0/0 Phyrexian artifact creature.
      *
      * Implemented purely as composition: the predefined token executor publishes the
@@ -2471,7 +2471,7 @@ object Effects {
     fun Incubate(n: Int): Effect = MechanicPatterns.incubate(n)
 
     /**
-     * Incubate X (CR 701.53), where the +1/+1 counter count is a [DynamicAmount]
+     * Incubate X (CR 701.51), where the +1/+1 counter count is a [DynamicAmount]
      * resolved at resolution time (e.g., the triggering spell's mana value).
      */
     fun Incubate(amount: com.wingedsheep.sdk.scripting.values.DynamicAmount): Effect =

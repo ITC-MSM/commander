@@ -120,7 +120,8 @@ interface MtgSet {
      * original's.
      *
      * Entries are matched by name plus whatever [TokenPrinting] discriminators are pinned; see
-     * [TokenPrinting.matches].
+     * [TokenPrinting.matches]. A set that printed one token with several illustrations declares a row
+     * per art — a batch of tokens created at once is dealt out of them in order.
      */
     val tokenArt: List<TokenPrinting> get() = emptyList()
 

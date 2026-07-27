@@ -1154,8 +1154,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
   Layer 2's bulk half is `mtg-sets/src/main/resources/tokens.json`, one entry per token printing of every
   set that has a Scryfall token set (`t<code>`), refreshed with **`just token-art-sync`**. You rarely
-  touch it: it is machine-owned and regenerated wholesale. Hand-authored `MtgSet.tokenArt` is registered
-  *ahead* of it, so declaring a row is how you override synced art or supply art Scryfall doesn't have.
+  touch it: it is machine-owned and regenerated wholesale. The two halves are combined by
+  `TokenArtData.forSet(set)` — hand-authored rows plus the synced rows for identities the set doesn't
+  declare itself — so declaring a row is how you override synced art or supply art Scryfall doesn't have.
+  Register a set's art through that function, never by concatenating the two lists yourself.
 
   ```kotlin
   object FoundationsSet : MtgSet {
@@ -1171,14 +1173,30 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   token as a generated frame and drops this image into its art box, so a full-card `normal` image arrives
   pre-framed and gets cropped to its middle band.
 
+  **Several arts for one token:** a set that printed the same token with different illustrations declares
+  **one row per art** — nothing on the row changes, the plurality lives in the list. A batch of tokens
+  created at once is dealt out of the matching rows in order and wraps, so Jumpstart's four `Dog` rows put
+  four different dogs on the battlefield for Release the Dogs' four tokens. Indexing is by position in the
+  batch, so it stays deterministic under replay. A row that pins an identity wins outright over a
+  name-only row, so this never bleeds one token's art onto a same-named sibling.
+
+  ```kotlin
+  override val tokenArt = listOf(
+      TokenPrinting(name = "Dog", imageUri = "/images/tokens/jmp-dog1.jpeg", power = 1, toughness = 1, colors = setOf(Color.WHITE)),
+      TokenPrinting(name = "Dog", imageUri = "/images/tokens/jmp-dog2.jpeg", power = 1, toughness = 1, colors = setOf(Color.WHITE)),
+      // … two more
+  )
+  ```
+
   Prefer this over `imageUri` on the effect. A card that bakes art into its `CreateToken` mints the same
   art from every printing, which is wrong the moment it is reprinted into a set with its own token —
   keying on the minting set is what makes reprints come out right.
 
   Roughly a third of the sets we implement predate token *cards* (Alpha through Invasion, Tempest,
-  Odyssey, Onslaught), so Scryfall has nothing to sync and their tokens fall back to generic art. Run
-  **`just token-art-gaps`** for the work list: it writes `backlog/token-art-gaps.md` naming every token
-  with no set-scoped art, the cards that create it, a suggested
+  Odyssey, Onslaught), so Scryfall has nothing to sync and their tokens would fall back to generic art.
+  Those are all self-hosted now, and `backlog/token-art-gaps.md` reports none outstanding — but adding a
+  card whose set prints an unsynced token reopens the gap. Run **`just token-art-gaps`** for the work
+  list: it names every token with no set-scoped art, the cards that create it, a suggested
   `web-client/public/images/tokens/<set>-<token>.jpeg` path, and a paste-ready `TokenPrinting(...)` row.
   Self-hosted art is served from that directory by relative URI — Invasion's Saproling and Reflection
   are the worked example.

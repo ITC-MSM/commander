@@ -1,6 +1,7 @@
 package com.wingedsheep.mtg.sets.definitions.fdn
 
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
 import com.wingedsheep.sdk.model.Printing
@@ -47,6 +48,38 @@ object FoundationsSet : MtgSet {
         TokenPrinting(
             name = "Cat",
             imageUri = "https://cards.scryfall.io/art_crop/front/2/8/2885d54c-9fb2-4f01-8937-54f8ac1ce5bc.jpg?1783908593",
+        ),
+        // Release the Dogs is reprinted here, and the joke only lands if the four Dogs look like
+        // four different dogs — so the FDN printing borrows Jumpstart's four Dog arts rather than
+        // repeating the single `tfdn` Dog four times. These rows are hand-authored, so they win
+        // over the synced one. See JumpstartSet.tokenArt.
+        TokenPrinting(
+            name = "Dog",
+            imageUri = "/images/tokens/jmp-dog1.jpeg",
+            power = 1,
+            toughness = 1,
+            colors = setOf(Color.WHITE),
+        ),
+        TokenPrinting(
+            name = "Dog",
+            imageUri = "/images/tokens/jmp-dog2.jpeg",
+            power = 1,
+            toughness = 1,
+            colors = setOf(Color.WHITE),
+        ),
+        TokenPrinting(
+            name = "Dog",
+            imageUri = "/images/tokens/jmp-dog3.jpeg",
+            power = 1,
+            toughness = 1,
+            colors = setOf(Color.WHITE),
+        ),
+        TokenPrinting(
+            name = "Dog",
+            imageUri = "/images/tokens/jmp-dog4.jpeg",
+            power = 1,
+            toughness = 1,
+            colors = setOf(Color.WHITE),
         ),
     )
 

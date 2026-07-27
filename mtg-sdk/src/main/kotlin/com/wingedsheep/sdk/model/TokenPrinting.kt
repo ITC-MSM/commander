@@ -19,6 +19,13 @@ import com.wingedsheep.sdk.core.Color
  * name — e.g. a white 1/1 Cat and a green 2/2 Cat — in which case spell out enough to separate
  * them. See [matches].
  *
+ * ## Several arts for one token
+ * A set that printed the *same* token with several illustrations declares one row per art —
+ * Jumpstart's four Dog tokens are four `TokenPrinting(name = "Dog", …)` rows differing only in
+ * [imageUri]. Nothing about the row changes; the plurality lives in the list. When a card mints a
+ * batch of them the engine deals the arts out in order ([allMatches]), so Release the Dogs' four
+ * Dogs show all four printed illustrations instead of one repeated four times.
+ *
  * ## Image form
  * Use the Scryfall **`art_crop`** URL, not `normal`. The client renders a token as a generated
  * frame (name bar / art box / type bar) and drops this image into the art box, so a full-card
@@ -88,8 +95,27 @@ data class TokenPrinting(
             power: Int? = null,
             toughness: Int? = null,
             colors: Set<Color> = emptySet(),
-        ): TokenPrinting? =
-            printings.firstOrNull { it.matches(name, power, toughness, colors) }
-                ?: printings.firstOrNull { it.matchesName(name) }
+        ): TokenPrinting? = allMatches(printings, name, power, toughness, colors).firstOrNull()
+
+        /**
+         * Every printing describing this token, in declaration order — the set's whole run of arts
+         * for it, which a batch of tokens created at once is dealt out of.
+         *
+         * Same two tiers as [bestMatch], applied wholesale: if any row pins this exact identity,
+         * *those* are the arts and the looser name-only rows are ignored — a set printing a white
+         * 1/1 Cat and a green 2/2 Cat must not cycle both arts for either one. Only when nothing
+         * pins the identity does the name-only tier stand in, for the same reason [bestMatch]
+         * falls back to it: a synced row pins P/T and colors from the printed token, and the
+         * engine's token can legitimately differ.
+         */
+        fun allMatches(
+            printings: List<TokenPrinting>,
+            name: String,
+            power: Int? = null,
+            toughness: Int? = null,
+            colors: Set<Color> = emptySet(),
+        ): List<TokenPrinting> =
+            printings.filter { it.matches(name, power, toughness, colors) }
+                .ifEmpty { printings.filter { it.matchesName(name) } }
     }
 }

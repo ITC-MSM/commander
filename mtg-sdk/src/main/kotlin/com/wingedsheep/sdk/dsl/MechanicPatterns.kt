@@ -303,11 +303,11 @@ object MechanicPatterns {
         )
 
     // =========================================================================
-    // Incubate Pattern (CR 701.53)
+    // Incubate Pattern (CR 701.51)
     // =========================================================================
 
     /**
-     * Incubate N (CR 701.53). Atomic composition: create the (DFC) Incubator token, then
+     * Incubate N (CR 701.51). Atomic composition: create the (DFC) Incubator token, then
      * place N +1/+1 counters on it via the pipeline-published entity ID.
      *
      * The Incubator's `{2}: Transform this token` activated ability is declared on the
@@ -326,7 +326,7 @@ object MechanicPatterns {
     )
 
     /**
-     * Incubate X (CR 701.53), where X is a [DynamicAmount] resolved at trigger/spell
+     * Incubate X (CR 701.51), where X is a [DynamicAmount] resolved at trigger/spell
      * resolution time (e.g., the triggering spell's mana value for Chrome Host Seedshark).
      *
      * Same shape as [incubate] but uses [AddDynamicCountersEffect] so the +1/+1 counter

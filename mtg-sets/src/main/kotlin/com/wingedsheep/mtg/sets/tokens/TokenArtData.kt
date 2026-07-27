@@ -1,6 +1,7 @@
 package com.wingedsheep.mtg.sets.tokens
 
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.model.MtgSet
 import com.wingedsheep.sdk.model.TokenPrinting
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -33,6 +34,27 @@ object TokenArtData {
 
     /** Token printings this set contributes, or empty when the set has none on Scryfall. */
     fun forSet(setCode: String): List<TokenPrinting> = bySet[setCode].orEmpty()
+
+    /**
+     * The whole art sheet to register for [set]: its hand-authored rows, plus the synced rows for
+     * tokens it doesn't declare itself.
+     *
+     * The precedence — a set's own declaration beats the Scryfall sync — used to be implicit in
+     * writing `set.tokenArt + forSet(set.code)` and letting the first match win. It cannot be, now
+     * that a set may declare *several* arts for one token and the engine deals out every match: a
+     * plain concatenation would tack the synced row onto the end of the set's own run. Foundations
+     * borrows Jumpstart's four Dog arts for the Release the Dogs reprint, and `tfdn`'s single Dog
+     * must not become a fifth.
+     *
+     * Overriding is per token *identity*, not per name, so a set declaring art for one Cat doesn't
+     * silently swallow the synced art of a differently-statted Cat it also prints.
+     */
+    fun forSet(set: MtgSet): List<TokenPrinting> =
+        set.tokenArt + forSet(set.code).filterNot { synced ->
+            set.tokenArt.any {
+                it.matches(synced.name, synced.power, synced.toughness, synced.colors.orEmpty())
+            }
+        }
 
     /**
      * [donor]'s synced sheet minus every token name [setCode] prints itself — the `tokenArt` for a
