@@ -262,16 +262,16 @@ class BeginningPhaseManager(
             newState = newState.updateEntity(entityId) { it.without<EnteredThisTurnComponent>() }
         }
 
-        // Wipe "put into graveyard from battlefield this turn" markers on every turn
-        // boundary so the predicate (Samwise, Lobelia — LTR) matches only cards that
-        // arrived in a graveyard this turn, not last turn. Scans all entities (the
+        // Wipe "put into a graveyard this turn" markers on every turn boundary so the
+        // predicates (Abyssal Harvester — FDN; Samwise, Lobelia — LTR) match only cards
+        // that arrived in a graveyard this turn, not last turn. Scans all entities (the
         // marker lives on graveyard cards, not battlefield permanents).
         val stampedThisTurn = newState.entities.filter { (_, container) ->
-            container.has<com.wingedsheep.engine.state.components.identity.PutIntoGraveyardFromBattlefieldThisTurnMarker>()
+            container.has<com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent>()
         }.keys
         for (entityId in stampedThisTurn) {
             newState = newState.updateEntity(entityId) {
-                it.without<com.wingedsheep.engine.state.components.identity.PutIntoGraveyardFromBattlefieldThisTurnMarker>()
+                it.without<com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent>()
             }
         }
 
@@ -424,7 +424,8 @@ class BeginningPhaseManager(
         predicate: StatePredicate,
         container: ComponentContainer
     ): Boolean = when (predicate) {
-        // Graveyard-only predicate; untap filters never see a card with the marker.
+        // Graveyard-only predicates; untap filters never see a card with the marker.
+        StatePredicate.PutIntoGraveyardThisTurn -> false
         StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false
         // No granter context in untap filtering — granter-relative exclusion is resolution-time only.
         StatePredicate.IsGrantingPermanent -> false
@@ -464,6 +465,7 @@ class BeginningPhaseManager(
         StatePredicate.HasDealtDamage,
         StatePredicate.HasDealtCombatDamageToPlayer,
         StatePredicate.DealtCombatDamageToSourceControllerThisTurn,
+        StatePredicate.ControllerDealtCombatDamageBySourceThisTurn,
         StatePredicate.AttackedThisTurn,
         StatePredicate.AttackedThisCombat,
         StatePredicate.BlockedThisCombat,
@@ -477,6 +479,7 @@ class BeginningPhaseManager(
         StatePredicate.HasLeastPowerAmongAllCreatures,
         StatePredicate.HasLeastPower,
         StatePredicate.IsEquipped,
+        StatePredicate.IsEnchanted,
         StatePredicate.IsModified,
         StatePredicate.IsSaddled,
         StatePredicate.HasLockedDoor,

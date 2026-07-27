@@ -165,6 +165,24 @@ data class GameObjectFilter(
                 CardPredicate.Or(listOf(CardPredicate.IsArtifact, CardPredicate.IsEnchantment))
             )
         )
+
+        /**
+         * Artifact, enchantment, or token — the permanents bargain lets you sacrifice
+         * (CR 702.166a). "Token" is not a card type, so it's an independent alternative here:
+         * a Food artifact token, an Aura, and a plain 1/1 creature token all qualify, while a
+         * nontoken creature does not.
+         */
+        val ArtifactEnchantmentOrToken = GameObjectFilter(
+            cardPredicates = listOf(
+                CardPredicate.Or(
+                    listOf(
+                        CardPredicate.IsArtifact,
+                        CardPredicate.IsEnchantment,
+                        CardPredicate.IsToken,
+                    )
+                )
+            )
+        )
         val CreatureOrArtifact = GameObjectFilter(
             cardPredicates = listOf(
                 CardPredicate.Or(listOf(CardPredicate.IsCreature, CardPredicate.IsArtifact))
@@ -670,6 +688,16 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.DealtCombatDamageToSourceControllerThisTurn
     )
 
+    /**
+     * Must be controlled — right now — by a player the effect's *source* dealt combat damage to
+     * this turn. Mirror of [dealtCombatDamageToSourceControllerThisTurn]; source-relative and
+     * cleared at end-of-turn cleanup. Used by "destroy each nonland permanent … whose controller
+     * was dealt combat damage by this creature this turn" (Steel Hellkite).
+     */
+    fun controllerDealtCombatDamageBySourceThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.ControllerDealtCombatDamageBySourceThisTurn
+    )
+
     /** Must be blocking */
     fun blocking() = copy(
         statePredicates = statePredicates + StatePredicate.IsBlocking
@@ -809,6 +837,15 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn
     )
 
+    /**
+     * Must currently be in a graveyard *and* have been put there during the current turn,
+     * from any zone. The zone-agnostic sibling of [putIntoGraveyardFromBattlefieldThisTurn],
+     * used by FDN's Abyssal Harvester. See [StatePredicate.PutIntoGraveyardThisTurn].
+     */
+    fun putIntoGraveyardThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.PutIntoGraveyardThisTurn
+    )
+
     /** Must be saddled (CR 702.171b) */
     fun saddled() = copy(
         statePredicates = statePredicates + StatePredicate.IsSaddled
@@ -893,6 +930,15 @@ data class GameObjectFilter(
     /** Must have at least one Equipment attached */
     fun equipped() = copy(
         statePredicates = statePredicates + StatePredicate.IsEquipped
+    )
+
+    /**
+     * Must have at least one Aura attached — "enchanted creature" as a group adjective. Compose with
+     * [youControl] for "enchanted creatures you control" (A Tale for the Ages); the Aura's own
+     * controller is irrelevant. See [StatePredicate.IsEnchanted].
+     */
+    fun enchanted() = copy(
+        statePredicates = statePredicates + StatePredicate.IsEnchanted
     )
 
     /**

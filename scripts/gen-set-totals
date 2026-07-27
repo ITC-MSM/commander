@@ -20,7 +20,12 @@ For each set we've catalogued (a `definitions/<code>/` folder with a `*Set.kt`):
 
 Output: `game-server/src/main/resources/coverage/set-totals.json`, an array of
   { code, name, releaseDate, setType, standardLegal,
-    draft: [{ name, img }, ...], extra: [{ name, img }, ...] }
+    draft: [{ name, img, notPlanned? }, ...], extra: [{ name, img, notPlanned? }, ...] }
+`notPlanned` is present only for the cards listed in `coverage/card-exclusions.json`
+(ante, subgames, physical dexterity) and carries `{ kind, why }` — the short reason key
+and the sentence explaining it. Those cards stay in the list so the detail view can show
+them, but the server drops them from the denominator while they're unimplemented, so a
+set reads complete once everything we intend to build is built.
 `standardLegal` is the set's current Standard-format membership, computed with the
 same rule as `card-status` (a core/expansion/draft-innovation set whose canonical
 cards are majority Standard-legal) so the Set Completion view doesn't have to
@@ -47,6 +52,8 @@ import re
 import sys
 from datetime import date, timedelta
 from pathlib import Path
+
+from card_exclusions import load_exclusions, load_reasons
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFINITIONS_ROOT = REPO_ROOT / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
@@ -144,6 +151,9 @@ def main() -> int:
             print(f"note: {len(missing)} set(s) missing/stale in cache: {' '.join(missing)}", file=sys.stderr)
             print("      run `scripts/card-status --refresh` to populate them, then re-run.", file=sys.stderr)
 
+    exclusions = load_exclusions()
+    reasons = load_reasons()
+
     entries = []
     skipped = []
     for code, name in sets:
@@ -157,7 +167,13 @@ def main() -> int:
             out = []
             for n in sorted(names):
                 meta = cards.get(n) or {}
-                out.append({"name": n, "img": meta.get("image_uri")})
+                entry = {"name": n, "img": meta.get("image_uri")}
+                kind = exclusions.get(n)
+                if kind:
+                    # Exclusion is carried as its reason — a not-planned card without a "why"
+                    # can't be represented, so the UI never has to render a bare "skipped".
+                    entry["notPlanned"] = {"kind": kind, "why": reasons[kind]}
+                out.append(entry)
             return out
 
         draft = {front_face(n) for n in payload.get("draft_names", [])}
@@ -179,8 +195,9 @@ def main() -> int:
 
     total_cards = sum(len(e["draft"]) + len(e["extra"]) for e in entries)
     with_img = sum(1 for e in entries for c in (e["draft"] + e["extra"]) if c["img"])
-    print(f"wrote {len(entries)} sets ({total_cards} canonical names, {with_img} with art) "
-          f"-> {OUTPUT.relative_to(REPO_ROOT)}")
+    not_planned = sum(1 for e in entries for c in (e["draft"] + e["extra"]) if c.get("notPlanned"))
+    print(f"wrote {len(entries)} sets ({total_cards} canonical names, {with_img} with art, "
+          f"{not_planned} flagged not planned) -> {OUTPUT.relative_to(REPO_ROOT)}")
     if skipped:
         print(f"skipped {len(skipped)} set(s) with no cache entry: {' '.join(sorted(skipped))}", file=sys.stderr)
         print("  run `scripts/card-status --refresh` to populate the cache, then re-run.", file=sys.stderr)

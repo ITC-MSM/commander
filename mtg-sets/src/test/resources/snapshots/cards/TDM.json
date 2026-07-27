@@ -16753,11 +16753,11 @@
                                 "type": "FromZone",
                                 "zone": "Hand"
                             },
-                            "storeAs": "hand"
+                            "storeAs": "discarded_candidates"
                         },
                         {
                             "type": "SelectFromCollection",
-                            "from": "hand",
+                            "from": "discarded_candidates",
                             "selection": {
                                 "type": "ChooseUpTo",
                                 "count": {
@@ -16766,7 +16766,7 @@
                                 }
                             },
                             "storeSelected": "discarded",
-                            "prompt": "Discard up to two cards"
+                            "prompt": "Discard up to 2 cards"
                         },
                         {
                             "type": "MoveCollection",
@@ -17801,8 +17801,10 @@
                     "filter": "noncreature nonland permanent mv<=3",
                     "storeSelected": "onto",
                     "storeRemainder": "rest",
+                    "prompt": "Put up to two noncreature, nonland permanent cards with mana value 3 or less onto the battlefield",
                     "selectedLabel": "Put onto the battlefield",
-                    "remainderLabel": "Put on bottom"
+                    "remainderLabel": "Put on bottom",
+                    "showAllCards": true
                 },
                 {
                     "type": "MoveCollection",

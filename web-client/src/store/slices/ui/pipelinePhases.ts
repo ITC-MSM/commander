@@ -497,7 +497,7 @@ export function mergeResult(
     }
 
     case 'damageDistribution': {
-      if (action.type === 'CastSpell') {
+      if (action.type === 'CastSpell' || action.type === 'ActivateAbility') {
         return { ...action, damageDistribution: result.distribution }
       }
       return action

@@ -111,14 +111,24 @@ export interface CastSpellAction {
    * "SELF_ALTERNATIVE", "MIRACLE"). Used by the action menu to identify the impending cast option.
    */
   readonly alternativeCostType?: string
-  /** Whether to cast this spell with kicker */
-  readonly wasKicked?: boolean
+  /**
+   * Which optional additional cost this cast declares (the server's `ChoiceSlot` name — "KICKED"
+   * for kicker/multikicker/offspring, "BARGAINED" for bargain), or absent when none. The server
+   * stamps it on the cast variant it offers; the client only echoes it back.
+   */
+  readonly declaredCostSlot?: string
   /**
    * Whether the spell's optional waterbend additional cost was elected (Avatar: The Last
    * Airbender). Set by the server on the paid cast variant; preserved through the pipeline so the
    * resolving effect can branch on `WaterbendWasPaid`.
    */
   readonly wasWaterbendPaid?: boolean
+  /**
+   * The opponent promised this spell's gift additional cost (Bloomburrow gift — CR 702.174a), or
+   * absent when the gift wasn't promised. The server emits a `CastWithGift` variant of the normal
+   * cast per opponent; the client just plays the variant the player picked.
+   */
+  readonly giftRecipient?: EntityId
   /** Pre-chosen damage distribution for DividedDamageEffect spells (target ID -> damage amount) */
   readonly damageDistribution?: Record<EntityId, number>
   /**
@@ -167,6 +177,12 @@ export interface ActivateAbilityAction {
   readonly paymentStrategy?: PaymentStrategy
   /** Alternative payment choices (e.g., convoke for abilities like Heirloom Epic) */
   readonly alternativePayment?: AlternativePaymentChoice
+  /**
+   * Pre-chosen damage distribution for a "N damage divided as you choose" ability
+   * (target ID -> damage amount). Chosen as the ability is activated, not at resolution, so
+   * removal in response can't let the player re-divide (Chandra, Flameshaper's −4).
+   */
+  readonly damageDistribution?: Record<EntityId, number>
 }
 
 // =============================================================================

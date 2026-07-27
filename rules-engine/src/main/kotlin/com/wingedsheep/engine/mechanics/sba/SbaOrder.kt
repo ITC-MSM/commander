@@ -5,6 +5,7 @@ package com.wingedsheep.engine.mechanics.sba
  * Lower values run first. Gaps of 100 allow easy insertion of new checks.
  */
 object SbaOrder {
+    const val START_YOUR_ENGINES = 50       // 704.5z (Aetherdrift speed)
     const val PLAYER_LIFE_LOSS = 100        // 704.5a
     const val COMMANDER_DAMAGE_LOSS = 150   // 704.5c (Commander format)
     const val POISON_LOSS = 200             // 704.5b

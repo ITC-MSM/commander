@@ -6,7 +6,19 @@
  * we've implemented), so a set's `implemented` count is always `<= total`. The headline
  * % is over the booster (draft) cards only. See `game-server` SetCoverageService /
  * `GET /api/sets/coverage` and `GET /api/sets/{code}/coverage`.
+ *
+ * Cards we've decided never to implement (ante, subgames, physical dexterity) come back
+ * flagged `notPlanned` and are already excluded from every total, so `implemented / total`
+ * measures what we intend to build.
  */
+
+/** Why a card will never be implemented. Present only on not-planned cards, and never without a reason. */
+export interface NotPlanned {
+  /** Short reason key — `ante`, `subgame`, `dexterity`. */
+  readonly kind: string
+  /** Player-facing sentence explaining the decision. */
+  readonly why: string
+}
 
 export interface SetCoverage {
   readonly code: string
@@ -19,12 +31,16 @@ export interface SetCoverage {
   readonly block: string | null
   /** Booster (draft) cards we've authored. Always `<= total`; drives the headline %. */
   readonly implemented: number
-  /** Booster (draft) canonical card count. */
+  /** Booster (draft) cards we intend to build — canonical count minus `notPlanned`. */
   readonly total: number
   /** Completionist extras we've authored. */
   readonly extraImplemented: number
-  /** Completionist extra canonical card count. */
+  /** Completionist extras we intend to build — canonical count minus `extraNotPlanned`. */
   readonly extraTotal: number
+  /** Booster cards we've decided never to implement; already excluded from `total`. */
+  readonly notPlanned: number
+  /** Completionist extras we've decided never to implement; already excluded from `extraTotal`. */
+  readonly extraNotPlanned: number
   /** `implemented / total * 100` (booster cards), one decimal; `0` when `total` is `0`. */
   readonly percent: number
   /** Whether the set is currently legal in the Standard format (derived from per-card legality). */
@@ -47,6 +63,8 @@ export interface CoverageSummary {
   readonly printingsImplemented: number
   readonly printingsTotal: number
   readonly printingsPercent: number
+  /** Distinct card names we've decided never to implement — excluded from every total above. */
+  readonly distinctNotPlanned: number
   readonly setsComplete: number
   readonly setCount: number
 }
@@ -56,6 +74,8 @@ export interface CardCoverage {
   readonly implemented: boolean
   /** Set-specific Scryfall art (direct CDN URL, normal size); null if Scryfall had none. */
   readonly imageUri: string | null
+  /** Non-null when we've decided never to implement this card, carrying the reason. */
+  readonly notPlanned: NotPlanned | null
 }
 
 export interface SetDetail {
@@ -67,8 +87,12 @@ export interface SetDetail {
   readonly total: number
   readonly extraImplemented: number
   readonly extraTotal: number
+  /** Booster cards flagged never-to-implement; excluded from `total` but still listed in `draft`. */
+  readonly notPlanned: number
+  /** Extras flagged never-to-implement; excluded from `extraTotal` but still listed in `extra`. */
+  readonly extraNotPlanned: number
   readonly percent: number
-  /** Booster (draft) cards, A→Z. */
+  /** Booster (draft) cards, A→Z — including the not-planned ones, each carrying its reason. */
   readonly draft: readonly CardCoverage[]
   /** Completionist extras, A→Z. Empty if the set has none. */
   readonly extra: readonly CardCoverage[]

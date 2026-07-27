@@ -53,4 +53,11 @@ data class StateDelta(
 
     /** Hotseat indicator. Always present in the delta; overwrites the client field. */
     val hotseat: Boolean? = null,
+
+    /**
+     * The viewer's decklist, sent only when it changed. Its *composition* is fixed for a whole
+     * game, so in practice this fires when a card's `remaining` count moves — a draw, a mill, a
+     * tutor — and not on the many updates that only shuffle the battlefield around.
+     */
+    val deck: List<ClientDeckCard>? = null,
 )

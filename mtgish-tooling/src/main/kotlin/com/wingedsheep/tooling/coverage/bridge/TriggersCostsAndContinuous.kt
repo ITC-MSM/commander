@@ -33,6 +33,12 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // attacker filter exactly or declines -> SCAFFOLD.
     supported("WhenAPlayerAttacksWithAnyNumberOfCreatures", "trigger: you attack with one or more creatures matching a filter (Triggers.YouAttackWithFilter)")
     supported("WhenACreatureBlocks", "trigger: blocks (Ydwen Efreet)")
+    // "Whenever a player discards a card" — Triggers.AnyOpponentDiscards / YouDiscard, or the
+    // discards(player, cardFilter, batch) factory. Fires once per discarded card, and each firing binds
+    // *its* card as the triggering entity, so a payoff can act on "it" — the card the discard put into
+    // the graveyard (CR 400.7e). That binding is what makes "exile it from their graveyard with a stash
+    // counter on it" (Tinybones, Bauble Burglar) expressible.
+    supported("WhenAPlayerDiscardsACard", "trigger: a player discards a card (Triggers.AnyOpponentDiscards / YouDiscard / discards(player, cardFilter)); binds the discarded card as TriggeringEntity")
     supported("WhenAPermanentBecomesTapped", "trigger: this permanent becomes tapped (Triggers.BecomesTapped — Wylie Duke, Atiin Hero)")
     supported("WhenACreatureDealsCombatDamageToAPlayer", "trigger: combat damage to player")
     // "Whenever you sacrifice a/another [filter] …" — the batched sacrifice trigger that fires when a
@@ -162,6 +168,15 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // OTJ crime (CR Outlaws of Thunder Junction) — "you've committed a crime this turn" ->
     // Conditions.YouCommittedCrimeThisTurn, gating a cost reduction or a resolution-time effect.
     supported("CommitedACrimeThisTurn", "predicate: player has committed a crime this turn (YouCommittedCrimeThisTurn)")
+    // Celebration (WOE ability word, CR 207.2c) — "if two or more nonland permanents entered the
+    // battlefield under your control this turn". Backed by the per-player permanent-entry log
+    // (TurnTracker.NONLAND_PERMANENTS_ENTERED) behind Conditions.Celebration, which is dual-mode, so
+    // it serves both the intervening-'if' triggers and the "as long as" conditional statics. The
+    // emitter renders the bare nonland-permanent + You shape; a narrower permanent filter scaffolds.
+    supported(
+        "NumberPermanentsEnteredTheBattlefieldUnderPlayersControlThisTurn",
+        "condition: N or more [nonland] permanents entered the battlefield under your control this turn (Conditions.Celebration)"
+    )
     // Delirium (ability word) — "there are four or more card types among cards in your graveyard."
     // Both the static "as long as …" gate (NumCardTypesInGraveyardIs) and the activated-ability
     // "Activate only if …" gate (ThereAreNumberCardTypesInPlayersGraveyard) map to Conditions.Delirium(N)
@@ -180,6 +195,14 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // (Giant Beaver) -> GameObjectFilter.Creature.crewedOrSaddledSourceThisTurn().
     supported("SaddledPermanentThisTurn", "filter: a creature that saddled this permanent this turn (crewedOrSaddledSourceThisTurn)")
     supported("CrewedPermanentThisTurn", "filter: a creature that crewed this permanent this turn (crewedOrSaddledSourceThisTurn)")
+    // Graveyard-arrival filters, both backed by the one PutIntoGraveyardThisTurnComponent stamp:
+    // "…that was put there this turn" (Abyssal Harvester) reads the stamp, the battlefield-only
+    // variant (Samwise the Stouthearted, Lobelia Sackville-Baggins) also requires its
+    // fromBattlefield flag. The remaining sibling tags (…FromLibraryThisTurn,
+    // …FromAnywhereOtherThanTheBattlefieldThisTurn) would each need the stamp to carry the origin
+    // zone rather than a boolean, so they stay unmapped.
+    supported("WasPutIntoGraveyardFromAnywhereThisTurn", "filter: a card put into a graveyard this turn, from any zone (putIntoGraveyardThisTurn)")
+    supported("WasPutIntoGraveyardFromTheBattlefieldThisTurn", "filter: a card put into a graveyard from the battlefield this turn (putIntoGraveyardFromBattlefieldThisTurn)")
 
     // Costs.
     supported("PayMana", "cost: pay mana (universal)")
@@ -269,6 +292,18 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
         "GrantMayPlayFromExile over the cards that player exiled this way",
         composes = listOf("GrantMayPlayFromExile"),
     )
+    // "You may play cards <filter> from exile, and mana of any type can be spent to cast those spells"
+    // (Tinybones, Bauble Burglar) — a *filter over exile* rather than a per-card grant, so it keeps
+    // covering cards a previous copy of the granter exiled. Maps to the MayPlayCardsFromExile static
+    // (filter + optional condition, e.g. Conditions.IsYourTurn from an enclosing IsPlayersTurn, +
+    // withAnyManaType per CR 118.14). The exile-card filter tags it needs — ownership and
+    // has-a-counter-of-type — are the standard filter predicates.
+    effect(
+        "MayPlayExiledCardsAndMaySpendManaAsThoughAnyTypeToCast",
+        "MayPlayCardsFromExile",
+        note = "static: may play filtered cards from exile, mana of any type for those casts",
+    )
+    supported("CardsInExile", "filter over cards in exile (ownership / has-a-counter-of-type predicates on GameObjectFilter)")
     // "Players can't play cards from their hand" (Memory Vessel) — the nested _PlayerEffect of a
     // CreateEachPlayerEffectUntil. Renders to the hand-scoped player restriction
     // `CantPlayCardsFromHand` (blocks casting spells and playing lands from the hand zone only;
@@ -284,6 +319,17 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
         composes = listOf("GatherCards", "MoveCollection"),
     )
     effect("ReplaceWouldPutIntoGraveyard", "RedirectZoneChange")
+    // "If a spell or ability an opponent controls causes you to discard this card, put it onto the
+    // battlefield instead" (Wilt-Leaf Liege, Loxodon Smiter). Same RedirectZoneChange replacement,
+    // narrowed by `requiredCause = ZoneChangeCause.DiscardedByOpponentEffect` so it can tell an
+    // opponent-forced discard from the cleanup-step hand-size discard or a cost payment. Capability
+    // only — the emitter declines (SCAFFOLD) because the destination and the "an opponent controls"
+    // scoping ride in the IR's replacement action rather than in this tag.
+    effect(
+        "ReplaceWouldDiscard",
+        "RedirectZoneChange",
+        note = "discard redirect: RedirectZoneChange(requiredCause = ZoneChangeCause.DiscardedByOpponentEffect)",
+    )
     supported("WouldPutACardOrTokenInAPlayersGraveyardFromAnywhere", "replaceable event: any card/token to any graveyard from anywhere")
     supported("ExileItInstead", "replacement action: exile instead of going to the graveyard")
 

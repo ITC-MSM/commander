@@ -656,6 +656,7 @@ class TriggerProcessor(
                 triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
                 triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
                 triggerScryCount = trigger.triggerContext.scryCount,
+                triggerDiscardCount = trigger.triggerContext.discardedCardCount,
                 triggerDiscoverValue = trigger.triggerContext.discoverValue,
                 triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
                 triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
@@ -710,6 +711,7 @@ class TriggerProcessor(
             triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
             enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower,
             triggerScryCount = trigger.triggerContext.scryCount,
+            triggerDiscardCount = trigger.triggerContext.discardedCardCount,
             triggerDiscoverValue = trigger.triggerContext.discoverValue,
             triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
             triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
@@ -771,6 +773,7 @@ class TriggerProcessor(
             triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
             enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower,
             triggerScryCount = trigger.triggerContext.scryCount,
+            triggerDiscardCount = trigger.triggerContext.discardedCardCount,
             triggerDiscoverValue = trigger.triggerContext.discoverValue,
             triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
             triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
@@ -1257,6 +1260,7 @@ class TriggerProcessor(
                         // cards looked at while scrying" (ContextPropertyKey.TRIGGER_SCRY_COUNT).
                         // Without this the cap resolves to 0 and the player can pick no targets.
                         triggerScryCount = trigger.triggerContext.scryCount,
+                        triggerDiscardCount = trigger.triggerContext.discardedCardCount,
                         triggerDiscoverValue = trigger.triggerContext.discoverValue,
                     )
                     DynamicAmountEvaluator().evaluate(state, dyn, context)

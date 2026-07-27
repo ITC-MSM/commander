@@ -2457,6 +2457,32 @@ private fun EmitCtx.singleInterveningIfDsl(cond: JsonObject): String? {
             }
         }
     }
+    // Celebration (WOE ability word, CR 207.2c) — "if two or more nonland permanents entered the
+    // battlefield under your control this turn":
+    //   NumberPermanentsEnteredTheBattlefieldUnderPlayersControlThisTurn(
+    //     GreaterThanOrEqualTo N, And(IsNonCardtype Land, IsPermanent), You)
+    // -> Conditions.Celebration (N = 2, the printed threshold) / Conditions.NonlandPermanentsEnteredThisTurn(N).
+    // Only the You scope, a GTE comparison, and exactly the bare "nonland permanent" filter render —
+    // a narrower filter (a card type, a subtype) would need a per-type entry tracker we don't have,
+    // so it declines -> SCAFFOLD rather than silently widening to "any nonland permanent".
+    if (cond.strField("_Condition") == "NumberPermanentsEnteredTheBattlefieldUnderPlayersControlThisTurn") {
+        val condArgs = cond["args"].asArr
+        val cmp = condArgs?.getOrNull(0) as? JsonObject
+        val filt = condArgs?.getOrNull(1) as? JsonObject
+        val player = (condArgs?.getOrNull(2) as? JsonObject)?.strField("_Player")
+        val arms = filt?.takeIf { it.strField("_Permanents") == "And" }
+            ?.get("args").asArr?.filterIsInstance<JsonObject>().orEmpty()
+        val bareNonlandPermanent = arms.size == 2 &&
+            arms.any { it.strField("_Permanents") == "IsNonCardtype" && it.field("args").asStr() == "Land" } &&
+            arms.any { it.strField("_Permanents") == "IsPermanent" && it.size == 1 }
+        if (player == "You" && cmp?.strField("_Comparison") == "GreaterThanOrEqualTo" && bareNonlandPermanent) {
+            val n = findInteger(cmp["args"])
+            if (n is Int) {
+                return if (n == 2) "Conditions.Celebration"
+                else "Conditions.NonlandPermanentsEnteredThisTurn($n)"
+            }
+        }
+    }
     // "if it's tapped" — PermanentPassesFilter(<subject>, IsTapped) over a bare IsTapped filter (no
     // other clause). Two subjects render:
     //  - Ref_TargetPermanent (the ability's first targeted permanent) -> Conditions.TargetIsTapped()
@@ -2803,6 +2829,23 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         if (scope?.strField("_Players") == "SinglePlayer" &&
             jsonContains(scope["args"], "_Player", "You")
         ) return "Triggers.YouDraw"
+    }
+
+    // "Whenever an opponent discards a card" (Entropic Battlecruiser, Tinybones, Bauble Burglar) /
+    // "whenever you discard a card". Fires once per discarded card, and each firing binds that card as
+    // the triggering entity, so a payoff can reference "it". Only the *unfiltered* `AnyCard` shape
+    // renders: a card-type filter ("whenever an opponent discards a creature card") needs the
+    // `discards(player, cardFilter)` factory with a recovered filter, so it declines -> SCAFFOLD rather
+    // than silently widen to "any card". The batch wording ("one or more cards") is a different IR tag.
+    if (jsonContains(trig, "_Trigger", "WhenAPlayerDiscardsACard") &&
+        jsonContains(trig, "_CardsInHand", "AnyCard")
+    ) {
+        val args = trig["args"].asArr?.filterIsInstance<JsonObject>() ?: emptyList()
+        val scope = args.firstOrNull { it.containsKey("_Players") || it.containsKey("_Player") }
+        if (scope?.strField("_Players") == "Opponent") return "Triggers.AnyOpponentDiscards"
+        if (scope?.strField("_Player") == "You" ||
+            (scope?.strField("_Players") == "SinglePlayer" && jsonContains(scope["args"], "_Player", "You"))
+        ) return "Triggers.YouDiscard"
     }
 
     // "Whenever you gain life" (You) — Pest Mascot, Essence Channeler. Only the You scope maps to

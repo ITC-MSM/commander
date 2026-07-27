@@ -156,6 +156,12 @@ class ManaAbilityEnumerator : ActionEnumerator {
                             )
                             if (sacrificeTargets.size < atom.count) affordable = false
                         }
+                        // CR 701.17b — a mill cost is unpayable when the library holds fewer cards,
+                        // so the mana ability isn't legal at all (Deranged Assistant on an empty
+                        // library).
+                        is CostAtom.Mill -> {
+                            if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) affordable = false
+                        }
                         // Other atoms (mana, life, discard, …) — engine validates at payment.
                         else -> {}
                     }
@@ -214,6 +220,12 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                     }
                                     is CostAtom.ReturnToHand -> {
                                         // Bounce costs not typical for mana abilities but handle for completeness
+                                    }
+                                    // CR 701.17b — see the single-atom branch above.
+                                    is CostAtom.Mill -> {
+                                        if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) {
+                                            affordable = false; break
+                                        }
                                     }
                                     // Other atoms (life, discard, exile, reveal) — engine validates at payment.
                                     else -> {}

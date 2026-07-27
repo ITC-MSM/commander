@@ -109,6 +109,16 @@ internal fun BridgeBuilder.zoneMovement() {
     // MoveCollection -> exile. Capability-only; the emitter declines the card-specific surrounding
     // pipeline (the may-gate + become-a-copy follow-up) -> SCAFFOLD.
     composed("Exile", "MoveToZone / Gather+MoveCollection -> exile (any exilable card)", composes = listOf("MoveToZone", "MoveCollection"))
+    // "…with a <kind> counter on it" — the exile flag riding an Exile action (Tinybones, Bauble
+    // Burglar's stash counter; Goliath Daydreamer's dream counter). One counter of the named type is
+    // put on the card as it lands in exile: `addCounterType` on MoveToZone (single target) or
+    // MoveCollection (a gathered pile).
+    supported("ExilesWithACounter", "exile flag: exile it with one counter of a type on it (MoveToZone/MoveCollection addCounterType)")
+    // "…from their graveyard" — the exilable selector for a card sitting in a graveyard, including the
+    // `Trigger_ThatGraveyardCard` self-reference to the card the current trigger put there. Maps to
+    // MoveToZone(fromZone = GRAVEYARD), which skips the move when the card has since left the graveyard
+    // (by then it's a new object, CR 400.7).
+    supported("CardInGraveyards", "exilable selector: a card in a graveyard (MoveToZone fromZone = GRAVEYARD; Trigger_ThatGraveyardCard -> EffectTarget.TriggeringEntity)")
     // "exile target <permanent> until this <permanent> leaves the battlefield" — the Banishing Light
     // O-Ring shape (Mystical Tether, Lassoed by the Law). Maps to the ExileUntilLeaves effect paired
     // with a synthesized leaves-battlefield ReturnLinkedExile trigger; only the

@@ -122,6 +122,7 @@ import com.wingedsheep.sdk.scripting.conditions.NoManaSpentToCastEntered
 import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid
 import com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid
+import com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid
 import com.wingedsheep.sdk.scripting.conditions.WaterbendWasPaid
 import com.wingedsheep.sdk.scripting.conditions.SourceIsRingBearer
 import com.wingedsheep.sdk.scripting.conditions.YouChoseOtherCreatureAsRingBearer
@@ -444,6 +445,7 @@ class ConditionEvaluator(
             is WasCastFromZone -> ifResolution { evaluateWasCastFromZone(state, condition, it) }
             is WasKicked -> ifResolution { evaluateWasKicked(state, it) }
             is SneakCostWasPaid -> ifResolution { evaluateSneakCostWasPaid(state, it) }
+            is WebSlungCostWasPaid -> ifResolution { evaluateWebSlungCostWasPaid(state, it) }
             is BlightWasPaid -> ifResolution { it.wasBlightPaid }
             is WaterbendWasPaid -> ifResolution { evaluateWaterbendWasPaid(state, it) }
             is ManaSpentToCastIncludes -> ifResolution { evaluateManaSpentToCastIncludes(state, condition, it) }
@@ -460,11 +462,19 @@ class ConditionEvaluator(
             }
             is CastChoiceMade -> {
                 // Generic "was this choice made" guard over the durable cast-choices bag; works at
-                // both resolution and projection.
+                // both resolution and projection. An optional-additional-cost declaration
+                // (kicker/bargain) also answers from the context, so a still-on-the-stack spell's
+                // own rider ("If this spell was bargained, …") and a cost gate priced before the
+                // spell exists both read true — the bag only exists once it resolves.
                 val sourceId = ctx.sourceId
-                sourceId != null &&
-                    state.getEntity(sourceId)?.get<CastChoicesComponent>()
-                        ?.chosen?.containsKey(condition.slot) == true
+                val declaredThisCast = (ctx as? Resolution)?.effectContext?.declaredCostSlot
+                if (declaredThisCast == condition.slot) {
+                    true
+                } else {
+                    sourceId != null &&
+                        state.getEntity(sourceId)?.get<CastChoicesComponent>()
+                            ?.chosen?.containsKey(condition.slot) == true
+                }
             }
             is CastChoiceIs -> {
                 val sourceId = ctx.sourceId
@@ -1001,10 +1011,10 @@ class ConditionEvaluator(
         ctx: ConditionEvaluationContext
     ): Boolean {
         val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
-        val tracker = state.getEntity(playerId)
-            ?.get<com.wingedsheep.engine.state.components.player.PermanentTypesEnteredBattlefieldThisTurnComponent>()
+        val log = state.getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent>()
             ?: return false
-        return condition.cardType in tracker.cardTypes
+        return log.countOfType(condition.cardType) > 0
     }
 
     private fun evaluatePermanentLeftBattlefieldThisTurnCtx(
@@ -1126,11 +1136,14 @@ class ConditionEvaluator(
     }
 
     private fun evaluateWasKicked(state: GameState, context: EffectContext): Boolean {
+        // Kicker specifically (ChoiceSlot.KICKED) — a spell that declared a *different*
+        // optional additional cost on the same rail (bargain) is not kicked.
+        val kicked = context.declaredCostSlot == ChoiceSlot.KICKED
         // Check the durable cast-choices bag on the permanent first (for triggered abilities)
-        val sourceId = context.sourceId ?: return context.wasKicked
+        val sourceId = context.sourceId ?: return kicked
         if (state.getEntity(sourceId)?.wasKickedChoice() == true) return true
         // Fall back to context (for spell resolution, e.g. kicker additional effects)
-        return context.wasKicked
+        return kicked
     }
 
     private fun evaluateSneakCostWasPaid(state: GameState, context: EffectContext): Boolean {
@@ -1144,6 +1157,19 @@ class ConditionEvaluator(
         // Fall back to the resolution context (a non-permanent spell's own resolving effect,
         // e.g. The Last Ronin's Technique reading "if this spell's sneak cost was paid").
         return context.wasSneaked
+    }
+
+    private fun evaluateWebSlungCostWasPaid(state: GameState, context: EffectContext): Boolean {
+        // Durable bag on the resolved permanent first (ETB / ongoing reads, e.g. Spiders-Man's
+        // "if they were cast using web-slinging" enters trigger).
+        val sourceId = context.sourceId ?: return context.wasWebSlung
+        val flagged = state.getEntity(sourceId)
+            ?.get<CastChoicesComponent>()
+            ?.chosen
+            ?.containsKey(ChoiceSlot.WEB_SLUNG) == true
+        if (flagged) return true
+        // Fall back to the resolution context for a non-permanent spell's own resolving effect.
+        return context.wasWebSlung
     }
 
     private fun evaluateWaterbendWasPaid(state: GameState, context: EffectContext): Boolean {

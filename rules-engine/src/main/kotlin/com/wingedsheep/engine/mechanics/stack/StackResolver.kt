@@ -57,6 +57,7 @@ import com.wingedsheep.engine.handlers.effects.permanent.types.returnDfcFace
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
@@ -113,15 +114,18 @@ class StackResolver(
         exiledCardCount: Int = 0,
         additionalCostBlightAmount: Int = 0,
         additionalCostPayXLifeAmount: Int? = null,
-        wasKicked: Boolean = false,
+        declaredCostSlot: ChoiceSlot? = null,
         wasBlightPaid: Boolean = false,
         wasWaterbendPaid: Boolean = false,
+        giftRecipient: EntityId? = null,
         wasWarped: Boolean = false,
         wasEvoked: Boolean = false,
         wasImpending: Boolean = false,
         wasCleaved: Boolean = false,
         wasSneaked: Boolean = false,
         sneakAttackDefenderId: EntityId? = null,
+        wasWebSlung: Boolean = false,
+        webSlungReturnedManaValue: Int = 0,
         chosenModes: List<Int> = emptyList(),
         modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),
         modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),
@@ -176,9 +180,10 @@ class StackResolver(
             var updated = c.with(SpellOnStackComponent(
                 casterId = casterId,
                 xValue = xValue,
-                wasKicked = wasKicked,
+                declaredCostSlot = declaredCostSlot,
                 wasBlightPaid = wasBlightPaid,
                 wasWaterbendPaid = wasWaterbendPaid,
+                giftRecipient = giftRecipient,
                 chosenModes = chosenModes,
                 modeTargetsOrdered = modeTargetsOrdered,
                 modeTargetRequirements = modeTargetRequirements,
@@ -197,6 +202,8 @@ class StackResolver(
                 wasCleaved = wasCleaved,
                 wasSneaked = wasSneaked,
                 sneakAttackDefenderId = sneakAttackDefenderId,
+                wasWebSlung = wasWebSlung,
+                webSlungReturnedManaValue = webSlungReturnedManaValue,
                 beheldCards = beheldCards,
                 discardedAsCostCards = discardedAsCostCards,
                 chosenEntitySnapshots = chosenEntitySnapshots,
@@ -212,7 +219,9 @@ class StackResolver(
                 castTimeFlags = castTimeFlags
             ))
             if (effectiveTargets.isNotEmpty()) {
-                updated = updated.with(TargetsComponent(effectiveTargets, effectiveTargetRequirements))
+                updated = updated.with(
+                    TargetsComponent.capture(state, effectiveTargets, effectiveTargetRequirements)
+                )
             }
             // Add morph data for creatures with morph (needed for face-down casting and
             // for effects like Backslide that target "creature with a morph ability")
@@ -339,7 +348,7 @@ class StackResolver(
                 casterId = casterId,
                 targetNames = targetNames,
                 xValue = xValue,
-                wasKicked = wasKicked,
+                declaredCostSlot = declaredCostSlot,
                 totalManaSpent = totalManaSpent,
                 distinctColorsSpent =
                     com.wingedsheep.engine.handlers.ManaSpentReader.distinctColorsSpent(newState, cardId),
@@ -468,7 +477,7 @@ class StackResolver(
 
         var container = ComponentContainer.of(ability)
         if (targets.isNotEmpty()) {
-            container = container.with(TargetsComponent(targets, targetRequirements))
+            container = container.with(TargetsComponent.capture(state, targets, targetRequirements))
         }
 
         var newState = stateWithId.withEntity(abilityId, container)
@@ -569,7 +578,7 @@ class StackResolver(
         val copiedCardComp = sourceCard.copy(ownerId = copyController)
 
         // Clone cast-time state; per 707.10 the copy inherits every decision made for
-        // the original. The data-class copy preserves: xValue, wasKicked, wasBlightPaid,
+        // the original. The data-class copy preserves: xValue, declaredCostSlot, wasBlightPaid,
         // wasWarped, wasEvoked, sacrificedPermanents (snapshots of P/T + subtypes), damageDistribution,
         // chosenCreatureType, exiledCardCount, castFromZone, beheldCards, and the
         // manaSpent{White,Blue,Black,Red,Green,Colorless} colors. Only the caster
@@ -585,7 +594,7 @@ class StackResolver(
 
         var container = ComponentContainer.of(copiedCardComp, copiedSpellComp)
         if (effectiveTargets.isNotEmpty()) {
-            container = container.with(TargetsComponent(effectiveTargets, effectiveRequirements))
+            container = container.with(TargetsComponent.capture(state, effectiveTargets, effectiveRequirements))
         }
         container = container.with(
             CopyOfComponent(
@@ -640,7 +649,7 @@ class StackResolver(
 
         var container = ComponentContainer.of(ability)
         if (targets.isNotEmpty()) {
-            container = container.with(TargetsComponent(targets, targetRequirements))
+            container = container.with(TargetsComponent.capture(state, targets, targetRequirements))
         }
         // CR 707.10e — "This ability can't be copied": tag the ability instance on the stack so a
         // copy-ability effect (e.g. Gogo, Master of Mimicry) makes no copy of it.
@@ -757,7 +766,8 @@ class StackResolver(
                 spellComponent.casterId, targetsComponent.targetRequirements,
                 sourceId = spellId,
                 targetingSourceType = TargetingSourceType.SPELL,
-                xValue = spellComponent.xValue
+                xValue = spellComponent.xValue,
+                targetEntryStamps = targetsComponent.targetEntryStamps
             )
             if (validTargets.isEmpty()) {
                 // All targets invalid - spell fizzles
@@ -1177,9 +1187,13 @@ class StackResolver(
                 val entered = updated.get<com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent>()
                 var bag = entered ?: com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent()
                 spellComponent.xValue?.let { bag = bag.copy(x = it) }
-                if (spellComponent.wasKicked) {
+                // The optional additional cost declared while casting (kicker → KICKED, bargain →
+                // BARGAINED, CR 702.166b) marks the permanent under its own slot, so a bargained
+                // permanent's "if it was bargained" enters trigger reads true while a kicker payoff
+                // reading KICKED still reads false.
+                spellComponent.declaredCostSlot?.let { slot ->
                     bag = bag.withChoice(
-                        com.wingedsheep.sdk.scripting.ChoiceSlot.KICKED,
+                        slot,
                         com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
                     )
                 }
@@ -1191,12 +1205,41 @@ class StackResolver(
                         com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
                     )
                 }
+                // Web-slinging (CR 702.188): durably mark the permanent so Conditions.WebSlungCostWasPaid
+                // reads "it was cast using web-slinging" for its whole life, and carry the returned
+                // creature's mana value (CR 118.9c) so a rider like Scarlet Spider, Ben Reilly can enter
+                // with that many +1/+1 counters via DynamicAmount.CastChoice(WEB_SLUNG_RETURNED_MV).
+                if (spellComponent.wasWebSlung) {
+                    bag = bag.withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
+                    ).withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG_RETURNED_MV,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.NumberChoice(
+                            spellComponent.webSlungReturnedManaValue
+                        )
+                    )
+                }
                 // Waterbend (Avatar): durably mark a permanent cast with its (optional) waterbend
                 // cost paid so Conditions.WaterbendWasPaid reads it for the permanent's whole life.
                 if (spellComponent.wasWaterbendPaid) {
                     bag = bag.withChoice(
                         com.wingedsheep.sdk.scripting.ChoiceSlot.WATERBEND_PAID,
                         com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
+                    )
+                }
+                // Gift (CR 702.174a–b): the promise was elected as an additional cost while casting,
+                // so the permanent carries both the flag and the promised opponent durably. Its gift
+                // trigger ("when this permanent enters, if its gift cost was paid, …") and any
+                // "if the gift was(n't) promised" rider read them back through
+                // Conditions.GiftWasPromised / Player.ChosenOpponent — no resolution-time question.
+                spellComponent.giftRecipient?.let { recipient ->
+                    bag = bag.withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
+                    ).withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.OPPONENT,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.EntityChoice(recipient)
                     )
                 }
                 if (spellComponent.additionalCostBlightAmount > 0) {
@@ -1655,7 +1698,7 @@ class StackResolver(
         }
         val baseSpellEffect = when {
             faceSpellEffect != null -> faceSpellEffect
-            spellComponent.wasKicked && cardComponent != null ->
+            spellComponent.declaredCostSlot != null && cardComponent != null ->
                 resolvedCardDef?.script?.kickerSpellEffect ?: cardComponent.spellEffect
             // Cleave (CR 702.148): a spell cast for its cleave cost resolves with its
             // brackets-removed effect variant, applied structurally at cast time rather than by
@@ -1690,10 +1733,11 @@ class StackResolver(
                     spellComponent.manaSpentBlack + spellComponent.manaSpentRed +
                     spellComponent.manaSpentGreen + spellComponent.manaSpentColorless,
                 manaSpentOnXByColor = spellComponent.manaSpentOnXByColor,
-                wasKicked = spellComponent.wasKicked,
+                declaredCostSlot = spellComponent.declaredCostSlot,
                 wasBlightPaid = spellComponent.wasBlightPaid,
                 wasWaterbendPaid = spellComponent.wasWaterbendPaid,
                 wasSneaked = spellComponent.wasSneaked,
+                wasWebSlung = spellComponent.wasWebSlung,
                 sacrificedPermanents = spellComponent.sacrificedPermanents,
                 discardedAsCostCards = spellComponent.discardedAsCostCards,
                 chosenEntitySnapshots = spellComponent.chosenEntitySnapshots,
@@ -2248,6 +2292,7 @@ class StackResolver(
                 xValue = abilityComponent.xValue,
                 triggeringEntityId = abilityComponent.triggeringEntityId,
                 triggeringPlayerId = abilityComponent.triggeringPlayerId,
+                targetEntryStamps = targetsComponent.targetEntryStamps,
             )
             if (validTargets.isEmpty()) {
                 // Fizzle - remove ability entity
@@ -2289,6 +2334,7 @@ class StackResolver(
             enchantedCreatureLastKnownPower = abilityComponent.enchantedCreatureLastKnownPower,
             triggerModesChosenCount = abilityComponent.triggerModesChosenCount,
             triggerScryCount = abilityComponent.triggerScryCount,
+            triggerDiscardCount = abilityComponent.triggerDiscardCount,
             triggerDiscoverValue = abilityComponent.triggerDiscoverValue,
             triggerExcessDamageAmount = abilityComponent.triggerExcessDamageAmount,
             triggerRecipientToughness = abilityComponent.triggerRecipientToughness,
@@ -2384,7 +2430,8 @@ class StackResolver(
                 state, targetsComponent.targets, sourceColors, sourceSubtypes,
                 abilityComponent.controllerId, targetsComponent.targetRequirements,
                 sourceId = abilityComponent.sourceId,
-                xValue = abilityComponent.xValue
+                xValue = abilityComponent.xValue,
+                targetEntryStamps = targetsComponent.targetEntryStamps
             )
             if (validTargets.isEmpty()) {
                 val newState = state.removeEntity(abilityId)
@@ -2421,6 +2468,7 @@ class StackResolver(
             lastKnownSourceCounters = abilityComponent.lastKnownSourceCounters,
             lastKnownSourceSnapshot = abilityComponent.lastKnownSourceSnapshot,
             lastKnownSourceAttachments = abilityComponent.lastKnownSourceAttachments,
+            damageDistribution = abilityComponent.damageDistribution,
             pipeline = PipelineState(namedTargets = EffectContext.buildNamedTargets(activatedReqs, alignedActivatedTargets))
         )
 
@@ -2839,7 +2887,13 @@ class StackResolver(
         targetingSourceType: TargetingSourceType = TargetingSourceType.ANY,
         xValue: Int? = null,
         triggeringEntityId: EntityId? = null,
-        triggeringPlayerId: EntityId? = null
+        triggeringPlayerId: EntityId? = null,
+        /**
+         * The object-identity stamps captured when these targets were chosen
+         * ([TargetsComponent.targetEntryStamps]) — a permanent that left the battlefield and came
+         * back in the meantime is a different object and no longer a legal target (CR 400.7).
+         */
+        targetEntryStamps: Map<EntityId, Long> = emptyMap()
     ): List<ChosenTarget> {
         // Always project state for shroud/hexproof checks (Rule 702.18, 702.11)
         val projected = state.projectedState
@@ -2872,6 +2926,13 @@ class StackResolver(
                     // Permanent is valid if still on battlefield
                     if (target.entityId !in state.getBattlefield()) return@filterIndexed false
 
+                    // ...and if it's still the same object. A permanent blinked in response
+                    // (Personify, Cloudshift) reuses its entity id here, but it returned as a new
+                    // object (CR 400.7) that was never targeted, so the target is illegal.
+                    if (TargetsComponent.isDifferentObject(state, target.entityId, targetEntryStamps)) {
+                        return@filterIndexed false
+                    }
+
                     // Check shroud — can't be targeted by anyone (Rule 702.18)
                     if (projected.hasKeyword(target.entityId, "SHROUD")) return@filterIndexed false
 
@@ -2886,6 +2947,19 @@ class StackResolver(
                         for (color in sourceColors) {
                             if (projected.hasKeyword(target.entityId, "HEXPROOF_FROM_${color.name}")) {
                                 return@filterIndexed false
+                            }
+                        }
+                        // ...and from the source's card types, e.g. "hexproof from instants"
+                        // (Elenda, Saint of Dusk). Same source-type resolution as protection.
+                        if (sourceId != null) {
+                            for (cardType in SourceTypeTargeting.sourceCardTypes(state, sourceId)) {
+                                if (projected.hasKeyword(
+                                        target.entityId,
+                                        "HEXPROOF_FROM_CARDTYPE_${cardType.uppercase()}"
+                                    )
+                                ) {
+                                    return@filterIndexed false
+                                }
                             }
                         }
                     }

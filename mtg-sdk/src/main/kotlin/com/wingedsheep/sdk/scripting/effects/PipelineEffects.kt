@@ -641,7 +641,14 @@ sealed interface SelectionRestriction {
 enum class Chooser {
     /** The controller of the spell/ability decides */
     Controller,
-    /** An opponent decides */
+    /**
+     * An opponent decides — *one* opponent, chosen by the controller of the spell or ability.
+     * The engine asks the controller which opponent decides whenever there is more than one
+     * (CR 601.7a / 602.3a, and rulings like Curator of Destinies' "You decide which opponent
+     * chooses the pile"); with a sole opponent the choice is forced and nothing is prompted, so
+     * two-player games never see the extra step. Each "an opponent chooses" step in a resolution
+     * gets its own pick.
+     */
     Opponent,
     /** The target player decides (resolved from context.targets[0]) */
     TargetPlayer,
@@ -1713,6 +1720,62 @@ data class FilterCollectionEffect(
     val storeNonMatching: String? = null
 ) : Effect {
     override val description: String = "Filter those cards"
+}
+
+/**
+ * "…chooses a \<permanent of each category\> they control…" — each permanent's **controller** picks
+ * one member of [from] for every filter in [categories], and all the picks land in [storeAs].
+ *
+ * The choosers are the distinct controllers of the permanents in [from], asked in APNAP order
+ * (CR 101.4) so the active player picks first and each later player chooses knowing what came
+ * before. Per chooser, the categories are offered in list order over just the members of [from]
+ * they control: a category they control nothing of is skipped, a category with a single candidate
+ * resolves itself without a prompt, and **one permanent may be the pick for several categories** —
+ * an artifact creature can be spared as both the artifact and the creature, which is why this is a
+ * sequence of one-of-each choices rather than a single restricted selection
+ * ([SelectionRestriction.OnePerCardType] would let that permanent claim only one of its types).
+ *
+ * This step only *chooses*; it moves nothing. Pair it with
+ * [CollectionFilter.ExcludeOtherCollection] to get "the rest", then any move step to decide their
+ * fate — which is what makes the whole family authorable from atoms:
+ *
+ * ```kotlin
+ * // Liliana, Dreadhorde General −9: "…and sacrifices the rest"
+ * Effects.Pipeline {
+ *     val atRisk = gather(GameObjectFilter.Permanent.controlledByOpponent())
+ *     val kept = chooseOnePerCategory(atRisk, Filters.PermanentTypes)
+ *     sacrifice(exclude(atRisk, kept))
+ * }
+ * ```
+ *
+ * Swapping the last step gives Consuming Tide ("returns the rest to their hands"); swapping the
+ * category list gives Cataclysm and Divine Reckoning.
+ *
+ * @property from Collection to choose from — every candidate, across all affected players.
+ * @property categories One filter per choice each controller makes, in the order they are offered.
+ * @property storeAs Collection receiving every player's picks (deduplicated).
+ */
+@SerialName("ChooseOnePerCategory")
+@Serializable
+data class ChooseOnePerCategoryEffect(
+    val from: String,
+    val categories: List<GameObjectFilter>,
+    val storeAs: String
+) : Effect {
+    init {
+        require(categories.isNotEmpty()) {
+            "ChooseOnePerCategoryEffect needs at least one category; with none it chooses nothing."
+        }
+    }
+
+    override val description: String =
+        "each player chooses ${categories.joinToString(", ") { it.description }} they control"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newCategories = categories.map { it.applyTextReplacement(replacer) }
+        val changed = newCategories.indices.any { newCategories[it] !== categories[it] }
+        return if (changed) copy(categories = newCategories) else this
+    }
 }
 
 /**

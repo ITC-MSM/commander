@@ -169,6 +169,21 @@ data class GameState(
     val pendingSacrificeIds: Set<EntityId> = emptySet(),
 
     /**
+     * Cards currently being discarded *by a spell or ability*, mapped to that spell/ability's
+     * controller. Recorded by the discard sites (`ZoneTransitionService.discardCards` and the
+     * `MoveType.Discard` pipeline step) just before the cards move, and consumed by
+     * `ZoneMovementUtils.checkZoneChangeRedirect` so a replacement can key off *why* the card is
+     * going to the graveyard — Wilt-Leaf Liege's "if a spell or ability an opponent controls causes
+     * you to discard this card". `moveToZone` removes each id as it processes it.
+     *
+     * A discard with no entry here has no spell/ability cause: discarding down to hand size in the
+     * cleanup step (CR 514.1, a turn-based action) and discards made to pay a cost. Same transient
+     * lifetime and motivation as [pendingSacrificeIds] — it saves every discard call site from
+     * threading an explicit cause through the zone-move signature.
+     */
+    val pendingDiscardCauseControllers: Map<EntityId, EntityId> = emptyMap(),
+
+    /**
      * Players (by entity id) who have committed a crime this turn (CR 700-level Outlaws of Thunder
      * Junction rule). Populated wherever a [com.wingedsheep.engine.core.CommitCrimeEvent] is emitted
      * (spell cast, activated ability, triggered ability), and cleared at every turn boundary. Read by
@@ -470,6 +485,25 @@ data class GameState(
         }
 
     /**
+     * [activePlayers] rotated into **APNAP order** (CR 101.4): the active player first, then the
+     * remaining players in turn order starting from the one after them. This is the order in which
+     * players make simultaneous choices — "each player sacrifices a creature" asks the active
+     * player first, then each nonactive player in turn order, and only then do the sacrifices
+     * happen.
+     *
+     * Note this is a *rotation*, not "active player prepended to seat order": with seats [A, B, C]
+     * and B active the order is [B, C, A], not [B, A, C]. Falls back to plain turn order when
+     * there is no active player (before the first turn begins).
+     */
+    val apnapOrder: List<EntityId>
+        get() {
+            val ordered = activePlayers
+            val active = activePlayerId ?: return ordered
+            val index = ordered.indexOf(active)
+            return if (index <= 0) ordered else ordered.drop(index) + ordered.take(index)
+        }
+
+    /**
      * Opponents of a player, in turn order, excluding players who have lost or left the
      * game. There is deliberately no single-opponent helper: any code that needs one
      * specific opponent must say which one (a chosen target, an iteration, or the
@@ -663,6 +697,29 @@ data class GameState(
     fun lifeTotal(playerId: EntityId): Int =
         getEntity(teamLifeOwnerOf(playerId))
             ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 0
+
+    /**
+     * [playerId]'s **speed** (Aetherdrift, CR 702.179), 0–[com.wingedsheep.sdk.core.Speed.MAX].
+     *
+     * A player who has no speed reads as 0 per CR 702.179f, so every consumer — dynamic amounts, the
+     * max-speed gate, the client DTO — can treat speed as a plain number. Use [hasSpeed] for the two
+     * rules that genuinely distinguish "no speed" from "speed 0".
+     *
+     * Speed is per-player even in team games: unlike life and poison, CR 810 does not pool it.
+     */
+    fun speed(playerId: EntityId): Int =
+        getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.PlayerSpeedComponent>()?.speed
+            ?: com.wingedsheep.sdk.core.Speed.NONE
+
+    /**
+     * Whether [playerId] has a speed at all (CR 702.179b). False means the CR 704.5z state-based
+     * action may still start their speed at 1, and that they have no inherent speed trigger yet
+     * (CR 702.179d).
+     */
+    fun hasSpeed(playerId: EntityId): Boolean =
+        getEntity(playerId)
+            ?.has<com.wingedsheep.engine.state.components.player.PlayerSpeedComponent>() == true
 
     /**
      * Set [playerId]'s (team's) life total to [newLife], writing the canonical owner's component.

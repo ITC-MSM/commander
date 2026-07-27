@@ -112,12 +112,7 @@ class LobbySharedContext(
      * Spectators themselves do not receive this message.
      */
     fun broadcastSpectatorCount(gameSession: GameSession) {
-        val spectators = gameSession.getSpectators()
-        val message = ServerMessage.SpectatorCountChanged(
-            gameSessionId = gameSession.sessionId,
-            count = spectators.size,
-            spectatorNames = spectators.map { it.playerName }
-        )
+        val message = gameSession.spectatorCountMessage()
         gameSession.getPlayers().forEach { player ->
             val ws = player.webSocketSession
             if (ws.isOpen) {

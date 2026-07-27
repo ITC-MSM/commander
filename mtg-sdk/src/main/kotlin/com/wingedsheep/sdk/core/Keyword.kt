@@ -158,6 +158,24 @@ enum class Keyword(val displayName: String) {
     NINJUTSU("Ninjutsu"),
 
     /**
+     * Web-slinging [cost] (CR 702.188, Marvel's Spider-Man).
+     * "You may cast this spell by paying [cost] and returning a tapped creature you control to
+     * its owner's hand rather than paying its mana cost." (CR 702.188a)
+     *
+     * Modelled as a hand-timed alternative cost ([KeywordAbility.WebSlinging]) bundling a
+     * return-a-tapped-creature additional cost — casting follows the alternative-cost rules
+     * (CR 601.2b / 601.2f–h). Unlike [SNEAK]/[NINJUTSU] it grants no timing permission: the spell
+     * is web-slung at its normal timing (sorcery speed for creatures, instant speed for
+     * Spider-Sense). The "cast using web-slinging" fact rides the resulting permanent durably
+     * ([com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG], read via
+     * [com.wingedsheep.sdk.dsl.Conditions.WebSlungCostWasPaid]) alongside the returned creature's
+     * mana value ([com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG_RETURNED_MV], read via
+     * [com.wingedsheep.sdk.scripting.values.DynamicAmount.CastChoice]). Wired by the
+     * `webSlinging(cost)` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+     */
+    WEB_SLINGING("Web-slinging"),
+
+    /**
      * Impending N—[cost] (CR 702.175, Duskmourn: House of Horror).
      * "If you cast this spell for its impending cost, it enters with N time counters
      * and isn't a creature until the last is removed. At the beginning of your end step,
@@ -182,6 +200,23 @@ enum class Keyword(val displayName: String) {
      * [com.wingedsheep.sdk.scripting.GrantKeywordToOwnSpells.keywordParameter] (granted).
      */
     CASUALTY("Casualty"),
+
+    /**
+     * Bargain (CR 702.166, Wilds of Eldraine). A static ability that functions while the spell is
+     * on the stack: "As an additional cost to cast this spell, you may sacrifice an artifact,
+     * enchantment, or token." A spell whose controller declared that intention has been
+     * *bargained* (CR 702.166b), and the card's other abilities — linked to this one
+     * (CR 702.166c) — branch on that fact.
+     *
+     * Modelled as an optional additional cost on the shared cast-time rail:
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost] with
+     * `declaredSlot = `[com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED], so "bargained" is a
+     * *different* fact from "kicked" — a bargained spell never triggers a "whenever you cast a
+     * kicked spell" payoff, and vice versa. Wired by the `bargain()` DSL helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder]; payoffs read it back through
+     * [com.wingedsheep.sdk.dsl.Conditions.WasBargained].
+     */
+    BARGAIN("Bargain"),
 
     /**
      * Miracle {cost} (CR 702.94). "You may cast this card for its miracle cost when you draw it if
@@ -291,6 +326,29 @@ enum class Keyword(val displayName: String) {
      * keyword itself is only a textual marker for rules-text display.
      */
     ASCEND("Ascend"),
+
+    /**
+     * Start your engines! (Aetherdrift, CR 702.179). "If a player controls a permanent with start
+     * your engines! and that player has no speed, their speed becomes 1."
+     *
+     * Unlike most display-only keywords, this one is *load-bearing*: the engine's
+     * `StartYourEnginesCheck` state-based action (CR 704.5z) scans projected battlefield permanents
+     * for this keyword, so granting it to a permanent at runtime works. Nothing else needs wiring on
+     * the card — add it with the `startYourEngines()` helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder]. See [com.wingedsheep.sdk.core.Speed].
+     */
+    START_YOUR_ENGINES("Start your engines!"),
+
+    /**
+     * Max speed (Aetherdrift, CR 702.178). "Max speed — [Ability]" means "As long as your speed is
+     * 4, this object has '[Ability].'"
+     *
+     * Display-only: the keyword prints the "Max speed — " prefix and drives the client badge, while
+     * the gate itself is an ordinary condition applied to whatever ability the card grants. Author
+     * it with the `maxSpeed { }` block on [com.wingedsheep.sdk.dsl.CardBuilder], which attaches this
+     * keyword and gates each ability inside it on [com.wingedsheep.sdk.dsl.Conditions.YouHaveMaxSpeed].
+     */
+    MAX_SPEED("Max speed"),
 
     /**
      * Decayed (CR 702.147, Innistrad: Midnight Hunt). A static ability plus a

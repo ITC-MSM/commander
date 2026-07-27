@@ -269,21 +269,14 @@ class ConnectionHandler(
                 val gameSession = gameRepository.findById(gameSessionId!!)
                 logger.info("Reconnecting to game: found=${gameSession != null}, isStarted=${gameSession?.isStarted}, seats=${gameSession?.getPlayers()?.map { it.playerId.value }}")
                 if (gameSession != null) {
-                    // Remove old player session if exists, then associate new one
-                    if (gameSession.getPlayerSession(identity.playerId) != null) {
-                        gameSession.removePlayer(identity.playerId)
-                    }
+                    // Swap the live socket into the seat this player already has. Don't un-seat them
+                    // first — that would hand back their deck and sideboard mid-game.
                     gameSession.associatePlayer(playerSession)
 
                     // Re-sync the spectator-count badge for the reconnecting player.
                     // Spectator joins/leaves only push to currently-connected players, so a
                     // mid-game reconnect would otherwise see count = 0 until the next change.
-                    val currentSpectators = gameSession.getSpectators()
-                    sender.send(session, ServerMessage.SpectatorCountChanged(
-                        gameSessionId = gameSession.sessionId,
-                        count = currentSpectators.size,
-                        spectatorNames = currentSpectators.map { it.playerName }
-                    ))
+                    sender.send(session, gameSession.spectatorCountMessage())
 
                     if (gameSession.isStarted) {
                         when {

@@ -9,6 +9,7 @@ import { EntityId } from './entities'
  */
 export type ClientEvent =
   | LifeChangedEvent
+  | SpeedChangedEvent
   | DamageDealtEvent
   | StatsModifiedEvent
   | CardDrawnEvent
@@ -56,6 +57,21 @@ export interface LifeChangedEvent {
   readonly oldLife: number
   readonly newLife: number
   readonly change: number
+  readonly description: string
+}
+
+/**
+ * A player's speed went up (Aetherdrift, CR 702.179) — "Start your engines!" starting it at 1
+ * (`oldSpeed` 0) or the inherent speed trigger raising it. `reachedMaxSpeed` fires at most once per
+ * player per game, since speed only rises and stops at 4.
+ */
+export interface SpeedChangedEvent {
+  readonly type: 'speedChanged'
+  readonly playerId: EntityId
+  readonly oldSpeed: number
+  readonly newSpeed: number
+  readonly isYours?: boolean
+  readonly reachedMaxSpeed: boolean
   readonly description: string
 }
 
@@ -436,6 +452,10 @@ export interface DecisionMadeEvent {
 
 export function isLifeChangedEvent(event: ClientEvent): event is LifeChangedEvent {
   return event.type === 'lifeChanged'
+}
+
+export function isSpeedChangedEvent(event: ClientEvent): event is SpeedChangedEvent {
+  return event.type === 'speedChanged'
 }
 
 export function isDamageDealtEvent(event: ClientEvent): event is DamageDealtEvent {

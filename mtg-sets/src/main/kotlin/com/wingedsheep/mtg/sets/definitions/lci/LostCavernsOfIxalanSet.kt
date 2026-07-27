@@ -16,7 +16,6 @@ object LostCavernsOfIxalanSet : MtgSet {
     override val code = "LCI"
     override val displayName = "The Lost Caverns of Ixalan"
     override val releaseDate = "2023-11-17"
-    override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)

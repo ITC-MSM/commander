@@ -3,9 +3,11 @@ package com.wingedsheep.sdk.dsl
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.BendType
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Speed
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.*
@@ -83,6 +85,7 @@ import com.wingedsheep.sdk.scripting.effects.SuccessCriterion
 import com.wingedsheep.sdk.scripting.effects.GrantDamageBonusEffect
 import com.wingedsheep.sdk.scripting.effects.DamageCantBePreventedThisTurnEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
+import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.EachPlayerReturnsPermanentToHandEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -260,6 +263,37 @@ object Effects {
      */
     fun DealXDamage(target: EffectTarget): Effect =
         DealDamageEffect(DynamicAmount.XValue, target)
+
+    /**
+     * "N damage divided as you choose among …" (Arc Lightning, Chandra, Flameshaper's −4).
+     *
+     * The targets among which the total is split come from the ability's own target requirement,
+     * not from here — so the requirement decides whether the wording is "1, 2, or 3 target
+     * creatures" (`TargetCreature(count = 3, minCount = 1)`) or "any number of target creatures
+     * and/or planeswalkers" (`TargetObject(unlimited = true, …)`). Because each chosen target must
+     * be assigned at least 1 damage (CR 601.2d), cap the requirement's target count at the total:
+     * pass `dynamicMaxCount = DynamicAmount.Fixed(total)` on an `unlimited` requirement, or let a
+     * board-derived cap do it when the total itself is dynamic.
+     *
+     * The division is chosen as the spell is cast / the ability is activated, never at resolution;
+     * if a target becomes illegal in between, its share is simply not dealt and the rest keep what
+     * they were assigned.
+     *
+     * @param total Fixed total to divide. Ignored when [dynamicTotal] is supplied.
+     * @param dynamicTotal Total computed at resolution instead ("X damage …, where X is the number
+     *        of lands you control" — Ureni, the Song Unending).
+     */
+    fun DividedDamage(
+        total: Int = 0,
+        minTargets: Int = 1,
+        maxTargets: Int = 3,
+        dynamicTotal: DynamicAmount? = null
+    ): Effect = DividedDamageEffect(
+        totalDamage = total,
+        minTargets = minTargets,
+        maxTargets = maxTargets,
+        dynamicTotal = dynamicTotal
+    )
 
     /**
      * Install a turn-duration replacement that adds [bonus] to every noncombat damage instance
@@ -474,7 +508,7 @@ object Effects {
     fun ReadTheRunes(): Effect = HandPatterns.readTheRunes()
 
     /**
-     * "Scry [count]" (CR 701.18): look at the top [count] cards of your library, put any number on
+     * "Scry [count]" (CR 701.22): look at the top [count] cards of your library, put any number on
      * the bottom and the rest on top in any order. Returns the compact `ScryEffect` macro node,
      * which the engine expands into the shared Gather → Select → Move pipeline at resolution (so the
      * card serializes as one `{"type":"Scry"}` node — see [LibraryPatterns.scry]).
@@ -491,11 +525,18 @@ object Effects {
     fun Scry(count: Int, target: EffectTarget): Effect = LibraryPatterns.scry(count, target)
 
     /**
-     * "Surveil [count]" (CR 701.42): look at the top [count] cards of your library, put any number
+     * "Surveil [count]" (CR 701.25): look at the top [count] cards of your library, put any number
      * into your graveyard and the rest on top in any order. The surveil twin of [Scry]; see
      * [LibraryPatterns.surveil].
      */
     fun Surveil(count: Int): Effect = LibraryPatterns.surveil(count)
+
+    /**
+     * "Surveil X" with a dynamic count (CR 701.25) — X resolved at resolution time, e.g.
+     * "surveil X, where X is the number of counters on it" (Spider-Man Noir). Expands to the
+     * dynamic surveil pipeline; see [LibraryPatterns.surveil].
+     */
+    fun Surveil(amount: DynamicAmount): Effect = LibraryPatterns.surveil(amount)
 
     /**
      * Target player discards N cards (controller chooses, mandatory).
@@ -584,6 +625,13 @@ object Effects {
      * Delegates to the LibraryPatterns/HandPatterns pipeline: ForEachPlayer(EachOpponent) → Gather → Select → Move.
      */
     fun EachOpponentDiscards(count: Int = 1): Effect = HandPatterns.eachOpponentDiscards(count)
+
+    /**
+     * Each player (including you) discards N cards, each choosing their own — Rankle's Prank.
+     * The symmetric twin of [EachOpponentDiscards]: same ForEachPlayer → Gather → Select → Move
+     * pipeline, iterated over every player in APNAP order. See [HandPatterns.eachPlayerDiscards].
+     */
+    fun EachPlayerDiscards(count: Int = 1): Effect = HandPatterns.eachPlayerDiscards(count)
 
     /**
      * Each opponent exiles N cards from their hand (Mindleech Ghoul). Same
@@ -722,9 +770,23 @@ object Effects {
 
     /**
      * Exile a target.
+     *
+     * [fromZone] gates the exile on the card still being in that zone — "exile it from their
+     * graveyard" does nothing if the card left the graveyard before the ability resolved (CR 400.7:
+     * it would be a new object). [addCounterType] puts one counter of that type on the exiled card
+     * once it lands ("exile it with a stash counter on it"); it is skipped along with the move when
+     * the [fromZone] gate closes.
      */
-    fun Exile(target: EffectTarget): Effect =
-        MoveToZoneEffect(target, Zone.EXILE)
+    fun Exile(
+        target: EffectTarget,
+        fromZone: Zone? = null,
+        addCounterType: CounterType? = null
+    ): Effect = MoveToZoneEffect(
+        target = target,
+        destination = Zone.EXILE,
+        fromZone = fromZone,
+        addCounterType = addCounterType
+    )
 
     /**
      * Exile a target and let its owner play it while it remains exiled.
@@ -1004,6 +1066,37 @@ object Effects {
      */
     fun GainCitysBlessing(target: EffectTarget = EffectTarget.Controller): Effect =
         com.wingedsheep.sdk.scripting.effects.GainCitysBlessingEffect(target)
+
+    /**
+     * "[target]'s speed increases by [amount]" (Aetherdrift, CR 702.179).
+     *
+     * Clamped to [com.wingedsheep.sdk.core.Speed.MAX]; a player with no speed ends up at [amount]
+     * (CR 702.179c). This backs the inherent speed trigger (CR 702.179d) and is the primitive for
+     * any card that raises speed. Speed itself is started by the "Start your engines!" keyword —
+     * see the `startYourEngines()` helper on [CardBuilder].
+     */
+    fun IncreaseSpeed(
+        amount: DynamicAmount = DynamicAmount.Fixed(1),
+        target: EffectTarget = EffectTarget.Controller
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ChangeSpeedEffect(target, amount)
+
+    /**
+     * "Reduce [target]'s speed by [amount]" (Aetherdrift, CR 702.179) — the mirror of
+     * [IncreaseSpeed], sharing its one effect type and executor.
+     *
+     * [minimum] is the card's own floor: Spikeshell Harrier prints "This effect can't reduce their
+     * speed below 1", so it passes [com.wingedsheep.sdk.core.Speed.STARTING] (the default). A player
+     * with no speed is never *given* speed by a reduction, whatever the floor.
+     */
+    fun ReduceSpeed(
+        amount: DynamicAmount = DynamicAmount.Fixed(1),
+        target: EffectTarget = EffectTarget.Controller,
+        minimum: Int = Speed.STARTING
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ChangeSpeedEffect(
+        target = target,
+        amount = DynamicAmount.Multiply(amount, -1),
+        minimum = minimum
+    )
 
     /**
      * "[target] has no maximum hand size for the rest of the game." A one-shot resolution effect
@@ -1842,16 +1935,28 @@ object Effects {
 
     /**
      * Add mana of a specific color.
+     *
+     * [riders] attaches side-effects that fire on whatever spell this mana ends up paying for
+     * (Pyromancer's Goggles: "When that mana is spent to cast a red instant or sorcery spell, copy
+     * that spell"). See [com.wingedsheep.sdk.scripting.effects.ManaSpellRider].
      */
-    fun AddMana(color: Color, amount: Int = 1, restriction: ManaRestriction? = null): Effect =
-        AddManaEffect(color, amount, restriction)
+    fun AddMana(
+        color: Color,
+        amount: Int = 1,
+        restriction: ManaRestriction? = null,
+        riders: Set<com.wingedsheep.sdk.scripting.effects.ManaSpellRider> = emptySet()
+    ): Effect = AddManaEffect(color, DynamicAmount.Fixed(amount), restriction, riders = riders)
 
     /**
      * Add a dynamic amount of mana of a specific color.
      * Used for effects like "Add {R} for each Goblin on the battlefield."
      */
-    fun AddMana(color: Color, amount: DynamicAmount, restriction: ManaRestriction? = null): Effect =
-        AddManaEffect(color, amount, restriction)
+    fun AddMana(
+        color: Color,
+        amount: DynamicAmount,
+        restriction: ManaRestriction? = null,
+        riders: Set<com.wingedsheep.sdk.scripting.effects.ManaSpellRider> = emptySet()
+    ): Effect = AddManaEffect(color, amount, restriction, riders = riders)
 
     /**
      * Add colorless mana.
@@ -2759,7 +2864,8 @@ object Effects {
         fromZone: Zone? = null,
         faceDown: FaceDownMode? = null,
         linkToSource: Boolean = false,
-        positionFromTop: Int? = null
+        positionFromTop: Int? = null,
+        addCounterType: CounterType? = null
     ): Effect = MoveToZoneEffect(
         target = target,
         destination = destination,
@@ -2769,7 +2875,8 @@ object Effects {
         fromZone = fromZone,
         faceDown = faceDown,
         linkToSource = linkToSource,
-        positionFromTop = positionFromTop
+        positionFromTop = positionFromTop,
+        addCounterType = addCounterType
     )
 
     /**
@@ -3119,6 +3226,10 @@ object Effects {
      *
      * If [keywordsForCopy] is non-empty, the copy will also be treated as having those
      * keywords for the duration of its time on the stack (e.g., wither, lifelink).
+     *
+     * [copies] makes more than one independent copy, each retargetable on its own (CR 707.10c) —
+     * "copy it for each other instant and sorcery spell you've cast before it this turn"
+     * (Thousand-Year Storm). A count of zero or less makes no copies.
      */
     fun CopyTargetSpell(
         target: EffectTarget = EffectTarget.ContextTarget(0),
@@ -3126,7 +3237,8 @@ object Effects {
         removeLegendary: Boolean = false,
         addedTokenKeywords: Set<com.wingedsheep.sdk.core.Keyword> = emptySet(),
         sacrificeTokenAtStep: com.wingedsheep.sdk.core.Step? = null,
-        sacrificeTokenOnlyOnControllersTurn: Boolean = false
+        sacrificeTokenOnlyOnControllersTurn: Boolean = false,
+        copies: DynamicAmount = DynamicAmount.Fixed(1)
     ): Effect =
         CopyTargetSpellEffect(
             target,
@@ -3134,7 +3246,8 @@ object Effects {
             removeLegendary,
             addedTokenKeywords,
             sacrificeTokenAtStep,
-            sacrificeTokenOnlyOnControllersTurn
+            sacrificeTokenOnlyOnControllersTurn,
+            copies
         )
 
     /**
@@ -3178,7 +3291,7 @@ object Effects {
      * [copies] copies of the chosen object are created; it defaults to a single copy. Pass a
      * [DynamicAmount] (e.g. [DynamicAmount.XValue]) to copy an ability multiple times — "Copy target
      * activated or triggered ability you control X times" (Gogo, Master of Mimicry). New targets may
-     * be chosen independently for each copy. Only the ability branches honor [copies] > 1.
+     * be chosen independently for each copy.
      */
     fun CopyTargetSpellOrAbility(
         target: EffectTarget = EffectTarget.ContextTarget(0),

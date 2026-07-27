@@ -160,6 +160,20 @@ function buildActionOptions(
             impendingTime: impendingInfo.time,
           }
     )
+    // Any further cost variant the server offered (e.g. a gift promise per opponent — CR 702.174a)
+    // has to survive this branch too, or picking impending's sibling silently drops the option.
+    castActions
+      .filter((ca) => ca !== normalCast && ca !== impendingCast)
+      .forEach((ca, index) => {
+        options.push({
+          key: `cast-extra-${index}`,
+          label: ca.description,
+          manaCost: ca.manaCostString || cardInfo.manaCost || null,
+          isAvailable: ca.isAffordable !== false,
+          action: ca,
+          actionType: 'cast',
+        })
+      })
   } else if (castActions.length > 1) {
     // 1b. Multiple cast options (e.g., BlightOrPay — blight path vs pay path)
     castActions.forEach((ca, index) => {
@@ -234,9 +248,10 @@ function buildActionOptions(
   if (kickerAction) {
     options.push({
       key: 'castWithKicker',
-      // Server picks the suffix — "(Kicked)", "(Offspring)", or "(with Flash)" for
-      // flash-timing kickers like Ghitu Fire / Molten Exhale. Fall back if absent.
-      label: kickerAction.description || `Cast ${cardInfo.name} (Kicked)`,
+      // Server picks the suffix — "(Kicked)", "(Offspring)", "(Bargained)", or "(with Flash)" for
+      // flash-timing kickers like Ghitu Fire / Molten Exhale. Fall back to an unlabelled cast if
+      // absent rather than guessing a mechanic.
+      label: kickerAction.description || `Cast ${cardInfo.name}`,
       manaCost: kickerAction.manaCostString || null,
       isAvailable: kickerAction.isAffordable !== false,
       action: kickerAction,
@@ -628,7 +643,13 @@ function ActionOptionButton({
         </span>
         {showSeparateCost && (
           hasFloatingMana && manaPool
-            ? <ManaCostProgress cost={option.manaCost} manaPool={manaPool} size={16} gap={2} />
+            ? <ManaCostProgress
+                cost={option.manaCost}
+                manaPool={manaPool}
+                eligibleRestrictedMana={option.action?.eligibleRestrictedMana ?? []}
+                size={16}
+                gap={2}
+              />
             : <ManaCost cost={option.manaCost} size={16} gap={2} />
         )}
       </button>
@@ -712,7 +733,9 @@ function ActionButton({
       case 'CastFaceDown':
         return 'Cast Face-Down ({3})'
       case 'CastWithKicker':
-        return `Cast (Kicked) (${action.manaCostString ?? ''})`
+        // The server's description already names the mechanic ("… (Bargained)"); only fall back to
+        // a bare cast label when it's missing.
+        return action.description || `Cast (${action.manaCostString ?? ''})`
       case 'TurnFaceUp':
         return `Turn Face-Up (${action.manaCostString ?? ''})`
       default:

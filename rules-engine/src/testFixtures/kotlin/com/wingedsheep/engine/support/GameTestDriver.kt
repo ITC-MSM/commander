@@ -661,12 +661,10 @@ class GameTestDriver {
             com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
-        if (cardDef.script.cantBeCountered) {
-            container = container.with(com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent)
-        }
-        if (cardDef.keywordAbilities.any { it is com.wingedsheep.sdk.scripting.KeywordAbility.Morph }) {
-            container = container.with(com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent)
-        }
+        // Every component derived from the printed definition (can't-be-countered/copied, morph,
+        // protection, self-redirects, hexproof-from, Toxic) — shared with the real CardEntityFactory
+        // so a driver-minted card never quietly loses one.
+        container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
 
         _state = _state.withEntity(cardId, container)
 
@@ -707,9 +705,7 @@ class GameTestDriver {
             com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
-        if (cardDef.script.cantBeCountered) {
-            container = container.with(com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent)
-        }
+        container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
 
         _state = _state.withEntity(cardId, container)
 
@@ -787,9 +783,7 @@ class GameTestDriver {
             com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
-        if (cardDef.script.cantBeCountered) {
-            container = container.with(com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent)
-        }
+        container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
 
         _state = _state.withEntity(cardId, container)
 
@@ -833,12 +827,10 @@ class GameTestDriver {
             ControllerComponent(playerId),
             com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
         )
-        if (cardDef.script.cantBeCountered) {
-            container = container.with(com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent)
-        }
-        if (cardDef.keywordAbilities.any { it is com.wingedsheep.sdk.scripting.KeywordAbility.Morph }) {
-            container = container.with(com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent)
-        }
+        // Every component derived from the printed definition (can't-be-countered/copied, morph,
+        // protection, self-redirects, hexproof-from, Toxic) — shared with the real CardEntityFactory
+        // so a driver-minted card never quietly loses one.
+        container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
         // Attach DoubleFacedComponent so transforms work (Rule 712).
         if (cardDef.isDoubleFaced) {
             container = container.with(
@@ -893,9 +885,7 @@ class GameTestDriver {
             com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
-        if (cardDef.script.cantBeCountered) {
-            container = container.with(com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent)
-        }
+        container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
         // Attach DoubleFacedComponent so transforms work (Rule 712) — mirrors the DFC wiring
         // in putCreatureOnBattlefield so non-creature DFC artifacts (Saheeli's Lattice etc.)
         // can also be exercised in scenario tests.
@@ -1006,9 +996,7 @@ class GameTestDriver {
             com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
-        if (cardDef.script.cantBeCountered) {
-            container = container.with(com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent)
-        }
+        container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
 
         // Bake continuous + replacement effects from the land's static abilities, mirroring
         // putPermanentOnBattlefield/putCreatureOnBattlefield (and the real ETB path in

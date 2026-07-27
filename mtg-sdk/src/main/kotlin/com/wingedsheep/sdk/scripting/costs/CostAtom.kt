@@ -61,6 +61,24 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
     }
 
     /**
+     * Mill [count] cards — put that many cards from the top of your library into your graveyard
+     * (CR 701.17a).
+     *
+     * Takes no selection: the cards milled are the top [count], not a player choice. Per CR 701.17b
+     * a player *can't pay a cost that includes milling more cards than their library holds*, so
+     * affordability is a plain library-size check — unlike the mill *effect*, which mills as many as
+     * possible. A `ModifyMillAmount` replacement (Bruvac) still applies to the announced number when
+     * the cost is actually paid, and the resulting library→graveyard zone changes fire mill triggers
+     * exactly as an effect's mill does.
+     */
+    @SerialName("AtomMill")
+    @Serializable
+    data class Mill(val count: Int = 1) : CostAtom {
+        override val description: String get() =
+            if (count == 1) "mill a card" else "mill $count cards"
+    }
+
+    /**
      * Sacrifice [count] permanents matching [filter].
      *
      * @property excludeSelf when true the cost's source permanent is excluded from the candidate

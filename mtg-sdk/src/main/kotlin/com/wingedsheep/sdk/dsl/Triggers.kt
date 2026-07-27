@@ -1752,12 +1752,30 @@ object Triggers {
     )
 
     /**
+     * Whenever you sacrifice **a** permanent matching the filter.
+     * Per-permanent trigger — fires once for EACH matching permanent sacrificed, even when several
+     * are sacrificed simultaneously (CR 603.2c). The bare-article template ([TriggerBinding.ANY])
+     * counts the source sacrificing itself, unlike [YouSacrificeAnother].
+     *
+     * Distinct from [YouSacrificeOneOrMore] (batch — one Rat for three Foods instead of three).
+     * Template: Experimental Confectioner ("Whenever you sacrifice a Food").
+     *
+     * Example: "Whenever you sacrifice a Food"
+     * → YouSacrificeA(GameObjectFilter.Artifact.withSubtype("Food"))
+     */
+    fun YouSacrificeA(filter: GameObjectFilter = GameObjectFilter.Any): TriggerSpec = TriggerSpec(
+        event = PermanentsSacrificedEvent(filter = filter, perPermanent = true),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever you sacrifice another permanent matching the filter.
      * Per-permanent trigger — fires once for EACH matching permanent sacrificed, even when several
      * are sacrificed simultaneously (CR 603.2c). "Another" ([TriggerBinding.OTHER]) excludes the
      * source, so the source sacrificing itself doesn't fire it.
      *
-     * Distinct from [YouSacrificeOneOrMore] (batch — fires once per event batch). Template:
+     * Distinct from [YouSacrificeOneOrMore] (batch — fires once per event batch) and from
+     * [YouSacrificeA] (same per-permanent multiplicity, but counts the source). Template:
      * Mazirek, Kraul Death Priest; Savra, Queen of the Golgari; Zhao, Ruthless Admiral.
      *
      * Example: "Whenever you sacrifice another permanent"
@@ -1975,7 +1993,7 @@ object Triggers {
     )
 
     // =========================================================================
-    // Scry Triggers (CR 701.18)
+    // Scry Triggers (CR 701.22)
     // =========================================================================
 
     /**
@@ -1990,7 +2008,7 @@ object Triggers {
     )
 
     /**
-     * Whenever you surveil (CR 701.42). The surveil twin of [WheneverYouScry] — fires once per
+     * Whenever you surveil (CR 701.25). The surveil twin of [WheneverYouScry] — fires once per
      * surveil resolution, after the kept/graveyard moves resolve. Pair with TRIGGER_SCRY_COUNT to
      * scale by "the number of cards looked at." Used by Golbez and similar surveil payoffs.
      */
@@ -2000,7 +2018,7 @@ object Triggers {
     )
 
     /**
-     * Whenever you scry **or** surveil (CR 701.18 / 701.42) — the combined look-at-top trigger
+     * Whenever you scry **or** surveil (CR 701.22 / 701.25) — the combined look-at-top trigger
      * (Matoya, Archon Elder). Fires once per scry and once per surveil.
      */
     val WheneverYouScryOrSurveil: TriggerSpec = TriggerSpec(

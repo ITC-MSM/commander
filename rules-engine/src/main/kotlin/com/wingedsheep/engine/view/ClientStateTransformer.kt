@@ -293,6 +293,9 @@ class ClientStateTransformer(
         // Persistent yields are private to each player: only ever surface the viewer's own.
         val activeYields = if (isSpectator) emptyList() else buildClientYields(state.yieldsFor(viewingPlayerId))
 
+        // The deck tracker is the viewer's own decklist — never a spectator's or an opponent's.
+        val deck = if (isSpectator) emptyList() else buildDeckList(state, viewingPlayerId)
+
         return ClientGameState(
             viewingPlayerId = viewingPlayerId,
             cards = cards,
@@ -310,8 +313,97 @@ class ClientStateTransformer(
             youAreHijacking = youAreHijacking,
             youAreHijackedBy = youAreHijackedBy,
             hotseat = hotseat,
-            activeYields = activeYields
+            activeYields = activeYields,
+            deck = deck
         )
+    }
+
+    /**
+     * Build [viewingPlayerId]'s own decklist: every non-token card they *own*, wherever it now is,
+     * grouped by printed card.
+     *
+     * Deriving the list from live ownership rather than a stored decklist keeps it honest for free —
+     * a stolen creature is still in its owner's deck (ownership never changes, CR 108.3), a token
+     * copy of one never is, and a permanent copying something else counts as the card it was printed
+     * as (that's what [CopyOfComponent] remembers).
+     *
+     * Zones: the sideboard is excluded as outside the game (CR 400.11a); the command zone is included
+     * so a commander stays one stable row instead of appearing and vanishing as it's cast and
+     * returns. The stack lives outside [GameState.zones], so it is walked separately.
+     */
+    private fun buildDeckList(state: GameState, viewingPlayerId: EntityId): List<ClientDeckCard> {
+        class Tally {
+            var copies = 0
+            var remaining = 0
+            /** Art from a real (non-copy) printing of this card in the game, if we saw one. */
+            var printingImageUri: String? = null
+        }
+
+        val tallies = HashMap<String, Tally>()
+
+        fun record(entityId: EntityId, zoneType: Zone) {
+            val container = state.getEntity(entityId) ?: return
+            if (container.has<TokenComponent>()) return
+            val cardComponent = container.get<CardComponent>() ?: return
+            val ownerId = cardComponent.ownerId ?: container.get<OwnerComponent>()?.playerId
+            if (ownerId != viewingPlayerId) return
+
+            // A copy effect overwrites CardComponent with the copied card; CopyOfComponent holds
+            // what this card is actually printed as, which is what belongs in the decklist.
+            val copyOf = container.get<CopyOfComponent>()
+            val definitionId = copyOf?.originalCardDefinitionId ?: cardComponent.cardDefinitionId
+
+            val tally = tallies.getOrPut(definitionId) { Tally() }
+            tally.copies++
+            if (!ownerKnowsIdentity(state, entityId, zoneType, viewingPlayerId)) tally.remaining++
+            if (copyOf == null && tally.printingImageUri == null) {
+                tally.printingImageUri = cardComponent.imageUri
+            }
+        }
+
+        for ((zoneKey, entityIds) in state.zones) {
+            if (zoneKey.zoneType == Zone.SIDEBOARD) continue
+            for (entityId in entityIds) record(entityId, zoneKey.zoneType)
+        }
+        for (entityId in state.stack) record(entityId, Zone.STACK)
+
+        return tallies.mapNotNull { (definitionId, tally) ->
+            val definition = cardRegistry.getCard(definitionId) ?: return@mapNotNull null
+            ClientDeckCard(
+                cardName = definition.name,
+                copies = tally.copies,
+                remaining = tally.remaining,
+                cmc = definition.cmc,
+                cardTypes = definition.typeLine.cardTypes.map { it.name },
+                colors = definition.colors.map { it.name },
+                imageUri = tally.printingImageUri ?: definition.metadata.imageUri
+            )
+        }.sortedWith(compareBy({ it.cmc }, { it.cardName }))
+    }
+
+    /**
+     * Whether the owner of [entityId] can currently tell *which* of their cards this one is.
+     *
+     * False for anything in their library (that's the whole point — you know what's in your deck,
+     * not where), and for a card of theirs that is face down somewhere they can't look: exiled face
+     * down, or a face-down permanent an opponent controls. Mirrors the face-down masking in
+     * [transformCard] so the tracker never claims knowledge the client wasn't sent.
+     */
+    private fun ownerKnowsIdentity(
+        state: GameState,
+        entityId: EntityId,
+        zoneType: Zone,
+        viewingPlayerId: EntityId
+    ): Boolean {
+        if (zoneType == Zone.LIBRARY) return false
+        val container = state.getEntity(entityId) ?: return false
+        val isInFaceDownZone =
+            zoneType == Zone.BATTLEFIELD || zoneType == Zone.STACK || zoneType == Zone.EXILE
+        if (!isInFaceDownZone || !container.has<FaceDownComponent>()) return true
+        val controllerId = container.get<ControllerComponent>()?.playerId
+        return controllerId == viewingPlayerId ||
+            isCardRevealedTo(state, entityId, viewingPlayerId) ||
+            (zoneType == Zone.BATTLEFIELD && hasLookAtFaceDownCreatures(state, viewingPlayerId))
     }
 
     /**
@@ -755,8 +847,11 @@ class ClientStateTransformer(
         val protections = (projectedProtections.ifEmpty { staticProtections }).distinct()
 
         // Extract hexproof-from-color colors from projected keywords (HEXPROOF_FROM_*).
-        // Both intrinsic per-color hexproof (HexproofFromColorComponent) and dynamically granted
+        // Both intrinsic per-color hexproof (HexproofFromComponent) and dynamically granted
         // hexproof (Tam, Mindful First-Year) flow through the same projection keywords.
+        // Non-color scopes in that namespace (HEXPROOF_FROM_CARDTYPE_INSTANT, HEXPROOF_FROM_MONOCOLORED)
+        // fail Color.valueOf and drop out here — like protection-from-card-type they surface to the
+        // player through the card's oracle text rather than a per-color badge.
         val hexproofFromPrefix = "HEXPROOF_FROM_"
         val hexproofFromColors = projectedValues?.keywords
             ?.filter { it.startsWith(hexproofFromPrefix) }
@@ -1004,18 +1099,34 @@ class ClientStateTransformer(
             )
         } else emptyList()
 
-        // Get kicker status for spells on the stack
-        val wasKicked = spellOnStack?.wasKicked ?: false
+        // Name the optional additional cost a spell on the stack declared ("Kicked", "Bargained",
+        // "Offspring"), so opponents can see at a glance which branch is coming on resolution. The
+        // label is derived server-side from the keyword's printed prefix — the client renders the
+        // badge verbatim rather than mapping slots to words itself.
+        val optionalCostLabel = spellOnStack?.declaredCostSlot?.let { slot ->
+            val declared = cardDef?.keywordAbilities
+                ?.filterIsInstance<com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost>()
+                ?.firstOrNull { it.declaredSlot == slot }
+            when {
+                declared?.keyword == Keyword.OFFSPRING -> "Offspring"
+                slot == com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED -> "Bargained"
+                slot == com.wingedsheep.sdk.scripting.ChoiceSlot.KICKED -> "Kicked"
+                else -> slot.name.lowercase().replaceFirstChar { it.uppercase() }
+            }
+        }
 
         // Surface whether the optional Blight additional cost was paid (Lorwyn Eclipsed)
         // so opponents can see at a glance that a stronger effect is incoming on resolution.
         val wasBlightPaid = spellOnStack?.wasBlightPaid ?: false
 
         // Detect whether this spell promised a gift (Bloomburrow gift mechanic).
-        // Gift is modeled as a modal choice: the "promise" mode's effect tree contains
-        // GiftGivenEffect. Surface this to opponents so they can see at a glance that
-        // a gift is coming on resolution, rather than having to parse the mode description.
+        // Permanent spells carry the promise as the gift additional cost elected while casting
+        // (CR 702.174a — `giftRecipient`); instants and sorceries model it as a modal choice whose
+        // "promise" mode's effect tree contains GiftGivenEffect. Surface either to opponents so
+        // they can see at a glance that a gift is coming on resolution, rather than having to parse
+        // the mode description.
         val giftPromised = spellOnStack?.let { comp ->
+            if (comp.giftRecipient != null) return@let true
             if (comp.chosenModes.isEmpty()) return@let false
             val spellEffect = cardRegistry.getCard(cardComponent.cardDefinitionId)?.script?.spellEffect
                 ?: return@let false
@@ -1111,7 +1222,7 @@ class ClientStateTransformer(
 
         // Check if this card is playable from exile (impulse draw like Mind's Desire,
         // or cast-from-linked-exile like Rona / Dawnhand Dissident).
-        val mayPlayFromExile = state.hasMayPlayFor(entityId, viewingPlayerId, conditionEvaluator)
+        val mayPlayFromExile = state.hasMayPlayFor(entityId, viewingPlayerId, conditionEvaluator, cardRegistry)
         val playableFromExile = zoneKey.zoneType == Zone.EXILE && (
             mayPlayFromExile || isCastableFromLinkedExile(state, viewingPlayerId, entityId, container)
         )
@@ -1237,7 +1348,7 @@ class ClientStateTransformer(
             rulings = cardDef?.metadata?.rulings?.map {
                 ClientRuling(date = it.date, text = it.text)
             } ?: emptyList(),
-            wasKicked = wasKicked,
+            optionalCostLabel = optionalCostLabel,
             giftPromised = giftPromised,
             wasBlightPaid = wasBlightPaid,
             chosenX = chosenX,
@@ -1433,7 +1544,7 @@ class ClientStateTransformer(
                 sourceId = spellEntityId,
                 controllerId = spellOnStack.casterId,
                 xValue = spellOnStack.xValue,
-                wasKicked = spellOnStack.wasKicked,
+                declaredCostSlot = spellOnStack.declaredCostSlot,
                 wasBlightPaid = spellOnStack.wasBlightPaid,
                 sacrificedPermanents = spellOnStack.sacrificedPermanents,
                 chosenEntitySnapshots = spellOnStack.chosenEntitySnapshots,
@@ -1685,6 +1796,7 @@ class ClientStateTransformer(
         triggerLastKnownToughness = triggered.lastKnownToughness,
         triggerDiedBatchTotalPower = triggered.diedBatchTotalPower,
         triggerScryCount = triggered.triggerScryCount,
+        triggerDiscardCount = triggered.triggerDiscardCount,
         triggerDiscoverValue = triggered.triggerDiscoverValue,
         triggerExcessDamageAmount = triggered.triggerExcessDamageAmount,
         triggerRecipientToughness = triggered.triggerRecipientToughness,
@@ -1777,7 +1889,9 @@ class ClientStateTransformer(
             hasLost = hasLost,
             manaPool = manaPool,
             activeEffects = activeEffects,
-            commanderDamage = buildCommanderDamage(state, playerId)
+            commanderDamage = buildCommanderDamage(state, playerId),
+            // CR 702.179 — public information, and 0 for the overwhelming majority of games.
+            speed = state.speed(playerId)
         )
     }
 

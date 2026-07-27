@@ -332,6 +332,25 @@ export const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 0 6px rgba(245, 215, 110, 0.85)',
     pointerEvents: 'none',
   } as React.CSSProperties,
+  // Stash-counter badge for a card in the exile browser grid (Tinybones, Bauble Burglar). Sits
+  // opposite the plotted badge so a plotted, stash-countered card shows both. Same amber palette as
+  // the on-card `stashCounterBadge`, so the counter reads the same wherever the card is rendered.
+  stashGridBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    borderRadius: 4,
+    padding: '2px 6px',
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#f0a030',
+    backgroundColor: 'rgba(120, 50, 20, 0.95)',
+    border: '1px solid rgba(220, 120, 40, 0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+    pointerEvents: 'none',
+  } as React.CSSProperties,
   plottedOverlay: {
     position: 'fixed',
     top: 0,
@@ -1900,6 +1919,8 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   BAIT: { bg: 'rgba(18, 48, 62, 0.95)', border: 'rgba(96, 186, 214, 0.65)', color: '#9ed4e8', glow: 'rgba(96, 186, 214, 0.5)' },
   POINT: { bg: 'rgba(20, 55, 35, 0.95)', border: 'rgba(110, 210, 150, 0.7)', color: '#9ce0b8', glow: 'rgba(110, 210, 150, 0.55)' },
   WISH: { bg: 'rgba(35, 22, 48, 0.95)', border: 'rgba(170, 130, 210, 0.7)', color: '#c8a8e0', glow: 'rgba(170, 130, 210, 0.55)' },
+  REVIVAL: { bg: 'rgba(22, 34, 30, 0.95)', border: 'rgba(120, 205, 165, 0.7)', color: '#9ee0c0', glow: 'rgba(120, 205, 165, 0.55)' },
+  FILM: { bg: 'rgba(28, 28, 32, 0.95)', border: 'rgba(180, 185, 195, 0.7)', color: '#d0d4dc', glow: 'rgba(180, 185, 195, 0.5)' },
   PLUS_ONE_PLUS_ZERO: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
   PLUS_ZERO_PLUS_ONE: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
   MINUS_ONE_MINUS_ZERO: { bg: 'rgba(60, 20, 20, 0.95)', border: 'rgba(220, 120, 120, 0.7)', color: '#e09c9c' },

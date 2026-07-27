@@ -50,13 +50,11 @@ import com.wingedsheep.engine.state.components.player.PlayerCantPlayFromHandComp
 import com.wingedsheep.engine.state.components.player.PlayerProtectionComponent
 import com.wingedsheep.engine.state.components.player.CardsLeftGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LandDropsComponent
-import com.wingedsheep.engine.state.components.player.LandsEnteredUnderControlThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LifeGainedAmountThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LifeGainedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent
-import com.wingedsheep.engine.state.components.player.PermanentTypesEnteredBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent
 import com.wingedsheep.engine.state.components.player.WasDealtCombatDamageByLegendaryCreatureThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CombatDamageReceivedThisTurnComponent
@@ -676,12 +674,6 @@ class CleanupPhaseManager(
                 }
                 if (result.has<SacrificedFoodThisTurnComponent>()) {
                     result = result.without<SacrificedFoodThisTurnComponent>()
-                }
-                if (result.has<PermanentTypesEnteredBattlefieldThisTurnComponent>()) {
-                    result = result.without<PermanentTypesEnteredBattlefieldThisTurnComponent>()
-                }
-                if (result.has<LandsEnteredUnderControlThisTurnComponent>()) {
-                    result = result.without<LandsEnteredUnderControlThisTurnComponent>()
                 }
                 if (result.has<PermanentsEnteredUnderControlThisTurnComponent>()) {
                     result = result.without<PermanentsEnteredUnderControlThisTurnComponent>()

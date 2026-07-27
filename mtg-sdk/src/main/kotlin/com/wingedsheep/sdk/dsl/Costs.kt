@@ -148,6 +148,24 @@ object Costs {
      */
     val DiscardHand: AbilityCost = AbilityCost.DiscardHand
 
+    // =========================================================================
+    // Mill Costs
+    // =========================================================================
+
+    /**
+     * Mill a card as a cost — "{T}, Mill a card: Add {C}" (Deranged Assistant).
+     *
+     * Unpayable with an empty library (CR 701.17b), and takes no player selection: the milled card
+     * is the top of the library.
+     */
+    val MillCard: AbilityCost = AbilityCost.Atom(CostAtom.Mill())
+
+    /**
+     * Mill [count] cards as a cost. Unpayable unless the library holds at least [count] cards
+     * (CR 701.17b).
+     */
+    fun Mill(count: Int): AbilityCost = AbilityCost.Atom(CostAtom.Mill(count))
+
     /**
      * Discard this card (for cycling and similar abilities).
      */
@@ -170,6 +188,13 @@ object Costs {
      * Exile this creature (for abilities that exile themselves as cost).
      */
     val ExileSelf: AbilityCost = AbilityCost.ExileSelf
+
+    /**
+     * Return this permanent to its owner's hand (for abilities that bounce themselves as cost —
+     * Maze's End). No player selection: the source is the only thing that moves. Contrast
+     * [ReturnToHand], the choose-a-permanent-you-control bounce cost, which excludes the source.
+     */
+    val ReturnSelfToHand: AbilityCost = AbilityCost.ReturnSelfToHand
 
     /**
      * Exile the permanent that granted this activated ability (e.g., the equipment

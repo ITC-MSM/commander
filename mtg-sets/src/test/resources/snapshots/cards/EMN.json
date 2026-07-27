@@ -1203,6 +1203,83 @@
     "colorIdentityOverride": []
 }
 
+// Mausoleum Wanderer
+{
+    "name": "Mausoleum Wanderer",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flying\nWhenever another Spirit you control enters, this creature gets +1/+1 until end of turn.\nSacrifice this creature: Counter target instant or sorcery spell unless its controller pays {X}, where X is this creature's power.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Spirit ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever another Spirit you control enters, this creature gets +1/+1 until end of turn."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "Counter",
+                    "condition": {
+                        "type": "CounterCondition.UnlessPaysDynamic",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": "Power"
+                        }
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "instant|sorcery",
+                            "zone": "Stack"
+                        }
+                    }
+                ],
+                "descriptionOverride": "Counter target instant or sorcery spell unless its controller pays {X}, where X is this creature's power."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "rarity": "RARE",
+        "artist": "Kieran Yanner",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42391fa7-6172-487c-b8aa-d41ab7c64973.jpg?1783937494"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Midnight Scavengers
 {
     "name": "Midnight Scavengers",
@@ -1575,6 +1652,70 @@
         "artist": "Lius Lasahido",
         "flavorText": "The remnants of Innistrad's corrupted angelic hosts collapsed to form the Flight of Nightmares.",
         "imageUri": "https://cards.scryfall.io/normal/front/a/f/af01371c-cd09-4882-9caf-04426dd4c965.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Thalia, Heretic Cathar
+{
+    "name": "Thalia, Heretic Cathar",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Human Soldier",
+    "oracleText": "First strike\nCreatures and nonbasic lands your opponents control enter tapped.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:opponent",
+                    "to": "Battlefield"
+                }
+            },
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsLand",
+                            {
+                                "type": "Not",
+                                "predicate": "IsBasicLand"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByOpponent"
+                    },
+                    "to": "Battlefield"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "rarity": "RARE",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"Salvation will not be granted by the Lunarch Council. It must be earned—at the edge of a sword, if necessary.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/ab0cee38-5e24-49d0-870c-22843ed4e101.jpg?1783937507",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "If an effect states that a creature or land enters the battlefield tapped unless a condition is met, Thalia's last ability has it enter tapped even if that condition is true."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If Thalia enters the battlefield at the same time as an opponent's creatures or nonbasic lands, those creatures and lands aren't affected by Thalia's last ability."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "WHITE"

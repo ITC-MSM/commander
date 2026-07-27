@@ -1,14 +1,17 @@
 package com.wingedsheep.gameserver.coverage
 
+import com.wingedsheep.mtg.sets.MtgSetCatalog
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 import io.kotest.matchers.doubles.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.doubles.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldNotBeEmpty
 
 /**
  * The denominator (canonical totals) is a committed resource; the numerator (implemented
@@ -72,11 +75,69 @@ class SetCoverageServiceTest : FunSpec({
     test("detail lists every canonical card with an implemented flag, counts agreeing with the grid") {
         val grid = coverage.find { it.code == "BLB" }.shouldNotBeNull()
         val detail = service.detail("blb").shouldNotBeNull() // case-insensitive
-        detail.draft.size shouldBe grid.total
-        detail.extra.size shouldBe grid.extraTotal
+        detail.draft.size shouldBe grid.total + grid.notPlanned
+        detail.extra.size shouldBe grid.extraTotal + grid.extraNotPlanned
         detail.draft.count { it.implemented } shouldBe grid.implemented
         detail.extra.count { it.implemented } shouldBe grid.extraImplemented
         detail.percent shouldBe grid.percent
+    }
+
+    context("cards we've decided never to implement") {
+        test("drop out of the denominator, so Antiquities is complete with Bronze Tablet unbuilt") {
+            // Bronze Tablet needs the ante zone the engine will never carry. Left in the total it
+            // would peg ATQ at 84/85 forever; excluded, the set reads done because everything we
+            // intend to build is built.
+            val atq = coverage.find { it.code == "ATQ" }.shouldNotBeNull()
+            atq.notPlanned shouldBe 1
+            atq.implemented shouldBe atq.total
+            atq.percent shouldBe 100.0
+        }
+
+        test("are still listed in the detail view, each carrying its reason") {
+            val detail = service.detail("ATQ").shouldNotBeNull()
+            val tablet = detail.draft.find { it.name == "Bronze Tablet" }.shouldNotBeNull()
+            tablet.implemented shouldBe false
+            tablet.notPlanned.shouldNotBeNull().kind shouldBe "ante"
+            // Exclusion is carried as its reason, so a flagged card can never lack an explanation.
+            tablet.notPlanned.shouldNotBeNull().why.shouldNotBeEmpty()
+            detail.notPlanned shouldBe 1
+            detail.total shouldBe detail.draft.count { it.notPlanned == null }
+        }
+
+        test("only excuse cards that are actually still missing — Arabian Nights keeps its real gaps") {
+            // ARN's holes are two policy exclusions (Jeweled Bird = ante, Shahrazad = subgame) and
+            // cards we could still build (City in a Bottle, Ring of Ma'rûf). Excluding the first
+            // pair must not paper over the second, so the set stays short of 100%.
+            val arn = coverage.find { it.code == "ARN" }.shouldNotBeNull()
+            arn.notPlanned shouldBe 2
+            arn.total - arn.implemented shouldBeGreaterThanOrEqualTo 2
+            arn.percent shouldBeLessThan 100.0
+            val detail = service.detail("ARN").shouldNotBeNull()
+            detail.draft.filter { it.notPlanned != null }.map { it.name } shouldBe
+                listOf("Jeweled Bird", "Shahrazad")
+        }
+
+        test("a set that reaches 100% is no longer flagged incomplete") {
+            // `incomplete` gates `fullyImplemented`, which is what keeps a set out of the lobby's
+            // set picker and forces the combined-pool booster path. Finishing a set and leaving the
+            // flag behind silently hides a draftable set — Antiquities and Foundations both sat
+            // there. Coverage knows when a set is done, so it can hold the flag honest.
+            val stale = coverage
+                .filter { it.total > 0 && it.implemented == it.total }
+                .filter { MtgSetCatalog.byCode(it.code)?.incomplete == true }
+                .map { "${it.code} (${it.implemented}/${it.total})" }
+            withClue("complete sets still flagged `incomplete = true` — drop the override: $stale") {
+                stale shouldBe emptyList()
+            }
+        }
+
+        test("summary counts them once across every set that prints them") {
+            val summary = service.summary()
+            // Exclusions key on card name, so Contract from Below is one not-planned card whether
+            // it shows up in Alpha, Beta or Unlimited.
+            summary.distinctNotPlanned shouldBeGreaterThanOrEqualTo 1
+            summary.setsComplete shouldBe coverage.count { it.percent >= 100.0 }
+        }
     }
 
     test("detail returns null for an unknown set") {

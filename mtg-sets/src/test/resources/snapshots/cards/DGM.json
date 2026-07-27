@@ -1,3 +1,134 @@
+// Maze's End
+{
+    "name": "Maze's End",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {C}.\n{3}, {T}, Return this land to its owner's hand: Search your library for a Gate card, put it onto the battlefield, then shuffle. If you control ten or more Gates with different names, you win the game.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        "CostReturnSelfToHand"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Library",
+                                        "filter": "land Gate"
+                                    },
+                                    "storeAs": "searchable"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "searchable",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "found"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "found",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Battlefield"
+                                    }
+                                },
+                                "ShuffleLibrary",
+                                "EmitLibrarySearchedEvent"
+                            ]
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "AggregateBattlefield",
+                                        "player": "You",
+                                        "filter": "land Gate",
+                                        "aggregation": "DISTINCT_NAMES"
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 10
+                                    }
+                                }
+                            },
+                            "then": "WinGame"
+                        }
+                    ]
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "rarity": "MYTHIC",
+        "artist": "Cliff Childs",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/401f7042-24fd-42a0-ae7c-e6b7de1aa446.jpg?1783940010",
+        "rulings": [
+            {
+                "date": "2013-04-15",
+                "text": "Returning Maze's End to its owner's hand is part of the cost to activate its last ability. Once that ability is announced, players can't respond to it until after you've paid its activation cost and returned Maze's End to hand."
+            },
+            {
+                "date": "2013-04-15",
+                "text": "When the last ability of Maze's End resolves, you'll search for a Gate and put it onto the battlefield before checking to see if you win the game. This check will happen even if you don't put a Gate onto the battlefield this way. This check will happen only as the ability resolves, not at other times."
+            },
+            {
+                "date": "2013-04-15",
+                "text": "Putting a Gate onto the battlefield with Maze's End doesn't count as the one land you can play during your turn. If it's your turn, you can play Maze's End or a different land card from your hand after its ability has resolved."
+            },
+            {
+                "date": "2013-04-15",
+                "text": "Controlling multiple Gates with the same name has no effect on your ability to win the game with Maze's End. The excess Gates are simply ignored."
+            }
+        ]
+    }
+}
+
 // Unflinching Courage
 {
     "name": "Unflinching Courage",

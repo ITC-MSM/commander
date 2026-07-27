@@ -74,7 +74,10 @@ enum class CounterType {
     BAIT,
     BORE,
     POINT,
-    WISH;
+    WISH,
+    REVIVAL,
+    INGENUITY,
+    FILM;
 
     companion object {
         /**
@@ -337,6 +340,35 @@ object Counters {
      * `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val WISH = "wish"
+
+    /**
+     * Revival counter (FDN — Nine-Lives Familiar). Passive "lives left" counter with no inherent
+     * rule of its own — the Familiar enters with eight if you cast it, and its dies trigger reads
+     * the last-known count (via
+     * `DynamicAmounts.lastKnownSourceCounters(CounterTypeFilter.Named(Counters.REVIVAL))`) to
+     * return itself with one fewer. NOT a keyword counter, so it is intentionally absent from
+     * `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val REVIVAL = "revival"
+
+    /**
+     * Ingenuity counter (SPM — Lady Octopus, Inspired Inventor). Passive storage counter with no
+     * inherent rule of its own — Lady Octopus's first/second-draw triggers each add one and her
+     * {T} ability reads the count (via `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(
+     * Counters.INGENUITY))`) to cap the mana value of the artifact she can free-cast from hand.
+     * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val INGENUITY = "ingenuity"
+
+    /**
+     * Film counter (SPM — Peter Parker's Camera). Passive "uses left" counter with no inherent rule
+     * of its own — the Camera enters with three (`EntersWithCounters(CounterTypeFilter.Named(
+     * Counters.FILM), count = 3, selfOnly = true)`) and each activation of its copy ability removes
+     * one as part of the cost (`Costs.RemoveCounterFromSelf(Counters.FILM, 1)`), bounding how many
+     * times it can copy an ability before it sits inert. Same shape as `Counters.WISH` / `Counters.NET`.
+     * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val FILM = "film"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.

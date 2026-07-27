@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import com.wingedsheep.sdk.scripting.AlternativePaymentChoice
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -66,7 +67,19 @@ data class CastSpell(
     val alternativePayment: AlternativePaymentChoice? = null,
     val additionalCostPayment: AdditionalCostPayment? = null,
     val castFaceDown: Boolean = false,
-    val wasKicked: Boolean = false,
+    /**
+     * The optional-additional-cost mechanic this cast declares (CR 601.2b), or `null` when the
+     * spell is cast without it — the single rail shared by every
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost] keyword: kicker,
+     * multikicker, offspring, the pay-more-for-flash unlock, and bargain (CR 702.166b).
+     *
+     * The slot, rather than a bare "was kicked" boolean, *is* the mechanic's identity: it must equal
+     * the [com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost.declaredSlot] of a
+     * keyword the card actually has (the handler rejects the cast otherwise), it is stamped on the
+     * spell and durably on the permanent it becomes, and payoffs key off it — so a bargained spell
+     * is never mistaken for a kicked one.
+     */
+    val declaredCostSlot: ChoiceSlot? = null,
     /**
      * Whether the spell's *optional* waterbend additional cost was elected (Avatar: The Last
      * Airbender — [com.wingedsheep.sdk.scripting.SpellWaterbendCost] with `optional = true`).
@@ -77,6 +90,18 @@ data class CastSpell(
      * `Conditions.WaterbendWasPaid`.
      */
     val wasWaterbendPaid: Boolean = false,
+    /**
+     * The opponent promised this spell's **gift** (CR 702.174a, Bloomburrow — "as an additional
+     * cost to cast this spell, you may choose an opponent"), or `null` when the gift wasn't
+     * promised. Only meaningful for a card carrying [com.wingedsheep.sdk.scripting.KeywordAbility.Gift].
+     *
+     * The promise is elected here, while casting — never later: the enumerator emits a
+     * `CastWithGift` variant per opponent, and on resolution the handler stamps
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED] plus the recipient in
+     * `ChoiceSlot.OPPONENT` onto the permanent, where the gift trigger and the
+     * "if the gift was(n't) promised" riders read it via `Conditions.GiftWasPromised`.
+     */
+    val giftRecipient: EntityId? = null,
     val damageDistribution: Map<EntityId, Int>? = null,
     val useAlternativeCost: Boolean = false,
     val chosenModes: List<Int> = emptyList(),
@@ -186,6 +211,12 @@ enum class AlternativeCostType {
      * ([CastSpell.additionalCostPayment] `bouncedPermanents`).
      */
     SNEAK,
+    /**
+     * Web-slinging ([com.wingedsheep.sdk.scripting.KeywordAbility.WebSlinging], CR 702.188) — hand,
+     * at the spell's normal timing. Pays the web-slinging mana plus returns a tapped creature you
+     * control to its owner's hand ([CastSpell.additionalCostPayment] `bouncedPermanents`).
+     */
+    WEB_SLINGING,
     /** Impending ([com.wingedsheep.sdk.scripting.KeywordAbility.Impending]) — hand. */
     IMPENDING,
     /**
@@ -257,6 +288,14 @@ sealed interface PaymentStrategy {
  * @property targets Chosen targets for the ability's effect
  * @property costPayment Payment choices for costs (sacrifice, etc.)
  * @property manaColorChoice Color chosen for "add one mana of any color" abilities
+ * @property damageDistribution Pre-chosen damage distribution for a
+ *           [com.wingedsheep.sdk.scripting.effects.DividedDamageEffect] ability (target ID ->
+ *           damage amount). The activated-ability twin of [CastSpell.damageDistribution]: CR 601.2d
+ *           has the division chosen **as the ability is activated**, not when it resolves, so
+ *           opponents responding by removing a target lose that damage entirely rather than letting
+ *           the controller re-divide (Chandra, Flameshaper's −4). Omitted for every other ability;
+ *           when omitted for a divided-damage ability the executor falls back to a resolution-time
+ *           `DistributeDecision`, which is how non-interactive controllers (the built-in AI) divide.
  */
 @Serializable
 @SerialName("ActivateAbility")
@@ -271,6 +310,7 @@ data class ActivateAbility(
     val repeatCount: Int = 1,
     val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay,
     val alternativePayment: AlternativePaymentChoice? = null,
+    val damageDistribution: Map<EntityId, Int>? = null,
     /**
      * Internal resume marker for "… of an opponent's choice" targets (Cuombajj Witches). On the
      * first pass the handler pauses to let an opponent pick the opponent-chosen target(s); the

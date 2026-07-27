@@ -25,7 +25,10 @@ import com.wingedsheep.sdk.core.ManaSymbol
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityCost
+import com.wingedsheep.engine.mechanics.cost.CostPaymentService
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.costs.CostAtom
+import com.wingedsheep.sdk.scripting.costs.PayCost
 import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaSpendOnChosenTypeEffect
@@ -218,7 +221,7 @@ data class ManaSolution(
      * ability contributes [ManaSpellRider.MakesSpellUncounterable] when tapped for
      * a color, but its colorless `{T}: Add {C}` ability does not).
      */
-    val consumedRiders: Set<ManaSpellRider> = emptySet(),
+    val consumedRiders: List<ManaSpellRider> = emptyList(),
     /**
      * For a color-restricted `{X}` cost ("spend only [colors] on X"), the per-color
      * breakdown of mana this solution allocated to the X portion specifically. Empty
@@ -775,9 +778,12 @@ class ManaSolver(
             genericRemaining--
         }
 
-        val consumedRiders: Set<ManaSpellRider> = usedSources.flatMapTo(mutableSetOf()) { source ->
-            val color = manaProduced[source.entityId]?.color ?: return@flatMapTo emptySet()
-            source.colorRiders[color] ?: emptySet()
+        // A List, not a Set: multiplicity is load-bearing. Two rider-carrying sources spent on
+        // one spell fire the rider twice (Pyromancer's Goggles: "That many copies will be
+        // created"), so identical riders must not collapse.
+        val consumedRiders: List<ManaSpellRider> = usedSources.flatMap { source ->
+            val color = manaProduced[source.entityId]?.color ?: return@flatMap emptyList()
+            source.colorRiders[color]?.toList() ?: emptyList()
         }
         return ManaSolution(
             usedSources,
@@ -1979,9 +1985,12 @@ class ManaSolver(
         //     refuses to auto-tap these because paying SacrificeSelf in the auto-pay flow would
         //     mean silently losing the permanent; the player must opt-in by activating the
         //     ability directly. But the spell is still *affordable* — we just need to know it.
+        //  3. Cost shapes findAvailableManaSources doesn't model at all (Ashnod's Altar's
+        //     "Sacrifice a creature: Add {C}{C}" — no {T} anywhere in the cost).
         val bonus = calculateTapPermanentsBonusMana(state, playerId)
             .plus(calculateSacrificeSelfBonusMana(state, playerId))
             .plus(calculateCompositeTapPermanentsBonusMana(state, playerId))
+            .plus(calculateExplicitActivationBonusMana(state, playerId))
         if (bonus.totalMana == 0) return false
 
         // Allocate any-color bonus mana to the pool based on what the cost needs,
@@ -2044,9 +2053,11 @@ class ManaSolver(
         //  - TapPermanents (e.g., Birchlore Rangers)
         //  - Tap+SacrificeSelf mana abilities (e.g., Treasure tokens)
         //  - Composite Tap+TapPermanents mana abilities (e.g., Springleaf Drum)
+        //  - Costs with no {T} at all, which the solver doesn't model (e.g., Ashnod's Altar)
         val extrasMana = calculateTapPermanentsBonusMana(state, playerId).totalMana +
             calculateSacrificeSelfBonusMana(state, playerId).totalMana +
-            calculateCompositeTapPermanentsBonusMana(state, playerId).totalMana
+            calculateCompositeTapPermanentsBonusMana(state, playerId).totalMana +
+            calculateExplicitActivationBonusMana(state, playerId).totalMana
 
         return floatingMana + sourceMana + extrasMana
     }
@@ -2153,6 +2164,179 @@ class ManaSolver(
         }
 
         return TapPermanentsBonusMana(anyColorTotal, specificColorTotal, colorlessTotal)
+    }
+
+    /**
+     * Calculates extra mana available from mana abilities that can only be produced by activating
+     * them explicitly, because [findAvailableManaSources] does not model their cost shape at all.
+     *
+     * That function accepts exactly three shapes — a bare `{T}`, a bare pay-life, and a composite
+     * containing `{T}` whose other parts are all pay-life/mana — and drops everything else on the
+     * floor (`else -> false // Skip non-tap mana abilities`). So Ashnod's Altar ("Sacrifice a
+     * creature: Add {C}{C}"), a `{T}`-plus-discard ability, or anything with a Forage sub-cost is
+     * invisible to the solver, and therefore to `canPay`. That mattered because ward, "counter
+     * unless you pay", and "you may pay {N}" all gate the *prompt itself* on `canPay`: a player
+     * whose only mana source was one of these had their spell countered without ever being asked.
+     *
+     * Like the other three extras helpers, this only feeds affordability. `solve()` still won't
+     * auto-tap these sources — paying a sacrifice or discard sub-cost silently is not something
+     * auto-pay may do — so the player activates the ability themselves, either at priority or
+     * inside the payment window that
+     * [com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow] opens (CR 605.3a).
+     *
+     * Deliberately conservative: an ability is counted only when every non-mana part of its cost is
+     * verifiably payable right now. Anything whose payability can't be established here (a Craft or
+     * Blight cost, an `{X}`-shaped one) is skipped rather than assumed affordable.
+     */
+    internal fun calculateExplicitActivationBonusMana(
+        state: GameState,
+        playerId: EntityId
+    ): TapPermanentsBonusMana {
+        val projected = state.projectedState
+        var total = TapPermanentsBonusMana()
+
+        for (entityId in projected.getBattlefieldControlledBy(playerId)) {
+            val container = state.getEntity(entityId) ?: continue
+            // Face-down permanents have no abilities (CR 708.2).
+            if (container.has<FaceDownComponent>()) continue
+            val card = container.get<CardComponent>() ?: continue
+
+            val ownAbilities = if (projected.hasLostAllAbilities(entityId)) emptyList()
+                else cardRegistry.getCard(card.cardDefinitionId)?.script?.activatedAbilities.orEmpty()
+            val abilities = ownAbilities + getStaticGrantedManaAbilities(entityId, state)
+
+            for (ability in abilities) {
+                if (!ability.isManaAbility) continue
+                val cost = ability.cost
+                if (manaAbilityIsAlreadyCounted(cost)) continue
+                // A mana sub-cost would recurse straight back into canPay, and its net production
+                // is ambiguous anyway — the same call the tap+SacrificeSelf helper makes.
+                if (costHasManaSubCost(cost)) continue
+                if (!activationRestrictionsSatisfied(state, playerId, entityId, ability)) continue
+                if (!nonManaAbilityCostIsPayable(state, playerId, entityId, cost)) continue
+
+                total += manaProducedByEffect(ability.effect)
+            }
+        }
+
+        return total
+    }
+
+    /**
+     * Whether a mana ability with this cost is already reflected in the mana the affordability
+     * path counts — either modelled by [findAvailableManaSources] or picked up by one of the other
+     * extras helpers. Counting it again in [calculateExplicitActivationBonusMana] would inflate
+     * `canPay` and `getAvailableManaCount`.
+     *
+     * Mirrors the accept conditions of `abilityCanBeUsed` inside [findAvailableManaSources] and the
+     * cost shapes matched by [calculateTapPermanentsBonusMana], [calculateSacrificeSelfBonusMana]
+     * and [calculateCompositeTapPermanentsBonusMana]. `ManaSolverExtrasNoDoubleCountTest` pins the
+     * two together: it asserts the available-mana count for a Treasure / Birchlore / Springleaf
+     * board is unchanged by this helper.
+     */
+    private fun manaAbilityIsAlreadyCounted(cost: AbilityCost): Boolean = when (cost) {
+        // Modelled by findAvailableManaSources.
+        is AbilityCost.Tap -> true
+        is AbilityCost.Atom -> when (cost.atom) {
+            is CostAtom.PayLife -> true                 // modelled (a pain land)
+            is CostAtom.TapPermanents -> true           // calculateTapPermanentsBonusMana
+            else -> false
+        }
+        is AbilityCost.Composite -> {
+            if (cost.costs.none { it is AbilityCost.Tap }) false
+            else if (cost.costs.any { it is AbilityCost.SacrificeSelf }) true               // sac-self helper
+            else if (cost.costs.any { (it as? AbilityCost.Atom)?.atom is CostAtom.TapPermanents }) true // composite helper
+            else cost.costs.all { sub ->
+                sub is AbilityCost.Tap ||
+                    ((sub as? AbilityCost.Atom)?.atom.let { it is CostAtom.PayLife || it is CostAtom.Mana })
+            }
+        }
+        else -> false
+    }
+
+    /** Whether any part of [cost] is a mana payment. */
+    private fun costHasManaSubCost(cost: AbilityCost): Boolean = when (cost) {
+        is AbilityCost.Atom -> cost.atom is CostAtom.Mana
+        is AbilityCost.Composite -> cost.costs.any { costHasManaSubCost(it) }
+        else -> false
+    }
+
+    /**
+     * Whether every non-mana part of [cost] can be paid right now by [playerId] activating the
+     * ability on [sourceId]. Unrecognised cost shapes report false — see the conservatism note on
+     * [calculateExplicitActivationBonusMana].
+     */
+    private fun nonManaAbilityCostIsPayable(
+        state: GameState,
+        playerId: EntityId,
+        sourceId: EntityId,
+        cost: AbilityCost
+    ): Boolean = when (cost) {
+        is AbilityCost.Free -> true
+        is AbilityCost.Tap -> canTapForCost(state, sourceId)
+        // The source itself pays these, and it is on the battlefield by construction.
+        is AbilityCost.SacrificeSelf, is AbilityCost.ExileSelf,
+        is AbilityCost.ReturnSelfToHand, is AbilityCost.DiscardSelf -> true
+        // Discarding an empty hand is a legal payment of "discard your hand".
+        is AbilityCost.DiscardHand -> true
+        is AbilityCost.SacrificeChosenCreatureType -> {
+            val chosenType = state.getEntity(sourceId)?.chosenCreatureType()
+            chosenType != null && controlsMatching(
+                state, playerId, GameObjectFilter.Creature.withSubtype(chosenType), null, 1
+            )
+        }
+        is AbilityCost.TapAttachedCreature -> {
+            val attachedTo = state.getEntity(sourceId)?.get<AttachedToComponent>()?.targetId
+            attachedTo != null && canTapForCost(state, attachedTo)
+        }
+        // CR 701.58a — forage: exile three cards from your graveyard, or sacrifice a Food.
+        is AbilityCost.Forage -> state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)).size >= 3 ||
+            state.projectedState.getBattlefieldControlledBy(playerId)
+                .any { state.projectedState.hasSubtype(it, Subtype.FOOD.value) }
+        is AbilityCost.Atom -> CostPaymentService.canAfford(
+            state = state,
+            payerId = playerId,
+            cost = PayCost.Atom(cost.atom),
+            sourceId = sourceId,
+            manaSolver = this,
+            // The source pays its own cost unless the atom says otherwise (CR 601.2h) — mirrors
+            // ManaAbilityEnumerator, which only excludes self for an excludeSelf sacrifice.
+            excludeSource = (cost.atom as? CostAtom.Sacrifice)?.excludeSelf == true
+        )
+        is AbilityCost.Composite -> cost.costs.all {
+            nonManaAbilityCostIsPayable(state, playerId, sourceId, it)
+        }
+        else -> false
+    }
+
+    /** Whether [entityId] can pay a `{T}` cost: untapped, and not a summoning-sick creature. */
+    private fun canTapForCost(state: GameState, entityId: EntityId): Boolean {
+        val container = state.getEntity(entityId) ?: return false
+        if (container.has<TappedComponent>()) return false
+        val card = container.get<CardComponent>() ?: return false
+        val projected = state.projectedState
+        // Summoning sickness only bites non-land creatures (CR 302.6).
+        if (!card.typeLine.isLand && projected.isCreature(entityId)) {
+            if (container.has<SummoningSicknessComponent>() &&
+                !projected.hasKeyword(entityId, Keyword.HASTE)
+            ) return false
+        }
+        return true
+    }
+
+    /** Whether [playerId] controls at least [count] permanents matching [filter]. */
+    private fun controlsMatching(
+        state: GameState,
+        playerId: EntityId,
+        filter: GameObjectFilter,
+        excludeId: EntityId?,
+        count: Int
+    ): Boolean {
+        val projected = state.projectedState
+        val context = PredicateContext(controllerId = playerId)
+        return projected.getBattlefieldControlledBy(playerId).count { id ->
+            id != excludeId && predicateEvaluator.matches(state, projected, id, filter, context)
+        } >= count
     }
 
     /**

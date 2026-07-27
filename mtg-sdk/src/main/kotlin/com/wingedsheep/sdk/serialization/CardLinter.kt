@@ -178,6 +178,7 @@ object CardLinter {
         put("Behold" to "storeAs", write(Space.COLLECTION))
         put("BeholdOrPay" to "storeAs", write(Space.COLLECTION))
         put("ChooseEntity" to "storeAs", write(Space.COLLECTION))
+        put("ChooseOnePerCategory" to "storeAs", write(Space.COLLECTION))
         put("StoreNumber" to "name", write(Space.NUMBER))
         put("FlipCoins" to "storeHeadsAs", write(Space.NUMBER))
         put("ForEachCapturedController" to "countVariable", write(Space.NUMBER))
@@ -195,6 +196,7 @@ object CardLinter {
             "ChoosePile", "MoveCollection", "GrantMayPlayFromExile", "GrantPlayWithoutPayingCost",
             "MakePlotted",
             "GrantPlayWithAdditionalCost", "GrantPlayWithCostIncrease", "FilterCollection",
+            "ChooseOnePerCategory",
             "StoreCardName", "CastFromCollectionWithoutPayingCost",
             "CastAnyNumberFromCollectionWithoutPayingCost", "ExileFromStorage",
             "CopyCollectionIntoCollection", "RecordChosenLinkedExile",
@@ -296,21 +298,26 @@ object CardLinter {
     // Choice slots
     // =========================================================================================
 
-    /** Node types that declare a slot just by being present. */
-    private val slotDeclarers: Map<String, String> = mapOf(
-        "Kicker" to "KICKED",
-        "Sneak" to "SNEAK",
-        "Ninjutsu" to "SNEAK",
-        "BlightVariable" to "BLIGHT_AMOUNT",
-        "BlightOrPay" to "BLIGHT_AMOUNT",
+    /** Node types that declare one or more slots just by being present. */
+    private val slotDeclarers: Map<String, List<String>> = mapOf(
+        "Sneak" to listOf("SNEAK"),
+        "Ninjutsu" to listOf("SNEAK"),
+        // Web-slinging (CR 702.188): the engine stamps both the "was web-slung" flag and the
+        // returned creature's mana value when the web-slinging cost is paid (see StackResolver).
+        "WebSlinging" to listOf("WEB_SLUNG", "WEB_SLUNG_RETURNED_MV"),
+        "BlightVariable" to listOf("BLIGHT_AMOUNT"),
+        "BlightOrPay" to listOf("BLIGHT_AMOUNT"),
         // Resolution-time color choices: ChooseColorThen sets EffectContext.chosenColor for its
         // wrapped effect; ChooseColorForTarget stamps a ChosenColorComponent on the permanent.
         // Both are what HasChosenColor / GrantChosenColor-style readers consume.
-        "ChooseColorThen" to "COLOR",
-        "ChooseColorForTarget" to "COLOR",
+        "ChooseColorThen" to listOf("COLOR"),
+        "ChooseColorForTarget" to listOf("COLOR"),
         // Resolution-time opponent choice: writes ChoiceSlot.OPPONENT on the source entity,
         // read back by Player.ChosenOpponent (gift recipient).
-        "ChooseOpponentForSource" to "OPPONENT",
+        "ChooseOpponentForSource" to listOf("OPPONENT"),
+        // Gift (CR 702.174a): the cast-time promise declares both the "was it promised" flag and
+        // the promised opponent, read back by Conditions.GiftWasPromised and Player.ChosenOpponent.
+        "Gift" to listOf("GIFT_PROMISED", "OPPONENT"),
     )
 
     /** [com.wingedsheep.sdk.scripting.ReplacementEffect] `EntersWithChoice.choiceType` → slot. */
@@ -361,7 +368,7 @@ object CardLinter {
         when (element) {
             is JsonObject -> {
                 val type = element.typeName()
-                slotDeclarers[type]?.let { slots.declared.add(it) }
+                slotDeclarers[type]?.let { slots.declared.addAll(it) }
                 if (type == "EntersWithChoice") {
                     val choiceType = (element["choiceType"] as? JsonPrimitive)?.contentOrNull
                     choiceTypeToSlot[choiceType]?.let { slots.declared.add(it) }
@@ -378,6 +385,13 @@ object CardLinter {
                 if (type in slotFieldDeclarers) {
                     (element["slot"] as? JsonPrimitive)?.contentOrNull
                         ?.let { slots.declared.add(it) }
+                }
+                // The optional-additional-cost keyword (serial name "Kicker") declares whichever
+                // slot its own mechanic uses: KICKED for kicker/multikicker/offspring, BARGAINED
+                // for bargain (CR 702.166b).
+                if (type == "Kicker") {
+                    val declaredSlot = (element["declaredSlot"] as? JsonPrimitive)?.contentOrNull
+                    slots.declared.add(declaredSlot ?: "KICKED")
                 }
                 if (type == "SourceChosenModeIs") {
                     (element["modeId"] as? JsonPrimitive)?.contentOrNull

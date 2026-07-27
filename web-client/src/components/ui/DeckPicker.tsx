@@ -1,9 +1,9 @@
 /**
- * DeckPicker — tabbed deck selector for the quick-game flow.
+ * DeckPicker — tabbed deck selector for the quick-game and tournament lobby flows.
  *
  * Tabs:
- *   - My decks: localStorage-backed library (load / delete)
- *   - Examples: server-supplied starter lists
+ *   - My decks: the unified deck library (cloud + browser), as a full-art deck gallery
+ *   - Examples: server-supplied starter lists, same gallery tiles
  *   - Paste:    free-form deck list parser ("4 Lightning Bolt" / "Lightning Bolt x4")
  *   - Random:   defer to the server (empty deck list → random sealed pool)
  *
@@ -19,7 +19,7 @@
  *   GET  /api/decks/examples   — the starter decks shown in the Examples tab
  *   POST /api/decks/validate   — authoritative validation pass when a list is non-empty
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PrintingRef } from '@/types'
 import type { AvailableSet } from '@/types/messages'
 import {
@@ -37,13 +37,21 @@ import {
   computeDeckStats,
   type DeckValidationResult,
 } from './DeckSummary'
+import {
+  DeckTile,
+  DeckTileActionButton,
+  deckColors,
+  rarestCard,
+} from '@/components/deck/DeckTile'
 import { parseArenaDeckList } from '../deckbuilder/parseArenaDeck'
+import type { CardSummary } from '../deckbuilder/cardFilter'
 import { SetIcon } from './SetIcon'
 import { SetPickerModal } from './SetPickerModal'
 import styles from './DeckPicker.module.css'
 import lobbyStyles from './GameUI.module.css'
 
-type Tab = 'saved' | 'examples' | 'paste' | 'random'
+export type DeckPickerTab = 'saved' | 'examples' | 'paste' | 'random'
+type Tab = DeckPickerTab
 
 export interface DeckPickerProps {
   /**
@@ -82,21 +90,15 @@ export interface DeckPickerProps {
    * Null/undefined = no restriction.
    */
   format?: string | null
-}
-
-interface CardSummary {
-  name: string
-  manaCost: string
-  cmc: number
-  colors: string[]
-  cardTypes: string[]
-  supertypes: string[]
-  subtypes: string[]
-  basicLand: boolean
-  rarity: string
-  setCode: string | null
-  collectorNumber: string | null
-  legalFormats?: string[]
+  /**
+   * Optional controlled tab. Pass it together with {@link onTabChange} to hoist the picker's tab
+   * out of the picker — the unified lobby does this so that "Random pool" on its **Cards** axis
+   * and the picker's Random tab are the same control rather than two things that can disagree.
+   * Leave both undefined and the picker owns its tab as before.
+   */
+  tab?: DeckPickerTab | undefined
+  /** Fired for every tab change, whether the user clicked it or the picker moved itself. */
+  onTabChange?: (tab: DeckPickerTab) => void
 }
 
 interface ExampleDeck {
@@ -154,6 +156,8 @@ export function DeckPicker({
   disabled = false,
   tabs = ALL_TABS,
   format = null,
+  tab: controlledTab,
+  onTabChange,
 }: DeckPickerProps) {
   // Unified library: cloud decks (when signed in) + browser-only decks, each tagged with where it
   // lives. Selecting a cloud deck works the same as a local one because both carry their card list.
@@ -173,7 +177,27 @@ export function DeckPicker({
       : showPaste
         ? 'paste'
         : (tabs[0] ?? 'paste')
-  const [tab, setTab] = useState<Tab>(() => initialTab)
+  const [uncontrolledTab, setUncontrolledTab] = useState<Tab>(() => initialTab)
+  const tab = controlledTab ?? uncontrolledTab
+  /**
+   * Whether landing on Random was a *placeholder* rather than a decision.
+   *
+   * The deck library hydrates asynchronously, so on the first render `decks` is always empty and
+   * {@link initialTab} falls through to `random` — the picker's way of showing something rather than
+   * an empty "My Decks". That placeholder is replaced by `saved` as soon as the list arrives.
+   *
+   * Random asked for *from outside* is the opposite: the landing wizard's "Random pool" and the
+   * cross-kind recreate both hand the tab in through {@link DeckPickerProps.tab}, having already
+   * promised the player a rolled pool. Before this the two were indistinguishable, so
+   * "A friend → Random pool → Create lobby" opened a lobby sitting on My Decks — the picker
+   * overwrote the answer the wizard had just collected.
+   */
+  const randomIsPlaceholder = useRef(controlledTab === undefined)
+  const setTab = useCallback((next: Tab) => {
+    randomIsPlaceholder.current = false
+    setUncontrolledTab(next)
+    onTabChange?.(next)
+  }, [onTabChange])
   const [pasteText, setPasteText] = useState('')
   // Commander designation that rides along with the Paste tab. The paste textarea has no
   // commander UI of its own — loading a commander-shape example is the only way this gets
@@ -194,9 +218,19 @@ export function DeckPicker({
     setRandomSetCode(initialSetCode)
   }, [initialSetCode])
 
-  // Move off `random` to `saved` once decks are hydrated, so users land on their own list.
+  // Tell a controlling parent which tab we resolved to, so it starts in sync rather than having
+  // to guess the default. Fires once; every later change goes through `setTab`.
   useEffect(() => {
-    if (decks.length > 0 && tab === 'random' && showSaved) {
+    onTabChange?.(tab)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Replace the placeholder Random tab with `saved` once decks are hydrated, so users land on their
+  // own list. Keyed on `decks.length`, so this only fires as the deck list arrives — a user who
+  // picks Random later stays on it, and so does a Random the caller asked for
+  // (see `randomIsPlaceholder`).
+  useEffect(() => {
+    if (randomIsPlaceholder.current && decks.length > 0 && tab === 'random' && showSaved) {
       setTab('saved')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -418,10 +452,12 @@ export function DeckPicker({
         {tab === 'saved' && (
           <SavedDecksPanel
             decks={visibleDecks}
+            catalog={cards}
             legalityMap={legalityMap}
             format={format}
             hiddenCount={decks.length - visibleDecks.length}
             selectedId={selectedSavedId}
+            disabled={disabled}
             onSelect={setSelectedSavedId}
             onDelete={(d) => {
               void removeDeck(d)
@@ -439,20 +475,13 @@ export function DeckPicker({
         )}
 
         {tab === 'examples' && (
-          <div className={styles.exampleGrid}>
-            {visibleExamples.map((ex) => (
-              <button key={ex.id} className={styles.exampleCard} onClick={() => handleLoadExample(ex)} disabled={disabled}>
-                <span className={styles.exampleName}>{ex.name}</span>
-                <span className={styles.exampleDesc}>{ex.description}</span>
-                <span className={styles.savedItemCount}>{Object.values(ex.cards).reduce((a, b) => a + b, 0)} cards</span>
-              </button>
-            ))}
-            {visibleExamples.length === 0 && (
-              <p className={styles.helperText}>
-                {examples.length === 0 ? 'Loading examples…' : 'No examples for this format.'}
-              </p>
-            )}
-          </div>
+          <ExampleDecksPanel
+            examples={visibleExamples}
+            catalog={cards}
+            loading={examples.length === 0}
+            disabled={disabled}
+            onLoad={handleLoadExample}
+          />
         )}
 
         {tab === 'paste' && (
@@ -491,39 +520,51 @@ export function DeckPicker({
 
         {tab === 'random' && (
           <>
-            {availableSets.length > 0 && (() => {
-              const selectedSet = randomSetCode
-                ? availableSets.find((s) => s.code === randomSetCode) ?? null
-                : null
-              return (
-                <div className={styles.actionsRow}>
-                  <label className={styles.helperText} style={{ flexShrink: 0 }}>Set</label>
-                  <span
-                    className={`${lobbyStyles.setChip} ${selectedSet?.partial ? lobbyStyles.setChipPartial : ''}`}
-                    title={selectedSet?.name ?? 'A random set is rolled when the game starts'}
-                  >
-                    {selectedSet ? (
-                      <SetIcon code={selectedSet.code} className={lobbyStyles.setChipIcon} />
-                    ) : (
-                      <span className={lobbyStyles.setChipIcon} aria-hidden>🎲</span>
-                    )}
-                    <span className={lobbyStyles.setChipName}>{selectedSet?.name ?? 'Random Set'}</span>
-                  </span>
-                  <button
-                    type="button"
-                    className={lobbyStyles.addSetsButton}
-                    onClick={() => setShowSetPicker(true)}
-                    disabled={disabled}
-                    style={{ marginLeft: 'auto' }}
-                  >
-                    Choose set
-                  </button>
-                </div>
-              )
-            })()}
-            <p className={styles.helperText}>
-              The server will generate a random sealed pool deck when the game starts.
-            </p>
+            {/* The one tab whose answer is "nothing to do", which is exactly why it has to say so.
+                It used to be a single grey line in a 220px box — indistinguishable from a panel
+                that had failed to load, and the least convincing possible landing place for
+                someone who has just answered "Random pool" in the wizard. */}
+            <div className={styles.randomCard} data-testid="random-pool-panel">
+              <span className={styles.randomDie} aria-hidden>🎲</span>
+              <h3 className={styles.randomTitle}>The server builds your deck</h3>
+              <p className={styles.randomBody}>
+                Eight boosters from one set, auto-built into a 40-card deck the moment the game
+                starts. Nothing to pick, nothing to submit — just ready up.
+              </p>
+              <p className={styles.randomBody}>
+                This covers your seat only. Your opponent can still bring a deck of their own.
+              </p>
+              {availableSets.length > 0 && (() => {
+                const selectedSet = randomSetCode
+                  ? availableSets.find((s) => s.code === randomSetCode) ?? null
+                  : null
+                return (
+                  <div className={styles.randomSetRow}>
+                    <label className={styles.helperText} style={{ flexShrink: 0 }}>Set</label>
+                    <span
+                      className={`${lobbyStyles.setChip} ${selectedSet?.partial ? lobbyStyles.setChipPartial : ''}`}
+                      title={selectedSet?.name ?? 'A random set is rolled when the game starts'}
+                    >
+                      {selectedSet ? (
+                        <SetIcon code={selectedSet.code} className={lobbyStyles.setChipIcon} />
+                      ) : (
+                        <span className={lobbyStyles.setChipIcon} aria-hidden>🎲</span>
+                      )}
+                      <span className={lobbyStyles.setChipName}>{selectedSet?.name ?? 'Random Set'}</span>
+                    </span>
+                    <button
+                      type="button"
+                      className={lobbyStyles.addSetsButton}
+                      onClick={() => setShowSetPicker(true)}
+                      disabled={disabled}
+                      style={{ marginLeft: 'auto' }}
+                    >
+                      Choose set
+                    </button>
+                  </div>
+                )
+              })()}
+            </div>
             {showSetPicker && (
               <SetPickerModal
                 sets={availableSets}
@@ -564,18 +605,42 @@ function TabButton({
   )
 }
 
+/**
+ * "My Decks" gallery. Same full-art {@link DeckTile} the deckbuilder's saved-deck browser
+ * uses, so a deck looks identical wherever it's picked; clicking a tile selects it as the
+ * deck to play, and hover exposes Edit (opens it in the Paste tab) / Delete.
+ */
 function SavedDecksPanel({
-  decks, legalityMap, format, hiddenCount, selectedId, onSelect, onDelete, onEdit,
+  decks, catalog, legalityMap, format, hiddenCount, selectedId, disabled, onSelect, onDelete, onEdit,
 }: {
   decks: UnifiedDeck[]
+  catalog: Record<string, CardSummary>
   legalityMap: Record<string, string[]>
   format: string | null
   hiddenCount: number
   selectedId: string | null
+  disabled: boolean
   onSelect: (id: string) => void
   onDelete: (d: UnifiedDeck) => void
   onEdit: (d: UnifiedDeck) => void
 }) {
+  // Tile metadata per deck. The commander is folded back into the card map (saved decks keep
+  // it out of `cards` per `SavedDeck.commander`) so the count and pips match what actually
+  // gets played, and so a commander can win the hero-art tie-break.
+  const tiles = useMemo(
+    () =>
+      decks.map((d) => {
+        const fullCards = mergeCommanderIntoCards(d.cards, d.commander ?? null)
+        return {
+          deck: d,
+          total: Object.values(fullCards).reduce((a, b) => a + b, 0),
+          colors: deckColors(fullCards, catalog),
+          hero: rarestCard(fullCards, catalog, d.commander ?? null),
+        }
+      }),
+    [decks, catalog],
+  )
+
   if (decks.length === 0) {
     if (format && hiddenCount > 0) {
       return (
@@ -595,66 +660,110 @@ function SavedDecksPanel({
           hiding {hiddenCount} that {hiddenCount === 1 ? 'is not' : 'are not'} legal.
         </p>
       )}
-      <ul className={styles.savedList}>
-        {decks.map((d) => {
-          const fullCards = mergeCommanderIntoCards(d.cards, d.commander ?? null)
-          const total = Object.values(fullCards).reduce((a, b) => a + b, 0)
-          const legalIn = legalityMap[d.id] ?? []
-          return (
-            <li
-              key={d.id}
-              className={`${styles.savedItem} ${selectedId === d.id ? styles.savedItemSelected : ''}`}
-              onClick={() => onSelect(d.id)}
-            >
-              <div className={styles.savedItemMeta}>
-                <span className={styles.savedItemName}>
-                  {d.name}
-                  <span
-                    className={styles.savedItemFormatBadge}
-                    style={{
-                      marginLeft: 6,
-                      color: d.online ? '#9be8bd' : '#b8b8c4',
-                      borderColor: d.online ? 'rgba(62,207,122,0.35)' : undefined,
-                    }}
-                    title={d.online ? 'Backed up to your account' : 'Saved only in this browser'}
-                  >
-                    {d.online ? 'Online' : 'Browser'}
-                  </span>
-                </span>
-                <span className={styles.savedItemCount}>{total} cards</span>
-                {(d.format || legalIn.length > 0) && (
-                  <span className={styles.savedItemFormats}>
-                    {d.format && (
-                      <span
-                        className={styles.savedItemFormatBadgeSaved}
-                        title={`Saved as ${labelForFormat(d.format)}`}
-                      >
-                        {labelForFormat(d.format)}
-                      </span>
-                    )}
-                    {legalIn
-                      .filter((f) => f !== d.format)
-                      .map((f) => (
-                        <span
-                          key={f}
-                          className={styles.savedItemFormatBadge}
-                          title={`Legal in ${labelForFormat(f)}`}
-                        >
-                          {labelForFormat(f)}
-                        </span>
-                      ))}
-                  </span>
-                )}
-              </div>
-              <div className={styles.savedItemActions}>
-                <button className={styles.linkButton} onClick={(e) => { e.stopPropagation(); onEdit(d) }} type="button">Edit</button>
-                <button className={styles.dangerButton} onClick={(e) => { e.stopPropagation(); onDelete(d) }} type="button">Delete</button>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
+      <div className={styles.deckGridScroll}>
+        <div className={styles.deckGrid}>
+          {tiles.map(({ deck, total, colors, hero }) => {
+            // One chip only: the format the deck was saved as, else the first format it's legal in.
+            const shownFormat = deck.format ?? legalityMap[deck.id]?.[0] ?? null
+            return (
+              <DeckTile
+                key={deck.id}
+                name={deck.name}
+                total={total}
+                colors={colors}
+                hero={hero}
+                format={shownFormat}
+                formatTitle={
+                  shownFormat
+                    ? deck.format
+                      ? `Saved as ${labelForFormat(shownFormat)}`
+                      : `Legal in ${labelForFormat(shownFormat)}`
+                    : undefined
+                }
+                selected={deck.id === selectedId}
+                badge={deck.id === selectedId ? 'Selected' : undefined}
+                storage={deck.online ? 'cloud' : 'local'}
+                title={`Play with ${deck.name}`}
+                disabled={disabled}
+                onClick={() => onSelect(deck.id)}
+                actions={
+                  <>
+                    <DeckTileActionButton
+                      onClick={() => onEdit(deck)}
+                      title="Edit in the Paste tab"
+                      ariaLabel={`Edit ${deck.name}`}
+                    >
+                      ✎
+                    </DeckTileActionButton>
+                    <DeckTileActionButton
+                      onClick={() => onDelete(deck)}
+                      title="Delete"
+                      ariaLabel={`Delete ${deck.name}`}
+                      danger
+                    >
+                      ✕
+                    </DeckTileActionButton>
+                  </>
+                }
+              />
+            )
+          })}
+        </div>
+      </div>
     </>
   )
 }
 
+/**
+ * Server-supplied starter decks, shown as the same art tiles as "My Decks" so both halves of
+ * the picker read as one gallery. Clicking a tile loads the list into the Paste tab (where the
+ * user can tweak and save it) — matching the pre-gallery behaviour.
+ */
+function ExampleDecksPanel({
+  examples, catalog, loading, disabled, onLoad,
+}: {
+  examples: ExampleDeck[]
+  catalog: Record<string, CardSummary>
+  loading: boolean
+  disabled: boolean
+  onLoad: (ex: ExampleDeck) => void
+}) {
+  const tiles = useMemo(
+    () =>
+      examples.map((ex) => ({
+        example: ex,
+        total: Object.values(ex.cards).reduce((a, b) => a + b, 0),
+        colors: deckColors(ex.cards, catalog),
+        hero: rarestCard(ex.cards, catalog, ex.commander ?? null),
+      })),
+    [examples, catalog],
+  )
+  if (tiles.length === 0) {
+    return (
+      <p className={styles.helperText}>
+        {loading ? 'Loading examples…' : 'No examples for this format.'}
+      </p>
+    )
+  }
+  return (
+    <div className={styles.deckGridScroll}>
+      <div className={styles.deckGrid}>
+        {tiles.map(({ example, total, colors, hero }) => (
+          <DeckTile
+            key={example.id}
+            name={example.name}
+            description={example.description}
+            total={total}
+            colors={colors}
+            hero={hero}
+            format={example.format ?? null}
+            formatTitle={example.format ? `Built for ${labelForFormat(example.format)}` : undefined}
+            title={`Load ${example.name} into the Paste tab`}
+            disabled={disabled}
+            onClick={() => onLoad(example)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}

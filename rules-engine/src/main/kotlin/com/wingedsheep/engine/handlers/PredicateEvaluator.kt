@@ -30,7 +30,7 @@ import com.wingedsheep.engine.state.components.identity.RoomComponent
 import com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
-import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardFromBattlefieldThisTurnMarker
+import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.CounterType
@@ -1056,6 +1056,21 @@ class PredicateEvaluator {
                         ?.playerIds?.contains(sourceController) == true
             }
 
+            // Mirror of the above: the *source* is the damage dealer and the candidate is any
+            // permanent. Reads the source's per-turn recipient marker and asks whether the
+            // candidate's current controller is among them ("destroy each nonland permanent whose
+            // controller was dealt combat damage by this creature this turn" — Steel Hellkite).
+            // Controller is read from the projected state so control-changing effects count.
+            StatePredicate.ControllerDealtCombatDamageBySourceThisTurn -> {
+                val sourceId = context?.sourceId
+                val damagedPlayers = sourceId
+                    ?.let { state.getEntity(it)?.get<DealtCombatDamageToPlayersThisTurnComponent>() }
+                    ?.playerIds ?: emptySet()
+                val candidateController = state.projectedState.getController(entityId)
+                    ?: container.get<ControllerComponent>()?.playerId
+                candidateController != null && candidateController in damagedPlayers
+            }
+
             // Whether this creature has been declared as an attacker this turn — derived
             // from the controller's PlayerAttackersThisTurnComponent, the same set that
             // backs raid / "you attacked with N creatures this turn" tribal triggers.
@@ -1080,15 +1095,20 @@ class PredicateEvaluator {
                 container.has<BlockedThisCombatComponent>()
             }
 
-            // "Put there from the battlefield this turn" filter for graveyard-zone targets
-            // (Samwise the Stouthearted, Lobelia Sackville-Baggins — LTR). Reads the marker
-            // set by ZoneTransitionService on battlefield→graveyard moves. The marker is
-            // stripped when the card leaves the graveyard (so a later mill→graveyard or
-            // exile→graveyard arrival doesn't falsely match) AND at the start of every
-            // turn by BeginningPhaseManager (so the "this turn" window matches MTG's
+            // "Put there this turn" filter for graveyard-zone targets (Abyssal Harvester — FDN).
+            // Reads the marker ZoneTransitionService stamps on every graveyard arrival,
+            // regardless of the zone it came from. The marker is stripped when the card leaves
+            // the graveyard (so it can't outlive the arrival it describes) AND at the start of
+            // every turn by BeginningPhaseManager (so the "this turn" window matches MTG's
             // per-turn semantics, not the engine's per-round turn counter).
+            StatePredicate.PutIntoGraveyardThisTurn -> {
+                container.has<PutIntoGraveyardThisTurnComponent>()
+            }
+
+            // The zone-restricted sibling: same marker, but the arrival must have been from
+            // the battlefield (Samwise the Stouthearted, Lobelia Sackville-Baggins — LTR).
             StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> {
-                container.has<PutIntoGraveyardFromBattlefieldThisTurnMarker>()
+                container.get<PutIntoGraveyardThisTurnComponent>()?.fromBattlefield == true
             }
 
             // "Blocked or was blocked by a legendary creature this turn" (You Cannot Pass! — LTR).
@@ -1142,6 +1162,16 @@ class PredicateEvaluator {
                     val attachContainer = state.getEntity(attachId)
                     val card = attachContainer?.get<CardComponent>()
                     card?.typeLine?.isEquipment == true
+                }
+            }
+
+            // Aura state — "enchanted". Mirrors IsEquipped over the Aura subtype instead of
+            // Equipment, so a permanent carrying only Equipment (or only counters) is not enchanted.
+            StatePredicate.IsEnchanted -> {
+                val attachments = container.get<AttachmentsComponent>()
+                if (attachments == null || attachments.attachedIds.isEmpty()) return false
+                attachments.attachedIds.any { attachId ->
+                    state.getEntity(attachId)?.get<CardComponent>()?.typeLine?.isAura == true
                 }
             }
 

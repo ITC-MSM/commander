@@ -14,6 +14,36 @@ internal fun BridgeBuilder.keywords() {
     // intimidate would compile, lint, and snapshot fine while doing nothing in combat — a silent
     // no-op. Pin it blocking until the engine implements it; then delete this line.
     unsupported("Intimidate", "Keyword.INTIMIDATE is enum-only — no BlockEvasionRules handling; implement intimidate block evasion (CR 702.13) to unlock")
+    // "Hexproof from [quality]" (CR 702.11b) — a PARAMETERIZED keyword ability, so `supported` rather
+    // than `keyword`: a bare `keywords(Keyword.HEXPROOF)` stamp would drop the quality and silently
+    // widen the card to full hexproof. Modelled as
+    // `keywordAbility(KeywordAbility.Hexproof(ProtectionScope.…))`; the engine enforces the Color and
+    // CardType scopes (Knight of Malice, Elenda, Saint of Dusk) at all three targeting sites. This entry
+    // only marks the capability covered — the emitter declines (SCAFFOLD) because picking the right
+    // ProtectionScope from the IR's quality node is a per-card read.
+    supported("HexproofFrom", "keyword ability: hexproof from [quality] -> KeywordAbility.Hexproof(ProtectionScope.…) (CR 702.11b)")
+    // Gift a [something] (CR 702.174, Bloomburrow) — a PARAMETERIZED keyword ability (the gifted thing
+    // rides in the rule), so `supported` rather than `keyword`: there is no Keyword.GIFT enum member.
+    // On a permanent the engine has the whole mechanic: `gift(GiftKind.…)` adds the cast-time additional
+    // cost (a `CastWithGift` legal action per opponent) plus the derived "when this enters, if its gift
+    // cost was paid, …" trigger; on an instant/sorcery it's `Patterns.Mechanic.giftSpell(…)`. The emitter
+    // declines (SCAFFOLD): which GiftKind is listed, and how the card's *other* text branches on
+    // `Conditions.GiftWasPromised`, is a per-card read.
+    supported("Gift", "keyword ability: Gift a [something] -> gift(GiftKind.…) on permanents / Patterns.Mechanic.giftSpell on instants & sorceries (CR 702.174)")
+    // Bargain (CR 702.166, Wilds of Eldraine) — "You may sacrifice an artifact, enchantment, or token
+    // as you cast this spell." `composed`, not a bare `keyword`: `Keyword.BARGAIN` exists, but stamping
+    // it alone would print the word and drop the whole mechanic — the optional additional cost and the
+    // ChoiceSlot.BARGAINED declaration its payoffs read. The `bargain()` CardBuilder helper composes
+    // both (an OptionalAdditionalCost over ArtifactEnchantmentOrToken declaring that slot), and the
+    // emitter's `rname == "Bargain"` branch renders that no-arg builder call (the rule carries no args).
+    // The payoff side — `SpellPassesFilter(ThisSpell, WasBargained)` — renders as
+    // `Conditions.WasBargained` in actionConditionDsl, so a plain "if this spell was bargained, X else
+    // Y" rider emits whole.
+    composed(
+        "Bargain",
+        "keyword: bargain() -> optional 'sacrifice an artifact, enchantment, or token' additional cost + ChoiceSlot.BARGAINED (CR 702.166)",
+        composes = listOf("Sacrifice"),
+    )
     // Saddle N (CR 702.171) — a PARAMETERIZED keyword ability (the N count rides in the rule's args),
     // NOT a bare card keyword. It must be `supported`, not `keyword`: a `keyword` entry would make
     // `keywordLines` stamp a bare `keywords(Keyword.SADDLE)` on the card and drop the N, exactly the

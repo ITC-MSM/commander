@@ -268,6 +268,10 @@ fun OptionalCostEffect(
  *   delegated (e.g. [EffectTarget.TargetController] for "that creature's controller may …",
  *   or [EffectTarget.PlayerRef] of `TargetOpponent` for "target opponent may …").
  * @param otherwise Effect that runs iff the chooser declines ("If that player doesn't, …").
+ * @param feasibility Precondition for the may-action being possible at all. Unmet at resolution ⇒ the
+ *   prompt is skipped and [otherwise] runs directly, so a recurring trigger ("whenever this creature
+ *   attacks, you may sacrifice a Food") stops asking an unanswerable question every combat. Only for
+ *   preconditions the *engine* can decide — never to pre-empt a genuine player choice.
  */
 @Suppress("FunctionName")
 fun MayEffect(
@@ -277,12 +281,14 @@ fun MayEffect(
     inlineOnTrigger: Boolean = false,
     hint: String? = null,
     decisionMaker: EffectTarget? = null,
-    otherwise: Effect? = null
+    otherwise: Effect? = null,
+    feasibility: FeasibilityCheck? = null
 ): GatedEffect = GatedEffect(
     gate = Gate.MayDecide(
         hint = hint,
         sourceRequiredZone = sourceRequiredZone,
-        inlineOnTrigger = inlineOnTrigger
+        inlineOnTrigger = inlineOnTrigger,
+        feasibility = feasibility
     ),
     then = effect,
     otherwise = otherwise,

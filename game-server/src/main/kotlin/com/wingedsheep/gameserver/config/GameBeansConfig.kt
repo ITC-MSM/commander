@@ -1,6 +1,7 @@
 package com.wingedsheep.gameserver.config
 
 import com.wingedsheep.ai.engine.SealedDeckGenerator
+import com.wingedsheep.ai.engine.deck.ConstructedDeckGenerator
 import com.wingedsheep.ai.engine.deck.RandomDeckGenerator
 import com.wingedsheep.engine.limited.BoosterGenerator
 import com.wingedsheep.engine.registry.CardRegistry
@@ -99,6 +100,17 @@ class GameBeansConfig(
     @Bean
     fun sealedDeckGenerator(boosterGenerator: BoosterGenerator): SealedDeckGenerator =
         SealedDeckGenerator(boosterGenerator)
+
+    /**
+     * Builds format-legal 60-card decks for the AI seat. Needs the registry as well as the booster
+     * generator: a set's reprints are name-only [com.wingedsheep.sdk.model.Printing] rows whose
+     * canonical definition lives in an earlier set.
+     */
+    @Bean
+    fun constructedDeckGenerator(
+        boosterGenerator: BoosterGenerator,
+        cardRegistry: CardRegistry,
+    ): ConstructedDeckGenerator = ConstructedDeckGenerator(boosterGenerator, cardRegistry)
 
     @Bean
     fun randomDeckGenerator(): RandomDeckGenerator {

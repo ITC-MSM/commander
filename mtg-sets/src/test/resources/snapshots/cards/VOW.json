@@ -4574,6 +4574,58 @@
     ]
 }
 
+// Honeymoon Hearse
+{
+    "name": "Honeymoon Hearse",
+    "manaCost": "{2}{R}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Trample\nTap two untapped creatures you control: This Vehicle becomes an artifact creature until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 2,
+                        "filter": "creature ctrl:you"
+                    }
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 5
+                    }
+                },
+                "descriptionOverride": "This Vehicle becomes an artifact creature until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "rarity": "UNCOMMON",
+        "artist": "Raoul Vitale",
+        "flavorText": "A carriage crafted from the finest materials. Horses bred from the finest stock. Skulls taken from the finest foes.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/04e491a1-b195-45bb-bf06-345eaee30b81.jpg?1783924835"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Honored Heirloom
 {
     "name": "Honored Heirloom",

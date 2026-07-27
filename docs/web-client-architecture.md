@@ -175,6 +175,25 @@ App
     └── DeathEffect
 ```
 
+## In-game deck tracker
+
+Clicking your own Deck pile (or pressing `D`) opens `board/DeckBrowser.tsx`, a two-tab overlay:
+
+- **Deck list** — your decklist with a `remaining/copies` count per card, fully-drawn rows dimmed,
+  next-draw odds, and the deckbuilder's mana curve and colour pips. It renders
+  `ClientGameState.deck` through `components/deck/GameDeckView.tsx`'s `DeckCardBody`, the same
+  component the profile and admin deck viewers use — a `DeckViewCard` is just a recorded
+  `GameDeckCard` plus an optional `remaining`, and supplying it is what switches rows into tracker
+  mode.
+- **Library order** — the pre-existing library view (top to bottom, card backs for anything not
+  revealed to you).
+
+Everything shown comes from the server: `deck` is populated only for `viewingPlayerId` and is empty
+for spectators, so an opponent's Deck pile has no deck-list tab at all and the client never has to
+decide what to hide. See `data-contracts.md` §B3 for the payload and its two masking rules — in
+particular that `remaining` means "copies you haven't seen", which is not always the same as
+"copies in your library".
+
 ## Battlefield card grouping (token quantity aggregation)
 
 Identical permanents on one player's board collapse into a single visual **stack**
@@ -248,12 +267,17 @@ are gated on `players.length > 2`).
   priority seat in hotseat — and is refused inside `followViewTo` while any input is
   pending (the camera never moves under an in-progress selection).
 - **Table overview** (`boardView.overviewMode`, rail toggle or key `0`; desktop/tablet
-  only — phones keep the focused camera): every living opponent's board shares the strip
+  only — phones keep the focused camera). **Every 3+ player game opens on it** — the
+  one-board camera hides most of a pod — and `GameBoard` re-defaults once per game
+  (keyed on the session id), so focusing a single board sticks for the rest of that game
+  but the next one starts on the overview again. Every living opponent's board shares the strip
   side-by-side instead of the one-board camera — cells split the width evenly (padded
   clear of the fixed rail via `railReservedWidth` and of the Fullscreen/Concede row),
   hand fans hide (chips carry the counts), and the per-slot card sizer shrinks cards to
   fit. Each visible cell gets a seat-colored **name plate** (`BoardNamePlate` — the
-  board's "face": name + life) and the viewed cell a subtle seat-colored inset ring.
+  board's "face": name + life), and the **active player's** cell a subtle seat-colored inset
+  ring (`activeTurnRingColor` — on the top row, the bottom row, and your own cell): with every
+  board on screen at once, whose turn it is is the thing worth highlighting.
   Hidden boards stay mounted after the visible cells at full width, overflowing
   off-screen right, so their card anchors keep remapping to rail chips. Selecting a
   single board (chip click / `1`-`9`) exits back to the focused camera. Each cell can
@@ -262,24 +286,38 @@ are gated on `players.length > 2`).
   remaining boards split the freed width, and a collapsed seat's full board moves to
   the off-screen group so its anchors bundle back to the rail chip. Collapse state is
   overview-only — the focused camera and the combat split ignore it — and persists
-  across overview toggles until the game resets.
+  across overview toggles until the game resets. In a 3+ player game the overview is
+  **two rows**, not one strip: `GameBoard` partitions the living seats into a top row (the
+  opponent strip) and a bottom row (grid rows 4-5) around an *anchor* seat — a team game
+  splits by team (your team at the bottom), a free-for-all balances evenly with the anchor
+  at the bottom and the odd seat on top. The bottom row renders as a second strip of cells
+  (`bottomHalf` — lands toward the bottom edge, per-board collapse) whenever it holds more
+  than the anchor; a lone anchor keeps the classic single bottom board.
 - **Combat defender-focus split** (`useCombatDefenderFocus`): when the server's confirmed
   combat is between two *other* players, the attacker's and defenders' boards share the
   strip so the fight renders as real arrows between real boards instead of a bundled
   arrow onto a rail chip. Entering the split respects the camera guards (follow on,
   unpinned, no pending input — `hasPendingInputSelection`); once active it holds for the
   whole combat so boards don't shift mid-fight.
-- **Eliminated spectator** (`boardView.eliminatedSpectating`): a personal
-  `PlayerEliminatedMessage` marks the defeat overlay `GameOverState.eliminated`, which
-  adds a "Keep Watching" button. It dismisses the overlay, forces the table overview, and
-  collapses the dead bottom half (grid rows 4-5 → 0, hand/pass/undo/concede hidden) with
-  a "spectating" banner + Leave Game button; the freed height flows to the opponent
-  strip. The banner also carries a **bottom-board picker**
-  (`boardView.eliminatedBottomSeatId`): choosing a living player anchors their board in
-  the empty bottom half the way spectating renders a bottom seat — read-only board +
-  face-down hand, their life on the right center-HUD orb (which takes over their
-  anchors from the rail chip), and their cell leaves the opponent strip. Clicking the
-  active seat again clears it; the choice self-heals to "collapsed" if that player dies.
+- **Eliminated spectator** (`isViewerEliminated`, in the `boardView` slice): the layout is
+  **derived from the roster** — the local seat is `hasLost` while two or more seats are still
+  standing, in a non-hotseat 3+ player game — not from any message or click, so it holds
+  however the seat died (conceding, damage, decking out, poison) and survives a reconnect.
+  Alongside it the server sends a personal `PlayerEliminatedMessage` (from
+  `GamePlayHandler.notifyEliminatedSeats`, once per seat, for *every* loss reason) which marks
+  the defeat overlay `GameOverState.eliminated` and adds a "Keep Watching" button;
+  `boardView.eliminatedSpectating` records only that the player took it, dismissing the overlay.
+  The layout hides all action UI (hand/pass/undo/concede) behind a "spectating" banner + Leave
+  Game button. An eliminated player is just an observer without a board of their own
+  (`viewerIsObserver` = spectating ‖ eliminated), so they get the same two-row overview a
+  spectator gets: the survivors face each other across the table, with a survivor's board
+  holding their now-vacant bottom half — read-only board + face-down hand, that seat's
+  life on the right center-HUD orb (which takes over their anchors from the rail chip),
+  and their cell out of the opponent strip. `useEliminatedBottomSeatId` resolves which
+  survivor that is: the banner's **bottom-seat picker**
+  (`boardView.eliminatedBottomSeatId`), else a living teammate (team game), else the next
+  living seat in turn order — so it self-heals when that seat dies. Only when no survivor
+  is left do grid rows 4-5 collapse to 0 and the freed height flow to the opponent strip.
 - **Seat identity**: `styles/seatColors.ts` (Okabe-Ito, by seat index = turn-order index in
   `gameState.players`) colors rail chips, combat arrows and chevrons, stack item borders
   (caster), and log entry names.
@@ -310,9 +348,10 @@ are gated on `players.length > 2`).
   (hand `CardRow`, `CommandZone`, `Battlefield`, `ZonePile`, and everything inside
   `GameCard`) that is full-screen or positioned in viewport coordinates must go through
   `createPortal(..., document.body)`.** Current portals: the
-  graveyard/exile/library/plotted/paradigm browsers (`ZonePiles.tsx` — titles carry the
+  graveyard/exile/plotted/paradigm browsers (`ZonePiles.tsx` — titles carry the
   owner's name, "Carol's Graveyard", since "Opponent's" is ambiguous at a multiplayer
-  table), the attachments browser (`Battlefield.tsx`), the copy-of hover preview and the
+  table) and the deck browser (`DeckBrowser.tsx`), the attachments browser
+  (`Battlefield.tsx`), the copy-of hover preview and the
   active-effect badge tooltip (`GameCard.tsx` / `CardOverlays.tsx`). Overlays rendered
   from `GameBoard` itself (stack, action menu, decision modals, yield menu) sit outside
   the strip and don't need it.

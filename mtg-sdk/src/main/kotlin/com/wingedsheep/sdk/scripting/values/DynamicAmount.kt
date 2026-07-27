@@ -71,6 +71,30 @@ enum class TurnTracker {
      * control this turn" wording (Bioengineered Future).
      */
     LANDS_ENTERED_UNDER_CONTROL,
+    /**
+     * Number of **nonland** permanents that entered the battlefield under the player's control
+     * this turn — the complement of [LANDS_ENTERED_UNDER_CONTROL] over the same per-player entry
+     * log. Tokens count (they're permanents); a permanent that is both a land and a creature does
+     * not (it's a land). Entries are counted per *entry event*, so a permanent that leaves and
+     * re-enters counts twice (CR 400.7 — it's a new object each time), and an entry stays counted
+     * even after the permanent leaves the battlefield or changes controller.
+     *
+     * `Compare(TurnTracking(You, NONLAND_PERMANENTS_ENTERED), GTE, Fixed(2))` is the **Celebration**
+     * ability word (Wilds of Eldraine, CR 207.2c — flavor only, no keyword): "two or more nonland
+     * permanents entered the battlefield under your control this turn". Reach for it via
+     * `Conditions.Celebration`.
+     */
+    NONLAND_PERMANENTS_ENTERED,
+    /**
+     * The number of creatures that entered the battlefield under the player's control this turn —
+     * the creature-typed slice of the same per-player entry log behind [NONLAND_PERMANENTS_ENTERED]
+     * (an entry counts if it was a creature at the moment it entered). Entries are counted per entry
+     * event (a creature that leaves and re-enters counts twice, CR 400.7) and stay counted after the
+     * creature later leaves. `Compare(TurnTracking(You, CREATURES_ENTERED_UNDER_CONTROL), GTE,
+     * Fixed(2))` backs "two or more creatures entered the battlefield under your control this turn"
+     * (Spider-UK). Reach for the threshold form via `Conditions.CreaturesEnteredThisTurn`.
+     */
+    CREATURES_ENTERED_UNDER_CONTROL,
     /** Indicator (0 or 1) that the player sacrificed at least one Food this turn. */
     FOOD_SACRIFICED,
     /** Total cards that left the player's graveyard this turn (Bonecache Overseer). */
@@ -136,6 +160,8 @@ enum class TurnTracker {
         COUNTERS_PUT_ON_CREATURE -> "whether ${player.description} put a counter on a creature this turn"
         LANDS_PLAYED -> "the number of lands ${player.description} played this turn"
         LANDS_ENTERED_UNDER_CONTROL -> "the number of lands that entered the battlefield under ${player.possessive} control this turn"
+        NONLAND_PERMANENTS_ENTERED -> "the number of nonland permanents that entered the battlefield under ${player.possessive} control this turn"
+        CREATURES_ENTERED_UNDER_CONTROL -> "the number of creatures that entered the battlefield under ${player.possessive} control this turn"
         FOOD_SACRIFICED -> "whether ${player.description} sacrificed a Food this turn"
         CARDS_LEFT_GRAVEYARD -> "the number of cards that left ${player.possessive} graveyard this turn"
         DESCENDED -> "the number of times ${player.description} descended this turn"
@@ -266,6 +292,14 @@ enum class ContextPropertyKey(val description: String) {
      * `0` when the trigger was not a creatures-died batch.
      */
     DIED_BATCH_TOTAL_POWER("the total power of those creatures"),
+    /**
+     * Number of cards discarded in the batch that fired this trigger (CR 603.2c). Read by
+     * "Whenever you discard one or more cards, ... that much / that many" payoffs (Magmakin
+     * Artillerist). Populated from `CardsDiscardedEvent.cardIds.size`, so a single discard
+     * event of three cards reports `3` while three sequential one-card discards fire three
+     * separate triggers reporting `1`. `0` when the trigger was not a discard.
+     */
+    TRIGGER_DISCARD_COUNT("that much"),
 }
 
 /**
@@ -323,6 +357,26 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     @Serializable
     data class LifeTotal(val player: Player) : DynamicAmount {
         override val description: String = "${player.possessive} life total"
+    }
+
+    /**
+     * A player's **speed** (Aetherdrift, CR 702.179) — the 0–4 designation that
+     * "Start your engines!" begins and the inherent speed trigger raises.
+     *
+     * A player who has no speed reads as 0 (CR 702.179f), so this is always a plain number and
+     * needs no "has speed" guard at the use site.
+     *
+     * Examples:
+     * ```kotlin
+     * Speed(Player.You)  // "your speed" — Point the Way's X, The Speed Demon's X
+     * ```
+     * Comparisons build the max-speed gate: `Compare(Speed(Player.You), EQ, Fixed(Speed.MAX))`,
+     * exposed as [com.wingedsheep.sdk.dsl.Conditions.YouHaveMaxSpeed].
+     */
+    @SerialName("Speed")
+    @Serializable
+    data class Speed(val player: Player = Player.You) : DynamicAmount {
+        override val description: String = "${player.possessive} speed"
     }
 
     /**
@@ -392,16 +446,25 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
-     * The number of counters matching [counterType] that the *source* of the current ability had
-     * the moment its self-exile / self-sacrifice cost was paid (CR 112.7a / 608.2h last-known
-     * information). When an activated ability's cost exiles or sacrifices its own source, the
-     * source's counters are gone by the time the effect resolves (CR 122.2 removes counters on a
-     * zone change), so the count is snapshotted into the resolution context at cost-payment time.
+     * The number of counters matching [counterType] the *source* of the current ability had as it
+     * last existed on the battlefield (CR 112.7a / 608.2h last-known information). Counters cease
+     * to exist on a zone change (CR 122.2), so the count comes from whichever snapshot the
+     * resolution context carries:
      *
-     * Example — Lost Isle Calling: "{4}{U}{U}, Exile this enchantment: Draw a card for each verse
-     * counter on this enchantment. If it had seven or more verse counters on it, take an extra turn
-     * after this one." Both the draw amount and the seven-or-more test read
-     * `LastKnownSourceCounters(CounterTypeFilter.Named(Counters.VERSE))`.
+     *  - the **cost-payment** snapshot, when an activated ability's cost exiles or sacrifices its
+     *    own source — Lost Isle Calling: "{4}{U}{U}, Exile this enchantment: Draw a card for each
+     *    verse counter on this enchantment. If it had seven or more verse counters on it, take an
+     *    extra turn after this one." Both the draw amount and the seven-or-more test read
+     *    `LastKnownSourceCounters(CounterTypeFilter.Named(Counters.VERSE))`.
+     *  - the **leaves-the-battlefield trigger** snapshot, for a dies/leaves ability reading the
+     *    counters its source had as it died — Nine-Lives Familiar: "When this creature dies, if it
+     *    had a revival counter on it, return it … with one fewer revival counter on it."
+     *
+     * The parameterized sibling of [ContextPropertyKey.LAST_KNOWN_PLUS_ONE_COUNTER_COUNT] (fixed to
+     * +1/+1) and [ContextPropertyKey.LAST_KNOWN_TOTAL_COUNTER_COUNT] (sums every kind): naming one
+     * kind means an unrelated +1/+1 counter can't satisfy "if it had a revival counter on it".
+     * Evaluates to `0` when neither snapshot is present; a permanent still on the battlefield
+     * should be read with [com.wingedsheep.sdk.dsl.DynamicAmounts.countersOnSelf] instead.
      */
     @SerialName("LastKnownSourceCounters")
     @Serializable
@@ -1198,6 +1261,14 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
      *   *distinct card types* among them (April O'Neil, Hacktivist: "for each card type among
      *   spells you've cast this turn"). An artifact creature spell contributes both Artifact and
      *   Creature. Card types are unioned across every player resolved by [player].
+     * @param beforeTriggeringSpell Count only the casts recorded *before* the triggering spell's own
+     *   cast record — the "each other spell you've cast **before it** this turn" clause that Storm
+     *   (CR 702.40a) and Thousand-Year Storm share. The triggering spell itself, and anything cast in
+     *   response to the trigger while it waits on the stack, are both excluded, so the count is the
+     *   spell's position in the turn's cast history rather than a resolution-time total. Unlike
+     *   [excludeSelf] (which keys off the resolving *source*, so it is inert for a permanent's
+     *   triggered ability) this keys off the triggering entity. A player whose history
+     *   holds no record for the triggering spell contributes nothing.
      */
     @SerialName("SpellsCastThisTurn")
     @Serializable
@@ -1206,7 +1277,8 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         val filter: GameObjectFilter = GameObjectFilter.Any,
         val excludeSelf: Boolean = false,
         val fromZone: Zone? = null,
-        val countDistinctCardTypes: Boolean = false
+        val countDistinctCardTypes: Boolean = false,
+        val beforeTriggeringSpell: Boolean = false
     ) : DynamicAmount {
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount {
             val newFilter = filter.applyTextReplacement(replacer)
@@ -1216,11 +1288,11 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
             append("the number of ")
             if (countDistinctCardTypes) {
                 append("card types among ")
-                if (excludeSelf) append("other ")
+                if (excludeSelf || beforeTriggeringSpell) append("other ")
                 if (filter != GameObjectFilter.Any) append("${filter.description} ")
                 append("spells")
             } else {
-                if (excludeSelf) append("other ")
+                if (excludeSelf || beforeTriggeringSpell) append("other ")
                 if (filter == GameObjectFilter.Any) append("spells")
                 else append("${filter.description} spells")
             }
@@ -1230,6 +1302,7 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
                 else -> append("${player.description} has cast")
             }
             if (fromZone != null) append(" from ${fromZone.name.lowercase()}")
+            if (beforeTriggeringSpell) append(" before it")
             append(" this turn")
         }
     }

@@ -243,6 +243,23 @@ data object SneakCostWasPaid : Condition {
 }
 
 /**
+ * Condition: "If this spell was cast using web-slinging" (CR 702.188).
+ *
+ * True when the source spell/permanent was cast for its
+ * [WebSlinging][com.wingedsheep.sdk.scripting.KeywordAbility.WebSlinging] cost (mana + returning a
+ * tapped creature you control to its owner's hand). Pairs with the durable
+ * [com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG] flag the engine stamps on a resolved
+ * permanent and the `wasWebSlung` flag carried in the resolution context for a non-permanent spell.
+ * Used by riders such as Spiders-Man, Heroic Horde and Scarlet Spider, Ben Reilly that change
+ * behavior when the web-slinging cost was paid.
+ */
+@SerialName("WebSlungCostWasPaid")
+@Serializable
+data object WebSlungCostWasPaid : Condition {
+    override val description: String = "it was cast using web-slinging"
+}
+
+/**
  * Condition: "If this spell's blight additional cost was paid"
  * Used for Lorwyn Eclipsed cards (e.g., Cinder Strike) where the effect changes
  * based on whether the optional Blight additional cost was actually paid.
@@ -367,7 +384,18 @@ data class SourceChosenModeIs(val modeId: String) : Condition {
 @SerialName("CastChoiceMade")
 @Serializable
 data class CastChoiceMade(val slot: com.wingedsheep.sdk.scripting.ChoiceSlot) : Condition {
-    override val description: String = "if a ${slot.name.lowercase().replace('_', ' ')} was chosen"
+    // Flag-shaped slots record "this cost was paid / this thing was declared" rather than a chosen
+    // value, so "if a bargained was chosen" would read as nonsense — phrase those the way the cards
+    // do. Value slots keep the generic wording.
+    override val description: String = when (slot) {
+        com.wingedsheep.sdk.scripting.ChoiceSlot.KICKED -> "if this spell was kicked"
+        com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED -> "if it was bargained"
+        com.wingedsheep.sdk.scripting.ChoiceSlot.SNEAK -> "if its sneak cost was paid"
+        com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG -> "if it was cast using web-slinging"
+        com.wingedsheep.sdk.scripting.ChoiceSlot.WATERBEND_PAID -> "if its waterbend cost was paid"
+        com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED -> "if the gift was promised"
+        else -> "if a ${slot.name.lowercase().replace('_', ' ')} was chosen"
+    }
 }
 
 /**

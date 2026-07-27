@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.dsl.firebending
 import com.wingedsheep.sdk.dsl.impending
 import com.wingedsheep.sdk.dsl.mobilize
 import com.wingedsheep.sdk.dsl.sneak
+import com.wingedsheep.sdk.dsl.webSlinging
 
 /**
  * Represents a keyword ability, which may be simple (Flying) or parameterized (Ward {2}).
@@ -126,11 +127,13 @@ sealed interface KeywordAbility {
     }
 
     /**
-     * Hexproof from a quality. Parameterized by [ProtectionScope]; today only
-     * `ProtectionScope.Color` is engine-supported (the other scopes format the
-     * oracle text but have no rules-engine wiring yet).
+     * Hexproof from a quality. Parameterized by [ProtectionScope]; `ProtectionScope.Color`,
+     * `ProtectionScope.Colors` and `ProtectionScope.CardType` are engine-supported (the remaining
+     * scopes format the oracle text but have no rules-engine wiring yet).
      *
-     * Example: `Hexproof(ProtectionScope.Color(Color.WHITE))` — "Hexproof from white".
+     * Examples:
+     * - `Hexproof(ProtectionScope.Color(Color.WHITE))`    — "Hexproof from white" (Knight of Malice)
+     * - `Hexproof(ProtectionScope.CardType("Instant"))`   — "Hexproof from instants" (Elenda, Saint of Dusk)
      */
     @SerialName("Hexproof")
     @Serializable
@@ -262,31 +265,35 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
-    // Optional Additional Cost (Kicker, Multikicker, Offspring, FlashKicker)
+    // Optional Additional Cost (Kicker, Multikicker, Offspring, FlashKicker, Bargain)
     // =========================================================================
 
     /**
      * **Optional additional cost paid at cast time.** Generalises Kicker, Multikicker,
-     * Offspring, and the pre-kicker "pay {N} more to cast as though it had flash" pattern
-     * (Ghitu Fire et al.). The card script gates effect variations on the [WasKicked]
-     * condition (or on `wasKicked` in trigger filters) when [branchesEffect] is `true`.
+     * Offspring, Bargain, and the pre-kicker "pay {N} more to cast as though it had flash"
+     * pattern (Ghitu Fire et al.). The card script gates effect variations on the durable
+     * fact recorded in [declaredSlot] — read via [WasKicked] / `Conditions.WasBargained`,
+     * or `wasKicked` in trigger filters — when [branchesEffect] is `true`.
      *
      * Mechanically all variants share the same plumbing: the player optionally pays
-     * [manaCost] and/or [additionalCost] as an extra cost while casting, the spell is
-     * marked with the `wasKicked` flag on the stack, and the cost calculator folds the
-     * extra mana into the effective cost. The variants differ only in *what the payment
-     * unlocks*:
+     * [manaCost] and/or [additionalCost] as an extra cost while casting, the spell carries
+     * [declaredSlot] as its declared-cost slot on the stack (and durably, once it resolves
+     * into a permanent), and the cost calculator folds the extra mana into the effective
+     * cost. The variants differ only in *what the payment unlocks*:
      *
      * - **Kicker / Multikicker / Offspring** ([branchesEffect] = `true`) — the spell's
      *   effect branches on `WasKicked`. [multi] = `true` lets the cost be paid any
      *   number of times (Multikicker).
+     * - **Bargain** ([declaredSlot] = [ChoiceSlot.BARGAINED]) — same shape as
+     *   kicker-with-a-sacrifice-cost, but a *different* fact (CR 702.166b), so bargaining
+     *   never reads as kicking and vice versa.
      * - **FlashKicker** ([grantsFlashTiming] = `true`) — paying the cost lets the spell
      *   be cast as though it had flash. Effect is unchanged unless the card also opts
      *   into [branchesEffect] (rare — Ghitu Fire does not).
      *
      * [displayPrefix] customises the printed label ("Kicker", "Multikicker", "Offspring");
      * for FlashKicker it's ignored and the description is rephrased to match the printed
-     * oracle text.
+     * oracle text, and for Bargain the `bargain()` DSL supplies the printed reminder text.
      *
      * The serial name remains `Kicker` for wire compatibility with previously serialised
      * card scripts.
@@ -299,7 +306,8 @@ sealed interface KeywordAbility {
      * - `OptionalAdditionalCost(manaCost = "{2}", grantsFlashTiming = true, branchesEffect = false)` — Ghitu Fire's flash unlock
      *
      * Prefer the [kicker] / [kickerSacrifice] / [multikicker] / [offspring] / [flashKicker]
-     * companion factories.
+     * companion factories, or the `bargain()` DSL helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder].
      */
     @SerialName("Kicker")
     @Serializable
@@ -325,7 +333,16 @@ sealed interface KeywordAbility {
          * non-mana [additionalCost] such as Behold (Molten Exhale: "you may cast this
          * as though it had flash if you behold a Dragon as an additional cost").
          */
-        val grantsFlashTiming: Boolean = false
+        val grantsFlashTiming: Boolean = false,
+        /**
+         * Which durable cast-choice slot records "this optional cost was declared" — the
+         * *identity* of the mechanic riding this rail. Kicker/Multikicker/Offspring stamp
+         * [ChoiceSlot.KICKED] (the default); Bargain stamps [ChoiceSlot.BARGAINED]
+         * (CR 702.166b). The engine stamps this slot on the spell as it is cast and carries it
+         * onto the resolving permanent, and the payoff conditions and cast-trigger filters key
+         * off it — so two mechanics on the same rail never read each other's declaration.
+         */
+        val declaredSlot: ChoiceSlot = ChoiceSlot.KICKED
     ) : KeywordAbility {
         init {
             require(manaCost != null || additionalCost != null) {
@@ -333,6 +350,9 @@ sealed interface KeywordAbility {
             }
         }
         override val description: String = when {
+            // Bargain's cost is definitional (CR 702.166a), so the printed text is the bare keyword
+            // — never "Bargain—sacrifice …". The reminder text belongs to the card's `oracleText`.
+            declaredSlot == ChoiceSlot.BARGAINED -> displayPrefix
             grantsFlashTiming && additionalCost != null ->
                 "You may cast this spell as though it had flash if you " +
                     "${additionalCost.description.replaceFirstChar { it.lowercase() }} as an additional cost to cast it."
@@ -584,6 +604,31 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Gift
+    // =========================================================================
+
+    /**
+     * Gift a [kind] (CR 702.174, Bloomburrow).
+     *
+     * Two abilities in one keyword (CR 702.174a): the additional cost "as an additional cost to
+     * cast this spell, you may choose an opponent" — elected **as the spell is cast**, carried on
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED] + [ChoiceSlot.OPPONENT] and readable
+     * via [com.wingedsheep.sdk.dsl.Conditions.GiftWasPromised] — and, on a permanent, the triggered
+     * ability "when this permanent enters, if its gift cost was paid, [effect]" (CR 702.174b),
+     * whose effect [kind] defines.
+     *
+     * Attach via the `gift(kind)` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder], which adds
+     * this keyword *and* the derived enters-the-battlefield ability. Instants and sorceries fold
+     * their gift-paid branch into the spell's own effect instead — see
+     * [com.wingedsheep.sdk.dsl.MechanicPatterns.giftSpell].
+     */
+    @SerialName("Gift")
+    @Serializable
+    data class Gift(val kind: GiftKind) : KeywordAbility {
+        override val description: String = "Gift ${kind.label}"
+    }
+
+    // =========================================================================
     // Sneak
     // =========================================================================
 
@@ -668,6 +713,40 @@ sealed interface KeywordAbility {
     data class Impending(val time: Int, val cost: ManaCost) : KeywordAbility {
         override val keyword: Keyword = Keyword.IMPENDING
         override val description: String = "Impending $time—$cost"
+    }
+
+    // =========================================================================
+    // Web-slinging
+    // =========================================================================
+
+    /**
+     * Web-slinging [cost] (CR 702.188, Marvel's Spider-Man).
+     * "Web-slinging [cost]" means "You may cast this spell by paying [cost] and returning a tapped
+     * creature you control to its owner's hand rather than paying its mana cost." (CR 702.188a)
+     *
+     * An alternative cost (like [Evoke]) whose payment bundles a non-mana portion — returning one
+     * tapped creature you control to its owner's hand — alongside the [cost] mana. Unlike the
+     * ninjutsu family ([Sneak] / [Ninjutsu]) it carries **no** timing permission: the spell is
+     * web-slung at its normal timing, so this is not routed through [ninjutsuStyleCost]. The mana
+     * value is unchanged by web-slinging (CR 118.9c) and any cost increases/reductions still apply
+     * on top (CR 118.9d).
+     *
+     * A permanent spell whose web-slinging cost was paid carries two durable facts merged into its
+     * [com.wingedsheep.engine…CastChoicesComponent]: the flag
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG] (readable via
+     * [com.wingedsheep.sdk.dsl.Conditions.WebSlungCostWasPaid], used by Spiders-Man, Heroic Horde)
+     * and the returned creature's mana value under
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG_RETURNED_MV] (read via
+     * [com.wingedsheep.sdk.scripting.values.DynamicAmount.CastChoice], used by Scarlet Spider,
+     * Ben Reilly to enter with that many +1/+1 counters).
+     *
+     * Attach via the `webSlinging("{cost}")` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+     */
+    @SerialName("WebSlinging")
+    @Serializable
+    data class WebSlinging(val cost: ManaCost) : KeywordAbility {
+        override val keyword: Keyword = Keyword.WEB_SLINGING
+        override val description: String = "Web-slinging $cost"
     }
 
     // =========================================================================
@@ -1007,6 +1086,12 @@ sealed interface KeywordAbility {
          * which also wires the associated static ability and end-step trigger.
          */
         fun impending(time: Int, cost: String): KeywordAbility = Impending(time, ManaCost.parse(cost))
+
+        /**
+         * Create Web-slinging with a mana cost from string (CR 702.188). Prefer the
+         * `webSlinging(cost)` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+         */
+        fun webSlinging(cost: String): KeywordAbility = WebSlinging(ManaCost.parse(cost))
 
         /**
          * Create Cleave with a cleave mana cost (CR 702.148). Declared on the card via

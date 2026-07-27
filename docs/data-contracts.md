@@ -153,6 +153,35 @@ wholeGame, autoAnswer }`. A triggered/activated ability on the stack carries its
 in its `ClientCard`, so the stack-item context menu can target it. When a yield auto-answers a
 may-question, the server emits an `abilityAutoAnswered` log event (shown only to the controller).
 
+### B3. Deck Tracker (`deck` on the client state)
+
+The state update carries the viewer's own decklist as `deck` — one entry per distinct card,
+`{ cardName, copies, remaining, cmc, cardTypes, colors, imageUri }`. It drives the in-game deck
+panel behind the Deck pile (also `D`), which renders it through the same `DeckCardBody` component
+as the recorded-deck viewer — hence the field names matching `GameDeckCard`.
+
+The server builds it in `ClientStateTransformer` from live *ownership* rather than a stored
+decklist, which is what keeps it honest: a permanent an opponent stole is still in its owner's deck
+(CR 108.3), a token copy of one never is, and a permanent copying something else counts as the card
+it was printed as. The sideboard is excluded as outside the game (CR 400.11a); the command zone is
+included so a commander doesn't flicker in and out as it's cast and returns.
+
+Two masking rules matter:
+
+- **`deck` describes only `viewingPlayerId`, and is empty for spectators.** No player, spectator or
+  replay viewer ever receives another player's decklist.
+- **`remaining` is "copies you can't currently see", not "copies in your library."** Those are the
+  same number in an ordinary game, but a card of yours hidden elsewhere — exiled face down, or a
+  face-down permanent an opponent controls — stays counted as `remaining`. Publishing an exact
+  library count would let the panel be read backwards to learn *which* card got exiled face down.
+
+Aggregate counts only: library *order* is never exposed here. (The Library-order tab in the same
+panel is the pre-existing view, and shows card backs for everything not revealed to the viewer.)
+
+`StateDelta.deck` is sent only when a count actually moved (a draw, a mill, a tutor), so the
+many updates that just shuffle the battlefield around don't re-send the list. Absent from a delta
+means unchanged — the client carries the previous value forward.
+
 ### C. Connection Liveness (Client <-> Server)
 
 `{"type": "ping"}` (client) is always answered with `{"type": "pong"}` (server), regardless of
@@ -224,7 +253,7 @@ completionist extras are reported separately.
 [
   { "code": "BLB", "name": "Bloomburrow", "releaseDate": "2024-08-02", "setType": "expansion",
     "block": null, "implemented": 261, "total": 261, "extraImplemented": 18, "extraTotal": 18,
-    "percent": 100.0 }
+    "notPlanned": 0, "extraNotPlanned": 0, "percent": 100.0 }
 ]
 ```
 
@@ -234,11 +263,22 @@ the click-through detail view.
 
 ```json
 { "code": "BLB", "name": "Bloomburrow", "releaseDate": "2024-08-02", "block": null,
-  "implemented": 261, "total": 261, "extraImplemented": 18, "extraTotal": 18, "percent": 100.0,
+  "implemented": 261, "total": 261, "extraImplemented": 18, "extraTotal": 18,
+  "notPlanned": 0, "extraNotPlanned": 0, "percent": 100.0,
   "draft": [{ "name": "Agate Assault", "implemented": true,
-              "imageUri": "https://cards.scryfall.io/normal/front/…jpg" }, ...],
-  "extra": [{ "name": "...", "implemented": false, "imageUri": "…" }, ...] }
+              "imageUri": "https://cards.scryfall.io/normal/front/…jpg", "notPlanned": null }, ...],
+  "extra": [{ "name": "...", "implemented": false, "imageUri": "…", "notPlanned": null }, ...] }
 ```
+
+**Cards we won't implement.** A card needing a mechanic the engine will never carry (ante, subgames,
+physical dexterity) is listed in the repo-root `coverage/card-exclusions.json` manifest, keyed by name
+so one entry covers every set that prints it. `scripts/gen-set-totals` bakes the flag onto the card as
+`"notPlanned": { "kind": "ante", "why": "…" }` — exclusion is carried *as* its reason, so a not-planned
+card can never render as an unexplained gap. Those cards stay in `draft` / `extra` (the detail view
+lists them with a badge) but drop out of `total` / `extraTotal` while unimplemented and are counted in
+`notPlanned` / `extraNotPlanned` instead, so "complete" means *everything we intend to build is built*.
+Implementing one silently un-excludes it: the flag only ever moves a card out of the still-to-do
+bucket. `scripts/card-status` applies the same manifest in its `Skip` column.
 
 **Implementation progress** — `GET /api/sets/progress` → the distinct-implemented-cards-over-time
 series (one cumulative point per calendar day since the project began), `[{ date, added, total }]`.
@@ -447,24 +487,83 @@ from a state-threaded counter (never a UUID), `ReplayReconstructor` rebuilds the
 deltas}` stream the viewer consumes. This is kilobytes per game instead of a masked snapshot + a
 per-frame delta + a full unmasked `GameState` per frame.
 
-The in-progress recording (setup + action log) is part of the persisted `GameSession` snapshot
-(`PersistentGameSession`), so a game interrupted by a server restart is still saved as a replay when
-it later finishes. Storage: an in-memory cache (`GameHistoryRepository`, last 100 games) for
-just-finished games, and a durable Postgres table (`game_replays`, gzip+base64 `CompactReplay`) when
-accounts are enabled.
-`ReplayService` resolves a game id cache-first, then the store; all replay endpoints reconstruct on
-demand. Decision ids are minted afresh each run (they are not part of the deterministic state), so a
+Decision ids are minted afresh each run (they are not part of the deterministic state), so a
 recorded `SubmitDecision` is re-bound to the freshly created decision's id during reconstruction;
 the choice payload (entity-id targets/cards) is unchanged, so the outcome is identical.
 
+#### One store
+
+Every replay — finished or still being recorded — is a row in `game_replays`, written by
+`ReplayService` and nobody else. `ReplayStore` has two implementations: `JdbcReplayStore` when
+accounts (and therefore a database) are enabled, and a bounded `InMemoryReplayStore` for a server
+running without one. In-progress recordings are flushed to the store every few seconds by
+`ReplayCheckpointFlusher` and picked back up on restart, which is what lets the Redis session blob
+carry no replay data at all.
+
+The flush is on a timer, not per action, so a crash can lose the tail of a recording. Splicing the
+rest of the game onto that short prefix would produce a record of a game nobody played, so each
+flush also writes a `resume_fingerprint` of the live position; on restore, `GameSession` compares it
+against the recovered state and stops recording if they disagree, keeping the shorter honest replay.
+
+#### Surviving deploys
+
+An input log only reproduces a game while the engine folding it behaves as it did on the day — and
+in this engine *cards are data the engine folds through*, so editing a card rewrites the past. Three
+things address that:
+
+| | What | Cost |
+|---|---|---|
+| `pinnedCards` | Compiled `CardDefinition` JSON for every card in the decks, overlaid on the live corpus during reconstruction (`ReplayCardPin` → a child `CardRegistry`). Card edits stop mattering; ability ids also stay stable, so recorded yields keep matching. Stored in its own write-once `pinned_cards` column, not in `data`, so the periodic flush doesn't rewrite it. | 7 KB gzipped on POR (34 definitions) up to ~40 KB on a modern set (113) — scales with deck variety, not game length, and is usually the largest part of a record |
+| `checkpoints` | A cheap position fingerprint (`ReplayFingerprint`: entity counter, clock, turn/phase, zone sizes, life) every 20 actions. Catches *silent* drift — actions that still apply but no longer produce the board that was played — instead of rendering it. | ~30 bytes each |
+| `presentation` | The `{initialSnapshot, deltas}` stream, materialized just after game over (the last moment we're provably on the recording build, on a background thread so it stays off the game-over path) and stored gzipped in its own column. A result rather than a recipe, so it renders regardless of engine changes. | ~62 KB gzipped for a 357-action game, ~160 KB for a 1650-action one — this one *does* scale with game length |
+
+`ReplayService.viewerPayload` picks between them: re-simulate first, and if that comes back faithful
+serve it (current view code, and "share frame as scenario" works because a real `GameState` exists);
+if it diverged, serve the archived frames instead, flagged `degraded`. `ReplayFidelity` (`EXACT` /
+`UNVERIFIED` / `DIVERGED`) and `stateReproducible` ride in the endpoint metadata, and the viewer
+shows a **From archive** badge and hides the scenario buttons when the position can't be rebuilt.
+
+`CompactReplay.version` is 2. All v2 fields default to empty and `persistenceJson` ignores unknown
+keys, so records round-trip in both directions across a rolling deploy. `engineVersion` (the git sha,
+passed to the backend image as `COMMIT_HASH`) is stamped on every record so a replay that stops
+re-simulating can be traced to the build that recorded it.
+
 **How big are they in practice?** `CompactReplaySizeBenchmark` (game-server, disabled by default)
-plays whole games with purely random actions through the real `GameSession` recording path, builds
-the `CompactReplay` each produces, and measures it. A full game's stored form (`ReplayCodec` →
-gzip+base64) lands around **4–10 KB** — roughly **3–4 bytes per recorded action** — which gzip
-shaves ~97% off the raw JSON (the action stream is highly repetitive `"type"` discriminators and
-`eN` entity ids). At that size ~170 games fit in 1 MB. Random play is action-heavy (it passes
-priority constantly and rarely closes out a game), so real AI/human games tend to be *smaller* per
-game. Run it with:
+plays whole games with purely random actions through the real `GameSession` recording path and
+measures both payloads. On POR, ~1650 actions over ~32 turns per game:
+
+| Payload | Raw JSON | Stored (gzip+base64) |
+|---|---|---|
+| Input log + pins + checkpoints (`data`) | ~237 KB | **~11 KB** (~7 B/action; ~7 KB of that is the 34 pinned card definitions) |
+| Archived frame stream (`presentation`) | ~8 MB | **~160 KB** — ~14× the input log |
+
+**POR is the cheap end of the range, though — don't plan capacity from it.** Portal's cards are
+simple, so its definitions are small and there are few distinct ones. The pins scale with *deck
+variety and card complexity*, not with game length, and on a modern set they dominate everything
+else. Measured on a real 357-action ECL game (40-card decks, human vs AI), per stored column:
+
+| Column | Stored (gzip+base64) | Scales with |
+|---|---|---|
+| `data` — input log + checkpoints | **~4.8 KB** | game length |
+| `pinned_cards` — 113 definitions | **~40 KB** | deck variety / card complexity (fixed per game) |
+| `presentation` — archived frames | **~62 KB** | game length |
+
+So ~107 KB per finished game, and **the pins are the single largest cost** — bigger than the input log
+by an order of magnitude, and unrelated to how long the game ran. Two consequences: budget per *game*,
+not per *action*; and a 20-turn concession costs nearly as much as a 40-minute grind.
+
+The input log itself stays genuinely tiny (~4.8 KB here, ~13× smaller than the archive), which is what
+keeps re-simulation the primary path. But note that the size argument is no longer the *reason* it is
+the record — with the pins counted, the recipe and the result are the same order of magnitude. The real
+reason is that only the input log can rebuild a real `GameState`, which is what "share frame as
+scenario" needs.
+
+This split is also why the pins live in their own column rather than inside `data`: the flush rewrites
+`data` every few seconds for the length of a game, and folding 40 KB of never-changing definitions into
+each of those writes cost ~12× more per flush than the action log itself. See `V11__replay_pins_write_once.sql`.
+
+Random play is action-heavy (it passes priority constantly and rarely closes out a game), so real
+AI/human games tend to have shorter action logs — but the same or larger pins. Run it with:
 
 ```bash
 ./gradlew :game-server:test --tests "*.CompactReplaySizeBenchmark" -Dbenchmark=true -DbenchmarkGames=40 -DbenchmarkSet=BLB

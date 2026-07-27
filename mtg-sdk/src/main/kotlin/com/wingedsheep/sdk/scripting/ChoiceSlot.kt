@@ -49,11 +49,44 @@ enum class ChoiceSlot {
     KICKED,
 
     /**
+     * Whether the spell's **bargain** additional cost was declared when cast (CR 702.166b, Wilds of
+     * Eldraine — "you may sacrifice an artifact, enchantment, or token as you cast this spell"). A
+     * present value means the spell was *bargained*. Read back through
+     * [com.wingedsheep.sdk.dsl.Conditions.WasBargained].
+     *
+     * Deliberately distinct from [KICKED] even though both ride the same optional-additional-cost
+     * rail ([KeywordAbility.OptionalAdditionalCost.declaredSlot]): CR 702.166c links a card's
+     * "if it was bargained" abilities to *its own* bargain ability, so a bargained spell must not
+     * read as kicked to unrelated "whenever you cast a kicked spell" payoffs.
+     */
+    BARGAINED,
+
+    /**
      * Whether the spell's sneak cost was paid when cast (CR 702.190, e.g. Leonardo, Leader
      * in Blue). A present value means "cast for its sneak cost". Read back through
      * [com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid].
      */
     SNEAK,
+
+    /**
+     * Whether the spell's web-slinging cost was paid when cast (CR 702.188, Marvel's Spider-Man —
+     * e.g. Spiders-Man, Heroic Horde). A present value means "cast for its web-slinging cost". Read
+     * back through [com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid]. Pairs with
+     * [WEB_SLUNG_RETURNED_MV], which carries the returned creature's mana value. Deliberately
+     * distinct from [SNEAK] even though both are "alt cost + return a creature you control": CR
+     * 702.188 links a card's "if it was cast using web-slinging" abilities to its own web-slinging
+     * ability, so a web-slung spell must not read as sneaked to unrelated payoffs.
+     */
+    WEB_SLUNG,
+
+    /**
+     * The mana value of the creature returned to pay a web-slinging cost (CR 702.188 / 118.9c —
+     * the returned creature's own mana value, not the spell's). Stored as a
+     * [com.wingedsheep.engine.state.components.battlefield.ChoiceValue.NumberChoice] and read back
+     * through [com.wingedsheep.sdk.scripting.values.DynamicAmount.CastChoice] — e.g. Scarlet Spider,
+     * Ben Reilly enters with this many +1/+1 counters. Present only when [WEB_SLUNG] is.
+     */
+    WEB_SLUNG_RETURNED_MV,
 
     /** The X declared for a `blight X` additional cost when cast (e.g. Soul Immolation). */
     BLIGHT_AMOUNT,
@@ -66,6 +99,16 @@ enum class ChoiceSlot {
      * [com.wingedsheep.sdk.scripting.SpellWaterbendCost] (`optional = true`).
      */
     WATERBEND_PAID,
+
+    /**
+     * Whether the spell's **gift** additional cost was paid when cast (CR 702.174a, Bloomburrow —
+     * "as an additional cost to cast this spell, you may choose an opponent"). A present value
+     * means the gift was promised; the promised opponent rides along in [OPPONENT]. Read back
+     * through [com.wingedsheep.sdk.dsl.Conditions.GiftWasPromised] (and its negation for the
+     * "if the gift wasn't promised" riders). Pairs with
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.Gift].
+     */
+    GIFT_PROMISED,
 
     /**
      * An opponent chosen as the object entered, stored as a [ChoiceValue.EntityChoice]

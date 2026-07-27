@@ -367,6 +367,15 @@ object Targets {
     )
 
     /**
+     * Target an instant spell, sorcery spell, or triggered ability on the stack — the Spider-Sense
+     * counter clause. Narrower than [InstantSorcerySpellOrAbility] (activated abilities excluded).
+     * Pair with [com.wingedsheep.sdk.dsl.Effects.CounterSpellOrAbility].
+     */
+    val InstantSorceryOrTriggeredAbility: TargetRequirement = TargetObject(
+        filter = TargetFilter.InstantSorcerySpellOrTriggeredAbilityOnStack
+    )
+
+    /**
      * Target triggered ability you control on the stack.
      */
     val TriggeredAbilityYouControl: TargetRequirement = TargetObject(

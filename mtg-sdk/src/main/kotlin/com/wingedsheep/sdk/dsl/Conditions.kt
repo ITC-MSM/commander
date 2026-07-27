@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
+import com.wingedsheep.sdk.core.Speed
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -25,6 +26,7 @@ import com.wingedsheep.sdk.scripting.conditions.WasKicked as WasKickedCondition
 import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid as BlightWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.WaterbendWasPaid as WaterbendWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid as SneakCostWasPaidCondition
+import com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid as WebSlungCostWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceMade as CastChoiceMadeCondition
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceIs as CastChoiceIsCondition
 import com.wingedsheep.sdk.scripting.conditions.CastTimeFlagSet as CastTimeFlagSetCondition
@@ -583,6 +585,21 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.ControllerTurnsTakenAtMost(threshold)
 
     /**
+     * If your life total is at least [amount] greater than your *starting* life total — the
+     * "as long as your life total is greater than your starting life total" family. Reads the
+     * player's actual starting total (20 / 30 / 40 / 2HG), never a hardcoded 20.
+     *
+     * `LifeAboveStartingBy(1)` is the plain "greater than your starting life total" reading;
+     * Elenda, Saint of Dusk pairs it with `LifeAboveStartingBy(10)` for her second tier.
+     */
+    fun LifeAboveStartingBy(amount: Int): ConditionInterface =
+        Compare(
+            DynamicAmount.LifeTotal(Player.You),
+            ComparisonOperator.GTE,
+            DynamicAmount.Add(DynamicAmount.StartingLifeTotal(Player.You), DynamicAmount.Fixed(amount))
+        )
+
+    /**
      * If you have more life than an opponent.
      */
     val MoreLifeThanOpponent: ConditionInterface =
@@ -766,12 +783,43 @@ object Conditions {
         WasKickedCondition
 
     /**
+     * If this spell was **bargained** (CR 702.166b, Wilds of Eldraine) — its optional "sacrifice an
+     * artifact, enchantment, or token" additional cost was declared as it was cast.
+     *
+     * A facade over the durable choice-slot read ([com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED]),
+     * so bargain needs no condition type of its own. Works in both directions of the mechanic:
+     * - on a **spell**, as a rider inside the spell's own effect ("If this spell was bargained, that
+     *   creature also gains flying and lifelink until end of turn"), read from the declaration the
+     *   spell carries on the stack;
+     * - on a **permanent**, as an intervening-if on an enters-the-battlefield trigger ("When this
+     *   creature enters, if it was bargained, …"), read from the flag stamped durably on the
+     *   permanent as it resolved;
+     * - as a **cost gate** — `CostGating.OnlyIf(Conditions.WasBargained)` on a `SelfCast`
+     *   [com.wingedsheep.sdk.scripting.ModifySpellCost] for "This spell costs {2} less to cast if
+     *   it's bargained", where it is evaluated against the cast branch being priced.
+     *
+     * Never true for a merely *kicked* spell: bargain and kicker are separate facts (CR 702.166c).
+     * Pairs with the `bargain()` DSL helper on [CardBuilder].
+     */
+    val WasBargained: ConditionInterface =
+        CastChoiceMadeCondition(com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED)
+
+    /**
      * If this spell's sneak cost was paid (CR 702.190 — [com.wingedsheep.sdk.scripting.KeywordAbility.Sneak]).
      * Used for riders like Leonardo, Leader in Blue and The Last Ronin's Technique whose
      * effect changes when the spell was cast for its sneak cost.
      */
     val SneakCostWasPaid: ConditionInterface =
         SneakCostWasPaidCondition
+
+    /**
+     * If this spell was cast using web-slinging (CR 702.188 —
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.WebSlinging]). Used for riders like
+     * Spiders-Man, Heroic Horde and Scarlet Spider, Ben Reilly whose enters-the-battlefield
+     * behavior changes when the spell was cast for its web-slinging cost.
+     */
+    val WebSlungCostWasPaid: ConditionInterface =
+        WebSlungCostWasPaidCondition
 
     /**
      * If this spell's blight additional cost was paid (`AdditionalCost.BlightOrPay`).
@@ -789,6 +837,27 @@ object Conditions {
      */
     val WaterbendWasPaid: ConditionInterface =
         WaterbendWasPaidCondition
+
+    /**
+     * If this spell's **gift** additional cost was paid — "if the gift was promised"
+     * (CR 702.174a/b, Bloomburrow). The promise is elected as the spell is cast and stamped
+     * durably on the resulting permanent, so a gift permanent's enters-the-battlefield abilities
+     * branch on it: `Conditions.GiftWasPromised` for the gift itself and the riders that need it,
+     * `Conditions.Not(Conditions.GiftWasPromised)` for "if the gift wasn't promised" (Kitnap's
+     * stun counters).
+     *
+     * A facade over the durable choice-slot read — gift needs no condition type of its own.
+     * Pairs with [com.wingedsheep.sdk.scripting.KeywordAbility.Gift] and the `gift(kind)` DSL
+     * helper.
+     *
+     * **Permanents only.** Unlike `SneakCostWasPaid` / `WaterbendWasPaid` this has no resolution-time
+     * fallback for a spell's own effect: the flag is written as the permanent enters, so a read from
+     * a still-on-the-stack instant or sorcery is always false. Instants and sorceries branch on the
+     * promise through `Patterns.Mechanic.giftSpell`'s mode instead (CR 702.174b gives them
+     * "if this spell's gift cost was paid, [effect]" rather than an enters trigger).
+     */
+    val GiftWasPromised: ConditionInterface =
+        CastChoiceMadeCondition(com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED)
 
     /**
      * If a value was locked in for [slot] when the source was cast / as it entered
@@ -1201,6 +1270,56 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.VoidCondition
 
     /**
+     * Celebration: "if two or more nonland permanents entered the battlefield under your control
+     * this turn". Backs the Celebration ability word from Wilds of Eldraine (CR 207.2c — an
+     * ability word is italic flavor with no rules meaning, so there is no keyword; only this
+     * condition).
+     *
+     * Pure past-event check (per the WOE rulings): the permanents need not still be on the
+     * battlefield or still be yours. Tokens count; lands do not (nor does a land creature).
+     * Crossing the threshold is all that matters — a third entry changes nothing.
+     *
+     * Works in both shapes the mechanic ships in:
+     *  - `triggerCondition = Conditions.Celebration` for the intervening-'if' triggers (CR 603.4 —
+     *    checked at trigger time *and* on resolution): Pests of Honor, Lady of Laughter, Ash,
+     *    Party Crasher, …
+     *  - a `ConditionalStaticAbility` gate for the "as long as …" statics (re-evaluated every
+     *    projection): Armory Mice, Grand Ball Guest, Gallant Pie-Wielder, …
+     */
+    val Celebration: ConditionInterface =
+        NonlandPermanentsEnteredThisTurn(atLeast = 2)
+
+    /**
+     * "If [atLeast] or more nonland permanents entered the battlefield under [player]'s control
+     * this turn" — the general form behind [Celebration], for wordings with a different threshold
+     * or a player other than the controller.
+     */
+    fun NonlandPermanentsEnteredThisTurn(
+        atLeast: Int = 1,
+        player: Player = Player.You
+    ): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.NONLAND_PERMANENTS_ENTERED,
+            atLeast,
+            player,
+        )
+
+    /**
+     * "If [atLeast] or more creatures entered the battlefield under [player]'s control this turn" —
+     * the creature-typed counterpart of [NonlandPermanentsEnteredThisTurn], e.g. Spider-UK's
+     * end-step "if two or more creatures entered the battlefield under your control this turn".
+     */
+    fun CreaturesEnteredThisTurn(
+        atLeast: Int = 1,
+        player: Player = Player.You
+    ): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.CREATURES_ENTERED_UNDER_CONTROL,
+            atLeast,
+            player,
+        )
+
+    /**
      * If an opponent lost life this turn (from any source).
      * Used for cards like Hired Claw: "Activate only if an opponent lost life this turn"
      */
@@ -1456,6 +1575,36 @@ object Conditions {
      */
     val YouHaveCitysBlessing: ConditionInterface =
         PlayerHasCitysBlessing(Player.You)
+
+    // =========================================================================
+    // Speed (Aetherdrift, CR 702.178–702.179)
+    // =========================================================================
+
+    /**
+     * "if you have max speed" — your speed is exactly 4 (CR 702.179e).
+     *
+     * This is the gate the `maxSpeed { }` block on [CardBuilder] applies to every ability inside it
+     * (CR 702.178a, "as long as your speed is 4, this object has [Ability]"). It is a plain
+     * [Compare] over [DynamicAmount.Speed], so it evaluates identically at resolution and during
+     * state projection — which is what lets one gate serve static, activated and triggered abilities
+     * alike.
+     *
+     * Equality (not `>=`) matches the rule literally; the engine clamps speed at
+     * [com.wingedsheep.sdk.core.Speed.MAX], so the two agree today.
+     */
+    val YouHaveMaxSpeed: ConditionInterface = HasMaxSpeed(Player.You)
+
+    /** [Player]-parametric "if [player] has max speed" — wrap in [Not] for "doesn't have max speed". */
+    fun HasMaxSpeed(player: Player): ConditionInterface =
+        Compare(DynamicAmount.Speed(player), ComparisonOperator.EQ, DynamicAmount.Fixed(Speed.MAX))
+
+    /**
+     * "if [player]'s speed is less than 4" — the intervening-if of the inherent speed trigger
+     * (CR 702.179d), and the gate for any effect that should only fire while there's speed left to
+     * gain. A player with no speed reads as 0 (CR 702.179f), so this holds for them too.
+     */
+    fun SpeedBelowMax(player: Player = Player.You): ConditionInterface =
+        Compare(DynamicAmount.Speed(player), ComparisonOperator.LT, DynamicAmount.Fixed(Speed.MAX))
 
     // =========================================================================
     // Trigger Entity Conditions

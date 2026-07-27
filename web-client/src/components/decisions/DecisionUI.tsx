@@ -23,19 +23,21 @@ import { PlayerTargetingUI } from './PlayerTargetingUI'
 import { GraveyardTargetingUI } from './GraveyardTargetingUI'
 import { SplitPilesUI } from './SplitPilesUI'
 import { ManaSourceSelectionUI } from './ManaSourceSelectionUI'
+import { isLoneTargetRequirement } from '@/utils/targeting.ts'
 import styles from './DecisionUI.module.css'
 
 /**
- * Check if a ChooseTargetsDecision is a single player-only requirement.
+ * Check if a ChooseTargetsDecision is a single player-only requirement asking for one target.
  *
  * Only then is the simple auto-submit [PlayerTargetingUI] banner appropriate. A decision with more
  * than one target requirement (e.g. Iroh, Tea Master: "target opponent" + "target permanent you
- * control") must route to [BattlefieldTargetingUI], which walks each requirement in turn and drives
- * player-orb selection through decisionSelectionState — [PlayerTargetingUI] can only collect a lone
- * player slot and would strand the remaining requirements.
+ * control") — or a single requirement wanting more than one target (e.g. Parker Luck: "two target
+ * players", maxTargets = 2) — must route to [BattlefieldTargetingUI], which walks each requirement
+ * in turn and accumulates player-orb selection through decisionSelectionState with a Confirm step.
+ * [PlayerTargetingUI] can only collect a lone player slot and would strand the rest.
  */
 function isPlayerOnlyTargeting(decision: ChooseTargetsDecision, playerIds: EntityId[]): boolean {
-  if (decision.targetRequirements.length !== 1) return false
+  if (!isLoneTargetRequirement(decision)) return false
   const legalTargets = decision.legalTargets[0] ?? []
   if (legalTargets.length === 0) return false
   return legalTargets.every((targetId) => playerIds.includes(targetId))

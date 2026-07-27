@@ -35,6 +35,11 @@ A game is only recorded if it reached a winner **or** had more than a trivial nu
 Redis stays responsible for hot/ephemeral game/lobby/tournament state. Postgres only holds durable,
 user-owned data. Different lifecycles, deliberately not merged.
 
+Replays used to straddle that line — the Redis session blob carried the in-progress recording while
+Postgres held the finished one — which meant two stores that could disagree about what a game was.
+They don't any more: a replay is a durable artefact, so it lives only in Postgres from the first
+flush, and `PersistentGameSession` carries no replay data at all.
+
 ## Enabling it
 
 Set these (e.g. in `.env` for `just server`, or the deploy environment):
@@ -101,6 +106,12 @@ Flyway migration `V2__match_stats.sql` extends the stats schema:
 | `tournaments` | tournaments + settings (format, mode, set codes, player count, rounds, winner) and a `status` (`IN_PROGRESS` / `COMPLETED` / `ABANDONED`); `ended_at` is null while in progress |
 | `tournament_participants` | a seat in a tournament with placement (0 until it finishes) + W/L/D |
 
+Participant and deck rows are written for **every** seat, however many there are: a Free-for-All pod or
+a team game records three to six decks the same way a duel records two. The decklist comes from
+`GameSession.getStartingDeckList()`, which prefers the seat's live submitted deck and falls back to the
+copy frozen into the replay setup at game start — so nothing that happens to a player's *socket* during
+a long multiplayer game (reconnects, a restart, giving up a seat) can leave their deck out of history.
+
 Flyway migration `V3__admin_role.sql` adds `users.is_admin` (boolean, default false) — the per-account
 admin flag (see **Admin access** below).
 
@@ -137,15 +148,17 @@ placement is done — Bronze `<1000`, Silver `1000–1199`, Gold `1200–1399`, 
 `1600–1999`, **Mythic** `≥2000` (open-ended) — and is shown as **Provisional** during placement. The
 profile page shows a card per queue (rating + tier + record) and a rating-over-time line chart.
 
-Flyway migration `V5__game_replays.sql` adds durable replays:
+Flyway migrations `V5__game_replays.sql`, `V10__replay_durability.sql` and
+`V11__replay_pins_write_once.sql` hold replays — the *only*
+place they live, in progress or finished:
 
 | Table | Purpose |
 |-------|---------|
-| `game_replays` | one row per finished game keyed by `game_id`: a gzip+base64 `CompactReplay` (RNG seed + decks + ordered action stream) in `data`, plus summary columns. A few KB each — the engine is deterministic, so the whole game is reconstructed from its inputs rather than stored frame-by-frame (see [data-contracts.md](data-contracts.md) → *Compact replays*). |
+| `game_replays` | one row per recorded game keyed by `game_id`: a gzip+base64 `CompactReplay` (RNG seed + decks + ordered action stream + checkpoints) in `data`, the pinned card definitions in a write-once `pinned_cards` column (kept out of `data` because that one is rewritten on every flush), the gzipped `{initialSnapshot, deltas}` archive in `presentation`, and summary columns. `status` distinguishes an `IN_PROGRESS` recording from a `FINISHED` one, and `resume_fingerprint` gates resuming the former after a restart. See [data-contracts.md](data-contracts.md) → *Compact replays*. |
+| `game_replay_players` | seat roster (owned child), so "replays I played in" is an indexed join rather than a scan. Rows written before V10 have no children and drop out of a player's own list, though their share links keep working. |
 
 A signed-in player's history (`/api/stats/me/history`) `LEFT JOIN`s `game_replays` on `game_id` to
-flag which past games can be watched/shared (`hasReplay`). Stored replays survive server restarts and
-the 100-game in-memory cache; the unguessable `game_id` doubles as the share token via the public
+flag which past games can be watched/shared (`hasReplay`); the unguessable `game_id` doubles as the share token via the public
 `/replay/{gameId}` page. For ranked games each history row also carries `selfRating`/`opponentRating`
 (both players' ELO at game time) plus `ratingDelta` (`rating_after − rating_before` from
 `rating_history`), so the recent-games table can show how each game moved your rating (green +N /
@@ -244,6 +257,7 @@ Per-user endpoints take `Authorization: Bearer …`; admin endpoints take either
 | GET | `/api/stats/admin/cards` · `/cards/win-rates?minDecks` | most-played + per-card win rate |
 | GET | `/api/stats/admin/tournaments?limit` | recorded tournaments |
 | GET | `/api/stats/admin/geo` | IP → coarse location, aggregated by location (raw IPs never returned) |
+| GET | `/api/stats/admin/database` | storage: `{ databaseName, databaseSizeBytes, tables: [{ tableName, rows, tableBytes, indexBytes, totalBytes }] }`. Row counts are exact `count(*)`s (one scan per table) — fetch on demand, don't poll |
 
 ### Admin — players (`/api/admin/users`, either admin credential)
 
@@ -297,8 +311,9 @@ accept/unfriend.
   deck picker's Paste-tab save.
 - **Unified deck library (`useUnifiedDecks`):** merges account decks (fetched in full via `?full`) with
   browser-only decks, each tagged `online`. Feeds (a) the deckbuilder's saved-deck **browser** overlay,
-  which shows an **Online / Browser** badge per deck and routes load/rename/delete to the right store,
-  and (b) the lobby deck picker's "My Decks" tab, so signed-in users can pick their cloud decks to play.
+  which routes load/rename/delete to the right store, and (b) the lobby deck picker's "My Decks" tab,
+  so signed-in users can pick their cloud decks to play. Both render the same full-art gallery tile
+  (`components/deck/DeckTile`), whose **Cloud / Local** badge is where a deck's storage shows up.
 - **Display name:** editable on the profile page (`PUT /api/auth/me`); the email stays the identity.
 - Profile page at `/profile` shows the win/loss summary plus colors played (a Recharts bar chart),
   sets, game modes, head-to-head, most-played cards, tournament finishes, and a recent-games list — all

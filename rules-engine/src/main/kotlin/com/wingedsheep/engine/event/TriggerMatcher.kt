@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.ExploreReveal
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -595,7 +596,7 @@ class TriggerMatcher(
             }
             is EventPattern.DiscardEvent -> {
                 event is CardsDiscardedEvent &&
-                    matchingDiscardCount(trigger, event, sourceId, controllerId, state) > 0
+                    matchingDiscardedCards(trigger, event, sourceId, controllerId, state).isNotEmpty()
             }
             is EventPattern.SearchLibraryEvent -> {
                 event is com.wingedsheep.engine.core.LibrarySearchedEvent &&
@@ -663,15 +664,42 @@ class TriggerMatcher(
     }
 
     /**
-     * How many of the discarded cards satisfy this discard trigger — i.e. how many times the
-     * ability fires. Discarding N cards in one resolution fires "whenever ... discards a card"
-     * N times (one per card); a [EventPattern.DiscardEvent.cardFilter] narrows that to the matching
-     * cards only. Returns 0 when the discarding player doesn't match the trigger's selector, so
-     * the boolean "does it trigger?" question is just `matchingDiscardCount(...) > 0`.
+     * Which of the discarded cards satisfy this discard trigger — one firing per card, in discard
+     * order. Discarding N cards in one resolution fires "whenever ... discards a card" N times (one
+     * per card); a [EventPattern.DiscardEvent.cardFilter] narrows that to the matching cards only.
+     * Returns an empty list when the discarding player doesn't match the trigger's selector.
+     *
+     * The ids matter, not just the count: each firing binds its card as the trigger's triggering
+     * entity, so "exile **it** from their graveyard" (Tinybones, Bauble Burglar) can find the card
+     * the discard put there (CR 400.7e — a trigger can find the new object a card became in a
+     * public zone).
      *
      * The filter is evaluated against post-discard state — the cards are already in the graveyard.
      * Safe for zone-independent predicates (type/subtype/color); a filter depending on hand-specific
      * state would read the wrong zone.
+     */
+    fun matchingDiscardedCards(
+        trigger: EventPattern.DiscardEvent,
+        event: CardsDiscardedEvent,
+        sourceId: EntityId,
+        controllerId: EntityId,
+        state: GameState
+    ): List<EntityId> {
+        if (!matchesPlayer(trigger.player, event.playerId, controllerId)) return emptyList()
+        val filter = trigger.cardFilter ?: return event.cardIds
+        val projected = state.projectedState
+        val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
+            controllerId = controllerId,
+            sourceId = sourceId
+        )
+        return event.cardIds.filter { cardId ->
+            predicateEvaluator.matches(state, projected, cardId, filter, predicateContext)
+        }
+    }
+
+    /**
+     * How many times this discard trigger fires — the size of [matchingDiscardedCards], so the
+     * boolean "does it trigger?" question is just `matchingDiscardCount(...) > 0`.
      */
     fun matchingDiscardCount(
         trigger: EventPattern.DiscardEvent,
@@ -679,18 +707,7 @@ class TriggerMatcher(
         sourceId: EntityId,
         controllerId: EntityId,
         state: GameState
-    ): Int {
-        if (!matchesPlayer(trigger.player, event.playerId, controllerId)) return 0
-        val filter = trigger.cardFilter ?: return event.cardIds.size
-        val projected = state.projectedState
-        val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
-            controllerId = controllerId,
-            sourceId = sourceId
-        )
-        return event.cardIds.count { cardId ->
-            predicateEvaluator.matches(state, projected, cardId, filter, predicateContext)
-        }
-    }
+    ): Int = matchingDiscardedCards(trigger, event, sourceId, controllerId, state).size
 
     /**
      * How many times a [EventPattern.DrawEvent] trigger fires for one aggregate
@@ -1532,7 +1549,9 @@ class TriggerMatcher(
             val from = spellComponent?.castFromZone
             from != null && from != predicate.zone
         }
-        SpellCastPredicate.WasKicked -> event.wasKicked
+        // "a kicked spell" is specifically the kicker mechanic — a spell that declared some other
+        // optional additional cost on the same rail (bargain, CR 702.166c) does not qualify.
+        SpellCastPredicate.WasKicked -> event.declaredCostSlot == ChoiceSlot.KICKED
         is SpellCastPredicate.PaidWithManaFromSubtype -> predicate.subtype in event.spentManaSubtypes
         is SpellCastPredicate.PaidWithManaFromSource -> sourceId in event.spentManaSourceIds
         SpellCastPredicate.IsModal -> event.chosenModesCount > 0
@@ -1596,11 +1615,16 @@ class TriggerMatcher(
                 triggerCounterCount = trigger.triggerContext.counterCount,
                 triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
                 triggerMinusOneMinusOneCounterCount = trigger.triggerContext.minusOneMinusOneCounterCount,
+                // Per-kind last-known counters, so an intervening "if" can name the counter it
+                // cares about ("if it had a revival counter on it" — Nine-Lives Familiar) instead
+                // of settling for the +1/+1-only or sum-of-all-kinds scalars above.
+                triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
                 triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
                 triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
                 triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness,
                 triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
                 triggerScryCount = trigger.triggerContext.scryCount,
+                triggerDiscardCount = trigger.triggerContext.discardedCardCount,
                 triggerDiscoverValue = trigger.triggerContext.discoverValue,
                 triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
                 triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
@@ -1718,7 +1742,8 @@ class TriggerMatcher(
             val entity = state.getEntity(entityId) ?: return false
             entity.has<FaceDownComponent>()
         }
-        // Graveyard-zone-only predicate; trigger gating never sees a stamped entity here.
+        // Graveyard-zone-only predicates; trigger gating never sees a stamped entity here.
+        is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardThisTurn -> false
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false
         // No granter context in trigger gating — granter-relative exclusion is resolution-time only.
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsGrantingPermanent -> false
@@ -1747,6 +1772,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasDealtDamage,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasDealtCombatDamageToPlayer,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.DealtCombatDamageToSourceControllerThisTurn,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.ControllerDealtCombatDamageBySourceThisTurn,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.AttackedThisTurn,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.AttackedThisCombat,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.BlockedThisCombat,
@@ -1758,6 +1784,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasLeastPowerAmongAllCreatures,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasLeastPower,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEquipped,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEnchanted,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsModified,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsSaddled,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.CrewedOrSaddledSourceThisTurn,

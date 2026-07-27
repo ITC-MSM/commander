@@ -297,6 +297,27 @@ data class TargetFilter(
             ),
             zone = Zone.STACK
         )
+
+        /**
+         * Target an instant spell, sorcery spell, or triggered ability on the stack — the Spider-Sense
+         * counter template. Narrower than [InstantSorcerySpellOrAbilityOnStack]: activated abilities
+         * are **not** included (only triggered ones), matching "counter target instant spell, sorcery
+         * spell, or triggered ability".
+         */
+        val InstantSorcerySpellOrTriggeredAbilityOnStack = TargetFilter(
+            GameObjectFilter(
+                cardPredicates = listOf(
+                    CardPredicate.Or(
+                        listOf(
+                            CardPredicate.IsInstant,
+                            CardPredicate.IsSorcery,
+                            CardPredicate.IsTriggeredAbility
+                        )
+                    )
+                )
+            ),
+            zone = Zone.STACK
+        )
     }
 
     // =============================================================================

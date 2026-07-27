@@ -19,9 +19,12 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.toEntityId
 import com.wingedsheep.engine.handlers.effects.bend.BendEvents
 import com.wingedsheep.engine.mechanics.mana.AlternativePaymentHandler
 import com.wingedsheep.engine.mechanics.mana.IntrinsicManaAbilities
+import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
@@ -68,6 +71,7 @@ import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.AdditionalManaOnSourceTap
 import com.wingedsheep.sdk.scripting.TappedForManaType
 import com.wingedsheep.sdk.scripting.ReplaceLandManaColor
@@ -124,7 +128,11 @@ class ActivateAbilityHandler(
         if (action.opponentTargetsChosen) {
             return "Internal resume flag cannot be set by a player"
         }
-        if (state.priorityPlayerId != action.playerId) {
+        // CR 605.3a — a mana ability may also be activated "whenever a rule or effect asks for a
+        // mana payment". While such a window is open the paying player holds no priority, so defer
+        // the priority verdict until the ability is known to be a mana ability (checked below).
+        val manaPaymentWindow = ManaPaymentWindow.openFor(state, action.playerId)
+        if (state.priorityPlayerId != action.playerId && manaPaymentWindow == null) {
             return "You don't have priority"
         }
 
@@ -152,6 +160,12 @@ class ActivateAbilityHandler(
             ?: staticGrants.firstOrNull { it.first.id == action.abilityId }?.first
             ?: resolveIntrinsicManaAbility(state, action.sourceId, action.abilityId)
             ?: return "Ability not found on this card"
+
+        // The mana-payment window (CR 605.3a) opens the door for mana abilities only — everything
+        // else still needs priority.
+        if (manaPaymentWindow != null && state.priorityPlayerId != action.playerId && !ability.isManaAbility) {
+            return "Only mana abilities can be activated while paying a cost"
+        }
 
         // Check that the card is in the correct zone for this ability
         if (ability.activateFromZone != Zone.BATTLEFIELD) {
@@ -457,10 +471,74 @@ class ActivateAbilityHandler(
             }
         }
 
+        // Validate a client-supplied divided-damage division (Chandra, Flameshaper's −4). The
+        // division is chosen as the ability is activated (CR 601.2d), so it arrives on the action
+        // rather than being asked for at resolution. Absence is legal — the executor then raises a
+        // resolution-time DistributeDecision, which is how non-interactive controllers divide — but
+        // anything present must be a well-formed division of exactly the printed total.
+        val distribution = action.damageDistribution
+        if (distribution != null) {
+            val dividedDamage = ability.effect as? DividedDamageEffect
+                ?: return "This ability does not divide damage among its targets"
+            val chosenTargetIds = action.targets.map { it.toEntityId() }.toSet()
+            if (distribution.keys != chosenTargetIds) {
+                return "Damage distribution targets must match chosen targets"
+            }
+            val totalDistributed = distribution.values.sum()
+            if (totalDistributed != dividedDamage.totalDamage) {
+                return "Total distributed damage ($totalDistributed) must equal ${dividedDamage.totalDamage}"
+            }
+            // CR 601.2d: each target in the division must be assigned at least 1 damage.
+            if (distribution.values.any { it < 1 }) {
+                return "Each target must receive at least 1 damage"
+            }
+        }
+
         return null
     }
 
     override fun execute(state: GameState, action: ActivateAbility): ExecutionResult {
+        val window = ManaPaymentWindow.openFor(state, action.playerId)
+            ?: return executeActivation(state, action)
+        return executeInManaPaymentWindow(state, action, window)
+    }
+
+    /**
+     * Runs a mana ability activated while the engine is asking [action]'s player for a mana payment
+     * (CR 605.3a — see [ManaPaymentWindow]).
+     *
+     * The window is set aside for the duration so the ability resolves against a decision-free
+     * state, then re-raised. Two things must survive the round trip:
+     *  - **Priority.** The mana-ability path ends with `withPriority(activatingPlayer)` when the
+     *    activation cost fired a trigger. That's right at priority and wrong here — the payment
+     *    resumer will hand priority back itself once the payment completes — so it's restored.
+     *  - **The window.** If the ability paused for a decision of its own, the
+     *    [ReopenManaPaymentDecisionContinuation] pushed by [ManaPaymentWindow.suspend] re-raises it
+     *    afterwards; otherwise it's re-raised here.
+     */
+    private fun executeInManaPaymentWindow(
+        state: GameState,
+        action: ActivateAbility,
+        window: SelectManaSourcesDecision
+    ): ExecutionResult {
+        val result = executeActivation(ManaPaymentWindow.suspend(state, window), action)
+
+        // A failed activation must not eat the window — roll all the way back.
+        result.error?.let { return ExecutionResult.error(state, it) }
+
+        val restored = if (result.state.priorityPlayerId == state.priorityPlayerId) result.state
+        else result.state.copy(
+            priorityPlayerId = state.priorityPlayerId,
+            priorityPassedBy = state.priorityPassedBy
+        )
+        if (result.isPaused) {
+            return ExecutionResult.paused(restored, result.pendingDecision!!, result.events)
+        }
+        return ManaPaymentWindow.resumeIfPending(restored, result.events, cardRegistry)
+            ?: ExecutionResult.success(restored, result.events)
+    }
+
+    private fun executeActivation(state: GameState, action: ActivateAbility): ExecutionResult {
         val container = state.getEntity(action.sourceId)
             ?: return ExecutionResult.error(state, "Source not found")
 
@@ -1555,7 +1633,10 @@ class ActivateAbilityHandler(
             abilityIdentity = com.wingedsheep.sdk.scripting.AbilityIdentity(
                 cardComponent.cardDefinitionId, ability.id
             ),
-            granterId = staticGranterId
+            granterId = staticGranterId,
+            // Lock in the activation-time damage division (CR 601.2d) so removal in response
+            // can't hand the controller a fresh division at resolution.
+            damageDistribution = action.damageDistribution
         )
 
         // Apply text-changing effects to the target requirements for resolution-time re-validation
@@ -1904,12 +1985,12 @@ class ActivateAbilityHandler(
     }
 
     /**
-     * Whether [cost] removes the source from its current zone — a self-exile or self-sacrifice.
-     * Used to decide whether to snapshot the source's counters before payment so the resolving
-     * effect can read the pre-cost count (DynamicAmount.LastKnownSourceCounters).
+     * Whether [cost] removes the source from its current zone — a self-exile, self-sacrifice, or
+     * self-bounce. Used to decide whether to snapshot the source's counters before payment so the
+     * resolving effect can read the pre-cost count (DynamicAmount.LastKnownSourceCounters).
      */
     private fun costExilesOrSacrificesSelf(cost: AbilityCost): Boolean = when (cost) {
-        is AbilityCost.ExileSelf, is AbilityCost.SacrificeSelf -> true
+        is AbilityCost.ExileSelf, is AbilityCost.SacrificeSelf, is AbilityCost.ReturnSelfToHand -> true
         is AbilityCost.Composite -> cost.costs.any { costExilesOrSacrificesSelf(it) }
         else -> false
     }

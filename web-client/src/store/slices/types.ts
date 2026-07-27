@@ -33,6 +33,7 @@ import type {
   Step,
   AvailableSet,
   QuickGameLobbyStateMessage,
+  AiDeckSpec,
   DeckFormat,
   YieldKind,
 } from '@/types'
@@ -280,10 +281,10 @@ export interface XSelectionState {
  * Damage distribution state for DividedDamageEffect spells.
  */
 export interface DamageDistributionState {
-  /** The action info containing the spell being cast */
+  /** The action info containing the spell being cast or the ability being activated */
   actionInfo: LegalActionInfo
-  /** The action with targets already set */
-  action: import('../../types').CastSpellAction
+  /** The action with targets already set (a divided-damage spell or activated ability) */
+  action: import('../../types').CastSpellAction | import('../../types').ActivateAbilityAction
   /** Card name for display */
   cardName: string
   /** Selected target entity IDs */
@@ -654,7 +655,7 @@ export interface SpectatingState {
   combat: SpectatorCombatState | null
   /** Pending decision status (null if no decision in progress) */
   decisionStatus: SpectatorDecisionStatus | null
-  /** When true, the ReplayViewer handles its own UI — SpectatorGameBoard should not render */
+  /** When true, `ReplayPlayer` handles its own UI — SpectatorGameBoard should not render */
   isReplay?: boolean
 }
 
@@ -865,6 +866,7 @@ export type GameStore = {
     selectedSources: readonly EntityId[],
     autoPay: boolean,
     waterbendPermanents?: readonly EntityId[],
+    declined?: boolean,
   ) => void
   submitCancelDecision: () => void
   submitSplitPilesDecision: (piles: readonly (readonly EntityId[])[]) => void
@@ -929,6 +931,8 @@ export type GameStore = {
   setQuickGameLobbyPublic: (isPublic: boolean) => void
   setQuickGameLobbyRanked: (ranked: boolean) => void
   setQuickGameLobbyFormat: (format: DeckFormat | null, momirBasic?: boolean) => void
+  /** Host-only: choose what the AI opponent plays (auto / built from sets / an exact list). */
+  setQuickGameAiDeck: (spec: AiDeckSpec) => void
 
   // Draft slice
   deckBuildingState: DeckBuildingState | null

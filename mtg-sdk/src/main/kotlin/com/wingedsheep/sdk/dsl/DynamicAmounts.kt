@@ -331,10 +331,12 @@ object DynamicAmounts {
         DynamicAmount.ContextProperty(ContextPropertyKey.ADDITIONAL_COST_EXILED_COUNT)
 
     /**
-     * The number of [filter] counters the source had the moment its self-exile / self-sacrifice
-     * cost wiped them — "for each verse counter on this" / "if it had seven or more counters on it"
-     * read as last-known information (CR 112.7a). See
-     * [DynamicAmount.LastKnownSourceCounters] (Lost Isle Calling).
+     * The number of [filter] counters the source had as it last existed on the battlefield
+     * (CR 112.7a / 608.2h) — either wiped by its own self-exile / self-sacrifice cost ("for each
+     * verse counter on this" / "if it had seven or more counters on it", Lost Isle Calling) or
+     * captured when it left the battlefield, for a dies/leaves trigger ("if it had a revival
+     * counter on it", Nine-Lives Familiar). See [DynamicAmount.LastKnownSourceCounters]; use
+     * [countersOnSelf] for a permanent that is still on the battlefield.
      */
     fun lastKnownSourceCounters(
         filter: com.wingedsheep.sdk.scripting.events.CounterTypeFilter
@@ -417,11 +419,20 @@ object DynamicAmounts {
      * "The number of lands that entered the battlefield under [player]'s control this turn"
      * (Bioengineered Future). Counts every land ETB under the player — land drops, Lander
      * search, Cultivate-style "put a land onto the battlefield" effects — not just land
-     * drops. Reads the per-player [LandsEnteredUnderControlThisTurnComponent] populated by
+     * drops. Reads the per-player permanent-entry log populated by
      * `PermanentEntryTracker`.
      */
     fun landsEnteredUnderControlThisTurn(player: Player = Player.You): DynamicAmount =
         DynamicAmount.TurnTracking(player, TurnTracker.LANDS_ENTERED_UNDER_CONTROL)
+
+    /**
+     * "The number of nonland permanents that entered the battlefield under [player]'s control this
+     * turn" — the complement of [landsEnteredUnderControlThisTurn] over the same per-player entry
+     * log. Tokens count; a land creature does not. The threshold form is the Celebration ability
+     * word (`Conditions.Celebration`); this is the raw count for "for each …" scaling.
+     */
+    fun nonlandPermanentsEnteredUnderControlThisTurn(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.TurnTracking(player, TurnTracker.NONLAND_PERMANENTS_ENTERED)
 
     /**
      * "The number of [other] [subtype]s that entered the battlefield under [player]'s control
@@ -468,18 +479,37 @@ object DynamicAmounts {
      *
      * Pass [fromZone] to count only spells cast from that zone (e.g. `Zone.HAND`), matched
      * independently of [filter].
+     *
+     * Pass [beforeTriggeringSpell] for the storm-style "each other spell you've cast **before it**
+     * this turn" clause: only casts recorded ahead of the triggering spell count, so neither the
+     * triggering spell nor anything cast in response to the trigger is included.
+     *
+     * ```kotlin
+     * // Thousand-Year Storm: "for each other instant and sorcery spell you've cast before it"
+     * DynamicAmounts.spellsCastThisTurn(
+     *     filter = GameObjectFilter.InstantOrSorcery, beforeTriggeringSpell = true)
+     * ```
      */
     fun spellsCastThisTurn(
         player: Player = Player.You,
         filter: GameObjectFilter = GameObjectFilter.Any,
         excludeSelf: Boolean = false,
-        fromZone: Zone? = null
+        fromZone: Zone? = null,
+        beforeTriggeringSpell: Boolean = false
     ): DynamicAmount =
-        DynamicAmount.SpellsCastThisTurn(player, filter, excludeSelf, fromZone)
+        DynamicAmount.SpellsCastThisTurn(
+            player, filter, excludeSelf, fromZone, beforeTriggeringSpell = beforeTriggeringSpell
+        )
 
     /** The starting life total of a player (20 in standard, 40 in commander). */
     fun startingLifeTotal(player: Player = Player.You): DynamicAmount =
         DynamicAmount.StartingLifeTotal(player)
+
+    /**
+     * A player's speed, 0–4 (Aetherdrift, CR 702.179) — "where X is your speed". A player with no
+     * speed reads as 0 (CR 702.179f), so this never needs a guard.
+     */
+    fun speed(player: Player = Player.You): DynamicAmount = DynamicAmount.Speed(player)
 
     // =========================================================================
     // Entity property shortcuts (composable entity + property)
@@ -526,6 +556,14 @@ object DynamicAmounts {
 
     fun countersOnTarget(type: CounterTypeFilter, index: Int = 0): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Target(index), EntityNumericProperty.CounterCount(type))
+
+    /**
+     * Number of counters (of [type]; defaults to counters of every kind) on the triggering
+     * permanent — "X is the number of counters on it" for an ANY-bound triggered ability such as
+     * Spider-Man Noir's "whenever a creature you control attacks alone."
+     */
+    fun countersOnTriggering(type: CounterTypeFilter = CounterTypeFilter.Any): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.CounterCount(type))
 
     fun attachmentsOnSelf(): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.AttachmentCount())

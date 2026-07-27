@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.actions.spell
 import com.wingedsheep.sdk.dsl.Patterns
+import com.wingedsheep.sdk.dsl.giftKeyword
 
 import com.wingedsheep.engine.core.AlternativeCostType
 import com.wingedsheep.engine.core.CastSpell
@@ -23,6 +24,7 @@ import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.SneakWindow
+import com.wingedsheep.engine.mechanics.WebSlinging
 import com.wingedsheep.engine.mechanics.WarpGrants
 import com.wingedsheep.engine.mechanics.MiracleGrants
 import com.wingedsheep.engine.mechanics.mana.paymentSubtypesOf
@@ -82,6 +84,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCost
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.CastRestriction
@@ -135,7 +138,7 @@ private fun CastSpell.altAllows(type: AlternativeCostType): Boolean =
 /**
  * True if this cast is paying the card's cleave cost (CR 702.148). Cleave is an alternative cost,
  * so it's driven by [CastSpell.useAlternativeCost] gated on the chosen [AlternativeCostType.CLEAVE]
- * (never by `wasKicked`, which is an *additional* cost). When true, the resolver swaps in the
+ * (never by `declaredCostSlot`, which names an *additional* cost). When true, the resolver swaps in the
  * brackets-removed effect / target-requirement variant (`cleaveSpellEffect` /
  * `cleaveTargetRequirements`).
  */
@@ -143,6 +146,24 @@ private fun isCleaveCast(action: CastSpell, cardDef: com.wingedsheep.sdk.model.C
     action.useAlternativeCost &&
         action.altAllows(AlternativeCostType.CLEAVE) &&
         cardDef.keywordAbilities.any { it is KeywordAbility.Cleave }
+
+/**
+ * The card's optional-additional-cost keywords matching the slot this cast declared (CR 601.2b) —
+ * empty when the cast declared none, or when the card has no keyword for the declared slot (which
+ * `validate` turns into a rejection). A card can carry two entries for one slot (a mana kicker
+ * alongside a sacrifice kicker), hence a list: the mana portion and the non-mana portion are read
+ * separately.
+ */
+private fun declaredOptionalCosts(
+    action: CastSpell,
+    cardDef: com.wingedsheep.sdk.model.CardDefinition?,
+): List<KeywordAbility.OptionalAdditionalCost> {
+    val slot = action.declaredCostSlot ?: return emptyList()
+    return cardDef?.keywordAbilities
+        ?.filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
+        ?.filter { it.declaredSlot == slot }
+        ?: emptyList()
+}
 
 class CastSpellHandler(
     private val cardRegistry: CardRegistry,
@@ -220,6 +241,19 @@ class CastSpellHandler(
             return "Card is not in your hand"
         }
 
+        // Gift (CR 702.174a): the promise is an additional cost whose "payment" is choosing an
+        // opponent, so the recipient must be an opponent of the caster and the card must actually
+        // have gift.
+        action.giftRecipient?.let { recipient ->
+            val giftCard = cardRegistry.getCard(cardComponent.cardDefinitionId)
+            if (giftCard?.giftKeyword() == null) {
+                return "${cardComponent.name} has no gift cost to promise"
+            }
+            if (recipient !in state.getOpponents(action.playerId)) {
+                return "A gift can only be promised to an opponent"
+            }
+        }
+
         // Memory Vessel: "they can't play cards from their hand" — hand-scoped, so casts from
         // exile/graveyard granted by a may-play permission still resolve.
         if (inHand && state.getEntity(action.playerId)?.has<PlayerCantPlayFromHandComponent>() == true) {
@@ -278,13 +312,11 @@ class CastSpellHandler(
             val grantedFlash = hasFlash || zoneResolver.hasGrantedFlash(state, action.cardId)
             // A from-exile may-play permission with an "as though it had flash" rider (Azula,
             // Cunning Usurper) lets a non-instant exiled card be cast at instant speed (CR 702.8).
-            val mayPlayFlash = state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator)
+            val mayPlayFlash = state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator, cardRegistry)
                 .any { it.asThoughFlash }
             // A flash-timing kicker unlocks instant-speed casting when paid — whether the
             // optional cost is mana (Ghitu Fire) or a non-mana cost like Behold (Molten Exhale).
-            val flashTimingKicker = action.wasKicked && cardDef?.keywordAbilities
-                ?.filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
-                ?.any { it.grantsFlashTiming } == true
+            val flashTimingKicker = declaredOptionalCosts(action, cardDef).any { it.grantsFlashTiming }
             if (!grantedFlash && !mayPlayFlash && !flashTimingKicker && !castingForSneak &&
                 !turnManager.canPlaySorcerySpeed(state, action.playerId)
             ) {
@@ -305,6 +337,23 @@ class CastSpellHandler(
             }
             if (bounced.first() !in SneakWindow.unblockedAttackers(state, action.playerId)) {
                 return "The chosen creature is not an unblocked attacker you control"
+            }
+        }
+
+        // Web-slinging (CR 702.188a): the player must return exactly one tapped creature they
+        // control to its owner's hand as the non-mana portion of the alternative cost. Timing is
+        // the spell's normal timing (checked above) — web-slinging grants no extra permission.
+        val castingForWebSling = action.useAlternativeCost &&
+            action.altAllows(AlternativeCostType.WEB_SLINGING) &&
+            cardDef != null &&
+            WebSlinging.webSlingingAbility(cardDef) != null
+        if (castingForWebSling) {
+            val bounced = action.additionalCostPayment?.bouncedPermanents ?: emptyList()
+            if (bounced.size != 1) {
+                return "Web-slinging requires returning exactly one tapped creature you control to its owner's hand"
+            }
+            if (bounced.first() !in WebSlinging.tappedCreaturesYouControl(state, action.playerId)) {
+                return "The chosen creature is not a tapped creature you control"
             }
         }
 
@@ -362,16 +411,26 @@ class CastSpellHandler(
             if (runtimeCostError != null) return runtimeCostError
         }
 
-        // Validate kicker/offspring: card must have a Kicker keyword ability
-        if (action.wasKicked && cardDef != null) {
-            val kickers = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
-            if (kickers.isEmpty()) return "This card does not have kicker"
+        // Validate the declared optional additional cost (kicker/offspring/bargain): the card must
+        // actually have a keyword declaring that slot, so a hand-built action can't claim to have
+        // bargained a kicker spell (or bargained a card with no bargain at all).
+        if (action.declaredCostSlot != null && cardDef != null) {
+            val declared = declaredOptionalCosts(action, cardDef)
+            if (declared.isEmpty()) {
+                val mechanic = when (action.declaredCostSlot) {
+                    ChoiceSlot.BARGAINED -> "bargain"
+                    ChoiceSlot.KICKED -> "kicker"
+                    else -> action.declaredCostSlot.name.lowercase()
+                }
+                return "This card does not have $mechanic"
+            }
 
-            // Validate non-mana kicker additional cost (sacrifice, etc.)
-            val kickerAdditionalCost = kickers.firstOrNull { it.additionalCost != null }?.additionalCost
-            if (kickerAdditionalCost != null) {
-                val kickerCostError = validateAdditionalCosts(state, listOf(kickerAdditionalCost), action)
-                if (kickerCostError != null) return kickerCostError
+            // Validate the non-mana portion (sacrifice a creature for kicker, an artifact /
+            // enchantment / token for bargain, …).
+            val declaredAdditionalCost = declared.firstOrNull { it.additionalCost != null }?.additionalCost
+            if (declaredAdditionalCost != null) {
+                val costError = validateAdditionalCosts(state, listOf(declaredAdditionalCost), action)
+                if (costError != null) return costError
             }
         }
 
@@ -488,7 +547,7 @@ class CastSpellHandler(
                 action.chosenModes.flatMap { modeIndex ->
                     modalEffect.modes.getOrNull(modeIndex)?.targetRequirements ?: emptyList()
                 }
-            } else if (action.wasKicked && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
+            } else if (action.declaredCostSlot != null && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
                 cardDef.script.kickerTargetRequirements
             } else if (isCleaveCast(action, cardDef) && cardDef.script.cleaveTargetRequirements.isNotEmpty()) {
                 // Cleave (CR 702.148): removing bracketed text can change the legal target set
@@ -527,7 +586,7 @@ class CastSpellHandler(
 
         // Validate damage distribution for DividedDamageEffect spells
         // Use kickerSpellEffect when kicked, cleaveSpellEffect when cleaved, else the printed effect.
-        val spellEffect = if (action.wasKicked && cardDef?.script?.kickerSpellEffect != null) {
+        val spellEffect = if (action.declaredCostSlot != null && cardDef?.script?.kickerSpellEffect != null) {
             cardDef.script.kickerSpellEffect
         } else if (cardDef != null && isCleaveCast(action, cardDef) && cardDef.script.cleaveSpellEffect != null) {
             cardDef.script.cleaveSpellEffect
@@ -758,10 +817,15 @@ class CastSpellHandler(
                     // The effective sneak cost is the printed Sneak, or a granted graveyard sneak
                     // (Ninja Teen: "creature cards in your graveyard have sneak {3}{B}").
                     val sneakCost = SneakWindow.effectiveSneakCost(state, cardDef, action.cardId, action.playerId, cardRegistry)
+                    // Check web-slinging cost (CR 702.188 — an alternative cost bundling a
+                    // return-a-tapped-creature payment, cast at the spell's normal timing).
+                    val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     if (action.altAllows(AlternativeCostType.SNEAK) && sneakCost != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, sneakCost, action.playerId)
+                    } else if (action.altAllows(AlternativeCostType.WEB_SLINGING) && webSlingingAbility != null) {
+                        costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, webSlingingAbility.cost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.EVOKE) && evokeAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, evokeAbility.cost, action.playerId)
                     } else {
@@ -807,15 +871,17 @@ class CastSpellHandler(
                 action.playerId,
                 action.targets.map { it.toEntityId() },
                 fromZone = if (castingFromCommandZone) Zone.COMMAND else castSourceZone(state, action.cardId),
+                // Price the branch the player actually announced — a "costs {2} less to cast if
+                // it's bargained" reduction is gated on the declaration (CR 702.166).
+                declaredCostSlot = action.declaredCostSlot,
             )
         } else {
             cardComponent.manaCost
         }
 
         // Add kicker/offspring mana cost if kicked (only for mana-based kicker/offspring)
-        if (action.wasKicked && !playForFree && !action.useAlternativeCost && cardDef != null) {
-            val kickerManaCost = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
+        if (!playForFree && !action.useAlternativeCost) {
+            val kickerManaCost = declaredOptionalCosts(action, cardDef)
                 .firstOrNull { it.manaCost != null }
                 ?.manaCost
             if (kickerManaCost != null) {
@@ -967,7 +1033,7 @@ class CastSpellHandler(
         val spellCtx = if (cardComponent != null) {
             SpellPaymentContext(
                 isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-                isKicked = action.wasKicked,
+                isKicked = action.declaredCostSlot == ChoiceSlot.KICKED,
                 isCreature = cardComponent.typeLine.isCreature,
                 isLegendary = cardComponent.typeLine.isLegendary,
                 manaValue = cardComponent.manaCost.cmc,
@@ -1061,22 +1127,32 @@ class CastSpellHandler(
     }
 
     /**
-     * True if the spell is being cast via a [com.wingedsheep.engine.state.permissions.MayPlayPermission]
-     * that allows mana of any type to be spent. The card must currently be in a zone a may-play
-     * permission can grant casting from — exile (the card's owner's, which may be an opponent —
-     * e.g. Taster of Wares leaves the exiled card in the revealing player's exile) or a graveyard
-     * (per-card grants that leave the card in the graveyard — e.g. Tinybones, the Pickpocket lets
-     * you cast a targeted nonland permanent card from the damaged player's graveyard). An active
-     * permission must be granted to the casting player with its condition gate open, and the
-     * `withAnyManaType` flag must be set on at least one of those active permissions.
+     * True if mana of any type may be spent on this spell's mana cost (CR 118.14 / 609.4b). Two
+     * independent sources:
+     *
+     * 1. A [com.wingedsheep.sdk.scripting.SpendAnyManaTypeForSpells] static controlled by the
+     *    caster whose filter matches the card — the blanket "you can spend mana of any type to cast
+     *    [these] spells" (Vizier of the Menagerie). Zone-agnostic, so it is checked first and covers
+     *    hand and top-of-library casts too.
+     * 2. A [com.wingedsheep.engine.state.permissions.MayPlayPermission] carrying the
+     *    `withAnyManaType` rider. That is a *per-card* grant, so the card must currently be in a
+     *    zone a may-play permission can grant casting from — exile (the card's owner's, which may be
+     *    an opponent — e.g. Taster of Wares leaves the exiled card in the revealing player's exile)
+     *    or a graveyard (per-card grants that leave the card in the graveyard — e.g. Tinybones, the
+     *    Pickpocket lets you cast a targeted nonland permanent card from the damaged player's
+     *    graveyard). An active permission must be granted to the casting player with its condition
+     *    gate open, and the `withAnyManaType` flag must be set on at least one of them.
      */
     private fun isCastWithAnyManaType(state: GameState, action: CastSpell): Boolean {
+        if (castPermissionUtils.canSpendAnyManaTypeForSpell(state, action.playerId, action.cardId)) {
+            return true
+        }
         val inGrantableZone = state.turnOrder.any { ownerId ->
             action.cardId in state.getZone(ZoneKey(ownerId, Zone.EXILE)) ||
                 action.cardId in state.getZone(ZoneKey(ownerId, Zone.GRAVEYARD))
         }
         if (!inGrantableZone) return false
-        return state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator)
+        return state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator, cardRegistry)
             .any { it.withAnyManaType }
     }
 
@@ -1497,10 +1573,12 @@ class CastSpellHandler(
                         }
                     }
                     // Mana / reveal are not produced as spell additional costs today;
-                    // put-counters-on-self is ability-scoped (no permanent to accrue them on) and
-                    // ExilePermanents is an activated-ability-only cost, never a spell additional cost.
+                    // put-counters-on-self is ability-scoped (no permanent to accrue them on);
+                    // ExilePermanents and Mill are activated-ability-only costs, never spell
+                    // additional costs (canPayAdditionalCost already reports Mill unpayable).
                     is CostAtom.Mana, is CostAtom.RevealFromHand,
-                    is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents -> {}
+                    is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents,
+                    is CostAtom.Mill -> {}
                     is CostAtom.RemoveCounters -> {
                         val needed = when (val c = atom.count) {
                             is com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed -> c.amount
@@ -1929,10 +2007,15 @@ class CastSpellHandler(
                     // Check sneak cost (CR 702.190 — mana portion; the bounce is paid separately).
                     // Printed Sneak, or a granted graveyard sneak (Ninja Teen).
                     val sneakCost = SneakWindow.effectiveSneakCost(currentState, cardDef, action.cardId, action.playerId, cardRegistry)
+                    // Check web-slinging cost (CR 702.188 — mana portion; the return-a-tapped-creature
+                    // bounce is paid separately, alongside).
+                    val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     if (action.altAllows(AlternativeCostType.SNEAK) && sneakCost != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, sneakCost, action.playerId)
+                    } else if (action.altAllows(AlternativeCostType.WEB_SLINGING) && webSlingingAbility != null) {
+                        costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, webSlingingAbility.cost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.EVOKE) && evokeAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, evokeAbility.cost, action.playerId)
                     } else {
@@ -1984,15 +2067,15 @@ class CastSpellHandler(
                 action.playerId,
                 action.targets.map { it.toEntityId() },
                 fromZone = if (castingFromCommand) Zone.COMMAND else castSourceZone(currentState, action.cardId),
+                declaredCostSlot = action.declaredCostSlot,
             )
         } else {
             cardComponent.manaCost
         }
 
         // Add kicker/offspring cost if kicked (not applicable with alternative costs)
-        if (action.wasKicked && !playForFreeInExecute && !action.useAlternativeCost && cardDef != null) {
-            val kickerManaCost = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
+        if (!playForFreeInExecute && !action.useAlternativeCost) {
+            val kickerManaCost = declaredOptionalCosts(action, cardDef)
                 .firstOrNull { it.manaCost != null }
                 ?.manaCost
             if (kickerManaCost != null) {
@@ -2117,13 +2200,10 @@ class CastSpellHandler(
         // Per-mode additional costs override card-level costs when present
         val allAdditionalCosts = buildList {
             if (cardDef != null) addAll(resolveAdditionalCostsForMode(cardDef, action))
-            if (action.wasKicked && cardDef != null) {
-                val kickerAdditionalCost = cardDef.keywordAbilities
-                    .filterIsInstance<KeywordAbility.OptionalAdditionalCost>()
-                    .firstOrNull { it.additionalCost != null }
-                    ?.additionalCost
-                if (kickerAdditionalCost != null) add(kickerAdditionalCost)
-            }
+            declaredOptionalCosts(action, cardDef)
+                .firstOrNull { it.additionalCost != null }
+                ?.additionalCost
+                ?.let { add(it) }
             if (action.useAlternativeCost && cardDef != null) {
                 // Each bundled additional cost is gated by the chosen alternative-cost type so a
                 // collision (e.g. granted warp on a card also being evoked) doesn't drag in the
@@ -2283,10 +2363,12 @@ class CastSpellHandler(
                         }
                         // PayLife is auto-paid in the loop above; mana / reveal aren't spell additional
                         // costs; put-counters-on-self is ability-scoped (a spell on the stack has no
-                        // permanent to accrue them on) and ExilePermanents is an activated-ability-only
-                        // cost, never a spell additional cost.
+                        // permanent to accrue them on); ExilePermanents and Mill are
+                        // activated-ability-only costs, never spell additional costs (and
+                        // canPayAdditionalCost reports Mill unpayable, so this is unreachable).
                         is CostAtom.PayLife, is CostAtom.Mana, is CostAtom.RevealFromHand,
-                        is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents -> {}
+                        is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents,
+                        is CostAtom.Mill -> {}
                         is CostAtom.RemoveCounters -> {
                             val resolvedRemovals = resolveDistributedCounterRemovalsForPayment(action)
                             for (removal in resolvedRemovals) {
@@ -2664,7 +2746,7 @@ class CastSpellHandler(
         // Build spell context for conditional mana restrictions
         val spellContext = SpellPaymentContext(
             isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
-            isKicked = action.wasKicked,
+            isKicked = action.declaredCostSlot == ChoiceSlot.KICKED,
             isCreature = cardComponent.typeLine.isCreature,
             isLegendary = cardComponent.typeLine.isLegendary,
             manaValue = cardComponent.manaCost.cmc,
@@ -2775,7 +2857,7 @@ class CastSpellHandler(
                 action.chosenModes.flatMap { idx ->
                     modalEffectForTargets.modes.getOrNull(idx)?.targetRequirements ?: emptyList()
                 }
-            } else if (action.wasKicked && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
+            } else if (action.declaredCostSlot != null && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
                 cardDef.script.kickerTargetRequirements
             } else if (isCleaveCast(action, cardDef) && cardDef.script.cleaveTargetRequirements.isNotEmpty()) {
                 cardDef.script.cleaveTargetRequirements
@@ -2817,6 +2899,27 @@ class CastSpellHandler(
                 sneakAttackDefenderId = currentState.getEntity(bounceId)
                     ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>()
                     ?.defenderId
+                val bounceResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                    currentState, bounceId, Zone.HAND
+                )
+                currentState = bounceResult.state
+                events.addAll(bounceResult.events)
+            }
+        }
+
+        // Web-slinging (CR 702.188a): pay the alternative cost's non-mana portion by returning one
+        // tapped creature you control to its owner's hand. Capture that creature's mana value first
+        // (CR 118.9c — its own mana value, needed by Scarlet Spider, Ben Reilly) before it leaves.
+        val wasWebSlung = action.useAlternativeCost && cardDef != null &&
+            action.altAllows(AlternativeCostType.WEB_SLINGING) &&
+            WebSlinging.webSlingingAbility(cardDef) != null
+        var webSlungReturnedManaValue = 0
+        if (wasWebSlung) {
+            val bounceId = action.additionalCostPayment?.bouncedPermanents?.firstOrNull()
+            if (bounceId != null) {
+                webSlungReturnedManaValue = currentState.getEntity(bounceId)
+                    ?.get<CardComponent>()
+                    ?.manaValue ?: 0
                 val bounceResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
                     currentState, bounceId, Zone.HAND
                 )
@@ -2969,17 +3072,22 @@ class CastSpellHandler(
             exiledCardCount = exiledCardCount,
             additionalCostBlightAmount = action.additionalCostPayment?.blightAmount ?: 0,
             additionalCostPayXLifeAmount = payXLifeAmount,
-            wasKicked = action.wasKicked,
+            declaredCostSlot = action.declaredCostSlot,
             wasBlightPaid = (action.additionalCostPayment?.blightTargets?.isNotEmpty() == true),
             // True when the spell's waterbend additional cost was paid (Avatar) — mandatory costs
             // always, optional "you may waterbend {N}" only when the player elected it.
             wasWaterbendPaid = cardDef?.script?.spellWaterbend?.let { !it.optional || action.wasWaterbendPaid } == true,
+            // Gift (CR 702.174a): the promised opponent, elected as part of casting. Only honored
+            // for a card that actually has gift — validate() rejects the flag otherwise.
+            giftRecipient = action.giftRecipient?.takeIf { cardDef?.giftKeyword() != null },
             wasWarped = wasWarped,
             wasEvoked = wasEvoked,
             wasImpending = wasImpending,
             wasCleaved = wasCleaved,
             wasSneaked = wasSneaked,
             sneakAttackDefenderId = sneakAttackDefenderId,
+            wasWebSlung = wasWebSlung,
+            webSlungReturnedManaValue = webSlungReturnedManaValue,
             chosenModes = action.chosenModes,
             modeTargetsOrdered = effectiveModeTargetsOrdered,
             modeTargetRequirements = perModeTargetRequirements,
@@ -3961,6 +4069,60 @@ class CastSpellHandler(
 
         is com.wingedsheep.sdk.scripting.effects.ManaSpellRider.ScryOnSharedTypeWithCommander ->
             buildScryOnSharedTypeWithCommanderTrigger(state, action, cardComponent, rider.amount)
+
+        is com.wingedsheep.sdk.scripting.effects.ManaSpellRider.CopySpellWhenSpent ->
+            buildCopySpellRiderTrigger(state, action, cardComponent, rider.spellFilter)
+    }
+
+    /**
+     * Pyromancer's Goggles' rider: if the cast spell matches [spellFilter], queue a copy trigger
+     * above the spell. Otherwise no-op (the {R} was spent on something else).
+     *
+     * The trigger resolves *before* the spell it copies, which is the printed behavior — the copy
+     * is put onto the stack above the original and resolves first (CR 707.10). The copy's controller
+     * may choose new targets, handled by [CopyTargetSpellEffect]'s own retarget pause.
+     *
+     * The spell is matched with [PredicateEvaluator] against its stack characteristics — projected
+     * *battlefield* state doesn't apply to an object on the stack, but the evaluator still reads
+     * color/type off the spell's [CardComponent], which is what "a red instant or sorcery spell"
+     * needs. Matching happens now, at payment time, not at trigger resolution.
+     */
+    private fun buildCopySpellRiderTrigger(
+        state: GameState,
+        action: CastSpell,
+        cardComponent: CardComponent,
+        spellFilter: com.wingedsheep.sdk.scripting.GameObjectFilter,
+    ): Pair<GameState, List<PendingTrigger>> {
+        val matches = predicateEvaluator.matches(
+            state,
+            state.projectedState,
+            action.cardId,
+            spellFilter,
+            PredicateContext(controllerId = action.playerId)
+        )
+        if (!matches) return state to emptyList()
+
+        val copyAbility = TriggeredAbility(
+            id = AbilityId.generate(),
+            trigger = SdkGameEvent.SpellCastEvent(player = Player.You),
+            binding = TriggerBinding.SELF,
+            effect = com.wingedsheep.sdk.scripting.effects.CopyTargetSpellEffect(
+                target = com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity
+            ),
+            activeZone = Zone.STACK,
+            descriptionOverride = "Copy ${cardComponent.name}. You may choose new targets for the copy."
+        )
+        val pending = PendingTrigger(
+            ability = copyAbility,
+            sourceId = action.cardId,
+            sourceName = cardComponent.name,
+            controllerId = action.playerId,
+            triggerContext = TriggerContext(
+                triggeringEntityId = action.cardId,
+                triggeringPlayerId = action.playerId
+            )
+        )
+        return state to listOf(pending)
     }
 
     /**

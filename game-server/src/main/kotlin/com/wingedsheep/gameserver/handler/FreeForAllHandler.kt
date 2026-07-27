@@ -112,9 +112,9 @@ class FreeForAllHandler(
 
         for (playerState in playerStates) {
             val identity = playerState.identity
-            val baseDeck = BoosterGenerator.distributeBasicLandVariants(
+            val baseDeck = BoosterGenerator.withBasicLandArt(
                 lobby.getSubmittedDeck(identity.playerId) ?: return false,
-                lobby.allBasicLandVariants
+                lobby.basicLands
             )
             val deckWithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(identity.playerName, baseDeck)
             val commander = if (isCommanderShape) playerState.commander else null
@@ -287,9 +287,8 @@ class FreeForAllHandler(
                 gameNumber = lobby.ffaGamesPlayed + 1,
                 players = gameSession.seatInfos(identity.playerId),
             ))
-            if (gameSession.getPlayerSession(identity.playerId) != null) {
-                gameSession.removePlayer(identity.playerId)
-            }
+            // Reseat in one step rather than remove-then-add: a pod's games run long enough that
+            // mid-game reconnects are routine, and each one must not cost the seat its decklist.
             gameSession.associatePlayer(playerSession)
             when {
                 gameSession.isAwaitingBottomCards(identity.playerId) -> {

@@ -62,6 +62,7 @@ export type {
   ClientBlocker,
   ClientChosenTarget,
   ClientPerModeTargetGroup,
+  ClientDeckCard,
 } from './gameState'
 export {
   totalMana,
@@ -314,6 +315,9 @@ export type {
   QuickGameLobbyPlayerView,
   QuickGameLobbyStateMessage,
   QuickGameLobbyClosedMessage,
+  AiDeckSpec,
+  AiDeckSpecView,
+  SetQuickGameAiDeckMessage,
   CreateQuickGameLobbyMessage,
   JoinQuickGameLobbyMessage,
   LeaveQuickGameLobbyMessage,
@@ -433,6 +437,7 @@ export {
   createSetQuickGameLobbyPublicMessage,
   createSetQuickGameLobbyRankedMessage,
   createSetQuickGameLobbyFormatMessage,
+  createSetQuickGameAiDeckMessage,
   isQuickGameLobbyStateMessage,
   isQuickGameLobbyClosedMessage,
 } from './messages'

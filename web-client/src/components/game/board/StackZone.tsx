@@ -247,10 +247,10 @@ export function StackDisplay() {
             X={card.chosenX}
           </div>
         )}
-        {/* Show kicked badge */}
-        {card.wasKicked && (
+        {/* Show the declared optional additional cost — Kicked / Bargained / Offspring */}
+        {card.optionalCostLabel && (
           <div style={styles.stackKickedBadge}>
-            Kicked
+            {card.optionalCostLabel}
           </div>
         )}
         {/* Show gift badge when the caster promised a gift (Bloomburrow) */}
@@ -258,7 +258,7 @@ export function StackDisplay() {
           <div
             style={{
               ...styles.stackGiftBadge,
-              top: card.wasKicked ? 26 : 4,
+              top: card.optionalCostLabel ? 26 : 4,
             }}
             title="Gift promised"
           >
@@ -271,7 +271,7 @@ export function StackDisplay() {
           <div
             style={{
               ...styles.stackBlightPaidBadge,
-              top: 4 + (card.wasKicked ? 22 : 0) + (card.giftPromised ? 22 : 0),
+              top: 4 + (card.optionalCostLabel ? 22 : 0) + (card.giftPromised ? 22 : 0),
             }}
             title="Blight cost paid"
           >

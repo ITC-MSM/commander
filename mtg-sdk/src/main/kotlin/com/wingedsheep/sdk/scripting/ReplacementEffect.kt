@@ -57,6 +57,28 @@ import kotlinx.serialization.Serializable
  * )
  * ```
  */
+/**
+ * Extra qualifier on *why* a card is changing zones, for replacement effects that only apply to a
+ * particular cause rather than to every move into the destination.
+ *
+ * The zone-change event itself carries the from/to zones; the cause is the piece the zones can't
+ * express — "hand → graveyard" is the same move whether you discarded to hand size, paid a cost, or
+ * an opponent's Mind Rot made you do it, but only the last one turns on Wilt-Leaf Liege.
+ */
+@Serializable
+enum class ZoneChangeCause {
+    /** No extra requirement — the replacement applies however the card got there. */
+    Any,
+
+    /**
+     * The move is a discard caused by a spell or ability an **opponent** of the discarding player
+     * controls (Wilt-Leaf Liege, Loxodon Smiter). Excludes discarding to hand size in the cleanup
+     * step (a turn-based action, not a spell or ability) and discarding to pay a cost of your own
+     * spell or ability.
+     */
+    DiscardedByOpponentEffect,
+}
+
 @Serializable
 sealed interface ReplacementEffect : TextReplaceable<ReplacementEffect> {
     /** Human-readable description of the replacement effect */
@@ -277,6 +299,11 @@ data class ModifyCounterPlacement(
  * [shuffleIntoLibrary] pairs with `newDestination = Zone.LIBRARY` for the Darksteel Colossus /
  * Progenitus family ("reveal ~ and shuffle it into its owner's library instead") — the card is
  * shuffled in rather than placed on top. [reveal] shows the card as it is shuffled away.
+ *
+ * [requiredCause] narrows the replacement to a particular *reason* for the move on top of the
+ * from/to zones. `DiscardedByOpponentEffect` + `selfOnly` + `newDestination = Zone.BATTLEFIELD` is
+ * Wilt-Leaf Liege / Loxodon Smiter: "if a spell or ability an opponent controls causes you to
+ * discard this card, put it onto the battlefield instead of putting it into your graveyard".
  */
 @SerialName("RedirectZoneChange")
 @Serializable
@@ -287,10 +314,15 @@ data class RedirectZoneChange(
     val selfOnly: Boolean = false,
     val shuffleIntoLibrary: Boolean = false,
     val reveal: Boolean = false,
+    val requiredCause: ZoneChangeCause = ZoneChangeCause.Any,
     override val priorityGroup: ReplacementPriorityGroup = ReplacementPriorityGroup.ANY
 ) : ReplacementEffect {
     override val description: String = buildString {
-        append("If ${appliesTo.description}, ")
+        when (requiredCause) {
+            ZoneChangeCause.Any -> append("If ${appliesTo.description}, ")
+            ZoneChangeCause.DiscardedByOpponentEffect ->
+                append("If a spell or ability an opponent controls causes you to discard this card, ")
+        }
         if (reveal) append("reveal it and ")
         if (shuffleIntoLibrary && newDestination == Zone.LIBRARY) {
             append("shuffle it into its owner's library instead")
@@ -446,6 +478,11 @@ data class PermanentsEnterTapped(
  *                  at the moment the permanent enters the battlefield. Used for cards like
  *                  Frilled Sparkshooter ("This creature enters with a +1/+1 counter on it if
  *                  an opponent lost life this turn.").
+ * @param otherOnly When true the source is excluded — "each **other** [filter] … enters with an
+ *                  additional counter" (Metallic Mimic). The [selfOnly] mirror, and the same flag
+ *                  [EntersWithDynamicCounters] carries: the source's own entry path skips an
+ *                  `otherOnly` effect, so the source can never counter itself as it enters. Leave
+ *                  false for a group effect that also covers the source's own entry.
  */
 @SerialName("EntersWithCounters")
 @Serializable
@@ -454,6 +491,7 @@ data class EntersWithCounters(
     val count: Int,
     val selfOnly: Boolean = false,
     val condition: Condition? = null,
+    val otherOnly: Boolean = false,
     override val appliesTo: EventPattern = EventPattern.ZoneChangeEvent(
         filter = GameObjectFilter.Creature.youControl(),
         to = Zone.BATTLEFIELD

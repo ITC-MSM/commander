@@ -10,6 +10,11 @@ server:
     mime-types: application/json,application/octet-stream,text/plain,text/html,text/css,application/javascript
     min-response-size: 2KB
 
+app:
+  # Build identity, stamped onto every recorded replay so one that later fails to re-simulate can be
+  # traced to the build that recorded it. The Dockerfile sets this from the deploy's git sha.
+  version: ${APP_VERSION:dev}
+
 spring:
   application:
     name: argentum-game-server
@@ -76,6 +81,12 @@ cache:
 
 game:
   debug-mode: ${GAME_DEBUG_MODE:false}
+  replay:
+    # Cap on the archived viewer stream stored alongside a replay's input log — the fallback that
+    # keeps old replays watchable after the engine changes (see ReplayPresentation). Measured on the
+    # gzipped form, which is ~160 KB for a full game, so 4 MB only bites on something pathological
+    # (a mill-loop stalemate, an AI grinding 400 turns). 0 disables archiving entirely.
+    presentation-max-stored-bytes: ${GAME_REPLAY_PRESENTATION_MAX_STORED_BYTES:4194304}
   dev-endpoints:
     # Enable development endpoints for manual testing. NEVER enable in production.
     enabled: ${GAME_DEV_ENDPOINTS_ENABLED:false}

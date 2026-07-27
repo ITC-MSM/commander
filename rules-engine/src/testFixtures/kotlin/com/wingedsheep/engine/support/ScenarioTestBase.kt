@@ -19,7 +19,6 @@ import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
-import com.wingedsheep.engine.state.components.identity.HexproofFromColorComponent
 import com.wingedsheep.engine.state.components.identity.ToxicComponent
 import com.wingedsheep.engine.state.components.identity.ProtectionComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
@@ -456,62 +455,10 @@ abstract class ScenarioTestBase : FunSpec() {
                 ControllerComponent(ownerId)
             )
 
-            if (cardDef.script.cantBeCountered) {
-                container = container.with(CantBeCounteredComponent)
-            }
-
-            if (cardDef.script.cantBeCopied) {
-                container = container.with(com.wingedsheep.engine.state.components.identity.CantBeCopiedComponent)
-            }
-
-            // Attach ProtectionComponent for cards with static protection from color/subtype
-            val protections = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Protection>()
-            val protectionColors = protections.flatMap { p ->
-                when (val s = p.scope) {
-                    is ProtectionScope.Color -> listOf(s.color)
-                    is ProtectionScope.Colors -> s.colors
-                    else -> emptyList()
-                }
-            }.toSet()
-            val protectionSubtypes = protections.mapNotNull {
-                (it.scope as? ProtectionScope.Subtype)?.subtype
-            }.toSet()
-            val protectionSupertypes = protections.mapNotNull {
-                (it.scope as? ProtectionScope.Supertype)?.supertype
-            }.toSet()
-            if (protectionColors.isNotEmpty() || protectionSubtypes.isNotEmpty() || protectionSupertypes.isNotEmpty()) {
-                container = container.with(ProtectionComponent(protectionColors, protectionSubtypes, protectionSupertypes))
-            }
-
-            // Attach HexproofFromColorComponent for cards with hexproof from color
-            val hexproofFromColors = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.Hexproof>()
-                .mapNotNull { (it.scope as? ProtectionScope.Color)?.color }
-                .toSet()
-            if (hexproofFromColors.isNotEmpty()) {
-                container = container.with(HexproofFromColorComponent(hexproofFromColors))
-            }
-
-            // Attach ToxicComponent for cards with printed Toxic N (sums per Rule 702.164b)
-            val toxicAmount = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.Numeric>()
-                .filter { it.keyword == Keyword.TOXIC }
-                .sumOf { it.n }
-            if (toxicAmount > 0) {
-                container = container.with(ToxicComponent(toxicAmount))
-            }
-
-            // Attach SelfZoneRedirectComponent for card-intrinsic "from anywhere" zone-redirect
-            // self-replacements (Darksteel Colossus, Progenitus) — mirrors CardEntityFactory so
-            // the redirect fires in every zone in scenario tests too.
-            val selfRedirects = cardDef.script.replacementEffects
-                .filterIsInstance<com.wingedsheep.sdk.scripting.RedirectZoneChange>()
-                .filter { it.selfOnly }
-            if (selfRedirects.isNotEmpty()) {
-                container = container.with(
-                    com.wingedsheep.engine.state.components.identity.SelfZoneRedirectComponent(selfRedirects)
-                )
-            }
+            // Every component derived from the printed definition (can't-be-countered/copied,
+            // morph, protection, self-redirects, hexproof-from, Toxic) — shared with the real
+            // CardEntityFactory so scenario entities never quietly lose one.
+            container = CardEntityFactory.applyDefinitionDecorations(container, cardDef)
 
             state = state.withEntity(cardId, container)
             return cardId
@@ -1468,6 +1415,49 @@ abstract class ScenarioTestBase : FunSpec() {
 
             val targets = listOf(ChosenTarget.Spell(targetSpellId))
             return execute(CastSpell(playerId, cardId, targets))
+        }
+
+        /**
+         * Cast a spell **bargained** (CR 702.166b) — declaring its optional "sacrifice an artifact,
+         * enchantment, or token" additional cost and paying it with [sacrificeName].
+         *
+         * @param playerNumber The player casting the spell (1 or 2)
+         * @param spellName The name of the spell to cast, from that player's hand
+         * @param sacrificeName The permanent that player controls to sacrifice for bargain
+         * @param targetId Optional single target for the spell
+         * @param xValue The value chosen for `{X}` on a bargained X spell (Stonesplitter Bolt);
+         *   leave `null` for spells with no `{X}` in their cost
+         */
+        fun castSpellBargained(
+            playerNumber: Int,
+            spellName: String,
+            sacrificeName: String,
+            targetId: EntityId? = null,
+            xValue: Int? = null,
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val cardId = state.getHand(playerId).find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's hand")
+
+            val sacrificeId = state.getBattlefield().find { entityId ->
+                val container = state.getEntity(entityId) ?: return@find false
+                container.get<CardComponent>()?.name == sacrificeName &&
+                    container.get<ControllerComponent>()?.playerId == playerId
+            } ?: error("Permanent '$sacrificeName' not found on player $playerNumber's battlefield")
+
+            return execute(
+                CastSpell(
+                    playerId = playerId,
+                    cardId = cardId,
+                    targets = targetId?.let { listOf(ChosenTarget.Permanent(it)) } ?: emptyList(),
+                    xValue = xValue,
+                    declaredCostSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED,
+                    additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
+                        sacrificedPermanents = listOf(sacrificeId)
+                    ),
+                )
+            )
         }
 
         /**

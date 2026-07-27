@@ -128,4 +128,7 @@ export const counterManaClass: Record<string, string> = {
   BAIT: 'counter-fungus',
   POINT: 'counter-charge',
   WISH: 'counter-charge',
+  REVIVAL: 'counter-charge',
+  INGENUITY: 'counter-charge',
+  FILM: 'counter-charge',
 }

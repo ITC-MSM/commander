@@ -193,10 +193,12 @@ export enum Keyword {
   EXPLOIT = 'EXPLOIT',
   SNEAK = 'SNEAK',
   NINJUTSU = 'NINJUTSU',
+  WEB_SLINGING = 'WEB_SLINGING',
   IMPENDING = 'IMPENDING',
   CLEAVE = 'CLEAVE',
   CONSPIRE = 'CONSPIRE',
   CASUALTY = 'CASUALTY',
+  BARGAIN = 'BARGAIN',
   MIRACLE = 'MIRACLE',
   HIDEAWAY = 'HIDEAWAY',
   CASCADE = 'CASCADE',
@@ -212,6 +214,9 @@ export enum Keyword {
   ENDURING = 'ENDURING',
   // Resolution-time city's blessing grant (Ixalan)
   ASCEND = 'ASCEND',
+  // Player speed 0–4 (Aetherdrift): the keyword that starts it, and the gate at 4
+  START_YOUR_ENGINES = 'START_YOUR_ENGINES',
+  MAX_SPEED = 'MAX_SPEED',
   // Token decay (Innistrad: Midnight Hunt / TDM decayed counter)
   DECAYED = 'DECAYED',
   // Attack-triggered self-buff (Innistrad: Midnight Hunt)
@@ -270,10 +275,12 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.EXPLOIT]: 'Exploit',
   [Keyword.SNEAK]: 'Sneak',
   [Keyword.NINJUTSU]: 'Ninjutsu',
+  [Keyword.WEB_SLINGING]: 'Web-slinging',
   [Keyword.IMPENDING]: 'Impending',
   [Keyword.CLEAVE]: 'Cleave',
   [Keyword.CONSPIRE]: 'Conspire',
   [Keyword.CASUALTY]: 'Casualty',
+  [Keyword.BARGAIN]: 'Bargain',
   [Keyword.MIRACLE]: 'Miracle',
   [Keyword.HIDEAWAY]: 'Hideaway',
   [Keyword.CASCADE]: 'Cascade',
@@ -284,6 +291,8 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.PERSIST]: 'Persist',
   [Keyword.ENDURING]: 'Enduring',
   [Keyword.ASCEND]: 'Ascend',
+  [Keyword.START_YOUR_ENGINES]: 'Start your engines!',
+  [Keyword.MAX_SPEED]: 'Max speed',
   [Keyword.DECAYED]: 'Decayed',
   [Keyword.TRAINING]: 'Training',
   [Keyword.JOB_SELECT]: 'Job select',
@@ -408,6 +417,9 @@ export enum CounterType {
   BORE = 'BORE',
   POINT = 'POINT',
   WISH = 'WISH',
+  REVIVAL = 'REVIVAL',
+  INGENUITY = 'INGENUITY',
+  FILM = 'FILM',
 }
 
 export const CounterTypeDisplayNames: Record<CounterType, string> = {
@@ -472,6 +484,9 @@ export const CounterTypeDisplayNames: Record<CounterType, string> = {
   [CounterType.BORE]: 'Bore',
   [CounterType.POINT]: 'Point',
   [CounterType.WISH]: 'Wish',
+  [CounterType.REVIVAL]: 'Revival',
+  [CounterType.INGENUITY]: 'Ingenuity',
+  [CounterType.FILM]: 'Film',
 }
 
 /**

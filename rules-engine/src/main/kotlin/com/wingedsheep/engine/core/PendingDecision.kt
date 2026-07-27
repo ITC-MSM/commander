@@ -826,8 +826,34 @@ data class ManaSourcesSelectedResponse(
      * Untapped artifacts/creatures the player taps to help pay a Ward—Waterbend cost (Avatar:
      * The Last Airbender) — each pays {1} of the generic. Empty for an ordinary mana payment.
      */
-    val waterbendPermanents: Set<EntityId> = emptySet()
-) : DecisionResponse
+    val waterbendPermanents: Set<EntityId> = emptySet(),
+    /**
+     * The player explicitly refused to pay (only meaningful when
+     * [SelectManaSourcesDecision.canDecline]).
+     *
+     * Declining used to be inferred purely from an empty submission, which stopped being
+     * unambiguous once a player could activate mana abilities during the payment itself
+     * (CR 605.3a — see [com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow]): "I tapped my
+     * own sources and the mana is already floating, just take it" also submits nothing. The flag
+     * separates the two; [isDecline] keeps the old inference as the fallback for clients and AI
+     * players that don't set it.
+     */
+    val declined: Boolean = false
+) : DecisionResponse {
+
+    /**
+     * Whether this submission refuses the payment.
+     *
+     * @param floatingCoversCost true when the player's mana pool already covers the whole cost, in
+     *   which case an empty submission means "pay with what I floated", not "decline".
+     */
+    fun isDecline(floatingCoversCost: Boolean): Boolean = when {
+        declined -> true
+        autoPay -> false
+        selectedSources.isNotEmpty() || waterbendPermanents.isNotEmpty() -> false
+        else -> !floatingCoversCost
+    }
+}
 
 /**
  * Response to cancel a decision and go back to the previous choice.

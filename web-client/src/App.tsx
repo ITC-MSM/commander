@@ -99,7 +99,19 @@ export default function App() {
     }
   }, [spectateParam, connectionStatus, spectatingState, spectateGame])
 
-  // Keep the URL bar in sync with tournament state so the link is shareable
+  /**
+   * Keep the URL bar in sync with tournament state so the link is shareable.
+   *
+   * **Deliberately raw `history.replaceState`, not `navigate()`.** `/tournament/:lobbyId` is a real
+   * route that renders `TournamentEntryPage`, so routing there would unmount this component and drop
+   * the WebSocket. This writes the address bar without telling the router — which is why React
+   * Router's location is stale relative to the bar during lobby play. Giving the in-`/` screens their
+   * own routes is the remaining half of Phase 6.
+   *
+   * The reset arm is scoped to lobby paths. It used to send *any* non-`/` path back to `/`, which
+   * erased the wizard's `/play/...` steps (and would erase any future in-`/` route) on every lobby
+   * state change.
+   */
   useEffect(() => {
     const lobbyId = tournamentState?.lobbyId ?? lobbyState?.lobbyId
     if (lobbyId) {
@@ -107,7 +119,7 @@ export default function App() {
       if (window.location.pathname !== target) {
         window.history.replaceState(null, '', target)
       }
-    } else if (window.location.pathname !== '/') {
+    } else if (window.location.pathname.startsWith('/tournament/')) {
       window.history.replaceState(null, '', '/')
     }
   }, [tournamentState?.lobbyId, lobbyState?.lobbyId])

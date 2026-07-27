@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.components.stack.EntitySnapshot
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import kotlinx.serialization.Serializable
@@ -94,7 +95,15 @@ data class EffectContext(
      * Read by `DynamicAmount.ManaSpentOnX`. Empty when X was unrestricted.
      */
     val manaSpentOnXByColor: Map<Color, Int> = emptyMap(),
-    val wasKicked: Boolean = false,
+    /**
+     * The optional-additional-cost mechanic declared for the spell being cast or resolved
+     * ([com.wingedsheep.sdk.scripting.ChoiceSlot.KICKED] for kicker, `BARGAINED` for bargain), or
+     * null when none was. Read by `WasKicked` and by `CastChoiceMade(slot)` — the latter is how a
+     * spell's own "if this spell was bargained" rider resolves while the spell is still on the
+     * stack, before any durable cast-choices bag exists, and how a `CostGating.OnlyIf` cost
+     * reduction is priced against the branch being enumerated.
+     */
+    val declaredCostSlot: ChoiceSlot? = null,
     /** True if the spell's optional Blight additional cost was paid (BlightOrPay path chosen). */
     val wasBlightPaid: Boolean = false,
     /**
@@ -105,6 +114,8 @@ data class EffectContext(
     val wasWaterbendPaid: Boolean = false,
     /** True if the spell was cast for its sneak cost (CR 702.190). Read by `SneakCostWasPaid`. */
     val wasSneaked: Boolean = false,
+    /** True if the spell was cast using web-slinging (CR 702.188). Read by `WebSlungCostWasPaid`. */
+    val wasWebSlung: Boolean = false,
     // --- Cast-time state ---
     /**
      * Projected snapshots of permanents sacrificed as part of the cost (Rule 112.7a /
@@ -283,6 +294,11 @@ data class EffectContext(
      */
     val triggerScryCount: Int? = null,
     /**
+     * Number of cards discarded in the batch that fired this trigger (CR 603.2c). Read by
+     * `ContextPropertyKey.TRIGGER_DISCARD_COUNT` (Magmakin Artillerist).
+     */
+    val triggerDiscardCount: Int? = null,
+    /**
      * Discover value N of the discover that fired this trigger (CR 701.57). Read by
      * `ContextPropertyKey.TRIGGER_DISCOVER_VALUE` (Curator of Sun's Creation).
      */
@@ -309,6 +325,20 @@ data class EffectContext(
     val chosenColor: Color? = null,
     /** Creature type chosen during casting (e.g., Aphetto Dredging) */
     val chosenCreatureType: String? = null,
+    /**
+     * The opponent the controller picked to make a
+     * [com.wingedsheep.sdk.scripting.effects.Chooser.Opponent] decision, when the game has more
+     * than one opponent to choose from (CR 601.7a / 602.3a and the matching resolution-time
+     * rulings). Set by
+     * [com.wingedsheep.engine.core.ChooseOpponentDeciderContinuation]'s resumer just before the
+     * effect is re-executed, and read back by
+     * [com.wingedsheep.engine.handlers.effects.ChooserResolution.resolve].
+     *
+     * Resolution-scoped on purpose: the stamp rides only the re-run context, so each separate
+     * "an opponent chooses" step gets its own prompt. Null in two-player games (a sole opponent
+     * is a forced choice, never asked) and before the pick is made.
+     */
+    val opponentDeciderId: EntityId? = null,
     // --- Zone state ---
     /** Zone the spell was cast from (e.g., HAND, GRAVEYARD for flashback) */
     val castFromZone: Zone? = null,

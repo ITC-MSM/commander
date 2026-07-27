@@ -517,8 +517,8 @@ class LobbyHandler(
         sealedSession.players.forEach { (playerId, playerState) ->
             val baseDeck = playerState.submittedDeck
                 ?: throw IllegalStateException("Player $playerId has no submitted deck")
-            val deckWithVariants = BoosterGenerator.distributeBasicLandVariants(baseDeck, sealedSession.allBasicLandVariants)
-            val deck = EasterEggDeckInjector.maybeInjectEasterEggs(playerState.session.playerName, deckWithVariants)
+            val deckWithLandArt = BoosterGenerator.withBasicLandArt(baseDeck, sealedSession.basicLands)
+            val deck = EasterEggDeckInjector.maybeInjectEasterEggs(playerState.session.playerName, deckWithLandArt)
             gameSession.addPlayer(playerState.session, deck, sideboard = playerState.submittedSideboard)
 
             // Store player info for persistence
@@ -935,9 +935,8 @@ class LobbyHandler(
                         gameSessionId = activePlayerMatch.gameSessionId!!,
                         opponentName = opponentName
                     ))
-                    if (gs.getPlayerSession(identity.playerId) != null) {
-                        gs.removePlayer(identity.playerId)
-                    }
+                    // Reseat in place — un-seating first would drop the submitted deck and sideboard,
+                    // blanking this seat's deck in match history and breaking sideboarding.
                     gs.associatePlayer(playerSession)
                     when {
                         gs.isAwaitingBottomCards(identity.playerId) -> {

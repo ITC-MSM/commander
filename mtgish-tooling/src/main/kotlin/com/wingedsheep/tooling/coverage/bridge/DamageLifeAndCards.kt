@@ -58,6 +58,15 @@ internal fun BridgeBuilder.damageLifeAndCards() {
     effect("LoseLife", "LoseLife")
 
     effect("SacrificePermanent", "Sacrifice")
+    // "chooses a permanent they control of each permanent type" (Liliana, Dreadhorde General's −9) —
+    // the ChooseOnePerCategory pipeline step over Filters.PermanentTypes. The IR follows this action
+    // with `SacrificeEachPermanent(ExceptFor(ThePermanentsChosenThisWay))`, which is the
+    // exclude → sacrifice tail of the same pipeline; that trio is *deliberately left unmapped*,
+    // because those three tags appear on 100+ cards in shapes this step does not cover and mapping
+    // them here would score all of them as coverable. Recovering the pair (which would also unlock
+    // Cataclysm / Divine Reckoning / Tragic Arrogance) is its own emitter pass.
+    effect("ChooseAPermanentOfEachPermanentTypeAvailable", "ChooseOnePerCategory",
+        "one pick per permanent type — chooseOnePerCategory(pool, Filters.PermanentTypes)")
     effect("CounterSpell", "Counter")
     // "Counter target spell, activated ability, or triggered ability" (Overcharged Amalgam's exploit
     // payoff, Teferi's Response). Same CounterEffect as CounterSpell, but its target dispatches at

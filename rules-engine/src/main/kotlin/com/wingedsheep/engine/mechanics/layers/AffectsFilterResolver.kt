@@ -414,6 +414,10 @@ internal class AffectsFilterResolver {
         // ability's source permanent, absent in group-static projection. Only meaningful in
         // target/edict-filter contexts via PredicateEvaluator. Never match here.
         StatePredicate.DealtCombatDamageToSourceControllerThisTurn -> false
+        // Mirror of the above, equally source-relative: "whose controller was dealt combat damage
+        // by the source this turn" needs the ability's source permanent, absent in group-static
+        // projection. Only meaningful in gather-filter contexts via PredicateEvaluator.
+        StatePredicate.ControllerDealtCombatDamageBySourceThisTurn -> false
         // Likewise source-relative: "crewed/saddled the source this turn" needs the ability's
         // source permanent, absent in group-static projection. Only meaningful in target/count
         // contexts via PredicateEvaluator / DynamicAmountEvaluator. Never match here.
@@ -453,10 +457,11 @@ internal class AffectsFilterResolver {
             container.has<AttackedThisCombatComponent>()
         StatePredicate.BlockedThisCombat ->
             container.has<BlockedThisCombatComponent>()
-        // Graveyard-zone-only predicate (Samwise/Lobelia). Battlefield projection
-        // never sees a card whose stamp would match — every battlefield permanent
+        // Graveyard-zone-only predicates (Abyssal Harvester; Samwise/Lobelia). Battlefield
+        // projection never sees a card whose stamp would match — every battlefield permanent
         // has had its from-graveyard marker stripped on battlefield entry — so the
         // projection answer is unconditionally false here.
+        StatePredicate.PutIntoGraveyardThisTurn -> false
         StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false
         StatePredicate.BlockedOrWasBlockedByLegendaryThisTurn ->
             container.has<com.wingedsheep.engine.state.components.combat.BlockedOrWasBlockedByLegendaryThisTurnComponent>()
@@ -472,6 +477,16 @@ internal class AffectsFilterResolver {
             val attachments = container.get<AttachmentsComponent>()
             attachments != null && attachments.attachedIds.any { attachId ->
                 state.getEntity(attachId)?.get<CardComponent>()?.typeLine?.isEquipment == true
+            }
+        }
+        // "Enchanted creatures you control get +2/+2" (A Tale for the Ages) is a layer-7c group
+        // static, so this has to resolve during projection: read the base attachment index and the
+        // attached card's printed type line — an Aura's own Aura-ness is never granted or removed by
+        // a continuous effect, so no projected lookup is needed for the attachment itself.
+        StatePredicate.IsEnchanted -> {
+            val attachments = container.get<AttachmentsComponent>()
+            attachments != null && attachments.attachedIds.any { attachId ->
+                state.getEntity(attachId)?.get<CardComponent>()?.typeLine?.isAura == true
             }
         }
         StatePredicate.IsModified -> com.wingedsheep.engine.handlers.predicates.isModified(state, entityId)

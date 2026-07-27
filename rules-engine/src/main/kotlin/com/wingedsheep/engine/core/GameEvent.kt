@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.ChoiceSlot
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -237,6 +238,28 @@ data class CitysBlessingGainedEvent(
 ) : GameEvent
 
 /**
+ * A player's speed changed (Aetherdrift, CR 702.179).
+ *
+ * Fired both by the CR 704.5z state-based action that starts a speed at 1 ([oldSpeed] = 0) and by
+ * every later increase. Speed only ever rises and never past
+ * [com.wingedsheep.sdk.core.Speed.MAX], so [newSpeed] > [oldSpeed] always holds and reaching
+ * [com.wingedsheep.sdk.core.Speed.MAX] fires at most once per player per game — which is what lets
+ * the client animate "max speed reached" off this event alone.
+ *
+ * @param sourceName The permanent or ability that raised the speed; "Start your engines!" for the
+ *   state-based action, which has no source object.
+ */
+@Serializable
+@SerialName("SpeedChangedEvent")
+data class SpeedChangedEvent(
+    val playerId: EntityId,
+    val playerName: String,
+    val oldSpeed: Int,
+    val newSpeed: Int,
+    val sourceName: String
+) : GameEvent
+
+/**
  * A player lost their maximum hand size for the rest of the game (Wisdom of Ages,
  * "You have no maximum hand size for the rest of the game"). Permanent — fires at most
  * once per player per game.
@@ -285,7 +308,7 @@ data class RingTemptedEvent(
 ) : GameEvent
 
 /**
- * A player just finished a `scry N` (CR 701.18). Fires once per scry, after the
+ * A player just finished a `scry N` (CR 701.22). Fires once per scry, after the
  * top/bottom moves have all resolved. Drives "Whenever you scry" triggers; see
  * [com.wingedsheep.sdk.scripting.EventPattern.ScriedEvent].
  *
@@ -304,7 +327,7 @@ data class ScriedEvent(
 ) : GameEvent
 
 /**
- * A player just finished a `surveil N` (CR 701.42). Fires once per surveil, after the
+ * A player just finished a `surveil N` (CR 701.25). Fires once per surveil, after the
  * kept/graveyard moves have all resolved. Drives "Whenever you surveil" and "Whenever you
  * scry or surveil" triggers; see [com.wingedsheep.sdk.scripting.EventPattern.SurveiledEvent].
  *
@@ -458,7 +481,12 @@ data class SpellCastEvent(
     val casterId: EntityId,
     val targetNames: List<String> = emptyList(),
     val xValue: Int? = null,
-    val wasKicked: Boolean = false,
+    /**
+     * Which optional-additional-cost mechanic this cast declared, or null when none — the fact
+     * "whenever you cast a kicked spell" filters on (`SpellCastPredicate.WasKicked` matches
+     * [ChoiceSlot.KICKED] only, so a bargained spell doesn't satisfy it).
+     */
+    val declaredCostSlot: ChoiceSlot? = null,
     /** Total mana spent to cast this spell (for Expend trigger detection) */
     val totalManaSpent: Int = 0,
     /**
@@ -1060,7 +1088,14 @@ data class DrawFailedEvent(
 data class CardsDiscardedEvent(
     val playerId: EntityId,
     val cardIds: List<EntityId>,
-    val cardNames: List<String> = emptyList()
+    val cardNames: List<String> = emptyList(),
+    /**
+     * True when the discard is the cost of a cycling/typecycling ability (CR 702.29a). Triggers
+     * ignore this — cycling really is a discard and "whenever you discard" payoffs must see it —
+     * but the client suppresses the "You discarded X" log line, because the accompanying
+     * [CardCycledEvent] already narrates the same action.
+     */
+    val asCyclingCost: Boolean = false
 ) : GameEvent
 
 /**

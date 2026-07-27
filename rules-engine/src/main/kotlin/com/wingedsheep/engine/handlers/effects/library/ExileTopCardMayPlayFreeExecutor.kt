@@ -15,6 +15,7 @@ import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostCom
 import com.wingedsheep.engine.state.components.identity.PlottedComponent
 import com.wingedsheep.engine.state.permissions.MayPlayPermission
 import com.wingedsheep.engine.state.permissions.addMayPlayPermission
+import com.wingedsheep.engine.state.permissions.revokeSupersededPermissionsFromSource
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.TriggerSpec
@@ -56,9 +57,21 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
         // survives the per-player rebinding (the source itself may already be in exile from a
         // cost, so it can't be read off the source's ControllerComponent).
         val activatingPlayer = context.effectControllerId ?: controllerId
-        val isPermanent = effect.expiry is MayPlayExpiry.Permanent
+        // "Until you exile another card with this permanent" persists across turns like a
+        // permanent grant, so it is exempt from end-of-turn cleanup; the superseding revocation
+        // (below) is what ends it, not a turn boundary.
+        val supersedesSameSource = effect.expiry is MayPlayExpiry.UntilSourceExilesAnother
+        val isPermanent = effect.expiry is MayPlayExpiry.Permanent || supersedesSameSource
 
         var newState = state
+
+        // Superseding grant: this source (e.g. Superior Foes of Spider-Man) exiling another card
+        // revokes the play permission on the card it previously exiled — only the latest stays
+        // playable. Revoke the prior same-source grant before registering the new one. Requires a
+        // real source id to identify siblings; without one the grant just persists like Permanent.
+        if (supersedesSameSource) {
+            context.sourceId?.let { newState = newState.revokeSupersededPermissionsFromSource(it) }
+        }
 
         // "If a spell cast this way would be put into a graveyard, exile it instead" (Nita,
         // Forum Conciliator). Stamp the granted cards now; StackResolver honors
@@ -130,6 +143,7 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
                     expiresAfterTurn = expiresAfterTurn,
                     riderLinkId = riderLinkId,
                     expiryControllerId = expiryControllerId,
+                    supersededBySameSource = supersedesSameSource,
                     timestamp = state.timestamp,
                 )
             )
@@ -166,15 +180,18 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
 
     /**
      * Translate a [MayPlayExpiry] into the turn whose cleanup will remove the permission.
-     * Returns `null` for [MayPlayExpiry.EndOfTurn] (default handling: cleared this cleanup)
-     * and for [MayPlayExpiry.Permanent] (component is flagged permanent and skipped).
+     * Returns `null` for [MayPlayExpiry.EndOfTurn] (default handling: cleared this cleanup),
+     * for [MayPlayExpiry.Permanent], and for [MayPlayExpiry.UntilSourceExilesAnother] (both
+     * flagged permanent and skipped by cleanup — the latter is ended by same-source revocation).
      */
     private fun expiresAfterTurnFor(
         state: GameState,
         controllerId: EntityId,
         expiry: MayPlayExpiry
     ): Int? = when (expiry) {
-        MayPlayExpiry.EndOfTurn, MayPlayExpiry.Permanent -> null
+        MayPlayExpiry.EndOfTurn,
+        MayPlayExpiry.Permanent,
+        MayPlayExpiry.UntilSourceExilesAnother -> null
         is MayPlayExpiry.UntilControllerStep -> resolveStepTurn(state, controllerId, expiry)
     }
 

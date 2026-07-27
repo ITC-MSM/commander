@@ -415,7 +415,12 @@ function GameCardImpl({
   // Valid blockers with legal actions (e.g., activated abilities) are still playable since blocking uses drag.
   // Face-down cards can be playable too (for TurnFaceUp action)
   const isCombatRoleCard = isValidAttacker || (isValidBlocker && !hasLegalActions) || isAttackingInBlockerMode
-  const hasActiveDecision = pendingDecision !== null
+  // A mana-payment decision is the one kind that still leaves actions open: CR 605.3a lets the
+  // paying player activate mana abilities, and the server sends exactly those as legal actions
+  // while the window is up. Sources already offered in the decision's own menu are excluded —
+  // those get the selection highlight and a click toggles them rather than opening a menu.
+  const isManaPaymentWindow = pendingDecision?.type === 'SelectManaSourcesDecision'
+  const hasActiveDecision = pendingDecision !== null && !(isManaPaymentWindow && !isValidDecisionSelection)
   const isPlayable = interactive && hasLegalActions && (!isInCombatMode || !isCombatRoleCard) && !hasActiveDecision
 
   const cardImageUrl = faceDown
@@ -1683,10 +1688,18 @@ function GameCardImpl({
         </div>
       )}
 
-      {/* Stash counter badge */}
-      {battlefield && getStashCounters(card) > 0 && (
+      {/* Stash counter badge. Unlike the other counter badges this one is *not* gated on
+          `battlefield`: a stash counter marks a card sitting in exile (Tinybones, Bauble Burglar
+          exiles opponents' discards with one), and that card is rendered off-battlefield — as a
+          castable ghost card in the hand row and in the exile browser. Hiding the badge there would
+          hide the only cue for why the card is playable. */}
+      {getStashCounters(card) > 0 && (
         <div style={{
           ...styles.stashCounterBadge,
+          // Off the battlefield the top-right corner is the mana-cost badge's (hand and
+          // playable-from-exile ghost cards draw it there, at a higher z-index), so the counter
+          // moves to the free top-left corner instead of hiding behind the cost.
+          ...(battlefield ? {} : { right: 'auto', left: 4 }),
           fontSize: responsive.badges.counterTextFontSize,
           padding: responsive.badges.badgePadding,
         }}>

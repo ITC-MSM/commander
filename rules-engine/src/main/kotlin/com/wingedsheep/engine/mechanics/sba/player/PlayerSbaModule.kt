@@ -5,6 +5,7 @@ import com.wingedsheep.engine.mechanics.sba.StateBasedActionModule
 
 class PlayerSbaModule : StateBasedActionModule {
     override fun checks(): List<StateBasedActionCheck> = listOf(
+        StartYourEnginesCheck(),
         PlayerLifeLossCheck(),
         CommanderDamageLossCheck(),
         PoisonLossCheck(),

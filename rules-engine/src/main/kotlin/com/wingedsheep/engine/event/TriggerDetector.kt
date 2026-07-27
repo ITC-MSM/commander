@@ -1269,23 +1269,30 @@ class TriggerDetector(
                         }
                     }
                     // Same shape for "whenever an opponent discards a card" — discarding N cards
-                    // through one effect creates N separate trigger firings. A card filter narrows
-                    // that to the matching cards, so defer to the matcher for the count. Batch
-                    // wording ("whenever you discard one or more cards", CR 603.2c) collapses the
-                    // whole event to a single firing — CardsDiscardedEvent is already one event
-                    // per discard action, so the cap is exactly the printed once-per-event.
+                    // through one effect creates N separate trigger firings, one per matching card,
+                    // and each firing binds *its* card as the triggering entity so "exile it from
+                    // their graveyard" (Tinybones, Bauble Burglar) acts on the right card (CR 400.7e
+                    // — the trigger can find the object the discarded card became in the graveyard).
+                    // Batch wording ("whenever you discard one or more cards", CR 603.2c) collapses
+                    // the whole event to a single firing — CardsDiscardedEvent is already one event
+                    // per discard action, so the cap is exactly the printed once-per-event — and has
+                    // no single "it" to bind.
                     else if (ability.trigger is EventPattern.DiscardEvent &&
                         event is CardsDiscardedEvent) {
                         val discardTrigger = ability.trigger as EventPattern.DiscardEvent
-                        val matchingCards = matcher.matchingDiscardCount(
+                        val matchingCards = matcher.matchingDiscardedCards(
                             discardTrigger,
                             event,
                             entityId,
                             controllerId,
                             state
                         )
-                        val firings = if (discardTrigger.batch) minOf(matchingCards, 1) else matchingCards
-                        repeat(firings) {
+                        val boundCards: List<EntityId?> = if (discardTrigger.batch) {
+                            if (matchingCards.isEmpty()) emptyList() else listOf(null)
+                        } else {
+                            matchingCards
+                        }
+                        for (discardedCardId in boundCards) {
                             triggers.add(
                                 PendingTrigger(
                                     ability = ability,
@@ -1293,6 +1300,7 @@ class TriggerDetector(
                                     sourceName = cardComponent.name,
                                     controllerId = controllerId,
                                     triggerContext = TriggerContext.fromEvent(event)
+                                        .copy(triggeringEntityId = discardedCardId)
                                 )
                             )
                         }
@@ -1377,6 +1385,9 @@ class TriggerDetector(
 
         // Check global granted triggered abilities (e.g., False Cure)
         detectGlobalGrantedTriggers(state, event, triggers)
+
+        // The inherent speed trigger every player with speed has (CR 702.179d)
+        detectInherentSpeedTriggers(state, event, triggers)
 
         // Handle death triggers (source might not be on battlefield anymore)
         if (event is ZoneChangeEvent && event.toZone == Zone.GRAVEYARD &&
@@ -1592,6 +1603,46 @@ class TriggerDetector(
                     )
                 )
             }
+        }
+    }
+
+    /**
+     * Detect the inherent speed trigger (Aetherdrift, CR 702.179d): "Whenever one or more opponents
+     * lose life during your turn, if your speed is less than 4, your speed increases by 1."
+     *
+     * The rule gives this ability no source and one copy to every player with 1 or more speed, so
+     * there is nothing on the battlefield to hang it off — it is synthesized here, per player, with
+     * the *player entity* as its source. That choice is what makes the "triggers only once each turn"
+     * clause work without new machinery: the generic `oncePerTurn` tracker is keyed on
+     * `(sourceId, abilityId)`, so a stable ability id on the player entity gives exactly one fire per
+     * player per turn, reset by the normal cleanup sweep. See [SpeedAbilities].
+     *
+     * Players with no speed have no such ability at all (CR 702.179b/d), which is the early-out here —
+     * and also why a game with no Aetherdrift cards pays only one `hasSpeed` read per player per event.
+     * The "during your turn" and "less than 4" clauses ride on the ability's intervening-if, applied
+     * downstream by [TriggerMatcher.filterByTriggerCondition].
+     */
+    private fun detectInherentSpeedTriggers(
+        state: GameState,
+        event: EngineGameEvent,
+        triggers: MutableList<PendingTrigger>
+    ) {
+        val ability = SpeedAbilities.inherentSpeedIncrease
+        for (playerId in state.turnOrder) {
+            if (!state.hasSpeed(playerId)) continue
+            if (!matcher.matchesTrigger(
+                    ability.trigger, ability.binding, event, playerId, playerId, state
+                )
+            ) continue
+            triggers.add(
+                PendingTrigger(
+                    ability = ability,
+                    sourceId = playerId,
+                    sourceName = SpeedAbilities.SOURCE_NAME,
+                    controllerId = playerId,
+                    triggerContext = TriggerContext.fromEvent(event)
+                )
+            )
         }
     }
 

@@ -96,7 +96,47 @@ data class ClientGameState(
      * per-player: only the viewer's own yields are ever included. Drives the "Active yields" panel
      * (revoke / clear-all) and lets the client suppress re-prompting cues. Empty for spectators.
      */
-    val activeYields: List<ClientYield> = emptyList()
+    val activeYields: List<ClientYield> = emptyList(),
+
+    /**
+     * The viewing player's own decklist — one entry per distinct card they own, with how many
+     * copies they still haven't seen. Drives the in-game deck tracker. Strictly private: empty for
+     * spectators and never populated for anyone but [viewingPlayerId], so a player can review their
+     * own 60 without learning anything about an opponent's. Library *order* is never exposed —
+     * entries are aggregated counts, not positions. See [ClientDeckCard].
+     */
+    val deck: List<ClientDeckCard> = emptyList()
+)
+
+/**
+ * One distinct card in the viewing player's deck, aggregated across every zone.
+ *
+ * Field names mirror the recorded-deck DTO the profile/admin deck viewer already uses
+ * (`GameDeckCard`), so the client renders both through the same component.
+ *
+ * @property copies Total copies of this card the player owns that are in the game — the printed
+ *   count in their deck. Cards in the sideboard are excluded (CR 400.11a puts them outside the game);
+ *   a card wished in from the sideboard therefore *adds* to the deck when it enters.
+ * @property remaining Copies whose current location the viewer cannot identify — i.e. still in
+ *   their library, or hidden from them elsewhere (a card of theirs exiled face down, or a
+ *   face-down permanent an opponent controls). Lumping "hidden elsewhere" in with "in library"
+ *   is deliberate: reporting an exact library count would leak *which* card an opponent exiled
+ *   face down. In an ordinary game nothing is hidden outside the library, so `remaining` is
+ *   exactly "cards of this name left to draw".
+ */
+@Serializable
+data class ClientDeckCard(
+    val cardName: String,
+    val copies: Int,
+    val remaining: Int,
+    /** Mana value, for the curve histogram. */
+    val cmc: Int,
+    /** Card type enum names, e.g. `["CREATURE"]` — the client buckets rows by these. */
+    val cardTypes: List<String>,
+    /** The card's own colours as enum names; empty for colourless. */
+    val colors: List<String>,
+    /** Art URL for the hover preview; null falls back to a client-side name lookup. */
+    val imageUri: String? = null
 )
 
 /**
@@ -309,8 +349,12 @@ data class ClientCard(
     /** Official rulings for this card (for card details view) */
     val rulings: List<ClientRuling> = emptyList(),
 
-    /** Whether this spell was kicked (only present on stack) */
-    val wasKicked: Boolean = false,
+    /**
+     * The optional additional cost this spell declared as it was cast — "Kicked", "Bargained",
+     * "Offspring" — or null when it declared none. Only present on the stack; rendered verbatim as
+     * a badge, so the naming decision stays server-side.
+     */
+    val optionalCostLabel: String? = null,
 
     /** Whether this spell promised a gift (Bloomburrow gift mechanic — only present on stack) */
     val giftPromised: Boolean = false,
@@ -605,7 +649,16 @@ data class ClientPlayer(
      * commander that has dealt at least 1 damage. Empty outside `Format.Commander`. The client
      * renders these as progress badges (e.g., `⚔ Atraxa 14/21`) under the life orb.
      */
-    val commanderDamage: List<ClientCommanderDamage> = emptyList()
+    val commanderDamage: List<ClientCommanderDamage> = emptyList(),
+
+    /**
+     * This player's speed, 0–4 (Aetherdrift, CR 702.179). `0` means they have no speed and the client
+     * renders no speed gauge at all; `4` is max speed.
+     *
+     * Public information — speed is a visible player designation like poison counters, so it is not
+     * masked. Defaulted so every non-Aetherdrift game serializes it away and the field costs nothing.
+     */
+    val speed: Int = 0
 )
 
 /**

@@ -95,5 +95,9 @@ export function applyStateDelta(
     youAreHijacking: delta.youAreHijacking ?? null,
     youAreHijackedBy: delta.youAreHijackedBy ?? null,
     hotseat: delta.hotseat ?? false,
+    // Carried forward: the server omits these from a delta when unchanged, and rebuilding the
+    // state object without them would silently blank the yields panel / deck tracker.
+    activeYields: current.activeYields ?? [],
+    deck: delta.deck ?? current.deck ?? [],
   }
 }

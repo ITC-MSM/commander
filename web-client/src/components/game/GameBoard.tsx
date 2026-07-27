@@ -1,7 +1,7 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { useInteraction } from '@/hooks/useInteraction'
-import { useViewingPlayer, useOpponent, useOpponents, useViewedOpponent, useStackCards, selectPriorityMode, useGhostCards, useBattlefieldCards, selectTeamMap, useIdentityColor, useViewerTeamIndex, useIsAlly, identitySeatColor, selectViewingPlayerId } from '@/store/selectors'
+import { useViewingPlayer, useOpponent, useOpponents, useViewedOpponent, useStackCards, selectPriorityMode, useGhostCards, useBattlefieldCards, selectTeamMap, useIdentityColor, useViewerTeamIndex, useIsAlly, identitySeatColor, selectViewingPlayerId, useEliminatedBottomSeatId, useViewerEliminated } from '@/store/selectors'
 import { useMultiplayerView, useCombatDefenderFocus } from '@/hooks/useMultiplayerView'
 import { OpponentRail, railReservedWidth } from './OpponentRail'
 import { hand, getNextStep, StepShortNames } from '@/types'
@@ -26,7 +26,8 @@ import { ManaSymbol } from '../ui/ManaSymbols'
 import { Battlefield, CardRow, CommandZone, OpponentBoardArea, CollapsedBoardTab, COLLAPSED_TAB_WIDTH, StackDisplay, ZonePile, ResponsiveContext } from './board'
 import { RenderProfiler } from '@/utils/renderProfiler'
 import { CardPreview } from './card'
-import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, ConcedeButton, FullscreenButton, SpectatorCountBadge } from './overlay'
+import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, ConcedeButton, FullscreenButton, SpectatorCountBadge } from './overlay'
+import { HelpDrawer, HelpDrawerButton } from '../help/HelpDrawer'
 import { styles } from './board/styles'
 
 /**
@@ -46,6 +47,7 @@ interface GameBoardProps {
 export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardProps) {
   const playerGameState = useGameStore((state) => state.gameState)
   const spectatingState = useGameStore((state) => state.spectatingState)
+  const sessionId = useGameStore((state) => state.sessionId)
   const playerId = useGameStore((state) => state.playerId)
   const submitAction = useGameStore((state) => state.submitAction)
   const combatState = useGameStore((state) => state.combatState)
@@ -101,46 +103,61 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   const overviewModeOn = useGameStore((state) => state.overviewMode)
   const collapsedSeats = useGameStore((state) => state.collapsedSeats)
   const toggleSeatCollapsed = useGameStore((state) => state.toggleSeatCollapsed)
-  const eliminatedSpectating = useGameStore((state) => state.eliminatedSpectating)
-  const eliminatedBottomSeatId = useGameStore((state) => state.eliminatedBottomSeatId)
+  const viewerEliminated = useViewerEliminated()
+  const eliminatedBottomSeatId = useEliminatedBottomSeatId()
   const setEliminatedBottomSeat = useGameStore((state) => state.setEliminatedBottomSeat)
   const returnToMenu = useGameStore((state) => state.returnToMenu)
   const viewingPlayer = useViewingPlayer()
-  // Eliminated-spectator layout: the local player is out of a multiplayer game and chose
-  // "Keep watching" — their dead bottom half collapses and all action UI hides.
-  const isEliminatedSpectator =
-    isMulti && !spectatorMode && eliminatedSpectating && (viewingPlayer?.hasLost ?? false)
-  // Eliminated spectator's chosen bottom seat: a living player whose board fills the
-  // (otherwise collapsed) bottom half, the way spectating anchors a bottom seat. Their
-  // board leaves the opponent strip while anchored here. Self-heals if the seat dies.
+  // Eliminated-spectator layout: the local player is out of a multiplayer game that plays on —
+  // their own board is dead and all action UI hides, so they watch the surviving seats spread
+  // across the table like any other spectator. Keyed off the roster (see `isViewerEliminated`)
+  // rather than the "Keep watching" click, so the table re-seats itself however the seat died,
+  // not just on a concession.
+  const isEliminatedSpectator = isMulti && !spectatorMode && viewerEliminated
+  // The viewer has no board of their own in this game: a spectator/replay stream, or a player
+  // who was eliminated and kept watching. Nothing in the bottom half is theirs — it belongs to
+  // a survivor — so no cell there is interactive and their own hand never renders.
+  const viewerIsObserver = spectatorMode || isEliminatedSpectator
+  // Eliminated spectator's bottom seat: the living player whose board takes over the bottom
+  // half of the table (see `useEliminatedBottomSeatId` for the pick/default). Their board
+  // leaves the opponent strip while it sits down here.
   const eliminatedBottomSeat = useMemo(() => {
     if (!isEliminatedSpectator || !eliminatedBottomSeatId) return null
-    const p = gameState?.players.find((pp) => pp.playerId === eliminatedBottomSeatId)
-    return p && !p.hasLost ? p : null
+    return gameState?.players.find((pp) => pp.playerId === eliminatedBottomSeatId) ?? null
   }, [isEliminatedSpectator, eliminatedBottomSeatId, gameState])
+  // Opponents still in the game — the seats an eliminated spectator can watch from.
+  const survivors = useMemo(() => opponents.filter((o) => !o.hasLost), [opponents])
   // In a Two-Headed Giant game the orb/edge tints follow the *team* hue (both teammates share
   // it); otherwise they keep the per-seat hue. The team map is empty in every non-team game.
   const teamMap = useGameStore(selectTeamMap)
   const viewerTeam = useViewerTeamIndex()
   const isTeamGame = viewerTeam != null && Object.keys(teamMap).length > 0
-  // The seat anchoring the bottom row: you when playing, the spectator's chosen/first seat otherwise.
-  const anchorId = useGameStore(selectViewingPlayerId)
+  // The seat anchoring the bottom row: you when playing, the spectator's chosen/first seat, or —
+  // for an eliminated spectator, whose own board left the game with them — the survivor sitting
+  // on their side of the table.
+  const viewingSeatId = useGameStore(selectViewingPlayerId)
+  const anchorId = eliminatedBottomSeat?.playerId ?? viewingSeatId
   // "Show the whole table" — the unified overview: two rows of boards. A team game splits by team
   // (your team on the bottom row, the enemy team on top); a free-for-all balances the seats evenly
   // with the anchor on the bottom (e.g. 6 players → 3 top / 3 bottom rather than 5 crammed on top).
-  // The classic single-opponent sliding camera is what you get when this is off. Not for the
-  // eliminated-spectator layout, which has its own bottom handling.
-  const twoRowActive = isMulti && overviewModeOn && !isEliminatedSpectator
+  // The classic single-opponent sliding camera is what you get when this is off. An eliminated
+  // spectator gets the same two rows — the survivors face each other across the table instead of
+  // all crowding the top half.
+  const twoRowActive = isMulti && overviewModeOn
   const twoRow = useMemo(() => {
     const empty = { top: [] as EntityId[], bottom: [] as EntityId[] }
     if (!twoRowActive || !gameState) return empty
-    const living = gameState.players.filter(
-      (p) => !p.hasLost && p.playerId !== eliminatedBottomSeat?.playerId,
-    )
+    const living = gameState.players.filter((p) => !p.hasLost)
     if (isTeamGame && viewerTeam != null) {
+      // The anchor joins the bottom row even when it isn't on the viewer's team — an eliminated
+      // spectator whose whole team is gone still watches from behind a survivor's board.
+      const bottom = living.filter(
+        (p) => teamMap[p.playerId] === viewerTeam || p.playerId === anchorId,
+      )
+      const bottomIds = new Set(bottom.map((p) => p.playerId))
       return {
-        top: living.filter((p) => teamMap[p.playerId] !== viewerTeam).map((p) => p.playerId),
-        bottom: living.filter((p) => teamMap[p.playerId] === viewerTeam).map((p) => p.playerId),
+        bottom: bottom.map((p) => p.playerId),
+        top: living.filter((p) => !bottomIds.has(p.playerId)).map((p) => p.playerId),
       }
     }
     // Free-for-all: anchor first on the bottom, the rest split evenly — the top row takes the odd
@@ -154,7 +171,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       bottom: anchorFirst.slice(0, bottomCount).map((p) => p.playerId),
       top: anchorFirst.slice(bottomCount).map((p) => p.playerId),
     }
-  }, [twoRowActive, gameState, eliminatedBottomSeat, isTeamGame, viewerTeam, teamMap, anchorId])
+  }, [twoRowActive, gameState, isTeamGame, viewerTeam, teamMap, anchorId])
   const bottomRowIds = twoRow.bottom
   const topRowIds = twoRow.top
   // Camera pool = opponents not pulled down to the bottom row (so no board renders in both halves).
@@ -191,20 +208,21 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
 
   const responsive = useResponsive(effectiveTopOffset, zoneRowCounts)
 
-  // Spectators (replay + live) default to the all-boards table overview: one seat anchored
-  // at the bottom, every other board across the top — the natural "watch the whole table"
-  // layout, rather than a one-board camera that hides most of the game. One-shot on entry so
-  // a spectator who then focuses a single board (rail-chip click / key 0) isn't yanked back.
-  // Desktop only — GameBoard degrades overview to the single-board camera on phones anyway.
-  const didDefaultSpectatorOverview = useRef(false)
+  // Every multiplayer game opens on the all-boards table overview — with three or more seats the
+  // one-board sliding camera hides most of what's happening, and seeing the whole table is the
+  // point of a pod. One-shot *per game*, so someone who focuses a single board (rail-chip click /
+  // keys 1-9 / key 0) isn't yanked back out of it, while the next game still starts on the
+  // overview. Desktop only — GameBoard degrades the overview to the single-board camera on phones
+  // anyway.
+  const overviewDefaultKey = spectatorMode ? spectatingState?.gameSessionId ?? null : sessionId
+  const defaultedOverviewFor = useRef<string | null>(null)
   useEffect(() => {
-    if (didDefaultSpectatorOverview.current) return
-    if (spectatorMode && isMulti && !responsive.isMobile) {
-      didDefaultSpectatorOverview.current = true
-      const store = useGameStore.getState()
-      if (!store.overviewMode) store.toggleOverviewMode()
-    }
-  }, [spectatorMode, isMulti, responsive.isMobile])
+    if (!isMulti || responsive.isMobile || !overviewDefaultKey) return
+    if (defaultedOverviewFor.current === overviewDefaultKey) return
+    defaultedOverviewFor.current = overviewDefaultKey
+    const store = useGameStore.getState()
+    if (!store.overviewMode) store.toggleOverviewMode()
+  }, [isMulti, responsive.isMobile, overviewDefaultKey])
 
   // Grid row 1: keeps the battlefield clear of the fixed/absolute opponent hand.
   const oppHandReservation =
@@ -303,13 +321,6 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     collapsedStripIds.length > 0
       ? `calc((100% - ${collapsedStripIds.length * COLLAPSED_TAB_WIDTH}px) / ${Math.max(1, expandedStripIds.length)})`
       : `${100 / Math.max(1, expandedStripIds.length)}%`
-  // The rail chips also cover the eliminated spectator's bottom-anchored board, whose
-  // anchors live on the bottom life orb while it is on screen.
-  const anchorVisibleBoardIds = useMemo<readonly EntityId[]>(
-    () => (eliminatedBottomSeat ? [...expandedStripIds, eliminatedBottomSeat.playerId] : expandedStripIds),
-    [expandedStripIds, eliminatedBottomSeat],
-  )
-
   // Mindslaver-style hijack indicators (Phase 2C). Spectators don't get the UX promotions.
   const youAreHijacking = !spectatorMode ? (gameState?.youAreHijacking ?? null) : null
   const youAreHijackedBy = !spectatorMode ? (gameState?.youAreHijackedBy ?? null) : null
@@ -377,57 +388,48 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       .sort((a, b) => (a.playerId === anchorId ? -1 : b.playerId === anchorId ? 1 : 0))
   }, [twoRowActive, gameState, bottomRowIds, anchorId])
   // The bottom half becomes a multi-board strip only when it holds more than the anchor (team
-  // games; 4+ player free-for-alls). A lone anchor keeps the classic single bottom board.
-  const bottomStripActive = twoRowActive && bottomRowOrdered.length > 1
+  // games; 4+ player free-for-alls). A lone anchor keeps the classic single bottom board — but
+  // only when it really is the anchor: the single-board paths below draw the anchor's board, so
+  // a lone *non-anchor* seat (a viewer parked on a seat that has since died) has to go through
+  // the strip or its board would never render at all.
+  const bottomStripActive =
+    twoRowActive &&
+    (bottomRowOrdered.length > 1 ||
+      (bottomRowOrdered.length === 1 && bottomRowOrdered[0]?.playerId !== anchorId))
   // Any bottom board may collapse to a tab — except your own interactive board when *playing*
-  // (there's no collapse control on it, and folding the board you act from makes no sense). A
-  // spectator's anchor seat is just another board, so it stays collapsible.
+  // (there's no collapse control on it, and folding the board you act from makes no sense). An
+  // observer's anchor seat is just another board, so it stays collapsible.
   const bottomCollapsedIds = useMemo(
     () =>
       bottomRowOrdered
         .filter(
           (p) =>
             collapsedSeats.includes(p.playerId) &&
-            !(!spectatorMode && p.playerId === anchorId),
+            !(!viewerIsObserver && p.playerId === anchorId),
         )
         .map((p) => p.playerId),
-    [bottomRowOrdered, collapsedSeats, anchorId, spectatorMode],
+    [bottomRowOrdered, collapsedSeats, anchorId, viewerIsObserver],
   )
   const bottomExpandedCount = Math.max(1, bottomRowOrdered.length - bottomCollapsedIds.length)
   const bottomCellBasis =
     bottomCollapsedIds.length > 0
       ? `calc((100% - ${bottomCollapsedIds.length * COLLAPSED_TAB_WIDTH}px) / ${bottomExpandedCount})`
       : `${100 / bottomExpandedCount}%`
-
-  if (!gameState || (!spectatorMode && (!playerId || !viewingPlayer))) {
-    return null
-  }
-
-  // In spectator mode: disable all interaction. In hotseat the single connection controls
-  // whichever seat holds priority, so it can always act on a live priority window.
-  const hasPriority = spectatorMode
-    ? false
-    : hotseat
-      ? gameState.priorityPlayerId != null
-      : (gameState.priorityPlayerId === viewingPlayer?.playerId ||
-        // Mindslaver-style hijack: this client drives the controlled opponent, so it holds
-        // priority whenever that opponent does (enables Pass, casting, ability activation).
-        (youAreHijacking != null && gameState.priorityPlayerId === youAreHijacking))
-  const canAct = hasPriority && !opponentDecisionStatus
-  const isMyTurn = spectatorMode
-    ? false
-    : (gameState.activePlayerId === viewingPlayer?.playerId ||
-      // During a hijack of the opponent's turn, treat it as "my turn" so the active-player
-      // controls (combat declaration, sorcery-speed plays) light up for the driving client.
-      (youAreHijacking != null && gameState.activePlayerId === youAreHijacking))
-  const isInCombatMode = spectatorMode ? false : (combatState !== null)
-  const isInDistributeMode = !spectatorMode && distributeState !== null
-  const distributeTotalAllocated = distributeState
-    ? Object.values(distributeState.distribution).reduce((sum, v) => sum + v, 0)
-    : 0
-  const distributeRemaining = distributeState ? distributeState.totalAmount - distributeTotalAllocated : 0
-  const isInCounterDistMode = !spectatorMode && counterDistributionState !== null
-  const isInManaSelectionMode = !spectatorMode && manaSelectionState !== null
+  // Exactly one element per player carries that player's card/life anchors. A rail chip hands
+  // them over whenever the seat's own board is on screen: an expanded cell in the top strip, an
+  // expanded cell in the bottom row, or the eliminated spectator's bottom board.
+  const anchorVisibleBoardIds = useMemo<readonly EntityId[]>(() => {
+    const ids = [...expandedStripIds]
+    if (eliminatedBottomSeat) ids.push(eliminatedBottomSeat.playerId)
+    if (bottomStripActive) {
+      for (const p of bottomRowOrdered) {
+        if (!bottomCollapsedIds.includes(p.playerId) && !ids.includes(p.playerId)) {
+          ids.push(p.playerId)
+        }
+      }
+    }
+    return ids
+  }, [expandedStripIds, eliminatedBottomSeat, bottomStripActive, bottomRowOrdered, bottomCollapsedIds])
 
   // Compute mana selection progress using most-constrained-first matching
   const manaProgress = useMemo(() => {
@@ -500,6 +502,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         G: floatingPool.green,
         C: floatingPool.colorless,
       }
+      // Restricted ("spend this mana only to …") mana counts too, but only the units the server
+      // judged eligible for this action — Ashling, Rimebound's MV4+ mana on an MV4+ spell.
+      for (const entry of manaSelectionState.actionInfo.eligibleRestrictedMana ?? []) {
+        const pip = entry.color ?? 'C'
+        if (pip in poolByPip) poolByPip[pip]!++
+      }
       // Spend exact-color pool first against colored pips
       for (const pip of Object.keys(poolByPip)) {
         while ((poolByPip[pip] ?? 0) > 0 && (remainingColorReqs[pip] ?? 0) > 0) {
@@ -556,6 +564,42 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
 
     return { satisfied, total, entries, colorSatisfied }
   }, [manaSelectionState, viewingPlayer?.manaPool])
+
+  // ⚠ Every hook must sit ABOVE this line. This is the component's only early return, and it fires
+  // whenever the store has no game state yet — which is exactly how a replay or spectator surface
+  // mounts the board, before frame 0 lands. A hook below here would run on the second render and
+  // not the first, and React aborts the tree with "Rendered more hooks than during the previous
+  // render". `manaProgress` used to be below it, and `ReplayPlayer` only avoided the crash by
+  // gating the mount; the guard belongs here so the next caller doesn't have to know that.
+  if (!gameState || (!spectatorMode && (!playerId || !viewingPlayer))) {
+    return null
+  }
+
+  // In spectator mode: disable all interaction. In hotseat the single connection controls
+  // whichever seat holds priority, so it can always act on a live priority window.
+  const hasPriority = spectatorMode
+    ? false
+    : hotseat
+      ? gameState.priorityPlayerId != null
+      : (gameState.priorityPlayerId === viewingPlayer?.playerId ||
+        // Mindslaver-style hijack: this client drives the controlled opponent, so it holds
+        // priority whenever that opponent does (enables Pass, casting, ability activation).
+        (youAreHijacking != null && gameState.priorityPlayerId === youAreHijacking))
+  const canAct = hasPriority && !opponentDecisionStatus
+  const isMyTurn = spectatorMode
+    ? false
+    : (gameState.activePlayerId === viewingPlayer?.playerId ||
+      // During a hijack of the opponent's turn, treat it as "my turn" so the active-player
+      // controls (combat declaration, sorcery-speed plays) light up for the driving client.
+      (youAreHijacking != null && gameState.activePlayerId === youAreHijacking))
+  const isInCombatMode = spectatorMode ? false : (combatState !== null)
+  const isInDistributeMode = !spectatorMode && distributeState !== null
+  const distributeTotalAllocated = distributeState
+    ? Object.values(distributeState.distribution).reduce((sum, v) => sum + v, 0)
+    : 0
+  const distributeRemaining = distributeState ? distributeState.totalAmount - distributeTotalAllocated : 0
+  const isInCounterDistMode = !spectatorMode && counterDistributionState !== null
+  const isInManaSelectionMode = !spectatorMode && manaSelectionState !== null
 
   // Attack restriction ("can only attack left/right", 2HG, …): during declare-attackers,
   // some living non-ally opponent is not a legal attack target. Drives the explainer
@@ -652,10 +696,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       // Hand reservation rows (1 and 5) keep the battlefield rows from sliding
       // under the position:fixed hand overlays. Both 1fr rows then receive
       // identical heights → symmetric card sizes for player and opponent.
-      // Eliminated spectator: the dead bottom half (rows 4-5) collapses — the freed
-      // space flows to the opponent strip (row 2, the only remaining 1fr) — unless a
-      // living player's board is anchored there, which restores the spectator-shaped
-      // rows (small face-down hand at the bottom).
+      // Eliminated spectator: a survivor's board takes over their dead bottom half, so the
+      // rows stay spectator-shaped (small face-down hand at the bottom). Only when no living
+      // seat is left to sit there (the game is effectively over) do rows 4-5 collapse and the
+      // freed space flow to the opponent strip (row 2, then the only remaining 1fr).
       gridTemplateRows: isEliminatedSpectator
         ? eliminatedBottomSeat
           ? `${oppHandReservation}px minmax(0, 1fr) auto minmax(0, 1fr) ${
@@ -704,9 +748,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           </button>
           {/* Spectating banner — top center, in the chrome row between the Fullscreen
               and Leave Game buttons (the bottom of the screen belongs to the step strip
-              or the anchored bottom board). It also carries the bottom-board picker:
-              put a living player's board in the empty bottom half (click the active
-              seat again to clear it). */}
+              or the bottom board). It also carries the bottom-seat picker: which survivor
+              sits on your (now vacant) side of the table. Only shown while there's more
+              than one survivor to choose between. */}
           <div
             role="status"
             style={{
@@ -731,19 +775,19 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           >
             <span aria-hidden>💀</span>
             You've been eliminated — spectating
+            {survivors.length > 1 && (
+              <>
             <span aria-hidden style={{ width: 1, height: 14, background: '#3a3a44' }} />
-            <span style={{ color: '#7c8aa8', fontWeight: 600 }}>Board below:</span>
-            {opponents.filter((o) => !o.hasLost).map((o) => {
+            <span style={{ color: '#7c8aa8', fontWeight: 600 }}>Bottom seat:</span>
+            {survivors.map((o) => {
               const idx = gameState.players.findIndex((p) => p.playerId === o.playerId)
               const seat = identitySeatColor(teamMap, o.playerId, idx)
               const active = eliminatedBottomSeat?.playerId === o.playerId
               return (
                 <button
                   key={o.playerId}
-                  onClick={() => setEliminatedBottomSeat(active ? null : o.playerId)}
-                  title={active
-                    ? `Stop showing ${o.name}'s board at the bottom`
-                    : `Show ${o.name}'s board in the bottom half`}
+                  onClick={() => setEliminatedBottomSeat(o.playerId)}
+                  title={`Watch from behind ${o.name}'s board (bottom half of the table)`}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -771,6 +815,8 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 </button>
               )
             })}
+              </>
+            )}
           </div>
         </>
       )}
@@ -861,8 +907,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                       // The viewed board's anchors stay on the center-HUD orb; every other
                       // expanded board's plate takes over from its rail chip.
                       plateCarriesAnchors={multiView && expandedCell && !isViewedCell}
-                      {...(multiView && expandedCell && isViewedCell
-                        ? { viewedRingColor: identitySeatColor(teamMap, o.playerId, gameState.players.findIndex((p) => p.playerId === o.playerId)).base }
+                      // With every board on screen the useful highlight is whose turn it is,
+                      // not which cell the camera nominally tracks.
+                      {...(multiView && expandedCell && o.playerId === gameState.activePlayerId
+                        ? { activeTurnRingColor: identitySeatColor(teamMap, o.playerId, gameState.players.findIndex((p) => p.playerId === o.playerId)).base }
                         : {})}
                       // Fold-away control — table overview only; the combat split and the
                       // focused camera keep their deliberate board sets.
@@ -961,7 +1009,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 life={effectiveOpponent.life}
                 playerId={effectiveOpponent.playerId}
                 playerName={effectiveOpponent.name}
-                spectatorMode={spectatorMode}
+                // An eliminated spectator has no opponents left to speak of — their orbs read
+                // spectator-shaped (no "OPPONENT" role tag, no targeting click), like the
+                // bottom-seat orb already does.
+                spectatorMode={viewerIsObserver}
                 poisonCounters={effectiveOpponent.poisonCounters}
                 commanderDamage={effectiveOpponent.commanderDamage ?? []}
                 handSize={effectiveOpponent.handSize}
@@ -969,6 +1020,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 {...(isMulti ? { seatColor: viewedSeatColor.base } : {})}
                 {...(isViewedOpponentAlly ? { isAlly: true } : {})}
               />
+              <SpeedGauge speed={effectiveOpponent.speed ?? 0} />
               {!responsive.isMobile && <ActiveEffectsBadges effects={effectiveOpponent.activeEffects} />}
               {!responsive.isMobile && effectiveOpponent.manaPool && <ManaPool manaPool={effectiveOpponent.manaPool} />}
             </>
@@ -1051,6 +1103,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               {/* When another seat is anchored here (eliminated spectator), the orb is
                   spectator-shaped: no "You" role tag, no player-click handling. */}
               <LifeDisplay life={bottomHudPlayer.life} isPlayer playerId={bottomHudPlayer.playerId} playerName={bottomHudPlayer.name} spectatorMode={spectatorMode || eliminatedBottomSeat != null} poisonCounters={bottomHudPlayer.poisonCounters} commanderDamage={bottomHudPlayer.commanderDamage ?? []} handSize={bottomHudPlayer.handSize} maxHandSize={bottomHudPlayer.maxHandSize} {...(isMulti ? { seatColor: bottomHudSeatColor.base } : {})} />
+              <SpeedGauge speed={bottomHudPlayer.speed ?? 0} />
               {!responsive.isMobile && <ActiveEffectsBadges effects={bottomHudPlayer.activeEffects} />}
               {!responsive.isMobile && bottomHudPlayer.manaPool && <ManaPool manaPool={bottomHudPlayer.manaPool} />}
             </>
@@ -1072,12 +1125,28 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
 
       {/* Player area (grid row 4) — player-hand reservation lives in row 5,
           so no padding here. Equal-height with row 2 → symmetric cards.
-          Collapsed (row is 0px) for an eliminated spectator — their permanents
-          left the game with them. */}
-      {/* Eliminated spectator with a chosen bottom seat: that living player's board fills
-          the bottom half, rendered read-only the way spectating renders a bottom seat. */}
-      {isEliminatedSpectator && eliminatedBottomSeat && (
-        <div style={styles.playerArea}>
+          Collapsed (row is 0px) for an eliminated spectator with nobody left to watch —
+          their own permanents left the game with them. */}
+      {/* Eliminated spectator whose bottom half holds a single survivor's board (a 3-player
+          game after one death, or a focused camera): that board fills the bottom half,
+          rendered read-only the way spectating renders a bottom seat. When the bottom row
+          holds several seats the strip below takes over. */}
+      {isEliminatedSpectator && eliminatedBottomSeat && !bottomStripActive && (
+        <div style={{ ...styles.playerArea, position: 'relative' }}>
+          {/* Same active-turn ring the strip cells carry, so the highlight keeps meaning
+              "whose turn it is" on the bottom half too. */}
+          {eliminatedBottomSeat.playerId === gameState.activePlayerId && (
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                inset: 2,
+                pointerEvents: 'none',
+                borderRadius: 10,
+                boxShadow: `inset 0 0 0 2px ${bottomHudSeatColor.base}55, inset 0 0 18px ${bottomHudSeatColor.base}22`,
+              }}
+            />
+          )}
           <div style={styles.playerRowWithZones}>
             <CommandZone player={eliminatedBottomSeat} />
             <div style={styles.playerMainArea}>
@@ -1087,7 +1156,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           </div>
         </div>
       )}
-      {isEliminatedSpectator && eliminatedBottomSeat && (
+      {isEliminatedSpectator && eliminatedBottomSeat && !bottomStripActive && (
         <div
           data-zone="hand"
           style={{
@@ -1103,15 +1172,20 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       )}
 
       {/* Show-table bottom row: the viewer's team (team game) or the balanced bottom half (FFA)
-          shares the bottom as a multi-board strip (rows 4-5), mirroring the top row. Your own
-          board (when playing) keeps its interactive battlefield + fixed hand; the others render as
-          overview cells (lands toward the bottom edge) with per-board collapse. Otherwise the
-          classic single bottom board. */}
-      {!isEliminatedSpectator && (bottomStripActive ? (
+          shares the bottom as a multi-board strip, mirroring the top row. Your own board (when
+          playing) keeps its interactive battlefield + fixed hand; every other seat — including
+          every seat for an observer — renders as an overview cell (lands toward the bottom edge)
+          with per-board collapse. Otherwise the classic single bottom board.
+
+          Rows: an observer has no hand of their own down here, so the strip takes row 5 as well
+          (the mirror of the top strip claiming row 1 once opponent hands are hidden). A *playing*
+          viewer's fixed hand fan still paints in row 5 — the strip must stop above it, or the
+          bottom boards size themselves into that band and their land row runs off the screen. */}
+      {bottomStripActive ? (
         <div
           data-team-strip="bottom"
           style={{
-            gridRow: '4 / 6',
+            gridRow: viewerIsObserver ? '4 / 6' : '4 / 5',
             position: 'relative',
             display: 'flex',
             overflow: 'hidden',
@@ -1122,7 +1196,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           }}
         >
           {bottomRowOrdered.map((p) => {
-            const isAnchorSelf = !spectatorMode && p.playerId === anchorId
+            // Only a *playing* viewer has an interactive board down here; an observer's anchor
+            // seat (spectator stream, eliminated player) is somebody else's board.
+            const isAnchorSelf = !viewerIsObserver && p.playerId === anchorId
             if (bottomCollapsedIds.includes(p.playerId)) {
               return (
                 <CollapsedBoardTab key={`${p.playerId}-collapsed`} player={p} onExpand={() => toggleSeatCollapsed(p.playerId)} />
@@ -1142,6 +1218,19 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                     position: 'relative',
                   }}
                 >
+                  {/* Your own cell carries the same active-turn ring as every other board. */}
+                  {p.playerId === gameState.activePlayerId && (
+                    <div
+                      aria-hidden
+                      style={{
+                        position: 'absolute',
+                        inset: 2,
+                        pointerEvents: 'none',
+                        borderRadius: 10,
+                        boxShadow: `inset 0 0 0 2px ${selfSeatColor.base}55, inset 0 0 18px ${selfSeatColor.base}22`,
+                      }}
+                    />
+                  )}
                   {/* Reservation band mirrors the other cells' name-plate band so all bottom
                       boards line up. */}
                   <div style={{ height: 34, flexShrink: 0 }} aria-hidden />
@@ -1167,7 +1256,14 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 bottomHalf
                 plateCarriesAnchors={p.playerId !== bottomHudPlayer?.playerId}
                 onToggleCollapse={() => toggleSeatCollapsed(p.playerId)}
-                spectatorMode={spectatorMode}
+                // Same active-turn ring as the top row — the highlight has to mean the same
+                // thing on both halves of the table.
+                {...(p.playerId === gameState.activePlayerId
+                  ? { activeTurnRingColor: identitySeatColor(teamMap, p.playerId, gameState.players.findIndex((q) => q.playerId === p.playerId)).base }
+                  : {})}
+                // `bottomHalf` orients the board as a bottom-side board, which would also make
+                // it interactive — so an observer's bottom cells must render read-only.
+                spectatorMode={viewerIsObserver}
                 isHijacking={hijackControlledOpponentId === p.playerId}
                 hijackedSurfaceStyle={hijackedSurfaceStyle}
                 isAlly={isTeamGame && !spectatorMode}
@@ -1176,7 +1272,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             )
           })}
         </div>
-      ) : (
+      ) : isEliminatedSpectator ? null : (
         <div style={styles.playerArea}>
           <div style={styles.playerRowWithZones}>
             {/* Player command zone (left side) — Commander format only; renders nothing otherwise. */}
@@ -1195,7 +1291,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             {effectiveViewingPlayer && <ZonePile player={effectiveViewingPlayer} />}
           </div>
         </div>
-      ))}
+      )}
 
       {/* Spectator mode: floating player name label for bottom player */}
       {spectatorMode && effectiveViewingPlayer && !bottomStripActive && (
@@ -1281,7 +1377,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         ) : null}
       </div>}
 
-      {/* Floating pass/resolve button (bottom-right) - always present, disabled when unavailable */}
+      {/* Floating pass/resolve button plus the undo / auto-tap / priority-mode / help row above it
+          (bottom-right) — always present, the pass disabled when unavailable. One column so the
+          pass button and the icon row above it end up exactly the same width; the row's intrinsic
+          width wins whenever the priority-mode label ("Full Control") makes it the wider of the two. */}
       {!spectatorMode && !isEliminatedSpectator && viewingPlayer && !isInManaSelectionMode && !isInCounterDistMode && (() => {
         const passEnabled = canAct && !isHijacked && !isInCombatMode && !isInDistributeMode && !isInCounterDistMode && !isInManaSelectionMode && !delveSelectionState && !tapForPowerSelectionState && !targetingState && !pipelineState
         return (
@@ -1290,7 +1389,87 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             bottom: 16,
             right: 16,
             zIndex: 100,
+            display: 'flex',
+            flexDirection: 'column',
+            // On phones the pass button is label-sized, so right-align instead of stretching it.
+            alignItems: responsive.isMobile ? 'flex-end' : 'stretch',
+            gap: responsive.isMobile ? 6 : 8,
           }}>
+            <div style={{
+              display: 'flex',
+              gap: 4,
+              alignItems: 'stretch',
+              justifyContent: 'flex-end',
+            }}>
+              <button
+                onClick={requestUndo}
+                disabled={!undoAvailable}
+                title="Undo"
+                style={{
+                  ...styles.floatingBarButton,
+                  color: undoAvailable ? '#d4a017' : '#555',
+                  border: undoAvailable ? '1px solid #8b7000' : '1px solid #333',
+                  opacity: undoAvailable ? 1 : 0.4,
+                  cursor: undoAvailable ? 'pointer' : 'default',
+                }}
+              >
+                <i className="ms ms-untap" style={{ fontSize: 14 }} />
+              </button>
+              <button
+                onClick={toggleAutoTap}
+                title={
+                  autoTapEnabled
+                    ? 'Auto Tap: Lands are tapped automatically. Click to switch to manual mana selection.'
+                    : 'Manual Tap: You choose which lands to tap. Click to switch to auto tap.'
+                }
+                style={{
+                  ...styles.floatingBarButton,
+                  backgroundColor: autoTapEnabled ? 'rgba(40, 40, 40, 0.8)' : 'rgba(245, 158, 11, 0.9)',
+                  color: autoTapEnabled ? '#999' : '#000',
+                  border: autoTapEnabled ? '1px solid #555' : '1px solid #f59e0b',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <i className="ms ms-land" style={{ fontSize: 14 }} />
+              </button>
+              <button
+                onClick={cyclePriorityMode}
+                title={
+                  serverPriorityMode === 'fullControl'
+                    ? 'Full Control: You receive priority at every step. Click to switch to Auto.'
+                    : serverPriorityMode === 'stops'
+                    ? 'Stops: Pauses on opponent spells/abilities and combat damage. Click to switch to Full Control.'
+                    : 'Auto: Smart auto-passing. Click to switch to Stops.'
+                }
+                style={{
+                  ...styles.floatingBarButton,
+                  width: 'auto',
+                  padding: '0 8px',
+                  backgroundColor:
+                    serverPriorityMode === 'fullControl' ? 'rgba(79, 195, 247, 0.9)' :
+                    serverPriorityMode === 'stops' ? 'rgba(245, 158, 11, 0.9)' :
+                    'rgba(40, 40, 40, 0.8)',
+                  color:
+                    serverPriorityMode === 'fullControl' ? '#000' :
+                    serverPriorityMode === 'stops' ? '#000' :
+                    '#999',
+                  border:
+                    serverPriorityMode === 'fullControl' ? '1px solid #4fc3f7' :
+                    serverPriorityMode === 'stops' ? '1px solid #f59e0b' :
+                    '1px solid #555',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {serverPriorityMode === 'fullControl' ? 'Full Control' :
+                 serverPriorityMode === 'stops' ? 'Stops' :
+                 'Auto'}
+              </button>
+              {/* The in-game help entry. Opens a drawer rather than navigating — leaving `/` would
+                  unmount the app and drop the WebSocket. */}
+              <HelpDrawerButton />
+            </div>
             <button
               disabled={!passEnabled}
               onClick={() => {
@@ -1311,7 +1490,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 ...(passEnabled ? getPassButtonStyle() : {}),
                 // On phones the desktop-sized button dwarfs the other
                 // controls and covers the hand — let the label size it.
-                width: responsive.isMobile ? 'auto' : 170,
+                // On desktop it stretches to the column, with 170 as the floor.
+                width: responsive.isMobile ? 'auto' : '100%',
+                minWidth: responsive.isMobile ? 'auto' : 170,
                 height: responsive.isMobile ? 28 : 42,
                 padding: responsive.isMobile ? '0 10px' : '0 24px',
                 color: passEnabled ? 'white' : '#555',
@@ -1333,85 +1514,6 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           </div>
         )
       })()}
-
-      {/* Undo, priority mode icons (bottom-right, above pass button) */}
-      {!spectatorMode && !isEliminatedSpectator && viewingPlayer && !isInManaSelectionMode && !isInCounterDistMode && (
-        <div style={{
-          position: 'fixed',
-          bottom: responsive.isMobile ? 50 : 66,
-          right: 16,
-          display: 'flex',
-          gap: 4,
-          alignItems: 'stretch',
-          zIndex: 100,
-        }}>
-          <button
-            onClick={requestUndo}
-            disabled={!undoAvailable}
-            title="Undo"
-            style={{
-              ...styles.floatingBarButton,
-              color: undoAvailable ? '#d4a017' : '#555',
-              border: undoAvailable ? '1px solid #8b7000' : '1px solid #333',
-              opacity: undoAvailable ? 1 : 0.4,
-              cursor: undoAvailable ? 'pointer' : 'default',
-            }}
-          >
-            <i className="ms ms-untap" style={{ fontSize: 14 }} />
-          </button>
-          <button
-            onClick={toggleAutoTap}
-            title={
-              autoTapEnabled
-                ? 'Auto Tap: Lands are tapped automatically. Click to switch to manual mana selection.'
-                : 'Manual Tap: You choose which lands to tap. Click to switch to auto tap.'
-            }
-            style={{
-              ...styles.floatingBarButton,
-              backgroundColor: autoTapEnabled ? 'rgba(40, 40, 40, 0.8)' : 'rgba(245, 158, 11, 0.9)',
-              color: autoTapEnabled ? '#999' : '#000',
-              border: autoTapEnabled ? '1px solid #555' : '1px solid #f59e0b',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            <i className="ms ms-land" style={{ fontSize: 14 }} />
-          </button>
-          <button
-            onClick={cyclePriorityMode}
-            title={
-              serverPriorityMode === 'fullControl'
-                ? 'Full Control: You receive priority at every step. Click to switch to Auto.'
-                : serverPriorityMode === 'stops'
-                ? 'Stops: Pauses on opponent spells/abilities and combat damage. Click to switch to Full Control.'
-                : 'Auto: Smart auto-passing. Click to switch to Stops.'
-            }
-            style={{
-              ...styles.floatingBarButton,
-              width: 'auto',
-              padding: '0 8px',
-              backgroundColor:
-                serverPriorityMode === 'fullControl' ? 'rgba(79, 195, 247, 0.9)' :
-                serverPriorityMode === 'stops' ? 'rgba(245, 158, 11, 0.9)' :
-                'rgba(40, 40, 40, 0.8)',
-              color:
-                serverPriorityMode === 'fullControl' ? '#000' :
-                serverPriorityMode === 'stops' ? '#000' :
-                '#999',
-              border:
-                serverPriorityMode === 'fullControl' ? '1px solid #4fc3f7' :
-                serverPriorityMode === 'stops' ? '1px solid #f59e0b' :
-                '1px solid #555',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            {serverPriorityMode === 'fullControl' ? 'Full Control' :
-             serverPriorityMode === 'stops' ? 'Stops' :
-             'Auto'}
-          </button>
-        </div>
-      )}
 
       {/* Attack-restriction explainer — "attack left/right" (CR 803.1) and similar
           restrictions are invisible on the board itself, so say exactly who can be
@@ -1967,6 +2069,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         </div>
       )}
     </div>
+    <HelpDrawer />
     </ResponsiveContext.Provider>
     </RenderProfiler>
   )

@@ -117,11 +117,16 @@ class DynamicAmountEvaluator(
 
             is DynamicAmount.XValue -> context.xValue ?: 0
 
-            // Counters the source had the moment its self-exile / self-sacrifice cost wiped them
-            // (CR 112.7a). Snapshotted into the resolution context at cost-payment time so the
-            // resolving effect reads the pre-cost count rather than zero (Lost Isle Calling).
+            // Counters the source had as it last existed on the battlefield (CR 112.7a / 608.2h).
+            // Two snapshots feed this, and they never both apply to one resolution: the cost-payment
+            // one, taken when a self-exile / self-sacrifice cost wiped the counters (Lost Isle
+            // Calling), and the leaves-the-battlefield one carried on a dies/leaves trigger
+            // (Nine-Lives Familiar's "if it had a revival counter on it"). Prefer the cost snapshot
+            // and fall back to the trigger's, so either path reads the pre-departure count rather
+            // than zero.
             is DynamicAmount.LastKnownSourceCounters -> {
                 val snapshot = context.lastKnownSourceCounters
+                    .ifEmpty { context.triggerLastKnownCounters ?: emptyMap() }
                 when (val filter = amount.counterType) {
                     is CounterTypeFilter.Any -> snapshot.values.sum()
                     else -> snapshot[counterTypeToString(resolveCounterType(filter))] ?: 0
@@ -186,6 +191,15 @@ class DynamicAmountEvaluator(
                 val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
                 val playerId = playerIds.firstOrNull() ?: return 0
                 state.getEntity(playerId)?.get<PlayerComponent>()?.startingLifeTotal ?: 20
+            }
+
+            // A player's speed, 0–4 (CR 702.179). "No speed" reads as 0 per CR 702.179f, which
+            // GameState.speed already returns, so there is no has-speed branch here. Speed is not
+            // pooled in team games, unlike life and poison.
+            is DynamicAmount.Speed -> {
+                val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
+                val playerId = playerIds.firstOrNull() ?: return 0
+                state.speed(playerId)
             }
 
             // Total unspent mana in the player's pool (Ozai, the Phoenix King's "six or more
@@ -492,8 +506,18 @@ class DynamicAmountEvaluator(
                     }
                     TurnTracker.LANDS_ENTERED_UNDER_CONTROL -> playerIds.sumOf { playerId ->
                         state.getEntity(playerId)
-                            ?.get<com.wingedsheep.engine.state.components.player.LandsEnteredUnderControlThisTurnComponent>()
-                            ?.count ?: 0
+                            ?.get<com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent>()
+                            ?.countOfType(com.wingedsheep.sdk.core.CardType.LAND) ?: 0
+                    }
+                    TurnTracker.NONLAND_PERMANENTS_ENTERED -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent>()
+                            ?.countNonland() ?: 0
+                    }
+                    TurnTracker.CREATURES_ENTERED_UNDER_CONTROL -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent>()
+                            ?.countOfType(com.wingedsheep.sdk.core.CardType.CREATURE) ?: 0
                     }
                     TurnTracker.FOOD_SACRIFICED -> playerIds.count { playerId ->
                         state.getEntity(playerId)
@@ -547,19 +571,27 @@ class DynamicAmountEvaluator(
                         // Zone qualifier is checked independently of the filter (see condition note).
                         (amount.fromZone == null || record.castFromZone == amount.fromZone) &&
                         predicateEvaluator.matchesFilter(record, amount.filter)
+                // beforeTriggeringSpell truncates each player's history at the triggering spell's own
+                // cast record ("each other spell you've cast BEFORE IT this turn"), so neither the
+                // triggering spell nor anything cast in response to the trigger is counted. A history
+                // with no record for the triggering spell contributes nothing.
+                fun history(playerId: EntityId): List<com.wingedsheep.engine.state.CastSpellRecord> {
+                    val records = state.spellsCastThisTurnByPlayer[playerId] ?: emptyList()
+                    if (!amount.beforeTriggeringSpell) return records
+                    val boundary = records.indexOfFirst { it.sourceEntityId == context.triggeringEntityId }
+                    return if (boundary < 0) emptyList() else records.subList(0, boundary)
+                }
                 if (amount.countDistinctCardTypes) {
                     // "for each card type among spells you've cast this turn" — union the card types
                     // across every matching record (an artifact creature spell counts for both).
                     playerIds
-                        .flatMap { state.spellsCastThisTurnByPlayer[it] ?: emptyList() }
+                        .flatMap { history(it) }
                         .filter { matches(it) }
                         .flatMap { it.typeLine.cardTypes }
                         .toSet()
                         .size
                 } else {
-                    playerIds.sumOf { playerId ->
-                        (state.spellsCastThisTurnByPlayer[playerId] ?: emptyList()).count { matches(it) }
-                    }
+                    playerIds.sumOf { playerId -> history(playerId).count { matches(it) } }
                 }
             }
 
@@ -700,6 +732,8 @@ class DynamicAmountEvaluator(
         ContextPropertyKey.X_VALUE_OF_TRIGGERING_SPELL -> context.triggerXValueOfTriggeringSpell ?: 0
 
         ContextPropertyKey.TRIGGER_SCRY_COUNT -> context.triggerScryCount ?: 0
+
+        ContextPropertyKey.TRIGGER_DISCARD_COUNT -> context.triggerDiscardCount ?: 0
 
         ContextPropertyKey.TRIGGER_DISCOVER_VALUE -> context.triggerDiscoverValue ?: 0
 

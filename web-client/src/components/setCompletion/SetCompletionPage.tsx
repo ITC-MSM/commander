@@ -178,6 +178,15 @@ export function SetCompletionPage() {
                         </span>
                         <span>
                           <strong>{summary.setsComplete}</strong> / {summary.setCount} sets complete
+                          {summary.distinctNotPlanned > 0 && (
+                            <span
+                              className={styles.summaryNote}
+                              title="Cards needing mechanics the engine will never carry — ante, subgames, physical dexterity. They're excluded from every total here."
+                            >
+                              {' '}
+                              ({summary.distinctNotPlanned} cards not planned)
+                            </span>
+                          )}
                         </span>
                       </>
                     ) : (
@@ -259,6 +268,7 @@ export function SetCompletionPage() {
 function SetCard({ set, onOpen }: { set: SetCoverage; onOpen: () => void }) {
   const t = tier(set.percent)
   const remaining = set.total - set.implemented
+  const notPlanned = set.notPlanned + set.extraNotPlanned
   return (
     <button className={styles.card} data-tier={t} onClick={onOpen} title={`View ${set.name} cards`}>
       <SetIcon code={set.code} className={styles.watermark} />
@@ -295,6 +305,14 @@ function SetCard({ set, onOpen }: { set: SetCoverage; onOpen: () => void }) {
             {set.extraImplemented}/{set.extraTotal} extra
           </span>
         )}
+        {notPlanned > 0 && (
+          <span
+            className={styles.notPlannedTag}
+            title={`${notPlanned} card${notPlanned === 1 ? '' : 's'} we won't implement (ante, subgames, dexterity) — not counted in the total`}
+          >
+            {notPlanned} not planned
+          </span>
+        )}
         {t === 'done' ? (
           <span className={styles.doneTag}>Complete</span>
         ) : (
@@ -305,7 +323,14 @@ function SetCard({ set, onOpen }: { set: SetCoverage; onOpen: () => void }) {
   )
 }
 
-type CardFilter = 'all' | 'implemented' | 'missing'
+type CardFilter = 'all' | 'implemented' | 'missing' | 'notPlanned'
+
+const CARD_FILTER_LABELS: Record<CardFilter, string> = {
+  all: 'All',
+  implemented: 'Implemented',
+  missing: 'Missing',
+  notPlanned: 'Not planned',
+}
 
 function SetDetailOverlay({ code, onClose }: { code: string; onClose: () => void }) {
   const [detail, setDetail] = useState<SetDetail | null>(null)
@@ -356,13 +381,26 @@ function SetDetailOverlay({ code, onClose }: { code: string; onClose: () => void
   useEffect(() => () => {
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
   }, [])
+  // "Missing" means still to do, so the not-planned cards live in their own bucket rather than
+  // padding a list of work that will never happen.
   const matches = useCallback(
-    (c: CardCoverage) =>
-      cardFilter === 'all' || (cardFilter === 'implemented' ? c.implemented : !c.implemented),
+    (c: CardCoverage) => {
+      switch (cardFilter) {
+        case 'implemented':
+          return c.implemented
+        case 'missing':
+          return !c.implemented && c.notPlanned === null
+        case 'notPlanned':
+          return c.notPlanned !== null
+        default:
+          return true
+      }
+    },
     [cardFilter],
   )
   const draftCards = useMemo(() => detail?.draft.filter(matches) ?? [], [detail, matches])
   const extraCards = useMemo(() => detail?.extra.filter(matches) ?? [], [detail, matches])
+  const notPlannedCount = detail ? detail.notPlanned + detail.extraNotPlanned : 0
 
   const t = detail ? tier(detail.percent) : 'empty'
 
@@ -390,6 +428,7 @@ function SetDetailOverlay({ code, onClose }: { code: string; onClose: () => void
                     {detail.extraImplemented}/{detail.extraTotal} extra
                   </>
                 )}
+                {notPlannedCount > 0 && <> · {notPlannedCount} not planned</>}
               </span>
             </div>
           )}
@@ -405,15 +444,19 @@ function SetDetailOverlay({ code, onClose }: { code: string; onClose: () => void
         )}
 
         <div className={styles.overlayControls}>
-          {(['all', 'implemented', 'missing'] as CardFilter[]).map((f) => (
-            <button
-              key={f}
-              className={cardFilter === f ? styles.segmentActive : styles.segment}
-              onClick={() => setCardFilter(f)}
-            >
-              {f === 'all' ? 'All' : f === 'implemented' ? 'Implemented' : 'Missing'}
-            </button>
-          ))}
+          {(Object.keys(CARD_FILTER_LABELS) as CardFilter[])
+            // The not-planned tab only exists for the handful of sets that have such a card.
+            .filter((f) => f !== 'notPlanned' || notPlannedCount > 0)
+            .map((f) => (
+              <button
+                key={f}
+                className={cardFilter === f ? styles.segmentActive : styles.segment}
+                onClick={() => setCardFilter(f)}
+              >
+                {CARD_FILTER_LABELS[f]}
+                {f === 'notPlanned' && ` (${notPlannedCount})`}
+              </button>
+            ))}
         </div>
 
         <div className={styles.overlayBody}>
@@ -476,10 +519,17 @@ const CardTile = memo(function CardTile({
   card: CardCoverage
   onHover: (h: HoverState | null) => void
 }) {
+  // A not-planned card is neither done nor outstanding, so it gets its own look and always
+  // explains itself — the reason travels with the flag from the manifest to this tooltip.
+  const className = card.implemented
+    ? styles.tile
+    : card.notPlanned
+      ? styles.tileNotPlanned
+      : styles.tileMissing
   return (
     <div
-      className={card.implemented ? styles.tile : styles.tileMissing}
-      title={card.name}
+      className={className}
+      title={card.notPlanned ? `${card.name} — not planned: ${card.notPlanned.why}` : card.name}
       onMouseEnter={(e) => onHover({ name: card.name, imageUri: card.imageUri, pos: { x: e.clientX, y: e.clientY } })}
       onMouseMove={(e) => onHover({ name: card.name, imageUri: card.imageUri, pos: { x: e.clientX, y: e.clientY } })}
       onMouseLeave={() => onHover(null)}
@@ -491,7 +541,9 @@ const CardTile = memo(function CardTile({
         loading="lazy"
         decoding="async"
       />
-      <span className={styles.tileBadge}>{card.implemented ? '✓' : 'Missing'}</span>
+      <span className={styles.tileBadge}>
+        {card.implemented ? '✓' : card.notPlanned ? card.notPlanned.kind : 'Missing'}
+      </span>
       <span className={styles.tileName}>{card.name}</span>
     </div>
   )

@@ -16,7 +16,7 @@ import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.identity.CommanderZoneChoiceAskedComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
-import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardFromBattlefieldThisTurnMarker
+import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.ManifestedComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
@@ -516,6 +516,13 @@ object ZoneTransitionService {
         if (entityId in newState.pendingSacrificeIds) {
             newState = newState.copy(pendingSacrificeIds = newState.pendingSacrificeIds - entityId)
         }
+        // Same one-shot lifetime for the discard-cause marker: the redirect check above has already
+        // read it, so drop it before any later move of the same card can see a stale cause.
+        if (entityId in newState.pendingDiscardCauseControllers) {
+            newState = newState.copy(
+                pendingDiscardCauseControllers = newState.pendingDiscardCauseControllers - entityId
+            )
+        }
         events.add(
             ZoneChangeEvent(
                 entityId = entityId,
@@ -622,24 +629,24 @@ object ZoneTransitionService {
             }
         }
 
-        // 8b3. Stamp "put into graveyard from battlefield this turn" on the card entity
-        // (Samwise the Stouthearted / Lobelia Sackville-Baggins, LTR). Overwrites any
-        // previous stamp so a card that bounces battlefield→graveyard twice in one turn
-        // still matches; a graveyard arrival via a different path (mill, exile→graveyard)
-        // doesn't trigger this branch, so it can't falsely match.
-        if (leavingBattlefield && actualDestZone == Zone.GRAVEYARD) {
+        // 8b3. Stamp "put into a graveyard this turn" on the card entity, recording whether
+        // the arrival came from the battlefield. Backs Abyssal Harvester (FDN, any origin
+        // zone) and Samwise the Stouthearted / Lobelia Sackville-Baggins (LTR, battlefield
+        // only). Overwrites any previous stamp so a card that bounces into a graveyard twice
+        // in one turn records its most recent origin.
+        if (actualDestZone == Zone.GRAVEYARD && fromZone != Zone.GRAVEYARD) {
             newState = newState.updateEntity(entityId) { c ->
-                c.with(PutIntoGraveyardFromBattlefieldThisTurnMarker)
+                c.with(PutIntoGraveyardThisTurnComponent(fromBattlefield = leavingBattlefield))
             }
         }
 
         // 8c. Track cards leaving the graveyard
         if (fromZone == Zone.GRAVEYARD) {
-            // Strip the "from battlefield this turn" stamp — the card is no longer in a
-            // graveyard, so the predicate must not carry over to a later graveyard
-            // arrival via a different path.
+            // Strip the "put into a graveyard this turn" stamp — the card is no longer in a
+            // graveyard, so neither predicate may carry over to a later graveyard arrival
+            // via a different path.
             newState = newState.updateEntity(entityId) { c ->
-                c.without<PutIntoGraveyardFromBattlefieldThisTurnMarker>()
+                c.without<PutIntoGraveyardThisTurnComponent>()
             }
             newState = newState.updateEntity(ownerId) { playerContainer ->
                 val existing = playerContainer.get<CardsLeftGraveyardThisTurnComponent>()
@@ -737,19 +744,58 @@ object ZoneTransitionService {
      * Emits the standard `CardsDiscardedEvent` plus the `ZoneChangeEvent` produced by
      * `moveToZone`, so dies/discard triggers and animations both see the canonical pair.
      */
-    fun discardCard(state: GameState, playerId: EntityId, cardId: EntityId): ZoneTransitionResult =
-        discardCards(state, playerId, listOf(cardId))
+    fun discardCard(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId,
+        causedByControllerId: EntityId? = null
+    ): ZoneTransitionResult =
+        discardCards(state, playerId, listOf(cardId), causedByControllerId)
+
+    /**
+     * Central "these cards are being discarded because of a spell or ability" hook, mirroring
+     * [trackPermanentSacrifice]. Records the causing object's controller in
+     * [GameState.pendingDiscardCauseControllers] so the imminent `moveToZone` can offer the cause to
+     * zone-change replacements (Wilt-Leaf Liege) without every discard site threading an explicit
+     * parameter through the move.
+     *
+     * Pass null — or skip the call — for discards with no spell/ability cause: the CR 514.1
+     * hand-size discard, and discards made to pay a cost.
+     */
+    fun markDiscardCause(
+        state: GameState,
+        cardIds: List<EntityId>,
+        causedByControllerId: EntityId?
+    ): GameState {
+        if (causedByControllerId == null || cardIds.isEmpty()) return state
+        return state.copy(
+            pendingDiscardCauseControllers = state.pendingDiscardCauseControllers +
+                cardIds.associateWith { causedByControllerId }
+        )
+    }
 
     /**
      * Move multiple cards from a player's hand to their graveyard as a single discard.
      *
      * Emits one combined `CardsDiscardedEvent` (so the client renders "You discarded X, Y"
      * as a single log entry) plus one `ZoneChangeEvent` per card from `moveToZone`.
+     *
+     * The discard event fires whichever zone the cards actually end up in: a card whose own
+     * replacement diverts it (Wilt-Leaf Liege onto the battlefield) has still been discarded, and
+     * discard triggers still see it.
+     *
+     * @param causedByControllerId Controller of the spell or ability causing the discard, via
+     *   [markDiscardCause]. Null for the cleanup-step hand-size discard and for cost payments.
      */
-    fun discardCards(state: GameState, playerId: EntityId, cardIds: List<EntityId>): ZoneTransitionResult {
+    fun discardCards(
+        state: GameState,
+        playerId: EntityId,
+        cardIds: List<EntityId>,
+        causedByControllerId: EntityId? = null
+    ): ZoneTransitionResult {
         if (cardIds.isEmpty()) return ZoneTransitionResult(state, emptyList())
         val cardNames = cardIds.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
-        var newState = state
+        var newState = markDiscardCause(state, cardIds, causedByControllerId)
         val moveEvents = mutableListOf<EngineGameEvent>()
         for (cardId in cardIds) {
             val result = moveToZone(

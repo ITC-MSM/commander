@@ -287,6 +287,10 @@ object TargetResolutionUtils {
             }
             is EffectTarget.PlayerRef -> when (effectTarget.player) {
                 Player.Each -> state.activePlayers
+                // The APNAP-ordered flavour of Player.Each (CR 101.4) — for effects whose
+                // per-player choices are made in turn order starting with the active player
+                // ("each player sacrifices two creatures of their choice").
+                Player.ActivePlayerFirst -> state.apnapOrder
                 Player.EachOpponent -> state.getOpponents(context.controllerId)
                 else -> resolvePlayerRef(effectTarget.player, context, state)
                     ?.let { listOf(it) } ?: emptyList()

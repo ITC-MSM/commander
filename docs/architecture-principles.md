@@ -391,6 +391,13 @@ fun withEntity(id: EntityId, container: ComponentContainer): GameState =
 - **Debugging.** Any bug can be reproduced by replaying the action sequence against the initial state.
   No hidden mutation means deterministic replay.
 
+Determinism is what lets a whole game be *stored* as its inputs (`CompactReplay` — kilobytes instead
+of a frame-by-frame archive). Note the limit, though: it is determinism across *runs of the same
+engine*, not across time. Cards are data this pure function folds through, so editing a card changes
+what an old input stream re-simulates to. Stored replays therefore pin the card definitions they ran
+on and carry position checkpoints, with an archived frame stream as the last resort — see
+[data-contracts.md](data-contracts.md) → *Compact replays*.
+
 ### 2.2 Entity-Component-System (ECS)
 
 **Principle:** Every game object is an `EntityId` with behavioral traits attached via components.
@@ -1018,6 +1025,42 @@ base amount — a `{1}{R}{R}` spell reduced by {2} still costs `{R}{R}`.
 instead of paying generic mana, Convoke taps creatures, and Force of Will can be cast by exiling a
 blue card and paying 1 life. The `AlternativePaymentHandler` processes these before the mana solver
 runs, reducing the remaining cost that must be paid with mana.
+
+**Mana-payment windows (CR 605.3a).** Casting a spell is not the only time a player owes mana.
+Ward, "you may pay {B}", an attack tax, a draw replacement, "sacrifice this unless you pay {2}",
+a morph's turn-face-up cost — each stops the game and raises a `SelectManaSourcesDecision` asking
+one player for mana. Costs that ask a yes/no question first ("counter unless you pay", pay-or-suffer,
+anything through `CostPaymentService`) raise the window as a *second* step, and only when the
+player's floating mana doesn't already cover the cost — there is nothing to choose when it does. CR 605.3a says a mana ability may be
+activated "whenever a rule or effect asks for a mana payment", so while that decision is open the
+paying player holds no priority but *may* still activate mana abilities. `ManaPaymentWindow` is the
+single definition of that state; both `ActivateAbilityHandler.validate` (the engine's authority
+check) and `GameSession.getLegalActions` (what the server offers the client) read it, and nothing
+else is unlocked — non-mana abilities and spells stay blocked.
+
+This matters because the decision's pre-computed `availableSources` menu is deliberately narrow:
+`findAvailableManaSources` only models `{T}`-shaped abilities, so Ashnod's Altar ("Sacrifice a
+creature: Add {C}{C}") and anything with a discard/Forage sub-cost has no entry in it. The window is
+the general escape hatch. Mana produced this way goes to the pool, the decision is re-raised
+refreshed (a source tapped by hand drops out of the menu), and every payment resumer already spends
+floating mana before tapping anything — so the player simply confirms. A mana ability that needs a
+decision of its own (choosing a color) nests above a `ReopenManaPaymentDecisionContinuation`, which
+restores the window once it resolves.
+
+Because the window is where the payment actually happens, it is also the only place that may tap
+anything: once it closes, the payer's picks are spent as-is. No resumer falls back to the auto-tap
+solver for a shortfall, which would silently overrule what they chose.
+
+**Affordability vs. auto-tappability.** These payments gate the *prompt itself* on `canPay`: ward
+counters the spell, and a "you may pay" trigger is skipped, without asking when the solver sees no
+way to pay. So `canPay` must know about mana the solver would never auto-tap. It does, via four
+"extras" helpers that contribute production on top of `solve()`: `TapPermanents` (Birchlore
+Rangers), tap+`SacrificeSelf` (Treasure), composite tap+`TapPermanents` (Springleaf Drum), and
+`calculateExplicitActivationBonusMana` for cost shapes `findAvailableManaSources` doesn't model at
+all. They are affordability-only — auto-pay must never silently sacrifice or discard, so the player
+activates these themselves, at priority or inside the payment window. Each helper owns a disjoint
+set of cost shapes; `ExplicitActivationManaSourcesTest` pins that partition so the same source can't
+be counted twice.
 
 **Why three tiers instead of a single "pay cost" function?**
 

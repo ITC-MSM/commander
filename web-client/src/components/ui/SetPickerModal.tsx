@@ -13,7 +13,7 @@
  * Extension sets (bonus sheets like The Big Score) carry an "extension" badge and are only
  * playable alongside a regular set, so single mode hides them entirely.
  *
- * Visuals come from `GameUI.module.css` (the shared lobby stylesheet — `QuickGameLobbyOverlay`
+ * Visuals come from `GameUI.module.css` (the shared lobby stylesheet — `LobbyScreen`
  * already reuses it) so both lobbies look identical.
  */
 import { useState } from 'react'
@@ -245,7 +245,7 @@ export function SetPickerModal({
               </span>
             </button>
             <label className={styles.setPickerMinCards}>
-              <span className={styles.setPickerMinCardsLabel}>Min cards</span>
+              <span>Min cards</span>
               <input
                 type="number"
                 min={0}

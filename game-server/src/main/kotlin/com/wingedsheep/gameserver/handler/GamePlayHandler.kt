@@ -41,6 +41,8 @@ class GamePlayHandler(
     private val deckGenerator: SealedDeckGenerator,
     private val gameProperties: GameProperties,
     private val replayService: ReplayService,
+    private val replayCheckpointFlusher: com.wingedsheep.gameserver.replay.ReplayCheckpointFlusher,
+    private val engineVersion: com.wingedsheep.gameserver.replay.EngineVersion,
     private val aiGameManager: AiGameManager,
     private val matchResultSink: com.wingedsheep.gameserver.stats.MatchResultSink,
     private val rankedResultSink: com.wingedsheep.gameserver.ranking.RankedResultSink,
@@ -548,10 +550,10 @@ class GamePlayHandler(
 
     /**
      * Concede [playerId]'s seat. If that ends the game (≤1 player remains, CR 104.2a) the match
-     * is finalized; otherwise the game continues for the remaining seats (CR 800.4a) — the
-     * conceder gets a personal [ServerMessage.PlayerEliminated] so their client can leave the
-     * table, and everyone else sees the seat drop out via the state rebroadcast. In a 2-player
-     * game conceding always ends it — the degenerate case.
+     * is finalized; otherwise the game continues for the remaining seats (CR 800.4a) and the
+     * rebroadcast below tells the conceder they're out (see [notifyEliminatedSeats]) while
+     * everyone else just sees the seat drop out of the state. In a 2-player game conceding always
+     * ends it — the degenerate case.
      */
     private fun concedeSeat(gameSession: GameSession, playerId: EntityId) {
         gameSession.playerConcedes(playerId)
@@ -559,32 +561,47 @@ class GamePlayHandler(
             handleGameOver(gameSession, GameOverReason.CONCESSION)
             return
         }
+        broadcastStateUpdate(gameSession, emptyList())
+    }
 
-        // In a hotseat pod the conceding identity may still control other live seats
-        // (scenario builder self-play) — keep them at the table instead of showing the
-        // personal elimination overlay.
+    /**
+     * Tell each newly dead seat that it is out while the table plays on (CR 800.4a): a personal
+     * [ServerMessage.PlayerEliminated] so their client can show the defeat overlay and offer to
+     * keep watching or leave. Every way of losing goes through here — conceding, damage, decking
+     * out, poison — because the engine marks the seat identically; before this, only a concession
+     * produced a notice, so a player who was simply killed sat on a dead board with no feedback.
+     *
+     * Skipped when the game itself has ended (everyone gets [ServerMessage.GameOver] instead) and
+     * for a hotseat / Mindslaver identity that still drives a living seat, which would otherwise be
+     * thrown out of a game it is still playing.
+     */
+    private fun notifyEliminatedSeats(gameSession: GameSession) {
+        if (gameSession.isGameOver()) return
+        val pending = gameSession.unnotifiedEliminations()
+        if (pending.isEmpty()) return
         val state = gameSession.getStateSnapshot()
-        val stillControlsLiveSeat = state != null && state.turnOrder.any { seat ->
-            seat != playerId && seat in state.activePlayers && state.actorFor(seat) == playerId
-        }
-        val conceder = gameSession.getPlayerSession(playerId)
-        if (!stillControlsLiveSeat && conceder != null) {
-            if (conceder.webSocketSession.isOpen) {
-                sender.send(conceder.webSocketSession, ServerMessage.PlayerEliminated(
+        for (playerId in pending) {
+            val stillControlsLiveSeat = state != null && state.turnOrder.any { seat ->
+                seat != playerId && seat in state.activePlayers && state.actorFor(seat) == playerId
+            }
+            if (stillControlsLiveSeat) continue
+            gameSession.markEliminationNotified(playerId)
+            val eliminated = gameSession.getPlayerSession(playerId) ?: continue
+            if (eliminated.webSocketSession.isOpen) {
+                sender.send(eliminated.webSocketSession, ServerMessage.PlayerEliminated(
                     gameId = gameSession.sessionId,
-                    reason = GameOverReason.CONCESSION,
+                    reason = gameSession.getEliminationReason(playerId),
                 ))
             }
-            // The conceder is out of the game (the table plays on without them). Clear their
-            // game-session routing — exactly as handleGameOver does for everyone — so that
-            // returning to the lobby sticks: a reconnect/refresh treats them as "waiting" instead
-            // of dropping them back into a game they've left. They stay seated in the engine state
-            // (CR 800.4a) and still receive the rebroadcast below until they choose to leave.
-            conceder.currentGameSessionId = null
-            sessionRegistry.getIdentityByWsId(conceder.webSocketSession.id)?.currentGameSessionId = null
-            sessionRegistry.getPlayerSession(conceder.webSocketSession.id)?.currentGameSessionId = null
+            // They're out of the game (the table plays on without them). Clear their game-session
+            // routing — exactly as handleGameOver does for everyone — so that returning to the
+            // lobby sticks: a reconnect/refresh treats them as "waiting" instead of dropping them
+            // back into a game they've left. They stay seated in the engine state (CR 800.4a) and
+            // keep receiving the rebroadcast until they choose to leave.
+            eliminated.currentGameSessionId = null
+            sessionRegistry.getIdentityByWsId(eliminated.webSocketSession.id)?.currentGameSessionId = null
+            sessionRegistry.getPlayerSession(eliminated.webSocketSession.id)?.currentGameSessionId = null
         }
-        broadcastStateUpdate(gameSession, emptyList())
     }
 
     fun handleGameOver(gameSession: GameSession, reason: GameOverReason? = null, events: List<GameEvent> = emptyList()) {
@@ -671,13 +688,27 @@ class GamePlayHandler(
                 setup = replaySetup,
                 actions = gameSession.getRecordedActions(),
                 yields = gameSession.getReplayYields(),
+                engineVersion = engineVersion.value,
+                pinnedCards = gameSession.getPinnedCards(),
+                checkpoints = gameSession.getReplayCheckpoints(),
             )
-            // AI-only games (e.g. the LLM tournament) stay in the in-memory cache for live viewing
-            // but aren't persisted — they never appear in any account's history.
+            // AI-only games (e.g. the LLM tournament) are stored — that page links straight at their
+            // replays — but skip the archived frame stream, which is orders of magnitude larger than
+            // the input log and only earns its keep for games someone may still watch years later.
             val persistenceInfo = gameSession.getPlayerPersistenceInfo()
             val hasHumanSeat = gameSession.getPlayers().any { persistenceInfo[it.playerId]?.isAi != true }
-            replayService.save(replay, durable = hasHumanSeat)
-            logger.info("Saved compact replay for game $gameSessionId ($frameCount frames, ${replay.actions.size} actions, durable=$hasHumanSeat)")
+            // Isolated: everything below still has to run. A replay is nice to have, but losing one
+            // to a database hiccup must not skip the match/ELO rows, the tournament callback or the
+            // session cleanup at the end of this method — that would leak the session and silently
+            // drop a player's stats over a failure in the least important write here.
+            runCatching {
+                replayService.save(replay, archive = hasHumanSeat)
+                replayCheckpointFlusher.forget(gameSessionId)
+            }.onFailure {
+                logger.error("Failed to save replay for game $gameSessionId: ${it.message}", it)
+            }.onSuccess {
+                logger.info("Saved compact replay for game $gameSessionId ($frameCount frames, ${replay.actions.size} actions, archived=$hasHumanSeat)")
+            }
         }
 
         // Record a durable match-history row for account stats. The sink is a no-op unless accounts
@@ -708,7 +739,9 @@ class GamePlayHandler(
                     participants = gameSession.getPlayers().map { player ->
                         val identity = sessionRegistry.getIdentityByWsId(player.webSocketSession.id)
                         val isAi = persistenceInfo[player.playerId]?.isAi == true
-                        val deckList = gameSession.getDeckList(player.playerId)
+                        // Every seat's starting deck — read through the replay-setup fallback so a
+                        // seat whose live entry went missing still lands in history with its deck.
+                        val deckList = gameSession.getStartingDeckList(player.playerId)
                         val profile = deckList?.let { deckProfiler.profile(it, gameSession.quickGameSetCode) }
                         // Count copies by canonical card name (strip any "#collector" pin).
                         val deckCards = deckList
@@ -811,6 +844,10 @@ class GamePlayHandler(
                 if (update != null) sender.send(session.webSocketSession, update)
                 else logger.warn("createStateUpdate returned null for player ${session.playerId.value}")
             }
+
+            // After the state (so a client's roster already shows the seat as lost, and its board
+            // has re-seated behind the overlay) but before the spectator feed.
+            notifyEliminatedSeats(gameSession)
 
             // Update spectators. (Replay recording no longer happens here — the compact replay
             // records the input stream as actions are applied, and reconstructs snapshots on demand.)
@@ -1114,7 +1151,7 @@ class GamePlayHandler(
         if (aiPlayers.isEmpty()) return
 
         for ((aiPlayerId, pi) in aiPlayers) {
-            val deckList = gameSession.getDeckList(aiPlayerId)
+            val deckList = gameSession.getStartingDeckList(aiPlayerId)
                 ?.groupingBy { it }?.eachCount()
             aiGameManager.wireAiForGame(
                 gameSession = gameSession,

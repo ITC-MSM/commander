@@ -169,6 +169,16 @@ class CoreAutoResumerModule(
             )
         },
 
+        // CR 605.3a — the player activated a mana ability while the engine was asking them for a
+        // mana payment, and that ability needed a decision of its own. Now that it has resolved,
+        // put the payment window back up (refreshed: the source they just tapped is gone from the
+        // menu and the auto-pay suggestion covers only what the new floating mana doesn't).
+        autoResumer(ReopenManaPaymentDecisionContinuation::class) { state, continuation, events, _ ->
+            com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow.reopen(
+                state, continuation.decision, events, services.cardRegistry
+            )
+        },
+
         autoResumer(ReflexiveTriggerTargetContinuation::class) { state, continuation, events, checkForMore ->
             // After the action completes, present target selection for the reflexive effect
             val executor = com.wingedsheep.engine.handlers.effects.composite.ReflexiveTriggerEffectExecutor(

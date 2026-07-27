@@ -190,6 +190,23 @@ sealed interface StatePredicate {
     }
 
     /**
+     * Controlled by a player the effect's *source* dealt combat damage to this turn — the mirror of
+     * [DealtCombatDamageToSourceControllerThisTurn]. Source-relative: reads the per-turn recipient
+     * marker off `context.sourceId` and asks whether this permanent's controller is among the
+     * players it connected with. Used for "…each nonland permanent whose controller was dealt combat
+     * damage by this creature this turn" (Steel Hellkite).
+     *
+     * Controller is evaluated *now*, not at damage time (CR 608.2 — the ability checks the current
+     * board): it doesn't matter who controlled the permanent when the damage was dealt, or whether
+     * it was even on the battlefield then. Inert with no source context.
+     */
+    @SerialName("ControllerDealtCombatDamageBySourceThisTurn")
+    @Serializable
+    data object ControllerDealtCombatDamageBySourceThisTurn : History {
+        override val description: String = "whose controller was dealt combat damage by this creature this turn"
+    }
+
+    /**
      * Was declared as an attacker at least once during the current turn (set during the
      * declare-attackers step, CR 508.1). Backed by the controller's
      * [com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent] (which
@@ -229,19 +246,42 @@ sealed interface StatePredicate {
     }
 
     /**
+     * This card is currently in a graveyard *and* was put there during the current turn,
+     * from any zone — the battlefield, but equally the library (mill), the hand (discard),
+     * or the stack (a countered or resolved spell). Used as a target predicate on
+     * graveyard-zone filters:
+     *
+     *  - Abyssal Harvester (FDN): "target creature card from a graveyard that was put
+     *    there this turn".
+     *
+     * The zone-restricted sibling is [PutIntoGraveyardFromBattlefieldThisTurn]; both read
+     * the same `PutIntoGraveyardThisTurnComponent` (see that predicate's doc for the
+     * component's lifecycle), this one ignoring its `fromBattlefield` flag.
+     *
+     * Pair with `CardPredicate.IsCreature` (or any other card-predicate constraint) to
+     * express the full Abyssal Harvester filter.
+     */
+    @SerialName("PutIntoGraveyardThisTurn")
+    @Serializable
+    data object PutIntoGraveyardThisTurn : History {
+        override val description: String = "put into a graveyard this turn"
+    }
+
+    /**
      * This card is currently in a graveyard *and* was put there from the battlefield
-     * during the current turn. Used as a target predicate on graveyard-zone filters:
+     * during the current turn. The zone-restricted sibling of [PutIntoGraveyardThisTurn].
+     * Used as a target predicate on graveyard-zone filters:
      *
      *  - Samwise the Stouthearted (LTR): "target permanent card in your graveyard
      *    that was put there from the battlefield this turn"
      *  - Lobelia Sackville-Baggins (LTR): same predicate on an opponent's graveyard.
      *
-     * Backed by the `PutIntoGraveyardFromBattlefieldThisTurnMarker` data-object
-     * component on the card entity. The marker is set by `ZoneTransitionService`
-     * whenever a card moves battlefield → graveyard, and stripped when it leaves the
-     * graveyard so a later arrival from a different zone (mill, exile → graveyard)
-     * does not falsely match. The marker carries no turn number — `BeginningPhaseManager`
-     * wipes it from every entity during the untap step of each turn, giving the predicate
+     * Backed by the `PutIntoGraveyardThisTurnComponent` on the card entity, whose
+     * `fromBattlefield` flag this predicate additionally requires. The component is set by
+     * `ZoneTransitionService` on every arrival in a graveyard, and stripped when the card
+     * leaves the graveyard so a later arrival by a different route does not carry the
+     * earlier "from battlefield" claim. It carries no turn number — `BeginningPhaseManager`
+     * wipes it from every entity during the untap step of each turn, giving both predicates
      * MTG-correct per-turn semantics independent of the engine's per-round `state.turnNumber`.
      *
      * Pair with `CardPredicate.IsPermanent` (or any other card-predicate constraint)
@@ -354,7 +394,7 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
-    // Equipment (Entity)
+    // Equipment / Auras (Entity)
     // =============================================================================
 
     /** Has at least one Equipment attached */
@@ -362,6 +402,23 @@ sealed interface StatePredicate {
     @Serializable
     data object IsEquipped : Entity {
         override val description: String = "equipped"
+    }
+
+    /**
+     * Has at least one Aura attached — the MTG adjective "enchanted" (CR 303.4: an Aura *enchants*
+     * the permanent it's attached to). The Aura mirror of [IsEquipped], and deliberately narrower
+     * than [IsModified]: an Equipment attached or a counter on the permanent does not make it
+     * enchanted. Control of the Aura is irrelevant — an opponent's Aura still enchants your
+     * creature, which is why "enchanted creatures you control" (A Tale for the Ages) scopes control
+     * on the *creature* via a separate controller predicate rather than on the attachment.
+     *
+     * Role tokens are Auras (CR 113.2c), so this is also the Wilds of Eldraine Roles payoff
+     * ("if you control an enchanted creature" — Lord Skitter's Blessing).
+     */
+    @SerialName("IsEnchanted")
+    @Serializable
+    data object IsEnchanted : Entity {
+        override val description: String = "enchanted"
     }
 
     /** Has an Equipment attached, an Aura attached, or any counter (MTG "modified" definition) */

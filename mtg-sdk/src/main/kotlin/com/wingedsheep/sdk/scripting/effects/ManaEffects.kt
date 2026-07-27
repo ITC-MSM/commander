@@ -92,7 +92,16 @@ data class AddManaEffect(
      * mana; [ManaExpiry.END_OF_COMBAT] is firebending-style mana that the pool keeps through
      * combat and discards when combat ends.
      */
-    val expiry: ManaExpiry = ManaExpiry.END_OF_TURN
+    val expiry: ManaExpiry = ManaExpiry.END_OF_TURN,
+    /**
+     * Side-effects attached to the produced mana — what happens to the *spell* this mana is
+     * eventually spent on (Pyromancer's Goggles: "When that mana is spent to cast a red instant or
+     * sorcery spell, copy that spell"). When non-empty, the mana is stored as restricted-mana
+     * entries so the rider set survives in the pool; with [restriction] null,
+     * [ManaRestriction.AnySpend] is used as a no-op marker so the mana still spends on anything.
+     * Mirrors [AddManaOfChoiceEffect.riders].
+     */
+    val riders: Set<ManaSpellRider> = emptySet()
 ) : Effect {
     constructor(color: Color, amount: Int, restriction: ManaRestriction? = null, expiry: ManaExpiry = ManaExpiry.END_OF_TURN) :
         this(color, DynamicAmount.Fixed(amount), restriction, expiry)
@@ -106,6 +115,7 @@ data class AddManaEffect(
         if (expiry == ManaExpiry.END_OF_COMBAT) {
             append(". Until end of combat, you don't lose this mana as steps and phases end")
         }
+        for (rider in riders) append(". ${rider.description}")
     }
 }
 

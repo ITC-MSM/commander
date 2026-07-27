@@ -293,7 +293,7 @@ object LibraryPatterns {
     )
 
     /**
-     * "Scry [count]" (CR 701.18). Returns the compact [ScryEffect] macro node; the engine expands
+     * "Scry [count]" (CR 701.22). Returns the compact [ScryEffect] macro node; the engine expands
      * it to [scryPipeline] at execution time. A card whose effect *is* scry therefore serializes as
      * a single `{"type":"Scry"}` node rather than the unrolled pipeline (see [ScryEffect]).
      */
@@ -322,10 +322,20 @@ object LibraryPatterns {
     }
 
     /**
-     * "Surveil [count]" (CR 701.42). Returns the compact [SurveilEffect] macro node; the engine
+     * "Surveil [count]" (CR 701.25). Returns the compact [SurveilEffect] macro node; the engine
      * expands it to [surveilPipeline] at execution time (see [SurveilEffect]).
      */
     fun surveil(count: Int): SurveilEffect = SurveilEffect(count)
+
+    /**
+     * "Surveil X" with a dynamic count (CR 701.25) — e.g. Spider-Man Noir's "surveil X, where X is
+     * the number of counters on it." There is no compact macro node for a dynamic surveil (the
+     * [SurveilEffect] macro only carries a literal), so this expands straight to the same
+     * Gather → Select → Move graveyard/top → emit `SurveiledEvent` pipeline as [surveilPipeline],
+     * with the look/select amounts driven by [count]. Mirrors the dynamic [lookAtTopAndReorder]
+     * overload.
+     */
+    fun surveil(count: DynamicAmount): CompositeEffect = surveilPipeline(count)
 
     /**
      * Expand a library *macro effect* ([ScryEffect] / [SurveilEffect]) to its underlying
@@ -375,12 +385,12 @@ object LibraryPatterns {
                 destination = CardDestination.ToZone(Zone.LIBRARY, player, placement = ZonePlacement.Top),
                 order = CardOrder.ControllerChooses
             ),
-            // Fire "Whenever you scry" triggers (CR 701.18) after the pipeline finishes.
+            // Fire "Whenever you scry" triggers (CR 701.22) after the pipeline finishes.
             // The event count is the actual size of the "scried" gather collection at
             // resolution time, not the literal N (handles library-smaller-than-N). Per
-            // CR 701.18d the trigger still fires when the library was empty and zero
+            // CR 701.22d the trigger still fires when the library was empty and zero
             // cards were looked at, so the tail emits unconditionally — it is only
-            // omitted for a literal "scry 0" (CR 701.18b: no scry event occurs).
+            // omitted for a literal "scry 0" (CR 701.22b: no scry event occurs).
             if (count > 0) EmitScriedEventEffect() else null
         )
     )
@@ -413,13 +423,47 @@ object LibraryPatterns {
                 destination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Top),
                 order = CardOrder.ControllerChooses
             ),
-            // Fire "Whenever you surveil" / "scry or surveil" triggers (CR 701.42) after the
+            // Fire "Whenever you surveil" / "scry or surveil" triggers (CR 701.25) after the
             // pipeline finishes. The event count is the actual size of the "surveiled" gather
             // collection at resolution time, not the literal N (handles library-smaller-than-N).
-            // Per CR 701.42d the trigger still fires when the library was empty and zero cards
+            // Per CR 701.25d the trigger still fires when the library was empty and zero cards
             // were looked at, so the tail emits unconditionally — it is only omitted for a literal
-            // "surveil 0" (CR 701.42c: no surveil event occurs).
+            // "surveil 0" (CR 701.25c: no surveil event occurs).
             if (count > 0) EmitSurveiledEventEffect() else null
+        )
+    )
+
+    /**
+     * The expanded surveil pipeline with a *dynamic* look count (Gather → Select → Move
+     * graveyard/top → emit `SurveiledEvent`). Twin of the literal [surveilPipeline]; the gather and
+     * the "put in graveyard" selection both use [count]. The `SurveiledEvent` is always emitted
+     * because the actual number of cards looked at is only known at resolution time — the event
+     * carries the real gathered size (which handles a library smaller than X, and X resolving to 0).
+     */
+    fun surveilPipeline(count: DynamicAmount): CompositeEffect = CompositeEffect(
+        listOf(
+            GatherCardsEffect(
+                source = CardSource.TopOfLibrary(count),
+                storeAs = "surveiled"
+            ),
+            SelectFromCollectionEffect(
+                from = "surveiled",
+                selection = SelectionMode.ChooseUpTo(count),
+                storeSelected = "toGraveyard",
+                storeRemainder = "toTop",
+                selectedLabel = "Put in graveyard",
+                remainderLabel = "Put on top"
+            ),
+            MoveCollectionEffect(
+                from = "toGraveyard",
+                destination = CardDestination.ToZone(Zone.GRAVEYARD)
+            ),
+            MoveCollectionEffect(
+                from = "toTop",
+                destination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Top),
+                order = CardOrder.ControllerChooses
+            ),
+            EmitSurveiledEventEffect()
         )
     )
 

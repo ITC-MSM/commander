@@ -851,6 +851,7 @@ class StaticAbilityHandler(
             // CastSpellEnumerator / PlayLandHandler):
             is CantCastSpellsSharingColorWithLastCast,
             is CastSpellTypesFromTopOfLibrary,
+            is com.wingedsheep.sdk.scripting.SpendAnyManaTypeForSpells,
             is GrantAdditionalLandDrop,
             is GrantFlashToSpellType,
             is GrantMayCastFromLinkedExile,
@@ -863,6 +864,7 @@ class StaticAbilityHandler(
             is MayCastWithoutPayingManaCost,
             is MayPlayLandsFromGraveyard,
             is MayPlayPermanentsFromGraveyard,
+            is com.wingedsheep.sdk.scripting.MayPlayCardsFromExile,
             // Equip-timing/cost permissions (consulted by CastPermissionUtils /
             // ActivatedAbilityEnumerator / ActivateAbilityHandler, not continuous effects):
             is EquipAbilitiesAtInstantSpeed,

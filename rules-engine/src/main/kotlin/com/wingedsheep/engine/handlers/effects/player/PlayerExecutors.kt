@@ -55,6 +55,7 @@ class PlayerExecutors(
         EachPlayerChoosesCreatureTypeExecutor(),
         EndTheTurnExecutor(),
         GainCitysBlessingExecutor(),
+        ChangeSpeedExecutor(),
         RemoveMaximumHandSizeExecutor(),
         ReduceMaximumHandSizeExecutor(),
         GiftGivenExecutor(),

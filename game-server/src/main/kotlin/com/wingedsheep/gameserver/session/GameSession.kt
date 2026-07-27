@@ -12,6 +12,7 @@ import com.wingedsheep.gameserver.protocol.ServerMessage
 import com.wingedsheep.gameserver.priority.AutoPassManager
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
+import com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisCombatComponent
@@ -30,6 +31,7 @@ import com.wingedsheep.sdk.model.EntityId
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 private val logger = LoggerFactory.getLogger(GameSession::class.java)
@@ -94,6 +96,28 @@ class GameSession(
     /** Players in the order they lost (first eliminated first). Empty while everyone is alive. */
     fun getEliminationOrder(): List<EntityId> = eliminationOrder.toList()
 
+    /**
+     * Seats already sent their personal [ServerMessage.PlayerEliminated]. A seat is told exactly
+     * once, however it died — conceding, damage, decking out — so its client shows the "you're out,
+     * the table plays on" overlay a single time.
+     */
+    private val eliminationNotified = ConcurrentHashMap.newKeySet<EntityId>()
+
+    /** Eliminated seats that haven't been told yet, in elimination order. */
+    fun unnotifiedEliminations(): List<EntityId> = eliminationOrder.filter { it !in eliminationNotified }
+
+    /** Record that [playerId] has been told they're out, so it isn't told again. */
+    fun markEliminationNotified(playerId: EntityId) {
+        eliminationNotified.add(playerId)
+    }
+
+    /**
+     * Why [playerId] is out of the game, in client terms. Falls back to [GameOverReason.LIFE_ZERO]
+     * for a seat with no loss marker — same fallback [getGameOverReason] uses.
+     */
+    fun getEliminationReason(playerId: EntityId): GameOverReason =
+        gameOverReasonFor(gameState?.getEntity(playerId)?.get<PlayerLostComponent>()?.reason)
+
     /** Checkpoint for undoing the last non-respondable action (e.g., play land, declare attackers) */
     @Volatile
     private var undoCheckpoint: GameState? = null
@@ -137,7 +161,13 @@ class GameSession(
     private val sideboards = mutableMapOf<EntityId, List<String>>()
     /** Per-player commander card name for commander-shape formats. Null = no commander. */
     private val commanderCardNames = mutableMapOf<EntityId, String>()
-    private val spectators = mutableSetOf<PlayerSession>()
+    /**
+     * Active spectators, keyed by player id. Keyed by *identity* rather than held as a set of
+     * sessions because a reconnect (refresh, or leaving and coming back) arrives on a brand-new
+     * [PlayerSession]: a set would then hold both the dead and the live socket and the same person
+     * would show up twice in the players' "N watching" list.
+     */
+    private val spectators = ConcurrentHashMap<EntityId, PlayerSession>()
 
     /**
      * Format the engine should run this game under. Set by the lobby / quick-game / tournament
@@ -222,6 +252,13 @@ class GameSession(
     // Persistent-yield mutations applied out-of-band of [recordedActions]. Captured in turn order so
     // the reconstructor can re-apply each at the action position it was set (see [CompactReplay.yields]).
     private val recordedYields = CopyOnWriteArrayList<com.wingedsheep.gameserver.replay.ReplayYieldEntry>()
+    // Sparse position fingerprints, so a later reconstruction can tell "this is the game that was
+    // played" from "this is a game the current engine produces from the same inputs".
+    private val recordedCheckpoints =
+        CopyOnWriteArrayList<com.wingedsheep.gameserver.replay.ReplayCheckpoint>()
+    // Archived card definitions for this game, computed lazily on first use — see [getPinnedCards].
+    @Volatile
+    private var pinnedCards: List<String>? = null
     var replayStartedAt: Instant? = null
         private set
 
@@ -309,13 +346,22 @@ class GameSession(
     }
 
     /**
-     * Remove a player from the session.
+     * Un-seat a player: they give up their chair in this session.
+     *
+     * Before the game starts that also releases their submitted deck and sideboard — the seat is free
+     * for someone else. Once the game is under way the decklist stops being live state and becomes
+     * part of the historical record (match history reads every seat's deck at game over, and the AI is
+     * re-wired from it after a restart), so it is kept. That distinction matters because "un-seat then
+     * re-seat" is a tempting way to swap in a reconnecting player's new socket — see [associatePlayer],
+     * which does that in one step without disturbing the seat at all.
      */
     fun removePlayer(playerId: EntityId) {
         players[playerId]?.currentGameSessionId = null
         players.remove(playerId)
-        deckLists.remove(playerId)
-        sideboards.remove(playerId)
+        if (!isStarted) {
+            deckLists.remove(playerId)
+            sideboards.remove(playerId)
+        }
     }
 
     /**
@@ -350,23 +396,49 @@ class GameSession(
     // =========================================================================
 
     /**
-     * Add a spectator to this game session.
+     * Add a spectator to this game session, replacing any earlier session that same spectator
+     * was watching on (see [spectators]).
      */
     fun addSpectator(spectator: PlayerSession) {
-        spectators.add(spectator)
+        spectators[spectator.playerId] = spectator
     }
 
     /**
-     * Remove a spectator from this game session.
+     * Remove a spectator from this game session. Only drops the entry while it still points at
+     * [spectator]'s socket, so a late cleanup for a socket the spectator has already replaced by
+     * reconnecting can't evict their live session.
      */
     fun removeSpectator(spectator: PlayerSession) {
-        spectators.remove(spectator)
+        spectators.remove(spectator.playerId, spectator)
     }
 
     /**
-     * Get all spectators.
+     * Get all spectators with a live socket. Closed sockets are filtered out rather than counted:
+     * a spectator who closed their tab is not watching, even before [pruneDisconnectedSpectators]
+     * gets around to dropping them.
      */
-    fun getSpectators(): Set<PlayerSession> = spectators.toSet()
+    fun getSpectators(): Set<PlayerSession> =
+        spectators.values.filterTo(mutableSetOf()) { it.isConnected }
+
+    /**
+     * Drop spectators whose socket has closed, returning true when anything was removed so the
+     * caller can refresh the players' spectator badge. Closing a tab produces no StopSpectating
+     * message, so without this sweep those entries would live as long as the game session.
+     */
+    fun pruneDisconnectedSpectators(): Boolean =
+        spectators.values.removeAll { !it.isConnected }
+
+    /**
+     * The spectator badge shown to the seated players: how many people are watching, and who.
+     */
+    fun spectatorCountMessage(): ServerMessage.SpectatorCountChanged {
+        val current = getSpectators()
+        return ServerMessage.SpectatorCountChanged(
+            gameSessionId = sessionId,
+            count = current.size,
+            spectatorNames = current.map { it.playerName }
+        )
+    }
 
     /**
      * Player names in seat order, for spectator display.
@@ -769,6 +841,17 @@ class GameSession(
 
     fun getLegalActions(playerId: EntityId): List<LegalActionInfo> {
         val state = gameState ?: return emptyList()
+
+        // CR 605.3a — while a rule or effect is asking this seat for a mana payment (ward, "you may
+        // pay {B}", an attack tax) they hold no priority, but they may still activate mana
+        // abilities. Offer exactly those: the pre-computed source menu on the decision only covers
+        // {T}-shaped abilities, so without this a cost payable only with, say, Ashnod's Altar is
+        // unreachable. See [ManaPaymentWindow].
+        ManaPaymentWindow.openFor(state, playerId)?.let { window ->
+            val manaActions = legalActionEnumerator.enumerateManaAbilities(state, window.playerId)
+            return legalActionEnricher.enrich(manaActions, state, window.playerId)
+        }
+
         val priorityPlayer = state.priorityPlayerId ?: return emptyList()
         // Allow either the priority player or, when their turn is hijacked, the controller
         // currently driving them. Legal actions are still enumerated for the affected
@@ -803,7 +886,7 @@ class GameSession(
         // decision to the controller, not the affected player.
         // Enrich with imageUri from card registry since engine doesn't have access to metadata
         val pendingDecision = state.pendingDecision?.takeIf { state.actorFor(it.playerId) == playerId }?.let {
-            decisionEnricher.enrich(it, state)
+            decisionEnricher.enrich(it, state, playerId)
         }
 
         // Calculate next stop point for the Pass button (only if player has priority,
@@ -825,7 +908,7 @@ class GameSession(
         // Include opponent decision status for the player who is NOT driving this
         // decision — i.e. when their seat is not the actor for the affected player.
         val opponentDecisionStatus = state.pendingDecision?.takeIf { state.actorFor(it.playerId) != playerId }?.let {
-            decisionEnricher.createOpponentDecisionStatus(it)
+            decisionEnricher.createOpponentDecisionStatus(it, state, playerId)
         }
 
         val stateWithLog = clientState.copy(gameLog = playerLog.toList())
@@ -974,6 +1057,11 @@ class GameSession(
         // Can't auto-pass if game is over
         if (state.gameOver) return null
 
+        // Nobody may pass priority while the game is waiting on a decision. This used to be
+        // implicit — getLegalActions returned nothing during a decision — but a mana-payment
+        // window (CR 605.3a) now legitimately offers mana abilities, so state it outright.
+        if (state.pendingDecision != null) return null
+
         // Get the player with priority
         val priorityPlayer = state.priorityPlayerId ?: return null
 
@@ -1050,6 +1138,7 @@ class GameSession(
         undoCheckpointActionCount?.let { target ->
             while (recordedActions.size > target) recordedActions.removeAt(recordedActions.size - 1)
             recordedYields.removeIf { it.afterActionCount > target }
+            recordedCheckpoints.removeIf { it.afterActionCount > target }
         }
         clearCheckpoint()
         logger.info("Player $playerId undid their last action")
@@ -1198,16 +1287,19 @@ class GameSession(
         val reason = lostReasons.firstOrNull { it != LossReason.TEAM_DEFEATED }
             ?: lostReasons.firstOrNull()
 
-        return when (reason) {
-            LossReason.LIFE_ZERO -> GameOverReason.LIFE_ZERO
-            LossReason.EMPTY_LIBRARY -> GameOverReason.DECK_OUT
-            LossReason.POISON_COUNTERS -> GameOverReason.POISON_COUNTERS
-            LossReason.CONCESSION -> GameOverReason.CONCESSION
-            LossReason.CARD_EFFECT -> GameOverReason.CARD_EFFECT
-            LossReason.COMMANDER_DAMAGE -> GameOverReason.COMMANDER_DAMAGE
-            LossReason.TEAM_DEFEATED -> GameOverReason.CARD_EFFECT
-            null -> GameOverReason.LIFE_ZERO // Fallback
-        }
+        return gameOverReasonFor(reason)
+    }
+
+    /** Engine loss reason → the client-facing reason code. */
+    private fun gameOverReasonFor(reason: LossReason?): GameOverReason = when (reason) {
+        LossReason.LIFE_ZERO -> GameOverReason.LIFE_ZERO
+        LossReason.EMPTY_LIBRARY -> GameOverReason.DECK_OUT
+        LossReason.POISON_COUNTERS -> GameOverReason.POISON_COUNTERS
+        LossReason.CONCESSION -> GameOverReason.CONCESSION
+        LossReason.CARD_EFFECT -> GameOverReason.CARD_EFFECT
+        LossReason.COMMANDER_DAMAGE -> GameOverReason.COMMANDER_DAMAGE
+        LossReason.TEAM_DEFEATED -> GameOverReason.CARD_EFFECT
+        null -> GameOverReason.LIFE_ZERO // Fallback
     }
 
 
@@ -1233,6 +1325,28 @@ class GameSession(
     /** Append an applied, state-advancing action to the compact replay log. */
     private fun recordAction(action: GameAction) {
         recordedActions.add(action)
+        stampCheckpointIfDue()
+    }
+
+    /**
+     * Every N actions, fingerprint the live position and keep it with the recording.
+     *
+     * The input log alone can't tell a faithful re-simulation from a drifted one — both just apply
+     * actions. These stamps are what makes the difference detectable later, when the engine has
+     * moved on and "the actions still applied" no longer implies "the same game came out". Costs one
+     * short SHA-256 per 20 actions; see [com.wingedsheep.gameserver.replay.ReplayFingerprint].
+     */
+    private fun stampCheckpointIfDue() {
+        if (replaySetup == null) return
+        val count = recordedActions.size
+        if (count % com.wingedsheep.gameserver.replay.ReplayRecordingPolicy.CHECKPOINT_EVERY_ACTIONS != 0) return
+        val state = gameState ?: return
+        recordedCheckpoints.add(
+            com.wingedsheep.gameserver.replay.ReplayCheckpoint(
+                afterActionCount = count,
+                fingerprint = com.wingedsheep.gameserver.replay.ReplayFingerprint.of(state),
+            )
+        )
     }
 
     /**
@@ -1269,6 +1383,52 @@ class GameSession(
 
     /** The persistent-yield mutations applied to this game, in order, for replay reconstruction. */
     fun getReplayYields(): List<com.wingedsheep.gameserver.replay.ReplayYieldEntry> = recordedYields.toList()
+
+    /** Sparse position fingerprints taken while this game was played. */
+    fun getReplayCheckpoints(): List<com.wingedsheep.gameserver.replay.ReplayCheckpoint> =
+        recordedCheckpoints.toList()
+
+    /**
+     * The compiled definitions of every card in this game's decks, archived with the replay so it
+     * re-simulates against the card code it actually ran on rather than whatever the corpus looks
+     * like when someone watches it — see [com.wingedsheep.gameserver.replay.ReplayCardPin].
+     *
+     * Computed once, on first use (the first flush or game over) rather than at [startGame], so the
+     * serialization cost lands off the game-start path and never at all for games that end before
+     * they're worth recording.
+     *
+     * Serialization happens *outside* [stateLock]: it reads only the setup's decklists, which never
+     * change once the game has started, and it is tens of milliseconds of JSON per game — long
+     * enough that holding the game's lock for it would visibly stall play on the first flush. Two
+     * callers racing here both capture and one result is published; wasted work, never wrong.
+     */
+    fun getPinnedCards(): List<String> {
+        pinnedCards?.let { return it }
+        val setup = getReplaySetup() ?: return emptyList()
+        val captured = com.wingedsheep.gameserver.replay.ReplayCardPin.capture(cardRegistry, setup)
+        return synchronized(stateLock) { pinnedCards ?: captured.also { pinnedCards = it } }
+    }
+
+    /**
+     * One consistent read of everything the flusher needs, so the recording it stores and the
+     * fingerprint it stores describe the *same* position — see
+     * [com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot] for why sampling them separately
+     * is unsound. Null for sessions that aren't being recorded, or aren't started yet.
+     */
+    internal fun replayRecordingSnapshot(): com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot? =
+        synchronized(stateLock) {
+            val setup = replaySetup ?: return null
+            val state = gameState ?: return null
+            com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot(
+                setup = setup,
+                actions = recordedActions.toList(),
+                yields = recordedYields.toList(),
+                checkpoints = recordedCheckpoints.toList(),
+                fingerprint = com.wingedsheep.gameserver.replay.ReplayFingerprint.of(state),
+                startedAt = replayStartedAt,
+                gameOver = state.gameOver,
+            )
+        }
 
     /**
      * Total number of replay frames: the initial state plus one per recorded action. Zero until the
@@ -1375,6 +1535,19 @@ class GameSession(
     /** Get deck list for a specific player. Used by engine AI to know the opponent's deck. */
     fun getDeckList(playerId: EntityId): List<String>? = deckLists[playerId]
 
+    /**
+     * The deck a seat *started the game with*, for anything that has to describe the game after the
+     * fact (match-history recording, re-wiring an AI after a restart). Prefers the live submitted
+     * deck and falls back to the copy frozen into the replay setup at [startGame], which is captured
+     * once and never mutated for the life of the session — so a seat's deck can still be reported
+     * even if its live entry was dropped (a pre-game leave, or a reseat bug like the one that used to
+     * blank multiplayer decks). Null only for sessions that never recorded a setup (dev scenario /
+     * hotseat) and have no live deck either.
+     */
+    fun getStartingDeckList(playerId: EntityId): List<String>? =
+        deckLists[playerId]
+            ?: replaySetup?.players?.firstOrNull { it.playerId == playerId.value }?.deck?.cards
+
     // =========================================================================
     // Persistence Support (for Redis caching)
     // =========================================================================
@@ -1435,28 +1608,64 @@ class GameSession(
     }
 
     /**
-     * Restore the compact-replay recording (setup + action log) after a server restart, so a game
-     * interrupted mid-play is still saved as a replay when it finishes. Null setup leaves the game
-     * unrecorded (a pre-feature game or an injected scenario).
+     * Resume the compact-replay recording of a game interrupted by a restart, so it is still saved
+     * as a replay when it finishes.
+     *
+     * The recording is flushed to the store periodically rather than on every action, so the stored
+     * log can be *behind* the live state we just recovered. Appending the rest of the game onto a
+     * short prefix would produce a record of a game nobody played — worse than no record, because it
+     * looks fine. [expectedFingerprint] is the position the flush captured; if the recovered state
+     * doesn't match it, actions were lost and we stop recording here, keeping the shorter but honest
+     * replay that was already stored.
+     *
+     * A null [expectedFingerprint] means the flush couldn't capture one, so there is nothing to
+     * check against and we resume unverified — the one path where a stale prefix could still be
+     * extended. The flusher always writes a fingerprint for a recorded session, so this should be
+     * unreachable; it is logged rather than assumed so it can't become reachable quietly.
+     *
+     * Returns whether recording continues.
      */
     internal fun restoreReplayRecording(
-        setup: com.wingedsheep.gameserver.replay.ReplaySetup?,
-        actions: List<GameAction>,
-        startedAtIso: String?,
-        yields: List<com.wingedsheep.gameserver.replay.ReplayYieldEntry> = emptyList(),
-    ) {
-        synchronized(stateLock) {
-            replaySetup = setup
-            recordedActions.clear()
-            recordedActions.addAll(actions)
-            recordedYields.clear()
-            recordedYields.addAll(yields)
-            replayStartedAt = startedAtIso?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        record: com.wingedsheep.gameserver.replay.CompactReplay,
+        expectedFingerprint: String?,
+    ): Boolean = synchronized(stateLock) {
+        val live = gameState
+        val actual = live?.let { com.wingedsheep.gameserver.replay.ReplayFingerprint.of(it) }
+        if (expectedFingerprint == null) {
+            logger.warn(
+                "Replay recording for $sessionId has no stored fingerprint " +
+                    "(${record.actions.size} actions at $actual) — resuming without verifying that " +
+                    "the stored log matches the recovered state"
+            )
         }
+        if (expectedFingerprint != null && actual != expectedFingerprint) {
+            logger.warn(
+                "Replay recording for $sessionId is behind the recovered state " +
+                    "(stored ${record.actions.size} actions at $expectedFingerprint, live at $actual) — " +
+                    "keeping the stored prefix and stopping recording"
+            )
+            replaySetup = null
+            return false
+        }
+
+        replaySetup = record.setup
+        recordedActions.clear()
+        recordedActions.addAll(record.actions)
+        recordedYields.clear()
+        recordedYields.addAll(record.yields)
+        recordedCheckpoints.clear()
+        recordedCheckpoints.addAll(record.checkpoints)
+        replayStartedAt = runCatching { Instant.parse(record.startedAt) }.getOrNull()
+        return true
     }
 
     /**
-     * Associate a player identity with this session (for reconnection after restore).
+     * Seat this player session — either a first association after a restore, or a reconnecting player
+     * being put back in the chair they already had.
+     *
+     * Seats are keyed by [PlayerSession.playerId], so this replaces any existing entry in place and
+     * leaves everything that describes the seat (deck, sideboard, commander, per-player log) alone.
+     * It is the whole reconnect operation on its own: don't call [removePlayer] first.
      */
     fun associatePlayer(playerSession: PlayerSession) {
         players[playerSession.playerId] = playerSession

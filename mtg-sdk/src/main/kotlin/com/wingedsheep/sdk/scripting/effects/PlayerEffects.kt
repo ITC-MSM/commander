@@ -703,6 +703,60 @@ data class GainCitysBlessingEffect(
 }
 
 /**
+ * Changes the target player's **speed** by a signed [amount] (Aetherdrift, CR 702.179).
+ *
+ * One effect covers both directions because the set needs both: the inherent speed trigger raises
+ * speed ("your speed increases by 1", CR 702.179d) while Spikeshell Harrier lowers it ("reduce that
+ * opponent's speed by 1. This effect can't reduce their speed below 1"). Splitting them would mean two
+ * near-identical types and executors over one concept, so a negative [amount] plus [minimum] expresses
+ * the reducing half. Reach for the [com.wingedsheep.sdk.dsl.Effects.IncreaseSpeed] /
+ * [com.wingedsheep.sdk.dsl.Effects.ReduceSpeed] facades rather than constructing this directly — they
+ * keep the call site reading like the card.
+ *
+ * Speed is a player designation like the city's blessing: it survives the source leaving play, so it
+ * lives on the player, not the permanent. Three rules are folded into the executor rather than the
+ * call site:
+ *
+ * - CR 702.179c — a player who has *no* speed and is told to increase it simply ends up at that
+ *   amount. Since [com.wingedsheep.sdk.core.Speed.NONE] is 0 this falls out of plain addition.
+ * - CR 702.179e — "max speed" is a speed of exactly 4, so the result is clamped to
+ *   [com.wingedsheep.sdk.core.Speed.MAX]. Changing a player already at max speed by a positive amount
+ *   is a no-op.
+ * - A change never moves speed the *wrong* way. A reduction can't push a player who has no speed up to
+ *   [minimum] (that would hand them the designation they don't have), and can't be turned into a gain
+ *   by a floor above their current speed.
+ *
+ * @param target The player whose speed changes. Defaults to the ability's controller ("your speed").
+ * @param amount The signed change, before clamping. Positive raises, negative reduces.
+ * @param minimum Floor for a reduction — Spikeshell Harrier's "can't reduce their speed below 1"
+ *   passes [com.wingedsheep.sdk.core.Speed.STARTING]. Ignored when [amount] is positive.
+ */
+@SerialName("ChangeSpeed")
+@Serializable
+data class ChangeSpeedEffect(
+    val target: EffectTarget = EffectTarget.Controller,
+    val amount: DynamicAmount = DynamicAmount.Fixed(1),
+    val minimum: Int = 0
+) : Effect {
+    override val description: String = buildString {
+        append(if (target == EffectTarget.Controller) "Your" else "${target.description}'s")
+        val fixed = (amount as? DynamicAmount.Fixed)?.amount
+        when {
+            fixed != null && fixed < 0 -> append(" speed decreases by ${-fixed}")
+            else -> append(" speed increases by ${amount.description}")
+        }
+        if (minimum > 0 && (fixed == null || fixed < 0)) {
+            append(", but not below $minimum")
+        }
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newAmount = amount.applyTextReplacement(replacer)
+        return if (newAmount !== amount) copy(amount = newAmount) else this
+    }
+}
+
+/**
  * Removes the target player's maximum hand size for the rest of the game
  * ("you have no maximum hand size for the rest of the game").
  *
