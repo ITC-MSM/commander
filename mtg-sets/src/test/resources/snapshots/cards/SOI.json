@@ -1839,6 +1839,79 @@
     ]
 }
 
+// Ulvenwald Mysteries
+{
+    "name": "Ulvenwald Mysteries",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a nontoken creature you control dies, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nWhenever you sacrifice a Clue, create a 1/1 white Human Soldier creature token.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature nontoken ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                },
+                "descriptionOverride": "Whenever a nontoken creature you control dies, investigate."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "artifact Clue",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Human",
+                        "Soldier"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/d/9/d9cbf36e-4044-4f08-9bae-f0dcb2455716.jpg?1783937683"
+                },
+                "descriptionOverride": "Whenever you sacrifice a Clue, create a 1/1 white Human Soldier creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "236",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Opalinski",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/1/911a2b5d-7e2d-4358-8e38-cbae7192e4d4.jpg?1783937718",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "If a nontoken creature dies at the same time as Ulvenwald Mysteries leaves the battlefield, the first ability triggers. Similarly, if Ulvenwald Mysteries isn't a token and has become a creature, it dying will cause its own first ability to trigger."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "The last ability is a triggered ability, not an activated ability. It doesn't allow you to sacrifice a Clue whenever you want; rather, you need some other way of sacrificing it, such as the activated ability that Clue tokens have."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If you sacrifice a Clue as part of casting a spell or activating an ability, the last ability will resolve before that spell or ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Uncaged Fury
 {
     "name": "Uncaged Fury",
