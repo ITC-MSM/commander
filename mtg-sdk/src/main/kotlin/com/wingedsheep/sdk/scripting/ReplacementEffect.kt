@@ -286,11 +286,9 @@ data class RedirectZoneChange(
     val linkToSource: Boolean = false,
     val selfOnly: Boolean = false,
     val shuffleIntoLibrary: Boolean = false,
-    val reveal: Boolean = false
+    val reveal: Boolean = false,
+    override val priorityGroup: ReplacementPriorityGroup = ReplacementPriorityGroup.ANY
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = if (selfOnly) ReplacementPriorityGroup.SELF_REPLACEMENT else ReplacementPriorityGroup.ANY
-
     override val description: String = buildString {
         append("If ${appliesTo.description}, ")
         if (reveal) append("reveal it and ")
@@ -338,15 +336,12 @@ data class RedirectZoneChange(
 @SerialName("OnEnterRunEffect")
 @Serializable
 data class OnEnterRunEffect(
-    val effect: com.wingedsheep.sdk.scripting.effects.Effect,
+    val effect: Effect,
     override val appliesTo: EventPattern = EventPattern.ZoneChangeEvent(
         filter = GameObjectFilter.Any,
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = ReplacementPriorityGroup.SELF_REPLACEMENT
-
     override val description: String = "As this permanent enters, ${effect.description.lowercase()}"
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
@@ -368,9 +363,6 @@ data class EntersTapped(
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = ReplacementPriorityGroup.SELF_REPLACEMENT
-
     override val description: String = when {
         payLifeCost != null -> "As this permanent enters, you may pay $payLifeCost life. If you don't, it enters tapped."
         unlessCondition != null -> "This permanent enters tapped unless ${unlessCondition.description}"
@@ -406,9 +398,6 @@ data class EntersUntapped(
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = ReplacementPriorityGroup.SELF_REPLACEMENT
-
     override val description: String = "If ${appliesTo.description}, it enters untapped"
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
@@ -470,9 +459,6 @@ data class EntersWithCounters(
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = if (selfOnly) ReplacementPriorityGroup.SELF_REPLACEMENT else ReplacementPriorityGroup.ANY
-
     override val description: String = buildString {
         append("If ${appliesTo.description}, it enters with $count ${counterType.description} counters")
         if (condition != null) append(" if ${condition.description}")
@@ -506,9 +492,6 @@ data class EntersWithDynamicCounters(
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = if (!otherOnly) ReplacementPriorityGroup.SELF_REPLACEMENT else ReplacementPriorityGroup.ANY
-
     override val description: String =
         "If ${appliesTo.description}, it enters with ${count.description} ${counterType.description} counters"
 
@@ -548,9 +531,6 @@ data class EntersWithKeywords(
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = if (selfOnly) ReplacementPriorityGroup.SELF_REPLACEMENT else ReplacementPriorityGroup.ANY
-
     override val description: String = buildString {
         append("If ${appliesTo.description}, it enters with ")
         append(keywords.joinToString(" and ") { it.displayName.lowercase() })
@@ -901,8 +881,12 @@ data class ReplaceDrawWithEffect(
     override val restrictions: List<Condition> = emptyList()
 ) : ReplacementEffect {
     override val description: String = buildString {
-        val restrictionDesc = restrictions.joinToString(" and ") { it.description.removePrefix("if ") }
-        append("If ${appliesTo.description} while $restrictionDesc, ")
+        append("If ${appliesTo.description}")
+        if (restrictions.isNotEmpty()) {
+            val restrictionDesc = restrictions.joinToString(" and ") { it.description.removePrefix("if ") }
+            append(" while $restrictionDesc")
+        }
+        append(", ")
         if (optional) append("you may ")
         append("instead ${replacementEffect.description}")
     }
@@ -1471,9 +1455,6 @@ data class EntersWithChoice(
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = ReplacementPriorityGroup.SELF_REPLACEMENT
-
     override val description: String = when (choiceType) {
         ChoiceType.COLOR -> if (chooser == Player.AnOpponent) {
             "As this permanent enters, an opponent chooses a color"
@@ -1557,9 +1538,6 @@ data class EntersWithRevealCounters(
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = ReplacementPriorityGroup.SELF_REPLACEMENT
-
     override val description: String =
         "As this creature enters, you may reveal any number of cards from your ${revealSource.name.lowercase()} that match. For each card revealed this way, put $countersPerReveal $counterType counter${if (countersPerReveal > 1) "s" else ""} on it."
 
@@ -1614,9 +1592,6 @@ data class EntersWithDevour(
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = ReplacementPriorityGroup.SELF_REPLACEMENT
-
     override val description: String = buildString {
         append("Devour")
         if (variant.isNotBlank()) {
@@ -1759,9 +1734,6 @@ data class RedirectZoneChangeWithEffect(
     val linkToSource: Boolean = false,
     override val appliesTo: EventPattern
 ) : ReplacementEffect {
-    override val priorityGroup: ReplacementPriorityGroup
-        get() = if (selfOnly) ReplacementPriorityGroup.SELF_REPLACEMENT else ReplacementPriorityGroup.ANY
-
     override val description: String =
         "If ${appliesTo.description}, instead put it into ${newDestination.displayName} and ${additionalEffect.description}"
 
