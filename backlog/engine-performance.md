@@ -9,8 +9,16 @@ Items below are ordered by impact ÷ risk; each carries its own status marker.
 > ⚠️ **The profile and the baseline below predate Steps 1–3.** The measured hotspot table and the
 > `~404 actions/sec/thread` figure describe the engine *before* the component-keying and
 > `getBattlefield()` fixes landed. Percentages for the fixed items are historical; the remaining
-> items' shares are now *larger* than shown. Re-profile and re-baseline before starting Step 4 —
-> see [`engine-ai-improvement.md`](engine-ai-improvement.md) Phase 0, which does exactly this.
+> items' shares are now *larger* than shown. **Re-profile and re-baseline before starting Step 4** —
+> `just benchmark-random 200 BLB` is one command and it has not been re-run.
+>
+> Indirect evidence that Steps 1–3 helped a lot: Phase 0 of
+> [`engine-ai-improvement.md`](engine-ai-improvement.md) measured `ActionProcessor.process` at
+> **~3,400 calls/sec/thread** on the AI-driven workload
+> ([`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md)). Different action mix, so not
+> directly comparable to the 404 figure — but it is ~8× it, and it means **Step 4 is no longer
+> blocking the AI's rollout evaluator.** Step 4 is now worth doing on its own merits (the O(n²) scan
+> is real), not as a prerequisite for anything.
 
 ## Methodology
 
@@ -236,5 +244,14 @@ After **each** step:
 
 Conservatively, **Steps 1 + 3 alone** should cut total CPU by **~20–30%** at low risk. Start there.
 
-*(Steps 1–3 have since shipped. The realized gain was never re-measured — that is the first thing to
-fix. Re-run the benchmark and the profile above, record the new baseline here, then start Step 4.)*
+*(Steps 1–3 have since shipped. The realized gain has still never been re-measured with this
+benchmark — that is the first thing to fix. Re-run the benchmark and the profile above, record the
+new baseline here, then start Step 4.)*
+
+### Related: AI-workload baseline (July 2026)
+
+[`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md) measures the same engine under real
+AI games rather than random actions: `ActionProcessor.process` ~3,400/sec/thread, `StateProjector.project`
+~47 µs cold (11% of one `process()`), and 6.36 legal actions per priority window. That confirms the
+"leave projection alone" call above from a second angle — a perfect cross-state projection cache
+caps out near 12%.

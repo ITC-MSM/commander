@@ -20,10 +20,14 @@ import com.wingedsheep.sdk.model.EntityId
 /**
  * Chooses which [LegalAction] to take when the AI has priority.
  *
- * Two-phase evaluation:
- * 1. **Quick pass**: Score all candidates with 1-ply lookahead.
- * 2. **Deep pass**: If the top candidates are close, re-score them with
- *    multi-ply [Searcher] to break the tie considering opponent responses.
+ * **Greedy 1-ply**: every candidate is scored with a single simulation and the max wins.
+ *
+ * There used to be a second, multi-ply alpha-beta pass here (`Searcher`). It was
+ * unreachable — its `recommendDepth` gated on "can the opponent respond?", which opened
+ * with `state.priorityPlayerId != playerId` and so was always false on our own priority —
+ * and it carried a `Double.MIN_VALUE / 2` "−∞" sentinel that is actually `0.0`. It was
+ * deleted rather than repaired; the replacement is the rollout evaluator in Phase 7 of
+ * `backlog/engine-ai-improvement.md`, which plugs in at [evaluate1Ply]'s leaf score.
  *
  * Combat decisions are delegated to [CombatAdvisor].
  * Card-specific overrides are handled by [CardAdvisorRegistry].
@@ -31,7 +35,6 @@ import com.wingedsheep.sdk.model.EntityId
 class Strategist(
     private val simulator: GameSimulator,
     private val evaluator: BoardEvaluator,
-    private val searcher: Searcher = Searcher(simulator, evaluator),
     private val combatAdvisor: CombatAdvisor = CombatAdvisor(simulator, evaluator),
     private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry()
 ) {
@@ -61,7 +64,7 @@ class Strategist(
 
         if (affordable.isEmpty()) return pass ?: legalActions.first()
 
-        // ── Phase 1: Quick 1-ply scoring of all candidates ──
+        // ── 1-ply scoring of all candidates ──
         val passScore = if (pass != null) {
             evaluate1Ply(state, pass, playerId)
         } else {
@@ -70,15 +73,6 @@ class Strategist(
 
         val scored = affordable.map { action ->
             action to evaluate1Ply(state, action, playerId, passScore)
-        }
-
-        // ── Phase 2: Adaptive deep search on close contenders ──
-        val depth = searcher.recommendDepth(state, scored, playerId)
-
-        val finalScored = if (depth > 1) {
-            deepSearch(state, scored, playerId, depth, passScore)
-        } else {
-            scored
         }
 
         // On the opponent's end step, unspent mana is about to be wasted.
@@ -90,7 +84,7 @@ class Strategist(
             passScore
         }
 
-        val best = finalScored.maxByOrNull { it.second }
+        val best = scored.maxByOrNull { it.second }
         return if (best != null && best.second > adjustedPassScore) {
             // Fill in targets on the returned action so the processor can execute it.
             // The committed target is chosen by simulation (not just the heuristic) so the
@@ -103,35 +97,6 @@ class Strategist(
             }
         } else {
             pass ?: legalActions.first()
-        }
-    }
-
-    /**
-     * Re-score top candidates with multi-ply search.
-     * Only the top N contenders get deep search — the rest keep their 1-ply scores.
-     */
-    private fun deepSearch(
-        state: GameState,
-        scored: List<Pair<LegalAction, Double>>,
-        playerId: EntityId,
-        depth: Int,
-        passScore: Double
-    ): List<Pair<LegalAction, Double>> {
-        val sorted = scored.sortedByDescending { it.second }
-        val bestScore = sorted.first().second
-
-        // Only deep-search actions within striking distance of the best
-        val threshold = (bestScore - passScore).coerceAtLeast(1.0) * 0.5
-        val contenders = sorted.takeWhile { it.second >= bestScore - threshold }
-            .take(6) // hard cap
-        val contenderSet = contenders.map { it.first }.toSet()
-
-        return scored.map { (action, quickScore) ->
-            if (action in contenderSet) {
-                action to searcher.searchAction(state, action, playerId, depth)
-            } else {
-                action to quickScore
-            }
         }
     }
 

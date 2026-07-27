@@ -29,7 +29,6 @@ class BloomburrowAdvisorModule : CardAdvisorModule {
         registry.register(SpellgyreAdvisor)
         registry.register(BoardWipeAdvisor)
         registry.register(GiftRemovalAdvisor)
-        registry.register(GiftBoardWipeAdvisor)
         registry.register(GiftCombatTrickAdvisor)
         registry.register(GiftCounterspellAdvisor)
         registry.register(GiftCardDrawAdvisor)
@@ -138,7 +137,8 @@ object CombatTrickAdvisor : CardAdvisor {
         "Scales of Shale",
         "Might of the Meek",
         "Rabbit Response",
-        "Valley Rally",
+        // "Valley Rally" is a gift trick — owned by GiftCombatTrickAdvisor, which
+        // delegates its cast timing back here.
     )
 
     override fun evaluateCast(context: CastContext): Double? {
@@ -367,6 +367,10 @@ object SpellgyreAdvisor : CardAdvisor {
  * Board wipes destroy our own creatures too. Worthwhile when:
  * - Opponent's board is significantly better than ours, OR
  * - We have cards in hand to rebuild and opponent doesn't
+ *
+ * Both BLB wipes are also gift cards, so this advisor owns the gift-mode choice
+ * too: prefer gift mode when far behind (the extra value outweighs the card),
+ * base mode when the wipe alone is sufficient.
  */
 object BoardWipeAdvisor : CardAdvisor {
     override val cardNames = setOf(
@@ -398,6 +402,11 @@ object BoardWipeAdvisor : CardAdvisor {
         // Behind on board: bonus scales with deficit + hand edge
         val deficit = oppBoardValue - myBoardValue
         return context.defaultScore + deficit * 0.3 + handEdge
+    }
+
+    override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
+        val decision = context.decision as? ChooseModeDecision ?: return null
+        return pickBestGiftMode(context, decision)
     }
 }
 
@@ -454,24 +463,6 @@ object GiftRemovalAdvisor : CardAdvisor {
         }
 
         // For others: simulate both with context-sensitive gift penalty
-        return pickBestGiftMode(context, decision)
-    }
-}
-
-/**
- * Gift board wipes (Starfall Invocation, Wildfire Howl).
- *
- * Prefer gift mode when far behind (the extra value outweighs the card),
- * use base mode when the wipe alone is sufficient.
- */
-object GiftBoardWipeAdvisor : CardAdvisor {
-    override val cardNames = setOf(
-        "Starfall Invocation",
-        "Wildfire Howl",
-    )
-
-    override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
-        val decision = context.decision as? ChooseModeDecision ?: return null
         return pickBestGiftMode(context, decision)
     }
 }

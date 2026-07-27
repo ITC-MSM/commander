@@ -435,6 +435,13 @@ class DecisionResponder(
         val selected = mutableListOf<Int>()
         var remaining = decision.budget
         for ((idx, mode) in sorted) {
+            if (mode.cost > remaining) continue
+            // A free mode never consumes budget, so repeating it would spin forever.
+            // Take it once and move on. (Rare in production, frequent under playouts.)
+            if (mode.cost <= 0) {
+                selected.add(idx)
+                continue
+            }
             while (mode.cost <= remaining) {
                 selected.add(idx)
                 remaining -= mode.cost
