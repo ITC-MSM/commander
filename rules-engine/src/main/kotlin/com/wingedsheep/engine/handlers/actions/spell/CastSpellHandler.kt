@@ -2960,6 +2960,13 @@ class CastSpellHandler(
             currentState.getEntity(action.playerId)
                 ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
                 ?.cardIds?.contains(action.cardId) == true
+        if (wasMayhem) {
+            // The card is leaving the graveyard to become a spell (CR 400.7 — a new object). Drop
+            // its "discarded this turn" gate mark now (casting bypasses ZoneTransitionService.moveToZone,
+            // so §8c won't fire) so it can't be Mayhem-cast again each time it resolves back.
+            currentState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                .untrackDiscardedCard(currentState, action.cardId)
+        }
 
         // Determine if this spell is being cast using warp. Gated by the chosen alternative-cost
         // type so that when warp collides with another alternative cost (e.g. a granted warp on a

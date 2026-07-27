@@ -1125,16 +1125,24 @@ data class PermanentsSacrificedThisTurnComponent(val count: Int = 0) : Component
  * counts as a discard). Reset to an empty list for every player at the start of each turn by
  * [com.wingedsheep.engine.core.TurnManager].
  *
- * Serves two roles from one component:
- *  - `cardIds.size` backs `TurnTracker.CARDS_DISCARDED` (`DynamicAmount.TurnTracking`) — e.g. Green
- *    Goblin, Revenant "draw a card for each card you've discarded this turn".
- *  - membership (`sourceId in cardIds`) backs the `YouDiscardedThisCardThisTurn` condition that gates
- *    the Mayhem keyword (CR 702.187) — "you may cast this card from your graveyard ... if you
- *    discarded it this turn". Entity ids are stable across the hand→graveyard move, so the id
- *    recorded at discard equals the id of the object now sitting in the graveyard.
+ * Two roles with deliberately different lifetimes:
+ *  - [count] — total cards discarded this turn (monotonic). Backs `TurnTracker.CARDS_DISCARDED`
+ *    (`DynamicAmount.TurnTracking`) — e.g. Green Goblin, Revenant "draw a card for each card you've
+ *    discarded this turn". Never decremented mid-turn: a discarded card that later leaves the
+ *    graveyard was still discarded this turn.
+ *  - [cardIds] — entity ids of discarded-this-turn cards **still identifiable as that discarded
+ *    object**. Membership (`sourceId in cardIds`) backs the `YouDiscardedThisCardThisTurn` condition
+ *    that gates the Mayhem keyword (CR 702.187b). Entity ids are stable across the hand→graveyard
+ *    move, so the id recorded at discard equals the object now in the graveyard — but per CR 400.7 a
+ *    card that leaves the graveyard (cast via Mayhem, reanimated, exiled, bounced) becomes a **new
+ *    object** on any later return, so its id is pruned from this list when it leaves the graveyard or
+ *    is cast via Mayhem. That stops a Mayhem spell being recast every time it resolves back.
  */
 @Serializable
-data class CardsDiscardedThisTurnComponent(val cardIds: List<EntityId> = emptyList()) : Component
+data class CardsDiscardedThisTurnComponent(
+    val cardIds: List<EntityId> = emptyList(),
+    val count: Int = 0
+) : Component
 
 /**
  * Tracks the total noncombat damage red sources this player controlled have dealt this turn

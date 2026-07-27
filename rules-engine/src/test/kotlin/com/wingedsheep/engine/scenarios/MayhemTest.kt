@@ -97,8 +97,11 @@ class MayhemTest : FunSpec({
 
     fun markDiscarded(driver: GameTestDriver, playerId: com.wingedsheep.sdk.model.EntityId, cardId: com.wingedsheep.sdk.model.EntityId) {
         val prior = driver.state.getEntity(playerId)
-            ?.get<CardsDiscardedThisTurnComponent>()?.cardIds ?: emptyList()
-        driver.addComponent(playerId, CardsDiscardedThisTurnComponent(prior + cardId))
+            ?.get<CardsDiscardedThisTurnComponent>() ?: CardsDiscardedThisTurnComponent()
+        driver.addComponent(
+            playerId,
+            prior.copy(cardIds = prior.cardIds + cardId, count = prior.count + 1)
+        )
     }
 
     fun mayhemActions(driver: GameTestDriver, playerId: com.wingedsheep.sdk.model.EntityId) =
@@ -189,6 +192,36 @@ class MayhemTest : FunSpec({
         // The sorcery went to the graveyard, NOT exile.
         driver.getGraveyard(player) shouldContain bolt
         driver.getExile(player).shouldNotContain(bolt)
+    }
+
+    test("a Mayhem spell that resolves back to the graveyard cannot be Mayhem-cast again (CR 400.7)") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40), startingLife = 20)
+        val player = driver.activePlayer!!
+
+        val bolt = driver.putCardInGraveyard(player, "Mayhem Bolt")
+        markDiscarded(driver, player, bolt)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.giveMana(player, Color.RED, 2)
+
+        // First Mayhem cast resolves and the sorcery returns to the graveyard.
+        driver.submit(
+            CastSpell(
+                playerId = player, cardId = bolt,
+                useAlternativeCost = true, alternativeCostType = AlternativeCostType.MAYHEM,
+                paymentStrategy = PaymentStrategy.FromPool
+            )
+        ).isSuccess shouldBe true
+        while (driver.state.stack.isNotEmpty()) driver.bothPass()
+
+        // It's back in the graveyard, but is a new object (CR 400.7) that you did NOT discard —
+        // so no second Mayhem cast is offered even though it sits there with mana available.
+        driver.getGraveyard(player) shouldContain bolt
+        driver.giveMana(player, Color.RED, 2)
+        mayhemActions(driver, player).map { it.cardId } shouldNotContain bolt
+
+        // The monotonic "discarded this turn" count is unchanged by the recast attempt.
+        driver.state.getEntity(player)?.get<CardsDiscardedThisTurnComponent>()?.count shouldBe 1
     }
 
     test("casting the sorcery normally from hand does NOT trigger the mayhem-paid branch") {
