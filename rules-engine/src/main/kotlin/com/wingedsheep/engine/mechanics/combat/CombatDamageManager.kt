@@ -1017,6 +1017,16 @@ internal class CombatDamageManager(
         newState = shieldState
         if (effectiveAmount <= 0) return newState
 
+        // Damage-to-counters self-replacement (Anti-Venom): "if damage would be dealt to <this
+        // creature>, prevent it and put that many +1/+1 counters on him." Replaces the damage
+        // entirely (CR 615) — checked before redirection and final marking.
+        val counterResult = DamageUtils.applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId)
+        if (counterResult != null) {
+            newState = counterResult.state
+            events.addAll(counterResult.events)
+            return newState
+        }
+
         // Damage redirection (Glarecaster, Zealous Inquisitor). See applyDamageToPlayer for why
         // inBatch=true — a Glarecaster shield protects its controller's creatures too, so a blocked
         // attacker's damage to a protected blocker is redirected as part of the same batch.

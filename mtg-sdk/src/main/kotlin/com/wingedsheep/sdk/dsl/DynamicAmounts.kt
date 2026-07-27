@@ -598,6 +598,15 @@ object DynamicAmounts {
     fun attachmentsOnSelf(): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.AttachmentCount())
 
+    /**
+     * Number of Auras and Equipment attached to the enchanted creature — the creature the source
+     * Aura is attached to (With Great Power…: "enchanted creature gets +2/+2 for each Aura and
+     * Equipment attached to it"). Distinct from [attachmentsOnSelf], which counts attachments on
+     * the source itself.
+     */
+    fun attachmentsOnEnchantedCreature(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.EnchantedCreature, EntityNumericProperty.AttachmentCount())
+
     /** Number of Equipment attached to the source (Shagrat, Loot Bearer's amass amount). */
     fun equipmentAttachedToSelf(): DynamicAmount =
         DynamicAmount.EntityProperty(

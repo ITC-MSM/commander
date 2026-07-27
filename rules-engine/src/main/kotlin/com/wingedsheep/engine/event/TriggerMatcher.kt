@@ -1342,6 +1342,22 @@ class TriggerMatcher(
                 recipientControllerLki(event, state) == controllerId
             }
             RecipientFilter.AnyPermanent -> event.targetId !in state.turnOrder
+            is RecipientFilter.Matching -> {
+                // "deals damage to a [filtered] creature/permanent" (East-Mark Cavalier,
+                // Mauhur, Spider-Slayer). Evaluate the filter against the recipient in projected
+                // state — mirrors DamageCalculator's Matching handling. A recipient that left the
+                // battlefield to the same damage is no longer projectable, but there is nothing
+                // left to act on ("destroy that creature"), so a live match is sufficient.
+                val filter = (trigger.recipient as RecipientFilter.Matching).filter
+                event.targetId !in state.turnOrder &&
+                    state.getEntity(event.targetId) != null &&
+                    predicateEvaluator.matches(
+                        state, state.projectedState, event.targetId, filter,
+                        com.wingedsheep.engine.handlers.PredicateContext(
+                            controllerId = controllerId ?: EntityId("")
+                        )
+                    )
+            }
             RecipientFilter.Self -> false // handled elsewhere
             else -> false
         }
