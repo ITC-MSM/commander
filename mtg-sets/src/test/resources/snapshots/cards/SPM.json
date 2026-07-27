@@ -8654,43 +8654,37 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": "WebSlungCostWasPaid"
-                    },
-                    "then": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "GainLife",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 3
-                                }
-                            },
-                            {
-                                "type": "CreateToken",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "power": 2,
-                                "toughness": 1,
-                                "colors": [
-                                    "GREEN"
-                                ],
-                                "creatureTypes": [
-                                    "Spider"
-                                ],
-                                "keywords": [
-                                    "REACH"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a40f6e1-3545-4503-af3e-f0acfb735e3a.jpg?1783905184"
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
                             }
-                        ]
-                    }
+                        },
+                        {
+                            "type": "CreateToken",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "power": 2,
+                            "toughness": 1,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Spider"
+                            ],
+                            "keywords": [
+                                "REACH"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a40f6e1-3545-4503-af3e-f0acfb735e3a.jpg?1783905184"
+                        }
+                    ]
                 },
+                "triggerCondition": "WebSlungCostWasPaid",
                 "descriptionOverride": "When Spiders-Man enters, if they were cast using web-slinging, you gain 3 life and create two 2/1 green Spider creature tokens with reach."
             }
         ]
