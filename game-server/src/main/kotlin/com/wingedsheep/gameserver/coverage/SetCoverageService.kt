@@ -29,13 +29,36 @@ import org.springframework.stereotype.Service
  * separately. Sets with no booster at all (Commander decks, supplemental products) have
  * every card flagged `booster: false`, so there the whole set *is* the main pool and there
  * are no separate extras — otherwise the headline would read a useless 0/0.
+ *
+ * A few cards are flagged [NotPlanned] in `coverage/card-exclusions.json` — they need mechanics
+ * the engine will never carry (ante, subgames, physical dexterity). They stay in the card lists
+ * so the detail view can show them, but they drop out of the denominator while unimplemented, so
+ * "complete" means *everything we intend to build is built* rather than a bar that can never fill.
  */
 @Service
 class SetCoverageService {
 
+    /**
+     * Why a card will never be implemented. Exclusion is represented *as* its reason rather than
+     * a boolean plus an optional note, so a not-planned card without a "why" can't be expressed —
+     * every surface, down to the tooltip, always has something to show.
+     */
+    @Serializable
+    data class NotPlanned(
+        /** Short reason key — `ante`, `subgame`, `dexterity`. Groups cards and labels the badge. */
+        val kind: String,
+        /** Player-facing sentence explaining the decision. */
+        val why: String,
+    )
+
     /** One canonical card with its set-specific Scryfall art, as baked by `scripts/gen-set-totals`. */
     @Serializable
-    private data class CanonicalCard(val name: String, val img: String? = null)
+    private data class CanonicalCard(
+        val name: String,
+        val img: String? = null,
+        /** Non-null when we've decided never to implement this card. */
+        val notPlanned: NotPlanned? = null,
+    )
 
     /** One catalogued set's canonical card universe, as baked by `scripts/gen-set-totals`. */
     @Serializable
@@ -73,12 +96,16 @@ class SetCoverageService {
         val block: String?,
         /** Booster (draft) cards we've authored. Always `<= total`; drives the headline %. */
         val implemented: Int,
-        /** Booster (draft) canonical card count — the headline denominator. */
+        /** Booster (draft) cards we intend to build — canonical count minus [notPlanned]. */
         val total: Int,
         /** Completionist extras we've authored (starter exclusives, bonus sheets, Special Guests). */
         val extraImplemented: Int,
-        /** Completionist extra canonical card count. */
+        /** Completionist extras we intend to build — canonical count minus [extraNotPlanned]. */
         val extraTotal: Int,
+        /** Booster cards we've decided never to implement; excluded from [total]. */
+        val notPlanned: Int,
+        /** Completionist extras we've decided never to implement; excluded from [extraTotal]. */
+        val extraNotPlanned: Int,
         /** `implemented / total * 100` (booster cards), one decimal. `0.0` when [total] is `0`. */
         val percent: Double,
         /** Whether this set is currently legal in the Standard format (baked by `scripts/gen-set-totals`). */
@@ -91,6 +118,8 @@ class SetCoverageService {
         val implemented: Boolean,
         /** Set-specific Scryfall art (direct CDN URL, normal size); null if Scryfall had none. */
         val imageUri: String?,
+        /** Non-null when the card is deliberately never going to be implemented, and why. */
+        val notPlanned: NotPlanned?,
     )
 
     /** A single set's full canonical card list, split into booster + extra, each marked. */
@@ -103,8 +132,12 @@ class SetCoverageService {
         val total: Int,
         val extraImplemented: Int,
         val extraTotal: Int,
+        /** Booster cards flagged never-to-implement; excluded from [total] but still listed in [draft]. */
+        val notPlanned: Int,
+        /** Extras flagged never-to-implement; excluded from [extraTotal] but still listed in [extra]. */
+        val extraNotPlanned: Int,
         val percent: Double,
-        /** Booster (draft) cards, A→Z. */
+        /** Booster (draft) cards, A→Z — including the not-planned ones, each carrying its reason. */
         val draft: List<CardCoverageDTO>,
         /** Completionist extras, A→Z. Empty if the set has none. */
         val extra: List<CardCoverageDTO>,
@@ -145,6 +178,8 @@ class SetCoverageService {
         val printingsTotal: Int,
         /** `printingsImplemented / printingsTotal * 100`, one decimal. */
         val printingsPercent: Double,
+        /** Distinct card names we've decided never to implement — excluded from every total above. */
+        val distinctNotPlanned: Int,
         /** Sets at 100% booster coverage. */
         val setsComplete: Int,
         /** Catalogued sets with baked totals. */
@@ -171,8 +206,10 @@ class SetCoverageService {
             .map { c ->
                 val set = MtgSetCatalog.byCode(c.code)
                 val authored = authoredNames(set)
-                val implemented = c.mainCards.count { frontFace(it.name) in authored }
-                val extraImplemented = c.secondaryCards.count { frontFace(it.name) in authored }
+                val main = c.mainCards.partition { it.counts(authored) }
+                val secondary = c.secondaryCards.partition { it.counts(authored) }
+                val implemented = main.first.count { frontFace(it.name) in authored }
+                val extraImplemented = secondary.first.count { frontFace(it.name) in authored }
                 SetCoverageDTO(
                     code = c.code,
                     name = c.name,
@@ -180,10 +217,12 @@ class SetCoverageService {
                     setType = c.setType,
                     block = set?.block,
                     implemented = implemented,
-                    total = c.mainCards.size,
+                    total = main.first.size,
                     extraImplemented = extraImplemented,
-                    extraTotal = c.secondaryCards.size,
-                    percent = percent(implemented, c.mainCards.size),
+                    extraTotal = secondary.first.size,
+                    notPlanned = main.second.size,
+                    extraNotPlanned = secondary.second.size,
+                    percent = percent(implemented, main.first.size),
                     inStandard = c.standardLegal,
                 )
             }
@@ -201,25 +240,41 @@ class SetCoverageService {
         val authoredAnywhere =
             canonical.asSequence().flatMap { authoredNames(MtgSetCatalog.byCode(it.code)).asSequence() }.toSet()
         // Distinct booster universe: every front-face main-pool name across the catalog, deduped.
-        val universe = canonical.asSequence().flatMap { it.mainCards.asSequence() }.map { frontFace(it.name) }.toSet()
+        // Not-planned cards leave the universe entirely — they're excluded by name, so a card
+        // dropped from Antiquities' denominator can't sneak back in via its Fourth Edition printing.
+        val universe = canonical.asSequence()
+            .flatMap { it.mainCards.asSequence() }
+            .filter { it.counts(authoredAnywhere) }
+            .map { frontFace(it.name) }
+            .toSet()
         val distinctImplemented = universe.count { it in authoredAnywhere }
         // Distinct extra universe: completionist exclusives, partitioned away from the booster universe so
         // a card that is a booster card in one set and an extra in another counts only as a booster card —
         // booster + extra distinct never double-count the same name.
         val extraUniverse =
-            canonical.asSequence().flatMap { it.secondaryCards.asSequence() }.map { frontFace(it.name) }.toSet() -
-                universe
+            canonical.asSequence()
+                .flatMap { it.secondaryCards.asSequence() }
+                .filter { it.counts(authoredAnywhere) }
+                .map { frontFace(it.name) }
+                .toSet() - universe
         val extraDistinctImplemented = extraUniverse.count { it in authoredAnywhere }
+        val distinctNotPlanned = canonical.asSequence()
+            .flatMap { it.mainCards.asSequence() + it.secondaryCards.asSequence() }
+            .filterNot { it.counts(authoredAnywhere) }
+            .map { frontFace(it.name) }
+            .toSet()
+            .size
 
         var printingsImplemented = 0
         var printingsTotal = 0
         var setsComplete = 0
         for (c in canonical) {
             val authored = authoredNames(MtgSetCatalog.byCode(c.code))
-            val implemented = c.mainCards.count { frontFace(it.name) in authored }
+            val countable = c.mainCards.filter { it.counts(authored) }
+            val implemented = countable.count { frontFace(it.name) in authored }
             printingsImplemented += implemented
-            printingsTotal += c.mainCards.size
-            if (percent(implemented, c.mainCards.size) >= 100.0) setsComplete++
+            printingsTotal += countable.size
+            if (percent(implemented, countable.size) >= 100.0) setsComplete++
         }
 
         return CoverageSummaryDTO(
@@ -232,6 +287,7 @@ class SetCoverageService {
             printingsImplemented = printingsImplemented,
             printingsTotal = printingsTotal,
             printingsPercent = percent(printingsImplemented, printingsTotal),
+            distinctNotPlanned = distinctNotPlanned,
             setsComplete = setsComplete,
             setCount = canonical.size,
         )
@@ -242,20 +298,29 @@ class SetCoverageService {
         val c = byCode[code.uppercase()] ?: return null
         val set = MtgSetCatalog.byCode(c.code)
         val authored = authoredNames(set)
+        // Not-planned cards stay in the list — the detail view shows them with their reason —
+        // but a card only counts toward the totals if we actually intend to build it.
         fun mark(cards: List<CanonicalCard>) =
-            cards.map { CardCoverageDTO(it.name, frontFace(it.name) in authored, it.img) }
+            cards.map { card ->
+                val implemented = frontFace(card.name) in authored
+                CardCoverageDTO(card.name, implemented, card.img, card.notPlanned.takeIf { !implemented })
+            }
         val draft = mark(c.mainCards)
         val extra = mark(c.secondaryCards)
+        val draftCountable = draft.count { it.notPlanned == null }
+        val extraCountable = extra.count { it.notPlanned == null }
         return SetDetailDTO(
             code = c.code,
             name = c.name,
             releaseDate = c.releaseDate,
             block = set?.block,
             implemented = draft.count { it.implemented },
-            total = draft.size,
+            total = draftCountable,
             extraImplemented = extra.count { it.implemented },
-            extraTotal = extra.size,
-            percent = percent(draft.count { it.implemented }, draft.size),
+            extraTotal = extraCountable,
+            notPlanned = draft.size - draftCountable,
+            extraNotPlanned = extra.size - extraCountable,
+            percent = percent(draft.count { it.implemented }, draftCountable),
             draft = draft,
             extra = extra,
         )
@@ -282,6 +347,14 @@ class SetCoverageService {
             ?.map(::frontFace)
             ?.toSet()
             ?: emptySet()
+
+    /**
+     * Whether this card counts toward a denominator: everything does, except a card flagged
+     * never-to-implement that we haven't implemented anyway. Implementing one un-excludes it —
+     * the flag only ever removes a card from the "still to do" bucket, never hides real work.
+     */
+    private fun CanonicalCard.counts(authored: Set<String>): Boolean =
+        notPlanned == null || frontFace(name) in authored
 
     private companion object {
         const val RESOURCE_PATH = "coverage/set-totals.json"

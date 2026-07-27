@@ -189,3 +189,6 @@ gradle-app.setting
 # Claude Code local-only files (auto-loaded, machine/contributor-specific — never commit)
 CLAUDE.local.md
 .claude/settings.local.json
+
+# Bytecode from the shared modules the scripts/ tools import
+scripts/__pycache__/

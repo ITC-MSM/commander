@@ -14,13 +14,15 @@ import com.wingedsheep.sdk.model.Printing
  * Foundations is a reprint-focused core-style set, used here primarily as a home
  * for Modern-legal staples referenced by MageZero training decks (see
  * backlog/magezero-coverage.md).
+ *
+ * All 262 booster cards are implemented, so the set is draftable (not `incomplete`).
+ * The one gap is a starter-deck exclusive that never appears in a pack.
  */
 object FoundationsSet : MtgSet {
 
     override val code = "FDN"
     override val displayName = "Foundations"
     override val releaseDate = "2024-11-15"
-    override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
