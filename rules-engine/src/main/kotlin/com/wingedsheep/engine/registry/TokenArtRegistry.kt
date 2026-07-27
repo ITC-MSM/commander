@@ -75,9 +75,8 @@ class TokenArtRegistry {
         colors: Set<Color> = emptySet(),
     ): String? {
         val setCode = setCodeFor(sourceCardDefinitionId) ?: return null
-        return bySet[setCode]
-            ?.firstOrNull { it.matches(tokenName, power, toughness, colors) }
-            ?.imageUri
+        val rows = bySet[setCode] ?: return null
+        return TokenPrinting.bestMatch(rows, tokenName, power, toughness, colors)?.imageUri
     }
 
     /** Set code that should supply token art for a creating entity, or null if unknown. */

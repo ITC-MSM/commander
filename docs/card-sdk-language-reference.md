@@ -1147,9 +1147,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
   1. an explicit `imageUri` on the effect — a deliberate per-card override, always wins;
   2. the `TokenPrinting` contributed by the set the *creating card was printed in*
-     (`TokenArtRegistry`, keyed off the entity's `Name#SET-CN` definition id);
+     (`TokenArtRegistry`, keyed off the entity's `Name#SET-CN` definition id), which is the set's own
+     hand-authored `tokenArt` first and then the bulk `TokenArtData` rows synced from Scryfall;
   3. the engine-wide generic fallback — `TokenArt.IMAGES` by creature type for creature tokens, or the
      canonical `PredefinedTokens.kt` printing for Treasure/Map/….
+
+  Layer 2's bulk half is `mtg-sets/src/main/resources/tokens.json`, one entry per token printing of every
+  set that has a Scryfall token set (`t<code>`), refreshed with **`just token-art-sync`**. You rarely
+  touch it: it is machine-owned and regenerated wholesale. Hand-authored `MtgSet.tokenArt` is registered
+  *ahead* of it, so declaring a row is how you override synced art or supply art Scryfall doesn't have.
 
   ```kotlin
   object FoundationsSet : MtgSet {
@@ -1168,6 +1174,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   Prefer this over `imageUri` on the effect. A card that bakes art into its `CreateToken` mints the same
   art from every printing, which is wrong the moment it is reprinted into a set with its own token —
   keying on the minting set is what makes reprints come out right.
+
+  Roughly a third of the sets we implement predate token *cards* (Alpha through Invasion, Tempest,
+  Odyssey, Onslaught), so Scryfall has nothing to sync and their tokens fall back to generic art. Run
+  **`just token-art-gaps`** for the work list: it writes `backlog/token-art-gaps.md` naming every token
+  with no set-scoped art, the cards that create it, a suggested
+  `web-client/public/images/tokens/<set>-<token>.jpeg` path, and a paste-ready `TokenPrinting(...)` row.
+  Self-hosted art is served from that directory by relative URI — Invasion's Saproling and Reflection
+  are the worked example.
 
   `TokenArtCoverageTest` walks every registered card and fails the build if any token it can create
   resolves to no image at all; fix a failure by adding the creature type to `TokenArt.IMAGES`, or the

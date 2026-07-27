@@ -47,9 +47,12 @@ class SetScopedTokenArtScenarioTest : ScenarioTestBase() {
             art shouldNotBe TokenArt.IMAGES["Cat"]
         }
 
-        test("a set that prints no token art falls back to the generic table") {
-            // Ajani's Pridemate is not a token maker; Raise the Alarm (a non-FDN Soldier maker)
-            // stands in for "any card whose set declares no token art of its own".
+        test("a set with no token art of its own falls back to the generic table") {
+            // Raise the Alarm is canonically Mirrodin, one of the ~57 sets that predate token
+            // cards — no `tmrd` on Scryfall to sync and no hand-authored `tokenArt` — so its
+            // Soldier is exactly the generic-fallback case. If this ever fails because the art
+            // resolved, it means MRD gained token art: that's the win this test is guarding the
+            // shape of, so re-point it at another set still listed in `just token-art-gaps`.
             val game = scenario()
                 .withPlayers()
                 .withCardInHand(1, "Raise the Alarm")

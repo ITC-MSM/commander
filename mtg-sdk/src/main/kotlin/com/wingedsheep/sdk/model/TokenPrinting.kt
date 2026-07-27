@@ -40,8 +40,8 @@ data class TokenPrinting(
     val colors: Set<Color>? = null,
 ) {
     /**
-     * Whether this printing describes the token being created. [name] is compared
-     * case-insensitively; each of [power], [toughness] and [colors] is checked only when this
+     * Whether this printing describes the token being created. The name must match
+     * ([matchesName]); each of [power], [toughness] and [colors] is checked only when this
      * printing pins it, so a bare `TokenPrinting("Cat", art)` matches every Cat the set mints.
      */
     fun matches(
@@ -50,8 +50,46 @@ data class TokenPrinting(
         toughness: Int? = null,
         colors: Set<Color> = emptySet(),
     ): Boolean =
-        this.name.equals(name, ignoreCase = true) &&
+        matchesName(name) &&
             (this.power == null || this.power == power) &&
             (this.toughness == null || this.toughness == toughness) &&
             (this.colors == null || this.colors == colors)
+
+    /**
+     * Name match alone, ignoring [power] / [toughness] / [colors].
+     *
+     * Case-insensitive, and order-insensitive across words: a token minted from
+     * `creatureTypes = setOf("Army", "Zombie")` is named by joining an unordered set, so it can
+     * arrive as either "Zombie Army" or "Army Zombie" depending on iteration order, while the
+     * printed name has one canonical order.
+     */
+    fun matchesName(name: String): Boolean =
+        this.name.equals(name, ignoreCase = true) || words(this.name) == words(name)
+
+    private fun words(value: String): Set<String> =
+        value.split(' ').filter { it.isNotEmpty() }.mapTo(mutableSetOf()) { it.lowercase() }
+
+    companion object {
+        /**
+         * Best row for a token among [printings], or null when the set prints nothing matching.
+         *
+         * Exact identity first, so a set printing two tokens that share a name (a 1/1 white
+         * Soldier and a 2/2 white Soldier) resolves to the right one. Then name alone: synced rows
+         * pin P/T and colors from the printed token and the engine's token can legitimately differ
+         * (a variable-P/T printing, a colour granted rather than printed), and the set's own art for the
+         * right token name still beats engine-wide generic art.
+         *
+         * Shared by `TokenArtRegistry` (runtime resolution) and the token-art gap report, so the
+         * report can never disagree with what the engine will actually do.
+         */
+        fun bestMatch(
+            printings: List<TokenPrinting>,
+            name: String,
+            power: Int? = null,
+            toughness: Int? = null,
+            colors: Set<Color> = emptySet(),
+        ): TokenPrinting? =
+            printings.firstOrNull { it.matches(name, power, toughness, colors) }
+                ?: printings.firstOrNull { it.matchesName(name) }
+    }
 }

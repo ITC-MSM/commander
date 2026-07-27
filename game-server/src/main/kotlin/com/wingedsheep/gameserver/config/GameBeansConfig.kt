@@ -7,6 +7,7 @@ import com.wingedsheep.engine.limited.BoosterGenerator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.registry.PrintingRegistry
 import com.wingedsheep.engine.registry.TokenArtRegistry
+import com.wingedsheep.mtg.sets.tokens.TokenArtData
 import com.wingedsheep.mtg.sets.MtgSetCatalog
 import com.wingedsheep.mtg.sets.definitions.custom.JustOneGlassToken
 import com.wingedsheep.mtg.sets.definitions.custom.SekshaasEarlySleeper
@@ -90,7 +91,7 @@ class GameBeansConfig(
     @Bean
     fun tokenArtRegistry(): TokenArtRegistry = TokenArtRegistry().apply {
         for (set in MtgSetCatalog.all) {
-            register(set.code, set.tokenArt, set.cards.map { it.name })
+            register(set.code, set.tokenArt + TokenArtData.forSet(set.code), set.cards.map { it.name })
         }
     }
 

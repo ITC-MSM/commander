@@ -6,6 +6,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.registry.TokenArtRegistry
 import com.wingedsheep.mtg.sets.MtgSetCatalog
 import com.wingedsheep.mtg.sets.tokens.PredefinedTokens
+import com.wingedsheep.mtg.sets.tokens.TokenArtData
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -71,7 +72,7 @@ abstract class ScenarioTestBase : FunSpec() {
      */
     protected val tokenArtRegistry = TokenArtRegistry().apply {
         for (set in MtgSetCatalog.all) {
-            register(set.code, set.tokenArt, set.cards.map { it.name })
+            register(set.code, set.tokenArt + TokenArtData.forSet(set.code), set.cards.map { it.name })
         }
     }
     protected val actionProcessor = ActionProcessor(EngineServices(cardRegistry, tokenArtRegistry = tokenArtRegistry))

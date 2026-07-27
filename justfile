@@ -45,6 +45,19 @@ test-class CLASS:
 rebless-cards:
     scripts/gradle-locked :mtg-sets:test --tests "*CardDefinitionSnapshotTest" -DupdateSnapshots=true
 
+# List every token our cards create that has no set-scoped art, so it renders with generic
+# stand-in art. Writes backlog/token-art-gaps.md with a suggested image path and a paste-ready
+# TokenPrinting row per gap. Mostly pre-2001 sets, which have no Scryfall token set to sync.
+[group: 'build']
+token-art-gaps:
+    scripts/gradle-locked :mtg-sets:tokenArtGaps
+
+# Refresh mtg-sets/src/main/resources/tokens.json from Scryfall's token sets (t<code>). Hand-authored
+# art belongs in a set's `tokenArt` (which wins over synced rows) — this file is regenerated wholesale.
+[group: 'build']
+token-art-sync:
+    scripts/gradle-locked :mtg-sets:syncTokenArt
+
 # CLASS options (all in :ai): AdvisorBenchmark   - AI advisor vs random, per-card timing
 #                             GameBenchmark      - full AI-vs-AI games, sealed decks
 #                             RandomActionBenchmark - raw engine throughput (see benchmark-random)
