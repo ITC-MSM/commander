@@ -225,22 +225,22 @@ to a permanent's presence. Fix (add-feature): a color-parameterized `RetainUnspe
 Blocked cards:
 - **Electro, Assaulting Battery** [76] — `{1}{R}{R}` Flying; "You don't lose unspent red mana as steps and phases end." Its other clauses (Flying; cast-instant/sorcery → add {R}; LTB pay-{X} deal X to a player) are all expressible today.
 
-## "Discard a card OR pay {2}" additional cost (DiscardOrPay)
+## "Discard a card OR pay {2}" additional cost (DiscardOrPay) — ✅ IMPLEMENTED
 
 > As an additional cost to cast this spell, **discard a card or pay {2}**.
 
-A choice between a non-mana cost (discard a card) and a **mana** payment as an additional cost.
-Not supported: `Costs.additional.Choice(...)` handles only non-mana options (`ChoiceCostResolver`
-drops any `CostAtom.Mana` branch → the pay-{2} path silently disappears), and the `*OrPay`
-family (`SacrificeOrPay`, `ExileFromGraveyardOrPay`, `BlightOrPay`, `BeholdOrPay`) has **no
-`DiscardOrPay`**. The `ModalEffect` per-mode-cost workaround (Bitter Triumph "discard or pay 3
-life") doesn't transfer because a mode's `CostAtom.Mana` additional cost is treated as a no-op
-by `CastSpellHandler` (the {2} would be free). Fix (add-feature): a `DiscardOrPay(count, filter,
-alternativeManaCost)` member of the `*OrPay` additional-cost family, wired into
-`CastSpellEnumerator` + `CastSpellHandler`.
+**Implemented** on branch `spm-goblins`. A choice between a non-mana cost (discard a card) and a **mana**
+payment as an additional cost. Added `AdditionalCost.DiscardOrPay(alternativeManaCost, filter, count)` +
+`Costs.additional.DiscardOrPay(...)`, mirroring the existing `*OrPay` family (`SacrificeOrPay` /
+`ExileFromGraveyardOrPay` / `BlightOrPay` / `BeholdOrPay`). Wired into `CastSpellEnumerator` (two cast
+paths — discard path with a `costType = "DiscardCard"` hand picker, and pay path folding in the alt mana),
+`CostHandler` (always payable — pay path), and `CastSpellHandler` (validation mana adjustment, payment
+validation, mana application, and the discard-payment application mirroring `CostAtom.Discard`, including
+`ZoneTransitionService.trackDiscard` so it feeds the turn's discard tracking / Mayhem). Path recovered at
+payment time from whether `AdditionalCostPayment.discardedCards` is non-empty.
 
-Blocked cards:
-- **Pumpkin Bombardment** [139] — `{B/R}` Sorcery; "As an additional cost to cast this spell, discard a card or pay {2}. Deals 3 damage to target creature." (the damage half is trivial; the discard-or-pay additional cost is the blocker)
+Implemented cards (1): **Pumpkin Bombardment** [139] — `{B/R}` Sorcery; "discard a card or pay {2}. Deals 3
+damage to target creature."
 
 ## "Play a land from anywhere other than your hand" trigger
 

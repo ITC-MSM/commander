@@ -2200,6 +2200,89 @@
     ]
 }
 
+// Green Goblin, Revenant
+{
+    "name": "Green Goblin, Revenant",
+    "manaCost": "{3}{B}{R}",
+    "typeLine": "Legendary Creature — Goblin Human Villain",
+    "oracleText": "Flying, deathtouch\nWhenever Green Goblin attacks, discard a card. Then draw a card for each card you've discarded this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "TurnTracking",
+                                "player": "You",
+                                "tracker": "CARDS_DISCARDED"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Rahn",
+        "flavorText": "\"The Green Goblin lives again!\"\n—Green Goblin, Harry Osborn",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/218ef931-46f5-4a4d-9f26-898a1ff8f70f.jpg?1783905318"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Grow Extra Arms
 {
     "name": "Grow Extra Arms",
@@ -5768,6 +5851,51 @@
     "colorIdentityOverride": [
         "BLUE",
         "BLACK"
+    ]
+}
+
+// Pumpkin Bombardment
+{
+    "name": "Pumpkin Bombardment",
+    "manaCost": "{B/R}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, discard a card or pay {2}.\nPumpkin Bombardment deals 3 damage to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "DiscardOrPay",
+                "alternativeManaCost": "{2}"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "artist": "Leon Tukker",
+        "flavorText": "\"Happy Halloween, Spider-Man!\"\n—Green Goblin, Norman Osborn",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a268ad73-9a1f-47d9-9a85-a4669a769c3d.jpg?1783905315"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -10861,6 +10989,94 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Ultimate Green Goblin
+{
+    "name": "Ultimate Green Goblin",
+    "manaCost": "{1}{B/R}{B/R}",
+    "typeLine": "Legendary Creature — Goblin Villain",
+    "oracleText": "At the beginning of your upkeep, discard a card, then create a Treasure token.\nMayhem {2}{B/R} (You may cast this card from your graveyard for {2}{B/R} if you discarded it this turn. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{2}{B/R}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Treasure"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "rarity": "RARE",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Osborn's lust for power was nothing short of monstrous.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/8/e82d3f71-8404-40e7-b7fa-35713d1b384e.jpg?1783905308"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 

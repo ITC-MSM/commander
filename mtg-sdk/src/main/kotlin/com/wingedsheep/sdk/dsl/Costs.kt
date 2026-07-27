@@ -527,6 +527,17 @@ object Costs {
         ): AdditionalCost =
             AdditionalCost.SacrificeOrPay(filter, alternativeManaCost, count)
 
+        /**
+         * Discard [count] card(s) matching [filter] from your hand, or pay
+         * [alternativeManaCost] instead (Pumpkin Bombardment — "discard a card or pay {2}").
+         */
+        fun DiscardOrPay(
+            alternativeManaCost: String,
+            filter: GameObjectFilter = GameObjectFilter.Any,
+            count: Int = 1,
+        ): AdditionalCost =
+            AdditionalCost.DiscardOrPay(alternativeManaCost, filter, count)
+
         /** "Behold a [filter] and exile it" — [Behold] + [ExileFromStorage] composed. */
         fun BeholdAndExile(
             filter: GameObjectFilter,
