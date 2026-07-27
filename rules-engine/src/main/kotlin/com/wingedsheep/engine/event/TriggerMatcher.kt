@@ -1768,7 +1768,8 @@ class TriggerMatcher(
             val entity = state.getEntity(entityId) ?: return false
             entity.has<FaceDownComponent>()
         }
-        // Graveyard-zone-only predicate; trigger gating never sees a stamped entity here.
+        // Graveyard-zone-only predicates; trigger gating never sees a stamped entity here.
+        is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardThisTurn -> false
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false
         // No granter context in trigger gating — granter-relative exclusion is resolution-time only.
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsGrantingPermanent -> false

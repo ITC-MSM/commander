@@ -837,6 +837,15 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn
     )
 
+    /**
+     * Must currently be in a graveyard *and* have been put there during the current turn,
+     * from any zone. The zone-agnostic sibling of [putIntoGraveyardFromBattlefieldThisTurn],
+     * used by FDN's Abyssal Harvester. See [StatePredicate.PutIntoGraveyardThisTurn].
+     */
+    fun putIntoGraveyardThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.PutIntoGraveyardThisTurn
+    )
+
     /** Must be saddled (CR 702.171b) */
     fun saddled() = copy(
         statePredicates = statePredicates + StatePredicate.IsSaddled

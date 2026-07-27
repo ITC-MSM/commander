@@ -457,10 +457,11 @@ internal class AffectsFilterResolver {
             container.has<AttackedThisCombatComponent>()
         StatePredicate.BlockedThisCombat ->
             container.has<BlockedThisCombatComponent>()
-        // Graveyard-zone-only predicate (Samwise/Lobelia). Battlefield projection
-        // never sees a card whose stamp would match — every battlefield permanent
+        // Graveyard-zone-only predicates (Abyssal Harvester; Samwise/Lobelia). Battlefield
+        // projection never sees a card whose stamp would match — every battlefield permanent
         // has had its from-graveyard marker stripped on battlefield entry — so the
         // projection answer is unconditionally false here.
+        StatePredicate.PutIntoGraveyardThisTurn -> false
         StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false
         StatePredicate.BlockedOrWasBlockedByLegendaryThisTurn ->
             container.has<com.wingedsheep.engine.state.components.combat.BlockedOrWasBlockedByLegendaryThisTurnComponent>()

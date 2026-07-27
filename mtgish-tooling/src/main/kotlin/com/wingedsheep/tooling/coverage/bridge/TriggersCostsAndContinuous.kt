@@ -195,6 +195,14 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // (Giant Beaver) -> GameObjectFilter.Creature.crewedOrSaddledSourceThisTurn().
     supported("SaddledPermanentThisTurn", "filter: a creature that saddled this permanent this turn (crewedOrSaddledSourceThisTurn)")
     supported("CrewedPermanentThisTurn", "filter: a creature that crewed this permanent this turn (crewedOrSaddledSourceThisTurn)")
+    // Graveyard-arrival filters, both backed by the one PutIntoGraveyardThisTurnComponent stamp:
+    // "…that was put there this turn" (Abyssal Harvester) reads the stamp, the battlefield-only
+    // variant (Samwise the Stouthearted, Lobelia Sackville-Baggins) also requires its
+    // fromBattlefield flag. The remaining sibling tags (…FromLibraryThisTurn,
+    // …FromAnywhereOtherThanTheBattlefieldThisTurn) would each need the stamp to carry the origin
+    // zone rather than a boolean, so they stay unmapped.
+    supported("WasPutIntoGraveyardFromAnywhereThisTurn", "filter: a card put into a graveyard this turn, from any zone (putIntoGraveyardThisTurn)")
+    supported("WasPutIntoGraveyardFromTheBattlefieldThisTurn", "filter: a card put into a graveyard from the battlefield this turn (putIntoGraveyardFromBattlefieldThisTurn)")
 
     // Costs.
     supported("PayMana", "cost: pay mana (universal)")

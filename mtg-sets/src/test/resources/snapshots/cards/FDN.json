@@ -1,3 +1,90 @@
+// Abyssal Harvester
+{
+    "name": "Abyssal Harvester",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Creature — Demon Warlock",
+    "oracleText": "{T}: Exile target creature card from a graveyard that was put there this turn. Create a token that's a copy of it, except it's a Nightmare in addition to its other types. Then exile all other Nightmare tokens you control.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "permanent token Nightmare ctrl:you"
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature card in a graveyard that was put there this turn"
+                            },
+                            "destination": "Exile",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "CreateTokenCopyOfTarget",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature card in a graveyard that was put there this turn"
+                            },
+                            "addedSubtypes": [
+                                "Nightmare"
+                            ]
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "gathered0",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "PutIntoGraveyardThisTurn"
+                                ]
+                            },
+                            "zone": "Graveyard"
+                        },
+                        "id": "creature card in a graveyard that was put there this turn"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "rarity": "RARE",
+        "artist": "Diana Franco",
+        "flavorText": "\"Till the soil, spare no soul. / Neath the darkness, nightmares grow.\"\n—Children's nursery rhyme",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f2e0f538-5825-47e9-883c-3ec6fd5b25ea.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Alesha, Who Laughs at Fate
 {
     "name": "Alesha, Who Laughs at Fate",

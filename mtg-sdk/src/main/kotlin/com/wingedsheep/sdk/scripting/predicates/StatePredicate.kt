@@ -246,19 +246,42 @@ sealed interface StatePredicate {
     }
 
     /**
+     * This card is currently in a graveyard *and* was put there during the current turn,
+     * from any zone — the battlefield, but equally the library (mill), the hand (discard),
+     * or the stack (a countered or resolved spell). Used as a target predicate on
+     * graveyard-zone filters:
+     *
+     *  - Abyssal Harvester (FDN): "target creature card from a graveyard that was put
+     *    there this turn".
+     *
+     * The zone-restricted sibling is [PutIntoGraveyardFromBattlefieldThisTurn]; both read
+     * the same `PutIntoGraveyardThisTurnComponent` (see that predicate's doc for the
+     * component's lifecycle), this one ignoring its `fromBattlefield` flag.
+     *
+     * Pair with `CardPredicate.IsCreature` (or any other card-predicate constraint) to
+     * express the full Abyssal Harvester filter.
+     */
+    @SerialName("PutIntoGraveyardThisTurn")
+    @Serializable
+    data object PutIntoGraveyardThisTurn : History {
+        override val description: String = "put into a graveyard this turn"
+    }
+
+    /**
      * This card is currently in a graveyard *and* was put there from the battlefield
-     * during the current turn. Used as a target predicate on graveyard-zone filters:
+     * during the current turn. The zone-restricted sibling of [PutIntoGraveyardThisTurn].
+     * Used as a target predicate on graveyard-zone filters:
      *
      *  - Samwise the Stouthearted (LTR): "target permanent card in your graveyard
      *    that was put there from the battlefield this turn"
      *  - Lobelia Sackville-Baggins (LTR): same predicate on an opponent's graveyard.
      *
-     * Backed by the `PutIntoGraveyardFromBattlefieldThisTurnMarker` data-object
-     * component on the card entity. The marker is set by `ZoneTransitionService`
-     * whenever a card moves battlefield → graveyard, and stripped when it leaves the
-     * graveyard so a later arrival from a different zone (mill, exile → graveyard)
-     * does not falsely match. The marker carries no turn number — `BeginningPhaseManager`
-     * wipes it from every entity during the untap step of each turn, giving the predicate
+     * Backed by the `PutIntoGraveyardThisTurnComponent` on the card entity, whose
+     * `fromBattlefield` flag this predicate additionally requires. The component is set by
+     * `ZoneTransitionService` on every arrival in a graveyard, and stripped when the card
+     * leaves the graveyard so a later arrival by a different route does not carry the
+     * earlier "from battlefield" claim. It carries no turn number — `BeginningPhaseManager`
+     * wipes it from every entity during the untap step of each turn, giving both predicates
      * MTG-correct per-turn semantics independent of the engine's per-round `state.turnNumber`.
      *
      * Pair with `CardPredicate.IsPermanent` (or any other card-predicate constraint)

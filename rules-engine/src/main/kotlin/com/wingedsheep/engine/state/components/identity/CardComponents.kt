@@ -167,18 +167,28 @@ data object CantBeCounteredComponent : Component
 data object CantBeCopiedComponent : Component
 
 /**
- * Marker: this card entered a graveyard *from the battlefield* during the current turn.
+ * Marker: this card entered a graveyard during the current turn, recording whether it came
+ * from the battlefield.
  *
  * "Current turn" follows MTG turn boundaries — a new turn begins whenever a player starts
  * their turn (BeginningPhaseManager wipes the marker from every entity at the untap step
- * of every turn). The marker is set by `ZoneTransitionService` whenever a card moves
- * battlefield → graveyard, and stripped when the card leaves the graveyard so a later
- * arrival via a different path (mill, exile → graveyard, hand → graveyard) does not
- * carry the "from battlefield" claim.
+ * of every turn). The marker is set by `ZoneTransitionService` on every arrival in a
+ * graveyard, and stripped when the card leaves the graveyard so a later arrival via a
+ * different path does not carry the earlier claim.
  *
- * Backs `StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn` (LTR — Samwise the
- * Stouthearted's "permanent card in your graveyard that was put there from the
- * battlefield this turn" and Lobelia Sackville-Baggins's analogous exile target).
+ * Backs two predicates, so the "from battlefield" refinement stays a flag on one stamp
+ * rather than two markers that can drift apart:
+ *  - `StatePredicate.PutIntoGraveyardThisTurn` — marker present, [fromBattlefield] ignored
+ *    (FDN — Abyssal Harvester's "creature card from a graveyard that was put there this turn").
+ *  - `StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn` — marker present *and*
+ *    [fromBattlefield] (LTR — Samwise the Stouthearted's "permanent card in your graveyard
+ *    that was put there from the battlefield this turn" and Lobelia Sackville-Baggins's
+ *    analogous exile target).
+ *
+ * @property fromBattlefield true when the graveyard arrival was a battlefield → graveyard
+ *   move; false for mill, discard, a countered or resolved spell, or exile → graveyard.
  */
 @Serializable
-data object PutIntoGraveyardFromBattlefieldThisTurnMarker : Component
+data class PutIntoGraveyardThisTurnComponent(
+    val fromBattlefield: Boolean
+) : Component
