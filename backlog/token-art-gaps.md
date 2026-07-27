@@ -15,7 +15,6 @@ Wizards printed no token cards before roughly Odyssey.
 
 | Set | Distinct tokens missing art |
 |-----|-----------------------------|
-| ODY | 4 |
 | ARN | 2 |
 | BIG | 2 |
 | DST | 2 |
@@ -38,32 +37,7 @@ Wizards printed no token cards before roughly Odyssey.
 | RIX | 1 |
 | SCG | 1 |
 
-**30 distinct tokens across 22 sets.**
-
-## ODY
-
-_No Scryfall token set (`tody`) — every token here needs self-hosted art._
-
-- **4/4 green Beast** — created by 1 card(s): Beast Attack
-  - image: `web-client/public/images/tokens/ody-beast.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Beast", imageUri = "/images/tokens/ody-beast.jpeg", power = 4, toughness = 4, colors = setOf(Color.GREEN)),
-    ```
-- **3/3 green Elephant** — created by 2 card(s): Call of the Herd, Elephant Ambush
-  - image: `web-client/public/images/tokens/ody-elephant.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Elephant", imageUri = "/images/tokens/ody-elephant.jpeg", power = 3, toughness = 3, colors = setOf(Color.GREEN)),
-    ```
-- **1/1 green Squirrel** — created by 1 card(s): Chatter of the Squirrel
-  - image: `web-client/public/images/tokens/ody-squirrel.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Squirrel", imageUri = "/images/tokens/ody-squirrel.jpeg", power = 1, toughness = 1, colors = setOf(Color.GREEN)),
-    ```
-- **6/6 green Wurm** — created by 1 card(s): Roar of the Wurm
-  - image: `web-client/public/images/tokens/ody-wurm.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Wurm", imageUri = "/images/tokens/ody-wurm.jpeg", power = 6, toughness = 6, colors = setOf(Color.GREEN)),
-    ```
+**26 distinct tokens across 21 sets.**
 
 ## ARN
 
