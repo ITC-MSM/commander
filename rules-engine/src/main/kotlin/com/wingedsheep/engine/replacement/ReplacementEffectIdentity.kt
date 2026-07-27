@@ -25,15 +25,12 @@ sealed interface ReplacementEffectIdentity {
      * A replacement effect originating from a permanent on the battlefield.
      *
      * @property sourceEntityId The permanent that grants this replacement effect
-     * @property sourceAbilityIndex Which ability on the permanent (0-based, or
-     *           null for class-level abilities)
      * @property effectIndex Which replacement effect within that ability (0-based)
      */
     @SerialName("BattlefieldIdentity")
     @Serializable
     data class BattlefieldIdentity(
         val sourceEntityId: EntityId,
-        val sourceAbilityIndex: Int? = null,
         val effectIndex: Int = 0
     ) : ReplacementEffectIdentity
 
