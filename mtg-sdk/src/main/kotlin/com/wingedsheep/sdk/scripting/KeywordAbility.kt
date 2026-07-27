@@ -438,6 +438,33 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Mayhem
+    // =========================================================================
+
+    /**
+     * Mayhem [cost] (CR 702.187, Marvel's Spider-Man). "As long as you discarded this card this
+     * turn, you may cast it from your graveyard by paying [cost] rather than paying its mana cost."
+     *
+     * Unlike [Flashback]/[Harmonize], a Mayhem spell is NOT exiled on resolution: a permanent
+     * simply enters the battlefield, and an instant/sorcery goes to the graveyard as normal. It
+     * grants no timing permission — normal timing rules still apply (a non-Flash creature/sorcery
+     * can only be Mayhem-cast at sorcery speed). The "you discarded this card this turn" gate is
+     * `Conditions.YouDiscardedThisCardThisTurn`, checked by the engine's Mayhem enumerator and
+     * cast-permission logic.
+     *
+     * [cost] is empty for the CR 702.187c "Mayhem" (no cost) form used by lands (Oscorp
+     * Industries) — those are *played* from the graveyard for no mana rather than cast.
+     */
+    @SerialName("Mayhem")
+    @Serializable
+    data class Mayhem(
+        val cost: ManaCost
+    ) : KeywordAbility {
+        override val keyword: Keyword = Keyword.MAYHEM
+        override val description: String = "Mayhem $cost"
+    }
+
+    // =========================================================================
     // Warp
     // =========================================================================
 
@@ -998,6 +1025,12 @@ sealed interface KeywordAbility {
          * Create Harmonize with mana cost from string (e.g., "Harmonize {5}{R}{R}").
          */
         fun harmonize(cost: String): KeywordAbility = Harmonize(ManaCost.parse(cost))
+
+        /**
+         * Create Mayhem with mana cost from string (e.g., "Mayhem {B}"). Pass "" for the CR
+         * 702.187c "Mayhem" (no cost) land form (Oscorp Industries).
+         */
+        fun mayhem(cost: String): KeywordAbility = Mayhem(ManaCost.parse(cost))
 
         /**
          * Create Kicker with a mana cost.

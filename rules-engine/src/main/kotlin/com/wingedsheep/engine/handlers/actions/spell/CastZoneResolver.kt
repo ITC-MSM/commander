@@ -328,6 +328,39 @@ class CastZoneResolver(
     }
 
     /**
+     * Check if a card in the graveyard has a Mayhem keyword ability — printed or granted (Green
+     * Goblin's Goblin Formula) — AND you discarded it this turn (CR 702.187b), allowing it to be
+     * cast from the graveyard for its mayhem cost. Unlike flashback/harmonize the spell is NOT
+     * exiled on resolution.
+     */
+    fun hasMayhemPermission(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): Boolean {
+        val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
+        if (cardId !in state.getZone(graveyardZone)) return false
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return false
+        // Lands use the no-cost "play from graveyard" form (CR 702.187c), not the cast path.
+        if (cardComponent.typeLine.isLand) return false
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        if (com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef) == null) return false
+        // The Mayhem gate: you must have discarded this card this turn.
+        return state.getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
+            ?.cardIds?.contains(cardId) == true
+    }
+
+    /**
+     * Get the mayhem cost for a card, or null if it doesn't have mayhem.
+     */
+    fun getMayhemCost(cardId: EntityId, state: GameState): com.wingedsheep.sdk.core.ManaCost? {
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        return com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef)?.cost
+    }
+
+    /**
      * Get the flashback cost for a card, or null if it doesn't have flashback.
      */
     fun getFlashbackCost(cardId: EntityId, state: GameState): com.wingedsheep.sdk.core.ManaCost? {

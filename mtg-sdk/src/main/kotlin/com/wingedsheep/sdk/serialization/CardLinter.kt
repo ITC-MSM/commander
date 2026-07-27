@@ -305,6 +305,9 @@ object CardLinter {
         // Web-slinging (CR 702.188): the engine stamps both the "was web-slung" flag and the
         // returned creature's mana value when the web-slinging cost is paid (see StackResolver).
         "WebSlinging" to listOf("WEB_SLUNG", "WEB_SLUNG_RETURNED_MV"),
+        // Mayhem (CR 702.187): the engine stamps the "mayhem cost was paid" flag on a resolved
+        // permanent / into the resolution context when the Mayhem cost is paid (see StackResolver).
+        "Mayhem" to listOf("MAYHEM_CAST"),
         "BlightVariable" to listOf("BLIGHT_AMOUNT"),
         "BlightOrPay" to listOf("BLIGHT_AMOUNT"),
         // Resolution-time color choices: ChooseColorThen sets EffectContext.chosenColor for its

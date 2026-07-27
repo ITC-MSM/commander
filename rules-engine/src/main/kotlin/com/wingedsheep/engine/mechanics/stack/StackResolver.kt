@@ -126,6 +126,7 @@ class StackResolver(
         sneakAttackDefenderId: EntityId? = null,
         wasWebSlung: Boolean = false,
         webSlungReturnedManaValue: Int = 0,
+        wasMayhem: Boolean = false,
         chosenModes: List<Int> = emptyList(),
         modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),
         modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),
@@ -204,6 +205,7 @@ class StackResolver(
                 sneakAttackDefenderId = sneakAttackDefenderId,
                 wasWebSlung = wasWebSlung,
                 webSlungReturnedManaValue = webSlungReturnedManaValue,
+                wasMayhem = wasMayhem,
                 beheldCards = beheldCards,
                 discardedAsCostCards = discardedAsCostCards,
                 chosenEntitySnapshots = chosenEntitySnapshots,
@@ -1220,6 +1222,16 @@ class StackResolver(
                         )
                     )
                 }
+                // Mayhem (CR 702.187): durably mark a permanent cast from the graveyard for its
+                // mayhem cost so Conditions.MayhemCostWasPaid reads it for the permanent's whole
+                // life. (Note: mayhem does NOT exile the spell on resolution — a permanent just
+                // enters the battlefield here via the normal permanent-resolution path.)
+                if (spellComponent.wasMayhem) {
+                    bag = bag.withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.MAYHEM_CAST,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
+                    )
+                }
                 // Waterbend (Avatar): durably mark a permanent cast with its (optional) waterbend
                 // cost paid so Conditions.WaterbendWasPaid reads it for the permanent's whole life.
                 if (spellComponent.wasWaterbendPaid) {
@@ -1738,6 +1750,7 @@ class StackResolver(
                 wasWaterbendPaid = spellComponent.wasWaterbendPaid,
                 wasSneaked = spellComponent.wasSneaked,
                 wasWebSlung = spellComponent.wasWebSlung,
+                wasMayhem = spellComponent.wasMayhem,
                 sacrificedPermanents = spellComponent.sacrificedPermanents,
                 discardedAsCostCards = spellComponent.discardedAsCostCards,
                 chosenEntitySnapshots = spellComponent.chosenEntitySnapshots,

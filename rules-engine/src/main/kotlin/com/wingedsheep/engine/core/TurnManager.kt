@@ -19,6 +19,7 @@ import com.wingedsheep.engine.state.components.player.InAdditionalUpkeepStepComp
 import com.wingedsheep.engine.state.components.player.AdditionalEndStepsComponent
 import com.wingedsheep.engine.state.components.player.InAdditionalEndStepComponent
 import com.wingedsheep.engine.state.components.player.BendsThisTurnComponent
+import com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsPutIntoExileThisTurnComponent
 import com.wingedsheep.engine.state.components.player.EquipActivationsThisTurnComponent
@@ -141,6 +142,8 @@ class TurnManager(
                     .with(CardsPutIntoExileThisTurnComponent(count = 0))
                     .with(ManaSpentOnSpellsThisTurnComponent(totalSpent = 0))
                     .with(EquipActivationsThisTurnComponent(count = 0))
+                    // Cards discarded this turn reset for every player (Mayhem gate + Green Goblin count).
+                    .with(CardsDiscardedThisTurnComponent(cardIds = emptyList()))
                     // Distinct bends reset each turn for every player ("this turn" is per game-turn).
                     .with(BendsThisTurnComponent(types = emptySet()))
             }

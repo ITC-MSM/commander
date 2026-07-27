@@ -22,6 +22,7 @@ import com.wingedsheep.engine.state.components.identity.ManifestedComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
+import com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsLeftGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsPutIntoExileThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CreatureSubtypesDiedThisTurnComponent
@@ -807,8 +808,28 @@ object ZoneTransitionService {
             newState = result.state
             moveEvents.addAll(result.events)
         }
+        newState = trackDiscard(newState, playerId, cardIds)
         val discardEvent = CardsDiscardedEvent(playerId, cardIds, cardNames)
         return ZoneTransitionResult(newState, listOf(discardEvent) + moveEvents)
+    }
+
+    /**
+     * Central per-turn discard bookkeeping, mirroring [trackPermanentSacrifice]. Call this at every
+     * discard site (alongside emitting [CardsDiscardedEvent]). Records the discarded cards' entity
+     * ids on the discarding player's [CardsDiscardedThisTurnComponent], regardless of the card's
+     * final zone (a discard diverted by a replacement still counts). Entity ids are stable across
+     * the hand→graveyard move, so the recorded id matches the object now in the graveyard, which is
+     * what the Mayhem gate ([com.wingedsheep.engine.mechanics.Mayhem]) reads.
+     *
+     * `cardIds.size` backs `TurnTracker.CARDS_DISCARDED`; membership backs `YouDiscardedThisCardThisTurn`.
+     * Cleared per-player at the start of each turn by `TurnManager`.
+     */
+    fun trackDiscard(state: GameState, playerId: EntityId, cardIds: List<EntityId>): GameState {
+        if (cardIds.isEmpty()) return state
+        return state.updateEntity(playerId) { container ->
+            val prior = container.get<CardsDiscardedThisTurnComponent>()?.cardIds ?: emptyList()
+            container.with(CardsDiscardedThisTurnComponent(prior + cardIds))
+        }
     }
 
     /**

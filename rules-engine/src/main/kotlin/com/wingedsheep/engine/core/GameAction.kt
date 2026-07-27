@@ -200,6 +200,13 @@ enum class AlternativeCostType {
     FLASHBACK,
     /** Harmonize ([com.wingedsheep.sdk.scripting.KeywordAbility.Harmonize], printed or granted) — graveyard. */
     HARMONIZE,
+    /**
+     * Mayhem ([com.wingedsheep.sdk.scripting.KeywordAbility.Mayhem], printed or granted, CR 702.187)
+     * — graveyard, at the spell's normal timing, only if you discarded the card this turn. Pays the
+     * mayhem mana instead of the mana cost. Unlike [FLASHBACK]/[HARMONIZE] the spell is NOT exiled
+     * on resolution.
+     */
+    MAYHEM,
     /** Warp ([com.wingedsheep.sdk.scripting.KeywordAbility.Warp], printed or granted) — hand (graveyard if opted in). */
     WARP,
     /** Evoke ([com.wingedsheep.sdk.scripting.KeywordAbility.Evoke]) — hand. */

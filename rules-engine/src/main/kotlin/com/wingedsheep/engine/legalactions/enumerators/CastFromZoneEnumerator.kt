@@ -39,6 +39,7 @@ import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
+import com.wingedsheep.engine.mechanics.MayhemGrants
 import com.wingedsheep.engine.mechanics.WarpGrants
 import com.wingedsheep.engine.mechanics.mana.spellPaymentContextFor
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -73,6 +74,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
         enumerateGraveyardCreaturesWithForage(context, result)
         enumerateFlashback(context, result)
         enumerateHarmonize(context, result)
+        enumerateMayhem(context, result)
         enumerateGraveyardCast(context, result)
         enumerateWarp(context, result)
         enumerateCommandZone(context, result)
@@ -1313,6 +1315,133 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         action = CastSpell(playerId, cardId, useAlternativeCost = true, alternativeCostType = AlternativeCostType.FLASHBACK),
                         manaCostString = costString,
                         additionalCostInfo = flashbackBeholdInfo,
+                        autoTapPreview = autoTapPreview,
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
+            }
+        }
+    }
+
+    // =========================================================================
+    // Mayhem (cards in graveyard with the Mayhem keyword, discarded this turn)
+    // =========================================================================
+
+    /**
+     * Mayhem (CR 702.187): cast a card from your graveyard for its Mayhem cost, but only if you
+     * discarded it this turn. Grants no timing permission (normal timing — sorcery speed unless the
+     * card is an instant or has flash) and, unlike Flashback/Harmonize, does NOT exile the spell on
+     * resolution (handled by the absence of any Mayhem branch in `StackResolver`). Lands with the
+     * no-cost Mayhem form (CR 702.187c, Oscorp Industries) are *played*, not cast, and are handled
+     * by the land-play path — skipped here.
+     */
+    private fun enumerateMayhem(
+        context: EnumerationContext,
+        result: MutableList<LegalAction>
+    ) {
+        val state = context.state
+        val playerId = context.playerId
+        val graveyardCards = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
+        val discardedThisTurn = state.getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
+            ?.cardIds ?: emptyList()
+        if (discardedThisTurn.isEmpty()) return
+
+        for (cardId in graveyardCards) {
+            // The Mayhem gate (CR 702.187b): "as long as you discarded this card this turn".
+            if (cardId !in discardedThisTurn) continue
+
+            val container = state.getEntity(cardId) ?: continue
+            val cardComponent = container.get<CardComponent>() ?: continue
+            // Lands are played (CR 702.187c), not cast — handled elsewhere.
+            if (cardComponent.typeLine.isLand) continue
+            val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
+
+            val mayhem = MayhemGrants.effectiveMayhem(state, cardId, cardDef) ?: continue
+
+            // Timing: Mayhem grants no permission — instants/flash any time, else sorcery speed.
+            val isInstant = cardComponent.typeLine.isInstant
+            val hasFlash = cardDef.keywords.contains(com.wingedsheep.sdk.core.Keyword.FLASH) ||
+                context.castPermissionUtils.hasGrantedFlash(state, cardId)
+            if (!isInstant && !hasFlash && !context.canPlaySorcerySpeed) continue
+
+            if (context.cantCastSpell(cardId)) {
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithMayhem",
+                        description = "Cast ${cardComponent.name} (Mayhem)",
+                        action = CastSpell(playerId, cardId, useAlternativeCost = true, alternativeCostType = AlternativeCostType.MAYHEM),
+                        affordable = false,
+                        manaCostString = mayhem.cost.toString(),
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
+                continue
+            }
+
+            val castRestrictions = cardDef.script.castRestrictions
+            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+
+            val effectiveCost = context.costCalculator.calculateEffectiveCostWithAlternativeBase(
+                state, cardDef, mayhem.cost, playerId
+            )
+            val costString = effectiveCost.toString()
+            val canAfford = context.manaSolver.canPay(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)
+
+            if (!canAfford) {
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithMayhem",
+                        description = "Cast ${cardComponent.name} (Mayhem)",
+                        action = CastSpell(playerId, cardId, useAlternativeCost = true, alternativeCostType = AlternativeCostType.MAYHEM),
+                        affordable = false,
+                        manaCostString = costString,
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
+                continue
+            }
+
+            val targetReqs = buildList {
+                addAll(cardDef.script.targetRequirements)
+                cardDef.script.auraTarget?.let { add(it) }
+            }
+
+            val autoTapPreview = if (context.skipAutoTapPreview) null else {
+                context.manaSolver.solve(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)
+                    ?.sources?.map { it.entityId }
+            }
+
+            if (targetReqs.isNotEmpty()) {
+                val targetInfos = context.targetUtils.buildTargetInfos(state, playerId, targetReqs)
+                val allSatisfied = context.targetUtils.allRequirementsSatisfied(targetInfos)
+                if (allSatisfied) {
+                    val firstReq = targetReqs.first()
+                    val firstInfo = targetInfos.first()
+                    result.add(
+                        LegalAction(
+                            actionType = "CastWithMayhem",
+                            description = "Cast ${cardComponent.name} (Mayhem)",
+                            action = CastSpell(playerId, cardId, useAlternativeCost = true, alternativeCostType = AlternativeCostType.MAYHEM),
+                            validTargets = firstInfo.validTargets,
+                            requiresTargets = true,
+                            targetCount = firstInfo.maxTargets,
+                            minTargets = firstReq.effectiveMinCount,
+                            targetDescription = firstReq.description,
+                            targetRequirements = if (targetInfos.size > 1) targetInfos else null,
+                            manaCostString = costString,
+                            autoTapPreview = autoTapPreview,
+                            sourceZone = "GRAVEYARD"
+                        )
+                    )
+                }
+            } else {
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithMayhem",
+                        description = "Cast ${cardComponent.name} (Mayhem)",
+                        action = CastSpell(playerId, cardId, useAlternativeCost = true, alternativeCostType = AlternativeCostType.MAYHEM),
+                        manaCostString = costString,
                         autoTapPreview = autoTapPreview,
                         sourceZone = "GRAVEYARD"
                     )

@@ -1119,6 +1119,24 @@ data object SacrificedFoodThisTurnComponent : Component
 data class PermanentsSacrificedThisTurnComponent(val count: Int = 0) : Component
 
 /**
+ * Tracks the (graveyard-resident) entity ids of this player's cards that were discarded this turn.
+ * Every discard site records its cards here via `ZoneTransitionService.trackDiscard`, regardless of
+ * where the card ultimately ends up (a discard diverted onto the battlefield by a replacement still
+ * counts as a discard). Reset to an empty list for every player at the start of each turn by
+ * [com.wingedsheep.engine.core.TurnManager].
+ *
+ * Serves two roles from one component:
+ *  - `cardIds.size` backs `TurnTracker.CARDS_DISCARDED` (`DynamicAmount.TurnTracking`) — e.g. Green
+ *    Goblin, Revenant "draw a card for each card you've discarded this turn".
+ *  - membership (`sourceId in cardIds`) backs the `YouDiscardedThisCardThisTurn` condition that gates
+ *    the Mayhem keyword (CR 702.187) — "you may cast this card from your graveyard ... if you
+ *    discarded it this turn". Entity ids are stable across the hand→graveyard move, so the id
+ *    recorded at discard equals the id of the object now sitting in the graveyard.
+ */
+@Serializable
+data class CardsDiscardedThisTurnComponent(val cardIds: List<EntityId> = emptyList()) : Component
+
+/**
  * Tracks the total noncombat damage red sources this player controlled have dealt this turn
  * (controller-scoped). Incremented in `DamageUtils.dealDamageToTarget` on the damage source's
  * controller whenever a red source deals a positive amount of noncombat damage, and cleared at

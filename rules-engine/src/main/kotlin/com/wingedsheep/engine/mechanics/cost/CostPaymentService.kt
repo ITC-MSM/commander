@@ -502,6 +502,7 @@ class CostPaymentService(private val services: EngineServices) {
             events.add(ZoneChangeEvent(cardId, name, Zone.HAND, Zone.GRAVEYARD, payerId))
         }
         events.add(0, CardsDiscardedEvent(payerId, selected, names))
+        newState = ZoneTransitionService.trackDiscard(newState, payerId, selected)
         return CostPaymentExecution(newState, events, success = true)
     }
 
@@ -526,6 +527,7 @@ class CostPaymentService(private val services: EngineServices) {
             events.add(ZoneChangeEvent(cardId, name, Zone.HAND, Zone.GRAVEYARD, payerId))
         }
         events.add(0, CardsDiscardedEvent(payerId, toDiscard, names))
+        newState = ZoneTransitionService.trackDiscard(newState, payerId, toDiscard)
         return CostPaymentExecution(newState, events, success = true)
     }
 

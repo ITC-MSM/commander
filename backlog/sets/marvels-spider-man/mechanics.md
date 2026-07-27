@@ -69,39 +69,45 @@ static/triggered ability). `add-feature` territory.
 Blocked cards:
 - **The Soul Stone** [66] — `{1}{B}` Legendary Artifact — Infinity Stone; harness → `∞` upkeep reanimation
 
-## Mayhem (new keyword — self graveyard-cast gated on "you discarded this card this turn")
+## Mayhem (new keyword — self graveyard-cast gated on "you discarded this card this turn") — ✅ IMPLEMENTED
 
 > Mayhem {cost} *(You may cast this card from your graveyard for {cost} if you discarded it
 > this turn. Timing rules still apply.)*
 
-Not implemented. There is **no `Keyword.MAYHEM`**, no `KeywordAbility.Mayhem`, and — the
-load-bearing gap — the engine does not track **"cards you discarded this turn"**, so there is
-no condition to gate the graveyard-cast on (only `discardedAsCostCards`, i.e. cards discarded
-to pay a spell's own additional cost). The closest primitives (`Flashback`, `Harmonize`,
-`Warp`, `MayCastFromGraveyard`) all let you cast from the graveyard **any** time the card is
-there — dropping the "only the turn you discarded it" gate would make every Mayhem card
-materially stronger and wrong. `add-feature` scope: (1) turn-scoped discarded-this-turn
-tracking + a `YouDiscardedThisCardThisTurn` condition; (2) a `Keyword.MAYHEM` /
-`KeywordAbility.Mayhem(cost)` self graveyard-cast alternative-cost primitive (permanent just
-enters — no exile-on-resolve) wired into the cast-from-zone enumerator + `CastSpellHandler`.
+**Implemented** (CR 702.187) on branch `spm-mayhem`. Two-part `add-feature`:
+(1) turn-scoped discarded-this-turn tracking — `CardsDiscardedThisTurnComponent(cardIds)` written at every
+discard site via `ZoneTransitionService.trackDiscard`, reset per-turn in `TurnManager`, exposed as
+`TurnTracker.CARDS_DISCARDED` / `DynamicAmounts.cardsDiscardedThisTurn()` (count) and
+`Conditions.YouDiscardedThisCardThisTurn` (per-card membership gate).
+(2) `Keyword.MAYHEM` / `KeywordAbility.Mayhem(cost)` / `mayhem("{cost}")` DSL / `AlternativeCostType.MAYHEM`,
+resolved via `MayhemGrants.effectiveMayhem`, enumerated by `CastFromZoneEnumerator.enumerateMayhem` and gated in
+`CastSpellHandler` by `CastZoneResolver.hasMayhemPermission`. Grants no timing permission; **not** exiled on
+resolution (permanent just enters — the deliberate omission of any Mayhem branch in `StackResolver`'s exile
+clause). "Mayhem cost was paid" is a durable `ChoiceSlot.MAYHEM_CAST` / resolution-context flag read via
+`Conditions.MayhemCostWasPaid`.
 
-Blocked cards:
-- **Swarm, Being of Bees** [69] — `{2}{B}` Flash Flying, Mayhem `{B}`
-- **Spider-Islanders** [91] — `{3}{R}` (vanilla), Mayhem `{1}{R}`
-- **Raging Goblinoids** [85] — `{4}{R}` Haste, Mayhem `{2}{R}` (5/4)
-- **Electro's Bolt** [77] — `{2}{R}` deal 4 to a creature, Mayhem `{1}{R}`
-- **Prison Break** [61] — `{4}{B}` reanimate + counter, Mayhem `{3}{B}`
-- **Sandman's Quicksand** [63] — `{1}{B}{B}` mass -2/-2 (mayhem-cast → opponents only), Mayhem `{3}{B}`
-- **Scarlet Spider, Kaine** [143] — `{B}{R}` Menace + discard→counter, Mayhem `{B/R}`
-- **Carnage, Crimson Chaos** [125] — `{2}{B}{R}` Trample + ETB reanimate, Mayhem `{B}{R}`
-- **Chameleon, Master of Disguise** [27] — `{3}{U}` enter-as-copy, Mayhem `{2}{U}` (also needs clone-on-ETB — verify)
-- **Rocket-Powered Goblin Glider** [172] — `{3}` Equipment (attach if cast from gy), Mayhem `{2}`
-- **Ultimate Green Goblin** [157] — `{1}{B/R}{B/R}` upkeep discard+Treasure, Mayhem `{2}{B/R}`
-- **Oscorp Industries** [182] — land, Mayhem (play land from graveyard if discarded this turn)
-- **Norman Osborn // Green Goblin** [39] — transform DFC; back's "Goblin Formula" grants Mayhem to every nonland card in your graveyard (also blocked on transform + this grant)
+Implemented cards (9): **Swarm, Being of Bees** [69] · **Spider-Islanders** [91] · **Raging Goblinoids** [85] ·
+**Electro's Bolt** [77] · **Prison Break** [61] · **Sandman's Quicksand** [63] (MayhemCostWasPaid rider) ·
+**Scarlet Spider, Kaine** [143] · **Chameleon, Master of Disguise** [27] (enter-as-copy) ·
+**Rocket-Powered Goblin Glider** [172] (ETB attach gated on `WasCastFromGraveyard`).
 
-Also blocked by the **discarded-this-turn tracking** half of this gap (a `CardsDiscardedThisTurnComponent` accumulator + `DynamicAmount.CardsDiscardedThisTurn`), independent of the Mayhem keyword itself:
-- **Green Goblin, Revenant** [130] — `{3}{B}{R}` Flying/deathtouch; "Whenever Green Goblin attacks, discard a card. Then **draw a card for each card you've discarded this turn**." (Flying/deathtouch + the discard are fine; the draw-per-discarded-this-turn count is blocked.)
+Still blocked (not on Mayhem itself):
+- **Carnage, Crimson Chaos** [125] — `{2}{B}{R}` Trample + Mayhem `{B}{R}` work; the ETB "reanimate a creature card
+  with mv ≤ 3, **it gains 'attacks each combat if able' and 'when it deals combat damage to a player, sacrifice it'**"
+  needs a persistent **grant-abilities-to-a-reanimated-target** effect (no clean facade to durably grant a
+  must-attack static + a combat-damage sacrifice trigger to a chosen target). Deferred rather than approximated.
+- **Oscorp Industries** [182] — land; the no-cost 702.187c form is a **land-play from graveyard** (not a cast),
+  which needs a land-play-from-graveyard action path (`enumerateMayhem` skips lands today). Deferred.
+- **Ultimate Green Goblin** [157] — `{1}{B/R}{B/R}` Mayhem `{2}{B/R}`; the upkeep "discard a card, then create a
+  Treasure" is expressible, but was not authored in this batch — a straightforward follow-up now that Mayhem exists.
+- **Norman Osborn // Green Goblin** [39] — transform DFC; back's "Goblin Formula" grants Mayhem (cost = mana cost) to
+  every nonland card in your graveyard — blocked on transform + a **group `GraveyardCardsHaveMayhem` grant**
+  (`MayhemGrants` already reads per-entity grants, so the group-grant static is the remaining piece).
+
+Also enabled by the **discarded-this-turn tracking** half (now implemented) but not yet authored:
+- **Green Goblin, Revenant** [130] — `{3}{B}{R}` Flying/deathtouch; "Whenever Green Goblin attacks, discard a card.
+  Then **draw a card for each card you've discarded this turn**" — now expressible via
+  `DynamicAmounts.cardsDiscardedThisTurn()`; a follow-up card.
 
 ## Riot (keyword — enters with your choice of a +1/+1 counter or haste)
 

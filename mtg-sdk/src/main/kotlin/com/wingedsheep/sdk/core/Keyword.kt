@@ -127,6 +127,18 @@ enum class Keyword(val displayName: String) {
      * pipeline. See [com.wingedsheep.sdk.scripting.KeywordAbility.Harmonize].
      */
     HARMONIZE("Harmonize"),
+
+    /**
+     * Mayhem [cost] (CR 702.187, Marvel's Spider-Man). "As long as you discarded this card
+     * this turn, you may cast it from your graveyard by paying [cost] rather than paying its
+     * mana cost." Unlike [FLASHBACK]/[HARMONIZE] the spell is NOT exiled on resolution — a
+     * permanent simply enters the battlefield and an instant/sorcery goes to the graveyard as
+     * normal. Grants no timing permission (normal timing rules still apply). Gated on the
+     * turn-scoped "you discarded this card this turn" tracker
+     * (`Conditions.YouDiscardedThisCardThisTurn`). See
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.Mayhem].
+     */
+    MAYHEM("Mayhem"),
     EVOKE("Evoke"),
 
     /**
