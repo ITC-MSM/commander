@@ -73,7 +73,7 @@ sealed interface ProcessorResult {
  * 3. **Granted replacement effects** in [GameState.grantedReplacementEffects]
  *    — temporary grants like Malicious Eclipse's "exile instead this turn"
  * 4. **Self-redirect components** via [SelfZoneRedirectComponent] on any
- *    entity (functions in every zone per CR 614.12)
+ *    entity
  */
 class ReplacementEffectProcessor {
 

@@ -112,7 +112,6 @@ class DrawReplacementDispatcher(
                                 processorResult.identity
                             )
                         }
-                        // Battlefield replacement (not a shield) — mark replaced without execution.
                         return DispatchResult.Replaced(processorResult.state, emptyList())
                     }
                     is ReplacementOutcome.Modified -> {
