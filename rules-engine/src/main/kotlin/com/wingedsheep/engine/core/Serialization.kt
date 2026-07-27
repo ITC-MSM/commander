@@ -511,6 +511,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CantCastFromNonHandZonesComponent::class)
         subclass(CantGainLifeComponent::class)
         subclass(CantActivateLoyaltyAbilitiesComponent::class)
+        subclass(CardsDiscardedThisTurnComponent::class)
         subclass(CardsLeftGraveyardThisTurnComponent::class)
         subclass(CardsPutIntoExileThisTurnComponent::class)
         subclass(CreaturesDiedThisTurnComponent::class)

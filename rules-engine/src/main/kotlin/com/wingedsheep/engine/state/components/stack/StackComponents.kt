@@ -72,6 +72,8 @@ data class SpellOnStackComponent(
      * like Scarlet Spider, Ben Reilly can enter with that many +1/+1 counters. 0 when not web-slung.
      */
     val webSlungReturnedManaValue: Int = 0,
+    /** For mayhem (CR 702.187) — the mayhem cost was paid; readable via MayhemCostWasPaid. */
+    val wasMayhem: Boolean = false,
     val beheldCards: List<EntityId> = emptyList(),  // Cards chosen via Behold (stored in pipeline as named collection)
     /**
      * Entity ids of cards discarded to pay this spell's additional discard cost

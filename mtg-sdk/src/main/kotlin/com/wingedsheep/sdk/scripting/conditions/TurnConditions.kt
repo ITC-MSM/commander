@@ -497,6 +497,21 @@ data object SourceForetoldOnPriorTurn : Condition {
     override val description: String = "if this card was foretold on a prior turn"
 }
 
+/**
+ * Gate condition for the Mayhem keyword's cast-from-graveyard permission (CR 702.187b).
+ *
+ * True when the source card's entity id is recorded in its controller's
+ * `CardsDiscardedThisTurnComponent` — i.e. "you discarded this card this turn". Entity ids are
+ * stable across the hand→graveyard move, so the id recorded at discard equals the id of the object
+ * now sitting in the graveyard. Used as the Mayhem gate in both the legal-action enumerator and the
+ * cast-permission check.
+ */
+@SerialName("YouDiscardedThisCardThisTurn")
+@Serializable
+data object YouDiscardedThisCardThisTurn : Condition {
+    override val description: String = "if you discarded this card this turn"
+}
+
 // =============================================================================
 // City's Blessing (Ixalan, CR 702.131 / 700.5)
 // =============================================================================

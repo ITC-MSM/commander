@@ -23,6 +23,7 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
+import com.wingedsheep.engine.mechanics.MayhemGrants
 import com.wingedsheep.engine.mechanics.SneakWindow
 import com.wingedsheep.engine.mechanics.WebSlinging
 import com.wingedsheep.engine.mechanics.WarpGrants
@@ -222,26 +223,31 @@ class CastSpellHandler(
         // cost; `hasHarmonizePermission` checks the graveyard zone + Harmonize keyword.
         val hasHarmonize = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback &&
             zoneResolver.hasHarmonizePermission(state, action.playerId, action.cardId)
-        val hasGraveyardCast = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize &&
+        // Mayhem (CR 702.187, e.g. Swarm, Being of Bees) — cast from graveyard for its mayhem cost
+        // if you discarded it this turn; `hasMayhemPermission` checks the keyword + the gate.
+        val hasMayhem = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize &&
+            action.useAlternativeCost && action.altAllows(AlternativeCostType.MAYHEM) &&
+            zoneResolver.hasMayhemPermission(state, action.playerId, action.cardId)
+        val hasGraveyardCast = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasMayhem &&
             zoneResolver.hasMayCastFromGraveyardPermission(state, action.playerId, action.cardId, cardComponent)
-        val hasForageFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasGraveyardCast &&
+        val hasForageFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasMayhem && !hasGraveyardCast &&
             zoneResolver.hasMayCastCreaturesFromGraveyardWithForage(state, action.playerId, action.cardId, cardComponent)
         // Warp from graveyard (e.g., Timeline Culler) — `hasWarpPermission` already
         // checks both hand and graveyard; this branch covers the graveyard case
         // when `inHand` is false.
-        val hasWarpFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasGraveyardCast && !hasForageFromGraveyard &&
+        val hasWarpFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasMayhem && !hasGraveyardCast && !hasForageFromGraveyard &&
             action.useAlternativeCost &&
             zoneResolver.hasWarpPermission(state, action.playerId, action.cardId)
-        val hasCommanderCast = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard &&
+        val hasCommanderCast = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasMayhem && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard &&
             zoneResolver.hasCommanderCastPermission(state, action.playerId, action.cardId)
         // Granted graveyard sneak (Ninja Teen): a creature card in the player's graveyard while they
         // control an active "creature cards in your graveyard have sneak {cost}" grant.
-        val hasGraveyardSneak = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast &&
+        val hasGraveyardSneak = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasMayhem && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast &&
             action.useAlternativeCost && action.altAllows(AlternativeCostType.SNEAK) &&
             cardComponent.typeLine.isCreature &&
             action.cardId in state.getGraveyard(action.playerId) &&
             SneakWindow.graveyardSneakGrantCost(state, action.playerId, cardRegistry) != null
-        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast && !hasGraveyardSneak) {
+        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasMayhem && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast && !hasGraveyardSneak) {
             return "Card is not in your hand"
         }
 
@@ -807,6 +813,13 @@ class CastSpellHandler(
                 // Harmonize cost (printed or granted). The per-creature power reduction is
                 // applied afterward via alternativePayment.
                 costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, harmonizeAbility.cost, action.playerId)
+            } else if (action.altAllows(AlternativeCostType.MAYHEM) &&
+                MayhemGrants.effectiveMayhem(state, action.cardId, cardDef) != null &&
+                zoneResolver.hasMayhemPermission(state, action.playerId, action.cardId)) {
+                // Mayhem cost (CR 702.187) — cast from graveyard for its mayhem cost.
+                costCalculator.calculateEffectiveCostWithAlternativeBase(
+                    state, cardDef, MayhemGrants.effectiveMayhem(state, action.cardId, cardDef)!!.cost, action.playerId
+                )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
                 // mana cost. Printed warp wins; a battlefield grant ([GrantWarpToCardsInHand])
@@ -1998,6 +2011,13 @@ class CastSpellHandler(
                 costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, flashbackAbility.cost, action.playerId)
             } else if (action.altAllows(AlternativeCostType.HARMONIZE) && harmonizeAbility != null && zoneResolver.hasHarmonizePermission(currentState, action.playerId, action.cardId)) {
                 costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, harmonizeAbility.cost, action.playerId)
+            } else if (action.altAllows(AlternativeCostType.MAYHEM) &&
+                MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef) != null &&
+                zoneResolver.hasMayhemPermission(currentState, action.playerId, action.cardId)) {
+                // Mayhem cost (CR 702.187) — cast from graveyard for its mayhem cost.
+                costCalculator.calculateEffectiveCostWithAlternativeBase(
+                    currentState, cardDef, MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef)!!.cost, action.playerId
+                )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
                 // mana cost. Printed warp wins; a battlefield grant ([GrantWarpToCardsInHand])
@@ -2323,6 +2343,8 @@ class CastSpellHandler(
                             }
                             val discardNames = discardedCards.map { currentState.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
                             events.add(CardsDiscardedEvent(action.playerId, discardedCards, discardNames))
+                            currentState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                                .trackDiscard(currentState, action.playerId, discardedCards)
                         }
                         is CostAtom.ExileFrom -> {
                             val exiledCards = action.additionalCostPayment.exiledCards
@@ -2932,6 +2954,24 @@ class CastSpellHandler(
             }
         }
 
+        // Determine if this spell is being cast using mayhem (CR 702.187). Gated by the chosen
+        // alternative-cost type + the card actually having mayhem + the "you discarded this card
+        // this turn" record (zone-independent, so it holds even after the card moves to the stack).
+        // Drives Sandman's Quicksand's "if this spell's mayhem cost was paid" rider.
+        val wasMayhem = action.useAlternativeCost && cardDef != null &&
+            action.altAllows(AlternativeCostType.MAYHEM) &&
+            MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef) != null &&
+            currentState.getEntity(action.playerId)
+                ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
+                ?.cardIds?.contains(action.cardId) == true
+        if (wasMayhem) {
+            // The card is leaving the graveyard to become a spell (CR 400.7 — a new object). Drop
+            // its "discarded this turn" gate mark now (casting bypasses ZoneTransitionService.moveToZone,
+            // so §8c won't fire) so it can't be Mayhem-cast again each time it resolves back.
+            currentState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                .untrackDiscardedCard(currentState, action.cardId)
+        }
+
         // Determine if this spell is being cast using warp. Gated by the chosen alternative-cost
         // type so that when warp collides with another alternative cost (e.g. a granted warp on a
         // card being evoked) only the chosen one drives its post-resolution behavior. With no
@@ -3092,6 +3132,7 @@ class CastSpellHandler(
             sneakAttackDefenderId = sneakAttackDefenderId,
             wasWebSlung = wasWebSlung,
             webSlungReturnedManaValue = webSlungReturnedManaValue,
+            wasMayhem = wasMayhem,
             chosenModes = action.chosenModes,
             modeTargetsOrdered = effectiveModeTargetsOrdered,
             modeTargetRequirements = perModeTargetRequirements,

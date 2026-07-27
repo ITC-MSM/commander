@@ -86,6 +86,8 @@ class EachPlayerDiscardsOrLoseLifeExecutor(
 
             val cardName = state.getEntity(cardId)?.get<CardComponent>()?.name ?: "Card"
             val events = listOf(com.wingedsheep.engine.core.CardsDiscardedEvent(playerId, listOf(cardId), listOf(cardName)))
+            newState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                .trackDiscard(newState, playerId, listOf(cardId))
             val newDiscardedCreature = discardedCreature + (playerId to isCreature)
 
             val nextIndex = currentPlayerIndex + 1

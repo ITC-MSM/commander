@@ -458,6 +458,15 @@ object DynamicAmounts {
         DynamicAmount.TurnTracking(player, TurnTracker.DESCENDED)
 
     /**
+     * "The number of cards [player] has discarded this turn" (CR 701.8). Reads the per-player
+     * `CardsDiscardedThisTurnComponent`; every discard site (cost, effect, cycling, hand-size
+     * cleanup) feeds it. Used by Green Goblin, Revenant ("draw a card for each card you've
+     * discarded this turn").
+     */
+    fun cardsDiscardedThisTurn(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.TurnTracking(player, TurnTracker.CARDS_DISCARDED)
+
+    /**
      * "The number of permanents [player] sacrificed this turn" (controller-scoped, any permanent
      * type). Reads the per-player `PermanentsSacrificedThisTurnComponent`, distinct from the
      * game-wide cost-reduction counter. Used by Sawblade Skinripper ("deals that much damage").
