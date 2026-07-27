@@ -15,7 +15,6 @@ Wizards printed no token cards before roughly Odyssey.
 
 | Set | Distinct tokens missing art |
 |-----|-----------------------------|
-| BIG | 2 |
 | DST | 2 |
 | JMP | 2 |
 | MRD | 2 |
@@ -36,20 +35,7 @@ Wizards printed no token cards before roughly Odyssey.
 | RIX | 1 |
 | SCG | 1 |
 
-**24 distinct tokens across 20 sets.**
-
-## BIG
-
-- **Clue** — created by 2 card(s): Hostile Investigator, Transmutation Font
-  - image: `web-client/public/images/tokens/big-clue.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Clue", imageUri = "/images/tokens/big-clue.jpeg"),
-    ```
-- **Treasure** — created by 2 card(s): Generous Plunderer, Sword of Wealth and Power
-  - image: `web-client/public/images/tokens/big-treasure.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Treasure", imageUri = "/images/tokens/big-treasure.jpeg"),
-    ```
+**22 distinct tokens across 19 sets.**
 
 ## DST
 
