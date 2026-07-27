@@ -2286,6 +2286,7 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
 - `Targets.SpellOrAbilityWithSingleTarget` — a spell or ability whose single target is changed (Willbender; pair with `Effects.ChangeTarget()`).
 - `Targets.SpellOrAbility` — any spell, activated ability, or triggered ability on the stack (`TargetFilter.SpellOrAbilityOnStack` = any object in the stack zone; mana abilities never use the stack). Pair with `Effects.CounterSpellOrAbility()` — "counter target spell, activated ability, or triggered ability" (Overcharged Amalgam).
 - `Targets.InstantSorcerySpellOrAbility` — one requirement admitting an instant spell, sorcery spell, activated ability, or triggered ability on the stack (`TargetFilter.InstantSorcerySpellOrAbilityOnStack`, a single `CardPredicate.Or`). Pair with `Effects.CopyTargetSpellOrAbility()` — Return the Favor. **Note:** the STACK targeting enumeration (`TargetFinder.findSpellTargets`) offers an ability as a legal target only when the requirement's filter *explicitly names an ability predicate* (anywhere inside `Or`/`And`/`Not`); plain "target spell" filters stay spell-only (CR 112.1 vs 113.3b/c).
+- `Targets.InstantSorceryOrTriggeredAbility` — narrower than `Targets.InstantSorcerySpellOrAbility`: admits an instant spell, sorcery spell, or **triggered** ability on the stack, but **not** an activated ability (`TargetFilter.InstantSorcerySpellOrTriggeredAbilityOnStack`, an `Or` of `IsInstant` / `IsSorcery` / `IsTriggeredAbility`). Because the filter names `IsTriggeredAbility`, the STACK enumeration offers triggered abilities (per the note above), while activated abilities stay excluded. Pair with `Effects.CounterSpellOrAbility()` — **Spider-Sense**'s "counter target instant spell, sorcery spell, or triggered ability."
 - `Targets.Card` — any card in any zone (e.g. graveyard).
 - `Targets.CreatureOrPlaneswalker` — combined.
 - `Targets.TappedCreature` / `UntappedCreature` — state-restricted.
@@ -6070,6 +6071,14 @@ default to "you" so card authors don't need to pass it explicitly.
   Pests of Honor, Lady of Laughter, Ash, Party Crasher) and as a `ConditionalStaticAbility` gate
   (Armory Mice, Grand Ball Guest, Gallant Pie-Wielder). Use
   `DynamicAmounts.nonlandPermanentsEnteredUnderControlThisTurn(player)` for the raw count.
+- `CreaturesEnteredThisTurn(atLeast = 1, player = Player.You)` — the creature-typed counterpart of
+  `NonlandPermanentsEnteredThisTurn`: "if two or more creatures entered the battlefield under your
+  control this turn" (Spider-UK's end step). Composes through
+  `Compare(TurnTracking(player, TurnTracker.CREATURES_ENTERED_UNDER_CONTROL), GTE, Fixed(atLeast))`
+  over the same per-player entry log (an entry counts if it was a creature at the moment it
+  entered, read from projected state), so it is the same pure past-event check — the creatures need
+  not still be on the battlefield, and each entry is counted per entry event (a creature that
+  leaves and re-enters counts twice, CR 400.7).
 - `YouDescendedThisTurn(atLeast = 1)` — CR 700.11 gate: at least `atLeast` nontoken
   permanent cards were put into your graveyard from *any* zone this turn (battlefield,
   hand, library, stack, exile). Tokens do not count, even though they briefly enter the
@@ -6885,6 +6894,11 @@ this turn").
   new object each time), and an entry stays counted after the permanent leaves or changes
   controller. Backs `DynamicAmounts.nonlandPermanentsEnteredUnderControlThisTurn(player)` and,
   at a threshold of two, the **Celebration** ability word — see `Conditions.Celebration`.
+- `CREATURES_ENTERED_UNDER_CONTROL` — the creature-typed slice of the same per-player entry log
+  (an entry counts if it was a creature at the moment it entered). Same per-*entry-event* counting
+  and post-departure persistence as `NONLAND_PERMANENTS_ENTERED`. At a threshold of two it backs
+  `Conditions.CreaturesEnteredThisTurn` — Spider-UK's "two or more creatures entered the
+  battlefield under your control this turn."
 - `FOOD_SACRIFICED` — Food tokens sacrificed.
 - `CARDS_LEFT_GRAVEYARD` — cards leaving your graveyard.
 - `DESCENDED` — number of times a player has descended this turn (CR 700.11) — i.e.
