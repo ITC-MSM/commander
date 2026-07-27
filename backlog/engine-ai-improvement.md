@@ -3,10 +3,12 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** **Phases 0 and 1 shipped** (2026-07-27) — baselines in
+**Status:** **Phases 0, 1 and 2 shipped** (2026-07-27) — baselines in
 [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
-[`docs/ai/measurement.md`](../docs/ai/measurement.md). Next up is **Phase 2, the puzzle suite**.
-Phases are individually shippable and ordered by dependency, not by appeal.
+[`docs/ai/measurement.md`](../docs/ai/measurement.md). Both scoreboards now exist: the arena
+(`just arena`) and the 48-puzzle suite (`just arena-puzzles`, **39/48 today**). Next up is
+**Phase 3, multiplayer evaluation**. Phases are individually shippable and ordered by dependency,
+not by appeal.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
 performance phase builds on. See "Cross-reference" below; parts of that doc are stale.
@@ -157,19 +159,25 @@ must not lose to any gauntlet member worse than 45%.
 
 ### 2. Tactical puzzle suite — the localizing signal
 
-Win rate says *that* you regressed; a puzzle says *what*. Runs in <30 s, CI-gated.
-**48 puzzles, 8 categories × 6:**
+Win rate says *that* you regressed; a puzzle says *what*. Runs in ~15 s, CI-gated.
+**48 puzzles, 8 categories × 6.** Built in Phase 2; scores are the measured 2026-07-27 baseline for
+`v0`/`production`, with the zero-weight `v0-blind` control in brackets.
 
-| Category | What it catches |
-|---|---|
-| Lethal detection | Missing an alpha strike / burn-to-face kill |
-| Blocking | Chump vs trade vs no-block; deathtouch / first strike / trample |
-| Removal targeting | Shooting the 1/1 instead of the bomb (`heuristicTargetRank`) |
-| Holding instants | Casting a combat trick in your own main phase |
-| Sequencing | Land before spell; ETB ordering; lord before creatures |
-| Board-wipe timing | Wrathing while ahead (`BoardWipeAdvisor`, currently overwritten) |
-| Race math | Attack-vs-hold when both players are on a clock |
-| **Non-creature valuation** | Ignoring an opposing O-Ring / signet / planeswalker — **expect ~0% today** |
+| Category | Baseline | What it catches |
+|---|---|---|
+| Lethal detection | 6/6 [6/6] | Missing an alpha strike / burn-to-face kill |
+| Blocking | 6/6 [6/6] | Chump vs trade vs no-block; deathtouch / first strike |
+| Removal targeting | 6/6 [0/6] | Shooting the 1/1 instead of the bomb (`heuristicTargetRank`) |
+| Holding instants | 3/6 [2/6] | Casting a combat trick in your own main phase |
+| Sequencing | 5/6 [0/6] | Land before spell; the land that unlocks the spell |
+| Board-wipe timing | 6/6 [3/6] | Wrathing while ahead |
+| Race math | 5/6 [5/6] | Attack-vs-hold when both players are on a clock |
+| **Non-creature valuation** | **2/6** [0/6] | Ignoring an opposing O-Ring / mana rock / anthem |
+
+Two readings the bracketed column forces. Lethal and blocking are carried entirely by
+`CombatAdvisor`'s seed heuristics — the blind agent matches the real one — so they are a regression
+net for *that* code, not for `BoardFeatures.kt`. And the plan's "expect ~0%" on non-creature
+valuation was close but for the wrong reason: see Phase 2's findings.
 
 ### 3. Latency
 
@@ -306,7 +314,41 @@ returns 50.0% CI [49.3%, 50.8%] against `AdvisorBenchmark`'s unpaired 46.1% — 
 
 ---
 
-### Phase 2 — Tactical puzzle suite · *3–4 d*
+### Phase 2 — Tactical puzzle suite · *3–4 d* — ✅ **DONE 2026-07-27**
+
+> **Shipped.** 48 puzzles, 8 categories × 6, in
+> `ai/src/test/kotlin/com/wingedsheep/ai/puzzles/`. `just arena-puzzles` is the gate (~15 s);
+> `just arena-puzzles-compare` runs the same suite across `v0` / `production` / `v0-blind`.
+> Per-category baseline and findings:
+> [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-2--puzzle-baselines); how to
+> write one: [`docs/ai/measurement.md`](../docs/ai/measurement.md#the-puzzle-suite).
+>
+> **Baseline: 39/48 (81%).** `v0` and `production` score identically, category for category — the
+> same "advisors are neutral" conclusion Phase 1's arena reached, from an independent measurement.
+> `v0-blind` scores 22/48, which is the suite proving it discriminates; that gap is asserted in the
+> always-on suite rather than eyeballed.
+>
+> Four corrections the build produced:
+>
+> 1. **Non-creature blindness is a *casting* failure before it is a targeting one.** The plan
+>    predicted ~0% and blamed `heuristicTargetRank`'s `else -> 0.0`. In all four failures the AI
+>    never casts the Disenchant at all: destroying an artifact is worth `permanentValue`'s flat
+>    `0.5` (+0.75 weighted) and costs a card (−1.5 weighted), so passing wins. **Phase 6's
+>    `staticPriorValue` has to clear the card-advantage cost of casting, not merely outrank a
+>    sibling target.** The two that pass are the two whose effect shows up in *creature* stats
+>    (an anthem on three bodies; Disenchanting a Pacifism off a 6/4) — so the deficit is exactly
+>    "permanents whose value is invisible in someone's P/T".
+> 2. **`CardAdvantage.cardValue(0) = -3.0` means the last card in hand is never played.**
+>    `sequencing-02` and `-04` are the same land drop one card apart; 04 passes, 02 fails. Land
+>    drops are free. One more hand-drawn constant for Phase 9.
+> 3. **A one-ply evaluator cannot see prevention.** Fog at 2 life facing lethal is passed up,
+>    because the post-simulation state has the same life totals as passing — the prevention only
+>    materializes at the damage step. It also means "hold Fog in your own main" passes for the
+>    wrong reason. A Phase 7 puzzle, not a Phase 9 one.
+> 4. **Combat is carried by `CombatAdvisor`, not the evaluator.** `v0-blind` still scores 6/6 on
+>    lethal *and* blocking. Those two categories are a regression net for `CombatAdvisor`'s seed
+>    heuristics; a `BoardFeatures.kt` change will not move them. The one combat position the
+>    evaluator owns — hold a blocker home rather than attack with everything — fails.
 
 Authored against **`ScenarioTestBase`** (`rules-engine/src/testFixtures/.../support/ScenarioTestBase.kt`,
 1562 L, already on `:ai`'s test classpath). Not scenario JSON — `manual-scenarios/` +
@@ -324,8 +366,8 @@ Files: `ai/src/test/.../puzzles/{AiPuzzle,PuzzleRunner,PuzzleSuiteTest}.kt` + `c
 - `PuzzleReport` (benchmark-gated) prints pass rate overall and per category — the number quoted
   alongside arena win rate.
 
-**Exit:** 48 puzzles committed, per-category baseline in `docs/ai/baseline-metrics.md`,
-`just arena-puzzles` runs in <30 s.
+**Exit:** ✅ 48 puzzles committed, ✅ per-category baseline in `docs/ai/baseline-metrics.md`,
+✅ `just arena-puzzles` runs in ~15 s.
 
 ---
 
@@ -568,8 +610,14 @@ add JSON for the sets we actually play, and consolidate with the duplicate store
 `CardIntent` reproduces, keeping the ones encoding genuinely card-specific tactics. A principled
 retirement criterion beats a judgment call.
 
-**Exit:** puzzle "non-creature valuation" ~0% → >70%; "removal targeting" and "holding instants" up;
-arena lower CI bound above 50%.
+**Exit:** puzzle "non-creature valuation" **2/6 → ≥5/6** (Phase 2's measured baseline, not the ~0%
+this plan guessed); "holding instants" up; arena lower CI bound above 50%.
+
+> **Phase 2 sharpened the target.** All four non-creature failures are the AI declining to *cast*
+> the Disenchant, not mis-targeting it: at flat `permanentValue = 0.5`, destroying an artifact is
+> worth +0.75 weighted and costs −1.5 of card advantage, so passing wins. `staticPriorValue` has to
+> clear the **cost of casting**, not merely outrank a sibling target. Consumer (b) — the
+> `heuristicTargetRank` fix — is necessary but on its own changes nothing.
 
 ---
 
@@ -818,13 +866,13 @@ but tanks a puzzle category, look hard before shipping.
 ## Recommended order
 
 ```
-0̶ → 1̶ → 2 → 3 → 4 → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
+0̶ → 1̶ → 2̶ → 3 → 4 → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
 ```
 
-Phases 0 and 1 are done. **Phase 5 has left the critical path** — simulation is already ~2× the
-speed the rollout budget needs, so 5a is now an independent engine-perf task and 5c is almost
-certainly not justified. Next up is **Phase 2, the puzzle suite**: the arena says *that* something
-regressed, a puzzle says *what*.
+Phases 0, 1 and 2 are done — both scoreboards exist. **Phase 5 has left the critical path** —
+simulation is already ~2× the speed the rollout budget needs, so 5a is now an independent
+engine-perf task and 5c is almost certainly not justified. Next up is **Phase 3, multiplayer
+evaluation**: 1–2 days for the highest strength-per-effort item on the list.
 
 Ranked by strength-per-effort, independent of ordering:
 
@@ -834,7 +882,7 @@ Ranked by strength-per-effort, independent of ordering:
 | 2 | **6** CardIntent | 5–7 d | Removes flat-0.5 blindness to every artifact/enchantment/PW; feeds 4 other consumers. |
 | 3 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones. Cheap once the arena exists. |
 | 4 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
-| 5 | **1̶ / 2** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Arena done. |
+| 5 | **1̶ / 2̶** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Both done. |
 | 6 | **4a** auto-pass filter | 3–5 d | Demoted by Phase 0: at 1.75 candidates there is little to filter. Still saves ~148 ms/game of pointless enumeration, and a rollout pays it repeatedly. |
 | 7 | **4b** DecisionBudget | 2–3 d | Enabling infrastructure. |
 | 8 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |

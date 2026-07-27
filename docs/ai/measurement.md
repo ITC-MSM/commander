@@ -135,3 +135,63 @@ Say these out loud rather than letting a reader assume otherwise.
   `BoardFeatures.kt` returns 0.0 with more than one opponent.
 - **Latency per budget tier.** There are no tiers until Phase 4b.
 - **Anything about a real player.** The reference opponent is another bot.
+
+---
+
+## The puzzle suite
+
+The arena tells you *that* something regressed. A puzzle tells you *what*.
+
+```bash
+just arena-puzzles              # the gate — always-on, seconds
+just arena-puzzles-compare      # the same 48 across v0 / production / v0-blind
+```
+
+48 hand-authored positions in `ai/src/test/kotlin/com/wingedsheep/ai/puzzles/`, 8 categories × 6.
+Each builds a board with `ScenarioTestBase`, asks the AI for **one** move, and asserts a predicate
+over it. Current per-category numbers: [`baseline-metrics.md`](baseline-metrics.md#phase-2--puzzle-baselines).
+
+### The gate is `KNOWN_FAILURES`, not 48/48
+
+`PuzzleSuiteTest` asserts the failing-id set **equals** a committed set. Today's AI solves 39 of 48,
+and a suite pinned to 48/48 would be red forever and therefore ignored.
+
+Equality — not "is a subset of" — is the point. It flags a regression *and* an unexpected fix:
+
+- **A new id appears** → you broke something. The report names the puzzle and prints the move.
+- **An id no longer fails** → the test goes red until you delete it from `KNOWN_FAILURES`. That is
+  the moment you want to notice, and the deletion is the evidence a phase actually landed.
+
+Each entry carries a comment naming the mechanism it is waiting on, so shrinking the set is a
+checklist for Phases 6, 7 and 9.
+
+### Writing a puzzle
+
+Put it in the right `categories/*.kt` file, give it the next id in sequence, run the suite, and add
+it to `KNOWN_FAILURES` if the AI does not solve it yet.
+
+**Assert a predicate, never an exact action.** `PuzzleMove` is the vocabulary:
+`shouldCast("Murder")`, `shouldTarget("Craw Wurm")`, `shouldAttackWithAtLeast("Wind Drake")`,
+`shouldAttackForAtLeast(6)`, `shouldBlock("Hill Giant", "Craw Wurm")`, `shouldNotBlock()`. Exact
+`GameAction` equality breaks on harmless tie-break changes and trains you to ignore the suite.
+
+Three things the runner enforces so a mis-built position cannot score as a pass:
+
+- the position must leave the AI's seat holding priority with **no pending decision**;
+- the chosen move must be **legal** — the arena found the AI proposing ~0.9 illegal actions per
+  game, and a puzzle that "passes" on a move the engine rejects measures nothing;
+- the scenario RNG is pinned (`ScenarioBuilder` otherwise seeds itself from `System.nanoTime()`).
+
+`advanceToDeclaration(seat, step)` stops where a seat is asked to declare attackers or blockers;
+`advanceToPriority(seat, step)` stops at the ordinary priority window *after* declarations, which
+is where a combat trick is cast. They differ by one window and using the wrong one is the easiest
+way to write a puzzle that measures the wrong decision.
+
+### Include positive controls
+
+Half of "holding instants" is *don't* cast the trick; the other half is *do*, in the right window.
+A category made only of "don't cast" puzzles scores 100% for an AI that never casts anything.
+`just arena-puzzles-compare`'s `v0-blind` column is the check on that: a category where the
+zero-weight agent scores as well as the real one is not measuring the evaluator. Today that is true
+of `lethal` and `blocking` — both are carried by `CombatAdvisor`'s heuristics, so they are a
+regression net for *that* code, not for `BoardFeatures.kt`.
