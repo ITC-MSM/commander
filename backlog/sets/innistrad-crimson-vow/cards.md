@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 171 / 272
+**Implemented:** 183 / 272
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -28,9 +28,9 @@
 - [x] Blood Petal Celebrant
 - [x] Blood Servitor
 - [x] Bloodcrazed Socialite
-- [ ] Bloodsworn Squire
+- [x] Bloodsworn Squire
 - [x] Bloodtithe Harvester
-- [ ] Bloodvial Purveyor
+- [x] Bloodvial Purveyor
 - [x] Bloody Betrayal
 - [x] Boarded Window
 - [x] Bramble Armor
@@ -53,7 +53,7 @@
 - [ ] Circle of Confinement
 - [x] Cloaked Cadet
 - [x] Cobbled Lancer
-- [ ] Concealing Curtains
+- [x] Concealing Curtains
 - [ ] Consuming Tide
 - [x] Courier Bat
 - [x] Cradle of Safety
@@ -68,7 +68,7 @@
 - [x] Daybreak Combatants
 - [x] Deathcap Glade
 - [x] Demonic Bargain
-- [ ] Desperate Farmer
+- [x] Desperate Farmer
 - [x] Dig Up
 - [x] Diregraf Scavenger
 - [ ] Distracting Geist
@@ -86,7 +86,7 @@
 - [ ] Drogskol Infantry
 - [ ] Dying to Serve
 - [ ] Edgar's Awakening
-- [ ] Edgar, Charmed Groom
+- [x] Edgar, Charmed Groom
 - [x] End the Festivities
 - [ ] Eruth, Tormented Prophet
 - [x] Estwald Shieldbasher
@@ -117,10 +117,10 @@
 - [x] Gryffwing Cavalry
 - [ ] Gutter Skulker
 - [x] Halana and Alena, Partners
-- [ ] Hallowed Haunting
+- [x] Hallowed Haunting
 - [ ] Hamlet Vanguard
 - [x] Headless Rider
-- [ ] Henrika Domnathi
+- [x] Henrika Domnathi
 - [x] Hero's Downfall
 - [ ] Heron of Hope
 - [x] Heron-Blessed Geist
@@ -129,7 +129,7 @@
 - [x] Honored Heirloom
 - [ ] Hookhand Mariner
 - [x] Hopeful Initiate
-- [ ] Howling Moon
+- [x] Howling Moon
 - [ ] Howlpack Piper
 - [x] Hullbreaker Horror
 - [x] Hungry Ridgewolf
@@ -179,7 +179,7 @@
 - [x] Ollenbock Escort
 - [x] Overcharged Amalgam
 - [x] Packsong Pup
-- [ ] Panicked Bystander
+- [x] Panicked Bystander
 - [x] Parasitic Grasp
 - [x] Parish-Blade Trainee
 - [ ] Patchwork Crawler
@@ -196,7 +196,7 @@
 - [x] Rending Flame
 - [x] Repository Skaab
 - [x] Resistance Squad
-- [ ] Restless Bloodseeker
+- [x] Restless Bloodseeker
 - [x] Retrieve
 - [x] Rot-Tide Gargantua
 - [x] Runebound Wolf
@@ -243,7 +243,7 @@
 - [ ] Toxrill, the Corrosive
 - [x] Traveling Minister
 - [ ] Twinblade Geist
-- [ ] Ulvenwald Oddity
+- [x] Ulvenwald Oddity
 - [x] Undead Butler
 - [x] Undying Malice
 - [x] Unhallowed Phalanx
@@ -264,7 +264,7 @@
 - [x] Wash Away
 - [ ] Weary Prisoner
 - [ ] Weaver of Blossoms
-- [ ] Wedding Announcement
+- [x] Wedding Announcement
 - [x] Wedding Invitation
 - [x] Wedding Security
 - [x] Welcoming Vampire
