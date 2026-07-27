@@ -194,28 +194,6 @@ sealed interface PendingGameEvent {
                 continuation = continuation
             )
         }
-
-        /**
-         * Check whether a player filter matches the drawing player relative to
-         * the replacement source's controller.
-         *
-         * For [Player.EachOpponent], the check uses [GameState.getOpponents] so that
-         * in a team game (e.g. Two-Headed Giant) a teammate's draw do not
-         * match `EachOpponent`
-         */
-        private fun matchesPlayerFilter(
-            player: Player,
-            affectedPlayerId: EntityId,
-            sourceControllerId: EntityId,
-            state: GameState
-        ): Boolean {
-            return when (player) {
-                Player.Each -> true
-                Player.You -> affectedPlayerId == sourceControllerId
-                Player.EachOpponent -> affectedPlayerId in state.getOpponents(sourceControllerId)
-                else -> false
-            }
-        }
     }
 
     /**
@@ -259,19 +237,6 @@ sealed interface PendingGameEvent {
             }
         }
 
-        private fun matchesPlayerFilter(
-            player: Player,
-            affectedPlayerId: EntityId,
-            sourceControllerId: EntityId,
-            state: GameState
-        ): Boolean {
-            return when (player) {
-                Player.Each -> true
-                Player.You -> affectedPlayerId == sourceControllerId
-                Player.EachOpponent -> affectedPlayerId in state.getOpponents(sourceControllerId)
-                else -> false
-            }
-        }
     }
 }
 
@@ -285,3 +250,17 @@ data class OptionalPromptResult(
     val decision: PendingDecision,
     val continuation: ContinuationFrame
 )
+
+private fun matchesPlayerFilter(
+    player: Player,
+    affectedPlayerId: EntityId,
+    sourceControllerId: EntityId,
+    state: GameState
+): Boolean {
+    return when (player) {
+        Player.Each, Player.Any -> true
+        Player.You -> affectedPlayerId == sourceControllerId
+        Player.EachOpponent, Player.AnOpponent -> affectedPlayerId in state.getOpponents(sourceControllerId)
+        else -> error("Unsupported player filter '$player' in matchesPlayerFilter")
+    }
+}
