@@ -15,7 +15,6 @@ Wizards printed no token cards before roughly Odyssey.
 
 | Set | Distinct tokens missing art |
 |-----|-----------------------------|
-| ARN | 2 |
 | BIG | 2 |
 | DST | 2 |
 | JMP | 2 |
@@ -37,22 +36,7 @@ Wizards printed no token cards before roughly Odyssey.
 | RIX | 1 |
 | SCG | 1 |
 
-**26 distinct tokens across 21 sets.**
-
-## ARN
-
-_No Scryfall token set (`tarn`) — every token here needs self-hosted art._
-
-- **4/4 red Bird** — created by 1 card(s): Rukh Egg
-  - image: `web-client/public/images/tokens/arn-bird.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Bird", imageUri = "/images/tokens/arn-bird.jpeg", power = 4, toughness = 4, colors = setOf(Color.RED)),
-    ```
-- **5/5 colorless Djinn** — created by 1 card(s): Bottle of Suleiman
-  - image: `web-client/public/images/tokens/arn-djinn.jpeg`
-  - ```kotlin
-    TokenPrinting(name = "Djinn", imageUri = "/images/tokens/arn-djinn.jpeg", power = 5, toughness = 5, colors = emptySet()),
-    ```
+**24 distinct tokens across 20 sets.**
 
 ## BIG
 
