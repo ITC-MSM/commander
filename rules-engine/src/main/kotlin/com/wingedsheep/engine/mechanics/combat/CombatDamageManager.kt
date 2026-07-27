@@ -55,6 +55,11 @@ internal class CombatDamageManager(
     private val damageCalculator: DamageCalculator,
 ) {
 
+    private companion object {
+        /** Generic label for a face-down (morph / manifest) creature; mirrors the client transformer. */
+        const val FACE_DOWN_CREATURE_NAME = "Face-down creature"
+    }
+
     private val damageModifiers: List<CombatDamageModifier> = listOf(
         PreventAllCombatDamageModifier(),
         PreventAllDamageFromSourceModifier(),
@@ -394,6 +399,16 @@ internal class CombatDamageManager(
         return emitCombatResolutionDecision(state, projected, candidates, firstStrike)
     }
 
+    /**
+     * The name shown for a combat participant in the damage-assignment board. Face-down permanents
+     * (morph / manifest) are masked to a generic label so the board never leaks the hidden card's
+     * identity — the whole decision graph is shared across every chooser (including the opponent
+     * assigning blocker damage), so masking must be unconditional, not keyed on any one viewer. This
+     * mirrors the "Face-down creature" masking in the client state transformer.
+     */
+    private fun combatDisplayName(state: GameState, entityId: EntityId, realName: String): String =
+        if (state.getEntity(entityId)?.has<FaceDownComponent>() == true) FACE_DOWN_CREATURE_NAME else realName
+
     private fun emitCombatResolutionDecision(
         state: GameState,
         projected: ProjectedState,
@@ -409,7 +424,7 @@ internal class CombatDamageManager(
             val container = state.getEntity(c.attackerId)
             ResolutionAttacker(
                 id = c.attackerId,
-                name = c.attackerName,
+                name = combatDisplayName(state, c.attackerId, c.attackerName),
                 power = projected.getPower(c.attackerId) ?: c.availablePower,
                 toughness = projected.getToughness(c.attackerId) ?: 0,
                 hasTrample = c.hasTrample,
@@ -430,7 +445,7 @@ internal class CombatDamageManager(
             val blocking = container.get<BlockingComponent>()
             ResolutionBlocker(
                 id = blockerId,
-                name = card.name,
+                name = combatDisplayName(state, blockerId, card.name),
                 power = projected.getPower(blockerId) ?: 0,
                 toughness = projected.getToughness(blockerId) ?: 0,
                 hasDeathtouch = projected.hasKeyword(blockerId, Keyword.DEATHTOUCH),
@@ -560,8 +575,11 @@ internal class CombatDamageManager(
         val choosers = attackerChoosers + blockerChoosers
 
         val decisionId = UUID.randomUUID().toString()
+        // Mask face-down attackers in the prompt / source name too — otherwise a single face-down
+        // attacker's real name leaks through the decision text even when the board node is masked.
+        val firstAttackerName = candidates.firstOrNull()?.let { combatDisplayName(state, it.attackerId, it.attackerName) }
         val prompt = if (candidates.size == 1) {
-            "Assign ${candidates[0].attackerName}'s ${candidates[0].availablePower} combat damage"
+            "Assign $firstAttackerName's ${candidates[0].availablePower} combat damage"
         } else {
             "Assign combat damage for ${candidates.size} attackers"
         }
@@ -571,7 +589,7 @@ internal class CombatDamageManager(
             prompt = prompt,
             context = DecisionContext(
                 sourceId = candidates.firstOrNull()?.attackerId,
-                sourceName = if (candidates.size == 1) candidates[0].attackerName else "Combat damage",
+                sourceName = if (candidates.size == 1) firstAttackerName ?: "Combat damage" else "Combat damage",
                 phase = DecisionPhase.COMBAT,
             ),
             firstStrike = firstStrike,
