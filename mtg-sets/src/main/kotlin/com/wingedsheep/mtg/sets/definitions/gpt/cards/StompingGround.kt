@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.eoe.cards
+package com.wingedsheep.mtg.sets.definitions.gpt.cards
 
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -6,7 +6,7 @@ import com.wingedsheep.sdk.scripting.EntersTapped
 
 /**
  * Stomping Ground
- * 
+ *
  * Land — Mountain Forest
  * ({T}: Add {R} or {G}.)
  * As this land enters, you may pay 2 life. If you don't, it enters tapped.
@@ -19,14 +19,14 @@ val StompingGround = card("Stomping Ground") {
 
     // Mana abilities are intrinsic from basic land types (Mountain → {R}, Forest → {G})
 
-    // As this land enters, you may pay 2 life. If you don't, it enters tapped.
     replacementEffect(EntersTapped(payLifeCost = 2))
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "258"
-        artist = "Bruce Brenneise"
-        flavorText = "\"Log 2.5.325: A newborn moon, Aqqat still churns with the fires of creation. I'm eager to see what it will become!\"\n—*Maisie's Edge Chronicles*"
-        imageUri = "https://cards.scryfall.io/normal/front/6/9/69be21b4-c613-47c6-ba57-f4785861af3e.jpg?1752947608"
+        collectorNumber = "165"
+        artist = "Rob Alexander"
+        imageUri = "https://cards.scryfall.io/normal/front/a/2/a2773d8f-f906-475d-aaff-b7ca3b01f188.jpg?1783943453"
+        ruling("2018-10-05", "Unlike most dual lands, this land has two basic land types. It's not basic, so cards such as District Guide can't find it, but it does have the appropriate land types for effects such as that of Drowned Catacomb (from the Ixalan set).")
+        ruling("2018-10-05", "If an effect puts this land onto the battlefield tapped, you may pay 2 life, but it still enters tapped.")
     }
 }

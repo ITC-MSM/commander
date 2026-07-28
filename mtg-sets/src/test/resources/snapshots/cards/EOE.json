@@ -6439,33 +6439,6 @@
     ]
 }
 
-// Godless Shrine
-{
-    "name": "Godless Shrine",
-    "manaCost": "",
-    "typeLine": "Land — Plains Swamp",
-    "oracleText": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "254",
-        "rarity": "RARE",
-        "artist": "Rob Rey",
-        "flavorText": "\"Log 1.7.618: Starshadow, a relic of a culture lost to calamity. Its people were eradicated in a single day—but by what?\"\n—*Maisie's Edge Chronicles*",
-        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8c542ea4-98c3-4c2d-9066-205ab7aa697a.jpg?1752947593"
-    },
-    "colorIdentityOverride": [
-        "WHITE",
-        "BLACK"
-    ]
-}
-
 // Gravblade Heavy
 {
     "name": "Gravblade Heavy",
@@ -12844,33 +12817,6 @@
     ]
 }
 
-// Sacred Foundry
-{
-    "name": "Sacred Foundry",
-    "manaCost": "",
-    "typeLine": "Land — Mountain Plains",
-    "oracleText": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "256",
-        "rarity": "RARE",
-        "artist": "Titus Lunter",
-        "flavorText": "\"Log 2.2.119: Kiln, known for its blazing forges and ancient lava seeps. The footing may be treacherous, but the metallurgy is grand!\"\n—*Maisie's Edge Chronicles*",
-        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b4e2642-3c87-4708-b9b4-2e7f7359ac7d.jpg?1752947600"
-    },
-    "colorIdentityOverride": [
-        "WHITE",
-        "RED"
-    ]
-}
-
 // Sami's Curiosity
 {
     "name": "Sami's Curiosity",
@@ -15245,33 +15191,6 @@
     },
     "colorIdentityOverride": [
         "BLUE"
-    ]
-}
-
-// Stomping Ground
-{
-    "name": "Stomping Ground",
-    "manaCost": "",
-    "typeLine": "Land — Mountain Forest",
-    "oracleText": "({T}: Add {R} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "258",
-        "rarity": "RARE",
-        "artist": "Bruce Brenneise",
-        "flavorText": "\"Log 2.5.325: A newborn moon, Aqqat still churns with the fires of creation. I'm eager to see what it will become!\"\n—*Maisie's Edge Chronicles*",
-        "imageUri": "https://cards.scryfall.io/normal/front/6/9/69be21b4-c613-47c6-ba57-f4785861af3e.jpg?1752947608"
-    },
-    "colorIdentityOverride": [
-        "RED",
-        "GREEN"
     ]
 }
 
@@ -19158,33 +19077,6 @@
     },
     "colorIdentityOverride": [
         "RED"
-    ]
-}
-
-// Watery Grave
-{
-    "name": "Watery Grave",
-    "manaCost": "",
-    "typeLine": "Land — Island Swamp",
-    "oracleText": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "261",
-        "rarity": "RARE",
-        "artist": "Sergey Glushakov",
-        "flavorText": "\"Log 2.9.089: Lammuat, the cemetery moon of salvage and secrets. Could be profitable for those brave enough to plumb its recesses.\"\n—*Maisie's Edge Chronicles*",
-        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5b8170dc-6a90-46fc-9989-7575f3d402b5.jpg?1752947617"
-    },
-    "colorIdentityOverride": [
-        "BLUE",
-        "BLACK"
     ]
 }
 

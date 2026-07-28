@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.eoe.cards
+package com.wingedsheep.mtg.sets.definitions.rav.cards
 
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -6,7 +6,7 @@ import com.wingedsheep.sdk.scripting.EntersTapped
 
 /**
  * Watery Grave
- * 
+ *
  * Land — Island Swamp
  * ({T}: Add {U} or {B}.)
  * As this land enters, you may pay 2 life. If you don't, it enters tapped.
@@ -19,14 +19,14 @@ val WateryGrave = card("Watery Grave") {
 
     // Mana abilities are intrinsic from basic land types (Island → {U}, Swamp → {B})
 
-    // As this land enters, you may pay 2 life. If you don't, it enters tapped.
     replacementEffect(EntersTapped(payLifeCost = 2))
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "261"
-        artist = "Sergey Glushakov"
-        flavorText = "\"Log 2.9.089: Lammuat, the cemetery moon of salvage and secrets. Could be profitable for those brave enough to plumb its recesses.\"\n—*Maisie's Edge Chronicles*"
-        imageUri = "https://cards.scryfall.io/normal/front/5/b/5b8170dc-6a90-46fc-9989-7575f3d402b5.jpg?1752947617"
+        collectorNumber = "286"
+        artist = "Rob Alexander"
+        imageUri = "https://cards.scryfall.io/normal/front/1/3/139b90cd-8272-457a-be32-1298145345be.jpg?1783943589"
+        ruling("2018-10-05", "Unlike most dual lands, this land has two basic land types. It's not basic, so cards such as District Guide can't find it, but it does have the appropriate land types for effects such as that of Drowned Catacomb (from the Ixalan set).")
+        ruling("2018-10-05", "If an effect puts this land onto the battlefield tapped, you may pay 2 life, but it still enters tapped.")
     }
 }
