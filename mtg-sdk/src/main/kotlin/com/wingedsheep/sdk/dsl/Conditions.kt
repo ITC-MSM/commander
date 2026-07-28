@@ -258,6 +258,20 @@ object Conditions {
         Exists(Player.You, Zone.BATTLEFIELD, filter, negate = negate, excludeSelf = excludeSelf)
 
     /**
+     * If **an** opponent controls at least one permanent matching [filter] — the opponent-side
+     * mirror of [YouControl], generalizing [OpponentControlsCreature] to any filter.
+     *
+     * `Player.EachOpponent` is an existential across opponents, not a universal: the condition
+     * holds when *any single* opponent controls a match, which is what "as long as an opponent
+     * controls a planeswalker" (Syr Ginger, the Meal Ender) means in multiplayer.
+     */
+    fun OpponentControls(
+        filter: GameObjectFilter,
+        negate: Boolean = false
+    ): ConditionInterface =
+        Exists(Player.EachOpponent, Zone.BATTLEFIELD, filter, negate = negate)
+
+    /**
      * If you control an enchantment.
      */
     val ControlEnchantment: ConditionInterface =

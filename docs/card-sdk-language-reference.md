@@ -4452,6 +4452,11 @@ staticAbility {
   same, all players), `PermanentsSacrificedThisTurn(amountPerPermanent = 1)` (the count of
   permanents sacrificed this turn by *any* player — not controller-scoped — reading the
   turn-scoped `GameState.permanentsSacrificedThisTurn` counter; The Balrog, Durin's Bane),
+  `CreaturesThatAttackedThisTurn(amountPerCreature = 1)` (the count of creatures declared as
+  attackers this turn by *any* player, across every combat phase — Witchstalker Frenzy. Turn
+  *history*, from the union of each player's `PlayerAttackersThisTurnComponent.attackerIds`, not a
+  battlefield scan: an attacker that has since died still counts, which
+  `PermanentsOnBattlefieldMatching(Creature.attackedThisTurn())` would miss),
   `CardsInGraveyardMatchingFilter`, `FixedIfAnyTargetMatches`,
   `GreatestPropertyAmongPermanentsYouControl(property, filter)` — "{X} less, where X is the greatest
   `<property>` among `<filter>` you control", parameterized over `EntityNumericProperty`:
@@ -5752,6 +5757,10 @@ answer it and would silently return `false`.
   battlefield, sacrifice this enchantment" state trigger.
 - `ControlMoreCreatures` — you control more creatures than each opponent.
 - `OpponentControlsCreature` — at least one opponent has a creature.
+- `OpponentControls(filter, negate = false)` — at least one opponent controls a permanent matching
+  `filter`; the opponent-side mirror of `YouControl(filter, …)` and the general form of
+  `OpponentControlsCreature`. Existential across opponents, so it holds when *any single* opponent
+  has a match (Syr Ginger, the Meal Ender's "as long as an opponent controls a planeswalker").
 - `OpponentControlsMoreCreatures` — an opponent outpaces you.
 - `OpponentControlsMoreLands` — an opponent has more lands.
 - `OpponentHasMoreCardsInHand` — an opponent has more cards in hand than you (compares opponents' hand size to yours). Used by Beza, the Bounding Spring and Joined Researchers.

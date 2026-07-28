@@ -654,6 +654,31 @@ sealed interface CostReductionSource {
     ) : CostReductionSource {
         override val description: String = "the number of permanents sacrificed this turn"
     }
+
+    /**
+     * Reduces cost by [amountPerCreature] for each creature that was declared as an attacker this
+     * turn — by ANY player, not just the caster ("for each creature that attacked this turn" is
+     * not controller-scoped), and counting every combat phase this turn.
+     *
+     * The turn-history sibling of [PermanentsSacrificedThisTurn], and deliberately *not*
+     * `PermanentsOnBattlefieldMatching(Creature.attackedThisTurn())`: that reads the live
+     * battlefield, so an attacker that died in combat would stop counting. The count here is
+     * the union of every player's `PlayerAttackersThisTurnComponent.attackerIds` — the same set
+     * the engine already maintains for raid — which survives the attacker leaving the
+     * battlefield, so a trick cast after combat damage still sees the creatures that traded.
+     *
+     * Used for Witchstalker Frenzy ("This spell costs {1} less to cast for each creature that
+     * attacked this turn"). Per its ruling the reduction never touches the colored part of the
+     * cost, so it can't reduce below `{R}` — that clamping is the generic-reduction rail's, not
+     * this source's.
+     */
+    @SerialName("CreaturesThatAttackedThisTurn")
+    @Serializable
+    data class CreaturesThatAttackedThisTurn(
+        val amountPerCreature: Int = 1
+    ) : CostReductionSource {
+        override val description: String = "the number of creatures that attacked this turn"
+    }
 }
 
 /**

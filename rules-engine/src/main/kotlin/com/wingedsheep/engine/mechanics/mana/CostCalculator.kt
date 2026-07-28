@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
+import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.sdk.core.CardType
@@ -441,8 +442,29 @@ class CostCalculator(
                 countBattlefieldPermanentsMatching(state, playerId, source.filter)
             is CostReductionSource.PermanentsSacrificedThisTurn ->
                 state.permanentsSacrificedThisTurn * source.amountPerPermanent
+            is CostReductionSource.CreaturesThatAttackedThisTurn ->
+                countCreaturesThatAttackedThisTurn(state) * source.amountPerCreature
         }
     }
+
+    /**
+     * The number of creatures declared as attackers this turn by any player, across every combat
+     * phase. Reads the per-player `PlayerAttackersThisTurnComponent` sets that
+     * `AttackPhaseManager` unions at each declare-attackers step, so an attacker that has since
+     * died, been exiled, or been bounced still counts — the count is turn history, not a
+     * battlefield scan. Cleared with the components at end-of-turn cleanup.
+     *
+     * A creature can only be declared as an attacker once per combat and the sets are per
+     * controller, so no de-duplication across players is needed.
+     */
+    private fun countCreaturesThatAttackedThisTurn(state: GameState): Int =
+        state.turnOrder.sumOf { playerId ->
+            state.getEntity(playerId)
+                ?.get<PlayerAttackersThisTurnComponent>()
+                ?.attackerIds
+                ?.size
+                ?: 0
+        }
 
     /**
      * Count permanents the player controls matching the filter. Iterates the projected-control
