@@ -2357,6 +2357,7 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
 - `Targets.ArtifactOrLand` — any artifact or land (Territory Forge).
 - `Targets.BasicLand` — any basic land.
 - `Targets.Spell` — any spell on the stack.
+- `Targets.SpellYouControl` — any spell on the stack you control, unrestricted by type (Slick Imitator's "Copy target spell you control"; a copied permanent spell resolves into a token).
 - `Targets.InstantOrSorcerySpellYouControl` — an instant or sorcery spell on the stack you control (copy-your-spell modes).
 - `Targets.CreatureSpellYouControl` — a creature spell on the stack you control (Choreographed Sparks' "Copy target creature spell you control").
 - `Targets.ActivatedOrTriggeredAbility` / `Targets.ActivatedAbility` — an ability on the stack (Stifle).
