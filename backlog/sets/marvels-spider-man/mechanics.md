@@ -529,7 +529,19 @@ Blocked cards:
 - **Spider-Verse** [93] — `{3}{R}{R}` Enchantment; the legend-rule exemption for Spiders is the blocker (the copy-spell-from-non-hand clause is fine).
 </details>
 
-## Play cards exiled **face down** from an opponent's library (controller may look + cast)
+## Play cards exiled **face down** from an opponent's library (controller may look + cast) — ✅ IMPLEMENTED
+
+**Done** (branch `spm-black-cat`). Needed **no new code** — the enabling feature (`FaceDownMode.HIDDEN`
+controller-visible-in-exile masking + `GrantMayPlayFromExileEffect(withAnyManaType = true)` + the
+cast-from-face-down-exile legal-action path) has landed since this card was first drafted (used by
+Laughing Jasper Flint / Cruelclaw's Heist). Black Cat's prior draft (from branch `spm-no-engine`,
+removed pending the feature) was restored verbatim: ETB `Gather` top-9 of `Targets.Opponent`'s library
+→ `SelectFromCollection(ChooseExactly(2), showAllCards, storeRemainder)` → exile the two
+`FaceDownMode.HIDDEN` + bottom the rest `CardOrder.Random` → `GrantMayPlayFromExile(Permanent,
+withAnyManaType = true)`. Scenario test pins the face-down exile + casting a stolen off-color spell
+paying entirely with off-color mana. Full regression green.
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Look at the top nine cards of target opponent's library, **exile two of them face down**, then
 > put the rest on the bottom in a random order. **You may play the exiled cards** for as long as
@@ -551,6 +563,8 @@ CastSpellHandler).
 
 Blocked cards:
 - **Black Cat, Cunning Thief** [52] — `{3}{B}{B}` Legendary Creature — Human Rogue Villain, 2/3; the ETB look/exile-two-face-down/bottom-rest pipeline resolves, but "you may play the exiled cards" is uncastable because the face-down HIDDEN exiled cards never surface as playable to the controller. (Previously authored on branch `spm-no-engine`, then removed pending this feature.)
+
+</details>
 
 ---
 
