@@ -356,7 +356,17 @@ Blocked cards:
 - **Anti-Venom, Horrifying Healer** [1] — `{W}{W}{W}{W}{W}` Symbiote Hero; ETB "if cast, reanimate a creature" is fine, but the damage-prevention-to-counters self-replacement is the blocker.
 </details>
 
-## Granted activated ability with `UntilYourNextTurn` duration never expires
+## Granted activated ability with `UntilYourNextTurn` duration never expires — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-costs-mana`. `CleanupPhaseManager.expireUntilYourNextTurnEffects` now also
+drops `grantedActivatedAbilities` whose duration is `UntilYourNextTurn`, keyed to the granted entity's
+current controller (correct for the self-grant case). The "becomes a non-creature land" half was *not* a
+missing primitive after all — `BecomeArtifactEffect` is a general "becomes [cardTypes]" effect;
+`BecomeArtifactEffect(cardTypes = setOf("LAND"), colors = null, loseAllAbilities = false, grantedAbility =
+"{T}: Add {U}", duration = UntilYourNextTurn)` expresses Hydro-Man's transform, and its granted mana
+ability expires via the fix above. Card: **Hydro-Man, Fluid Felon** [33].
+
+<details><summary>Original analysis</summary>
 
 > …until your next turn, he becomes a land and **gains "{T}: Add {U}."**
 
@@ -376,6 +386,7 @@ field, like the player-component grants).
 
 Blocked cards:
 - **Hydro-Man, Fluid Felon** [33] — `{U}{U}`; blue-cast pump (fine) + end-step "untap; until your next turn becomes a non-creature land with '{T}: Add {U}'". The **granted-activated `UntilYourNextTurn` expiry** half is now **fixed** on branch `spm-costs-mana` (`CleanupPhaseManager.expireUntilYourNextTurnEffects` drops `grantedActivatedAbilities` with that duration, keyed to the granted entity's controller). BUT the card is still blocked on a **second, unplanned primitive**: "becomes a **non-creature land**" is a type-*replacement* (lose creature card type + become a Land), and only `AddCardTypeEffect` (additive "in addition to its types") exists — there is no "becomes only a land" effect. Deferred until that type-replacement primitive is built.
+</details>
 
 ## Static damage redirect to the enchanted/equipped creature (Pariah-style) — ✅ IMPLEMENTED
 
