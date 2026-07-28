@@ -3,7 +3,7 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** **Phases 0, 1, 2, 3 and 4 shipped** (Phase 4 on 2026-07-28) — baselines in
+**Status:** **Phases 0, 1, 2, 3, 4 and 5 shipped** (Phases 4 and 5 on 2026-07-28) — baselines in
 [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
 [`docs/ai/measurement.md`](../docs/ai/measurement.md). Four scoreboards now exist: the arena
 (`just arena`), the 48-puzzle suite (`just arena-puzzles`, **39/48 today**), the multiplayer pod
@@ -13,7 +13,8 @@ that is meant to move the win rate rather than enable it. Phases are individuall
 ordered by dependency, not by appeal.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
-performance phase builds on. See "Cross-reference" below; parts of that doc are stale.
+performance phase built on. **Every step in that document is now closed**; Phase 5a was its Step 4
+and Phase 5c retired its Step 5. See "Cross-reference" below.
 
 > **Phase 0's measurements moved two later phases.** Simulation is ~3,400 `process()`/sec/thread,
 > already above Phase 5's 1,500–2,000 target, so **Phase 5 is no longer a gate on Phase 7**. And the
@@ -580,7 +581,46 @@ CI [49.8%, 52.7%]; ✅ `ArenaBudgetScalingTest` running **and monotone**.
 
 ---
 
-### Phase 5 — Simulation speed · *3–5 d* — **no longer a gate on Phase 7**
+### Phase 5 — Simulation speed · *3–5 d* — ✅ **DONE 2026-07-28** — *was never a gate on Phase 7*
+
+> **Shipped.** 5a is done and closes `engine-performance.md` Step 4; 5b was already dropped by
+> Phase 0; **5c is adjudicated and stays dropped**, now on a fresh profile rather than an old one.
+> `rules-engine/.../mechanics/mana/ManaStaticsIndex.kt` and
+> `rules-engine/.../event/BattlefieldStaticsIndex.kt` own the walks. Numbers and findings:
+> [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-5a--the-on-battlefield-scans).
+>
+> **The targeted leaves are gone**, measured with async-profiler over 60 BLB games:
+> `ManaSolver.findAvailableManaSources` **~59% → 3.1%** inclusive ·
+> `getStaticGrantedManaAbilities` **3.5% self → 0.00%** ·
+> `TriggerAbilityResolver.getWardTriggeredAbilities` **13.7% → 0.19%** ·
+> `isWardSuppressed` → **0.00%** · `GameState.getBattlefield()` **19% → 0.28%**. The two new
+> indexes together cost **0.71%** inclusive.
+>
+> Three corrections the build produced:
+>
+> 1. **An eagerly-built index is a hotspot of its own, and the first cut had one.** Giving
+>    `getTriggeredAbilities` a *default argument* that builds the index looks free and is not: Kotlin
+>    evaluates a default per call, and ~19 call sites sit inside per-entity loops, so
+>    `BattlefieldStaticsIndex.build` came back at **5.2% inclusive** — about the size of the hotspot
+>    the hoist had just removed. Threading it on `TriggerIndex` (which `detectTriggers` already
+>    builds once per pass) took it to **0.13%**, and `detectTriggers` from 20.7% to 7.1%.
+>    `ManaSolver` had the same trap and is fixed with a local `lazy(LazyThreadSafetyMode.NONE)`.
+>    **Hoisting work out of an inner loop is only half the fix; the other half is paying for it once
+>    per pass rather than once per call that might have needed it.**
+> 2. **`PredicateEvaluator.matchesCardPredicate` is now the engine's top hotspot at 20.4% self** —
+>    more than 3× the next entry. That is the next perf item, and it is a different shape of problem:
+>    not a redundant scan, but the per-call cost of the predicate language itself.
+> 3. **The benchmark delivers, but only against a same-day run.** Total engine CPU over 200 games
+>    goes **1,051 s → 832 s (−21%)** and wall clock 133 s → 108 s, with `process` nearly halving
+>    (287 s → 144 s — the trigger half) and `enumerate` down 10% (764 s → 688 s — the mana half).
+>    Against its own *recorded* baseline it reads ~290 actions/sec/thread versus ~404, which is not
+>    a regression: `GameState.turnNumber` counts player turns now rather than rounds, and the BLB
+>    pool has roughly doubled since May, so the two runs describe different workloads. Compare
+>    same-afternoon runs and let the profile say why.
+>
+> **Phase 0's headline conclusion stands unchanged:** simulation was already ~2× the rate the
+> rollout budget needs, so none of this was blocking Phase 7. It is a standing engine win taken on
+> its own merits.
 
 > **Phase 0 measured this target as already met.** The budget below assumed ~8 candidates and a
 > ~404 actions/sec/thread engine. Reality: **~3,400 `process()`/sec/thread** (as-played mix,
@@ -588,11 +628,6 @@ CI [49.8%, 52.7%]; ✅ `ArenaBudgetScalingTest` running **and monotone**.
 > ~6,800 `process()` calls ≈ **60 rollouts per decision, ~35 per candidate** — an order of magnitude
 > more than Phase 7's R = 3–4 × K = 1–2 needs. Steps 1–3 of `engine-performance.md`, which landed
 > after that baseline, evidently did the work.
->
-> **Build Phase 7 without waiting on this.** 5a remains a genuine standing engine win (the O(n²)
-> scan is real and was 59% inclusive) — do it as an independent perf task, on the performance plan's
-> own validation loop, not as a rollout prerequisite. 5c stays profile-gated and is now unlikely to
-> be justified at all.
 
 **The original budget, kept for the record:**
 
@@ -621,6 +656,27 @@ suppressor set once per detection pass.
 `getBattlefield()`'s memoization (already landed) removed the *allocation* cost of these scans but
 not the *iteration*. This is the remaining half.
 
+> **As built, the hoist went wider than the two named scans, because they had siblings.**
+> `getStaticGrantedManaAbilities` was one of *six* per-source battlefield walks inside
+> `findAvailableManaSources` (the other five: the aura colour override — carried twice, once in the
+> solver and once in `ManaAbilityEnumerator` — the `ReplaceLandManaColor` check, the aura bonus-mana
+> scan and the source-tap bonus-mana scan), and `isWardSuppressed` was one of *four* inside
+> `TriggerAbilityResolver` (the others: the battlefield-scope `GrantWard` scan and two
+> attachment scans). Fixing one and leaving its siblings would have left the O(n²) exactly where it
+> was, so each file got **one index instead of five one-off hoists**:
+> `mechanics/mana/ManaStaticsIndex.kt` and `event/BattlefieldStaticsIndex.kt`.
+>
+> Both index the *rare* static they hunt for, so an ordinary board yields the `EMPTY` instance and
+> the per-entity cost collapses to a lookup that finds nothing. Each bucket reproduces its original
+> loop's collection rules exactly — including the two places where those rules disagreed with one
+> another (face-down handling; `staticAbilities` vs `effectiveStaticAbilities`). Preserving a
+> pre-existing inconsistency is deliberate: this is a hoist, not a rules change.
+>
+> Fold-ins that came for free: `EnumerationContext.manaStatics` shares one index across a whole
+> enumeration pass, and `TriggerDetector.buildTriggerIndex`'s existing grant-provider pass merged
+> into the new walk (it was scanning for a sibling of the same `GrantX` shape over the same entity
+> set), so trigger detection now walks the battlefield once where it walked twice.
+
 #### 5b. Do **not** build a projection cache — *confirmed by Phase 0*
 
 An earlier draft of this plan proposed caching `StateProjector.project` across rollout states, on the
@@ -635,7 +691,12 @@ Phase 0 measured this independently: projection timed cold on a fresh `state.cop
 of one `process()` call**. Same verdict, from a different measurement — the ceiling on a perfect
 cache is ~12%.
 
-#### 5c. Persistent collections for `entities` / `zones` — profile-gated
+#### 5c. Persistent collections for `entities` / `zones` — profile-gated ❌ **DROPPED 2026-07-28**
+
+> **The gate was checked and it does not open.** In the post-5a profile the allocation cluster this
+> targets is `Arena::grow` **1.37%** plus `posix_madvise` ~0.7% — about **2%** of the engine, against
+> 4–6 days plus the serializer work below. `engine-performance.md` Step 5 says "only if `Arena::grow`
+> is still hot"; it is not. Everything below stays accurate as a design should the number ever move.
 
 Matches `engine-performance.md`'s own Step 5 ("only if `Arena::grow` is still hot"). `withEntity`
 (`GameState.kt:312`) is `copy(entities = entities + (id to container))` — an **O(entities) map copy
@@ -996,13 +1057,14 @@ but tanks a puzzle category, look hard before shipping.
 ## Recommended order
 
 ```
-0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
+0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 5̶ → 6 → 7 → 8 → 9 → 10
 ```
 
-Phases 0–4 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
-table, and the budget ladder is calibrated and monotone before any rollout depends on it.
-**Phase 5 has left the critical path** — simulation is already ~2× the speed the rollout budget
-needs, so 5a is now an independent engine-perf task and 5c is almost certainly not justified.
+Phases 0–5 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
+table, the budget ladder is calibrated and monotone before any rollout depends on it, and the
+engine's quadratic battlefield scans are gone (−21% engine CPU, and `engine-performance.md` is now
+fully closed out). **Phase 5 never was on the critical path** — simulation was already ~2× the speed
+the rollout budget needs — so it was taken as a standing engine win, not a prerequisite.
 Next up is **Phase 6, CardIntent** — the highest strength-per-effort item left, and the first phase
 since 3 that is meant to move a win rate rather than enable one.
 
@@ -1018,8 +1080,8 @@ Ranked by strength-per-effort, independent of ordering:
 | — | **4̶a** auto-pass filter | 3–5 d | **Done.** Demoted by Phase 0 and rescoped to "skip the enumeration": 40% of priority windows now never call the enumerator. Also closed Phase 1's 889-of-945 illegal-action finding, which turned out to be a targeting bug. |
 | — | **4̶b** DecisionBudget | 2–3 d | **Done.** Enabling infrastructure, and it measures like it — neutral in the arena, monotone in the scaling ladder. |
 | 7 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
-| 8 | **5a** hoist O(n²) scans | 3–5 d | Demoted by Phase 0: no longer needed for rollouts. Still a standing engine win — `findAvailableManaSources` was 59% inclusive. |
-| — | **5c** persistent collections | 4–6 d | **Drop** unless a fresh profile demands it. Phase 0 measured throughput at ~2× the required rate. |
+| — | **5̶a** hoist O(n²) scans | 3–5 d | **Done.** Demoted by Phase 0 (not a rollout prerequisite), taken as a standing engine win anyway: `findAvailableManaSources` 59% → 3.1% inclusive, −21% engine CPU. Closed `engine-performance.md` Step 4. |
+| — | **5̶c** persistent collections | 4–6 d | **Dropped**, gate checked. Post-5a profile puts the allocation cluster at ~2% (`Arena::grow` 1.37%). The top leaf is now `PredicateEvaluator.matchesCardPredicate` at 20.4% self. |
 | — | projection incrementalization | 2+ wk | **Skip.** 7.4% in the profile, 11% measured cold, and already cached. |
 
 Phases 0–2 are ~10 days of pure infrastructure before any strength lands. That is the correct trade:
@@ -1057,8 +1119,10 @@ Per phase, in addition to the exit criteria above:
   full `:rules-engine:test` + `:game-server:test` run, not just `:ai:test`. Always via `just`, never
   raw `./gradlew` — parallel agents each spawn their own daemons and thrash the box.
 - **Perf validation loop** (from `engine-performance.md`): after each perf step, `just test-rules` →
-  `just benchmark-random 200 BLB` vs baseline → re-profile with async-profiler and confirm the
-  targeted leaf shrank.
+  `just benchmark-random 200 BLB` **against a same-session run of the pre-change tree**, never
+  against a figure recorded months ago → re-profile with async-profiler and confirm the targeted
+  leaf shrank *and that nothing new appeared*. Phase 5a's first cut passed the "targeted leaf
+  shrank" half and failed the second, and only the benchmark caught it.
 - **SDK docs:** no card-SDK surface changes are expected. If any phase adds an SDK primitive,
   `docs/card-sdk-language-reference.md` updates in the *same* change.
 - **New docs:** `docs/ai/baseline-metrics.md` (Phase 0, appended per phase) ·
@@ -1074,32 +1138,25 @@ Per phase, in addition to the exit criteria above:
 
 ---
 
-## Cross-reference: `engine-performance.md` is partly stale
+## Cross-reference: `engine-performance.md` is now fully closed
 
-That doc's header still says *"Analysis complete, no fixes applied yet."* Verified against the code
-on 2026-07-27:
+Verified against the code on 2026-07-28:
 
 | Step | Status |
 |---|---|
 | 1 — remove kotlin-reflect from component keys | **Done** |
 | 2 — key components by `Class<*>` | **Done** — `ComponentContainer.kt:23` is `Map<Class<*>, Component>`, lookups at `:29/:45/:52` use `T::class.java` |
 | 3 — memoize `getBattlefield()` | **Done** — `GameState.kt:808` returns a `by lazy cachedBattlefield` built in one pass |
-| 4 — hoist battlefield scans in ward / trigger / mana detection | **NOT done** — this plan's Phase 5a |
-| 5 — reduce component-map copy churn | **NOT done** — this plan's Phase 5c |
+| 4 — hoist battlefield scans in ward / trigger / mana detection | **Done** — this plan's Phase 5a; `ManaStaticsIndex` + `BattlefieldStaticsIndex` |
+| 5 — reduce component-map copy churn | **Dropped** — this plan's Phase 5c; gate checked, `Arena::grow` is 1.37% |
 
-So the `~404 actions/sec/thread` baseline is **pre-Steps-1–3** and the current number is still
-unknown — Phase 0 did *not* re-run `just benchmark-random 200 BLB`. What Phase 0 did measure is the
-AI-driven workload (`just benchmark-throughput`), which puts `ActionProcessor.process` at ~3,400/sec
-per thread. The two benchmarks use different action mixes and are not directly comparable, so the
-random-action baseline still needs one clean run before Step 4 / Phase 5a starts.
+The `~404 actions/sec/thread` figure in that doc is **pre-Steps-1–3 and not comparable to anything
+measured since** — `GameState.turnNumber` counts player turns rather than rounds now, and the
+implemented BLB pool has roughly doubled, so the benchmark describes a different workload. Both docs
+now say so at the point where the number appears. Compare same-session runs and use the profile to
+explain the delta.
 
-Step 4 specifically, still live:
-- `ManaSolver.findAvailableManaSources` (`:916`) loops candidate entities and calls
-  `getStaticGrantedManaAbilities(entityId, state)` (`:945` → `:1823`), which itself loops
-  `state.getBattlefield()` → **O(n²) per enumerate**, and `findAvailableManaSources` was **59%
-  inclusive**.
-- `TriggerAbilityResolver.isWardSuppressed` (`:662`) still does `state.getBattlefield().any { … }`
-  from inside a per-entity path (`:496`).
-
-`getBattlefield()`'s memoization removed the *allocation* cost of these scans but not the
-*iteration*. Phase 5a is the remaining half — and it is a standing engine win independent of the AI.
+**The next perf item is not in that document.** `PredicateEvaluator.matchesCardPredicate` is the top
+leaf in the post-5a profile at **20.4% self**, more than 3× the next entry, reached from both the
+enumerator and every filter match. It is a different shape of problem from Steps 1–5 — the per-call
+cost of the predicate language rather than a redundant scan — and wants its own analysis.
