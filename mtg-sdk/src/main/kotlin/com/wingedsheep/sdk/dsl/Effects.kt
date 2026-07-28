@@ -451,6 +451,16 @@ object Effects {
         ExchangeLifeAndPowerEffect(target)
 
     /**
+     * Exchange the controller's life total with [target] player's (CR 701.12c). When
+     * [drawEqualToLifeLost] is true, the controller then draws a card for each point of life they
+     * lost in the exchange (Mister Negative).
+     */
+    fun ExchangeLifeTotals(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        drawEqualToLifeLost: Boolean = false
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ExchangeLifeTotalsEffect(target, drawEqualToLifeLost)
+
+    /**
      * Lose half your life, rounded up.
      * Composes as LoseLifeEffect with Divide(LifeTotal, 2).
      *

@@ -632,6 +632,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   is worded "equal to the life lost this way".
 - `SetLifeTotal(amount, target)` — set target's life total to N.
 - `ExchangeLifeAndPower(target)` — swap target's power with controller's life total.
+- `ExchangeLifeTotals(target, drawEqualToLifeLost)` — swap the controller's life total with `target`
+  player's (CR 701.12c, simultaneous; emits gain/loss events for lifelink/triggers). With
+  `drawEqualToLifeLost = true`, the controller then draws a card for each point of life they **lost** in
+  the swap (Mister Negative). Wrap the whole thing in `MayEffect` for "you may exchange".
 - `LoseHalfLife(roundUp, target, lifePlayer?)` — lose half of life total (round up/down).
 - `LockLifeGain(target?, duration?)` — "target player can't gain life" for `duration` (default
   `Duration.Permanent` = rest of the game; `EndOfTurn` / `UntilYourNextTurn` also honored). A one-shot

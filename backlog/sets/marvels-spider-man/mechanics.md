@@ -190,7 +190,16 @@ event filters (e.g. `DealsDamageEvent.sourceFilter`), + verify the delayed match
 Blocked cards:
 - **The Clone Saga** [28] — `{3}{U}` Enchantment — Saga; chapters I (Surveil 3) and II (copy your next creature spell, non-legendary — both expressible today) are fine, but chapter III ("choose a card name … whenever a creature with the chosen name deals combat damage, draw") is blocked
 
-## Exchange life totals with a player (CR 701.12c) + "life you lost this way" draw amount
+## Exchange life totals with a player (CR 701.12c) + "life you lost this way" draw amount — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-life-exchange`. Added `ExchangeLifeTotalsEffect(target, drawEqualToLifeLost)`
++ `ExchangeLifeTotalsExecutor` — reads both totals before any change (simultaneous swap, CR 701.12c),
+emits gain/loss `LifeChangedEvent`s for both players (for lifelink/triggers), marks life gained/lost, and —
+because the draw amount is the controller's life-loss delta that no `DynamicAmount` exposes — draws that
+many cards itself (via `DrawCardPrimitive`, `cardRegistry` threaded through `LifeExecutors`). Card:
+**Mister Negative** [135] (`MayEffect(Effects.ExchangeLifeTotals(drawEqualToLifeLost = true))`).
+
+<details><summary>Original analysis</summary>
 
 > You may **exchange life totals** with target opponent. If you lost life this way, draw that
 > many cards.
@@ -206,6 +215,7 @@ for lifelink/triggers) + a way to feed the controller's life-lost delta into `Dr
 
 Blocked cards:
 - **Mister Negative** [135] — `{5}{W}{B}` Vigilance/lifelink; "you may exchange life totals with target opponent. If you lost life this way, draw that many cards." (Vigilance + lifelink are fine; the ETB exchange is blocked.)
+</details>
 
 ## "Different names" multi-target distinctness constraint — ✅ IMPLEMENTED
 

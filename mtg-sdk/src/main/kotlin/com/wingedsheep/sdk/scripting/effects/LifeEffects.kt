@@ -185,3 +185,26 @@ data class ExchangeLifeAndPowerEffect(
 ) : Effect {
     override val description: String = "Exchange your life total with ${target.description}'s power"
 }
+
+/**
+ * Exchange the controller's life total with [target] player's (CR 701.12c — a simultaneous swap:
+ * each becomes the other's former total). Emits gain/loss `LifeChangedEvent`s for both players so
+ * lifelink / life-change triggers see them, and marks life gained/lost this turn.
+ *
+ * When [drawEqualToLifeLost] is true, the controller then draws a card for each point of life they
+ * **lost** in the exchange (their former total minus their new total, when positive) — Mister
+ * Negative's "If you lost life this way, draw that many cards." Modelled as one self-contained
+ * effect because the draw amount is the controller's life-loss delta, which no `DynamicAmount`
+ * otherwise exposes.
+ */
+@SerialName("ExchangeLifeTotals")
+@Serializable
+data class ExchangeLifeTotalsEffect(
+    val target: EffectTarget = EffectTarget.ContextTarget(0),
+    val drawEqualToLifeLost: Boolean = false
+) : Effect {
+    override val description: String = buildString {
+        append("Exchange life totals with ${target.description}")
+        if (drawEqualToLifeLost) append(". If you lost life this way, draw that many cards")
+    }
+}
