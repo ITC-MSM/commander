@@ -103,6 +103,12 @@ class TriggerIndex(
     private val byCategory: Map<TriggerCategory, List<IndexedEntity>>,
     val aurasByTarget: Map<EntityId, List<IndexedEntity>>,
     val grantProviders: List<GrantProviderEntry>,
+    /**
+     * The battlefield-wide statics every `getTriggeredAbilities` call in this pass reads. Carried
+     * here so the detectors thread one instance through instead of each call rebuilding it — a
+     * rebuild per call showed up at 5% of the engine profile.
+     */
+    val statics: BattlefieldStaticsIndex,
     val damageToYouObservers: List<IndexedEntity>,
     val subtypeDamageObservers: List<IndexedEntity>,
     val damageObservers: List<IndexedEntity>,
@@ -175,6 +181,7 @@ class TriggerIndex(
             byCategory = emptyMap(),
             aurasByTarget = emptyMap(),
             grantProviders = emptyList(),
+            statics = BattlefieldStaticsIndex.EMPTY,
             damageToYouObservers = emptyList(),
             subtypeDamageObservers = emptyList(),
             damageObservers = emptyList(),

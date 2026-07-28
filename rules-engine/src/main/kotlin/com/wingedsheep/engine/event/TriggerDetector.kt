@@ -203,6 +203,7 @@ class TriggerDetector(
             byCategory = categoryMap,
             aurasByTarget = auraMap,
             grantProviders = grantProviders,
+            statics = statics,
             damageToYouObservers = damageToYou,
             subtypeDamageObservers = subtypeDmg,
             damageObservers = damageObs,
@@ -244,7 +245,7 @@ class TriggerDetector(
         // each creature's death triggers should still see the others dying.
         // The main loop in detectTriggersForEvent only checks battlefield creatures,
         // so dead creatures miss each other's death events. Fix that here.
-        deathAndLeaveDetector.detectSimultaneousDeathTriggers(state, events, triggers)
+        deathAndLeaveDetector.detectSimultaneousDeathTriggers(state, index.statics, events, triggers)
 
         // Detect "whenever one or more cards are put into your graveyard from your library"
         // batching triggers (e.g., Sidisi, Brood Tyrant). Groups library→graveyard zone changes
@@ -536,7 +537,7 @@ class TriggerDetector(
                 val container = state.getEntity(entityId) ?: continue
                 val cardComponent = container.get<CardComponent>() ?: continue
 
-                val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state)
+                val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, index.statics)
 
                 for (ability in abilities) {
                     if (ability.activeZone != Zone.GRAVEYARD) continue
@@ -565,7 +566,7 @@ class TriggerDetector(
                 val container = state.getEntity(entityId) ?: continue
                 val cardComponent = container.get<CardComponent>() ?: continue
 
-                val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state)
+                val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, index.statics)
 
                 for (ability in abilities) {
                     if (ability.activeZone != Zone.EXILE) continue
@@ -1351,7 +1352,7 @@ class TriggerDetector(
                 if (event is ZoneChangeEvent && event.fromZone == Zone.BATTLEFIELD &&
                     event.entityId == entityId) continue
 
-                val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state)
+                val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, index.statics)
 
                 for (ability in abilities) {
                     if (ability.activeZone != Zone.GRAVEYARD) continue
@@ -1382,12 +1383,12 @@ class TriggerDetector(
         // Handle death triggers (source might not be on battlefield anymore)
         if (event is ZoneChangeEvent && event.toZone == Zone.GRAVEYARD &&
             event.fromZone == Zone.BATTLEFIELD) {
-            deathAndLeaveDetector.detectDeathTriggers(state, event, triggers)
+            deathAndLeaveDetector.detectDeathTriggers(state, index.statics, event, triggers)
             // Handle "whenever a creature dealt damage by this creature this turn dies" triggers
             deathAndLeaveDetector.detectCreatureDealtDamageBySourceDiesTriggers(state, event, triggers, projected, index)
             // Handle ATTACHED zone-change triggers on auras that went to graveyard with their creature
             // (detected on the AURA's zone change event using lastKnownAttachedTo)
-            deathAndLeaveDetector.detectDeadAuraAttachmentTriggers(state, event, triggers)
+            deathAndLeaveDetector.detectDeadAuraAttachmentTriggers(state, index.statics, event, triggers)
             // Handle persist (CR 702.79) — nontoken creature with persist dies with no -1/-1 counter
             deathAndLeaveDetector.detectPersistTriggers(state, event, triggers)
             // Handle Enduring (Duskmourn Glimmer cycle) — nontoken creature with Enduring dies and
@@ -1397,34 +1398,34 @@ class TriggerDetector(
 
         // Handle leaves-the-battlefield triggers (source is no longer on battlefield)
         if (event is ZoneChangeEvent && event.fromZone == Zone.BATTLEFIELD) {
-            deathAndLeaveDetector.detectLeavesBattlefieldTriggers(state, event, triggers)
+            deathAndLeaveDetector.detectLeavesBattlefieldTriggers(state, index.statics, event, triggers)
         }
 
         // Handle cycling triggers on the cycled card itself (e.g., Renewed Faith)
         if (event is CardCycledEvent) {
-            detectCyclingCardTriggers(state, event, triggers)
+            detectCyclingCardTriggers(state, index.statics, event, triggers)
         }
 
         // Handle "when this card becomes plotted" triggers on the plotted card itself, which
         // now sits face up in exile rather than on the battlefield (e.g., Aloe Alchemist).
         if (event is CardPlottedEvent) {
-            detectPlottedCardTriggers(state, event, triggers)
+            detectPlottedCardTriggers(state, index.statics, event, triggers)
         }
 
         // Handle damage-received triggers for creatures no longer on the battlefield
         // (e.g., Broodhatch Nantuko dies from combat damage but trigger still fires)
         if (event is DamageDealtEvent && event.targetId !in state.getBattlefield()) {
-            damageDetector.detectDamageReceivedTriggers(state, event, triggers)
+            damageDetector.detectDamageReceivedTriggers(state, index.statics, event, triggers)
         }
 
         // Handle damage-source triggers
         if (event is DamageDealtEvent && event.sourceId != null) {
-            damageDetector.detectDamageSourceTriggers(state, event, triggers, projected)
+            damageDetector.detectDamageSourceTriggers(state, index.statics, event, triggers, projected)
         }
 
         // Handle "whenever a creature/spell deals damage to this" triggers (e.g., Tephraderm)
         if (event is DamageDealtEvent && event.sourceId != null) {
-            damageDetector.detectDamagedBySourceTriggers(state, event, triggers)
+            damageDetector.detectDamagedBySourceTriggers(state, index.statics, event, triggers)
         }
 
         // Handle "whenever a creature deals damage to you" triggers (e.g., Aurification)
@@ -1449,8 +1450,8 @@ class TriggerDetector(
         // Handle "when you gain control of this from another player" triggers (e.g., Risky Move)
         // and "whenever an opponent gains control of a permanent from you" triggers (e.g., Zidane).
         if (event is ControlChangedEvent) {
-            detectControlChangeTriggers(state, event, triggers)
-            detectOpponentGainsControlTriggers(state, event, triggers)
+            detectControlChangeTriggers(state, index.statics, event, triggers)
+            detectOpponentGainsControlTriggers(state, index.statics, event, triggers)
         }
 
         // Handle self-cast triggers on the spell currently being cast — both NthSpellCast
@@ -1458,7 +1459,7 @@ class TriggerDetector(
         // this spell" cast triggers (e.g. Sage of the Skies). The spell is on the stack, not
         // the battlefield, so the main index scan above skips it.
         if (event is SpellCastEvent) {
-            detectSelfCastTriggers(state, event, triggers)
+            detectSelfCastTriggers(state, index.statics, event, triggers)
         }
 
         // Handle a self-exploiting creature's own exploit watcher (CR 603.10a look-back). When an
@@ -1467,7 +1468,7 @@ class TriggerDetector(
         // exploits ..." trigger (Skull Skaab). The exploiter was on the battlefield as its exploit
         // ability resolved, so the sacrifice look-back requires that watcher to still fire.
         if (event is com.wingedsheep.engine.core.ExploitedEvent) {
-            detectExploitedSelfSacrificeTriggers(state, event, triggers)
+            detectExploitedSelfSacrificeTriggers(state, index.statics, event, triggers)
         }
 
         return triggers
@@ -1494,6 +1495,7 @@ class TriggerDetector(
      */
     private fun detectExploitedSelfSacrificeTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: com.wingedsheep.engine.core.ExploitedEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -1505,7 +1507,7 @@ class TriggerDetector(
         val cardComponent = container.get<CardComponent>() ?: return
         val controllerId = event.exploiterControllerId
 
-        val abilities = abilityResolver.getTriggeredAbilities(exploiterId, cardComponent.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(exploiterId, cardComponent.cardDefinitionId, state, statics)
         for (ability in abilities) {
             if (ability.trigger !is EventPattern.ExploitedEvent) continue
             if (ability.binding == TriggerBinding.OTHER) continue
@@ -1538,6 +1540,7 @@ class TriggerDetector(
      */
     private fun detectSelfCastTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: SpellCastEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -1546,7 +1549,7 @@ class TriggerDetector(
         val cardComponent = container.get<CardComponent>() ?: return
         if (container.has<FaceDownComponent>()) return
 
-        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, statics)
         val controllerId = event.casterId
 
         for (ability in abilities) {
@@ -1643,6 +1646,7 @@ class TriggerDetector(
      */
     private fun detectCyclingCardTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: CardCycledEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -1650,7 +1654,7 @@ class TriggerDetector(
         val container = state.getEntity(entityId) ?: return
         val cardComponent = container.get<CardComponent>() ?: return
 
-        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, statics)
 
         for (ability in abilities) {
             if (ability.trigger is EventPattern.CycleEvent) {
@@ -1676,6 +1680,7 @@ class TriggerDetector(
      */
     private fun detectPlottedCardTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: CardPlottedEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -1683,7 +1688,7 @@ class TriggerDetector(
         val container = state.getEntity(entityId) ?: return
         val cardComponent = container.get<CardComponent>() ?: return
 
-        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, statics)
 
         for (ability in abilities) {
             if (ability.trigger is EventPattern.BecomesPlottedEvent) {
@@ -2024,7 +2029,7 @@ class TriggerDetector(
                     val cardComponent = container.get<CardComponent>() ?: continue
 
                     val abilities = abilityResolver.getTriggeredAbilities(
-                        permanentId, cardComponent.cardDefinitionId, state
+                        permanentId, cardComponent.cardDefinitionId, state, index.statics
                     )
                     for (ability in abilities) {
                         val trigger = ability.trigger
@@ -2518,7 +2523,7 @@ class TriggerDetector(
                 ?: event.lastKnown?.cardDefinitionId ?: continue
             val controllerId = event.lastKnown?.controllerId ?: event.ownerId
             val sourceName = container?.get<CardComponent>()?.name ?: event.entityName
-            for (ability in abilityResolver.getTriggeredAbilities(event.entityId, cardDefId, state)) {
+            for (ability in abilityResolver.getTriggeredAbilities(event.entityId, cardDefId, state, index.statics)) {
                 if (ability.trigger !is EventPattern.CreaturesYouControlDiedEvent) continue
                 fireCreaturesDiedBatchTrigger(
                     state = state,
@@ -3380,6 +3385,7 @@ class TriggerDetector(
      */
     private fun detectControlChangeTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: ControlChangedEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -3393,7 +3399,7 @@ class TriggerDetector(
         // Only fire if control actually changed
         if (event.oldControllerId == event.newControllerId) return
 
-        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, statics)
 
         for (ability in abilities) {
             val controlTrigger = ability.trigger as? EventPattern.ControlChangeEvent
@@ -3434,6 +3440,7 @@ class TriggerDetector(
      */
     private fun detectOpponentGainsControlTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: ControlChangedEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -3457,7 +3464,7 @@ class TriggerDetector(
                 else state.projectedState.getController(holderId)
             if (holderControllerBefore != oldController) continue
 
-            val abilities = abilityResolver.getTriggeredAbilities(holderId, cardComponent.cardDefinitionId, state)
+            val abilities = abilityResolver.getTriggeredAbilities(holderId, cardComponent.cardDefinitionId, state, statics)
             for (ability in abilities) {
                 val controlTrigger = ability.trigger as? EventPattern.ControlChangeEvent ?: continue
                 if (controlTrigger.direction != com.wingedsheep.sdk.scripting.ControlChangeDirection.LOST) continue

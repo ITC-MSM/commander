@@ -132,12 +132,10 @@ need to justify itself.
 
 ## Not yet refreshed
 
-`just benchmark-random 200 BLB` — the raw random-action baseline that
-[`engine-performance.md`](../../backlog/engine-performance.md) quotes as `~404 actions/sec/thread`
-(pre-Steps-1–3) — **was not re-run in Phase 0.** The AI-driven numbers above supersede it for
-budgeting the rollout evaluator, but the random-action figure is what the performance plan's
-validation loop compares against step-by-step, so it still needs one clean run before Step 4 / Phase 5a
-starts. It is one command and no code.
+~~`just benchmark-random 200 BLB`~~ — **re-run in Phase 5a**, see
+[below](#phase-5a--the-on-battlefield-scans). The finding is that it is not comparable to the
+`~404 actions/sec/thread` figure it was supposed to be compared against, for reasons that have
+nothing to do with engine speed.
 
 ## Not measured here
 

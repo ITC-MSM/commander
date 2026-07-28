@@ -3,22 +3,24 @@
 CPU profile of the rules engine's hot path (legal-action enumeration + action processing),
 with a prioritized plan to cut total CPU. Generated May 2026 from a sampled profiling run.
 
-**Status:** Steps 1–3 shipped. **Steps 4–5 outstanding** — Step 4 is now the top remaining hotspot.
+**Status:** Steps 1–4 shipped (Step 4 on 2026-07-28). **Step 5 outstanding, and profile-gated.**
 Items below are ordered by impact ÷ risk; each carries its own status marker.
 
-> ⚠️ **The profile and the baseline below predate Steps 1–3.** The measured hotspot table and the
-> `~404 actions/sec/thread` figure describe the engine *before* the component-keying and
-> `getBattlefield()` fixes landed. Percentages for the fixed items are historical; the remaining
-> items' shares are now *larger* than shown. **Re-profile and re-baseline before starting Step 4** —
-> `just benchmark-random 200 BLB` is one command and it has not been re-run.
+> ⚠️ **The profile and the May 2026 baseline below predate Steps 1–3.** The measured hotspot table
+> and the `~404 actions/sec/thread` figure describe the engine *before* the component-keying and
+> `getBattlefield()` fixes landed, so percentages for the fixed items are historical.
 >
-> Indirect evidence that Steps 1–3 helped a lot: Phase 0 of
-> [`engine-ai-improvement.md`](engine-ai-improvement.md) measured `ActionProcessor.process` at
-> **~3,400 calls/sec/thread** on the AI-driven workload
-> ([`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md)). Different action mix, so not
-> directly comparable to the 404 figure — but it is ~8× it, and it means **Step 4 is no longer
-> blocking the AI's rollout evaluator.** Step 4 is now worth doing on its own merits (the O(n²) scan
-> is real), not as a prerequisite for anything.
+> **The random-action baseline has now been re-run** (2026-07-28, Step 4's own before/after) — see
+> ["Baseline"](#baseline) below and
+> [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-5a--the-on-battlefield-scans).
+> Read the 404 figure as *not comparable* rather than as a target: the BLB card pool has roughly
+> doubled since May, and `GameState.turnNumber` now counts player turns rather than rounds, so the
+> same game reports ~2× the turns. Only the same-session before/after pair says anything.
+>
+> Phase 0 of [`engine-ai-improvement.md`](engine-ai-improvement.md) measured
+> `ActionProcessor.process` at **~3,400 calls/sec/thread** on the AI-driven workload. Different
+> action mix, not directly comparable either — but it is why **Step 4 was never blocking the AI's
+> rollout evaluator**, and why it shipped on its own merits rather than as a prerequisite.
 
 ## Methodology
 
@@ -188,28 +190,42 @@ phased-out filter once rather than a reflective `has<PhasedOutComponent>()` per 
   construction — which the immutability invariant already guarantees. Keep `allBattlefieldEntities()`
   (the phased-out-inclusive variant) as-is.
 
-### Step 4 — Hoist battlefield scans in ward / trigger / mana detection ⬜ **NOT DONE — top remaining item** *(medium)*
+### Step 4 — Hoist battlefield scans in ward / trigger / mana detection ✅ **DONE 2026-07-28** *(medium)*
 
-> Verified outstanding 2026-07-27. Both quadratic scans are still live:
+> Shipped as Phase 5a of [`engine-ai-improvement.md`](engine-ai-improvement.md). Two new index
+> types own the walk, and the nine per-entity scans that used to hunt for these statics are gone:
 >
-> - `ManaSolver.findAvailableManaSources` (`:916`) loops candidate entities and calls
->   `getStaticGrantedManaAbilities(entityId, state)` (`:945` → `:1823`), which itself loops
->   `state.getBattlefield()` → **O(n²) per enumerate**, and enumerate runs at every priority step.
->   This method was **59% inclusive** in the profile.
-> - `TriggerAbilityResolver.isWardSuppressed` (`:662`) still does `state.getBattlefield().any { … }`
->   from inside a per-entity path (`:496`).
+> - `rules-engine/.../mechanics/mana/ManaStaticsIndex.kt` — built once per
+>   `findAvailableManaSources` / `calculateExplicitActivationBonusMana` call, and once per
+>   enumeration pass on `EnumerationContext.manaStatics`. It replaces **six** per-source battlefield
+>   walks: `getStaticGrantedManaAbilities`, `findEnchantedLandManaColorOverride` (twice — the solver
+>   and `ManaAbilityEnumerator` each carried a copy), `landMatchesManaColorReplacement`,
+>   `augmentWithAuraBonusMana`, `augmentWithSourceTapBonusMana`.
+> - `rules-engine/.../event/BattlefieldStaticsIndex.kt` — built once per `detectTriggers` pass and
+>   threaded into `getTriggeredAbilities` / `getTriggeredAbilitiesWithProviders`. It replaces the
+>   battlefield-scope `GrantWard` scan, the `isWardSuppressed` scan, and the two attachment scans in
+>   `getWardTriggeredAbilities` / `getAttachedGrantedTriggeredAbilities`.
 >
-> With Step 3's memoization landed, the ~5–8% estimate below is understated — the remaining cost is
-> pure iteration, which memoization did nothing for, and it is now a larger share of a smaller total.
+> Both index the *rare* statics they are hunting for, so an ordinary board produces the `EMPTY`
+> instance and the per-entity cost collapses to a lookup that finds nothing. Each bucket reproduces
+> its original loop's collection rules exactly — including where those rules disagreed with each
+> other about face-down permanents and about `staticAbilities` vs `effectiveStaticAbilities` — so
+> this is a hoist, not a rules change.
+>
+> **Measured:** the fresh random-action baseline and the post-change numbers are in
+> [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-5a--the-on-battlefield-scans).
+> Gates: `just test-rules`, `:game-server:test`, `:ai:test` green; six new unit tests pin what each
+> index bucket collects (`ManaStaticsIndexTest`, `BattlefieldStaticsIndexTest`).
 
-Compute the battlefield list **once** per `detectTriggers` / `findAvailableManaSources` call and
-pass it down to the inner loops instead of re-calling `getBattlefield()`. Fix the O(n²)
-`isWardSuppressed` by precomputing the set of ward-suppressors once per detection pass.
+**The original plan, kept for the record:** compute the battlefield list once per `detectTriggers` /
+`findAvailableManaSources` call and pass it down instead of re-calling `getBattlefield()`; fix the
+O(n²) `isWardSuppressed` by precomputing the set of ward-suppressors once per detection pass.
 
-- Largely subsumed by Step 3's memoization for the allocation cost, but eliminating the redundant
-  *iteration* (and the quadratic suppressor check) is a separate, additive win on big boards.
-- **Risk:** medium — refactors signatures in `TriggerAbilityResolver` / `ManaSolver`; behavior
-  must be identical. Cover with existing ward / trigger scenario tests.
+What changed in execution: hoisting the *list* would have removed only the allocation, which Step 3
+had already removed. The cost that remained was the **iteration**, so the fix had to hoist the
+*result of the scan* — hence an index per concern rather than a shared battlefield list. And once
+one scan in each file was indexed, leaving its four siblings scanning would have left the O(n²)
+in place, so all of them moved.
 
 ### Step 5 (optional) — Reduce component-map copy churn ⬜ **NOT DONE** *(only if still hot)*
 

@@ -621,6 +621,27 @@ suppressor set once per detection pass.
 `getBattlefield()`'s memoization (already landed) removed the *allocation* cost of these scans but
 not the *iteration*. This is the remaining half.
 
+> **As built, the hoist went wider than the two named scans, because they had siblings.**
+> `getStaticGrantedManaAbilities` was one of *six* per-source battlefield walks inside
+> `findAvailableManaSources` (the other five: the aura colour override — carried twice, once in the
+> solver and once in `ManaAbilityEnumerator` — the `ReplaceLandManaColor` check, the aura bonus-mana
+> scan and the source-tap bonus-mana scan), and `isWardSuppressed` was one of *four* inside
+> `TriggerAbilityResolver` (the others: the battlefield-scope `GrantWard` scan and two
+> attachment scans). Fixing one and leaving its siblings would have left the O(n²) exactly where it
+> was, so each file got **one index instead of five one-off hoists**:
+> `mechanics/mana/ManaStaticsIndex.kt` and `event/BattlefieldStaticsIndex.kt`.
+>
+> Both index the *rare* static they hunt for, so an ordinary board yields the `EMPTY` instance and
+> the per-entity cost collapses to a lookup that finds nothing. Each bucket reproduces its original
+> loop's collection rules exactly — including the two places where those rules disagreed with one
+> another (face-down handling; `staticAbilities` vs `effectiveStaticAbilities`). Preserving a
+> pre-existing inconsistency is deliberate: this is a hoist, not a rules change.
+>
+> Fold-ins that came for free: `EnumerationContext.manaStatics` shares one index across a whole
+> enumeration pass, and `TriggerDetector.buildTriggerIndex`'s existing grant-provider pass merged
+> into the new walk (it was scanning for a sibling of the same `GrantX` shape over the same entity
+> set), so trigger detection now walks the battlefield once where it walked twice.
+
 #### 5b. Do **not** build a projection cache — *confirmed by Phase 0*
 
 An earlier draft of this plan proposed caching `StateProjector.project` across rollout states, on the

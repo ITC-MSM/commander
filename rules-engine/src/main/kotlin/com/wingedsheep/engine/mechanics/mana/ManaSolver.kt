@@ -923,7 +923,13 @@ class ManaSolver(
 
         // Collect every mana-relevant battlefield static once, rather than re-walking the
         // battlefield inside each of the five per-source helpers below (see ManaStaticsIndex).
-        val manaStatics = ManaStaticsIndex.build(state, cardRegistry)
+        //
+        // Lazily, and that matters: this function is called on every affordability check, and a
+        // player who is tapped out has no candidate source at all, so the helpers below never run.
+        // Building eagerly would charge a battlefield walk to exactly the calls that used to do no
+        // scanning whatsoever — measurably the wrong trade in a benchmark full of tapped-out
+        // windows. NONE is safe because a solve never leaves the calling thread.
+        val manaStatics by lazy(LazyThreadSafetyMode.NONE) { ManaStaticsIndex.build(state, cardRegistry) }
 
         // Use projected controller to find all permanents controlled by this player
         // (accounts for control-changing effects like Annex)
