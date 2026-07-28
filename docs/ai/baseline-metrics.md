@@ -834,3 +834,90 @@ A card the analyzer cannot interpret gets `CardIntent.UNKNOWN`, whose `staticPri
 historical flat `0.5`. And the prior is applied as a **floor**, never a ceiling: no permanent is
 ever valued lower than it was before Phase 6. Both choices point the same way — the failure mode is
 "no better than before", never "confidently wrong".
+
+---
+
+# Phase 2b — Puzzle suite, second pass
+
+Measured 2026-07-29. Three of the six planned categories shipped — the three that needed no
+framework change. `just arena-puzzles`.
+
+## Why the suite needed a second pass
+
+Phase 6 took it to 44/48, and **two of the four remaining failures were the same constant**
+(`CardAdvantage.cardValue(0) = −3.0`, which Phase 9 exists to refit). So the plan's most expensive
+phase, the rollout evaluator, had a **two-puzzle** localizing signal — and its written exit
+criterion, phrased over sequencing / race math / board-wipe timing, could move exactly **one**,
+because those categories stood at 5/6, 5/6 and 6/6 and the one sequencing miss is the Phase 9
+constant.
+
+The 48 also shared five properties by construction rather than by choice: every position probed
+`chooseAction` at a clean priority window (so all 18 `PendingDecision` branches in
+`DecisionResponder.kt` were unmeasured), scored **one** action (so a *line* was inexpressible), was
+1v1, never had anything on the stack, and never asserted on an `ActivateAbility` — even though
+`PuzzleMove` had spoken one since Phase 2.
+
+## Per-category baseline — 48 → 66 puzzles
+
+`AiProfile.PRODUCTION`, with the zero-weight `v0-blind` control.
+
+| Category | `production` | `v0-blind` |
+|---|---|---|
+| lethal | 6/6 | 6/6 |
+| blocking | 6/6 | 6/6 |
+| removal | 6/6 | 0/6 |
+| instants | 5/6 | 2/6 |
+| sequencing | 5/6 | 0/6 |
+| wipe | 6/6 | 3/6 |
+| race | 5/6 | 5/6 |
+| noncreature | 5/6 | 0/6 |
+| **respond** *(new)* | **5/6** | **1/6** |
+| **activate** *(new)* | **5/6** | **2/6** |
+| **keywords** *(new)* | **6/6** | **5/6** |
+| **total** | **60/66 (91%)** | **30/66 (45%)** |
+
+The AI solves **16 of the 18** new positions. The discrimination control holds at the new size,
+which was the criterion that mattered: a set of 18 positions that a blind agent solves as often as
+the real one would be 18 coin flips.
+
+## What Phase 2b found
+
+**1. A latent harness bug, hiding behind the fact that no earlier puzzle had twin blockers.**
+`PuzzleMove.blockAssignments` was a `Map<String, List<String>>` keyed by **card name**, so two
+Grizzly Bears gang-blocking one attacker collapsed into a single map entry and
+`shouldBlockWithAtLeast` counted 1. `keywords-03` (menace) therefore reported a failure the AI had
+not made — it finds the double block correctly. It is a `List<Pair<…>>` now.
+
+The engine was never at fault, and `PuzzleRunner` had already said so: it processes every chosen
+move and fails the puzzle when the engine rejects it, and it did not reject this one.
+`BlockPhaseManager.validateMenaceRequirements:504` is correct. **A puzzle reporting an illegal move
+that the engine accepts is a harness bug, every time** — the legality gate is the tell.
+
+**2. `keywords` barely discriminates — 6/6 against 5/6 blind — which is Phase 2's finding again.**
+Combat is carried by `CombatAdvisor`'s seed heuristics, not by `BoardFeatures.kt`, exactly as
+`lethal` and `blocking` already showed. Trample, menace and reach are a regression net for *that*
+code and a `BoardFeatures` change will not move them. The one position in the category that the
+evaluator owns is `keywords-06` — Murder with an indestructible creature and a Craw Wurm to choose
+between — and it passes: `chooseCommittedTargets`' simulation refinement does overrule
+`heuristicTargetRank`'s +3.0 indestructible bonus in time. That was a predicted failure and the
+prediction was wrong, which is worth more than the pass.
+
+**3. Both new failures are `instants-05`'s shape, and that is the deliverable.**
+
+| Puzzle | Why it fails |
+|---|---|
+| `respond-05` | A regeneration shield is bought *before* the destruction it answers. At the moment of the activation the board is unchanged and two mana are gone |
+| `activate-05` | Firebreathing an unblocked attacker pays now for damage that lands at the combat-damage step. `evaluate1Ply` simulates to the next quiet state, which is still inside declare-blockers |
+
+Both are "pay now for an effect that materializes a step later", which is precisely what
+`instants-05` (Fog at 2 life) has failed on since Phase 2. **Phase 7's signal is now four puzzles
+rather than two** — `instants-05`, `race-03`, `respond-05`, `activate-05` — and two of the four are
+non-combat, so `CombatAdvisor` cannot carry them the way it carries `lethal` and `blocking`.
+
+## Not built
+
+`walker`, `lines`, `decisions` and `pod` need framework work first, itemized in
+`backlog/engine-ai-improvement.md` § Phase 2b. One concrete finding from scoping them:
+`withCardOnBattlefield` attaches no `CountersComponent`, so a **planeswalker placed directly on the
+battlefield enters at 0 loyalty and dies to state-based actions immediately** — the walker category
+cannot be written until `ScenarioBuilder` can seed counters.

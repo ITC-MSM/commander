@@ -97,7 +97,7 @@ arena A B GAMES="300" SET="BLB" SEED="20260727":
 arena-puzzles:
     scripts/gradle-locked :ai:test --tests "*.PuzzleSuiteTest"
 
-# Same 48 puzzles across AI profiles (v0, production) with a side-by-side per-category table.
+# Same 66 puzzles across AI profiles (v0, production) with a side-by-side per-category table.
 [group: 'ai']
 arena-puzzles-compare:
     scripts/gradle-locked :ai:test --tests "*.PuzzleComparisonBenchmark" -Dbenchmark=true

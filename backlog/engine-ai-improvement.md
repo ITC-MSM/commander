@@ -166,24 +166,37 @@ must not lose to any gauntlet member worse than 45%.
 ### 2. Tactical puzzle suite — the localizing signal
 
 Win rate says *that* you regressed; a puzzle says *what*. Runs in ~15 s, CI-gated.
-**48 puzzles, 8 categories × 6.** Built in Phase 2; scores are the measured 2026-07-27 baseline for
-`v0`/`production`, with the zero-weight `v0-blind` control in brackets.
+**66 puzzles, 11 categories × 6.** Categories 1–8 built in Phase 2, 9–11 in Phase 2b. The baseline
+column is the measured 2026-07-27 figure for `v0`/`production` (2026-07-29 for the Phase 2b
+categories), with the zero-weight `v0-blind` control in brackets; **"Today"** is `production` now,
+after Phase 6.
 
-| Category | Baseline | What it catches |
-|---|---|---|
-| Lethal detection | 6/6 [6/6] | Missing an alpha strike / burn-to-face kill |
-| Blocking | 6/6 [6/6] | Chump vs trade vs no-block; deathtouch / first strike |
-| Removal targeting | 6/6 [0/6] | Shooting the 1/1 instead of the bomb (`heuristicTargetRank`) |
-| Holding instants | 3/6 [2/6] | Casting a combat trick in your own main phase |
-| Sequencing | 5/6 [0/6] | Land before spell; the land that unlocks the spell |
-| Board-wipe timing | 6/6 [3/6] | Wrathing while ahead |
-| Race math | 5/6 [5/6] | Attack-vs-hold when both players are on a clock |
-| **Non-creature valuation** | **2/6** [0/6] | Ignoring an opposing O-Ring / mana rock / anthem |
+| Category | Baseline | Today | What it catches |
+|---|---|---|---|
+| Lethal detection | 6/6 [6/6] | 6/6 | Missing an alpha strike / burn-to-face kill |
+| Blocking | 6/6 [6/6] | 6/6 | Chump vs trade vs no-block; deathtouch / first strike |
+| Removal targeting | 6/6 [0/6] | 6/6 | Shooting the 1/1 instead of the bomb (`heuristicTargetRank`) |
+| Holding instants | 3/6 [2/6] | 5/6 | Casting a combat trick in your own main phase |
+| Sequencing | 5/6 [0/6] | 5/6 | Land before spell; the land that unlocks the spell |
+| Board-wipe timing | 6/6 [3/6] | 6/6 | Wrathing while ahead |
+| Race math | 5/6 [5/6] | 5/6 | Attack-vs-hold when both players are on a clock |
+| Non-creature valuation | 2/6 [0/6] | 5/6 | Ignoring an opposing O-Ring / mana rock / anthem |
+| Stack response | 5/6 [1/6] | 5/6 | Never answering a spell that is already on the stack |
+| Activated abilities | 5/6 [2/6] | 5/6 | Pingers, tappers and pump abilities left unused |
+| Combat keywords | 6/6 [5/6] | 6/6 | Trample / menace / reach / indestructible read as ordinary stats |
+| **total** | | **60/66** | `v0-blind`: 30/66 |
 
 Two readings the bracketed column forces. Lethal and blocking are carried entirely by
 `CombatAdvisor`'s seed heuristics — the blind agent matches the real one — so they are a regression
 net for *that* code, not for `BoardFeatures.kt`. And the plan's "expect ~0%" on non-creature
 valuation was close but for the wrong reason: see Phase 2's findings.
+
+**At 44/48 this signal was nearly exhausted, which is why Phase 2b exists.** Two of the four
+remaining failures were the same Phase 9 constant, so rollouts had exactly **two** puzzles to move —
+and Phase 7's own exit criterion, phrased over sequencing / race math / board-wipe timing, was
+capped at **one**. Phase 2b's first three categories took that to **four**: `respond-05` and
+`activate-05` both fail for `instants-05`'s reason — paying now for an effect that materializes a
+step later — and two of the four are non-combat, so `CombatAdvisor` cannot carry them.
 
 ### 3. Latency
 
@@ -382,6 +395,238 @@ Files: `ai/src/test/.../puzzles/{AiPuzzle,PuzzleRunner,PuzzleSuiteTest}.kt` + `c
 
 **Exit:** ✅ 48 puzzles committed, ✅ per-category baseline in `docs/ai/baseline-metrics.md`,
 ✅ `just arena-puzzles` runs in ~15 s.
+
+---
+
+### Phase 2b — Puzzle suite, second pass · *4–6 d* — 🟡 **3 of 6 categories shipped 2026-07-29**
+
+> **Shipped: `respond`, `activate`, `keywords` — the three that needed no framework change.**
+> 18 positions in `ai/src/test/.../puzzles/categories/{StackResponse,ActivatedAbility,CombatKeyword}Puzzles.kt`,
+> plus `advanceToStackResponse` in `PuzzlePositions.kt` and `PuzzleMove.shouldActivate`.
+>
+> **Suite 48 → 66. `production` scores 60/66 (91%)**, `v0-blind` 30/66 (45%) — the discrimination
+> control holds at the new size, which was the exit criterion that mattered. The AI solves **16 of
+> the 18** new positions.
+>
+> | Category | `production` | `v0-blind` |
+> |---|---|---|
+> | `respond` | 5/6 | 1/6 |
+> | `activate` | 5/6 | 2/6 |
+> | `keywords` | 6/6 | 5/6 |
+>
+> Three things the build changed about the plan:
+>
+> 1. **A latent harness bug was hiding behind the fact that no old puzzle had twin blockers.**
+>    `PuzzleMove.blockAssignments` was a `Map<String, List<String>>` keyed by **card name**, so two
+>    Grizzly Bears gang-blocking one attacker collapsed into a single entry and
+>    `shouldBlockWithAtLeast` counted **1**. `keywords-03` (menace) reported a failure the AI had
+>    not made — it finds the double block correctly. It is now a `List<Pair<…>>`. The engine's
+>    menace validation (`BlockPhaseManager.validateMenaceRequirements:504`) was never at fault, and
+>    `PuzzleRunner`'s legality gate had already proved as much by not rejecting the move — a report
+>    of an illegal block that the engine accepts is a harness bug, every time.
+> 2. **`keywords` discriminates barely at all — 6/6 against 5/6 blind — and that is the same
+>    finding Phase 2 recorded about `lethal` and `blocking`.** Combat is carried by
+>    `CombatAdvisor`'s seed heuristics, not by `BoardFeatures.kt`, so trample / menace / reach are
+>    a regression net for *that* code. Only `keywords-06` (Murder vs an indestructible creature)
+>    sits with the evaluator, and it passes — `chooseCommittedTargets`' simulation refinement does
+>    overrule `heuristicTargetRank`'s +3.0 indestructible bonus in time.
+> 3. **Both new failures are the same shape, and it is `instants-05`'s shape.** `respond-05`
+>    (regenerate through a Wrath) and `activate-05` (firebreathe an unblocked attacker) both pay
+>    mana *now* for an effect that only materializes at a later step, so the post-simulation state
+>    is strictly worse than passing. **That was the point of building these before Phase 7:** the
+>    rollout evaluator now has a four-puzzle signal on "cannot see past the current step" —
+>    `instants-05`, `race-03`, `respond-05`, `activate-05` — where it had two, and two of the four
+>    are non-combat, so `CombatAdvisor` cannot carry them.
+>
+> **Still to build:** `walker` (needs `ScenarioBuilder.withCountersOn` — a planeswalker placed by
+> `withCardOnBattlefield` enters at **0 loyalty** and dies to state-based actions immediately),
+> `lines` (needs `AiLinePuzzle`), `decisions` (needs `AiDecisionPuzzle`), `pod` (needs an N-seat
+> `withPlayers`). Everything below is the plan as written.
+
+**Do this before Phase 7, not after.** At 44/48 the suite has four points left, and *two* of them
+(`sequencing-02`, `noncreature-02`) are the same Phase 9 constant — `CardAdvantage.cardValue(0) =
+−3.0` — which no amount of rollout will move. So Phase 7's entire puzzle-side signal is
+**`instants-05` and `race-03`: two positions**. Its stated exit criterion, "puzzle gains in
+sequencing / race math / board-wipe timing", is arithmetically capped at **one** puzzle — those
+categories sit at 5/6, 5/6 and 6/6, and the one sequencing miss is the Phase 9 constant. A lever
+this expensive deserves more than a one-bit localizing signal.
+
+The suite also can't see whole regions of the AI. Five structural gaps, each of which the 48
+positions share by construction rather than by choice:
+
+| # | Gap | Consequence |
+|---|---|---|
+| **G1** | Every puzzle probes `chooseAction` at a **clean priority window** | All 18 `PendingDecision` branches in `DecisionResponder.kt` (33 KB) are **completely unmeasured** — discard, tutor, damage assignment, modal choice, distribute, block ordering, mana-source selection |
+| **G2** | Every puzzle scores **one action** | A *line* is inexpressible. "Kill the blocker, then attack" is two actions. This is the shape that would actually measure a rollout evaluator, because seeing past the current action is its whole claim |
+| **G3** | Every puzzle is **1v1** | Phase 3's headline bug was "the AI systematically attacked the wrong player" in a pod, and pod win-share is the only thing that can see it — a signal that says *that*, never *what*. `withPlayers()` is hardcoded to two seats |
+| **G4** | Nothing is ever **on the stack** | The AI is never asked to respond. Phase 4b deliberately shipped without the "real counterspell window" CRITICAL trigger; there is no puzzle that would tell us whether adding it helped |
+| **G5** | No puzzle asserts on an **`ActivateAbility`** | `PuzzleMove.playedCard` already handles it (`AiPuzzle.kt:86`) and zero puzzles use it. Pingers, tappers, firebreathing, regeneration, loyalty abilities — all unmeasured |
+
+Content-wise the 48 are also narrow: five permanents at most, no counters, no damage marked, one
+aura, and combat keywords stop at flying / deathtouch / first strike / vigilance.
+
+**36 new positions across six categories**, taking the suite to **84**. Three land against today's
+framework; three need the extensions in "Framework work" below and are the reason this is 4–6 days
+rather than 2.
+
+#### 9. `STACK_RESPONSE` — "respond" · *no framework change*
+
+The opponent has cast something and the AI holds priority. Closes G4.
+
+| id | Position | Expect | What it catches |
+|---|---|---|---|
+| `respond-01` | P2 casts **Serra Angel**; AI has 2 Islands + **Counterspell** | Counter it | Does the AI respond at all |
+| `respond-02` | P2 (7 lands, full grip) casts **Grizzly Bears**; AI has 2 Islands + **Counterspell** | Pass | Negative control — a category of "counter it" scores 100% for an agent that counters everything |
+| `respond-03` | AI has three creatures; P2 casts **Wrath of God** | Counter it | The counter's value is *board*, not cards — the position where countering is most clearly right |
+| `respond-04` | AI controls **Serra Angel**; P2 casts **Murder** targeting it | Counter it | Reading the **target of a spell on the stack**. Nothing in `:ai` does this today |
+| `respond-05` | AI controls **Troll Ascetic** + 2 Forests; P2 casts **Wrath of God** | Activate `{1}{G}` regenerate | Regeneration as a *response*; also G5 |
+| `respond-06` | P2 casts **Wrath of God**; AI holds **Negate** *and* **Essence Scatter**, 2 lands | Cast Negate | Picks the counter that is legal here rather than passing |
+
+*Position helper:* `advanceToStackResponse(seat)` in `PuzzlePositions.kt` — `withActivePlayer(2)`,
+`castSpell(2, …)`, then pass until the AI seat holds priority with a non-empty stack. Both halves
+exist (`ScenarioTestBase.castSpell:525`, `passPriority:892`); this is ~15 lines alongside
+`advanceToDeclaration` / `advanceToPriority`.
+
+*Prediction:* `respond-01/03/04` plausible, `respond-02` likely passes for the wrong reason (the AI
+rarely casts anything at instant speed on an opponent's turn), `respond-05` fails — nothing models a
+regeneration shield.
+
+#### 10. `ACTIVATED_ABILITIES` — "activate" · *no framework change*
+
+Closes G5. Every card here is already implemented and verified: `Prodigal Sorcerer` (`{T}`: 1 damage
+to any target), `Icy Manipulator` (`{1},{T}`: tap target artifact/creature/land), `Royal Assassin`
+(`{T}`: destroy target tapped creature), `Shivan Dragon` (`{R}`: +1/+0).
+
+| id | Position | Expect | What it catches |
+|---|---|---|---|
+| `activate-01` | AI: **Prodigal Sorcerer**. P2: **Llanowar Elves** + **Hill Giant** | Ping the Elves | Ability targeting through `heuristicTargetRank` — a path only `CastSpell` reaches today |
+| `activate-02` | P2 at **1 life**, empty boards, AI has **Prodigal Sorcerer** | Ping their face | Lethal **through an ability**. The lethal category is attacks and burn spells only. Direct probe of the Phase 3 finding that a player target always ranks −5.0 |
+| `activate-03` | AI: **Craw Wurm** + **Icy Manipulator** + 1 untapped land. P2: **Wall of Stone** (0/8) | Tap the Wall | Spend a resource *now* to unlock combat *later* — the one-ply blind spot in miniature |
+| `activate-04` | AI: **Prodigal Sorcerer**. P2: **Hill Giant** only, both at 20 | Don't point it at the Giant | Negative control on toughness: 1 damage to a 3/3 does nothing |
+| `activate-05` | **Shivan Dragon** unblocked, P2 at 7, two Mountains untapped | Activate firebreathing | Converting floating mana into damage. *Note:* only the first pump is visible to a single-action check — the honest version of this is `line-05` |
+| `activate-06` | P2 attacked with **Craw Wurm** (now tapped) and kept **Hill Giant** home; AI has **Royal Assassin** | Assassinate the Wurm | The ability is only live against a *tapped* creature, and the window is mid-combat |
+
+#### 11. `COMBAT_KEYWORDS` — "keywords" · *no framework change*
+
+Combat past the four keywords the blocking category covers. Each position is built so the naive
+reading picks the wrong side.
+
+| id | Position | Expect | What it catches |
+|---|---|---|---|
+| `keywords-01` | **Fangren Hunter** (4/4 trample) attacks; AI at 12 with **Llanowar Elves** | No block | Chumping a trampler buys one point of life for a whole creature |
+| `keywords-02` | Same attacker; AI has **Wall of Stone** (0/8 defender) | Block | The mirror: 8 toughness eats all 4, *nothing* tramples over. A blanket "don't block tramplers" rule fails this |
+| `keywords-03` | **Goblin Trailblazer** (2/1 menace) attacks; AI at **2 life** with two **Grizzly Bears** | Gang-block with both | Menace makes a single block *illegal* — either find the double block or die |
+| `keywords-04` | **Wind Drake** + **Trained Armodon** attack; AI at 8 with **Giant Spider** (2/4 reach) | Block the Drake | Reach can block a flier at all, and the Drake is the one the Spider eats for free |
+| `keywords-05` | **Ambush Viper** (2/1 deathtouch) attacks; AI at 18 with **Serra Angel** | No block | Deathtouch means blocking trades a bomb for a 2/1 |
+| `keywords-06` | AI holds **Murder**, 3 Swamps. P2: **Zetalpa, Primal Dawn** (indestructible) + **Craw Wurm** | Kill the Wurm | *Legal but useless.* `creatureValue` pays **+3.0 for indestructible** plus flying/double-strike/trample/vigilance, so Zetalpa is by far the highest-ranked target — the evaluator's own keyword table aims the spell at the creature it cannot kill |
+
+*Prediction:* `keywords-06` is the interesting one. `heuristicTargetRank` will point at Zetalpa; the
+question the puzzle answers is whether `chooseCommittedTargets`' simulation refinement is consulted
+in time to overrule it.
+
+#### 12. `PLANESWALKERS` — "walker" · *needs `withCountersOn`*
+
+`permanentValue` prices a walker at `max(4.0, prior + loyalty × 0.8)` (`BoardFeatures.kt:143-146`) —
+Phase 6 built it and **nothing measures it**. 25 planeswalkers are implemented; these use
+`Ajani, Caller of the Pride` (loyalty 4), `Vivien Reid` (5) and `Karn, Scion of Urza` (5).
+
+| id | Position | Expect | What it catches |
+|---|---|---|---|
+| `walker-01` | P2 at 20 with **Ajani** at 4 loyalty, no blockers; AI has **Hill Giant** | Attack Ajani | Is a walker a target at all |
+| `walker-02` | P2 at **3** with **Karn** at 5, no blockers; AI has two **Hill Giants** | All at the face | Lethal beats value — the negative control |
+| `walker-03` | AI controls **Ajani**; P2 attacks it with **Grizzly Bears**; AI has **Hill Giant** untapped | Block | Our own walker is worth defending |
+| `walker-04` | AI controls **Vivien Reid**, precombat main, empty board | Activate a loyalty ability | Does the AI *ever* use a walker |
+| `walker-05` | AI controls **Vivien Reid**; P2 controls **Air Elemental** | Activate the **−3** (destroy target creature with flying), not the +1 | Ability selection *inside* a walker — the closest thing to modal reasoning the action layer has |
+| `walker-06` | P2 has **Karn** at 5 and **Grizzly Bears**; AI has **Serra Angel** (vigilance) | Attack Karn | Vigilance makes the attack free, so the only question left is the valuation |
+
+*Framework:* `withCardOnBattlefield` adds no `CountersComponent`, so a planeswalker placed directly
+enters at **0 loyalty and dies to state-based actions immediately**. Tests that need counters
+hand-roll them today (`MilesMoralesScenarioTest.kt:41`). Add
+`ScenarioBuilder.withCountersOn(name, type, count)` — useful well beyond this suite. `PuzzleMove`
+also needs `attackTargets: Map<String, String>` (attacker → defender name); `DeclareAttackers`
+already carries the defender and `attackerNames` throws it away (`AiPuzzle.kt:105`).
+
+#### 13. `LINES` — multi-action · *needs `AiLinePuzzle`* · **this is the Phase 7 signal**
+
+G2, and the reason to build all of this before Phase 7 rather than after. A line puzzle lets the AI
+act until the turn ends and asserts over the **resulting state**, not the first move.
+
+| id | Position | Assert |
+|---|---|---|
+| `line-01` | AI: **Craw Wurm**, 3 Swamps, **Murder**. P2 at 6 with **Wall of Stone** | P2 is dead. (Murder the Wall → attack for 6. A single-action check can only ask "did you cast Murder") |
+| `line-02` | `sequencing-05`'s board — **Glorious Anthem** + two Bears, P2 at 6 | P2 is dead |
+| `line-03` | `activate-03`'s board, P2 at 6 | P2 is dead — Icy the Wall, then swing |
+| `line-04` | `sequencing-01`'s board — 3 Mountains, a Mountain and a **Hill Giant** in hand | The Giant is on the battlefield *and* the land was played |
+| `line-05` | `activate-05`'s board — **Shivan Dragon**, P2 at 7, two Mountains | P2 is dead — both pumps, not one |
+| `line-06` | AI: **Grizzly Bears**, 1 Forest, **Giant Growth**. P2: **Hill Giant** | Attacked *and* the Growth was spent on the block, not precombat |
+
+`AiLinePuzzle` is a loop: `while (state.priorityPlayerId == aiId && !turnEnded) { process(ai.chooseAction(state)) }`
+with the same 200-iteration guard `advanceUntil` already uses, then a predicate over the final
+`GameState`. ~40 lines in `PuzzleRunner.kt`. **Every line here is currently unreachable by the
+suite, and every one of them is exactly what a rollout evaluator claims to find.**
+
+#### 14. `DECISIONS` — · *needs `AiDecisionPuzzle`* · **the largest unmeasured surface**
+
+G1. Build the position, drive it to a `pendingDecision`, call the AI's `DecisionResponder`, assert
+over the `DecisionResponse`. `PuzzleRunner` currently *rejects* any position with a pending decision
+(`PuzzleRunner.kt:50`) — correctly, for action puzzles; this is the sibling runner.
+
+| id | Decision | Position | Expect |
+|---|---|---|---|
+| `decision-01` | `SelectCardsDecision` | P2 resolves **Mind Rot**; AI hand is **Murder**, **Craw Wurm**, one land, with 2 lands in play | Pitch the uncastable Wurm, keep the removal |
+| `decision-02` | `SearchLibraryDecision` | **Diabolic Tutor** resolving; library has **Wrath of God** and **Serra Angel**; P2 has three creatures | Fetch the Wrath |
+| `decision-03` | `SearchLibraryDecision` | Same, but *we* have the board and P2 is empty | Fetch the Angel — the mirror |
+| `decision-04` | `AssignDamageDecision` | **Fangren Hunter** (4/4 trample) blocked by **Grizzly Bears** | 2 to the blocker, 2 through. `respondDamageAssignment` is *eight lines* that forward `decision.defaultAssignments` unexamined (`DecisionResponder.kt:475`) |
+| `decision-05` | `AssignDamageDecision` | 4/4 double-blocked by a 2/2 and a 3/3 | All 4 into the 3/3 — killing one beats splitting and killing neither |
+| `decision-06` | `SelectManaSourcesDecision` | AI holds **Counterspell**, casts a 2-drop, controls **Island** + 2 **Plains** | Pay with Plains. `respondManaSelection` unconditionally auto-pays whenever the solver has a suggestion (`DecisionResponder.kt:523`) |
+
+*Caveat on `decision-06`:* verify the prompt actually fires — the engine may auto-resolve the
+payment without ever asking. If it does, the defect is `ManaSolver`'s source choice rather than the
+AI's, the puzzle belongs to the engine suite instead, and **that is a finding worth recording**, not
+a reason to drop the position.
+
+#### 15. `POD` — multiplayer tactics · *needs N-seat `withPlayers`* · *optional, ship last*
+
+G3. The pod arena reports win share and nothing else; these localize it. Six positions at `ffa3`
+and `2hg`:
+
+- **`pod-01`** — two opponents, one tapped out and one with blockers: attack the one who can't block.
+- **`pod-02`** — the runaway leader is *across* the table, not next in turn order: removal points at
+  them. This is the exact shape of the pre-Phase-3 bug; it should pass now, which makes it a
+  regression net for `OpponentAggregate.THREAT`.
+- **`pod-03`** — 2HG: block an attacker that is attacking our **teammate** (CR 810 — teammates
+  defend as one side).
+- **`pod-04`** — 2HG: **don't Wrath away our teammate's board.** `BoardPresence` folds teammates into
+  `sides.mine`, so a sweeper killing three of theirs and three of ours must read as neutral.
+- **`pod-05`** — one opponent at 4 and one at 20: swing at the one we can kill.
+- **`pod-06`** — don't spend removal on the player who is already dead to someone else's board.
+
+*Framework:* `withPlayers` builds exactly two seats (`ScenarioTestBase.kt:98`). An N-seat overload
+plus a team assignment is the prerequisite; treat it as the expensive item and ship this category
+after the other five if it is.
+
+#### Framework work, itemized
+
+| Item | Where | Size | Unlocks |
+|---|---|---|---|
+| `advanceToStackResponse(seat)` | `puzzles/PuzzlePositions.kt` | ~15 L | category 9 |
+| `PuzzleMove.attackTargets` | `puzzles/AiPuzzle.kt:105` | ~5 L | `walker-01/02/06` |
+| `ScenarioBuilder.withCountersOn` | `ScenarioTestBase.kt` | ~15 L | category 12; generally useful |
+| `AiLinePuzzle` + runner | `puzzles/PuzzleRunner.kt` | ~40 L | category 13 |
+| `AiDecisionPuzzle` + runner | `puzzles/PuzzleRunner.kt` | ~50 L | category 14 |
+| N-seat `withPlayers` | `ScenarioTestBase.kt:98` | ~60 L | category 15 |
+
+`PuzzleSuiteTest`'s shape invariants change with this: `byCategory(…).size shouldBe 6` becomes
+`shouldBeGreaterThanOrEqual(6)` and `all.size shouldBe 48` is re-pinned. Keep the **`KNOWN_FAILURES`
+set-equality gate exactly as it is** — it is the reason the suite stays green without hiding
+anything, and 36 new positions will arrive with a large known-failure set that is the *point*, not a
+problem.
+
+**Exit:** 84 puzzles committed; a per-category baseline for the six new categories appended to
+`docs/ai/baseline-metrics.md`; `just arena-puzzles` still under ~60 s (the line and decision runners
+each play out more than one action, so this is not free); `v0-blind` still scores strictly lower on
+the expanded suite — the discrimination control has to hold at the new size or the new positions are
+coin flips.
 
 ---
 
@@ -1102,7 +1347,7 @@ but tanks a puzzle category, look hard before shipping.
 ## Recommended order
 
 ```
-0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 5̶ → 6̶ → 7 → 8 → 9 → 10
+0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 5̶ → 6̶ → 2b → 7 → 8 → 9 → 10
 ```
 
 Phases 0–6 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
@@ -1119,6 +1364,12 @@ Oblivion Ring and a signet as the same number. Phase 6 also left it two pieces o
 gauntlet, which needs an arena that can separate `{intent-only, advisors-only, both}` before it can
 retire anything.
 
+**Phase 2b is inserted before it, by the same argument that put Phase 2 before everything.** Phase 6
+took the suite to 44/48, which leaves the plan's most expensive phase with a two-puzzle localizing
+signal and no coverage at all of the shapes a rollout is supposed to be good at — multi-action
+lines, mid-combat responses, decisions. Measuring Phase 7 with the suite as it stands means reading
+the arena alone, which is exactly the position Phase 1 was built to get us out of.
+
 Ranked by strength-per-effort, independent of ordering:
 
 | Rank | Phase | Effort | Why |
@@ -1127,6 +1378,7 @@ Ranked by strength-per-effort, independent of ordering:
 | — | **3̶** multiplayer eval | 1–2 d | **Done.** Was ranked 1: the evaluator scored a whole pod as a duel against one arbitrary neighbour, and read a stale life component in 2HG. |
 | 1 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones — and Phase 6 raised the stakes: two of the four remaining puzzle failures are *one* constant, `CardAdvantage.cardValue(0) = −3.0`. Cheap once the arena exists. |
 | 2 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
+| 3 | **2b** puzzle suite, second pass | 4–6 d | No direct strength — but at 44/48 the suite can move **two** puzzles for Phase 7, and its five structural gaps (decisions, lines, pods, the stack, activated abilities) hide the AI's least-measured code. Same argument as Phase 2, one phase later. |
 | 4 | **1̶ / 2̶** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Both done. |
 | — | **4̶a** auto-pass filter | 3–5 d | **Done.** Demoted by Phase 0 and rescoped to "skip the enumeration": 40% of priority windows now never call the enumerator. Also closed Phase 1's 889-of-945 illegal-action finding, which turned out to be a targeting bug. |
 | — | **4̶b** DecisionBudget | 2–3 d | **Done.** Enabling infrastructure, and it measures like it — neutral in the arena, monotone in the scaling ladder. |

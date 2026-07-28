@@ -4,6 +4,7 @@ import com.wingedsheep.ai.engine.AiProfile
 import com.wingedsheep.ai.engine.EvaluationWeights
 import com.wingedsheep.engine.support.ScenarioTestBase
 import io.kotest.assertions.withClue
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 
@@ -24,12 +25,14 @@ class PuzzleSuiteTest : ScenarioTestBase() {
     init {
         val runner = PuzzleRunner(cardRegistry) { scenario() }
 
-        test("the suite covers eight categories, six puzzles each, with unique ids") {
+        test("every category carries at least six puzzles, with unique ids") {
             PuzzleCatalog.all.map { it.id }.toSet().size shouldBe PuzzleCatalog.all.size
             PuzzleCategory.entries.forEach { category ->
-                withClue(category) { PuzzleCatalog.byCategory(category).size shouldBe 6 }
+                withClue(category) {
+                    PuzzleCatalog.byCategory(category).size shouldBeGreaterThanOrEqual 6
+                }
             }
-            PuzzleCatalog.all.size shouldBe 48
+            PuzzleCatalog.all.size shouldBe 66
         }
 
         test("every KNOWN_FAILURES id names a real puzzle") {
@@ -63,8 +66,9 @@ class PuzzleSuiteTest : ScenarioTestBase() {
          * of `backlog/engine-ai-improvement.md`; growing it needs a reason in the commit message.
          *
          * Baselined 2026-07-27 against `AiProfile.PRODUCTION` at 39/48; **44/48 since Phase 6**
-         * (`CardIntent`), which closed noncreature-01/03/04 and instants-01/06. Per-category rates
-         * are in `docs/ai/baseline-metrics.md`.
+         * (`CardIntent`), which closed noncreature-01/03/04 and instants-01/06; **60/66 since Phase
+         * 2b** added the respond / activate / keywords categories. Per-category rates are in
+         * `docs/ai/baseline-metrics.md`.
          */
         val KNOWN_FAILURES: Set<String> = setOf(
             // A one-ply evaluator cannot see a prevention effect: the state right after Fog
@@ -85,6 +89,17 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // Phase 9 exists to refit. Raising the anthem prior until this passes would be tuning
             // one guess to cancel another.
             "noncreature-02",
+
+            // ── Phase 2b ──
+            // A regeneration shield is bought *before* the destruction it answers, so at the moment
+            // of the activation the board is unchanged and two mana are gone — the same shape as
+            // instants-05's Fog, and the same fix. Phase 7.
+            "respond-05",
+            // Pumping an unblocked attacker pays now for damage that lands at the combat-damage
+            // step. `evaluate1Ply` simulates to the next quiet state, which is still inside
+            // declare-blockers, so the +1/+0 shows up as `attackPotential` on a creature that is
+            // already attacking and never as life off the opponent. Phase 7.
+            "activate-05",
         )
     }
 }
