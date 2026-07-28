@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.one.cards
+package com.wingedsheep.mtg.sets.definitions.som.cards
 
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.dsl.card
@@ -14,16 +14,16 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
- * Razorverge Thicket
+ * Seachrome Coast
  * Land
  *
  * This land enters tapped unless you control two or fewer other lands.
- * {T}: Add {G} or {W}.
+ * {T}: Add {W} or {U}.
  */
-val RazorvergeThicket = card("Razorverge Thicket") {
+val SeachromeCoast = card("Seachrome Coast") {
     typeLine = "Land"
-    colorIdentity = "WG"
-    oracleText = "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {G} or {W}."
+    colorIdentity = "WU"
+    oracleText = "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {W} or {U}."
 
     replacementEffect(EntersTapped(
         unlessCondition = Compare(
@@ -35,24 +35,25 @@ val RazorvergeThicket = card("Razorverge Thicket") {
 
     activatedAbility {
         cost = AbilityCost.Tap
-        effect = AddManaEffect(Color.GREEN)
+        effect = AddManaEffect(Color.WHITE)
         manaAbility = true
         timing = TimingRule.ManaAbility
     }
 
     activatedAbility {
         cost = AbilityCost.Tap
-        effect = AddManaEffect(Color.WHITE)
+        effect = AddManaEffect(Color.BLUE)
         manaAbility = true
         timing = TimingRule.ManaAbility
     }
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "257"
-        artist = "Randy Gallegos"
-        flavorText = "Where evolution meets austerity, primal might bucks against the yoke of hierarchy."
-        imageUri = "https://cards.scryfall.io/normal/front/6/5/65b26f68-3a25-4c4e-bc76-a199ab479a50.jpg?1675957278"
-        ruling("2023-02-04", "If one of these lands enters the battlefield at the same time as one or more other lands, it doesn't take those lands into consideration when determining how many other lands you control.")
+        collectorNumber = "229"
+        artist = "Lars Grant-West"
+        flavorText = "Where the Quicksilver Sea laps over the Razor Fields, the landscape reflects the suns' fading hope."
+        imageUri = "https://cards.scryfall.io/normal/front/9/9/99939b90-e88c-4c2f-ba78-56d455611703.jpg?1783941689"
+        ruling("2023-02-04", "If one of these lands enters the battlefield under your control and you control zero, one, or two other lands, it enters the battlefield untapped. If you control three or more other lands, it enters the battlefield tapped.")
+        ruling("2023-02-04", "If one of these lands enters the battlefield at the same time as one or more other lands (due to Oblivion Sower or Warp World, perhaps), it doesn't take those lands into consideration when determining how many other lands you control.")
     }
 }
