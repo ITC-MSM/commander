@@ -181,14 +181,28 @@ The built-in AI kept an explicitly 1v1 `soleOpponent` helper in the `ai` module.
 opposing team instead of the first opponent in turn order. `just arena-pod` plays FFA and 2HG games.
 See "AI pod players" below.
 
-> **Open engine question that came out of that work: `GameState.turnNumber` stops advancing after
-> the first elimination.** `TurnManager.startTurn` increments it only when
-> `playerId == state.turnOrder.first()`, and `turnOrder` retains eliminated players — so once seat 0
-> is out, a pod plays another twenty turns at the same `turnNumber`. Everything that reads
-> `turnNumber + 1` as "next turn" inherits the freeze: delayed triggers
-> (`CreateDelayedTriggerExecutor`), `ExileTopCardMayPlayFreeExecutor`, `StackResolver`'s
-> `notBeforeTurn`. Fixing it is a rules change with replay and client-display consequences, so it
-> wants its own phase rather than a drive-by.
+> **Engine question that came out of that work, now resolved: `GameState.turnNumber` used to stop
+> advancing after the first elimination.** It was a *round* counter — `TurnManager.startTurn`
+> incremented it only when `playerId == state.turnOrder.first()` — and `turnOrder` retains
+> eliminated players, so once seat 0 was out a pod played another twenty turns at the same
+> `turnNumber`. **`turnNumber` now counts player turns**: every turn that begins gets the next
+> number, so a four-player pod's opening round is turns 1-4 and nothing freezes.
+>
+> That also fixed two things the round counter got wrong independently of elimination. Every
+> `turnNumber + 1` read of "next turn" (`CreateDelayedTriggerExecutor`, `StackResolver`'s rebound
+> `notBeforeTurn`, `ExileTopCardMayPlayFreeExecutor`) meant "next *round*", firing a full cycle
+> late in a pod; and every `stamp == turnNumber` read of "this turn" (graveyard and exile entry
+> stamps) matched a whole round, so a creature that died on an opponent's turn counted as having
+> died on yours. The seat-index arithmetic that `resolveStepTurn` used to compensate with is gone —
+> the floor is `turnNumber` or `turnNumber + 1`, and `CleanupPhaseManager`'s controller check picks
+> the turn, which is what makes it survive skipped turns, extra turns and eliminated seats.
+>
+> Fallout, absorbed in the same change: the client's turn indicator now counts player turns
+> (`Turn 5` where it read `Turn 3`, matching MTGO/Arena); `match_results.turn_count` and the gym's
+> `turnNumber` observation change units the same way; and arena/benchmark turn caps are now read as
+> turns *per seat* (`TableGameRunner` multiplies by seat count), so their effective horizons are
+> unchanged. Replays re-simulate from the input stream, so old replays still play back — only the
+> displayed number moves.
 
 The riskiest work, done first, while everything is still verifiable against the existing 2-player test corpus.
 

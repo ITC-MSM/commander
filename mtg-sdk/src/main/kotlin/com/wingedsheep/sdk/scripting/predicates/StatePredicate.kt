@@ -281,8 +281,8 @@ sealed interface StatePredicate {
      * `ZoneTransitionService` on every arrival in a graveyard, and stripped when the card
      * leaves the graveyard so a later arrival by a different route does not carry the
      * earlier "from battlefield" claim. It carries no turn number — `BeginningPhaseManager`
-     * wipes it from every entity during the untap step of each turn, giving both predicates
-     * MTG-correct per-turn semantics independent of the engine's per-round `state.turnNumber`.
+     * wipes it from every entity during the untap step of each turn, which is what gives both
+     * predicates their per-turn semantics.
      *
      * Pair with `CardPredicate.IsPermanent` (or any other card-predicate constraint)
      * to express the full Samwise / Lobelia filter.

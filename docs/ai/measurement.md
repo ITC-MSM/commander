@@ -194,19 +194,20 @@ or four growing boards, and the Strategist simulates every candidate against all
 uncapped mirror spends minutes per game proving what a few hundred actions already proved. Full
 length pod games are what `just arena-pod` is for.
 
-### Two traps this harness had to work around
+### One trap this harness had to work around
 
-Both are real engine behaviours, not harness bugs, and anything else that drives multiplayer games
-will hit them:
+A real engine behaviour, not a harness bug, and anything else that drives multiplayer games will hit
+it: **a pod turn costs more actions than a duel turn.** Three or four growing boards mean the
+Strategist's per-decision cost grows with the table, so a flat "300 actions without a turn change
+means stuck" threshold tuned on duels fires on a pod game that is making perfectly good progress.
+`STUCK_ACTIONS_PER_TURN` is deliberately loose for that reason.
 
-1. **`GameState.turnNumber` is a round counter that stops advancing after the first elimination.**
-   `TurnManager.startTurn` only increments it when `turnOrder.first()` begins a turn, and
-   `turnOrder` keeps eliminated players — so once seat 0 is knocked out it never moves again. Any
-   progress detector or length cap keyed on it declares a healthy three-way endgame wedged forever.
-   The runner counts player-turn handovers instead.
-2. **A pod round costs several turns' worth of actions.** Even before an elimination, one
-   `turnNumber` at a four-seat table is four player turns, so a flat "300 actions without a turn
-   change means stuck" threshold fires on a game that is making perfectly good progress.
+A second trap is now gone: `GameState.turnNumber` used to be a *round* counter that
+`TurnManager.startTurn` only incremented for `turnOrder.first()`. Since `turnOrder` keeps eliminated
+players, it froze the moment seat 0 was knocked out, and any progress detector or length cap keyed
+on it declared a healthy three-way endgame wedged forever. It now counts player turns, so it is a
+sound clock at any table size. Note the unit when reading caps: `maxTurns` in the arena config is
+turns **per seat**, which `TableGameRunner` multiplies by the seat count.
 
 ---
 

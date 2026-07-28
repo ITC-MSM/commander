@@ -102,7 +102,7 @@ class PodArenaHarnessTest : FunSpec({
         withClue("${setup.id}: $illegalActions") { illegalActions.keys.shouldBeEmpty() }
         withClue("${setup.id}: $exception") { exception shouldBe null }
         withClue("${setup.id} wedged: $drawReason") {
-            val hitACap = listOf("maxTurns", "maxPlayerTurns", "maxActions").any { drawReason.startsWith(it) }
+            val hitACap = listOf("maxTurns", "maxActions").any { drawReason.startsWith(it) }
             (drawReason.isEmpty() || hitACap) shouldBe true
         }
     }
@@ -114,10 +114,11 @@ class PodArenaHarnessTest : FunSpec({
     }
 
     test("a four-player pod plays past its first elimination to a real finish, clean") {
-        // The path that matters here: once a seat is knocked out, `GameState.turnNumber` stops
-        // advancing (TurnManager only bumps it for turnOrder.first()), and a harness that measures
-        // progress by it declares a healthy three-way endgame wedged. This test is that regression
-        // net — before the runner counted player-turn handovers instead, it failed with `stuck`.
+        // The path that matters here is the endgame after a seat is knocked out. `turnNumber` used
+        // to be a round counter that only advanced for `turnOrder.first()` — and turnOrder keeps
+        // eliminated players — so it froze the moment the opening seat died and a harness measuring
+        // progress by it declared a healthy three-way endgame wedged. This test is that regression
+        // net: it failed with `stuck` before the fix.
         val game = soloGame(TableSetup.FFA4, maxTurns = 30)
         game.shouldRunClean()
         withClue("did not finish: ${game.drawReason}") { game.completed shouldBe true }

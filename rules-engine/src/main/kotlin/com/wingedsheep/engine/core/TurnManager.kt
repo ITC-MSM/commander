@@ -94,13 +94,16 @@ class TurnManager(
      * Start a new turn for a player.
      */
     fun startTurn(state: GameState, playerId: EntityId): ExecutionResult {
-        // Turn number increments when the first player starts a new turn
-        // It stays the same when the second player starts their turn within the same round
-        val newTurnNumber = if (playerId == state.turnOrder.first()) {
-            state.turnNumber + 1
-        } else {
-            state.turnNumber
-        }
+        // [GameState.turnNumber] counts player turns, so every turn that begins gets the next
+        // number — a four-player pod's opening round is turns 1..4, and an extra turn (CR 500.7)
+        // is a turn of its own. The game's *first* turn doesn't come through here (GameInitializer
+        // seeds turnNumber = 1 directly), so this is only ever a transition into a later turn.
+        //
+        // This used to increment only for `turnOrder.first()`, making it a round counter. That made
+        // `turnNumber + 1` mean "next round" rather than "next turn" for delayed triggers, and it
+        // froze outright once the opening seat was eliminated — turnOrder keeps eliminated players,
+        // so nothing ever matched the boundary again and a pod played on at a fixed turn number.
+        val newTurnNumber = state.turnNumber + 1
 
         var newState = state.copy(
             activePlayerId = playerId,

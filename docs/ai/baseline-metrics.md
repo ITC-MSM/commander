@@ -402,25 +402,22 @@ starting 30 for the whole game**.
 
 `MultiplayerEvaluationTest` asserts each of these as a positive claim rather than describing them.
 
-### 2. `GameState.turnNumber` stops advancing after the first elimination
+### 2. `GameState.turnNumber` stopped advancing after the first elimination — fixed since
 
-`TurnManager.startTurn` increments `turnNumber` only when `playerId == state.turnOrder.first()`, and
-`turnOrder` keeps eliminated players. So in a pod, the moment seat 0 is knocked out, **`turnNumber`
-never changes again** — the game plays on for another twenty turns at "turn 16".
+As measured, `TurnManager.startTurn` incremented `turnNumber` only when
+`playerId == state.turnOrder.first()`, and `turnOrder` keeps eliminated players. So in a pod, the
+moment seat 0 was knocked out, **`turnNumber` never changed again** — the game played on for another
+twenty turns at "turn 16". The arena's wedge detector and length cap both keyed on it and declared
+every healthy three-way endgame stuck.
 
-This is not an AI bug and Phase 3 did not change it, but anything that drives multiplayer games has
-to know about it:
+This was never an AI bug. `turnNumber` now counts **player turns**, so it advances on every turn at
+any table size and the harness reads it directly again. See `backlog/multiplayer.md` for the engine
+side — the same freeze reached delayed triggers and everything else that read `turnNumber + 1` as
+"next turn".
 
-- The arena's wedge detector (`actionCount` since the last `turnNumber` change) declared every
-  healthy three-way endgame stuck. It now counts **player-turn handovers**.
-- A game-length cap of `turnNumber < maxTurns` never trips after an elimination. There is now a
-  player-turn cap alongside it.
-- Anything in the engine that reasons about "next turn" as `turnNumber + 1` — delayed triggers,
-  `ExileTopCardMayPlayFreeExecutor`, `CreateDelayedTriggerExecutor` — inherits the same freeze. That
-  is a real rules question for multiplayer and belongs in `backlog/multiplayer.md`, not here.
-
-Also worth knowing before writing any pod harness: even *before* an elimination, one `turnNumber` at
-a four-seat table is four player turns, so a per-round action budget tuned on duels is ~4× too tight.
+One thing that survives the fix and is still worth knowing before writing a pod harness: a pod turn
+costs more actions than a duel turn, because the Strategist simulates every candidate against three
+or four growing boards. An action budget tuned on duels is too tight regardless of the clock.
 
 ### 3. `ThreatAssessment` has a ~130-point cliff at "opponent has no creatures"
 

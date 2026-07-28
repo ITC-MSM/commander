@@ -163,7 +163,8 @@ private fun measureGame(
     deck1: Deck,
     deck2: Deck,
     seed: Long,
-    maxTurns: Int = 50
+    // Turns per player, not rounds — `GameState.turnNumber` counts player turns.
+    maxTurns: Int = 100
 ): ThroughputSample {
     val processor = ActionProcessor(registry)
     val enumerator = LegalActionEnumerator.create(registry)
