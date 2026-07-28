@@ -10,6 +10,7 @@ import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.permissions.activeMayPlayFor
@@ -155,6 +156,14 @@ class PlayLandHandler(
         }
         newState = com.wingedsheep.engine.handlers.effects.BattlefieldEntry
             .place(newState, action.playerId, action.cardId)
+
+        // Lands bypass ZoneTransitionService, which is where every other zone-change path
+        // stamps EnteredThisTurnComponent (cleared again at the controller's next untap step,
+        // see BeginningPhaseManager). Without this, "activate only if this land entered the
+        // battlefield this turn" (Hidden Lair) and any other Conditions.SourceEnteredThisTurn /
+        // GameObjectFilter.enteredThisTurn() check keyed on a land would never see it as true,
+        // even on the very turn it was played.
+        newState = newState.updateEntity(action.cardId) { c -> c.with(EnteredThisTurnComponent) }
 
         // Lands bypass ZoneTransitionService (which bakes ETB components for everything else),
         // so install the land's own static + replacement effect components here — mirroring
