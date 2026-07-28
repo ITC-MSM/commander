@@ -1998,6 +1998,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   promised opponent in the same slot as part of the cast — see § 11 "Gift".) The *as-enters* analogue
   is `EntersWithChoice(ChoiceType.OPPONENT)`,
   which writes the same slot (Jihad, The Rack).
+- `Effects.ChooseCardTypeForSource(allowedCardTypes=null, lookAtOpponentHand=false, slot=ChoiceSlot.CARD_TYPE, prompt)`
+  — the controller picks a card type (CR 205.2a), **stored durably on the source entity** under
+  `ChoiceSlot.CARD_TYPE` (a `ChoiceValue.TextChoice`) and read back at cost-calculation / projection
+  time by `CardPredicate.CardTypeEqualsChosenComponent` (build the filter with
+  `GameObjectFilter.…ofChosenCardTypeComponent()`). `allowedCardTypes` restricts the offered set (pass
+  the non-creature list for "a card type other than creature"); `lookAtOpponentHand` reveals an
+  opponent's hand to the controller first. The on-resolution, durable-slot analogue of an as-enters
+  card-type choice — the same relationship `ChooseNumberForSource` has to `EntersWithChoice(NUMBER)`;
+  use it in a "when ~ enters" trigger when the chosen type only feeds a continuous tax (Arachne,
+  Psionic Weaver — "choose a card type … Spells of the chosen type cost {1} more").
 - `GrantHexproofFromChosenColorEffect(target)` — hexproof from chosen color.
 - `GrantProtectionFromChosenColorEffect(target)` — protection from chosen color. Must run inside `ChooseColorThen`; wrap in `ForEachInGroup` for the group case (Akroma's Blessing: "Creatures you control gain protection from the chosen color").
 - `Effects.GrantProtectionFromChosenCardType(target, duration)` — "gains protection from the card type of your choice" (Pippin, Guard of the Citadel). The card-type analogue of `GrantProtectionFromChosenColor`, but **self-contained**: its executor owns the choice — it presents a `ChooseOptionDecision` over the fixed protectable card-type set (Artifact, Creature, Enchantment, Instant, Land, Planeswalker, Sorcery, Battle) and, on response, grants a floating `PROTECTION_FROM_CARDTYPE_<TYPE>` keyword for `duration`. The targeting validator, `StackResolver` spell-targeting, `DamageUtils`, the combat-damage pipeline/manager, and a `ProtectionFromCardTypeRule` block-evasion rule all match the protected keyword against the source's projected card types. (The "can't be enchanted/equipped by that type" clause is reminder text and unenforced at attach time, mirroring color/subtype protection.)
@@ -2884,6 +2894,12 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   evaluated. Pair with `replacementEffect(EntersWithChoice(ChoiceType.CARD_NAME))`. Fails closed (no match) before
   a name is chosen. Used by name-keyed static abilities (Petrified Hamlet — "sources with the chosen name … /
   Lands with the chosen name …").
+- `.ofChosenCardTypeComponent(slot = ChoiceSlot.CARD_TYPE)` — `CardPredicate.CardTypeEqualsChosenComponent`:
+  the card-type analogue of `.namedFromChosenComponent`. Matches cards whose **card type** equals the type
+  **durably chosen by the source permanent** (read from its `CastChoicesComponent` under `slot`). Same
+  static-projection / cost-calculation safety and source-id keying. Pair with a trigger running
+  `Effects.ChooseCardTypeForSource`. Fails closed before a type is chosen. Used by card-type-keyed taxes
+  (Arachne, Psionic Weaver — "Spells of the chosen type cost {1} more").
 - `.originallyPrintedInSet(setCode)` — `CardPredicate.OriginallyPrintedInSet`: matches a card whose
   *canonical* set code equals `setCode` (case-insensitive), i.e. the set it was *originally printed* in —
   reprints still match their original set, regardless of the printing in play. Reads the entity's

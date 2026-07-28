@@ -872,6 +872,7 @@ class CastZoneResolver(
                 is CardPredicate.SharesChosenColorWithSource,
                 is CardPredicate.NameEqualsChosen,
                 is CardPredicate.NameEqualsChosenComponent,
+                is CardPredicate.CardTypeEqualsChosenComponent,
                 is CardPredicate.NameNotSharedWithControlledRoom,
                 is CardPredicate.NameNotSharedWithControlledToken,
                 is CardPredicate.NameNotSharedWithAnotherControlledPermanent,

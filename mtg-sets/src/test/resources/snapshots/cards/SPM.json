@@ -315,6 +315,79 @@
     ]
 }
 
+// Arachne, Psionic Weaver
+{
+    "name": "Arachne, Psionic Weaver",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "Web-slinging {W} (You may cast this spell for {W} if you also return a tapped creature you control to its owner's hand.)\nAs Arachne enters, look at an opponent's hand, then choose a card type other than creature.\nSpells of the chosen type cost {1} more to cast.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "WEB_SLINGING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "WebSlinging",
+            "cost": "{W}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ChooseCardTypeForSource",
+                    "allowedCardTypes": [
+                        "Artifact",
+                        "Battle",
+                        "Enchantment",
+                        "Instant",
+                        "Land",
+                        "Planeswalker",
+                        "Sorcery"
+                    ],
+                    "lookAtOpponentHand": true,
+                    "prompt": "Choose a card type other than creature"
+                },
+                "descriptionOverride": "As Arachne enters, look at an opponent's hand, then choose a card type other than creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "AnyCaster",
+                    "filter": {
+                        "cardPredicates": [
+                            "CardTypeEqualsChosenComponent"
+                        ]
+                    }
+                },
+                "modification": {
+                    "type": "IncreaseGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "RARE",
+        "artist": "Steve Argyle",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c1f871a-bd85-402e-b474-1deb64c18a52.jpg?1783905365"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Araña, Heart of the Spider
 {
     "name": "Araña, Heart of the Spider",

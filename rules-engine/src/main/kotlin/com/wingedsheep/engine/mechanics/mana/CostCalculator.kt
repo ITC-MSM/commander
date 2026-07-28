@@ -1114,6 +1114,13 @@ class CostCalculator(
                     as? ChoiceValue.TextChoice)?.text ?: return false
                 cardDef.name.equals(chosenName, ignoreCase = true)
             }
+            is CardPredicate.CardTypeEqualsChosenComponent -> {
+                if (sourceEntityId == null || state == null) return false
+                val chosenType = (state.getEntity(sourceEntityId)
+                    ?.get<CastChoicesComponent>()?.chosen?.get(predicate.slot)
+                    as? ChoiceValue.TextChoice)?.text ?: return false
+                cardDef.typeLine.cardTypes.any { it.displayName.equals(chosenType, ignoreCase = true) }
+            }
 
             is CardPredicate.And -> predicate.predicates.all { matchesCardPredicate(cardDef, it, sourceEntityId, state, projectedState) }
             is CardPredicate.Or -> predicate.predicates.any { matchesCardPredicate(cardDef, it, sourceEntityId, state, projectedState) }

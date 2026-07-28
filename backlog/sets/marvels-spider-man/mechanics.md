@@ -41,7 +41,17 @@ Still blocked (not on web-slinging itself):
   keyword is now grantable in principle, but the "your legendary spells have web-slinging" grant is
   not yet wired — separate follow-up).
 
-## "Choose a card type" durable enters-choice + "spells of the chosen type cost {1} more" static
+## "Choose a card type" durable enters-choice + "spells of the chosen type cost {1} more" static — ✅ IMPLEMENTED
+
+**Done** (branch `spm-arachne`). New durable card-type choice dimension: `ChoiceSlot.CARD_TYPE`,
+`Effects.ChooseCardTypeForSource(allowedCardTypes, lookAtOpponentHand)` (on-resolution, writes the slot
+durably — the analogue of `ChooseNumberForSource`, run from a "when ~ enters" trigger), and
+`CardPredicate.CardTypeEqualsChosenComponent` / `GameObjectFilter.ofChosenCardTypeComponent()` read at
+cost-calculation time. The tax is a plain `ModifySpellCost(AnyCaster(ofChosenCardTypeComponent()),
+IncreaseGeneric(1))` (Thalia shape). Scenario test pins the durable write + the symmetric tax
+(chosen-type spell costs {1} more, other types untaxed).
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > As Arachne enters, look at an opponent's hand, then **choose a card type** other than creature.
 > **Spells of the chosen type cost {1} more to cast.**
@@ -56,6 +66,8 @@ stored choice feeding a cost-increase). "Look at an opponent's hand" is informat
 
 Blocked cards:
 - **Arachne, Psionic Weaver** [2] — web-slinging implemented; the choose-a-card-type tax is the blocker.
+
+</details>
 
 ## Harness / Infinity Stone ∞ ability
 

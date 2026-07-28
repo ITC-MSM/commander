@@ -2,13 +2,13 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 180 / 188
+**Implemented:** 181 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
 - [x] Amazing Acrobatics
 - [x] Anti-Venom, Horrifying Healer
-- [ ] Arachne, Psionic Weaver
+- [x] Arachne, Psionic Weaver
 - [x] Araña, Heart of the Spider
 - [x] Aunt May
 - [x] Bagel and Schmear

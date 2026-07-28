@@ -740,6 +740,18 @@ class PredicateEvaluator {
                 card.name.equals(chosenName, ignoreCase = true)
             }
 
+            // Source-component card-type reference: the card type durably chosen by the source
+            // permanent as it entered (Arachne). Read from the source's CastChoicesComponent[slot];
+            // works at cost-calculation / projection time as long as the predicate context supplies
+            // the choosing permanent as the source. The card-type analogue of NameEqualsChosenComponent.
+            is CardPredicate.CardTypeEqualsChosenComponent -> {
+                val sourceId = context?.sourceId ?: return false
+                val chosenType = (state.getEntity(sourceId)
+                    ?.get<CastChoicesComponent>()?.chosen?.get(predicate.slot)
+                    as? ChoiceValue.TextChoice)?.text ?: return false
+                card.typeLine.cardTypes.any { it.displayName.equals(chosenType, ignoreCase = true) }
+            }
+
             is CardPredicate.OriginallyPrintedInSet ->
                 card.originalSetCode?.equals(predicate.setCode, ignoreCase = true) == true
 
@@ -1552,9 +1564,10 @@ class PredicateEvaluator {
             is CardPredicate.DoesNotShareLandTypeWithPermanentYouControl -> false
             is CardPredicate.HasSubtypeFromVariable, is CardPredicate.HasSubtypeInStoredList,
             is CardPredicate.HasSubtypeInEachStoredGroup -> false
-            // Source-component name reference is a permanent-static predicate, not meaningful for a
-            // cast-spell record.
+            // Source-component name/card-type references are permanent-static predicates, not
+            // meaningful for a cast-spell record.
             is CardPredicate.NameEqualsChosenComponent -> false
+            is CardPredicate.CardTypeEqualsChosenComponent -> false
 
             // Stack ability check — cast spells are not abilities
             CardPredicate.IsActivatedOrTriggeredAbility -> false
