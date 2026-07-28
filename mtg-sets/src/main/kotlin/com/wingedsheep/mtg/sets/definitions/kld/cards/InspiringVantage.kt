@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.one.cards
+package com.wingedsheep.mtg.sets.definitions.kld.cards
 
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.dsl.card
@@ -14,16 +14,16 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
- * Seachrome Coast
+ * Inspiring Vantage
  * Land
  *
  * This land enters tapped unless you control two or fewer other lands.
- * {T}: Add {W} or {U}.
+ * {T}: Add {R} or {W}.
  */
-val SeachromeCoast = card("Seachrome Coast") {
+val InspiringVantage = card("Inspiring Vantage") {
     typeLine = "Land"
-    colorIdentity = "WU"
-    oracleText = "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {W} or {U}."
+    colorIdentity = "RW"
+    oracleText = "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {R} or {W}."
 
     replacementEffect(EntersTapped(
         unlessCondition = Compare(
@@ -35,24 +35,24 @@ val SeachromeCoast = card("Seachrome Coast") {
 
     activatedAbility {
         cost = AbilityCost.Tap
-        effect = AddManaEffect(Color.WHITE)
+        effect = AddManaEffect(Color.RED)
         manaAbility = true
         timing = TimingRule.ManaAbility
     }
 
     activatedAbility {
         cost = AbilityCost.Tap
-        effect = AddManaEffect(Color.BLUE)
+        effect = AddManaEffect(Color.WHITE)
         manaAbility = true
         timing = TimingRule.ManaAbility
     }
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "258"
-        artist = "Mauricio Calle"
-        flavorText = "Where indoctrination meets inquiry, currents roil restlessly beneath the surface."
-        imageUri = "https://cards.scryfall.io/normal/front/9/e/9ed7441f-f624-49c8-8611-d9bba0e441ac.jpg?1675957278"
-        ruling("2023-02-04", "If one of these lands enters the battlefield at the same time as one or more other lands, it doesn't take those lands into consideration when determining how many other lands you control.")
+        collectorNumber = "246"
+        artist = "Jonas De Ro"
+        imageUri = "https://cards.scryfall.io/normal/front/1/6/160ac412-005f-48ca-a204-10207307c6c2.jpg?1783937144"
+        ruling("2016-09-20", "If one of these lands is your first, second, or third land, it enters the battlefield untapped. If you control three or more other lands, however, it enters the battlefield tapped.")
+        ruling("2016-09-20", "If one of these lands enters the battlefield at the same time as one or more other lands (due to Oblivion Sower or Warp World, perhaps), it doesn't take those lands into consideration when determining how many other lands you control.")
     }
 }

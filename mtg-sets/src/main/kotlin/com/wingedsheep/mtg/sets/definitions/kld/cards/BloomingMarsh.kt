@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.otj.cards
+package com.wingedsheep.mtg.sets.definitions.kld.cards
 
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.dsl.card
@@ -49,9 +49,10 @@ val BloomingMarsh = card("Blooming Marsh") {
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "266"
-        artist = "Yeong-Hao Han"
-        imageUri = "https://cards.scryfall.io/normal/front/8/6/861caabb-0573-4e94-8b03-342f90465064.jpg?1723149884"
-        ruling("2024-04-19", "If one of these lands enters the battlefield at the same time as one or more other lands, it doesn't take those lands into consideration when determining how many other lands you control.")
+        collectorNumber = "243"
+        artist = "Adam Paquette"
+        imageUri = "https://cards.scryfall.io/normal/front/9/0/90da33d4-fe9c-42fe-b326-2fe337dc3ecd.jpg?1783937147"
+        ruling("2016-09-20", "If one of these lands is your first, second, or third land, it enters the battlefield untapped. If you control three or more other lands, however, it enters the battlefield tapped.")
+        ruling("2016-09-20", "If one of these lands enters the battlefield at the same time as one or more other lands (due to Oblivion Sower or Warp World, perhaps), it doesn't take those lands into consideration when determining how many other lands you control.")
     }
 }

@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.otj.cards
+package com.wingedsheep.mtg.sets.definitions.som.cards
 
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.dsl.card
@@ -14,16 +14,16 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
- * Spirebluff Canal
+ * Blackcleave Cliffs
  * Land
  *
  * This land enters tapped unless you control two or fewer other lands.
- * {T}: Add {U} or {R}.
+ * {T}: Add {B} or {R}.
  */
-val SpirebluffCanal = card("Spirebluff Canal") {
+val BlackcleaveCliffs = card("Blackcleave Cliffs") {
     typeLine = "Land"
-    colorIdentity = "UR"
-    oracleText = "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {U} or {R}."
+    colorIdentity = "BR"
+    oracleText = "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {B} or {R}."
 
     replacementEffect(EntersTapped(
         unlessCondition = Compare(
@@ -35,7 +35,7 @@ val SpirebluffCanal = card("Spirebluff Canal") {
 
     activatedAbility {
         cost = AbilityCost.Tap
-        effect = AddManaEffect(Color.BLUE)
+        effect = AddManaEffect(Color.BLACK)
         manaAbility = true
         timing = TimingRule.ManaAbility
     }
@@ -49,9 +49,11 @@ val SpirebluffCanal = card("Spirebluff Canal") {
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "270"
-        artist = "Ron Spears"
-        imageUri = "https://cards.scryfall.io/normal/front/5/9/59a04e16-a767-4112-ab01-6ca1b09c286c.jpg?1712356382"
-        ruling("2024-04-19", "If one of these lands enters the battlefield at the same time as one or more other lands, it doesn't take those lands into consideration when determining how many other lands you control.")
+        collectorNumber = "224"
+        artist = "Dave Kendall"
+        flavorText = "Where the Oxidda Chain mingles with the Mephidross, oil-suffused metal crumbles away, leaving walls of blackened bones."
+        imageUri = "https://cards.scryfall.io/normal/front/3/d/3d71be5f-0fd7-4a88-8041-f4d6bc4cc9ac.jpg?1783941689"
+        ruling("2023-02-04", "If one of these lands enters the battlefield under your control and you control zero, one, or two other lands, it enters the battlefield untapped. If you control three or more other lands, it enters the battlefield tapped.")
+        ruling("2023-02-04", "If one of these lands enters the battlefield at the same time as one or more other lands (due to Oblivion Sower or Warp World, perhaps), it doesn't take those lands into consideration when determining how many other lands you control.")
     }
 }
