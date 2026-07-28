@@ -1311,6 +1311,166 @@
     ]
 }
 
+// Brave the Wilds
+{
+    "name": "Brave the Wilds",
+    "manaCost": "{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nIf this spell was bargained, target land you control becomes a 3/3 Elemental creature with haste that's still a land.\nSearch your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "basicland"
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "found"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        },
+        "kickerTargetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                },
+                "id": "target land you control"
+            }
+        ],
+        "kickerSpellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land you control"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "keywords": [
+                        "HASTE"
+                    ],
+                    "creatureTypes": [
+                        "Elemental"
+                    ],
+                    "duration": "Permanent"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "artist": "Lucas Graciano",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/821b9e86-d108-42e5-b642-c5e07ab16c37.jpg?1783915084",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If you bargained Brave the Wilds and the target land is an illegal target by the time it tries to resolve, the spell won't resolve. You won't search for a basic land card, and you won't shuffle."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Some instant and sorcery spells require additional targets if they're bargained. You ignore those targeting requirements if those spells aren't bargained, and you can't bargain those spells unless you can choose the appropriate targets."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Break the Spell
 {
     "name": "Break the Spell",
@@ -4501,6 +4661,112 @@
     ]
 }
 
+// Hearth Elemental
+{
+    "name": "Hearth Elemental",
+    "manaCost": "{5}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "This spell costs {X} less to cast, where X is the number of cards in your graveyard that are instant cards, sorcery cards, and/or have an Adventure.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "CardsInGraveyardMatchingFilter",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        "IsInstant",
+                                        "IsSorcery",
+                                        "HasAdventure"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "UNCOMMON",
+        "artist": "Nicholas Gregory",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8f5f102-cc75-4cee-a117-4bdaaf86c2e9.jpg?1783915092",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "When casting a spell as an Adventure, use the alternative characteristics and ignore all of the card's normal characteristics. The spell's color, mana cost, mana value, and so on are determined by only those alternative characteristics."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "An effect may refer to a card, spell, or permanent that \"has an Adventure.\" This refers to a card, spell, or permanent that has an adventurer card's set of alternative characteristics, even if they're not being used and even if that card was never cast as an Adventure."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a spell is cast as an Adventure, its controller exiles it instead of putting it into its owner's graveyard as it resolves. For as long as it remains exiled, that player may cast it as a permanent spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Stoke Genius",
+            "manaCost": "{1}{R}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Discard your hand, then draw two cards. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "discardedHand"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discardedHand",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // High Fae Negotiator
 {
     "name": "High Fae Negotiator",
@@ -4904,6 +5170,84 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Ice Out
+{
+    "name": "Ice Out",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nThis spell costs {1} less to cast if it's bargained.\nCounter target spell.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": "Counter",
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "CastChoiceMade",
+                        "slot": "BARGAINED"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "Olivier Bernard",
+        "flavorText": "Hylda built an ice statuary from all those who couldn't understand \"go away.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/88ffafda-c852-497a-8156-4f759cdf3693.jpg?1783915120",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Bargain represents an optional additional cost. A spell cast with that additional cost paid is \"bargained.\""
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you copy a bargained spell, the copy is also bargained."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -7212,6 +7556,91 @@
                         }
                     ]
                 }
+            }
+        }
+    ]
+}
+
+// Picnic Ruiner
+{
+    "name": "Picnic Ruiner",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "Whenever this creature attacks while you control a creature with power 4 or greater, this creature gains double strike until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOUBLE_STRIKE",
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature pow>=4"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "rarity": "UNCOMMON",
+        "artist": "Edgar Sánchez Hidalgo",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/66485c3e-3b21-4db4-ac12-af04e35b49b1.jpg?1783915064",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If you controlled a creature with power 4 or greater when you declared Picnic Ruiner as an attacker, it doesn't matter whether you still control one as its ability resolves. Picnic Ruiner will still gain double strike until end of turn."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You choose how the counters will be distributed as you cast Stolen Goodies. Each target must receive at least one +1/+1 counter."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If some of the creatures are illegal targets as Stolen Goodies tries to resolve, the original distribution of counters still applies and the counters that would have been put on illegal targets are lost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You can cast Stolen Goodies with no targets. If you do, you won't distribute any counters, but you'll still exile it as it resolves, and you'll still be able to cast Picnic Ruiner later."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Stolen Goodies",
+            "manaCost": "{3}{G}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Distribute three +1/+1 counters among any number of target creatures you control. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "DistributeCountersAmongTargets",
+                    "totalCounters": 3
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 3,
+                        "minCount": 0,
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "any number of target creatures you control"
+                    }
+                ]
             }
         }
     ]
@@ -11545,6 +11974,115 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Torch the Tower
+{
+    "name": "Torch the Tower",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nTorch the Tower deals 2 damage to target creature or planeswalker. If this spell was bargained, instead it deals 3 damage to that permanent and you scry 1.\nIf a permanent dealt damage by Torch the Tower would die this turn, exile it instead.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "BARGAINED"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature or planeswalker"
+                                }
+                            },
+                            {
+                                "type": "Scry",
+                                "count": 1
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature or planeswalker"
+                        }
+                    }
+                },
+                {
+                    "type": "MarkExileOnDeath",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or planeswalker"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target creature or planeswalker"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "artist": "Uriah Voth",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b3d6027c-813f-46df-95b4-e2e305a67620.jpg?1783915088",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Torch the Tower's last replacement effect will exile the target permanent if it would die this turn for any reason, not just due to lethal damage or having 0 loyalty."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you copy a bargained spell, the copy is also bargained."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
