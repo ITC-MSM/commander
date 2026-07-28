@@ -87,6 +87,12 @@ val AvengersDisassembled = card("Avengers Disassembled") {
                         ),
                     ),
                     decisionMaker = EffectTarget.TargetController,
+                    // The Gather/Select/Move/Shuffle pipeline's auto-composed description reads
+                    // poorly as a yes/no prompt (each sub-effect's .description concatenated
+                    // verbatim) — override with the oracle-text phrasing, shown from the
+                    // decision-maker's own perspective (they see "you", not "its controller").
+                    descriptionOverride = "You may search your library for a basic land card, " +
+                        "put it onto the battlefield tapped, then shuffle.",
                 )
             }
         }
