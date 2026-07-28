@@ -3571,6 +3571,12 @@ matcher branch — `SpellCastEvent` does not grow a new field per axis.
   Conciliator; Gonti's-style borrow effects). Matches when the spell entity's `OwnerComponent`
   (fixed at game start, CR 108.3) differs from the controller; a spell cast from your own zones
   (owner == controller) never satisfies it.
+- `SpellCastPredicate.CastAsAdventure` — the spell was cast **as an Adventure** (CR 715.3), i.e. using
+  the card's alternative characteristics. Used by Chancellor of Tales ("whenever you cast an Adventure
+  spell, you may copy it"). A cast-time fact, not a card characteristic: the same adventurer card cast
+  as its creature half never matches, and neither does an unrelated instant/sorcery. Contrast
+  `CardPredicate.HasAdventure`, which is true of an adventurer *card* in any zone regardless of which
+  half was cast.
 
 Examples:
 
@@ -6593,6 +6599,19 @@ Numbers computed at resolution time.
   `AddDynamicCountersEffect` into a `Fixed` literal at scheduling time (the same treatment `AddManaEffect` gets).
   That is how Nine-Lives Familiar's "with one fewer revival counter" —
   `Subtract(lastKnownSourceCounters(Named(Counters.REVIVAL)), Fixed(1))` — survives to the end step.
+
+### Last-known damage dealt to the source (dies/leaves triggers)
+
+- `LastKnownDamageDealtToSource` — the total damage dealt to the source *this turn*, read as last-known
+  information. Facade: `DynamicAmounts.lastKnownDamageDealtToSource()`. Tangled Colony: "When this
+  creature dies, create X 1/1 black Rat creature tokens …, where X is the amount of damage dealt to it
+  this turn." The engine already tallies damage per source-controller on every permanent it is dealt to
+  and captures that map onto the `ZoneChangeEvent` when the permanent leaves the battlefield, so the
+  value survives into the dies trigger; this node simply sums it across all controllers. The per-player
+  split is what `EachPlayerDrawsForDamageDealtToSource` (Grothama, All-Devouring) reads instead.
+  Evaluates to `0` when no snapshot is present — including for a source still on the battlefield, since
+  the tally is only captured on the way out. Lethal damage is not a cap: excess damage, and non-lethal
+  damage the creature survived earlier in the turn, both count.
 
 - **Last-known source P/T (self-exile / self-sacrifice cost)** — the P/T analogue of
   `LastKnownSourceCounters`, applied automatically to `EntityProperty(EntityReference.Source, Power|Toughness)`

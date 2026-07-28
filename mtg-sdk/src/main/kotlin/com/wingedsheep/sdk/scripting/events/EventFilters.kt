@@ -523,6 +523,23 @@ sealed interface SpellCastPredicate {
     data object NotOwnedByController : SpellCastPredicate {
         override val description = "you don't own"
     }
+
+    /**
+     * The spell was cast **as an Adventure** (CR 715.3) — "Whenever you cast an Adventure spell"
+     * (Chancellor of Tales). This is about how the card was cast, not what the card is: the same
+     * adventurer card cast as its creature half does *not* satisfy it, and per the 2023-09-01
+     * rulings an "Adventure spell" is never found among instants/sorceries that merely have an
+     * Adventure printed on them.
+     *
+     * Contrast [com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasAdventure], which is a
+     * zone-independent characteristic of the *card* (Frantic Firebolt tallying adventurer cards in
+     * a graveyard) and is true regardless of which half was cast.
+     */
+    @SerialName("SpellCastAsAdventure")
+    @Serializable
+    data object CastAsAdventure : SpellCastPredicate {
+        override val description = "as an Adventure"
+    }
 }
 
 // =============================================================================

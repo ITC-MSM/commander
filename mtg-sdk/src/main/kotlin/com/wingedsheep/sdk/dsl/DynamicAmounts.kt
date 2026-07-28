@@ -342,6 +342,13 @@ object DynamicAmounts {
         filter: com.wingedsheep.sdk.scripting.events.CounterTypeFilter
     ): DynamicAmount = DynamicAmount.LastKnownSourceCounters(filter)
 
+    /**
+     * The total damage dealt to the source this turn, captured as last-known information when it
+     * left the battlefield — "where X is the amount of damage dealt to it this turn" (Tangled
+     * Colony). See [DynamicAmount.LastKnownDamageDealtToSource].
+     */
+    fun lastKnownDamageDealtToSource(): DynamicAmount = DynamicAmount.LastKnownDamageDealtToSource
+
     // =========================================================================
     // Spell-cast trigger values
     // =========================================================================
