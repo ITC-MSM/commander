@@ -1570,33 +1570,6 @@
     ]
 }
 
-// Breeding Pool
-{
-    "name": "Breeding Pool",
-    "manaCost": "",
-    "typeLine": "Land — Forest Island",
-    "oracleText": "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "251",
-        "rarity": "RARE",
-        "artist": "Constantin Marin",
-        "flavorText": "\"Log 1.4.778: Granove, a tropical moon teeming with endemic biota. A must see for any aspiring astrobiologist!\"\n—*Maisie's Edge Chronicles*",
-        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3c750d5a-f743-41ff-b5ba-02025ca0bec2.jpg?1752947580"
-    },
-    "colorIdentityOverride": [
-        "BLUE",
-        "GREEN"
-    ]
-}
-
 // Brightspear Zealot
 {
     "name": "Brightspear Zealot",

@@ -1504,33 +1504,6 @@
     ]
 }
 
-// Blood Crypt
-{
-    "name": "Blood Crypt",
-    "manaCost": "",
-    "typeLine": "Land — Swamp Mountain",
-    "oracleText": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "262",
-        "rarity": "RARE",
-        "artist": "Adam Paquette",
-        "flavorText": "The boggart was playfully prodding a critter when the skies darkened, then he gobbled it down with glee.",
-        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6da63cc5-4624-4491-abd9-9b600c3fefe2.jpg?1759144844"
-    },
-    "colorIdentityOverride": [
-        "BLACK",
-        "RED"
-    ]
-}
-
 // Bloodline Bidding
 {
     "name": "Bloodline Bidding",
@@ -9785,33 +9758,6 @@
     },
     "colorIdentityOverride": [
         "BLACK"
-    ]
-}
-
-// Hallowed Fountain
-{
-    "name": "Hallowed Fountain",
-    "manaCost": "",
-    "typeLine": "Land — Plains Island",
-    "oracleText": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "265",
-        "rarity": "RARE",
-        "artist": "Adam Paquette",
-        "flavorText": "The merrow was vending her wares when the skies darkened, then she sharply raised her prices.",
-        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e056b55f-82ed-4fe0-ab0c-bb20fa4a218a.jpg?1759144845"
-    },
-    "colorIdentityOverride": [
-        "WHITE",
-        "BLUE"
     ]
 }
 

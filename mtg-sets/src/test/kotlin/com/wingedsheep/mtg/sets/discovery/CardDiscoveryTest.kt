@@ -33,11 +33,11 @@ class CardDiscoveryTest : FunSpec({
     }
 
     test("discovery picks up Printing reprints declared in the cards package") {
-        // EOE's reprints live in `cards/BanishingLightReprint.kt` and `cards/Annul.kt`;
-        // KTK's is `cards/NaturalizeReprint.kt`. All should surface via [findPrintingsIn]
-        // without a hand-maintained list.
+        // EOE's reprints live in `cards/BanishingLightReprint.kt`, `cards/Annul.kt`, and
+        // `cards/BreedingPoolReprint.kt`; KTK's is `cards/NaturalizeReprint.kt`. All should
+        // surface via [findPrintingsIn] without a hand-maintained list.
         val eoePrintings = CardDiscovery.findPrintingsIn("com.wingedsheep.mtg.sets.definitions.eoe.cards")
-        eoePrintings.map { it.name } shouldContainExactlyInAnyOrder listOf("Annul", "Banishing Light")
+        eoePrintings.map { it.name } shouldContainExactlyInAnyOrder listOf("Annul", "Banishing Light", "Breeding Pool")
         eoePrintings.forEach { it.setCode shouldBe "EOE" }
 
         val ktkPrintings = CardDiscovery.findPrintingsIn("com.wingedsheep.mtg.sets.definitions.ktk.cards")
