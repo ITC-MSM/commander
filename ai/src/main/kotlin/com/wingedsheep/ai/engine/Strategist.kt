@@ -2,11 +2,15 @@ package com.wingedsheep.ai.engine
 
 import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
 import com.wingedsheep.ai.engine.advisor.CastContext
+import com.wingedsheep.ai.engine.budget.BudgetPolicy
+import com.wingedsheep.ai.engine.budget.DecisionBudget
+import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.BoardPresence
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.legalactions.MeaningfulActionFilter
 import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -36,7 +40,19 @@ class Strategist(
     private val simulator: GameSimulator,
     private val evaluator: BoardEvaluator,
     private val combatAdvisor: CombatAdvisor = CombatAdvisor(simulator, evaluator),
-    private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry()
+    private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry(),
+    /**
+     * Phase 4a: only propose actions the AI can actually take.
+     *
+     * Two halves. Candidates come from [MeaningfulActionFilter] instead of the ad-hoc
+     * `affordable && !isManaAbility` filter, so a spell whose mandatory target slot is empty stops
+     * being a candidate; and [fillableRequirements] fills the slots it *can* rather than
+     * abandoning the whole spell. Together they close the "889 of 945 rejected actions were
+     * `CastSpell: No valid targets available`" finding Phase 1 quantified and left open.
+     */
+    private val useMeaningfulFilter: Boolean = false,
+    /** Phase 4b. How much search each decision may spend. */
+    private val budgetPolicy: BudgetPolicy = LegacyBudgetPolicy,
 ) {
     fun chooseAction(
         state: GameState,
@@ -48,31 +64,32 @@ class Strategist(
         // returns a single DeclareAttackers/DeclareBlockers with an empty default map).
         val combatAction = legalActions.find { it.actionType == "DeclareAttackers" || it.actionType == "DeclareBlockers" }
         if (combatAction != null) {
-            return handleCombatDeclaration(state, combatAction, playerId)
+            val budget = budgetPolicy.budgetFor(state, playerId, listOf(combatAction))
+            return handleCombatDeclaration(state, combatAction, playerId, budget)
         }
 
         if (legalActions.size == 1) return legalActions.first()
 
         val pass = legalActions.find { it.actionType == "PassPriority" }
-        val affordable = expandXCostAbilities(
-            state,
-            preferKickerVariants(
-                legalActions.filter { it.affordable && !it.isManaAbility && it.actionType != "PassPriority" }
-            ),
-            playerId
-        )
+        val affordable = expandXCostAbilities(state, preferKickerVariants(candidatesFrom(legalActions)), playerId)
 
         if (affordable.isEmpty()) return pass ?: legalActions.first()
 
+        val budget = budgetPolicy.budgetFor(state, playerId, affordable)
+
         // ── 1-ply scoring of all candidates ──
         val passScore = if (pass != null) {
-            evaluate1Ply(state, pass, playerId)
+            evaluate1Ply(state, pass, playerId, budget = budget)
         } else {
             evaluator.evaluate(state, state.projectedState, playerId)
         }
 
-        val scored = affordable.map { action ->
-            action to evaluate1Ply(state, action, playerId, passScore)
+        // The anytime contract: the first candidate is always scored, and the budget only cuts the
+        // tail short. `maxByOrNull` over a partial list is still a valid (if worse) answer.
+        val scored = mutableListOf<Pair<LegalAction, Double>>()
+        for (action in affordable) {
+            scored += action to evaluate1Ply(state, action, playerId, passScore, budget)
+            if (budget.expired()) break
         }
 
         // On the opponent's end step, unspent mana is about to be wasted.
@@ -91,7 +108,7 @@ class Strategist(
             // AI sees the real resolved board, including effects already on the stack.
             val chosen = best.first
             if (chosen.requiresTargets) {
-                chosen.copy(action = chooseCommittedTargets(state, chosen, playerId))
+                chosen.copy(action = chooseCommittedTargets(state, chosen, playerId, budget))
             } else {
                 chosen
             }
@@ -100,27 +117,48 @@ class Strategist(
         }
     }
 
+    /**
+     * The candidate actions worth scoring.
+     *
+     * Mana abilities are excluded either way: activating one on its own is never the AI's move —
+     * mana is produced as part of paying for something, by the engine's own auto-tap.
+     */
+    private fun candidatesFrom(legalActions: List<LegalAction>): List<LegalAction> =
+        if (useMeaningfulFilter) {
+            MeaningfulActionFilter.filterMeaningful(legalActions).filter { it.affordable && !it.isManaAbility }
+        } else {
+            legalActions.filter { it.affordable && !it.isManaAbility && it.actionType != "PassPriority" }
+        }
+
     private fun handleCombatDeclaration(
         state: GameState,
         legalAction: LegalAction,
-        playerId: EntityId
+        playerId: EntityId,
+        budget: DecisionBudget,
     ): LegalAction {
         val action = when (legalAction.actionType) {
-            "DeclareAttackers" -> combatAdvisor.chooseAttackers(state, legalAction, playerId)
-            "DeclareBlockers" -> combatAdvisor.chooseBlockers(state, legalAction, playerId, useSimulation = true)
+            "DeclareAttackers" -> combatAdvisor.chooseAttackers(state, legalAction, playerId, budget)
+            "DeclareBlockers" ->
+                combatAdvisor.chooseBlockers(state, legalAction, playerId, useSimulation = true, budget = budget)
             else -> legalAction.action
         }
         return legalAction.copy(action = action)
     }
 
-    private fun evaluate1Ply(state: GameState, action: LegalAction, playerId: EntityId, passScore: Double? = null): Double {
+    private fun evaluate1Ply(
+        state: GameState,
+        action: LegalAction,
+        playerId: EntityId,
+        passScore: Double? = null,
+        budget: DecisionBudget = DecisionBudget.legacy(),
+    ): Double {
         // For targeted spells, fill in the best target by simulation before scoring. Without a
         // target the CastSpellHandler rejects the action ("No valid targets") and the spell always
         // scores the same as passing; with only a *heuristic* target, an ability whose ideal target
         // is already taken by something on the stack (e.g. a second "can't block" when the first is
         // still resolving) would be scored at that redundant target and look worthless — so the AI
         // would never play it. Scoring at the best target makes the action's real upside visible.
-        val simulationAction = chooseCommittedTargets(state, action, playerId)
+        val simulationAction = chooseCommittedTargets(state, action, playerId, budget)
         val result = simulator.simulate(state, simulationAction)
         val defaultScore = evaluator.evaluate(result.state, result.state.projectedState, playerId)
 
@@ -164,8 +202,7 @@ class Strategist(
         // AI re-picks it forever — an infinite loop.
         val baseAction = action.action
         if (targetsAlreadyFilled(baseAction) != false) return action.action
-        val targetInfos = targetInfosFor(action) ?: return action.action
-        if (targetInfos.any { it.validTargets.isEmpty() }) return action.action
+        val targetInfos = fillableRequirements(action) ?: return action.action
 
         val chosenTargets = targetInfos.map { info ->
             val best = info.validTargets.maxByOrNull { heuristicTargetRank(state, it, playerId) }
@@ -184,22 +221,26 @@ class Strategist(
      * at the same creature: while the first is still on the stack the heuristic sees that creature
      * at full value and re-picks it, but a simulation that resolves both effects shows re-hitting it
      * gains nothing over neutralizing a second, still-able blocker (which [BoardPresence] now prices
-     * lower). Requirements are resolved greedily — others held at their heuristic best — and only the
-     * top [MAX_TARGET_CANDIDATES] candidates per requirement are simulated to bound cost. Falls back
-     * to [resolveTargetsForSimulation] when the action carries no usable target metadata.
+     * lower). Requirements are resolved greedily — others held at their heuristic best — and only
+     * the top `budget.allowances.targetCandidates` per requirement are simulated to bound cost. A
+     * budget below [com.wingedsheep.ai.engine.budget.BudgetTier.NORMAL] skips the refinement
+     * entirely and keeps the heuristic pick: this loop is the most expensive thing a routine
+     * priority window can pay for. Falls back to [resolveTargetsForSimulation] when the action
+     * carries no usable target metadata.
      */
     private fun chooseCommittedTargets(
         state: GameState,
         action: LegalAction,
-        playerId: EntityId
+        playerId: EntityId,
+        budget: DecisionBudget = DecisionBudget.legacy(),
     ): com.wingedsheep.engine.core.GameAction {
         val baseAction = action.action
         if (targetsAlreadyFilled(baseAction) != false) return baseAction
-        val targetInfos = targetInfosFor(action)
-            ?: return resolveTargetsForSimulation(state, action, playerId)
-        if (targetInfos.any { it.validTargets.isEmpty() }) {
+        if (!budget.allowances.refineTargetsBySimulation) {
             return resolveTargetsForSimulation(state, action, playerId)
         }
+        val targetInfos = fillableRequirements(action)
+            ?: return resolveTargetsForSimulation(state, action, playerId)
 
         // Heuristic baseline for every requirement, then refine each one by simulation.
         val chosenTargets = targetInfos.map { info ->
@@ -209,10 +250,11 @@ class Strategist(
         }.toMutableList()
 
         for (i in targetInfos.indices) {
+            if (budget.expired()) break
             val info = targetInfos[i]
             val candidates = info.validTargets
                 .sortedByDescending { heuristicTargetRank(state, it, playerId) }
-                .take(MAX_TARGET_CANDIDATES)
+                .take(budget.allowances.targetCandidates)
             if (candidates.size <= 1) continue
             val best = candidates.maxByOrNull { candidate ->
                 val trial = chosenTargets.toMutableList()
@@ -235,6 +277,39 @@ class Strategist(
             is ActivateAbility -> baseAction.targets.isNotEmpty()
             else -> null
         }
+
+    /**
+     * The target requirements the AI will actually fill, or null when it cannot build a legal
+     * target list at all and should leave the action's targets alone.
+     *
+     * Targets are submitted as one **flat** list, which the engine slices back into requirements
+     * by their max counts (`TargetValidator.validateTargets`). An unfilled slot can therefore only
+     * ever be a trailing one — there is no way to say "requirement 0 got nothing, requirement 1
+     * got this".
+     *
+     * That mattered more than it sounds. V0 bails on the *whole spell* the moment any requirement
+     * has no legal target, and then submits no targets at all, which the engine rejects with "No
+     * valid targets available" — Phase 1 measured that as ~0.9 rejected actions per game, 889 of
+     * 945 rejections. The shape behind almost all of them is an **optional** trailing slot:
+     * Conduct Electricity's "up to one target creature token" with no token on the board makes the
+     * AI decline to target the mandatory creature either.
+     *
+     * Behind [useMeaningfulFilter] with the rest of "only propose actions you can actually take" —
+     * not because the old behaviour is defensible, but because `AiProfile.LEGACY_V0` is the
+     * permanent reference opponent that every published number is quoted against, and quietly
+     * making it stronger would silently rebase months of arena results.
+     */
+    private fun fillableRequirements(action: LegalAction): List<TargetInfo>? {
+        val all = targetInfosFor(action) ?: return null
+        val fillable = all.takeWhile { it.validTargets.isNotEmpty() }
+        if (fillable.size == all.size) return all
+        if (!useMeaningfulFilter) return null
+        val unfilled = all.drop(fillable.size)
+        // A mandatory slot with no legal target means the spell cannot be cast at all, and a
+        // later slot that *does* have targets cannot be reached past a skipped one.
+        if (unfilled.any { it.minTargets > 0 || it.validTargets.isNotEmpty() }) return null
+        return fillable
+    }
 
     /** Normalize an action's target metadata into requirements (multi-target or single-target). */
     private fun targetInfosFor(action: LegalAction): List<TargetInfo>? =
@@ -468,9 +543,6 @@ class Strategist(
     }
 
     private companion object {
-        /** Cap on candidate targets simulated per requirement when committing a targeted action. */
-        const val MAX_TARGET_CANDIDATES = 8
-
         /** Cap on the number of X values an X-cost ability is expanded into (keeps the highest). */
         const val MAX_X_CANDIDATES = 5
 

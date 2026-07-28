@@ -5,6 +5,7 @@ import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
 import com.wingedsheep.ai.engine.evaluation.*
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.legalactions.MeaningfulActionFilter
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.core.Step
@@ -33,13 +34,26 @@ class AIPlayer(
     private val simulator: GameSimulator,
     private val evaluator: BoardEvaluator,
     private val strategist: Strategist,
-    private val responder: DecisionResponder
+    private val responder: DecisionResponder,
+    /**
+     * Phase 4a. Skip enumeration entirely on priority windows that
+     * [MeaningfulActionFilter.canAutoPassWithoutEnumerating] can decide from the state alone.
+     */
+    private val useMeaningfulFilter: Boolean = false,
 ) {
     /**
      * Choose the best action from the current legal actions.
      * Returns the [GameAction] to submit to the [ActionProcessor].
+     *
+     * The fast path matters more than it looks. Phase 0 measured **76.2% of priority windows
+     * offering zero candidates** while still paying ~0.40 ms to enumerate and find that out —
+     * ~148 ms per game of pure waste, and a cost a rollout would pay again on every one of the
+     * ~20-30 windows it crosses.
      */
     fun chooseAction(state: GameState): GameAction {
+        if (useMeaningfulFilter && MeaningfulActionFilter.canAutoPassWithoutEnumerating(state, playerId)) {
+            return PassPriority(playerId)
+        }
         val legalActions = simulator.getLegalActions(state, playerId)
         return chooseFrom(state, legalActions).action
     }
@@ -163,7 +177,11 @@ class AIPlayer(
             val simulator = GameSimulator(cardRegistry)
             val evaluator = profile.evaluationWeights.toEvaluator()
             val combatAdvisor = CombatAdvisor(simulator, evaluator, cardRegistry, advisorRegistry)
-            val responder = DecisionResponder(simulator, evaluator, advisorRegistry = advisorRegistry)
+            val responder = DecisionResponder(
+                simulator, evaluator,
+                advisorRegistry = advisorRegistry,
+                budgetPolicy = profile.budgetPolicy,
+            )
 
             // Wire up the decision resolver so simulations can resolve non-trivial
             // decisions (modal spells, gift choices, etc.) instead of returning
@@ -176,8 +194,15 @@ class AIPlayer(
                 playerId = playerId,
                 simulator = simulator,
                 evaluator = evaluator,
-                strategist = Strategist(simulator, evaluator, combatAdvisor = combatAdvisor, advisorRegistry = advisorRegistry),
-                responder = responder
+                strategist = Strategist(
+                    simulator, evaluator,
+                    combatAdvisor = combatAdvisor,
+                    advisorRegistry = advisorRegistry,
+                    useMeaningfulFilter = profile.useMeaningfulFilter,
+                    budgetPolicy = profile.budgetPolicy,
+                ),
+                responder = responder,
+                useMeaningfulFilter = profile.useMeaningfulFilter,
             )
         }
 

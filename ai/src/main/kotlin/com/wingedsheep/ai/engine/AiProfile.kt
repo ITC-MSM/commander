@@ -3,6 +3,9 @@ package com.wingedsheep.ai.engine
 import com.wingedsheep.ai.engine.advisor.CardAdvisorModule
 import com.wingedsheep.ai.engine.advisor.modules.BloomburrowAdvisorModule
 import com.wingedsheep.ai.engine.advisor.modules.OnslaughtAdvisorModule
+import com.wingedsheep.ai.engine.budget.BudgetPolicy
+import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
+import com.wingedsheep.ai.engine.budget.TieredBudgetPolicy
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.BoardPresence
 import com.wingedsheep.ai.engine.evaluation.CardAdvantage
@@ -77,6 +80,23 @@ data class AiProfile(
     val advisorModules: List<CardAdvisorModule> = emptyList(),
     /** Leaf-evaluation weights. See [EvaluationWeights]. */
     val evaluationWeights: EvaluationWeights = EvaluationWeights.DEFAULT,
+    /**
+     * Phase 4a: only propose actions the AI can actually take, and skip windows where it has
+     * none.
+     *
+     * Routes candidate generation and whole-window skipping through
+     * [com.wingedsheep.engine.legalactions.MeaningfulActionFilter] — the same rules the client's
+     * auto-pass uses — and fixes the Strategist's target filling to fill the slots it can instead
+     * of abandoning a spell whose *optional* slot happens to be empty. Off for [LEGACY_V0]:
+     * the second half is a plain bug fix, but the reference opponent has to stay frozen or every
+     * number published against it silently rebases.
+     */
+    val useMeaningfulFilter: Boolean = false,
+    /**
+     * Phase 4b. How much search one decision may spend. [LegacyBudgetPolicy] is today's
+     * constants with no global deadline.
+     */
+    val budgetPolicy: BudgetPolicy = LegacyBudgetPolicy,
 ) {
     companion object {
         /**
@@ -100,6 +120,16 @@ data class AiProfile(
         val PRODUCTION = AiProfile(
             id = "production",
             advisorModules = listOf(BloomburrowAdvisorModule(), OnslaughtAdvisorModule()),
+        )
+
+        /**
+         * Everything Phase 4 added, on top of [LEGACY_V0]: the meaningful-action filter and the
+         * four-tier decision budget at its nominal sizes. The arena agent `v0-phase4`.
+         */
+        val PHASE4 = AiProfile(
+            id = "v0-phase4",
+            useMeaningfulFilter = true,
+            budgetPolicy = TieredBudgetPolicy(),
         )
     }
 }

@@ -1,6 +1,7 @@
 package com.wingedsheep.ai.engine
 
 import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
+import com.wingedsheep.ai.engine.budget.DecisionBudget
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.engine.core.DeclareAttackers
 import com.wingedsheep.engine.core.DeclareBlockers
@@ -31,7 +32,13 @@ class CombatAdvisor(
     private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry()
 ) {
     companion object {
-        /** Max engine simulations for blocking local search. Keeps decision time bounded. */
+        /**
+         * Max engine simulations for blocking local search — now a **floor**, not a ceiling.
+         *
+         * `DecisionBudget` derives the real allowance from the tier, and combat declaration is
+         * always CRITICAL, so combat never gets less search than it did before Phase 4. This
+         * constant is what `SearchAllowances.LEGACY` and every sub-NORMAL tier resolve to.
+         */
         const val MAX_BLOCK_SIMULATIONS = 10
     }
 
@@ -68,7 +75,8 @@ class CombatAdvisor(
     fun chooseAttackers(
         state: GameState,
         legalAction: LegalAction,
-        playerId: EntityId
+        playerId: EntityId,
+        budget: DecisionBudget = DecisionBudget.legacy(),
     ): GameAction {
         val projected = state.projectedState
         val validAttackers = legalAction.validAttackers ?: emptyList()
@@ -211,9 +219,8 @@ class CombatAdvisor(
             other != playerId && projected.getBattlefieldControlledBy(other).any { projected.isCreature(it) }
         }
         if (state.step == Step.DECLARE_ATTACKERS && enemyControlsCreature) {
-            val deadline = System.currentTimeMillis() + 1000
             improveAttackViaLocalSearch(
-                state, playerId, opponentId, validAttackers, mandatory.toSet(), seedMap, deadline
+                state, playerId, opponentId, validAttackers, mandatory.toSet(), seedMap, budget
             )
         }
 
@@ -239,7 +246,8 @@ class CombatAdvisor(
         state: GameState,
         legalAction: LegalAction,
         playerId: EntityId,
-        useSimulation: Boolean = false
+        useSimulation: Boolean = false,
+        budget: DecisionBudget = DecisionBudget.legacy(),
     ): GameAction {
         val projected = state.projectedState
         val validBlockers = legalAction.validBlockers ?: emptyList()
@@ -280,7 +288,7 @@ class CombatAdvisor(
         val bestMap = if (useSimulation) {
             improveViaLocalSearch(
                 state, projected, playerId, attackers, validBlockers,
-                mandatoryBlockerIds, seedMap
+                mandatoryBlockerIds, seedMap, budget
             )
         } else {
             seedMap
@@ -400,7 +408,9 @@ class CombatAdvisor(
      * Each candidate is then validated via full engine simulation to catch triggers,
      * replacement effects, and keyword interactions that math alone would miss.
      *
-     * Caps at [MAX_BLOCK_SIMULATIONS] total simulations to keep decision time bounded.
+     * Caps at `budget.allowances.blockSimulations` total simulations to keep decision time
+     * bounded — [MAX_BLOCK_SIMULATIONS] is that allowance's floor, so blocking never searches
+     * less than it did before the budget existed.
      */
     private fun improveViaLocalSearch(
         state: GameState,
@@ -409,15 +419,17 @@ class CombatAdvisor(
         attackers: List<EntityId>,
         validBlockers: List<EntityId>,
         mandatoryBlockerIds: Set<EntityId>,
-        seedMap: MutableMap<EntityId, List<EntityId>>
+        seedMap: MutableMap<EntityId, List<EntityId>>,
+        budget: DecisionBudget,
     ): MutableMap<EntityId, List<EntityId>> {
         var currentPlan = seedMap.toMutableMap()
         var currentScore = evaluateBlockingPlan(state, playerId, currentPlan) ?: return currentPlan
-        var simulationsLeft = MAX_BLOCK_SIMULATIONS
+        var simulationsLeft = budget.allowances.blockSimulations
+        val deadline = budget.combatDeadlineNanos
 
         val maxIterations = 2
         for (iteration in 1..maxIterations) {
-            if (simulationsLeft <= 0) break
+            if (simulationsLeft <= 0 || System.nanoTime() > deadline) break
 
             val mutations = generateBlockMutations(
                 state, projected, attackers, validBlockers,
@@ -428,7 +440,7 @@ class CombatAdvisor(
             var bestScore = currentScore
 
             for (mutation in mutations) {
-                if (simulationsLeft <= 0) break
+                if (simulationsLeft <= 0 || System.nanoTime() > deadline) break
                 simulationsLeft--
                 val score = evaluateBlockingPlan(state, playerId, mutation) ?: continue
                 if (score > bestScore) {
@@ -1051,8 +1063,9 @@ class CombatAdvisor(
         validAttackers: List<EntityId>,
         mandatoryAttackers: Set<EntityId>,
         attackerMap: MutableMap<EntityId, EntityId>,
-        deadline: Long
+        budget: DecisionBudget,
     ) {
+        val deadline = budget.combatDeadlineNanos
         // Baseline: use current board evaluation. Attack plans must beat this.
         val noAttackScore = evaluateAttackPlan(state, playerId, opponentId, emptyMap())
             ?: evaluator.evaluate(state, state.projectedState, playerId)
@@ -1068,15 +1081,15 @@ class CombatAdvisor(
             currentScore = noAttackScore
         }
 
-        val maxIterations = 3
+        val maxIterations = budget.allowances.attackSearchIterations
         for (iteration in 1..maxIterations) {
-            if (System.currentTimeMillis() > deadline) break
+            if (System.nanoTime() > deadline) break
             var bestMutation: Map<EntityId, EntityId>? = null
             var bestScore = currentScore
 
             // Mutation 1: Add each non-attacking creature
             for (attacker in validAttackers) {
-                if (System.currentTimeMillis() > deadline) break
+                if (System.nanoTime() > deadline) break
                 if (attacker in attackerMap) continue
                 val mutation = attackerMap.toMutableMap()
                 mutation[attacker] = opponentId
@@ -1089,7 +1102,7 @@ class CombatAdvisor(
 
             // Mutation 2: Remove each non-mandatory attacker
             for (attacker in attackerMap.keys.toList()) {
-                if (System.currentTimeMillis() > deadline) break
+                if (System.nanoTime() > deadline) break
                 if (attacker in mandatoryAttackers) continue
                 val mutation = attackerMap.toMutableMap()
                 mutation.remove(attacker)

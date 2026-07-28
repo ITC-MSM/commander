@@ -3,13 +3,14 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** **Phases 0, 1, 2 and 3 shipped** (Phase 3 on 2026-07-28) — baselines in
+**Status:** **Phases 0, 1, 2, 3 and 4 shipped** (Phase 4 on 2026-07-28) — baselines in
 [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
-[`docs/ai/measurement.md`](../docs/ai/measurement.md). Three scoreboards now exist: the arena
-(`just arena`), the 48-puzzle suite (`just arena-puzzles`, **39/48 today**) and the multiplayer pod
-arena (`just arena-pod`). Next up is **Phase 4, branching factor + budget** — or **Phase 6,
-CardIntent**, which is the highest strength-per-effort item left. Phases are individually shippable
-and ordered by dependency, not by appeal.
+[`docs/ai/measurement.md`](../docs/ai/measurement.md). Four scoreboards now exist: the arena
+(`just arena`), the 48-puzzle suite (`just arena-puzzles`, **39/48 today**), the multiplayer pod
+arena (`just arena-pod`) and the budget-scaling ladder (`just arena-budget-scaling`, **monotone**).
+Next up is **Phase 6, CardIntent** — the highest strength-per-effort item left, and the first one
+that is meant to move the win rate rather than enable it. Phases are individually shippable and
+ordered by dependency, not by appeal.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
 performance phase builds on. See "Cross-reference" below; parts of that doc are stale.
@@ -451,7 +452,63 @@ an exact-mirror / clean-game / discrimination harness in the always-on suite, �
 
 ---
 
-### Phase 4 — Branching factor + budget · *5–8 d*
+### Phase 4 — Branching factor + budget · *5–8 d* — ✅ **DONE 2026-07-28**
+
+> **Shipped.** `rules-engine/.../legalactions/MeaningfulActionFilter.kt` owns the auto-pass rules;
+> `AutoPassManager` adapts the DTO and delegates. `ai/.../engine/budget/{DecisionBudget,BudgetPolicy}.kt`
+> carries the four tiers, threaded through `AIPlayer` → `Strategist` → `CombatAdvisor` →
+> `DecisionResponder` and switched by `AiProfile.useMeaningfulFilter` / `.budgetPolicy`. New
+> scoreboard: `just arena-budget-scaling`. Numbers and findings:
+> [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-4--branching-factor--budget);
+> how to read the ladder: [`docs/ai/measurement.md`](../docs/ai/measurement.md#the-budget-scaling-ladder).
+>
+> **Baselines: `v0-meaningful` 51.3% CI [49.8%, 52.7%] and `v0-phase4` 50.8% CI [49.4%, 52.2%]**
+> over 1,000 paired games each — neutral, which is the result enabling infrastructure should
+> produce. The exit criterion was ≥50% precisely because a filtered agent that *loses* is
+> discarding a real option; it does not lose. **The budget-scaling ladder is monotone with every
+> rung's lower CI bound above parity** (1000 vs 100: 55.7% [52.7%, 58.7%] · 3000 vs 1000: 54.0%
+> [51.0%, 57.0%] · end to end: 55.3% [52.0%, 59.0%]) — the safety net is calibrated and passing
+> before rollouts exist, which was the whole point of building it now.
+>
+> Five corrections the build produced:
+>
+> 1. **Phase 1's illegal-action finding was a targeting bug, not a filtering one — and it is now
+>    fixed.** 889 of 945 rejections were `CastSpell: No valid targets available`, and the
+>    meaningful-action filter turned out not to be the cause. `Strategist` abandoned target
+>    selection for the *whole spell* whenever *any* requirement had no legal target, then submitted
+>    an untargeted cast. Almost every case is an **optional** trailing slot — Conduct Electricity's
+>    "up to one target creature token" with no token on the board makes the AI decline to target the
+>    mandatory creature either. `fillableRequirements` fills what it can. Measured: **36 → 0** over
+>    200 mirror games.
+> 2. **`validTargets` cannot see a multi-requirement spell's second slot.** It only ever mirrors the
+>    first requirement, so "targeted spell with no legal target" passed a spell whose second
+>    *mandatory* slot was empty. `PriorityAction.hasUnfillableTargetRequirement` asks the real
+>    question, and the client's auto-pass gets the fix too — it was stopping players on spells they
+>    could not cast.
+> 3. **A budget must be spent as work, not wall clock.** `SearchAllowances` converts a tier into a
+>    count of simulations once; the millisecond figure is a hard safety stop only. A stopwatch would
+>    have made every arena run irreproducible and `ArenaHarnessTest`'s "identical at 8 threads and
+>    at 1" assertion flaky — and it is why the arena's 3.5-minute 1,000-game gate survives Phase 4b
+>    intact, contrary to Phase 1's warning that shipping a budget would make the arena expensive.
+> 4. **The plan's threading list was one module too long.** Every scan in `DecisionResponder` is
+>    already bounded to ≤11 simulations by construction, at or below what even ROUTINE allows. The
+>    budget is wired into the one place it can bind (the target pre-rank cut) and deliberately not
+>    into the other twenty responders.
+> 5. **Two CRITICAL triggers from the table are not implemented, on purpose.** "Sweeper castable"
+>    and "a real counterspell window" both need to know what a card *does* — Phase 6's `CardIntent`.
+>    Guessing from a mana cost would put the most expensive tier on the wrong windows.
+>
+> **`LEGACY_V0` is untouched.** Both halves are behind profile flags, including the target-filling
+> bug fix — not because the old behaviour is defensible, but because quietly strengthening the
+> permanent reference opponent would silently rebase every number published against it.
+> `FrozenBaselineTest` would not have caught it: its frozen game is all-vanilla Portal, which has no
+> multi-requirement spell.
+>
+> **The branching-factor exit criterion was dropped, as Phase 0 predicted.** "Down 30–50%" was
+> written against an assumed ~8 candidates; the real figure is 1.75, and `filterMeaningful` has
+> almost nothing left to cut. The delivered win is `canAutoPassWithoutEnumerating`: **40% of
+> priority windows are now decided without calling the enumerator at all** (measured over 884 real
+> windows by `AutoPassParityTest`, which prints the figure).
 
 #### 4a. Port the meaningful-action filter down into the engine
 
@@ -490,6 +547,12 @@ honour it.
 > written against an assumed ~8. The win is entirely `shouldAutoPass`: 76.2% of windows already
 > yield zero candidates and still pay `enumerate` (0.40 ms) first, which is ~148 ms per game of pure
 > waste and is paid again on every rollout crossing. Scope 4a as "skip the enumeration".
+>
+> **As built,** that became a third entry point, `canAutoPassWithoutEnumerating`, which decides a
+> window from the **state alone** — the other two still need the enumerated list. It fires on 40%
+> of windows rather than 76.2%, because it declines every window whose verdict depends on what the
+> player is holding, and `AutoPassParityTest` holds it to being a strict subset of the full verdict
+> over a corpus of real windows.
 
 #### 4b. `DecisionBudget`
 
@@ -511,9 +574,9 @@ so combat never gets *less* time than today.
 **Anytime contract:** every consumer must have a valid answer after its first iteration. Enforced
 structurally by Phase 7's sequential halving.
 
-**Exit:** branching factor down 30–50%; `just arena v0 v0-meaningful 1000` ≥50% — if the filtered
-agent *loses*, the filter is discarding a real option and you've found a bug for free;
-`ArenaBudgetScalingTest` running.
+**Exit:** ~~branching factor down 30–50%~~ (unreachable at 1.75 candidates — replaced by "40% of
+priority windows decided without enumerating"); ✅ `just arena v0 v0-meaningful 1000` = 51.3%,
+CI [49.8%, 52.7%]; ✅ `ArenaBudgetScalingTest` running **and monotone**.
 
 ---
 
@@ -933,15 +996,15 @@ but tanks a puzzle category, look hard before shipping.
 ## Recommended order
 
 ```
-0̶ → 1̶ → 2̶ → 3̶ → 4 → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
+0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
 ```
 
-Phases 0–3 are done — all three scoreboards exist and the evaluator is no longer one-eyed at a pod
-table. **Phase 5 has left the critical path** — simulation is already ~2× the speed the rollout
-budget needs, so 5a is now an independent engine-perf task and 5c is almost certainly not justified.
-Next up is **Phase 6, CardIntent** — now the highest strength-per-effort item left — with **Phase 4**
-(branching factor + budget) as the alternative if you would rather land the enabling infrastructure
-first. Phase 6 does not depend on Phase 4.
+Phases 0–4 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
+table, and the budget ladder is calibrated and monotone before any rollout depends on it.
+**Phase 5 has left the critical path** — simulation is already ~2× the speed the rollout budget
+needs, so 5a is now an independent engine-perf task and 5c is almost certainly not justified.
+Next up is **Phase 6, CardIntent** — the highest strength-per-effort item left, and the first phase
+since 3 that is meant to move a win rate rather than enable one.
 
 Ranked by strength-per-effort, independent of ordering:
 
@@ -952,8 +1015,8 @@ Ranked by strength-per-effort, independent of ordering:
 | 2 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones. Cheap once the arena exists. |
 | 3 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
 | 4 | **1̶ / 2̶** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Both done. |
-| 5 | **4a** auto-pass filter | 3–5 d | Demoted by Phase 0: at 1.75 candidates there is little to filter. Still saves ~148 ms/game of pointless enumeration, and a rollout pays it repeatedly. |
-| 6 | **4b** DecisionBudget | 2–3 d | Enabling infrastructure. |
+| — | **4̶a** auto-pass filter | 3–5 d | **Done.** Demoted by Phase 0 and rescoped to "skip the enumeration": 40% of priority windows now never call the enumerator. Also closed Phase 1's 889-of-945 illegal-action finding, which turned out to be a targeting bug. |
+| — | **4̶b** DecisionBudget | 2–3 d | **Done.** Enabling infrastructure, and it measures like it — neutral in the arena, monotone in the scaling ladder. |
 | 7 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
 | 8 | **5a** hoist O(n²) scans | 3–5 d | Demoted by Phase 0: no longer needed for rollouts. Still a standing engine win — `findAvailableManaSources` was 59% inclusive. |
 | — | **5c** persistent collections | 4–6 d | **Drop** unless a fresh profile demands it. Phase 0 measured throughput at ~2× the required rate. |
@@ -969,17 +1032,17 @@ two phases' worth of assumed work.
 
 | Risk | Detection | Mitigation |
 |---|---|---|
-| **Search makes the AI slower AND weaker** | `ArenaBudgetScalingTest` — strength must be monotone in budget | Build it in Phase 4, *before* rollouts. Non-monotone ⇒ rollouts are noise; fix the leaf evaluator (6, 9) before adding samples |
+| ~~**Search makes the AI slower AND weaker**~~ | `ArenaBudgetScalingTest` — strength must be monotone in budget | **Instrument built and calibrated in Phase 4, before rollouts exist, and it passes**: 55.7% / 54.0% / 55.3% up the ladder, every lower CI bound above parity. Still the standing gate for Phase 7 — non-monotone ⇒ rollouts are noise, and the fix is the leaf evaluator (6, 9), not more samples |
 | **Determinization dip read as a regression** | Certain to happen | Named in advance; Phase 8's bar is "still beats V0", not "beats the cheating version" |
 | **Overfitting to self-play** | Held-out set + gauntlet + puzzles | ≥3 collecting agents; hold out by game *and* by set; arena is the arbiter, not log-loss |
 | **Non-transitive strength** | Full pairwise matrix, not just Elo | Must beat V0 *and* previous version; lose to no gauntlet member worse than 45% |
-| **Combat's 1 s cap fights the global budget** | Blocking puzzle category; per-tier latency logging | Combat declaration is always CRITICAL; keep `MAX_BLOCK_SIMULATIONS = 10` as a floor, not a ceiling |
+| ~~**Combat's 1 s cap fights the global budget**~~ | Blocking puzzle category; `DecisionBudgetTest` | **Closed in Phase 4b** — combat declaration is always CRITICAL and `MAX_BLOCK_SIMULATIONS = 10` is a floor on every tier, asserted directly, so combat can never search *less* than it did before the budget existed |
 | **`GameSimulator.isResolving` / `decisionResolver` thread-safety** | Nondeterminism across arena reruns at the same seed | One `AIPlayer` per *seat* per game, never shared. `ArenaHarnessTest` asserts identical outcomes at 8 threads and at 1 — **green as of Phase 1**, so the AI is deterministic today. `PlayoutEngine` must own its own processor when Phase 7 lands |
 | **A pod result is read against 50%** | Certain to happen — every other number in this plan is | The null is **1/teams**: 33% at `ffa3`, 25% at `ffa4`, 50% at `2hg`. `ArenaReport.podSummary` prints the null on the same line as the win share and states it in the verdict sentence |
 | **A multiplayer harness trusts `GameState.turnNumber`** | Used to read every pod game as wedged after the first elimination | `turnNumber` was a round counter that only advanced for `turnOrder.first()`, who may be dead. **Closed**: it counts player turns now, so it is a sound clock at any table size (`backlog/multiplayer.md`) |
 | **Persistent collections break persisted sessions / committed replays** | `GameStateSerializationFormatStabilityTest` golden JSON | Serializers delegate to standard `MapSerializer`/`ListSerializer` ⇒ byte-identical wire format |
 | **`CardInstantiator` extraction produces malformed cards** | `DeterminizerInvariantsTest` + full engine suite | Reuse `GameInitializer`'s own construction path, don't hand-roll |
-| ~~**Arena wall-clock makes the merge gate unaffordable**~~ | Measured in Phase 1 | **Not a risk today** — 1,000 games is 3.5 min, because no `DecisionBudget` exists yet. Re-opens in Phase 4b: re-measure before shipping a budget, and only then consider a reduced-budget arena mode |
+| ~~**Arena wall-clock makes the merge gate unaffordable**~~ | Measured in Phase 1, re-measured in Phase 4b | **Closed.** 1,000 games is still ~3.5 min *with* a budget, because `SearchAllowances` spends a tier as a count of simulations rather than as wall clock. The reduced-budget arena mode was never needed and was not built |
 | ~~**`AiProfile.LEGACY_V0` silently drifts**~~ | `FrozenBaselineTest` golden action-stream hash | **Closed in Phase 1** — one fixed all-vanilla Portal game, SHA-256 over the action stream. All-vanilla so the hash tracks *AI* behaviour, not every card that ships |
 | ~~**`respondBudgetModal` zero-cost infinite loop**~~ | Arena stuck-game detector | **Closed in Phase 0** — free modes are taken once; regression test committed |
 | ~~**`Searcher.kt`'s `Double.MIN_VALUE/2` gets accidentally revived**~~ | — | **Closed in Phase 0** — file deleted rather than repaired |

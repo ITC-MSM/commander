@@ -2,6 +2,9 @@ package com.wingedsheep.ai.engine
 
 import com.wingedsheep.ai.engine.advisor.AdvisorDecisionContext
 import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
+import com.wingedsheep.ai.engine.budget.BudgetPolicy
+import com.wingedsheep.ai.engine.budget.DecisionBudget
+import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.BoardPresence
 import com.wingedsheep.engine.core.*
@@ -21,11 +24,19 @@ import com.wingedsheep.sdk.model.EntityId
  * simulates each option. For larger spaces, it uses MTG-aware heuristics.
  *
  * Card-specific overrides are checked first via [CardAdvisorRegistry].
+ *
+ * **On the decision budget:** every scan in here is already bounded to at most ~11 simulations by
+ * construction (a yes/no is 2, a colour is 5, a number is sampled to 11, targets are pre-ranked and
+ * truncated), which is at or below what even [com.wingedsheep.ai.engine.budget.BudgetTier.ROUTINE]
+ * allows. The one place a budget can genuinely bind is the target pre-rank cut, so that is the one
+ * place it is wired. Threading it through the other twenty responders would be plumbing that
+ * changes no number.
  */
 class DecisionResponder(
     private val simulator: GameSimulator,
     private val evaluator: BoardEvaluator,
-    private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry()
+    private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry(),
+    private val budgetPolicy: BudgetPolicy = LegacyBudgetPolicy,
 ) {
     fun respond(state: GameState, decision: PendingDecision, playerId: EntityId): DecisionResponse {
         // Try card-specific advisor first
@@ -48,7 +59,8 @@ class DecisionResponder(
 
         // Fall through to generic logic
         return when (decision) {
-            is ChooseTargetsDecision -> respondTargets(state, decision, playerId)
+            is ChooseTargetsDecision ->
+                respondTargets(state, decision, playerId, budgetPolicy.budgetForDecision(state, playerId))
             is SelectCardsDecision -> respondSelectCards(state, decision, playerId)
             is YesNoDecision -> respondYesNo(state, decision, playerId)
             is BatchYesNoDecision -> respondBatchYesNo(state, decision, playerId)
@@ -90,19 +102,20 @@ class DecisionResponder(
     private fun respondTargets(
         state: GameState,
         decision: ChooseTargetsDecision,
-        playerId: EntityId
+        playerId: EntityId,
+        budget: DecisionBudget,
     ): DecisionResponse {
+        val maxCandidates = budget.allowances.targetCandidates
         if (decision.targetRequirements.size == 1) {
             val req = decision.targetRequirements.first()
             val targets = decision.legalTargets[req.index] ?: return cancelOrFirst(decision)
             if (targets.isEmpty()) return cancelOrFirst(decision)
 
             // For small target pools, simulate each; for large pools, use heuristics then simulate top candidates
-            val candidates = if (targets.size <= 8) {
+            val candidates = if (targets.size <= maxCandidates) {
                 targets
             } else {
-                // Pre-rank by heuristic, then simulate top 8
-                targets.sortedByDescending { targetHeuristic(state, it, playerId) }.take(8)
+                targets.sortedByDescending { targetHeuristic(state, it, playerId) }.take(maxCandidates)
             }
 
             val best = pickBestBySimulation(state, candidates, playerId) { target ->
@@ -127,7 +140,7 @@ class DecisionResponder(
             if (targets.isEmpty()) {
                 req.index to emptyList()
             } else {
-                val best = pickBestBySimulation(state, targets.take(8), playerId) { target ->
+                val best = pickBestBySimulation(state, targets.take(maxCandidates), playerId) { target ->
                     TargetsResponse(decision.id, mapOf(req.index to listOf(target)))
                 }
                 // For optional targets, compare best pick against skipping
