@@ -15,10 +15,17 @@ import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.model.EntityId
 
 /**
- * The eight things the suite is built to catch. Categories are the localizing signal: an arena run
- * says *that* the AI got worse, a category pass-rate says *what* got worse.
+ * The things the suite is built to catch. Categories are the localizing signal: an arena run says
+ * *that* the AI got worse, a category pass-rate says *what* got worse.
  *
- * See `backlog/engine-ai-improvement.md` § "How we measure" for why these eight.
+ * The first eight are Phase 2's. The last three are Phase 2b's, added because at 44/48 the original
+ * suite had four points of headroom left and two of them were the same Phase 9 constant — so the
+ * plan's most expensive phase had a two-puzzle localizing signal. Each of the three closes a gap
+ * that all 48 shared by construction rather than by choice: nothing was ever on the stack, no
+ * puzzle asserted on an [ActivateAbility] even though [PuzzleMove] already spoke it, and combat
+ * coverage stopped at flying / deathtouch / first strike / vigilance.
+ *
+ * See `backlog/engine-ai-improvement.md` § "How we measure" and § Phase 2b.
  */
 enum class PuzzleCategory(val id: String, val catches: String) {
     LETHAL_DETECTION("lethal", "Missing an alpha strike / burn-to-face kill"),
@@ -29,6 +36,9 @@ enum class PuzzleCategory(val id: String, val catches: String) {
     BOARD_WIPE_TIMING("wipe", "Wrathing while ahead"),
     RACE_MATH("race", "Attack-vs-hold when both players are on a clock"),
     NON_CREATURE_VALUATION("noncreature", "Ignoring an opposing O-Ring / mana rock / anthem"),
+    STACK_RESPONSE("respond", "Never answering a spell that is already on the stack"),
+    ACTIVATED_ABILITIES("activate", "Pingers, tappers and pump abilities left unused"),
+    COMBAT_KEYWORDS("keywords", "Trample / menace / reach / indestructible read as ordinary stats"),
 }
 
 /**
@@ -105,10 +115,16 @@ class PuzzleMove internal constructor(
     val attackerNames: List<String> =
         (action as? DeclareAttackers)?.attackers?.keys?.map(::nameOf).orEmpty()
 
-    /** Declared blocks as `blocker name -> attackers it blocks`. */
-    val blockAssignments: Map<String, List<String>> =
+    /**
+     * Declared blocks as `blocker name -> attackers it blocks`, **one entry per blocker**.
+     *
+     * A list rather than a map on purpose: two creatures with the same name blocking the same
+     * attacker is exactly what a gang block against menace looks like, and keying by name collapses
+     * them into one entry. That silently turned a correct double block into a reported single one.
+     */
+    val blockAssignments: List<Pair<String, List<String>>> =
         (action as? DeclareBlockers)?.blockers.orEmpty()
-            .entries.associate { (blocker, attackers) -> nameOf(blocker) to attackers.map(::nameOf) }
+            .map { (blocker, attackers) -> nameOf(blocker) to attackers.map(::nameOf) }
 
     /** Total projected power of the declared attackers — what a lethal-detection puzzle counts. */
     val attackingPower: Int = (action as? DeclareAttackers)?.attackers?.keys
@@ -122,7 +138,7 @@ class PuzzleMove internal constructor(
             else "DeclareAttackers(${attackerNames.sorted().joinToString(", ")}) — $attackingPower power"
         is DeclareBlockers ->
             if (blockAssignments.isEmpty()) "DeclareBlockers(none)"
-            else "DeclareBlockers(" + blockAssignments.entries.joinToString("; ") { (b, a) ->
+            else "DeclareBlockers(" + blockAssignments.joinToString("; ") { (b, a) ->
                 "$b blocks ${a.joinToString(" & ")}"
             } + ")"
         else -> {
@@ -133,7 +149,7 @@ class PuzzleMove internal constructor(
 
     private fun fail(what: String): Nothing = throw AssertionError("$what, but chose ${describe()}")
 
-    // ── Assertions. Each has many callers across the 48 puzzles; that is what earns them a name. ──
+    // ── Assertions. Each has many callers across the 66 puzzles; that is what earns them a name. ──
 
     fun shouldCast(cardName: String) {
         if (action !is CastSpell || playedCard != cardName) fail("Expected to cast $cardName")
@@ -141,6 +157,17 @@ class PuzzleMove internal constructor(
 
     fun shouldNotCast(cardName: String) {
         if (action is CastSpell && playedCard == cardName) fail("Expected NOT to cast $cardName")
+    }
+
+    /**
+     * Activates [cardName]'s ability. Pair it with [shouldTarget] when the ability is targeted —
+     * `shouldActivate` alone only says the AI reached for the right permanent, not that it pointed
+     * the ability anywhere sensible.
+     */
+    fun shouldActivate(cardName: String) {
+        if (action !is ActivateAbility || playedCard != cardName) {
+            fail("Expected to activate $cardName")
+        }
     }
 
     fun shouldPlayLand(landName: String? = null) {
@@ -188,14 +215,14 @@ class PuzzleMove internal constructor(
     }
 
     fun shouldBlock(blocker: String, attacker: String) {
-        if (blockAssignments[blocker]?.contains(attacker) != true) {
+        if (blockAssignments.none { (b, attackers) -> b == blocker && attacker in attackers }) {
             fail("Expected $blocker to block $attacker")
         }
     }
 
     /** At least [count] creatures must be blocking [attacker] — the double-block assertion. */
     fun shouldBlockWithAtLeast(count: Int, attacker: String) {
-        val blocking = blockAssignments.count { attacker in it.value }
+        val blocking = blockAssignments.count { (_, attackers) -> attacker in attackers }
         if (blocking < count) fail("Expected at least $count blockers on $attacker")
     }
 

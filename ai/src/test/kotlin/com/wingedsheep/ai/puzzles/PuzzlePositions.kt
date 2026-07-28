@@ -39,6 +39,25 @@ fun ScenarioTestBase.TestGame.advanceToPriority(seat: Int, step: Step): Scenario
         state.step == step && state.priorityPlayerId == seatId(seat) && !needsDeclaration(seatId(seat))
     }
 
+/**
+ * Advance until [seat] holds priority with something still on the stack — the window a response is
+ * cast in. The position is expected to have put the spell there already, by casting it from the
+ * other seat.
+ *
+ * Separate from [advanceToPriority] because of the failure mode it has to rule out: passing one
+ * time too many resolves the spell, and a puzzle that then asks *"do you counter this?"* about an
+ * empty stack scores the AI on a decision that no longer exists. That check is why this cannot
+ * just be `advanceUntil { priorityPlayerId == … }`.
+ */
+fun ScenarioTestBase.TestGame.advanceToStackResponse(seat: Int): ScenarioTestBase.TestGame =
+    advanceUntil("$seat's response window") {
+        check(state.stack.isNotEmpty()) {
+            "The stack emptied before seat $seat was offered a response window — the position " +
+                "resolved the spell it meant to ask about"
+        }
+        state.priorityPlayerId == seatId(seat)
+    }
+
 /** Whether [playerId] still owes this combat an attacker or blocker declaration. */
 private fun ScenarioTestBase.TestGame.needsDeclaration(playerId: EntityId): Boolean = when {
     state.step == Step.DECLARE_ATTACKERS && playerId == state.activePlayerId ->

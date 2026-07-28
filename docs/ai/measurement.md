@@ -249,17 +249,17 @@ The arena tells you *that* something regressed. A puzzle tells you *what*.
 
 ```bash
 just arena-puzzles              # the gate — always-on, seconds
-just arena-puzzles-compare      # the same 48 across v0 / production / v0-blind
+just arena-puzzles-compare      # the same 66 across v0 / production / v0-blind
 ```
 
-48 hand-authored positions in `ai/src/test/kotlin/com/wingedsheep/ai/puzzles/`, 8 categories × 6.
+66 hand-authored positions in `ai/src/test/kotlin/com/wingedsheep/ai/puzzles/`, 11 categories × 6.
 Each builds a board with `ScenarioTestBase`, asks the AI for **one** move, and asserts a predicate
-over it. Current per-category numbers: [`baseline-metrics.md`](baseline-metrics.md#phase-2--puzzle-baselines).
+over it. Current per-category numbers: [`baseline-metrics.md`](baseline-metrics.md#phase-2b--puzzle-suite-second-pass).
 
-### The gate is `KNOWN_FAILURES`, not 48/48
+### The gate is `KNOWN_FAILURES`, not 66/66
 
-`PuzzleSuiteTest` asserts the failing-id set **equals** a committed set. Today's AI solves 39 of 48,
-and a suite pinned to 48/48 would be red forever and therefore ignored.
+`PuzzleSuiteTest` asserts the failing-id set **equals** a committed set. Today's AI solves 60 of 66,
+and a suite pinned to 66/66 would be red forever and therefore ignored.
 
 Equality — not "is a subset of" — is the point. It flags a regression *and* an unexpected fix:
 
@@ -290,7 +290,16 @@ Three things the runner enforces so a mis-built position cannot score as a pass:
 `advanceToDeclaration(seat, step)` stops where a seat is asked to declare attackers or blockers;
 `advanceToPriority(seat, step)` stops at the ordinary priority window *after* declarations, which
 is where a combat trick is cast. They differ by one window and using the wrong one is the easiest
-way to write a puzzle that measures the wrong decision.
+way to write a puzzle that measures the wrong decision. `advanceToStackResponse(seat)` stops with
+something still **on the stack** — cast the spell from the other seat first — and fails loudly if
+one pass too many resolved it, because a puzzle asking "do you counter this?" about an empty stack
+scores a decision that no longer exists.
+
+**If a puzzle reports an illegal-looking move that the engine accepted, suspect the harness first.**
+`PuzzleRunner` processes every chosen move and fails the puzzle when the engine rejects it, so a
+"the AI single-blocked a menace creature" report means `PuzzleMove` mis-read the action, not that
+the rules are wrong. That is exactly what happened to `keywords-03`: blocks were keyed by card
+name, and two creatures with the same name collapsed into one entry.
 
 ### Include positive controls
 
