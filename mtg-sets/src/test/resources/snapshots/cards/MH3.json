@@ -1,0 +1,65 @@
+// Galvanic Discharge
+{
+    "name": "Galvanic Discharge",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Choose target creature or planeswalker. You get {E}{E}{E} (three energy counters), then you may pay any amount of {E}. Galvanic Discharge deals that much damage to that permanent.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "AddCounters",
+                    "counterType": "energy",
+                    "count": 3,
+                    "target": "Controller"
+                },
+                {
+                    "type": "PayCounters",
+                    "counterType": "energy",
+                    "storeAmountAs": "paid"
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "VariableReference",
+                        "variableName": "paid"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "artist": "Zoltan Boros",
+        "flavorText": "\"Remember, if you find a rock making crackly noises, just put it back. Carefully.\"\n—Bo, Great Desert prospector",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32aa6e33-221f-414c-9b51-850d97a7e051.jpg?1783911272",
+        "rulings": [
+            {
+                "date": "2024-06-07",
+                "text": "You may pay zero {E}. You will get {E}{E}{E}, but Galvanic Discharge won't deal any damage."
+            },
+            {
+                "date": "2024-06-07",
+                "text": "Energy counters are a kind of counter that a player may have. They're not associated with any specific permanents."
+            },
+            {
+                "date": "2024-06-07",
+                "text": "If a spell or ability with one or more targets states that you \"may pay\" some amount of {E}, and each permanent that it targets has become an illegal target, the spell or ability won't resolve. You can't pay any {E} even if you want to."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
