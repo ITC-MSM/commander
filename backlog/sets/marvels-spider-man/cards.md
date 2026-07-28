@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 179 / 188
+**Implemented:** 180 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -22,7 +22,7 @@
 - [x] City Pigeon
 - [x] Common Crook
 - [x] Cosmic Spider-Man
-- [ ] Costume Closet
+- [x] Costume Closet
 - [x] Daily Bugle Building
 - [x] Daily Bugle Reporters
 - [x] Damage Control Crew

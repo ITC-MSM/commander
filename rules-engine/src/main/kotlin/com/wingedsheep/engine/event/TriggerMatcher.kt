@@ -1,5 +1,8 @@
 package com.wingedsheep.engine.event
 
+import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
+import com.wingedsheep.engine.handlers.predicates.isModified
+
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
@@ -1812,6 +1815,27 @@ class TriggerMatcher(
                 counters?.counters?.values?.any { it > 0 } ?: false
             }
         }
+        // "Modified" (has a counter, an attached Equipment, or an attached Aura — CR 122/301/303) on
+        // a permanent that has left the battlefield reads last-known info: the live counters and
+        // attachment links are gone by trigger-gating time. Counters come from the snapshot; the
+        // equipped/enchanted legs come from the frozen wasEquipped/wasEnchanted flags captured in
+        // ZoneTransitionService before exit cleanup. For non-leave triggers (ETB) the entity is live.
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsModified -> {
+            if (event.fromZone == Zone.BATTLEFIELD) {
+                val lk = event.lastKnown
+                (lk?.totalCounters ?: 0) > 0 || lk?.wasEquipped == true || lk?.wasEnchanted == true
+            } else {
+                isModified(state, event.entityId)
+            }
+        }
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEquipped -> {
+            if (event.fromZone == Zone.BATTLEFIELD) event.lastKnown?.wasEquipped == true
+            else hasAttachmentOfKind(state, event.entityId, equipment = true)
+        }
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEnchanted -> {
+            if (event.fromZone == Zone.BATTLEFIELD) event.lastKnown?.wasEnchanted == true
+            else hasAttachmentOfKind(state, event.entityId, equipment = false)
+        }
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.Or ->
             predicate.predicates.any { matchesStatePredicateForZoneChangeTrigger(it, state, event) }
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.And ->
@@ -1912,4 +1936,18 @@ class TriggerMatcher(
             .replace("+1/+1", "plus_one_plus_one")
             .replace("-1/-1", "minus_one_minus_one")
             .replace(" ", "_")
+
+    /**
+     * Live check for whether [entityId] has an Equipment (or, when [equipment] is false, an Aura)
+     * attached — the last-known-info counterpart is the `wasEquipped`/`wasEnchanted` flag on the
+     * [ZoneChangeEvent]'s snapshot. Used only for the non-leave (ETB) branch of an
+     * `IsEquipped`/`IsEnchanted` zone-change gate.
+     */
+    private fun hasAttachmentOfKind(state: GameState, entityId: EntityId, equipment: Boolean): Boolean {
+        val attachments = state.getEntity(entityId)?.get<AttachmentsComponent>() ?: return false
+        return attachments.attachedIds.any { attachId ->
+            val typeLine = state.getEntity(attachId)?.get<CardComponent>()?.typeLine
+            if (equipment) typeLine?.isEquipment == true else typeLine?.isAura == true
+        }
+    }
 }

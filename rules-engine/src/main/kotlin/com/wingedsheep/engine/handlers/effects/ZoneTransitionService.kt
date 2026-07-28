@@ -271,6 +271,22 @@ object ZoneTransitionService {
         // battlefield. Carried on the ZoneChangeEvent for trigger resolution AND stashed on the
         // entity itself (LastKnownPermanentComponent) for resolution-time reads that outlive the
         // permanent ("Destroy target creature. Its controller creates two Map tokens.").
+        // Was this permanent equipped / enchanted as it left? The live attachment links are torn
+        // down by the exit cleanup below (CR 704.5m/n), so "modified/equipped/enchanted creature
+        // leaves the battlefield" triggers must freeze it here as last-known information (CR 608.2h).
+        val lastKnownAttachedTypeLines = if (leavingBattlefield) {
+            state.getEntity(entityId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent>()
+                ?.attachedIds
+                ?.mapNotNull { attachId ->
+                    state.getEntity(attachId)
+                        ?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.typeLine
+                }
+                ?: emptyList()
+        } else emptyList()
+        val lastKnownWasEquipped = lastKnownAttachedTypeLines.any { it.isEquipment }
+        val lastKnownWasEnchanted = lastKnownAttachedTypeLines.any { it.isAura }
+
         val lastKnownSnapshot = if (leavingBattlefield) {
             com.wingedsheep.engine.state.components.stack.EntitySnapshot(
                 entityId = entityId,
@@ -288,6 +304,8 @@ object ZoneTransitionService {
                 typeLine = lastKnownTypeLine,
                 cardDefinitionId = cardComponent.cardDefinitionId,
                 attachedTo = lastKnownAttachedTo,
+                wasEquipped = lastKnownWasEquipped,
+                wasEnchanted = lastKnownWasEnchanted,
                 blockingOrBlockedByIds = lastKnownBlockingOrBlockedByIds,
                 wasAttacking = lastKnownWasAttacking,
                 wasToken = lastKnownWasToken,

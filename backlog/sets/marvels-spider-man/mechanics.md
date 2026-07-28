@@ -123,7 +123,16 @@ which requires Riot to exist as a grantable keyword. `add-feature` scope.
 Blocked cards:
 - **Spider-Punk** [92] — `{1}{R}` Riot; "Other Spiders you control have riot"; also "Spells and abilities can't be countered" + "Damage can't be prevented" (verify those two independently)
 
-## "Modified" state on a leaves-the-battlefield (last-known-information) trigger
+## "Modified" state on a leaves-the-battlefield (last-known-information) trigger — ✅ IMPLEMENTED
+
+**Done** (branch `spm-modified-ltb`). `EntitySnapshot` now captures `wasEquipped` / `wasEnchanted`
+(populated in `ZoneTransitionService` before the exit cleanup strips attachments), and
+`TriggerMatcher.matchesStatePredicateForZoneChangeTrigger` evaluates `IsModified` / `IsEquipped` /
+`IsEnchanted` against the snapshot (counters + those flags) on a leaves-battlefield trigger instead
+of falling through fail-open. Costume Closet ships with a scenario test covering the counter,
+equipped, and unmodified (regression-guard) legs.
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Whenever a **modified** creature you control **leaves the battlefield**, …
 
@@ -141,6 +150,8 @@ battlefield-exit (or the predicate evaluated against pre-leave state). `add-feat
 
 Blocked cards:
 - **Costume Closet** [5] — `{1}{W}` Artifact; enters with two +1/+1 counters + sorcery-speed "{T}: move a counter to target creature you control" (both of those work today) + "Whenever a **modified** creature you control leaves the battlefield, put a +1/+1 counter on this artifact" (the blocked part)
+
+</details>
 
 ## "Deals damage to a [filtered] creature" trigger (RecipientFilter.Matching on a deals-damage trigger) — ✅ IMPLEMENTED
 
