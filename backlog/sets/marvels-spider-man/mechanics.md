@@ -223,7 +223,16 @@ reference + `CardLinter`).
 Blocked cards:
 - **Behold the Sinister Six!** [51] — `{6}{B}` Sorcery; "Return up to six target creature cards with different names from your graveyard to the battlefield." Dropping the constraint would wrongly allow six copies of the same-named creature, so it is not approximated.
 
-## Color-filtered permanent "don't lose unspent [color] mana" static
+## Color-filtered permanent "don't lose unspent [color] mana" static — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-costs-mana`. Added `RetainUnspentColoredMana(color)` StaticAbility (scan-based,
+controller-scoped, single-colour, durable) merged into the `retain` colour set in
+`CleanupPhaseManager.emptyManaPools` (control-aware, via a `retainedColorsFromStatics` helper). `endCombat`
+needs no change — it only touches firebending `END_OF_COMBAT` mana, not ordinary red. Card: **Electro,
+Assaulting Battery** [76] (the cast-instant/sorcery→add-{R} and LTB `MayPayXForEffect` deal-X clauses use
+existing primitives).
+
+<details><summary>Original analysis</summary>
 
 > You don't lose unspent **red** mana as steps and phases end.
 
@@ -238,6 +247,7 @@ to a permanent's presence. Fix (add-feature): a color-parameterized `RetainUnspe
 
 Blocked cards:
 - **Electro, Assaulting Battery** [76] — `{1}{R}{R}` Flying; "You don't lose unspent red mana as steps and phases end." Its other clauses (Flying; cast-instant/sorcery → add {R}; LTB pay-{X} deal X to a player) are all expressible today.
+</details>
 
 ## "Discard a card OR pay {2}" additional cost (DiscardOrPay) — ✅ IMPLEMENTED
 
@@ -365,7 +375,7 @@ grant-holder's controller (the `GrantedActivatedAbility` record needs a controll
 field, like the player-component grants).
 
 Blocked cards:
-- **Hydro-Man, Fluid Felon** [33] — `{U}{U}`; blue-cast pump (fine) + end-step "untap; until your next turn becomes a non-creature land with '{T}: Add {U}'" — the type-change + untap work, but the granted mana ability never expires.
+- **Hydro-Man, Fluid Felon** [33] — `{U}{U}`; blue-cast pump (fine) + end-step "untap; until your next turn becomes a non-creature land with '{T}: Add {U}'". The **granted-activated `UntilYourNextTurn` expiry** half is now **fixed** on branch `spm-costs-mana` (`CleanupPhaseManager.expireUntilYourNextTurnEffects` drops `grantedActivatedAbilities` with that duration, keyed to the granted entity's controller). BUT the card is still blocked on a **second, unplanned primitive**: "becomes a **non-creature land**" is a type-*replacement* (lose creature card type + become a Land), and only `AddCardTypeEffect` (additive "in addition to its types") exists — there is no "becomes only a land" effect. Deferred until that type-replacement primitive is built.
 
 ## Static damage redirect to the enchanted/equipped creature (Pariah-style) — ✅ IMPLEMENTED
 
