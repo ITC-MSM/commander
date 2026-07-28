@@ -250,6 +250,24 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 // Check cast restrictions
                 val castRestrictions = topCardDef?.script?.castRestrictions ?: emptyList()
                 if (context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) {
+                    // Gwenom: a spell cast from the top under a PlayFromTopWithAlternativeCost
+                    // permission pays no mana and instead pays life equal to its mana value.
+                    val topAltCost = context.castPermissionUtils.playFromTopAlternativeCost(state, playerId)
+                        ?.takeIf { grant ->
+                            val grantFilter = grant.filter
+                            grantFilter == null || context.predicateEvaluator.matches(
+                                state, state.projectedState, topCardId, grantFilter,
+                                PredicateContext(controllerId = playerId)
+                            )
+                        }
+                    val freeCastFromTop = topAltCost?.withoutPayingManaCost == true
+                    val payLifeMv = topAltCost?.additionalCost is AdditionalCost.PayLifeEqualToManaValueOfSpell
+                    val lifeForThisCard = if (payLifeMv) topCardComponent.manaCost.cmc else 0
+                    val lifeAffordable = !payLifeMv || state.lifeTotal(playerId) >= lifeForThisCard
+                    val topAltAdditionalCostInfo = if (payLifeMv) {
+                        AdditionalCostData(description = "Pay $lifeForThisCard life", costType = "PayLife")
+                    } else null
+
                     val topEffectiveCost = if (topCardDef != null) {
                         context.costCalculator.calculateEffectiveCost(state, topCardDef, playerId)
                     } else {
@@ -262,14 +280,16 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     val topPayableCost = context.castPermissionUtils
                         .relaxSpellCostColorsIfAny(state, playerId, topCardId, topEffectiveCost)
                     val cachedSources = context.availableManaSources
-                    val canAfford = context.manaSolver.canPay(state, playerId, topPayableCost, precomputedSources = cachedSources)
+                    val canAfford = (freeCastFromTop ||
+                        context.manaSolver.canPay(state, playerId, topPayableCost, precomputedSources = cachedSources)) &&
+                        lifeAffordable
                     if (canAfford) {
                         val targetReqs = buildList {
                             addAll(topCardDef?.script?.targetRequirements ?: emptyList())
                             topCardDef?.script?.auraTarget?.let { add(it) }
                         }
 
-                        val manaCostString = topEffectiveCost.toString()
+                        val manaCostString = if (freeCastFromTop) "0" else topEffectiveCost.toString()
                         val hasXCost = topEffectiveCost.hasX
                         val maxAffordableX: Int? = if (hasXCost) {
                             val availableSources = context.manaSolver.getAvailableManaCount(state, playerId, precomputedSources = cachedSources)
@@ -305,7 +325,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                         maxAffordableX = maxAffordableX,
                                         manaCostString = manaCostString,
                                         autoTapPreview = autoTapPreview,
-                                        sourceZone = "LIBRARY"
+                                        sourceZone = "LIBRARY",
+                                        additionalCostInfo = topAltAdditionalCostInfo
                                     )
                                 )
                             }
@@ -319,7 +340,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                     maxAffordableX = maxAffordableX,
                                     manaCostString = manaCostString,
                                     autoTapPreview = autoTapPreview,
-                                    sourceZone = "LIBRARY"
+                                    sourceZone = "LIBRARY",
+                                    additionalCostInfo = topAltAdditionalCostInfo
                                 )
                             )
                         }

@@ -382,7 +382,20 @@ the land and spell turn-conditions.
 - **Spider-Man 2099** [150] — `{U}{R}` double strike/vigilance; the "From the Future" turn-number cast restriction (`ControllerTurnsTakenAtMost`) and "deal power to any target" are fine, but the end-step intervening-if "if you've played a land or cast a spell this turn from anywhere other than your hand" is the blocker.
 </details>
 
-## Temporary "play from top of library, paying life = mana value instead of mana cost"
+## Temporary "play from top of library, paying life = mana value instead of mana cost" — ✅ IMPLEMENTED
+
+**Done** (branch `spm-gwenom`). New `PlayFromTopWithAlternativeCost(withoutPayingManaCost, additionalCost,
+filter)` static (the top-of-library counterpart to `GrantMayCastFromLinkedExile`). `CastPermissionUtils`
+gained `playFromTopAlternativeCost(...)` which scans BOTH printed `staticAbilities` and
+`state.grantedStaticAbilities` (mirroring `MayCastFromGraveyard`), and every top-of-library read site
+(`CastPermissionUtils`, `CastZoneResolver` incl. `hasPlayWithoutPayingCost`, the enumerator cost branch,
+`CastSpellHandler` validate+execute) now honors it: mana is waived and `PayLifeEqualToManaValueOfSpell`
+is charged. Gwenom's attack trigger grants it (+ `LookAtTopOfLibrary`) to Self until end of turn.
+Scenario test pins it (not castable before the attack; after, casts for life = mana value, no mana).
+(The durationally-granted look's client-side top-card reveal remains printed-scan only — a UI/visibility
+gap with no rules impact.)
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Whenever Gwenom attacks, until end of turn, you may look at the top card of your library any
 > time and you may play cards from the top. If you cast a spell this way, **pay life equal to its
@@ -401,6 +414,8 @@ sites to consult granted statics (mirroring `MayCastFromGraveyard`).
 
 Blocked cards:
 - **Gwenom, Remorseless** [56] — `{3}{B}{B}` Deathtouch/lifelink; the attack-granted "play from top, pay life = mana value" is the blocker (deathtouch, lifelink, and the attack trigger itself are fine).
+
+</details>
 
 ## "Prevent damage to this creature, put that many +1/+1 counters on it" self-replacement — ✅ IMPLEMENTED
 

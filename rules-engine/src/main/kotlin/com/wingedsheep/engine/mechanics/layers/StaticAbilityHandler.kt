@@ -898,6 +898,7 @@ class StaticAbilityHandler(
             is ReduceActivatedAbilityCost,
             is com.wingedsheep.sdk.scripting.IncreaseActivatedAbilityCost,
             is PlayFromTopOfLibrary,
+            is com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost,
             is PlayLandsAndCastFilteredFromTopOfLibrary,
             is PlotFromTopOfLibrary,
             is PlayersCantCastSpells,

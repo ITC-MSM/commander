@@ -374,7 +374,37 @@ class CastPermissionUtils(
                 return true
             }
         }
-        return false
+        // An alternative-cost play-from-top permission (Gwenom, Remorseless) also lets any card be
+        // played from the top — printed or granted durationally.
+        return playFromTopAlternativeCost(state, playerId) != null
+    }
+
+    /**
+     * The effective [com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost] permission for
+     * [playerId] (Gwenom's "play from the top; pay life equal to a spell's mana value rather than its
+     * mana cost"), or null. Printed on a permanent the player controls, or granted durationally in
+     * `grantedStaticAbilities` anchored to a permanent they control. Mirrors the printed-or-granted
+     * scan used for `MayCastFromGraveyard`.
+     */
+    fun playFromTopAlternativeCost(
+        state: GameState,
+        playerId: EntityId
+    ): com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost? {
+        for (entityId in state.getBattlefield(playerId)) {
+            val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            cardDef.script.staticAbilities
+                .firstOrNull { it is com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost }
+                ?.let { return it as com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost }
+        }
+        for (grant in state.grantedStaticAbilities) {
+            val ability = grant.ability
+            if (ability !is com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost) continue
+            val anchor = state.getEntity(grant.entityId) ?: continue
+            if (anchor.get<ControllerComponent>()?.playerId != playerId) continue
+            return ability
+        }
+        return null
     }
 
     /**
@@ -408,7 +438,8 @@ class CastPermissionUtils(
                 return true
             }
         }
-        return false
+        // "You may play cards from the top of your library" (Gwenom) also permits land plays from top.
+        return playFromTopAlternativeCost(state, playerId) != null
     }
 
     fun getCastFilteredFromTopOfLibraryFilter(state: GameState, playerId: EntityId): GameObjectFilter? {

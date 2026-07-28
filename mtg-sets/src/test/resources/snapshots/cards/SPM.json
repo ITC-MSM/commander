@@ -3040,6 +3040,59 @@
     ]
 }
 
+// Gwenom, Remorseless
+{
+    "name": "Gwenom, Remorseless",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Legendary Creature — Symbiote Spider Hero",
+    "oracleText": "Deathtouch, lifelink\nWhenever Gwenom attacks, until end of turn, you may look at the top card of your library any time and you may play cards from the top of your library. If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantStaticAbility",
+                            "ability": {
+                                "type": "PlayFromTopWithAlternativeCost",
+                                "withoutPayingManaCost": true,
+                                "additionalCost": "PayLifeEqualToManaValueOfSpell"
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantStaticAbility",
+                            "ability": "LookAtTopOfLibrary",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Gwenom attacks, until end of turn, you may look at the top card of your library any time and you may play cards from the top of your library. If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "rarity": "MYTHIC",
+        "artist": "Lordigan",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/46b6cc5d-7a37-4e8b-a1a5-9a573056610c.jpg?1783905344"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Heroes' Hangout
 {
     "name": "Heroes' Hangout",

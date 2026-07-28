@@ -445,6 +445,15 @@ class CastSpellHandler(
             if (linkedCostError != null) return linkedCostError
         }
 
+        // Gwenom: a spell cast from the top of the library under a PlayFromTopWithAlternativeCost
+        // permission pays the grant's additional cost (pay life equal to its mana value).
+        val topOfLibraryAdditionalCost = zoneResolver
+            .topOfLibraryAlternativeGrant(state, action.playerId, action.cardId)?.additionalCost
+        if (topOfLibraryAdditionalCost != null) {
+            val topCostError = validateAdditionalCosts(state, listOf(topOfLibraryAdditionalCost), action)
+            if (topCostError != null) return topCostError
+        }
+
         // Validate a self-referential MayCastSelfFromZones grant's additional cost (e.g. Alien
         // Symbiosis: "cast this from your graveyard by discarding a card").
         val mayCastFromZoneAbility = zoneResolver.findMayCastSelfFromZoneAbility(state, action.playerId, action.cardId)
@@ -2395,6 +2404,10 @@ class CastSpellHandler(
             // Self-referential MayCastSelfFromZones grant's additional cost (e.g. Alien
             // Symbiosis' "by discarding a card")
             zoneResolver.findMayCastSelfFromZoneAbility(currentState, action.playerId, action.cardId)
+                ?.additionalCost?.let { add(it) }
+
+            // Gwenom: pay-life additional cost for a spell cast from the top of the library.
+            zoneResolver.topOfLibraryAlternativeGrant(currentState, action.playerId, action.cardId)
                 ?.additionalCost?.let { add(it) }
         }
 

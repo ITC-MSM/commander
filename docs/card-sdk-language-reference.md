@@ -5411,6 +5411,14 @@ concerns — the `ClientStateTransformer` reveals the top card for `PlayFromTopO
   shown to all players, but can only be played once drawn. (**Goblin Spy**)
 - `PlayFromTopOfLibrary` — public reveal **and** "play lands and cast spells from the top of your
   library" (all card types). (Future Sight)
+- `PlayFromTopWithAlternativeCost(withoutPayingManaCost = false, additionalCost = null, filter = null)`
+  — "you may play cards from the top of your library; a spell cast this way pays an alternative cost"
+  (mana waived and/or an `AdditionalCost` substituted). Gwenom, Remorseless grants this until end of
+  turn (`GrantStaticAbility(..., Duration.EndOfTurn)`) with `withoutPayingManaCost = true` +
+  `Costs.additional.PayLifeEqualToManaValueOfSpell` — "play from the top; pay life equal to a spell's
+  mana value rather than its mana cost." Read through the top-of-library cast path, which scans
+  `grantedStaticAbilities` for it (so a durationally-granted permission works), waives the mana, and
+  charges the life. Pass `filter` to restrict which cards it covers (null = all).
 - `PlayLandsAndCastFilteredFromTopOfLibrary(spellFilter)` — like `PlayFromTopOfLibrary` but only
   spells matching `spellFilter` are castable (lands always playable), and **no public reveal** (pair
   with `LookAtTopOfLibrary` to let just the controller see). `spellFilter = GameObjectFilter.Any`
