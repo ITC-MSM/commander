@@ -7985,11 +7985,19 @@ Card authors rarely reference these directly; they are created/updated by the ma
     `ConditionalStaticAbility`, activated via `ActivationRestriction.OnlyIfCondition`, triggered via
     `triggerCondition` (CR 603.4). No new ability type; activated/triggered labels get the printed
     "Max speed — " prefix. Several abilities may share one block (Tsagan, Raider Warlord).
-    A `staticAbility { ability = ModifySpellCost(…) }` is the one exception to the wrapper: cost
-    calculation scans the raw static list for `is ModifySpellCost` and never unwraps a conditional, so
-    the gate is folded into the modifier's own `CostGating.OnlyIf` slot instead (Racers' Scoreboard,
-    "Max speed — Spells you cast cost {1} less to cast"). Authoring is unchanged — declare it in the
-    block and the builder picks the right seam.
+    Two static kinds are exceptions to the wrapper, both for the same reason — their read site scans
+    the *raw* static list with `filterIsInstance` and never unwraps a conditional, so a
+    `ConditionalStaticAbility` would hide them entirely. Both carry their own condition slot, and the
+    builder folds the gate into it. Authoring is unchanged — declare them in the block and the builder
+    picks the right seam:
+    - `ModifySpellCost` → its `CostGating.OnlyIf` slot (cost calculation; Racers' Scoreboard,
+      "Max speed — Spells you cast cost {1} less to cast").
+    - `MayCastSelfFromZones` → its `condition` slot (`CastFromZoneEnumerator.enumerateIntrinsicZoneCast`
+      / `CastZoneResolver.findMayCastSelfFromZoneAbility`; Lightwheel Enhancements, "Max speed — You
+      may cast this card from your graveyard"). The condition is evaluated in the *casting player's*
+      context at both read sites, which is what lets a max-speed ability function from a zone where
+      the card isn't a permanent at all — per the CR ruling that *"if the granted ability functions in
+      a zone other than the battlefield, the max speed ability does too."*
   - Raising speed is `Effects.IncreaseSpeed(amount, target)`. The inherent CR 702.179d trigger
     ("Whenever one or more opponents lose life during your turn, if your speed is less than 4, your
     speed increases by 1. This ability triggers only once each turn.") is synthesized per player by
