@@ -215,6 +215,23 @@ class TargetValidator {
                     return "Targets must have total mana value $cap or less"
                 }
             }
+
+            // "... with different names" — no two chosen targets for this requirement may share a
+            // name (Behold the Sinister Six!: "up to six target creature cards with different
+            // names"). CR 601.2c. Grouped by projected name on the battlefield, base card name in
+            // other zones (graveyard cards aren't projected).
+            if (requirement is TargetObject && requirement.differentNames && targetsForReq.size > 1) {
+                val names = targetsForReq.map { target ->
+                    val id = (target as? ChosenTarget.Permanent)?.entityId
+                        ?: (target as? ChosenTarget.Card)?.cardId
+                    id?.let {
+                        state.projectedState.getName(it) ?: state.getEntity(it)?.get<CardComponent>()?.name
+                    }
+                }
+                if (names.size != names.toSet().size) {
+                    return "Targets must have different names"
+                }
+            }
         }
 
         return null

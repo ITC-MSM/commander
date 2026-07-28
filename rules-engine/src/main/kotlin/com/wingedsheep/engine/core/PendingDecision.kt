@@ -129,7 +129,13 @@ data class TargetRequirementInfo(
      * [DecisionValidators.validateTargets] rejects a selection whose summed `manaValue` exceeds it.
      * `null` imposes no aggregate cap.
      */
-    val totalManaValueAtMost: Int? = null
+    val totalManaValueAtMost: Int? = null,
+    /**
+     * When true, no two chosen targets for this requirement may share a name — "target creature
+     * cards with different names" (Behold the Sinister Six!). Enforced against each selected
+     * target's name in [DecisionValidators.validateTargets].
+     */
+    val differentNames: Boolean = false
 )
 
 /**

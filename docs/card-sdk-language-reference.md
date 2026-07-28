@@ -2600,6 +2600,12 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   TargetFilter(GameObjectFilter.Creature.ownedByTriggeringPlayer(), zone = Zone.GRAVEYARD),
   totalManaValueAtMost = DynamicAmount.XValue)` — **Fire Lord Sozin** (back face of The Rise of Sozin),
   reanimating post-payment via a `MayPayXForEffect(ReflexiveTriggerEffect(...))`.
+- `differentNames = false` — on `TargetObject`; when `true` and more than one target is chosen, no two
+  chosen targets may share a **name** ("**up to six target creature cards with different names**" —
+  Behold the Sinister Six!). Enforced cross-target by `TargetValidator` (authoritative) and, on the
+  interactive target decision, `DecisionValidators` (via `TargetRequirementInfo.differentNames`),
+  grouping by projected name (battlefield) / base card name (other zones). E.g.
+  `TargetObject(count = 6, optional = true, filter = TargetFilter.CreatureInYourGraveyard, differentNames = true)`.
 - `chooser = TargetChooser.Controller` — **who selects this requirement's target(s)**. Set to
   `TargetChooser.Opponent` for "**… of an opponent's choice**" wording (Cuombajj Witches). The chosen
   target is still a real target of *your* spell/ability — announced together with your own targets,

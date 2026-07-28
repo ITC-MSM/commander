@@ -207,7 +207,16 @@ for lifelink/triggers) + a way to feed the controller's life-lost delta into `Dr
 Blocked cards:
 - **Mister Negative** [135] — `{5}{W}{B}` Vigilance/lifelink; "you may exchange life totals with target opponent. If you lost life this way, draw that many cards." (Vigilance + lifelink are fine; the ETB exchange is blocked.)
 
-## "Different names" multi-target distinctness constraint
+## "Different names" multi-target distinctness constraint — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-target-constraints`. Added a `differentNames: Boolean` field to
+`TargetObject`, enforced cross-target by `TargetValidator` (authoritative) and `DecisionValidators`
+(interactive, via a new `TargetRequirementInfo.differentNames` propagated at the target-decision build
+sites) — grouping chosen targets by projected name (battlefield) / base card name (other zones). Card:
+**Behold the Sinister Six!** [51] (`TargetObject(count = 6, optional = true, differentNames = true)` +
+`ForEachTargetEffect(PutOntoBattlefield)`).
+
+<details><summary>Original analysis</summary>
 
 > Return up to six **target creature cards with different names** from your graveyard to the
 > battlefield.
@@ -222,6 +231,7 @@ reference + `CardLinter`).
 
 Blocked cards:
 - **Behold the Sinister Six!** [51] — `{6}{B}` Sorcery; "Return up to six target creature cards with different names from your graveyard to the battlefield." Dropping the constraint would wrongly allow six copies of the same-named creature, so it is not approximated.
+</details>
 
 ## Color-filtered permanent "don't lose unspent [color] mana" static — ✅ IMPLEMENTED
 
