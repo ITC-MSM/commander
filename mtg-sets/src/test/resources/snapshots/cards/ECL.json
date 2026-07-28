@@ -1504,33 +1504,6 @@
     ]
 }
 
-// Blood Crypt
-{
-    "name": "Blood Crypt",
-    "manaCost": "",
-    "typeLine": "Land — Swamp Mountain",
-    "oracleText": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "262",
-        "rarity": "RARE",
-        "artist": "Adam Paquette",
-        "flavorText": "The boggart was playfully prodding a critter when the skies darkened, then he gobbled it down with glee.",
-        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6da63cc5-4624-4491-abd9-9b600c3fefe2.jpg?1759144844"
-    },
-    "colorIdentityOverride": [
-        "BLACK",
-        "RED"
-    ]
-}
-
 // Bloodline Bidding
 {
     "name": "Bloodline Bidding",
@@ -9788,33 +9761,6 @@
     ]
 }
 
-// Hallowed Fountain
-{
-    "name": "Hallowed Fountain",
-    "manaCost": "",
-    "typeLine": "Land — Plains Island",
-    "oracleText": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "265",
-        "rarity": "RARE",
-        "artist": "Adam Paquette",
-        "flavorText": "The merrow was vending her wares when the skies darkened, then she sharply raised her prices.",
-        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e056b55f-82ed-4fe0-ab0c-bb20fa4a218a.jpg?1759144845"
-    },
-    "colorIdentityOverride": [
-        "WHITE",
-        "BLUE"
-    ]
-}
-
 // Harmonized Crescendo
 {
     "name": "Harmonized Crescendo",
@@ -13440,33 +13386,6 @@
     ]
 }
 
-// Overgrown Tomb
-{
-    "name": "Overgrown Tomb",
-    "manaCost": "",
-    "typeLine": "Land — Swamp Forest",
-    "oracleText": "({T}: Add {B} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "266",
-        "rarity": "RARE",
-        "artist": "Adam Paquette",
-        "flavorText": "The elf was disgusted by the bramble before him when the skies darkened, then he stepped closer to observe the wild beauty.",
-        "imageUri": "https://cards.scryfall.io/normal/front/4/5/45b92924-baa1-4c9b-9932-9a5eda8f3446.jpg?1759144847"
-    },
-    "colorIdentityOverride": [
-        "BLACK",
-        "GREEN"
-    ]
-}
-
 // Perfect Intimidation
 {
     "name": "Perfect Intimidation",
@@ -16916,33 +16835,6 @@
     "colorIdentityOverride": []
 }
 
-// Steam Vents
-{
-    "name": "Steam Vents",
-    "manaCost": "",
-    "typeLine": "Land — Island Mountain",
-    "oracleText": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "267",
-        "rarity": "RARE",
-        "artist": "Adam Paquette",
-        "flavorText": "The flamekin was drawn toward warm laughter when the skies darkened, then she turned back to the lonely peak.",
-        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b66daa94-d367-4812-9f18-f35378c1febb.jpg?1759144847"
-    },
-    "colorIdentityOverride": [
-        "BLUE",
-        "RED"
-    ]
-}
-
 // Sting-Slinger
 {
     "name": "Sting-Slinger",
@@ -17994,33 +17886,6 @@
     },
     "colorIdentityOverride": [
         "BLACK"
-    ]
-}
-
-// Temple Garden
-{
-    "name": "Temple Garden",
-    "manaCost": "",
-    "typeLine": "Land — Forest Plains",
-    "oracleText": "({T}: Add {G} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
-    "script": {
-        "replacementEffects": [
-            {
-                "type": "EntersTapped",
-                "payLifeCost": 2
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "268",
-        "rarity": "RARE",
-        "artist": "Adam Paquette",
-        "flavorText": "The kithkin was admiring the flowers when the skies darkened, then they ripped up the roots for the next season.",
-        "imageUri": "https://cards.scryfall.io/normal/front/6/c/6cdd2a74-63b3-4ff2-9c5a-a85dee63c3c9.jpg?1759144838"
-    },
-    "colorIdentityOverride": [
-        "WHITE",
-        "GREEN"
     ]
 }
 

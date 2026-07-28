@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.eoe.cards
+package com.wingedsheep.mtg.sets.definitions.dis.cards
 
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -6,27 +6,27 @@ import com.wingedsheep.sdk.scripting.EntersTapped
 
 /**
  * Breeding Pool
- * 
+ *
  * Land — Forest Island
  * ({T}: Add {G} or {U}.)
  * As this land enters, you may pay 2 life. If you don't, it enters tapped.
  */
 val BreedingPool = card("Breeding Pool") {
     manaCost = ""
-    colorIdentity = "UG"
+    colorIdentity = "GU"
     typeLine = "Land — Forest Island"
     oracleText = "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
 
     // Mana abilities are intrinsic from basic land types (Forest → {G}, Island → {U})
 
-    // As this land enters, you may pay 2 life. If you don't, it enters tapped.
     replacementEffect(EntersTapped(payLifeCost = 2))
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "251"
-        artist = "Constantin Marin"
-        flavorText = "\"Log 1.4.778: Granove, a tropical moon teeming with endemic biota. A must see for any aspiring astrobiologist!\"\n—*Maisie's Edge Chronicles*"
-        imageUri = "https://cards.scryfall.io/normal/front/3/c/3c750d5a-f743-41ff-b5ba-02025ca0bec2.jpg?1752947580"
+        collectorNumber = "172"
+        artist = "Rob Alexander"
+        imageUri = "https://cards.scryfall.io/normal/front/b/9/b98b2a35-ec2b-47fe-903d-dd292e469a3c.jpg?1783943378"
+        ruling("2018-10-05", "Unlike most dual lands, this land has two basic land types. It's not basic, so cards such as District Guide can't find it, but it does have the appropriate land types for effects such as that of Drowned Catacomb (from the Ixalan set).")
+        ruling("2018-10-05", "If an effect puts this land onto the battlefield tapped, you may pay 2 life, but it still enters tapped.")
     }
 }

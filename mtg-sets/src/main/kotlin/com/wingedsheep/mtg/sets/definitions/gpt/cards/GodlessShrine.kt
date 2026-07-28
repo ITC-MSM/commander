@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.eoe.cards
+package com.wingedsheep.mtg.sets.definitions.gpt.cards
 
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -6,7 +6,7 @@ import com.wingedsheep.sdk.scripting.EntersTapped
 
 /**
  * Godless Shrine
- * 
+ *
  * Land — Plains Swamp
  * ({T}: Add {W} or {B}.)
  * As this land enters, you may pay 2 life. If you don't, it enters tapped.
@@ -19,14 +19,14 @@ val GodlessShrine = card("Godless Shrine") {
 
     // Mana abilities are intrinsic from basic land types (Plains → {W}, Swamp → {B})
 
-    // As this land enters, you may pay 2 life. If you don't, it enters tapped.
     replacementEffect(EntersTapped(payLifeCost = 2))
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "254"
-        artist = "Rob Rey"
-        flavorText = "\"Log 1.7.618: Starshadow, a relic of a culture lost to calamity. Its people were eradicated in a single day—but by what?\"\n—*Maisie's Edge Chronicles*"
-        imageUri = "https://cards.scryfall.io/normal/front/8/c/8c542ea4-98c3-4c2d-9066-205ab7aa697a.jpg?1752947593"
+        collectorNumber = "157"
+        artist = "Rob Alexander"
+        imageUri = "https://cards.scryfall.io/normal/front/b/e/be010c2f-06db-47e3-80bd-df3f2a21ca34.jpg?1783943456"
+        ruling("2018-10-05", "Unlike most dual lands, this land has two basic land types. It's not basic, so cards such as District Guide can't find it, but it does have the appropriate land types for effects such as that of Drowned Catacomb (from the Ixalan set).")
+        ruling("2018-10-05", "If an effect puts this land onto the battlefield tapped, you may pay 2 life, but it still enters tapped.")
     }
 }

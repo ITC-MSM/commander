@@ -182,6 +182,42 @@
     ]
 }
 
+// Godless Shrine
+{
+    "name": "Godless Shrine",
+    "manaCost": "",
+    "typeLine": "Land — Plains Swamp",
+    "oracleText": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "payLifeCost": 2
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "rarity": "RARE",
+        "artist": "Rob Alexander",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/be010c2f-06db-47e3-80bd-df3f2a21ca34.jpg?1783943456",
+        "rulings": [
+            {
+                "date": "2018-10-05",
+                "text": "Unlike most dual lands, this land has two basic land types. It's not basic, so cards such as District Guide can't find it, but it does have the appropriate land types for effects such as that of Drowned Catacomb (from the Ixalan set)."
+            },
+            {
+                "date": "2018-10-05",
+                "text": "If an effect puts this land onto the battlefield tapped, you may pay 2 life, but it still enters tapped."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Gruul Signet
 {
     "name": "Gruul Signet",
@@ -634,6 +670,78 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Steam Vents
+{
+    "name": "Steam Vents",
+    "manaCost": "",
+    "typeLine": "Land — Island Mountain",
+    "oracleText": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "payLifeCost": 2
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "RARE",
+        "artist": "Rob Alexander",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/054f2276-2dd5-43da-bb26-c57c560861fe.jpg?1783943453",
+        "rulings": [
+            {
+                "date": "2018-10-05",
+                "text": "Unlike most dual lands, this land has two basic land types. It's not basic, so cards such as District Guide can't find it, but it does have the appropriate land types for effects such as that of Drowned Catacomb (from the Ixalan set)."
+            },
+            {
+                "date": "2018-10-05",
+                "text": "If an effect puts this land onto the battlefield tapped, you may pay 2 life, but it still enters tapped."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
+// Stomping Ground
+{
+    "name": "Stomping Ground",
+    "manaCost": "",
+    "typeLine": "Land — Mountain Forest",
+    "oracleText": "({T}: Add {R} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "payLifeCost": 2
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "rarity": "RARE",
+        "artist": "Rob Alexander",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a2773d8f-f906-475d-aaff-b7ca3b01f188.jpg?1783943453",
+        "rulings": [
+            {
+                "date": "2018-10-05",
+                "text": "Unlike most dual lands, this land has two basic land types. It's not basic, so cards such as District Guide can't find it, but it does have the appropriate land types for effects such as that of Drowned Catacomb (from the Ixalan set)."
+            },
+            {
+                "date": "2018-10-05",
+                "text": "If an effect puts this land onto the battlefield tapped, you may pay 2 life, but it still enters tapped."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
     ]
 }
 
