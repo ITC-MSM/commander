@@ -2576,6 +2576,85 @@
     ]
 }
 
+// Devouring Sugarmaw
+{
+    "name": "Devouring Sugarmaw",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Horror",
+    "oracleText": "Menace, trample\nAt the beginning of your upkeep, you may sacrifice an artifact, enchantment, or token. If you don't, tap this creature.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "MENACE",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Sacrifice",
+                    "filter": "artifact|enchantment|token"
+                },
+                "optional": true,
+                "elseEffect": {
+                    "type": "TapUntap",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "RARE",
+        "artist": "Nino Vecia",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/58c7f52e-a97d-4475-ae00-3149991e723e.jpg?1783915066"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Have for Dinner",
+            "manaCost": "{1}{W}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Create a 1/1 white Human creature token and a Food token. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [
+                                "WHITE"
+                            ],
+                            "creatureTypes": [
+                                "Human"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/5/0/50240867-3a3e-4a8d-9569-816ab4a3671a.jpg?1783914992"
+                        },
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Food"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Diminisher Witch
 {
     "name": "Diminisher Witch",
@@ -4905,6 +4984,89 @@
     ]
 }
 
+// Gumdrop Poisoner
+{
+    "name": "Gumdrop Poisoner",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Warlock",
+    "oracleText": "Lifelink\nWhen this creature enters, up to one target creature gets -X/-X until end of turn, where X is the amount of life you gained this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "TurnTracking",
+                            "player": "You",
+                            "tracker": "LIFE_GAINED"
+                        },
+                        "multiplier": -1
+                    },
+                    "toughnessModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "TurnTracking",
+                            "player": "You",
+                            "tracker": "LIFE_GAINED"
+                        },
+                        "multiplier": -1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "93",
+        "rarity": "RARE",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5cb01d4d-91c2-41c6-981e-b4135a1e1e36.jpg?1783915106"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Tempt with Treats",
+            "manaCost": "{B}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Create a Food token. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                }
+            }
+        }
+    ]
+}
+
 // Hamlet Glutton
 {
     "name": "Hamlet Glutton",
@@ -5042,6 +5204,76 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Heartflame Duelist
+{
+    "name": "Heartflame Duelist",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Instant and sorcery spells you control have lifelink.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeywordToOwnSpells",
+                "keyword": "LIFELINK",
+                "spellFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "Or",
+                            "predicates": [
+                                "IsInstant",
+                                "IsSorcery"
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "rarity": "RARE",
+        "artist": "Justyna Dura",
+        "flavorText": "\"The fire of Embereth will never be doused!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/811b283f-22f3-47b1-a802-11dc8c25d0ee.jpg?1783915065"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Heartflame Slash",
+            "manaCost": "{2}{R}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Heartflame Slash deals 3 damage to any target. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "target"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -5796,6 +6028,79 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Intrepid Trufflesnout
+{
+    "name": "Intrepid Trufflesnout",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Boar",
+    "oracleText": "Whenever this creature attacks alone, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "requires": [
+                        "AttacksAlone"
+                    ]
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "320",
+        "rarity": "UNCOMMON",
+        "artist": "Kisung Koh",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/4224747e-1dbc-4a29-b5da-5916d8ca2768.jpg?1783915038"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Go Hog Wild",
+            "manaCost": "{1}{G}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Target creature gets +2/+2 until end of turn. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -11231,6 +11536,52 @@
                 ]
             }
         }
+    ]
+}
+
+// Storyteller Pixie
+{
+    "name": "Storyteller Pixie",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\nWhenever you cast an Adventure spell, draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        "SpellCastAsAdventure"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "313",
+        "rarity": "UNCOMMON",
+        "artist": "Peter Polach",
+        "flavorText": "After the royal nanny had finished his dull, droning recital of the prince and princess's bedtime story, their secret friend emerged and the real story began.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b9f4cf85-2120-4897-aecd-4ee4b02d6f9b.jpg?1783915040"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
