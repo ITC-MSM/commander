@@ -147,6 +147,9 @@ function formatDeckText(cards: Record<string, number>): string {
 
 const ALL_TABS: ReadonlyArray<Tab> = ['saved', 'examples', 'paste', 'random']
 
+/** Formats the server can't autobuild for; a Random seat there still gets a sealed pool. */
+const COMMANDER_SHAPES = ['COMMANDER', 'BRAWL', 'STANDARD_BRAWL']
+
 export function DeckPicker({
   onDeckChange,
   onValidityChange,
@@ -168,6 +171,13 @@ export function DeckPicker({
   const showExamples = tabs.includes('examples')
   const showPaste = tabs.includes('paste')
   const showRandom = tabs.includes('random')
+
+  // Under a constructed format the server builds a 60-card format-legal deck from the whole legal
+  // pool — the same thing the AI seat's Auto gets — so the set choice drops out: the format defines
+  // the pool, not the boosters. Only limited (and the not-yet-buildable commander shapes) still
+  // open eight boosters from one set.
+  const randomIsConstructed = format !== null && !COMMANDER_SHAPES.includes(format.toUpperCase())
+  const formatLabel = format?.replace('_', ' ').toLowerCase() ?? ''
 
   // Default tab: saved if available, else paste, else the first allowed tab.
   const initialTab: Tab = decks.length > 0 && showSaved
@@ -528,13 +538,16 @@ export function DeckPicker({
               <span className={styles.randomDie} aria-hidden>🎲</span>
               <h3 className={styles.randomTitle}>The server builds your deck</h3>
               <p className={styles.randomBody}>
-                Eight boosters from one set, auto-built into a 40-card deck the moment the game
-                starts. Nothing to pick, nothing to submit — just ready up.
+                {randomIsConstructed
+                  ? `A 60-card ${formatLabel}-legal deck, auto-built from the whole legal card pool
+                     the moment the game starts. Nothing to pick, nothing to submit — just ready up.`
+                  : `Eight boosters from one set, auto-built into a 40-card deck the moment the game
+                     starts. Nothing to pick, nothing to submit — just ready up.`}
               </p>
               <p className={styles.randomBody}>
                 This covers your seat only. Your opponent can still bring a deck of their own.
               </p>
-              {availableSets.length > 0 && (() => {
+              {!randomIsConstructed && availableSets.length > 0 && (() => {
                 const selectedSet = randomSetCode
                   ? availableSets.find((s) => s.code === randomSetCode) ?? null
                   : null

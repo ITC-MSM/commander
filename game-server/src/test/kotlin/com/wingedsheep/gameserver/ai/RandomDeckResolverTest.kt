@@ -17,15 +17,17 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 
 /**
- * The policy matrix behind "what does the AI play" — what the host asked for crossed with what the
- * lobby's format allows.
+ * The policy matrix behind "what does a seat with no submitted deck play" — what the seat asked for
+ * crossed with what the lobby's format allows.
  *
- * The behaviour under test is the one the feature exists for: a lobby's deck-format restriction
- * used to apply to the human's deck only, so a Pauper or Standard lobby seated a 40-card sealed
- * pool opposite a validated constructed deck. Each case here pins one cell of the matrix, including
- * the two deliberate fallbacks (commander-shape formats, and a legal pool too thin to build from).
+ * The behaviour under test is the one the feature exists for: a lobby's deck-format restriction used
+ * to apply only to a *submitted* deck, so a Pauper or Standard lobby seated a 40-card sealed pool
+ * opposite a validated constructed deck. The AI seat was fixed first; a human on "Random" kept the
+ * old behaviour until it was routed through this same resolver, which is what the `randomDeck` cases
+ * at the bottom pin. Each case covers one cell of the matrix, including the two deliberate fallbacks
+ * (commander-shape formats, and a legal pool too thin to build from).
  */
-class AiDeckResolverTest : FunSpec({
+class RandomDeckResolverTest : FunSpec({
 
     fun card(name: String, cost: String, rarity: Rarity, formats: Set<DeckFormat>) =
         CardDefinition.creature(
@@ -55,7 +57,7 @@ class AiDeckResolverTest : FunSpec({
         CardDefinition.basicLand("Forest", Subtype.FOREST, ScryfallMetadata(collectorNumber = "300")),
     )
 
-    fun resolver(): AiDeckResolver {
+    fun resolver(): RandomDeckResolver {
         val configs = listOf("AAA", "BBB").associateWith { code ->
             BoosterGenerator.SetConfig(
                 setCode = code,
@@ -68,7 +70,7 @@ class AiDeckResolverTest : FunSpec({
         val registry = CardRegistry()
         configs.values.forEach { registry.register(it.cards) }
         registry.register(basics)
-        return AiDeckResolver(SealedDeckGenerator(booster), ConstructedDeckGenerator(booster, registry))
+        return RandomDeckResolver(SealedDeckGenerator(booster), ConstructedDeckGenerator(booster, registry))
     }
 
     val sealedSize = 40
@@ -145,5 +147,34 @@ class AiDeckResolverTest : FunSpec({
         val decks = (1..8).map { resolver.resolve(AiDeckSpec.Auto, null, "AAA") }
 
         decks.distinct().size shouldNotBe 1
+    }
+
+    test("a human Random seat with no format opens a sealed pool from their set") {
+        val deck = resolver().randomDeck(format = null, setCodes = emptyList(), fallbackSetCode = "BBB")
+
+        deck.values.sum() shouldBe sealedSize
+        deck.keys.filterNot { it.startsWith("Forest") }.forEach { it.startsWith("BBB") shouldBe true }
+    }
+
+    test("a human Random seat under a constructed format builds to that format") {
+        // The asymmetry this closes: the AI seat honoured the lobby format while a human on Random
+        // always got a 40-card sealed pool, so a Pauper lobby could seat a rare-filled sealed deck
+        // opposite a validated 60-card Pauper deck.
+        val deck = resolver().randomDeck(DeckFormat.MODERN, setCodes = emptyList(), fallbackSetCode = "AAA")
+
+        deck.values.sum() shouldBe constructedSize
+    }
+
+    test("a human Random seat under Pauper uses only Pauper-legal cards") {
+        val deck = resolver().randomDeck(DeckFormat.PAUPER, setCodes = emptyList(), fallbackSetCode = "AAA")
+
+        deck.values.sum() shouldBe constructedSize
+        deck.keys.filterNot { it.startsWith("Forest") }.forEach { it.contains("Rare") shouldBe false }
+    }
+
+    test("a human Random seat in a commander lobby still falls back to a limited deck") {
+        val deck = resolver().randomDeck(DeckFormat.COMMANDER, setCodes = emptyList(), fallbackSetCode = "AAA")
+
+        deck.values.sum() shouldBe sealedSize
     }
 })

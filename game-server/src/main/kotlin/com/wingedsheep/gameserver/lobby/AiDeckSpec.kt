@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
  * Before this the answer was always "a 40-card sealed deck from whatever set the human picked",
  * decided at game start and not configurable at all. This is the host's answer to the same
  * question, held on [QuickGameLobby.aiDeckSpec] and resolved into an actual deck list by
- * [com.wingedsheep.gameserver.ai.AiDeckResolver] when the game starts.
+ * [com.wingedsheep.gameserver.ai.RandomDeckResolver] when the game starts.
  *
  * Three variants rather than the four sources the UI offers, deliberately: "an example deck",
  * "one of my saved decks" and "a decklist I pasted" all reduce to a list of card names on the

@@ -31,7 +31,7 @@ import styles from '../ui/GameUI.module.css'
 
 type Source = 'auto' | 'sets' | 'deck'
 
-/** Commander-shape formats the AI builders can't construct for — see `AiDeckResolver`. */
+/** Commander-shape formats the AI builders can't construct for — see `RandomDeckResolver`. */
 const COMMANDER_SHAPES = ['COMMANDER', 'BRAWL', 'STANDARD_BRAWL']
 
 export type AiDeckSource = Source
