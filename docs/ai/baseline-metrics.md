@@ -316,3 +316,127 @@ blocker home), and it fails for both — there is no model of holding a creature
 Phase 1's arena reached at 1,000 paired games (50.0%, CI [49.3%, 50.8%]), from a completely
 independent measurement. Two signals agreeing lowers the retirement bar for the 42 advisor entries
 further.
+
+---
+
+# Phase 3 — Multiplayer baselines
+
+**Measured:** 2026-07-28, `just arena-pod <table> <a> <b> <games>`, BLB sealed, seed 20260727, on
+the same 8-core M1 Pro. How to read one:
+[`measurement.md`](measurement.md#the-pod-arena).
+
+Phase 3 made the evaluator see a whole table instead of one neighbour. Before it, every feature in
+`BoardFeatures.kt` opened with `soleOpponent(playerId)`; the pod arena (`just arena-pod`) is the
+scoreboard that can tell whether that mattered.
+
+## The pod scoreboard's own calibration
+
+One agent in a field of the other, rotated through every team position. **The null is 1/teams, not
+50%.**
+
+| Table | Seats | Null | `v0` vs a field of `v0-blind` | Games |
+|---|---|---|---|---|
+| `ffa3` | 3 | 33.3% | **100.0%** CI [100%, 100%] | 150 |
+| `ffa4` | 4 | 25.0% | **100.0%** CI [100%, 100%] | 120 |
+| `2hg` | 4 (2 teams) | 50.0% | **100.0%** CI [100%, 100%] | 120 |
+
+Every game, at every table. `v0-blind` zeroes the evaluation weights, so this is the pod arena's
+discrimination control, the same one Phases 1 and 2 use — and a cleaner sweep than the head-to-head
+arena's 200-0, because a blind agent in a pod is being hunted by two or three opponents rather than
+one.
+
+## Health at a pod table
+
+Multiplayer is the least-exercised engine path in the repo, so these matter as much as the win
+share:
+
+| Table | Completion | Mean rounds | Mean actions | Mean game | Rejected AI actions / game |
+|---|---|---|---|---|---|
+| `ffa3` (`v0` vs blind) | 150/150 | 7.7 | 615 | 1.3 s | 0.18 |
+| `ffa4` (`v0` vs blind) | 120/120 | 7.9 | 1,133 | 2.3 s | 0.53 |
+| `2hg` (`v0` vs blind) | 120/120 | 8.3 | 601 | 1.0 s | 0.08 |
+| `ffa3` (`production` vs `v0`) | 286/300 | 13.2 | 1,244 | 14.3 s | 1.26 |
+
+Zero engine exceptions across all 690 games. Note "rounds", not turns —
+`GameState.turnNumber` counts rounds, so 13.2 at a three-seat table is ~40 player turns.
+
+**A pod game is 5-10× the wall clock of a duel.** 14.3 s per game in the `production` vs `v0` run
+against ~1.6 s for a head-to-head game: three agents deciding instead of two, over boards that keep
+growing because nobody is closing the game out. A 1,000-game pod merge gate is hours, not the
+head-to-head arena's 3.5 minutes. Size pod runs accordingly — 300 games is already a 10-minute run.
+
+## Reference-opponent baselines
+
+| Matchup | Table | Win share | CI | Null | Games |
+|---|---|---|---|---|---|
+| `production` vs a field of `v0` | `ffa3` | 31.7% | [29.3%, 33.7%] | 33.3% | 300 |
+
+**The BLB + ONS card advisors are neutral in a pod too.** That is now three independent
+measurements agreeing — Phase 1's 1,000 paired duels (50.0%, CI [49.3%, 50.8%]), Phase 2's puzzle
+suite (39/48 for both `v0` and `production`, category for category), and this one. It lowers the
+retirement bar for the 42 advisor entries in Phase 6 again.
+
+## What Phase 3 found
+
+### 1. The plan's diagnosis was wrong in a way that made the bug sound smaller
+
+The plan says the five features' `state.soleOpponent(playerId) ?: return 0.0` meant "in any
+multiplayer game the evaluator returns exactly 0.0 for every candidate". It does not.
+`soleOpponent` was `getOpponents(playerId).firstOrNull()`, and in a pod `getOpponents` returns two
+or three players — so the helper returned the **first opponent in turn order** and the evaluator
+scored the position as a two-player game against one arbitrary neighbour.
+
+That is not "no evaluation". It is worse in one respect and better in another:
+
+- **Better:** the AI was not choosing at random. It was playing a real, if one-eyed, game.
+- **Worse:** a one-eyed evaluation is *confidently* wrong. The runaway leader across the table is
+  invisible; a removal spell aimed at them scores exactly 0.0 while the same spell aimed at the
+  first opponent scores normally, so the AI systematically attacks the wrong player.
+
+And in Two-Headed Giant the same expression produced three separate failures at once: the teammate's
+board did not count, the teammate's cards in hand did not count, and — the sharpest one —
+`LifeDifferential` read `getEntity(playerId).get<LifeTotalComponent>()` directly. A 2HG team's life
+lives on the team's canonical owner (`GameState.teamLifeOwnerOf`); the *other* member's component is
+never written again after setup. So for half the table the life differential was **frozen at the
+starting 30 for the whole game**.
+
+`MultiplayerEvaluationTest` asserts each of these as a positive claim rather than describing them.
+
+### 2. `GameState.turnNumber` stops advancing after the first elimination
+
+`TurnManager.startTurn` increments `turnNumber` only when `playerId == state.turnOrder.first()`, and
+`turnOrder` keeps eliminated players. So in a pod, the moment seat 0 is knocked out, **`turnNumber`
+never changes again** — the game plays on for another twenty turns at "turn 16".
+
+This is not an AI bug and Phase 3 did not change it, but anything that drives multiplayer games has
+to know about it:
+
+- The arena's wedge detector (`actionCount` since the last `turnNumber` change) declared every
+  healthy three-way endgame stuck. It now counts **player-turn handovers**.
+- A game-length cap of `turnNumber < maxTurns` never trips after an elimination. There is now a
+  player-turn cap alongside it.
+- Anything in the engine that reasons about "next turn" as `turnNumber + 1` — delayed triggers,
+  `ExileTopCardMayPlayFreeExecutor`, `CreateDelayedTriggerExecutor` — inherits the same freeze. That
+  is a real rules question for multiplayer and belongs in `backlog/multiplayer.md`, not here.
+
+Also worth knowing before writing any pod harness: even *before* an elimination, one `turnNumber` at
+a four-seat table is four player turns, so a per-round action budget tuned on duels is ~4× too tight.
+
+### 3. `ThreatAssessment` has a ~130-point cliff at "opponent has no creatures"
+
+`turnsUntilDead` falls back to a sentinel `99.0` when a side has no attack power, and the score is
+`(99 − turnsUntilWeKill) × 1.5`. So removing an opponent's **last** creature is worth about 130
+points while removing one of their four is worth about 2. The cliff was always there; a pod makes it
+visible, because it now competes across opponents and can outweigh any amount of progress against
+the actual leader. One more hand-drawn constant for Phase 9's fit.
+
+### 4. `heuristicTargetRank` can never rank an opponent *player* as a target
+
+Found while auditing the same neighbourhood, **not fixed** — it is a 1v1 bug, it would move the
+frozen baseline, and `Strategist.heuristicTargetRank` is Phase 6's consumer (b) anyway.
+
+`heuristicTargetRank` computes `isOpponent` from `projected.getController(entityId)`. `ProjectedState`
+is built from `state.getBattlefield()` only, so `getController` on a *player* entity returns null —
+and the player branch therefore always takes the `else` arm and returns **−5.0**. Every burn spell
+ranks its own controller and its opponent identically badly. Phase 6 should fix this when it
+rewrites the function's `else -> 0.0`.

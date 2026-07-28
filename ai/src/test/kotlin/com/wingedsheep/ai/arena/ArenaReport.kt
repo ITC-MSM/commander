@@ -91,6 +91,89 @@ object ArenaReport {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Multiplayer pod
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * A pod run. Every number is quoted against the **null share** rather than 50%: one seat in a
+     * field of N is a 1/N proposition, and reading a 34% pod result as "loses badly" is the single
+     * most likely way to misread this report.
+     */
+    fun podSummary(run: PodArenaRun): String = buildString {
+        val s = run.stats
+        appendLine("--- POD ARENA (${s.table}): ${s.agentA} vs a field of ${s.agentB} ---")
+        appendLine("Games:        ${s.games} (${s.groups} rotation groups x ${run.config.gamesPerGroup}), " +
+            "set=${run.config.setCode}, seed=${run.config.seed}")
+        appendLine("Record:       ${s.aWins} wins for ${s.agentA}, ${s.games - s.aWins - s.noWinner} " +
+            "for the field, ${s.noWinner} with no winner")
+        appendLine()
+        appendLine("Win share:    ${pct(s.winShare)}  CI [${pct(s.winShareCi.low)}, ${pct(s.winShareCi.high)}]" +
+            "   vs null ${pct(s.nullShare)}  <- the gate")
+        appendLine("Decisive:     ${pct(s.decisiveWinShare)} of the ${s.games - s.noWinner} games that " +
+            "produced a winner (a timeout is not a result for anyone)")
+        appendLine()
+        appendLine("Wins by team position: ${s.winsByTeamPosition.joinToString(", ")} " +
+            "— turn-order advantage, cancelled by the rotation")
+        appendLine("Completed:    ${s.completedGames} / ${s.games} (${pct(s.completionRate)})")
+        appendLine("Illegal acts: ${s.illegalActions.values.sum()} (actions the processor rejected)")
+        if (s.drawReasons.isNotEmpty()) {
+            appendLine("Unfinished:   " + s.drawReasons.entries.joinToString(", ") { "${it.value}x ${it.key}" })
+        }
+        if (s.illegalActions.isNotEmpty()) {
+            appendLine()
+            appendLine("--- REJECTED AI ACTIONS (distinct) — each is a bug, not noise ---")
+            s.illegalActions.forEach { (message, count) -> appendLine("  [${count}x] $message") }
+        }
+        if (s.exceptions.isNotEmpty()) {
+            appendLine()
+            appendLine("--- ENGINE EXCEPTIONS (distinct) ---")
+            s.exceptions.forEach { (message, count) -> appendLine("  [${count}x] $message") }
+        }
+        appendLine()
+        appendLine("Avg turns:    ${fmt("%.1f", s.meanTurns)}   avg actions: ${fmt("%.0f", s.meanActions)}   " +
+            "avg game: ${fmt("%.0f", s.meanGameMs)}ms")
+        appendLine("Wall clock:   ${run.wallClock.inWholeSeconds}s on ${run.config.threads} threads")
+        appendLine()
+        appendLine(podVerdict(s))
+    }
+
+    private fun podVerdict(s: PodArenaStats): String = when {
+        s.beatsField ->
+            "VERDICT: ${s.agentA} beats a field of ${s.agentB} at ${s.table} — lower CI bound " +
+                "${pct(s.winShareCi.low)} is above the ${pct(s.nullShare)} null."
+        s.winShareCi.high < s.nullShare ->
+            "VERDICT: ${s.agentA} LOSES to a field of ${s.agentB} at ${s.table} — upper CI bound " +
+                "${pct(s.winShareCi.high)} is below the ${pct(s.nullShare)} null."
+        else ->
+            "VERDICT: not distinguishable. CI [${pct(s.winShareCi.low)}, ${pct(s.winShareCi.high)}] " +
+                "spans the ${pct(s.nullShare)} null — this is not a demonstrated improvement."
+    }
+
+    /** Writes `results.csv` + `summary.md` under `benchmarks/arena/<timestamp>-pod-...`. */
+    fun writePod(run: PodArenaRun): File {
+        val s = run.stats
+        val dir = outputDir("pod-${s.table}-${s.agentA}-vs-${s.agentB}")
+        File(dir, "results.csv").writeText(buildString {
+            appendLine("group,rotation,table,a_seat,seat_agents,seed,winner_seat,winner_team,a_won," +
+                "turns,actions,duration_ms,life_by_seat,completed,illegal_actions,draw_reason,exception")
+            for (group in run.groups) {
+                for (game in group.games) {
+                    val o = game.outcome
+                    appendLine(listOf(
+                        o.groupId, o.rotation, o.setup.id, game.aSeat, o.seatAgents.joinToString("|"),
+                        o.seed, o.winnerSeat ?: "", o.winnerTeam ?: "", game.aWon,
+                        o.turns, o.actions, o.durationMs, o.lifeBySeat.joinToString("|"),
+                        o.completed, o.illegalActions.values.sum(),
+                        csv(o.drawReason), csv(o.exception ?: ""),
+                    ).joinToString(","))
+                }
+            }
+        })
+        File(dir, "summary.md").writeText("```\n${podSummary(run)}```\n")
+        return dir
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Gauntlet
     // ─────────────────────────────────────────────────────────────────────────
 

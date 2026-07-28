@@ -3,12 +3,13 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** **Phases 0, 1 and 2 shipped** (2026-07-27) — baselines in
+**Status:** **Phases 0, 1, 2 and 3 shipped** (Phase 3 on 2026-07-28) — baselines in
 [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
-[`docs/ai/measurement.md`](../docs/ai/measurement.md). Both scoreboards now exist: the arena
-(`just arena`) and the 48-puzzle suite (`just arena-puzzles`, **39/48 today**). Next up is
-**Phase 3, multiplayer evaluation**. Phases are individually shippable and ordered by dependency,
-not by appeal.
+[`docs/ai/measurement.md`](../docs/ai/measurement.md). Three scoreboards now exist: the arena
+(`just arena`), the 48-puzzle suite (`just arena-puzzles`, **39/48 today**) and the multiplayer pod
+arena (`just arena-pod`). Next up is **Phase 4, branching factor + budget** — or **Phase 6,
+CardIntent**, which is the highest strength-per-effort item left. Phases are individually shippable
+and ordered by dependency, not by appeal.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
 performance phase builds on. See "Cross-reference" below; parts of that doc are stale.
@@ -61,9 +62,12 @@ write-only field. And `CombatMath.calculateAggressionLevel`, `turnsToKill`,
   number. The code comments this as a known limitation.
 - `Strategist.heuristicTargetRank` (`:289-310`) has `else -> 0.0`, so an opponent's non-creature
   permanent ranks equal to nothing. **The AI cannot Disenchant correctly at all.**
-- All five features open with `state.soleOpponent(playerId) ?: return 0.0`, so in **any multiplayer
+- ~~All five features open with `state.soleOpponent(playerId) ?: return 0.0`, so in **any multiplayer
   game (FFA, Commander, 2HG) the evaluator returns exactly 0.0 for every candidate** — the AI is
-  choosing with no evaluation whatsoever.
+  choosing with no evaluation whatsoever.~~ **Wrong, and fixed in Phase 3.** `soleOpponent` returned
+  the *first opponent in turn order*, never null, so the evaluator scored a pod as a duel against one
+  arbitrary neighbour — confidently wrong rather than absent. In 2HG it also read a
+  `LifeTotalComponent` the engine stops maintaining once life pools on the team. See Phase 3.
 - Every weight (`AIPlayer.kt:179-187`) and every constant inside `BoardFeatures.kt` is a hand-guessed
   literal. There is no tuning harness.
 - `Tempo` counts lands only — mana rocks, rituals and colour availability are invisible.
@@ -188,6 +192,14 @@ not shippable.
 
 Games completed %, draw-reason histogram, stuck-game detection, and distinct engine exceptions —
 `RandomActionBenchmark` already groups exceptions, so the arena is a free crash-finder at scale.
+
+### 5. Pod win share — added in Phase 3
+
+`just arena-pod <table> <a> <b> <games>` over `ffa3` / `ffa4` / `2hg`. One agent against a field of
+the other, rotated through every team position so turn order cancels; **the null is 1/teams, not
+50%**. This is the only signal that exercises teammates, multiple opponents, and elimination at all,
+and it is the cheapest crash finder we have for the engine's least-travelled path. A pod game costs
+5–10× a duel, so size runs accordingly.
 
 ---
 
@@ -371,16 +383,70 @@ Files: `ai/src/test/.../puzzles/{AiPuzzle,PuzzleRunner,PuzzleSuiteTest}.kt` + `c
 
 ---
 
-### Phase 3 — Multiplayer evaluation · *1–2 d* — pulled early, categorical fix
+### Phase 3 — Multiplayer evaluation · *1–2 d* — ✅ **DONE 2026-07-28**
 
-All five features in `BoardFeatures.kt` open with `state.soleOpponent(playerId) ?: return 0.0`. In
-FFA, Commander or 2HG the evaluator returns **0.0 for every candidate** — no evaluation at all.
-(`AiOpponent.kt:6-15` documents this as deliberate: multiplayer pods launch without AI seats. That
-is a workaround, not a fix.)
+> **Shipped.** `AiOpponent.kt` is now `Sides.kt`: `state.sidesFor(playerId)` returns the AI's own
+> side (itself plus still-in teammates) and one entry per opposing team, and every feature folds a
+> per-opponent score over it with `OpponentAggregate.THREAT` (board presence, threat assessment) or
+> `.FIELD` (life, cards, tempo). Pod scoreboard: `just arena-pod <table> <a> <b> <games>` over
+> `ffa3` / `ffa4` / `2hg`. Numbers and findings:
+> [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-3--multiplayer-baselines);
+> how to read a pod report: [`docs/ai/measurement.md`](../docs/ai/measurement.md#the-pod-arena).
+>
+> **Baseline: `v0` beats a field of `v0-blind` 100% at all three tables** (150 / 120 / 120 games)
+> against nulls of 33.3% / 25% / 50%. `production` vs a field of `v0` at `ffa3` is 31.7%,
+> CI [29.3%, 33.7%] — **the card advisors are neutral in a pod too**, a third independent
+> measurement agreeing with Phase 1's arena and Phase 2's puzzles.
+>
+> Four corrections the build produced:
+>
+> 1. **The diagnosis below was wrong, in the direction that made the bug sound smaller.**
+>    `soleOpponent` was `getOpponents(playerId).firstOrNull()`, and `getOpponents` returns *every*
+>    opponent — so it returned the **first opponent in turn order**, not null, and the evaluator did
+>    not return 0.0. It scored a pod as a duel against one arbitrary neighbour. That is worse than
+>    "no evaluation" in the way that matters: the runaway leader across the table was invisible, so
+>    removal aimed at them scored 0.0 while the same spell aimed at the first opponent scored
+>    normally, and the AI systematically attacked the wrong player.
+> 2. **Two-Headed Giant was failing three ways at once, and the sharpest one is a stale component.**
+>    A 2HG team's life lives on the team's canonical owner (`GameState.teamLifeOwnerOf`); the other
+>    member's own `LifeTotalComponent` is never written again after setup. `LifeDifferential` read it
+>    directly, so for half the table the life differential was **frozen at the starting 30 for the
+>    whole game**. Everything now reads `state.lifeTotal()` and values a side per *life pool*.
+> 3. **`GameState.turnNumber` stops advancing after the first elimination.** `TurnManager.startTurn`
+>    only increments it for `turnOrder.first()`, and `turnOrder` keeps eliminated players — so a pod
+>    plays on for twenty more turns at "turn 16". The arena's wedge detector and length cap both keyed
+>    on it and declared every healthy three-way endgame stuck; they now count player-turn handovers.
+>    **The engine-side consequence is not fixed and is not an AI question**: delayed triggers and
+>    every other `turnNumber + 1` reading of "next turn" inherit the same freeze. That belongs in
+>    `backlog/multiplayer.md`.
+> 4. **No `AiProfile` flag, deliberately.** In 1v1 the new code is bit-identical by construction (one
+>    opposing side of one player, short-circuited before the fold), which `FrozenBaselineTest` and the
+>    unchanged 39/48 puzzle score both confirm. In multiplayer the old behaviour was a bug, not a
+>    strategy — preserving it behind a switch so it can be A/B'd against itself buys a number and
+>    costs a permanent dual path through `:ai`, `:gym` and `:gym-trainer`. The pod arena's control is
+>    `v0-blind`, the same one the other two scoreboards use.
+>
+> Also found, and **not fixed** (a 1v1 bug, and Phase 6 owns the function): `heuristicTargetRank`
+> derives `isOpponent` from `projected.getController(entityId)`, but `ProjectedState` only covers
+> battlefield entities — so `getController` on a *player* returns null and an opponent player always
+> ranks **−5.0**, exactly as our own face does. Quantified in the baseline doc.
+
+**The original diagnosis, kept for the record:** all five features in `BoardFeatures.kt` open with
+`state.soleOpponent(playerId) ?: return 0.0`. In FFA, Commander or 2HG the evaluator returns 0.0 for
+every candidate — no evaluation at all. (`AiOpponent.kt:6-15` documents this as deliberate:
+multiplayer pods launch without AI seats. That is a workaround, not a fix.)
 
 Generalize to `opponentsOf(playerId)`: differentials become "me vs. strongest opponent"
 (threat-focused) or "me vs. mean" (positional); 2HG treats a team as one entity via `teammatesOf`.
 Add multiplayer games to the arena to verify.
+
+**Exit:** ✅ every feature folds over all opposing sides, ✅ `just arena-pod` over three tables with
+an exact-mirror / clean-game / discrimination harness in the always-on suite, ✅ pod baselines in
+`docs/ai/baseline-metrics.md`, ✅ 1v1 provably unchanged (`FrozenBaselineTest` green, puzzles 39/48).
+
+> **Sizing a pod run.** A pod game is 5–10× the wall clock of a duel — three agents deciding instead
+> of two, over boards that keep growing because nobody is closing the game out. 300 pod games is
+> ~10 minutes where 300 duels is ~70 seconds, so the head-to-head merge-gate table does not transfer.
 
 ---
 
@@ -866,27 +932,29 @@ but tanks a puzzle category, look hard before shipping.
 ## Recommended order
 
 ```
-0̶ → 1̶ → 2̶ → 3 → 4 → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
+0̶ → 1̶ → 2̶ → 3̶ → 4 → 6 → 7 → 8 → 9 → 10        (5a runs alongside, on its own schedule)
 ```
 
-Phases 0, 1 and 2 are done — both scoreboards exist. **Phase 5 has left the critical path** —
-simulation is already ~2× the speed the rollout budget needs, so 5a is now an independent
-engine-perf task and 5c is almost certainly not justified. Next up is **Phase 3, multiplayer
-evaluation**: 1–2 days for the highest strength-per-effort item on the list.
+Phases 0–3 are done — all three scoreboards exist and the evaluator is no longer one-eyed at a pod
+table. **Phase 5 has left the critical path** — simulation is already ~2× the speed the rollout
+budget needs, so 5a is now an independent engine-perf task and 5c is almost certainly not justified.
+Next up is **Phase 6, CardIntent** — now the highest strength-per-effort item left — with **Phase 4**
+(branching factor + budget) as the alternative if you would rather land the enabling infrastructure
+first. Phase 6 does not depend on Phase 4.
 
 Ranked by strength-per-effort, independent of ordering:
 
 | Rank | Phase | Effort | Why |
 |---|---|---|---|
-| 1 | **3** multiplayer eval | 1–2 d | AI is *evaluation-blind* in FFA/Commander/2HG today. Categorical fix. |
-| 2 | **6** CardIntent | 5–7 d | Removes flat-0.5 blindness to every artifact/enchantment/PW; feeds 4 other consumers. |
-| 3 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones. Cheap once the arena exists. |
-| 4 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
-| 5 | **1̶ / 2̶** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Both done. |
-| 6 | **4a** auto-pass filter | 3–5 d | Demoted by Phase 0: at 1.75 candidates there is little to filter. Still saves ~148 ms/game of pointless enumeration, and a rollout pays it repeatedly. |
-| 7 | **4b** DecisionBudget | 2–3 d | Enabling infrastructure. |
-| 8 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
-| 9 | **5a** hoist O(n²) scans | 3–5 d | Demoted by Phase 0: no longer needed for rollouts. Still a standing engine win — `findAvailableManaSources` was 59% inclusive. |
+| 1 | **6** CardIntent | 5–7 d | Removes flat-0.5 blindness to every artifact/enchantment/PW; feeds 4 other consumers. |
+| — | **3̶** multiplayer eval | 1–2 d | **Done.** Was ranked 1: the evaluator scored a whole pod as a duel against one arbitrary neighbour, and read a stale life component in 2HG. |
+| 2 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones. Cheap once the arena exists. |
+| 3 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
+| 4 | **1̶ / 2̶** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Both done. |
+| 5 | **4a** auto-pass filter | 3–5 d | Demoted by Phase 0: at 1.75 candidates there is little to filter. Still saves ~148 ms/game of pointless enumeration, and a rollout pays it repeatedly. |
+| 6 | **4b** DecisionBudget | 2–3 d | Enabling infrastructure. |
+| 7 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
+| 8 | **5a** hoist O(n²) scans | 3–5 d | Demoted by Phase 0: no longer needed for rollouts. Still a standing engine win — `findAvailableManaSources` was 59% inclusive. |
 | — | **5c** persistent collections | 4–6 d | **Drop** unless a fresh profile demands it. Phase 0 measured throughput at ~2× the required rate. |
 | — | projection incrementalization | 2+ wk | **Skip.** 7.4% in the profile, 11% measured cold, and already cached. |
 
@@ -906,6 +974,8 @@ two phases' worth of assumed work.
 | **Non-transitive strength** | Full pairwise matrix, not just Elo | Must beat V0 *and* previous version; lose to no gauntlet member worse than 45% |
 | **Combat's 1 s cap fights the global budget** | Blocking puzzle category; per-tier latency logging | Combat declaration is always CRITICAL; keep `MAX_BLOCK_SIMULATIONS = 10` as a floor, not a ceiling |
 | **`GameSimulator.isResolving` / `decisionResolver` thread-safety** | Nondeterminism across arena reruns at the same seed | One `AIPlayer` per *seat* per game, never shared. `ArenaHarnessTest` asserts identical outcomes at 8 threads and at 1 — **green as of Phase 1**, so the AI is deterministic today. `PlayoutEngine` must own its own processor when Phase 7 lands |
+| **A pod result is read against 50%** | Certain to happen — every other number in this plan is | The null is **1/teams**: 33% at `ffa3`, 25% at `ffa4`, 50% at `2hg`. `ArenaReport.podSummary` prints the null on the same line as the win share and states it in the verdict sentence |
+| **A multiplayer harness trusts `GameState.turnNumber`** | Every pod game reads as wedged after the first elimination | `turnNumber` only advances for `turnOrder.first()`, who may be dead. Count player-turn handovers. **Closed for the arena in Phase 3**; still open for engine code that reads "next turn" as `turnNumber + 1` (`backlog/multiplayer.md`) |
 | **Persistent collections break persisted sessions / committed replays** | `GameStateSerializationFormatStabilityTest` golden JSON | Serializers delegate to standard `MapSerializer`/`ListSerializer` ⇒ byte-identical wire format |
 | **`CardInstantiator` extraction produces malformed cards** | `DeterminizerInvariantsTest` + full engine suite | Reuse `GameInitializer`'s own construction path, don't hand-roll |
 | ~~**Arena wall-clock makes the merge gate unaffordable**~~ | Measured in Phase 1 | **Not a risk today** — 1,000 games is 3.5 min, because no `DecisionBudget` exists yet. Re-opens in Phase 4b: re-measure before shipping a budget, and only then consider a reduced-budget arena mode |
@@ -934,7 +1004,9 @@ Per phase, in addition to the exit criteria above:
   latency feels right and the AI no longer plays around cards it shouldn't know about.
 - **Standing regression set** after each merge: `just arena-puzzles` (seconds, from Phase 2) +
   `just arena <prev> <new> 1000` (the gate) + `just arena <new> v0 1000` (the compounding check).
-  Both 1,000-game runs are ~3.5 min each today.
+  Both 1,000-game runs are ~3.5 min each today. Add `just arena-pod ffa3 <new> v0 300` (~10 min,
+  from Phase 3) whenever the change touches evaluation — it is the only run that exercises more than
+  one opponent.
 
 ---
 

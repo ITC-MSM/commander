@@ -131,10 +131,82 @@ Say these out loud rather than letting a reader assume otherwise.
 - **Deck diversity within a pair.** Both seats get the *same* 40-card sealed decklist (they still
   draw different shuffles of it). Lowest variance, and it matches what `AdvisorBenchmark` measured —
   but it means the arena tests symmetric matchups only.
-- **Multiplayer.** Two seats. Phase 3 adds FFA/Commander/2HG games, and it has to: every feature in
-  `BoardFeatures.kt` returns 0.0 with more than one opponent.
+- **Multiplayer.** `just arena` is two seats and always will be — the paired swap has no meaning at
+  a bigger table. Pods have their own harness; see [the pod arena](#the-pod-arena) below.
 - **Latency per budget tier.** There are no tiers until Phase 4b.
 - **Anything about a real player.** The reference opponent is another bot.
+
+---
+
+## The pod arena
+
+Two-player pairing does not generalize. At a bigger table there is no "swap the seats" — there are
+N seats, N! assignments, and no reason to believe two agents should split a pod evenly. So the pod
+arena asks a different, well-posed question: **can one agent beat a field of another?**
+
+```bash
+just arena-pod ffa3 current v0-blind 300     # 3-player free-for-all
+just arena-pod ffa4 current v0-blind 300     # 4-player free-for-all
+just arena-pod 2hg  current v0-blind 300     # Two-Headed Giant, 2v2 (CR 810)
+```
+
+Agent A takes one seat and agent B takes all the others. The estimator is the multiplayer
+generalization of the paired swap: a **rotation group** plays the same decks and the same seed once
+per cyclic shift of the assignment, so A occupies every team position exactly once and turn-order
+advantage cancels. Groups are the resampling unit for the bootstrap, exactly as pairs are in the
+head-to-head arena.
+
+> **The null is 1/teams, not 50%.** One seat in a three-way field is a **33.3%** proposition; four-way
+> is **25%**; 2HG is **50%** because there are two teams. A 34% pod result is *parity*, not a rout.
+> Every line of the report quotes the null next to the number for exactly this reason.
+
+```
+--- POD ARENA (ffa3): v0 vs a field of v0-blind ---
+Games:        300 (100 rotation groups x 3), set=BLB, seed=20260727
+Record:       268 wins for v0, 20 for the field, 12 with no winner
+
+Win share:    89.3%  CI [85.0%, 93.0%]   vs null 33.3%  <- the gate
+Decisive:     93.1% of the 288 games that produced a winner
+
+Wins by team position: 96, 90, 82 — turn-order advantage, cancelled by the rotation
+```
+
+- **Win share** is A's share of *all* games; unfinished games count for nobody and drag it down for
+  both sides. **Decisive** is the same number over the games that produced a winner. Read them
+  together: a change that wins more but finishes less is something you want to see.
+- **Wins by team position** is the pod analogue of "seat 0 wins" — the diagnostic that the rotation
+  is doing its job, not a result.
+- **Illegal acts / exceptions** matter more here than in the duel arena. Multiplayer is the
+  least-exercised engine path in the repo, and a pod run is the cheapest crash finder for it.
+
+### What makes it trustworthy
+
+Same shape as the head-to-head guarantees, in `PodArenaHarnessTest` (always-on):
+
+| Property | Test |
+|---|---|
+| No seat or seed leak | a `v0` mirror is **exactly** the null share — with the same agent everywhere, a group's games are one game relabelled, so a decisive group gives A exactly one win |
+| Pod games are real games | one FFA3 and one FFA4 game played to a natural finish, no rejected actions, no exceptions, no wedge |
+| It can tell agents apart | an evaluating agent beats a field of `v0-blind` |
+
+The always-on runs are capped by **actions**, not turns — a late pod position is expensive (three
+or four growing boards, and the Strategist simulates every candidate against all of them) and an
+uncapped mirror spends minutes per game proving what a few hundred actions already proved. Full
+length pod games are what `just arena-pod` is for.
+
+### Two traps this harness had to work around
+
+Both are real engine behaviours, not harness bugs, and anything else that drives multiplayer games
+will hit them:
+
+1. **`GameState.turnNumber` is a round counter that stops advancing after the first elimination.**
+   `TurnManager.startTurn` only increments it when `turnOrder.first()` begins a turn, and
+   `turnOrder` keeps eliminated players — so once seat 0 is knocked out it never moves again. Any
+   progress detector or length cap keyed on it declares a healthy three-way endgame wedged forever.
+   The runner counts player-turn handovers instead.
+2. **A pod round costs several turns' worth of actions.** Even before an elimination, one
+   `turnNumber` at a four-seat table is four player turns, so a flat "300 actions without a turn
+   change means stuck" threshold fires on a game that is making perfectly good progress.
 
 ---
 

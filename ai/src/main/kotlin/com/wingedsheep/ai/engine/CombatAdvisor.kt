@@ -12,7 +12,6 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
@@ -79,8 +78,13 @@ class CombatAdvisor(
             return DeclareAttackers(playerId, emptyMap())
         }
 
-        val opponentId = state.soleOpponent(playerId) ?: defendingPlayers.first()
-        val opponentLife = state.getEntity(opponentId)?.get<LifeTotalComponent>()?.life ?: 20
+        // CR 802.2a — who we attack is a choice, and `validAttackTargets` mixes players with
+        // opponent planeswalkers. Pick the *player* closest to dying: in 1v1 that is the sole
+        // opponent (unchanged), and in a pod it is the seat an alpha strike can actually finish.
+        val opponentId = defendingPlayers.filter { it in state.turnOrder }
+            .minByOrNull { state.lifeTotal(it) }
+            ?: defendingPlayers.first()
+        val opponentLife = if (opponentId in state.turnOrder) state.lifeTotal(opponentId) else 20
         val opponentCreatures = CombatMath.getOpponentUntappedCreatures(state, projected, opponentId)
         val mandatory = legalAction.mandatoryAttackers ?: emptyList()
 
@@ -167,7 +171,7 @@ class CombatAdvisor(
 
                 // Estimate opponent's crack-back damage through our optimal blocking.
                 // Accounts for evasion — flying creatures we can't block deal guaranteed damage.
-                val myLife = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
+                val myLife = state.lifeTotal(playerId)
                 val allOpponentAttackers = projected.getBattlefieldControlledBy(opponentId).filter {
                     projected.isCreature(it) && Keyword.DEFENDER.name !in projected.getKeywords(it)
                 }
@@ -250,7 +254,7 @@ class CombatAdvisor(
             return DeclareBlockers(playerId, emptyMap())
         }
 
-        val myLife = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
+        val myLife = state.lifeTotal(playerId)
 
         // Build mandatory blocker base (preserved across all plans)
         val mandatoryMap = mutableMapOf<EntityId, List<EntityId>>()
@@ -805,23 +809,27 @@ class CombatAdvisor(
         val baseScore = evaluator.evaluate(current, postProjected, playerId)
 
         // Estimate our next-turn attack potential: what damage can we push through?
-        val opponentId = state.soleOpponent(playerId) ?: return baseScore
+        // Scored against the opponent it pays off best against — in a pod we get to choose who to
+        // swing at, so the counter-attack is worth what its *best* target is worth. In 1v1 there is
+        // one opponent and this is the original single calculation.
         val myAttackers = CombatMath.getCreaturesThatCanAttack(current, postProjected, playerId)
-        val opponentBlockers = CombatMath.getOpponentUntappedCreatures(current, postProjected, opponentId)
-        val ourDamageThrough = if (myAttackers.isNotEmpty()) {
-            CombatMath.calculateDamageThroughOptimalBlocking(current, postProjected, myAttackers, opponentBlockers)
-        } else 0
-        val opponentLife = current.getEntity(opponentId)?.get<LifeTotalComponent>()?.life ?: 20
+        val counterAttackBonus = current.getOpponents(playerId).maxOfOrNull { opponentId ->
+            val opponentBlockers = CombatMath.getOpponentUntappedCreatures(current, postProjected, opponentId)
+            val ourDamageThrough = if (myAttackers.isNotEmpty()) {
+                CombatMath.calculateDamageThroughOptimalBlocking(current, postProjected, myAttackers, opponentBlockers)
+            } else 0
+            val opponentLife = current.lifeTotal(opponentId)
 
-        // Small bonus for blocking plans that preserve our attack potential.
-        // Nudges the AI toward blocks that keep our counter-attack alive.
-        val counterAttackBonus = if (ourDamageThrough >= opponentLife) {
-            3.0
-        } else if (ourDamageThrough > 0) {
-            ourDamageThrough.toDouble() * 0.15
-        } else {
-            0.0
-        }
+            // Small bonus for blocking plans that preserve our attack potential.
+            // Nudges the AI toward blocks that keep our counter-attack alive.
+            if (ourDamageThrough >= opponentLife) {
+                3.0
+            } else if (ourDamageThrough > 0) {
+                ourDamageThrough.toDouble() * 0.15
+            } else {
+                0.0
+            }
+        } ?: 0.0
 
         return baseScore + counterAttackBonus
     }
@@ -849,7 +857,6 @@ class CombatAdvisor(
 
         // Next-turn check: after taking this damage, would opponent's next attack kill us?
         val lifeAfter = myLife - incomingDamage
-        val opponentId = state.soleOpponent(playerId) ?: return false
 
         // Our blockers next turn: untapped creatures that aren't currently assigned to block
         // (conservatively — some may die in this combat, but this is a fast heuristic)
@@ -859,10 +866,29 @@ class CombatAdvisor(
                     state.getEntity(entityId)?.has<TappedComponent>() != true
             }
 
-        val nextTurnDamage = CombatMath.estimateNextTurnDamage(state, projected, opponentId, myBlockers)
+        val nextTurnDamage = incomingNextTurnDamage(state, projected, playerId, myBlockers)
         if (nextTurnDamage > 0 && lifeAfter <= nextTurnDamage) return true
 
         return false
+    }
+
+    /**
+     * Damage the most dangerous opposing *side* can push through [myBlockers] on its next turn.
+     *
+     * Summed within a team (CR 805.10 — teammates attack in one combat, against one set of
+     * blockers) but maxed across teams, because opposing teams attack on separate turns and we
+     * untap in between. In a two-player game this is one team of one player: the original call.
+     */
+    private fun incomingNextTurnDamage(
+        state: GameState,
+        projected: ProjectedState,
+        playerId: EntityId,
+        myBlockers: List<EntityId>
+    ): Int {
+        val sides = state.sidesFor(playerId) ?: return 0
+        return sides.opponents.maxOf { team ->
+            team.sumOf { CombatMath.estimateNextTurnDamage(state, projected, it, myBlockers) }
+        }
     }
 
     /**
@@ -997,8 +1023,8 @@ class CombatAdvisor(
             postProjected.isCreature(entityId) &&
                 postCombat.getEntity(entityId)?.has<TappedComponent>() != true
         }
-        val nextTurnDamage = CombatMath.estimateNextTurnDamage(postCombat, postProjected, opponentId, myBlockers)
-        val myLife = postCombat.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
+        val nextTurnDamage = incomingNextTurnDamage(postCombat, postProjected, playerId, myBlockers)
+        val myLife = postCombat.lifeTotal(playerId)
 
         // Light penalty for plans that leave us dead to the crack-back.
         // Keep this small — the base evaluator already scores life totals and threats.
