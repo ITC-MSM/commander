@@ -143,7 +143,25 @@ Also enabled by the **discarded-this-turn tracking** half (now implemented) but 
   Then **draw a card for each card you've discarded this turn**" — now expressible via
   `DynamicAmounts.cardsDiscardedThisTurn()`; a follow-up card.
 
-## Riot (keyword — enters with your choice of a +1/+1 counter or haste)
+## Riot (keyword — enters with your choice of a +1/+1 counter or haste) — ✅ IMPLEMENTED
+
+**Done** (branch `spm-spider-punk`). New `Keyword.RIOT` + a `CardBuilder.riot()` DSL helper modeling
+printed Riot via the Khans-Siege `EntersWithChoice(ChoiceType.MODE, [counter, haste])` pattern +
+mode-gated `EntersWithCounters(condition = SourceChosenModeIs("counter"))` + mode-gated
+`ConditionalStaticAbility(GrantKeyword(HASTE), SourceChosenModeIs("haste"))`. **Granted riot** ("Other
+Spiders you control have riot") is handled by a new `RiotSynthesis` helper: for a Spider cast as a
+spell it scans battlefield `GrantKeyword(RIOT)` lords (excludeSelf, deduped vs printed) and ORs a
+synthesized `EntersWithChoice` into the entry; for token/land entries it detects granted RIOT via
+projected `hasKeyword`; the resumers apply the chosen +1/+1-counter or Duration.Permanent-floating-haste
+branch directly (a granted creature has no printed statics). Wired into StackResolver /
+PermanentEntryReplacements / TokenFromDefinition / PlayLandHandler + both continuation resumers.
+"Spells and abilities can't be countered" = `GrantCantBeCountered(Any, includesAbilities = true)` (the
+new `includesAbilities` flag fizzles Stifle-type ability counters). "Damage can't be prevented" =
+`DamageCantBePrevented`. Scenario tests cover printed Riot (counter/haste), granted riot (a cast Spider
+gets the choice), and can't-be-countered. Full regression green. (Granted-riot synthesis for
+blink/reanimation entry paths is not wired — a rare edge, flagged.)
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Riot *(This creature enters with your choice of a +1/+1 counter or haste.)*
 
@@ -153,6 +171,8 @@ which requires Riot to exist as a grantable keyword. `add-feature` scope.
 
 Blocked cards:
 - **Spider-Punk** [92] — `{1}{R}` Riot; "Other Spiders you control have riot"; also "Spells and abilities can't be countered" + "Damage can't be prevented" (verify those two independently)
+
+</details>
 
 ## "Modified" state on a leaves-the-battlefield (last-known-information) trigger — ✅ IMPLEMENTED
 

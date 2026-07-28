@@ -48,13 +48,21 @@ data class GrantFlashToSpellType(
  * attempt fails.
  *
  * @property filter The filter that spells must match to be uncounterable
+ * @property includesAbilities When true, activated/triggered abilities matching [filter] also can't
+ *   be countered (Spider-Punk: "Spells **and abilities** can't be countered"). Default false — a
+ *   plain "spells can't be countered" grant leaves abilities counterable.
  */
 @SerialName("GrantCantBeCountered")
 @Serializable
 data class GrantCantBeCountered(
-    val filter: GameObjectFilter
+    val filter: GameObjectFilter,
+    val includesAbilities: Boolean = false
 ) : StaticAbility {
-    override val description: String = "${filter.description} spells can't be countered"
+    override val description: String = buildString {
+        append("${filter.description} spells")
+        if (includesAbilities) append(" and abilities")
+        append(" can't be countered")
+    }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
         return if (newFilter !== filter) copy(filter = newFilter) else this

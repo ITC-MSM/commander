@@ -305,7 +305,18 @@ data class EntersWithChoiceSpellContinuation(
      * this list to recover the name stored under
      * [com.wingedsheep.sdk.scripting.ChoiceSlot.CARD_NAME].
      */
-    val cardNames: List<String> = emptyList()
+    val cardNames: List<String> = emptyList(),
+    /**
+     * True when this MODE choice is a **synthesized Riot** choice granted to the entity (not printed
+     * on its card). The resumer then applies the chosen branch (a +1/+1 counter or a haste grant)
+     * directly, because a granted permanent has no printed `EntersWithCounters`/haste static.
+     */
+    val syntheticRiot: Boolean = false,
+    /**
+     * The number of *further* synthesized Riot choices to present after this one (CR 702.136b — each
+     * granted riot instance is a separate choice). The resumer re-pauses that many more times.
+     */
+    val syntheticRiotRemaining: Int = 0
 ) : ContinuationFrame
 
 /**
@@ -346,7 +357,11 @@ data class EntersWithChoiceOnBattlefieldContinuation(
     /** For [com.wingedsheep.sdk.scripting.ChoiceType.CARD_NAME] choices, the land card names
      *  presented (the resumer stores the chosen name by index). */
     val cardNames: List<String> = emptyList(),
-    val fromZone: Zone? = null
+    val fromZone: Zone? = null,
+    /** See [EntersWithChoiceSpellContinuation.syntheticRiot]. */
+    val syntheticRiot: Boolean = false,
+    /** See [EntersWithChoiceSpellContinuation.syntheticRiotRemaining]. */
+    val syntheticRiotRemaining: Int = 0
 ) : ContinuationFrame
 
 /**

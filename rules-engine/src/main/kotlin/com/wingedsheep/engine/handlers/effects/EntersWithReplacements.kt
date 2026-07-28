@@ -45,6 +45,58 @@ object EntersWithReplacements {
     private val conditionEvaluator = com.wingedsheep.engine.handlers.ConditionEvaluator()
 
     /**
+     * Apply a **granted-Riot** chosen branch to [entityId] (controlled by [controllerId]): the
+     * `counter` mode adds one +1/+1 counter (honoring counter-placement replacements); the `haste`
+     * mode grants a [Duration.Permanent] floating HASTE.
+     *
+     * This is a **deliberate parallel apply path**, not a duplicate: the printed `riot()` DSL applies
+     * its branch via a mode-gated `EntersWithCounters` and a mode-gated `ConditionalStaticAbility`
+     * that both live on the *printed card* and are read from its [CardDefinition]. A permanent that
+     * merely has RIOT *granted* ("Other Spiders you control have riot") has none of those statics on
+     * its own definition, so the printed path ([applyFromDefinition] / the layer system) has nothing
+     * to fire. The chosen branch is therefore assembled here from the same primitives the printed
+     * path uses ([ReplacementEffectUtils.applyCounterPlacementModifiers] for the counter,
+     * `addFloatingEffect(GrantKeyword(HASTE))` for haste), so the two paths stay behaviorally aligned.
+     */
+    fun applyGrantedRiotBranch(
+        state: GameState,
+        entityId: EntityId,
+        controllerId: EntityId,
+        modeId: String,
+        entityName: String,
+    ): Pair<GameState, List<GameEvent>> {
+        val context = EffectContext(sourceId = entityId, controllerId = controllerId)
+        val events = mutableListOf<GameEvent>()
+        return when (modeId) {
+            com.wingedsheep.sdk.dsl.RIOT_MODE_COUNTER -> {
+                val counterType = com.wingedsheep.sdk.core.CounterType.PLUS_ONE_PLUS_ONE
+                val count = ReplacementEffectUtils.applyCounterPlacementModifiers(
+                    state, entityId, counterType, 1, placerId = controllerId
+                )
+                if (count <= 0) return state to events
+                val current = state.getEntity(entityId)?.get<CountersComponent>() ?: CountersComponent()
+                var newState = state.updateEntity(entityId) { c -> c.with(current.withAdded(counterType, count)) }
+                val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(newState, entityId)
+                newState = afterMark
+                events.add(CountersAddedEvent(entityId, "+1/+1", count, entityName, firstThisTurn, placedBy = controllerId))
+                newState to events
+            }
+            com.wingedsheep.sdk.dsl.RIOT_MODE_HASTE -> {
+                val newState = state.addFloatingEffect(
+                    layer = Layer.ABILITY,
+                    modification = SerializableModification.GrantKeyword(com.wingedsheep.sdk.core.Keyword.HASTE.name),
+                    affectedEntities = setOf(entityId),
+                    duration = Duration.Permanent,
+                    context = context,
+                )
+                events.add(KeywordGrantedEvent(targetId = entityId, targetName = entityName, keyword = "haste", sourceName = entityName))
+                newState to events
+            }
+            else -> state to events
+        }
+    }
+
+    /**
      * Apply both the entering entity's own enters-with replacement effects (from its
      * [CardDefinition], looked up via [cardRegistry]) and any global ones sourced from other
      * battlefield permanents. Used by callers that put a permanent on the battlefield from a

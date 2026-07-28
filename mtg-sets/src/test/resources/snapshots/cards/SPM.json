@@ -10273,6 +10273,90 @@
     "colorIdentityOverride": []
 }
 
+// Spider-Punk
+{
+    "name": "Spider-Punk",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "Riot (This creature enters with your choice of a +1/+1 counter or haste.)\nOther Spiders you control have riot.\nSpells and abilities can't be countered.\nDamage can't be prevented.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "RIOT"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "SourceChosenModeIs",
+                    "modeId": "haste"
+                }
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "RIOT",
+                "filter": {
+                    "baseFilter": "creature Spider ctrl:you",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "GrantCantBeCountered",
+                "filter": {},
+                "includesAbilities": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "MODE",
+                "modeOptions": [
+                    {
+                        "id": "counter",
+                        "label": "A +1/+1 counter",
+                        "iconKey": "plusOneCounter"
+                    },
+                    {
+                        "id": "haste",
+                        "label": "Haste",
+                        "iconKey": "haste"
+                    }
+                ]
+            },
+            {
+                "type": "EntersWithCounters",
+                "count": 1,
+                "selfOnly": true,
+                "condition": {
+                    "type": "SourceChosenModeIs",
+                    "modeId": "counter"
+                }
+            },
+            "DamageCantBePrevented"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "RARE",
+        "artist": "Forrest Imel",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0bd41879-fcd4-4211-9b98-47e7cdba5399.jpg?1783905333"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Spider-Rex, Daring Dino
 {
     "name": "Spider-Rex, Daring Dino",
