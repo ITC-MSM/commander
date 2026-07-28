@@ -1040,6 +1040,109 @@
     ]
 }
 
+// Boommobile
+{
+    "name": "Boommobile",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "When this Vehicle enters, add four mana of any one color. Spend this mana only to activate abilities.\nExhaust — {X}{2}{R}: This Vehicle deals X damage to any target. Put a +1/+1 counter on this Vehicle. (Activate each exhaust ability only once.)\nCrew 2",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "restriction": "AbilityActivationOnly"
+                },
+                "descriptionOverride": "When this Vehicle enters, add four mana of any one color. Spend this mana only to activate abilities."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{X}{2}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": "XValue",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "This Vehicle deals X damage to any target. Put a +1/+1 counter on this Vehicle.",
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "113",
+        "rarity": "RARE",
+        "artist": "Alexandr Leskinen",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/930c8289-4043-401a-8a7f-22349b7148b4.jpg?1783907886",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "You may spend the four mana added by the first ability on the same ability or on multiple abilities."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Boosted Sloop
 {
     "name": "Boosted Sloop",
@@ -6359,6 +6462,70 @@
     ]
 }
 
+// Lightwheel Enhancements
+{
+    "name": "Lightwheel Enhancements",
+    "manaCost": "{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature or Vehicle\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nEnchanted permanent gets +1/+1 and has vigilance.\nMax speed — You may cast this card from your graveyard.",
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            },
+            {
+                "type": "MayCastSelfFromZones",
+                "zones": [
+                    "Graveyard"
+                ],
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature|Vehicle"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "artist": "Yeong-Hao Han",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/a/9ab169c1-4e25-4a5d-8961-4f06298c3781.jpg?1783907917",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "\"Max speed — [ability]\" means \"As long as you have max speed, this object has [ability].\" If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Locust Spray
 {
     "name": "Locust Spray",
@@ -6923,6 +7090,77 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// March of the World Ooze
+{
+    "name": "March of the World Ooze",
+    "manaCost": "{3}{G}{G}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Creatures you control have base power and toughness 6/6 and are Oozes in addition to their other types.\nWhenever an opponent casts a spell, if it's not their turn, you create a 3/3 green Elephant creature token.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Elephant"
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "IsPlayersTurn",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever an opponent casts a spell, if it's not their turn, you create a 3/3 green Elephant creature token."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CompositeStaticAbility",
+                "abilities": [
+                    {
+                        "type": "SetBasePowerToughnessStatic",
+                        "power": 6,
+                        "toughness": 6,
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    {
+                        "type": "GrantSubtype",
+                        "subtype": "Ooze",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "169",
+        "rarity": "MYTHIC",
+        "artist": "Helge C. Balzer",
+        "flavorText": "\"The fauna here functions as a planar antibody.\"\n—Rashmi, aether-seer",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/1/b1964ec5-0dd1-4b54-917c-cbeab05aba79.jpg?1783907868"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -9475,6 +9713,61 @@
     ]
 }
 
+// Riptide Gearhulk
+{
+    "name": "Riptide Gearhulk",
+    "manaCost": "{1}{W}{W}{U}{U}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Double strike\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nWhen this creature enters, for each opponent, put up to one target nonland permanent that player controls into its owner's library third from the top.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "keywords": [
+        "DOUBLE_STRIKE",
+        "PROWESS"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nonland permanent that player controls"
+                    },
+                    "destination": "Library",
+                    "positionFromTop": 2
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "nonland permanent ctrl:opponent"
+                    },
+                    "id": "target nonland permanent that player controls"
+                },
+                "descriptionOverride": "When this creature enters, for each opponent, put up to one target nonland permanent that player controls into its owner's library third from the top."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "MYTHIC",
+        "artist": "Artur Nakhodkin",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44bfb0f7-18ca-4f6e-ba64-92120010456e.jpg?1783907853"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Risen Necroregent
 {
     "name": "Risen Necroregent",
@@ -11029,6 +11322,109 @@
         "artist": "Maxime Minard",
         "flavorText": "The druid's aim was dead on. But their choice of target was dead wrong.",
         "imageUri": "https://cards.scryfall.io/normal/front/8/d/8dd4374f-0301-4b2e-bc99-2cd19568cb3b.jpg?1738359138"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Spikeshell Harrier
+{
+    "name": "Spikeshell Harrier",
+    "manaCost": "{4}{U}",
+    "typeLine": "Artifact Creature — Robot Turtle",
+    "oracleText": "When this creature enters, return target creature or Vehicle an opponent controls to its owner's hand. If that opponent's speed is greater than each other player's speed, reduce that opponent's speed by 1. This effect can't reduce their speed below 1.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature or Vehicle an opponent controls"
+                            },
+                            "destination": "Hand"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "CountPlayersWith",
+                                        "scope": "Each",
+                                        "condition": {
+                                            "type": "Compare",
+                                            "left": "Speed",
+                                            "operator": "GTE",
+                                            "right": {
+                                                "type": "Speed",
+                                                "player": {
+                                                    "type": "ControllerOf",
+                                                    "targetDescription": "target creature or Vehicle an opponent controls"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "operator": "EQ",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "ChangeSpeed",
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": {
+                                        "type": "ControllerOf",
+                                        "targetDescription": "target creature or Vehicle an opponent controls"
+                                    }
+                                },
+                                "amount": {
+                                    "type": "Multiply",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "multiplier": -1
+                                },
+                                "minimum": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature|Vehicle ctrl:opponent"
+                    },
+                    "id": "target creature or Vehicle an opponent controls"
+                },
+                "descriptionOverride": "When this creature enters, return target creature or Vehicle an opponent controls to its owner's hand. If that opponent's speed is greater than each other player's speed, reduce that opponent's speed by 1. This effect can't reduce their speed below 1."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "rarity": "UNCOMMON",
+        "artist": "Alfonso Santano",
+        "flavorText": "\"Target acquired. Resolution: Imminent impact.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f1ece22-ca32-45bb-b5f4-480f9b366cb5.jpg?1783907901"
     },
     "colorIdentityOverride": [
         "BLUE"
