@@ -1598,8 +1598,8 @@ object Effects {
 
     /**
      * Put a player-chosen number (0 up to [max]) of a single kind of counter on a target.
-     * "Put up to N [counterType] counters on target" — the additive mirror of
-     * [Effects.RemoveCountersUpTo] / [RemoveAnyNumberOfCountersEffect].
+     * "Put up to N [counterType] counters on target" — the single-kind mirror of
+     * [Effects.RemoveAnyNumberOfCounters] / [RemoveAnyNumberOfCountersEffect].
      */
     fun AddCountersUpTo(counterType: String, max: Int, target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
         AddCountersUpToEffect(counterType, DynamicAmount.Fixed(max), target)
@@ -1693,6 +1693,30 @@ object Effects {
      */
     fun RemoveCountersUpTo(maxCount: Int, target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
         com.wingedsheep.sdk.scripting.effects.RemoveAnyNumberOfCountersEffect(target, maxTotal = maxCount)
+
+    /**
+     * "[player] gets N [counterType] counters" (CR 122.1 — counters placed on a player rather
+     * than a permanent). Sugar for [AddCounters] targeting the player directly; no new plumbing —
+     * `AddCountersExecutor` already resolves player-shaped targets the same way it does for
+     * "that player gets two poison counters" (Virulent Silencer).
+     *
+     * "You get {E}{E}{E}" (three energy counters) is `GetEnergy(3)`.
+     */
+    fun GetEnergy(amount: Int, target: EffectTarget = EffectTarget.Controller): Effect =
+        AddCountersEffect(Counters.ENERGY, amount, target)
+
+    /**
+     * [player] pays any amount of [counterType] counters they currently have (CR 107.14's "pay
+     * {E}" generalized to a player-chosen amount and to any player-scoped counter kind), storing
+     * the paid amount in the pipeline under [storeAmountAs] for a later composed effect to read
+     * via `DynamicAmount.VariableReference(storeAmountAs)`.
+     *
+     * "you may pay any amount of {E}. [~] deals that much damage to that permanent." (Galvanic
+     * Discharge) composes as
+     * `Composite(PayCounters(Counters.ENERGY, storeAmountAs = "paid"), DealDamage(VariableReference("paid"), target))`.
+     */
+    fun PayCounters(counterType: String, player: Player = Player.You, storeAmountAs: String): Effect =
+        com.wingedsheep.sdk.scripting.effects.PayCountersEffect(counterType, player, storeAmountAs)
 
     /**
      * Move one counter of each kind on [source] that [destination] does not already have,

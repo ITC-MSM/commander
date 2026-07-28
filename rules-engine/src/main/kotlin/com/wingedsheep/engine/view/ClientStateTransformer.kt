@@ -1891,7 +1891,9 @@ class ClientStateTransformer(
             activeEffects = activeEffects,
             commanderDamage = buildCommanderDamage(state, playerId),
             // CR 702.179 — public information, and 0 for the overwhelming majority of games.
-            speed = state.speed(playerId)
+            speed = state.speed(playerId),
+            // CR 107.14 — public information like poison counters, and 0 outside energy decks.
+            energyCounters = container?.get<CountersComponent>()?.getCount(CounterType.ENERGY) ?: 0
         )
     }
 

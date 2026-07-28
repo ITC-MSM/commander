@@ -520,6 +520,20 @@ object DynamicAmounts {
      */
     fun speed(player: Player = Player.You): DynamicAmount = DynamicAmount.Speed(player)
 
+    /**
+     * How many counters of [counterType] a player currently has (CR 122.1 — counters placed on a
+     * player rather than a permanent). Poison, energy, and rad counters all live here.
+     */
+    fun playerCounterCount(counterType: String, player: Player = Player.You): DynamicAmount =
+        DynamicAmount.PlayerCounterCount(counterType, player)
+
+    /**
+     * A player's current energy counter total (CR 107.14) — "where X is the number of energy
+     * counters you have" (Longtusk Cub, Electrostatic Pummeler).
+     */
+    fun energyCount(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.PlayerCounterCount(com.wingedsheep.sdk.core.Counters.ENERGY, player)
+
     // =========================================================================
     // Entity property shortcuts (composable entity + property)
     // =========================================================================

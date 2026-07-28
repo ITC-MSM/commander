@@ -874,6 +874,26 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   with `maxTotal` set, not a separate effect: one `ChooseNumber` prompt per kind, each capped at
   `min(kind's count, remaining budget)`; prompting stops once the budget is spent. Used by Heartless Act's
   "Remove up to three counters from target creature."
+- **Player-scoped counters (CR 122.1, 107.14).** Every counter type above lives on a permanent/object. Poison,
+  energy, and rad counters instead live directly on a **player entity**, reusing the same `CountersComponent` —
+  no separate component or data model. `AddCountersExecutor` already resolves player-shaped targets (`that
+  player gets two poison counters`, Virulent Silencer), so a fixed grant needs no new vocabulary at all.
+  - `GetEnergy(amount, target = Controller)` — sugar for `AddCounters(Counters.ENERGY, amount, target)`. "You get
+    {E}{E}{E}" (three energy counters, CR 107.14) = `GetEnergy(3)`.
+  - `PayCounters(counterType, player = Player.You, storeAmountAs)` — a player pays any amount of `counterType`
+    counters they currently have (CR 107.14's "pay {E}" generalized to a player-chosen amount and to any
+    player-scoped counter kind). One `ChooseNumberDecision` (0..their current total; no prompt at all when they
+    have zero); paying is always optional down to 0. The paid amount is removed and stored in the pipeline under
+    `storeAmountAs`, readable downstream via `VariableReference(storeAmountAs)` — same convention as
+    `DrawUpTo.storeNotDrawnAs`. Galvanic Discharge (MH3): `Composite(GetEnergy(3), PayCounters(Counters.ENERGY,
+    storeAmountAs = "paid"), DealDamage(VariableReference("paid"), target))`. Paying 0 is legal and does nothing
+    (2024-06-07 ruling: "You may pay zero {E}... won't deal any damage"); if the spell's target becomes illegal
+    before resolution the whole spell fizzles per the normal CR 608.2b check, so no energy is gained either.
+  - `DynamicAmount.PlayerCounterCount(counterType, player = Player.You)` / `DynamicAmounts.playerCounterCount(...)`
+    — how many counters of `counterType` a player currently has; the player-scoped sibling of
+    `EntityProperty(entity, CounterCount(filter))` (which has no case for "a player" — `EntityReference` only
+    resolves permanents/objects). `DynamicAmounts.energyCount(player)` is sugar for the energy case — "where X is
+    the number of energy counters you have" (Longtusk Cub, Electrostatic Pummeler).
 - `ConvertCountersToTokensEffect(counterType = +1/+1, tokenFactory)` — "remove any number of `counterType`
   counters from this permanent; for each removed, create one token." Prompts for `0..(count on source)`,
   removes that many, then mints exactly that many tokens from `tokenFactory` (its own `count` is ignored).

@@ -1014,6 +1014,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 // bottom-seat orb already does.
                 spectatorMode={viewerIsObserver}
                 poisonCounters={effectiveOpponent.poisonCounters}
+                energyCounters={effectiveOpponent.energyCounters ?? 0}
                 commanderDamage={effectiveOpponent.commanderDamage ?? []}
                 handSize={effectiveOpponent.handSize}
                 maxHandSize={effectiveOpponent.maxHandSize}
@@ -1102,7 +1103,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             <>
               {/* When another seat is anchored here (eliminated spectator), the orb is
                   spectator-shaped: no "You" role tag, no player-click handling. */}
-              <LifeDisplay life={bottomHudPlayer.life} isPlayer playerId={bottomHudPlayer.playerId} playerName={bottomHudPlayer.name} spectatorMode={spectatorMode || eliminatedBottomSeat != null} poisonCounters={bottomHudPlayer.poisonCounters} commanderDamage={bottomHudPlayer.commanderDamage ?? []} handSize={bottomHudPlayer.handSize} maxHandSize={bottomHudPlayer.maxHandSize} {...(isMulti ? { seatColor: bottomHudSeatColor.base } : {})} />
+              <LifeDisplay life={bottomHudPlayer.life} isPlayer playerId={bottomHudPlayer.playerId} playerName={bottomHudPlayer.name} spectatorMode={spectatorMode || eliminatedBottomSeat != null} poisonCounters={bottomHudPlayer.poisonCounters} energyCounters={bottomHudPlayer.energyCounters ?? 0} commanderDamage={bottomHudPlayer.commanderDamage ?? []} handSize={bottomHudPlayer.handSize} maxHandSize={bottomHudPlayer.maxHandSize} {...(isMulti ? { seatColor: bottomHudSeatColor.base } : {})} />
               <SpeedGauge speed={bottomHudPlayer.speed ?? 0} />
               {!responsive.isMobile && <ActiveEffectsBadges effects={bottomHudPlayer.activeEffects} />}
               {!responsive.isMobile && bottomHudPlayer.manaPool && <ManaPool manaPool={bottomHudPlayer.manaPool} />}

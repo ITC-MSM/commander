@@ -37,6 +37,7 @@ object Bridge {
             manaCountersAndState()
             triggersCostsAndContinuous()
             speed()
+            energy()
         }.build()
     }
 

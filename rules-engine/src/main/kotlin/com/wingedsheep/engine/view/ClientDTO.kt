@@ -658,7 +658,14 @@ data class ClientPlayer(
      * Public information — speed is a visible player designation like poison counters, so it is not
      * masked. Defaulted so every non-Aetherdrift game serializes it away and the field costs nothing.
      */
-    val speed: Int = 0
+    val speed: Int = 0,
+
+    /**
+     * This player's current energy counter total (Kaladesh block onward, CR 107.14). Public
+     * information like poison counters, so it is not masked. Defaulted so every non-energy game
+     * serializes it away and the field costs nothing.
+     */
+    val energyCounters: Int = 0
 )
 
 /**

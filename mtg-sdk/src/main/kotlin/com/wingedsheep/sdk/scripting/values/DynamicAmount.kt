@@ -390,6 +390,25 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * How many counters of [counterType] a player currently has — the player-scoped sibling of
+     * [EntityProperty]'s [com.wingedsheep.sdk.scripting.values.EntityNumericProperty.CounterCount]
+     * (which reads a permanent/object; `EntityReference` has no case for "a player" since players
+     * aren't targeted the way permanents are). Counters placed directly on a player rather than a
+     * permanent (CR 122.1) — poison ([com.wingedsheep.sdk.core.Counters.POISON]), energy
+     * ([com.wingedsheep.sdk.core.Counters.ENERGY], CR 107.14), and rad counters all live here.
+     *
+     * Examples:
+     * ```kotlin
+     * PlayerCounterCount(Counters.ENERGY, Player.You)  // "your energy counters" — Longtusk Cub
+     * ```
+     */
+    @SerialName("PlayerCounterCount")
+    @Serializable
+    data class PlayerCounterCount(val counterType: String, val player: Player = Player.You) : DynamicAmount {
+        override val description: String = "${player.possessive} $counterType counters"
+    }
+
+    /**
      * The starting life total of a player (e.g., 20 in standard, 40 in commander).
      * Used for conditions like "life total ≤ half your starting life total".
      */
