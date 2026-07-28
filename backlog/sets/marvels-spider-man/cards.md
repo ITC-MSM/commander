@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 181 / 188
+**Implemented:** 182 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -166,7 +166,7 @@
 - [x] Terrific Team-Up
 - [ ] The Clone Saga
 - [x] The Death of Gwen Stacy
-- [ ] The Soul Stone
+- [x] The Soul Stone
 - [x] The Spot's Portal
 - [x] The Spot, Living Portal
 - [x] Thwip!

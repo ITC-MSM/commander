@@ -69,7 +69,18 @@ Blocked cards:
 
 </details>
 
-## Harness / Infinity Stone ∞ ability
+## Harness / Infinity Stone ∞ ability — ✅ IMPLEMENTED
+
+**Done** (branch `spm-soul-stone`). Modeled composition-first: "Harness" is a binary marker counter
+(`Counters.HARNESS`, a new `CounterType` enum value — the only new vocabulary). The Harness activated
+ability places one via `Effects.AddCounters`; the `∞` triggered ability is gated on the permanent
+having a harness counter (`Conditions.SourceHasCounter(CounterTypeFilter.Named(Counters.HARNESS))`),
+so it's dormant until harnessed and reactivates each qualifying trigger thereafter. A counter (not a
+durable component) matches the flavor — it resets if the permanent leaves, and re-placing is
+idempotent. No new engine executor/handler needed. Scenario test pins the gating (reanimates only
+while harnessed).
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > `{cost}, {T}, Exile a creature you control: Harness <this>. (Once harnessed, its ∞ ability
 > is active.)` — ∞ — <ongoing ability>
@@ -80,6 +91,8 @@ static/triggered ability). `add-feature` territory.
 
 Blocked cards:
 - **The Soul Stone** [66] — `{1}{B}` Legendary Artifact — Infinity Stone; harness → `∞` upkeep reanimation
+
+</details>
 
 ## Mayhem (new keyword — self graveyard-cast gated on "you discarded this card this turn") — ✅ IMPLEMENTED
 
