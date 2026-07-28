@@ -5255,6 +5255,14 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   in your graveyard has flashback … equal to that card's mana cost") and one for
   `InstantOrSorcery.withSubtype(Lesson)` with `cost = {1}` ("each Lesson card in your graveyard has
   flashback {1}"), both `duringYourTurnOnly = true`.
+- `GraveyardCardsHaveMayhem(filter, cost = null, duringYourTurnOnly = false)` — the Mayhem (CR 702.187)
+  analogue of `GraveyardCardsHaveFlashback`: a whole-graveyard group grant of the Mayhem keyword to
+  every graveyard card matching `filter`. `cost = null` means "mayhem cost equal to that card's mana
+  cost". Read through the shared `MayhemGrants.effectiveMayhem` resolver (enumerator, cast cost,
+  permission), which now scans the battlefield for this static; the mayhem discarded-this-turn gate
+  still applies, and (unlike flashback) the spell is not exiled on resolution. Used by Green Goblin's
+  "Goblin Formula — Each nonland card in your graveyard has mayhem. The mayhem cost is equal to its
+  mana cost" (`GraveyardCardsHaveMayhem(GameObjectFilter.Nonland)`).
 - `GrantMayCastFromLinkedExile(filter = Nonland, duringYourTurnOnly = false, additionalCost = null, ownedByYou = false, withoutPayingManaCost = false, oncePerTurn = false, maxManaValue = null, exiledThisTurnOnly = false, entersWithCounter = null)`
   — "you may cast cards exiled with this permanent" — reads the source's `LinkedExileComponent` (Rona,
   Disciple of Gix; Maralen, Fae Ascendant; Dawnhand Dissident). Casting spells from linked exile is

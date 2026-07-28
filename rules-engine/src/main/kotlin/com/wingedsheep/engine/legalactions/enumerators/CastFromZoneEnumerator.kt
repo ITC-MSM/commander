@@ -1379,7 +1379,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
             if (cardComponent.typeLine.isLand) continue
             val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
 
-            val mayhem = MayhemGrants.effectiveMayhem(state, cardId, cardDef) ?: continue
+            val mayhem = MayhemGrants.effectiveMayhem(
+                state, cardId, cardDef, playerId, context.cardRegistry, context.predicateEvaluator
+            ) ?: continue
 
             // Timing: Mayhem grants no permission — instants/flash any time, else sorcery speed.
             val isInstant = cardComponent.typeLine.isInstant

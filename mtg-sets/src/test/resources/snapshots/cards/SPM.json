@@ -5728,6 +5728,165 @@
     "colorIdentityOverride": []
 }
 
+// Norman Osborn
+{
+    "name": "Norman Osborn",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Human Scientist Villain",
+    "oracleText": "Norman Osborn can't be blocked.\nWhenever Norman Osborn deals combat damage to a player, he connives. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on this creature.)\n{1}{U}{B}{R}: Transform Norman Osborn. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "connive_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "connive_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "connive_discarded",
+                            "prompt": "Choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "connive_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "connive_discarded",
+                            "ifNotEmpty": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Connive"
+                },
+                "descriptionOverride": "Whenever Norman Osborn deals combat damage to a player, he connives."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{U}{B}{R}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Norman Osborn. Activate only as a sorcery."
+            }
+        ],
+        "staticAbilities": [
+            "CantBeBlocked"
+        ]
+    },
+    "backFace": {
+        "name": "Green Goblin",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Goblin Human Villain",
+        "oracleText": "Flying, menace\nSpells you cast from your graveyard cost {2} less to cast.\nGoblin Formula — Each nonland card in your graveyard has mayhem. The mayhem cost is equal to its mana cost. (You may cast a card from your graveyard for its mayhem cost if you discarded it this turn. Timing rules still apply.)",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "keywords": [
+            "FLYING",
+            "MENACE"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ModifySpellCost",
+                    "target": {
+                        "type": "YouCastFromZones",
+                        "zones": [
+                            "Graveyard"
+                        ]
+                    },
+                    "modification": {
+                        "type": "ReduceGeneric",
+                        "amount": 2
+                    }
+                },
+                {
+                    "type": "GraveyardCardsHaveMayhem",
+                    "filter": "nonland"
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "39",
+            "rarity": "MYTHIC",
+            "artist": "Scott M. Fischer",
+            "imageUri": "https://cards.scryfall.io/normal/back/d/5/d5c53af9-7150-4e78-8771-2de7980aa307.jpg?1783905356"
+        },
+        "colorIdentityOverride": [
+            "BLUE",
+            "BLACK",
+            "RED"
+        ],
+        "colorIndicator": [
+            "BLUE",
+            "BLACK",
+            "RED"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "rarity": "MYTHIC",
+        "artist": "Scott M. Fischer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d5c53af9-7150-4e78-8771-2de7980aa307.jpg?1783905356"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Ominous Asylum
 {
     "name": "Ominous Asylum",

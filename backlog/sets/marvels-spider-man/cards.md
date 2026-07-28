@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 183 / 188
+**Implemented:** 184 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -80,7 +80,7 @@
 - [x] Mysterio's Phantasm
 - [x] Mysterio, Master of Illusion
 - [x] News Helicopter
-- [ ] Norman Osborn // Green Goblin
+- [x] Norman Osborn // Green Goblin
 - [x] Ominous Asylum
 - [x] Origin of Spider-Man
 - [x] Oscorp Industries

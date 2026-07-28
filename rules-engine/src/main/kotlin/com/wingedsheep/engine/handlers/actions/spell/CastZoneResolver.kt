@@ -390,7 +390,10 @@ class CastZoneResolver(
         // Lands use the no-cost "play from graveyard" form (CR 702.187c), not the cast path.
         if (cardComponent.typeLine.isLand) return false
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-        if (com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef) == null) return false
+        if (com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(
+                state, cardId, cardDef, playerId, cardRegistry, predicateEvaluator
+            ) == null
+        ) return false
         // The Mayhem gate: you must have discarded this card this turn.
         return state.getEntity(playerId)
             ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
@@ -403,7 +406,9 @@ class CastZoneResolver(
     fun getMayhemCost(cardId: EntityId, state: GameState): com.wingedsheep.sdk.core.ManaCost? {
         val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-        return com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef)?.cost
+        return com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(
+            state, cardId, cardDef, cardComponent.ownerId, cardRegistry, predicateEvaluator
+        )?.cost
     }
 
     /**

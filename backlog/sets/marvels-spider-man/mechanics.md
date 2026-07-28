@@ -128,9 +128,12 @@ Still blocked (not on Mayhem itself):
   graveyard land-plays (lands bypass `ZoneTransitionService`).
 - **Ultimate Green Goblin** [157] — `{1}{B/R}{B/R}` Mayhem `{2}{B/R}`; the upkeep "discard a card, then create a
   Treasure" is expressible, but was not authored in this batch — a straightforward follow-up now that Mayhem exists.
-- **Norman Osborn // Green Goblin** [39] — transform DFC; back's "Goblin Formula" grants Mayhem (cost = mana cost) to
-  every nonland card in your graveyard — blocked on transform + a **group `GraveyardCardsHaveMayhem` grant**
-  (`MayhemGrants` already reads per-entity grants, so the group-grant static is the remaining piece).
+- **Norman Osborn // Green Goblin** [39] — ✅ DONE (branch `spm-norman-osborn`). Transform DFC (front: unblockable +
+  connive-on-combat-damage + sorcery-speed transform; all pre-existing). Back's "Goblin Formula" is the new
+  `GraveyardCardsHaveMayhem(filter, cost?)` static (mirrors `GraveyardCardsHaveFlashback`): `MayhemGrants.effectiveMayhem`
+  now also scans the battlefield for it (group grant → per-entity → printed), threaded through the four cast read sites,
+  still gated on discarded-this-turn. Back's gy-cast `{2}` reduction is a plain `ModifySpellCost(YouCastFromZones(GRAVEYARD))`.
+  Scenario test pins the group-granted mayhem (grant on, grant off, discard-gate).
 
 Also enabled by the **discarded-this-turn tracking** half (now implemented) but not yet authored:
 - **Green Goblin, Revenant** [130] — `{3}{B}{R}` Flying/deathtouch; "Whenever Green Goblin attacks, discard a card.

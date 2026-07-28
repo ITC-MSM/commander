@@ -856,11 +856,11 @@ class CastSpellHandler(
                 // applied afterward via alternativePayment.
                 costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, harmonizeAbility.cost, action.playerId)
             } else if (action.altAllows(AlternativeCostType.MAYHEM) &&
-                MayhemGrants.effectiveMayhem(state, action.cardId, cardDef) != null &&
+                MayhemGrants.effectiveMayhem(state, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null &&
                 zoneResolver.hasMayhemPermission(state, action.playerId, action.cardId)) {
                 // Mayhem cost (CR 702.187) — cast from graveyard for its mayhem cost.
                 costCalculator.calculateEffectiveCostWithAlternativeBase(
-                    state, cardDef, MayhemGrants.effectiveMayhem(state, action.cardId, cardDef)!!.cost, action.playerId
+                    state, cardDef, MayhemGrants.effectiveMayhem(state, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)!!.cost, action.playerId
                 )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
@@ -2113,11 +2113,11 @@ class CastSpellHandler(
             } else if (action.altAllows(AlternativeCostType.HARMONIZE) && harmonizeAbility != null && zoneResolver.hasHarmonizePermission(currentState, action.playerId, action.cardId)) {
                 costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, harmonizeAbility.cost, action.playerId)
             } else if (action.altAllows(AlternativeCostType.MAYHEM) &&
-                MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef) != null &&
+                MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null &&
                 zoneResolver.hasMayhemPermission(currentState, action.playerId, action.cardId)) {
                 // Mayhem cost (CR 702.187) — cast from graveyard for its mayhem cost.
                 costCalculator.calculateEffectiveCostWithAlternativeBase(
-                    currentState, cardDef, MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef)!!.cost, action.playerId
+                    currentState, cardDef, MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)!!.cost, action.playerId
                 )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
@@ -3118,7 +3118,7 @@ class CastSpellHandler(
         // Drives Sandman's Quicksand's "if this spell's mayhem cost was paid" rider.
         val wasMayhem = action.useAlternativeCost && cardDef != null &&
             action.altAllows(AlternativeCostType.MAYHEM) &&
-            MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef) != null &&
+            MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null &&
             currentState.getEntity(action.playerId)
                 ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
                 ?.cardIds?.contains(action.cardId) == true

@@ -392,6 +392,35 @@ data class GraveyardCardsHaveFlashback(
 }
 
 /**
+ * "Each [filter] card in your graveyard has mayhem [cost]." The Mayhem analogue of
+ * [GraveyardCardsHaveFlashback] — a whole-graveyard group grant of the Mayhem keyword ability
+ * (CR 702.187), read through `MayhemGrants.effectiveMayhem` alongside the discarded-this-turn gate.
+ * Green Goblin's "Goblin Formula — Each nonland card in your graveyard has mayhem. The mayhem cost
+ * is equal to its mana cost."
+ *
+ * @property filter Which graveyard cards gain mayhem (matched against the card's characteristics).
+ * @property cost The granted mayhem cost, or null for "equal to that card's mana cost".
+ * @property duringYourTurnOnly If true, the grant is active only during the controller's turn.
+ */
+@SerialName("GraveyardCardsHaveMayhem")
+@Serializable
+data class GraveyardCardsHaveMayhem(
+    val filter: GameObjectFilter,
+    val cost: ManaCost? = null,
+    val duringYourTurnOnly: Boolean = false
+) : StaticAbility {
+    override val description: String = buildString {
+        if (duringYourTurnOnly) append("During your turn, e") else append("E")
+        append("ach ${filter.description} card in your graveyard has mayhem")
+        if (cost != null) append(" $cost")
+    }
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * "Creature cards in your graveyard have sneak [cost]. You may cast creature spells from your
  * graveyard using their sneak abilities." (Ninja Teen level 3.)
  *
