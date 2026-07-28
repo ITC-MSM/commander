@@ -505,6 +505,27 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * The total damage dealt to the ability's source this turn, read as last-known information —
+     * "where X is the amount of damage dealt to it this turn" (Tangled Colony).
+     *
+     * Backed by the same per-turn tally the engine already keeps on every permanent that is dealt
+     * damage (summed per source-controller and captured onto the `ZoneChangeEvent` when the
+     * permanent leaves the battlefield), so it reads correctly from a dies/leaves trigger where
+     * the entity itself is already gone. Summing that map gives the total from *all* sources; the
+     * per-player split is what
+     * [com.wingedsheep.sdk.scripting.effects.EachPlayerDrawsForDamageDealtToSourceEffect]
+     * (Grothama, All-Devouring) uses instead.
+     *
+     * Evaluates to `0` when no snapshot is present — including for a source still on the
+     * battlefield, since the tally is only captured on the way out.
+     */
+    @SerialName("LastKnownDamageDealtToSource")
+    @Serializable
+    data object LastKnownDamageDealtToSource : DynamicAmount {
+        override val description: String = "the amount of damage dealt to it this turn"
+    }
+
+    /**
      * The value of `{X}` this object was cast with, read off the *current object* regardless of
      * what zone it is in.
      *

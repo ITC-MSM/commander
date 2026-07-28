@@ -1596,6 +1596,16 @@ class TriggerMatcher(
                 )
             }
         }
+        // Cast as an Adventure (CR 715.3): an ADVENTURE-layout card declares exactly one face —
+        // the Adventure — so a recorded faceIndex on an adventurer card means the alternative
+        // characteristics were used. Casting the same card as its creature half leaves faceIndex
+        // null and does not match.
+        SpellCastPredicate.CastAsAdventure -> {
+            val spellComponent = state.getEntity(event.spellEntityId)?.get<SpellOnStackComponent>()
+            val hasAdventure = state.getEntity(event.spellEntityId)
+                ?.get<CardComponent>()?.hasAdventure == true
+            hasAdventure && spellComponent?.faceIndex != null
+        }
         SpellCastPredicate.NotOwnedByController -> {
             val ownerId = state.getEntity(event.spellEntityId)
                 ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()
