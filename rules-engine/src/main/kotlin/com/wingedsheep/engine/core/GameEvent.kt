@@ -883,6 +883,18 @@ data class TappedEvent(
 ) : GameEvent
 
 /**
+ * A permanent was exerted (CR 701.39a) — it won't untap during its controller's next untap step.
+ * Lets animations and "whenever you exert a permanent" reactions (none printed yet) fire instead
+ * of the state changing silently.
+ */
+@Serializable
+@SerialName("ExertedEvent")
+data class ExertedEvent(
+    val entityId: EntityId,
+    val entityName: String
+) : GameEvent
+
+/**
  * A permanent became saddled (CR 702.171b) — a Saddle ability resolved. Lets animations and
  * "whenever this becomes saddled" triggers react instead of the state changing silently.
  *

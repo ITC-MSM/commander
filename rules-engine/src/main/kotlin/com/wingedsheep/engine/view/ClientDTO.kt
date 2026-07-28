@@ -248,6 +248,9 @@ data class ClientCard(
     val hasSummoningSickness: Boolean,
     val isTransformed: Boolean,
 
+    /** Exerted (CR 701.39a) — won't untap during its controller's next untap step. */
+    val isExerted: Boolean = false,
+
     /** Phased out (Rule 702.26) — treated as though it doesn't exist; rendered translucent */
     val isPhasedOut: Boolean = false,
 

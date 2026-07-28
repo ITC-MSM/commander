@@ -84,6 +84,7 @@ class CostHandler {
             is AbilityCost.Untap -> {
                 state.getEntity(sourceId)!!.has<TappedComponent>()
             }
+            is AbilityCost.Exert -> true // CR 701.39b — always payable regardless of tapped/exerted state.
             is AbilityCost.PayXLife -> {
                 // X can be 0, so this is always payable as long as the player has a life total.
                 // maxAffordableX is capped by life total in calculateMaxAffordableX.
@@ -243,6 +244,18 @@ class CostHandler {
                 // counter correctly replaces the untap (CR 122.1d) instead of being ignored.
                 val (newState, events) = untapOrConsumeStun(state, sourceId)
                 CostPaymentResult.success(newState, manaPool, events)
+            }
+            is AbilityCost.Exert -> {
+                // CR 701.39b: exerting an already-exerted permanent is legal but doesn't stack —
+                // only emit ExertedEvent (and only mutate state) the first time this turn cycle.
+                val container = state.getEntity(sourceId)
+                if (container?.has<ExertedComponent>() == true) {
+                    CostPaymentResult.success(state, manaPool)
+                } else {
+                    val cardName = container?.get<CardComponent>()?.name ?: "Permanent"
+                    val newState = state.updateEntity(sourceId) { it.with(ExertedComponent) }
+                    CostPaymentResult.success(newState, manaPool, listOf(ExertedEvent(sourceId, cardName)))
+                }
             }
             is AbilityCost.PayXLife -> {
                 val amount = choices.xValue

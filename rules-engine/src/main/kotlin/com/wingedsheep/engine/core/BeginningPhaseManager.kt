@@ -8,6 +8,7 @@ import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.SagaComponent
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.ExertedComponent
 import com.wingedsheep.engine.state.components.battlefield.PhasedOutComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -102,8 +103,15 @@ class BeginningPhaseManager(
         // Temporal Distortion's hourglass counters route through DOESNT_UNTAP via a
         // counter-keyed static ability (so the restriction is projection-scoped and
         // disappears if Temporal Distortion leaves play).
+        //
+        // Exerted permanents (CR 701.39a, ExertedComponent — a one-shot per-object marker, not a
+        // continuous static ability) are filtered the same way. Unlike DOESNT_UNTAP, the marker is
+        // cleared unconditionally below regardless of whether this filter actually skipped an
+        // untap (2024-06-07 ruling: an exerted-but-already-untapped permanent's marker still
+        // expires having done nothing).
         val permanentsAfterCantUntap = permanentsToUntap.filter { entityId ->
-            !projected.doesntUntapDuringUntapStep(entityId)
+            !projected.doesntUntapDuringUntapStep(entityId) &&
+                newState.getEntity(entityId)?.has<ExertedComponent>() != true
         }
 
         // Check if any permanents have MAY_NOT_UNTAP keyword (e.g., Everglove Courier)
@@ -260,6 +268,18 @@ class BeginningPhaseManager(
         }.keys
         for (entityId in enteredThisTurn) {
             newState = newState.updateEntity(entityId) { it.without<EnteredThisTurnComponent>() }
+        }
+
+        // Clear exert markers (CR 701.39a — "your next untap step") for every permanent the
+        // active team controls, unconditionally: an exerted permanent that was already untapped
+        // (or already had its untap replaced/skipped above) still has the marker expire here per
+        // the 2024-06-07 ruling, having prevented nothing. Scoped to the active team, not every
+        // permanent, since exert only ever refers to its controller's own next untap step.
+        val exertedForActiveTeam = newState.entities.filter { (entityId, container) ->
+            container.has<ExertedComponent>() && projectedAfterUntap.getController(entityId) in activeTeam
+        }.keys
+        for (entityId in exertedForActiveTeam) {
+            newState = newState.updateEntity(entityId) { it.without<ExertedComponent>() }
         }
 
         // Wipe "put into a graveyard this turn" markers on every turn boundary so the

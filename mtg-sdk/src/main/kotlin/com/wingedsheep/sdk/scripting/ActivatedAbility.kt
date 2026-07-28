@@ -201,6 +201,21 @@ sealed interface AbilityCost : TextReplaceable<AbilityCost> {
     }
 
     /**
+     * Exert this permanent (CR 701.39a) — choose to have it not untap during your next untap
+     * step. Always payable: a permanent can be exerted even if it's untapped or was already
+     * exerted this turn (701.39b); exerting it more than once before the next untap step doesn't
+     * stack multiple skips (they all expire at that same untap step). Used as a component of an
+     * activated ability's cost — e.g. Arena of Glory's "{R}, {T}, Exert this land: ...". Distinct
+     * from the "you may exert [this] as it attacks" attack-cost template (701.39d), which is a
+     * separate optional-cost-to-attack shape, not an ability cost.
+     */
+    @SerialName("CostExert")
+    @Serializable
+    data object Exert : AbilityCost {
+        override val description: String = "Exert this permanent"
+    }
+
+    /**
      * Pay X life, where X is the value chosen for the ability's `{X}` mana cost.
      *
      * Mirrors [ExileXFromGraveyard]: an X-linked variable cost that reads the chosen

@@ -55,6 +55,11 @@ object Costs {
      */
     val Untap: AbilityCost = AbilityCost.Untap
 
+    /**
+     * Exert this permanent (CR 701.39a) — it won't untap during your next untap step.
+     */
+    val Exert: AbilityCost = AbilityCost.Exert
+
     // =========================================================================
     // Mana Costs
     // =========================================================================

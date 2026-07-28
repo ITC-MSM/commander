@@ -306,6 +306,14 @@ sealed interface ClientEvent {
     ) : ClientEvent
 
     @Serializable
+    @SerialName("permanentExerted")
+    data class PermanentExerted(
+        val permanentId: EntityId,
+        val permanentName: String,
+        override val description: String = "$permanentName was exerted — it won't untap next turn"
+    ) : ClientEvent
+
+    @Serializable
     @SerialName("permanentUntapped")
     data class PermanentUntapped(
         val permanentId: EntityId,
@@ -979,6 +987,11 @@ object ClientEventTransformer {
             )
 
             is BecameSaddledEvent -> ClientEvent.PermanentSaddled(
+                permanentId = event.entityId,
+                permanentName = event.entityName
+            )
+
+            is ExertedEvent -> ClientEvent.PermanentExerted(
                 permanentId = event.entityId,
                 permanentName = event.entityName
             )
