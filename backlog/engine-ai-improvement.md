@@ -412,13 +412,14 @@ Files: `ai/src/test/.../puzzles/{AiPuzzle,PuzzleRunner,PuzzleSuiteTest}.kt` + `c
 >    member's own `LifeTotalComponent` is never written again after setup. `LifeDifferential` read it
 >    directly, so for half the table the life differential was **frozen at the starting 30 for the
 >    whole game**. Everything now reads `state.lifeTotal()` and values a side per *life pool*.
-> 3. **`GameState.turnNumber` stops advancing after the first elimination.** `TurnManager.startTurn`
->    only increments it for `turnOrder.first()`, and `turnOrder` keeps eliminated players — so a pod
->    plays on for twenty more turns at "turn 16". The arena's wedge detector and length cap both keyed
->    on it and declared every healthy three-way endgame stuck; they now count player-turn handovers.
->    **The engine-side consequence is not fixed and is not an AI question**: delayed triggers and
->    every other `turnNumber + 1` reading of "next turn" inherit the same freeze. That belongs in
->    `backlog/multiplayer.md`.
+> 3. **`GameState.turnNumber` stopped advancing after the first elimination.**
+>    `TurnManager.startTurn` only incremented it for `turnOrder.first()`, and `turnOrder` keeps
+>    eliminated players — so a pod played on for twenty more turns at "turn 16". The arena's wedge
+>    detector and length cap both keyed on it and declared every healthy three-way endgame stuck.
+>    **Fixed in the engine since**: `turnNumber` now counts player turns, so it advances on every
+>    turn at any table size and the harness reads it directly again. The same freeze had reached
+>    delayed triggers and every other `turnNumber + 1` reading of "next turn" — see
+>    `backlog/multiplayer.md` for that half.
 > 4. **No `AiProfile` flag, deliberately.** In 1v1 the new code is bit-identical by construction (one
 >    opposing side of one player, short-circuited before the fold), which `FrozenBaselineTest` and the
 >    unchanged 39/48 puzzle score both confirm. In multiplayer the old behaviour was a bug, not a
@@ -975,7 +976,7 @@ two phases' worth of assumed work.
 | **Combat's 1 s cap fights the global budget** | Blocking puzzle category; per-tier latency logging | Combat declaration is always CRITICAL; keep `MAX_BLOCK_SIMULATIONS = 10` as a floor, not a ceiling |
 | **`GameSimulator.isResolving` / `decisionResolver` thread-safety** | Nondeterminism across arena reruns at the same seed | One `AIPlayer` per *seat* per game, never shared. `ArenaHarnessTest` asserts identical outcomes at 8 threads and at 1 — **green as of Phase 1**, so the AI is deterministic today. `PlayoutEngine` must own its own processor when Phase 7 lands |
 | **A pod result is read against 50%** | Certain to happen — every other number in this plan is | The null is **1/teams**: 33% at `ffa3`, 25% at `ffa4`, 50% at `2hg`. `ArenaReport.podSummary` prints the null on the same line as the win share and states it in the verdict sentence |
-| **A multiplayer harness trusts `GameState.turnNumber`** | Every pod game reads as wedged after the first elimination | `turnNumber` only advances for `turnOrder.first()`, who may be dead. Count player-turn handovers. **Closed for the arena in Phase 3**; still open for engine code that reads "next turn" as `turnNumber + 1` (`backlog/multiplayer.md`) |
+| **A multiplayer harness trusts `GameState.turnNumber`** | Used to read every pod game as wedged after the first elimination | `turnNumber` was a round counter that only advanced for `turnOrder.first()`, who may be dead. **Closed**: it counts player turns now, so it is a sound clock at any table size (`backlog/multiplayer.md`) |
 | **Persistent collections break persisted sessions / committed replays** | `GameStateSerializationFormatStabilityTest` golden JSON | Serializers delegate to standard `MapSerializer`/`ListSerializer` ⇒ byte-identical wire format |
 | **`CardInstantiator` extraction produces malformed cards** | `DeterminizerInvariantsTest` + full engine suite | Reuse `GameInitializer`'s own construction path, don't hand-roll |
 | ~~**Arena wall-clock makes the merge gate unaffordable**~~ | Measured in Phase 1 | **Not a risk today** — 1,000 games is 3.5 min, because no `DecisionBudget` exists yet. Re-opens in Phase 4b: re-measure before shipping a budget, and only then consider a reduced-budget arena mode |

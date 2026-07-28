@@ -76,7 +76,14 @@ class FrozenBaselineTest : FunSpec({
         /**
          * Blessed 2026-07-27 against `AiProfile.LEGACY_V0` as pinned in Phase 1: seat 1 wins on
          * turn 10, life -8 / 16. Re-bless only for the reasons listed in this class's KDoc.
+         *
+         * Re-blessed 2026-07-28 for the turn-numbering change (`GameState.turnNumber` counts player
+         * turns rather than rounds). **`LEGACY_V0` did not move.** The stream's only turn-number
+         * carrier is its trailing `END|turns=` record, so the same game now hashes differently while
+         * every action in it is identical — verified by re-running both turn-numbering schemes with
+         * that record's turn count elided: both produced `8ae37a73f24d4e42`. The game itself is
+         * unchanged down to the outcome: seat 1 still wins at life -8 / 16, on what is now turn 20.
          */
-        private const val GOLDEN_HASH = "506577c26cba1a9c"
+        private const val GOLDEN_HASH = "d7d1bf75e6eb1a33"
     }
 }

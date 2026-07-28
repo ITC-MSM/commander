@@ -34,10 +34,9 @@ data class PodArenaConfig(
     val seed: Long = ArenaConfig.DEFAULT_SEED,
     val setCode: String = "BLB",
     /**
-     * Cap in **rounds**, not player turns — `GameState.turnNumber` only increments when the first
-     * seat starts a turn (`TurnManager.startTurn`), so one unit here is [TableSetup.seats] player
-     * turns. Default 30 rather than the head-to-head 50: a four-seat round is four turns of real
-     * play, and 30 rounds is already 120 of them.
+     * Cap in turns **per seat**, so one unit here is [TableSetup.seats] player turns. Default 30
+     * rather than the head-to-head 50: every seat's turn is a turn of real play, and 30 per seat is
+     * already 90-120 of them at this table.
      */
     val maxTurns: Int = DEFAULT_MAX_TURNS,
     /** Per-game runaway backstop. See [TableGameRunner.DEFAULT_MAX_ACTIONS]. */
@@ -52,8 +51,8 @@ data class PodArenaConfig(
 
     companion object {
         /**
-         * 30 rounds, against the head-to-head arena's 50. `maxTurns` is a round count and a pod
-         * round is [TableSetup.seats] player turns, so 30 is already 90-120 turns of real play.
+         * 30 turns per seat, against the head-to-head arena's 50 — at [TableSetup.seats] seats
+         * that is already 90-120 turns of real play.
          */
         const val DEFAULT_MAX_TURNS = 30
     }

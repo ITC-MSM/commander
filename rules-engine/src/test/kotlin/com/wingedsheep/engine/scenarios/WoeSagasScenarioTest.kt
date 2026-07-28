@@ -77,8 +77,13 @@ class WoeSagasScenarioTest : FunSpec({
         }
     }
 
-    /** Advance to the given turn's precombat main phase through the real game flow. */
-    fun GameTestDriver.advanceToMain(targetTurn: Int) {
+    /**
+     * Advance to the precombat main phase of the starting player's [nth] turn — the clock a Saga's
+     * lore counters run on. `GameState.turnNumber` counts player turns, and this is a duel where
+     * the two seats alternate, so the starting player's nth turn is turn `2n - 1`.
+     */
+    fun GameTestDriver.advanceToMain(nth: Int) {
+        val targetTurn = nth * 2 - 1
         var guard = 0
         while (!(state.turnNumber == targetTurn && state.step == Step.PRECOMBAT_MAIN) && guard < 500) {
             if (state.gameOver) throw AssertionError("Game ended while advancing to turn $targetTurn")

@@ -139,16 +139,15 @@ object TableGameRunner {
     /**
      * Wedge detection: this many actions without the turn passing to another player.
      *
-     * `AIBenchmark`'s version counts actions without a **`GameState.turnNumber`** change, and that
-     * measure does not survive a pod. `turnNumber` is a *round* counter — `TurnManager.startTurn`
-     * only increments it when `turnOrder.first()` begins a turn — and `turnOrder` keeps eliminated
-     * players, so **once the first seat is knocked out `turnNumber` never advances again** and a
-     * perfectly healthy three-way endgame reads as wedged forever. Counting player-turn handovers
-     * instead is format-independent.
+     * `GameState.turnNumber` counts player turns, so it is a sound clock here — it advances on every
+     * turn regardless of seat count or who has been eliminated. (It was a *round* counter until the
+     * turn-number fix, which froze outright once the opening seat was knocked out and made every
+     * healthy three-way endgame read as wedged forever; this detector counted handovers itself to
+     * dodge that.)
      *
-     * 300 per player turn is deliberately looser than the old 300 per round (two player turns in a
-     * duel): a false "stuck" silently discards a real result, which is worse than taking a few
-     * hundred extra actions to notice a genuine wedge.
+     * 300 per player turn is deliberately looser than 300 per round (two player turns in a duel):
+     * a false "stuck" silently discards a real result, which is worse than taking a few hundred
+     * extra actions to notice a genuine wedge.
      */
     private const val STUCK_ACTIONS_PER_TURN = 300
 
@@ -171,6 +170,7 @@ object TableGameRunner {
         seed: Long,
         groupId: Int,
         rotation: Int,
+        /** Cap in turns *per seat* — a duel gets `2 * maxTurns` player turns, a four-pod `4 *`. */
         maxTurns: Int = 50,
         maxActions: Int = DEFAULT_MAX_ACTIONS,
         /** Hash every action and decision into [TableGameOutcome.actionStreamHash]. Off by
@@ -211,22 +211,20 @@ object TableGameRunner {
         var actionCount = 0
         val illegalActions = mutableMapOf<String, Int>()
         var lastActivePlayer: EntityId? = null
-        var playerTurns = 0
         var lastProgressAction = 0
         var drawReason = ""
         var exception: String? = null
-        // `maxTurns` stays a round count so the head-to-head numbers keep their meaning, but the
-        // hard cap has to be in player turns — see STUCK_ACTIONS_PER_TURN on why `turnNumber` is
-        // not a reliable clock. In a duel `turnNumber < maxTurns` always trips first, so this is a
-        // backstop there and the real terminator in a pod that has lost its first seat.
+        // `maxTurns` is a cap in turns *per seat*, so a duel and a four-player pod get the same
+        // number of turns each and the head-to-head numbers keep their historical meaning.
+        // `GameState.turnNumber` counts player turns, hence the multiply.
         val maxPlayerTurns = maxTurns * setup.seats
         val stream = if (recordActionStream) MessageDigest.getInstance("SHA-256") else null
         fun record(entry: String) = stream?.update(entry.toByteArray(Charsets.UTF_8))
 
         val duration = measureTime {
             try {
-                while (!state.gameOver && state.turnNumber < maxTurns &&
-                    playerTurns < maxPlayerTurns && actionCount < maxActions
+                while (!state.gameOver && state.turnNumber < maxPlayerTurns &&
+                    actionCount < maxActions
                 ) {
                     if (actionCount - lastProgressAction > STUCK_ACTIONS_PER_TURN) {
                         drawReason = "stuck(turn=${state.turnNumber},step=${state.step.name})"
@@ -234,7 +232,6 @@ object TableGameRunner {
                     }
                     if (state.activePlayerId != lastActivePlayer) {
                         lastActivePlayer = state.activePlayerId
-                        playerTurns++
                         lastProgressAction = actionCount
                     }
 
@@ -284,7 +281,6 @@ object TableGameRunner {
                 if (!state.gameOver && drawReason.isEmpty()) {
                     drawReason = when {
                         actionCount >= maxActions -> "maxActions($maxActions)"
-                        playerTurns >= maxPlayerTurns -> "maxPlayerTurns($maxPlayerTurns)"
                         else -> "maxTurns($maxTurns)"
                     }
                 }
