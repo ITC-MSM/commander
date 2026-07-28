@@ -1,7 +1,7 @@
 package com.wingedsheep.ai.engine
 
-import com.wingedsheep.engine.handlers.effects.composite.asConditional
-import com.wingedsheep.engine.handlers.effects.composite.asMayDecide
+import com.wingedsheep.ai.draftsim.DraftsimData
+import com.wingedsheep.ai.engine.knowledge.EffectWalker
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
@@ -14,9 +14,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Rates cards for limited (sealed/draft) play on a 0.0–5.0 scale.
  *
- * When 17Lands data is available for a card (loaded from resource files),
- * the rating is derived from real win-rate statistics. Otherwise, falls back
- * to heuristic scoring.
+ * Three sources, best first: real 17Lands win-rate statistics where we have them, then the
+ * vendored Draftsim pick ratings (which cover far more sets), then the structural heuristic below.
  *
  * Scale:
  *   5.0 = Bomb (wins the game by itself)
@@ -46,11 +45,24 @@ object LimitedCardRater {
      */
     private val ratingsCache = ConcurrentHashMap<String, Map<String, CardRating>>()
 
+    /**
+     * Which sets have a 17Lands file, read from `/ratings/_manifest.json`.
+     *
+     * Phase 6 replaced a hardcoded `listOf("BLB")` with this. Shipping data for another set is now
+     * a JSON file plus a line in the manifest — no Kotlin change — which is the point: the list
+     * used to be a literal one contributor at a time would forget to update.
+     */
+    private val ratedSetCodes: List<String> by lazy {
+        val text = LimitedCardRater::class.java.getResourceAsStream("/ratings/_manifest.json")
+            ?.bufferedReader()?.use { it.readText() }
+            ?: return@lazy emptyList()
+        json.decodeFromString<List<String>>(text)
+    }
+
     /** All loaded ratings merged (name → best available rating). */
     private val allRatings: Map<String, CardRating> by lazy {
         val merged = mutableMapOf<String, CardRating>()
-        val setCodes = listOf("BLB") // Add more set codes as data becomes available
-        for (code in setCodes) {
+        for (code in ratedSetCodes) {
             loadSetRatings(code).forEach { (name, rating) ->
                 // Keep the entry with higher game count
                 val existing = merged[name]
@@ -73,6 +85,20 @@ object LimitedCardRater {
         }
     }
 
+    /**
+     * The vendored Draftsim pick ratings, already on this rater's 0–5 scale and covering ~47 sets
+     * — `DraftsimData`'s tables, merged across every set it ships.
+     *
+     * The two rating stores are *not* duplicates, which is why this consolidates by **chaining**
+     * rather than by deleting one: the `ratings/` resources are raw 17Lands win-rate data (one
+     * set), and the `draftai/ratings/` resources are a curated pick rating (many sets). Preferring
+     * the measured win rate and falling back to the curated rating gives the rater real data on far
+     * more of the catalog than either store alone, with no new files.
+     */
+    private val draftsimRatings: Map<String, Double> by lazy {
+        DraftsimData.tablesFor(DraftsimData.ratedSetCodes()).ratings
+    }
+
     fun rate(card: CardDefinition): Double {
         if (card.typeLine.isBasicLand) return 0.0
         if (card.typeLine.isLand) return 1.5 // non-basic lands are decent filler
@@ -85,6 +111,9 @@ object LimitedCardRater {
                 return winRateToRating(winRate)
             }
         }
+
+        // Then the curated pick rating, which covers far more sets than the win-rate data.
+        draftsimRatings[DraftsimData.nameKey(card.name)]?.let { return it.coerceIn(0.0, 5.0) }
 
         // Fall back to heuristic
         return heuristicRate(card)
@@ -207,40 +236,36 @@ object LimitedCardRater {
     /**
      * Bonus for spell/ability effects. Walks the effect tree to detect
      * removal, card draw, tokens, and other high-value effects.
+     *
+     * The traversal — which script slots count, how much each is discounted, how gates and
+     * composites fold — lives in [EffectWalker], shared with
+     * [com.wingedsheep.ai.engine.knowledge.CardIntentAnalyzer]. Only the leaf scoring below is
+     * this rater's own.
      */
-    private fun effectBonus(card: CardDefinition): Double {
-        var bonus = 0.0
-
-        // Check spell effect
-        card.script.spellEffect?.let { bonus += scoreEffect(it) }
-
-        // Check triggered abilities (ETB, death triggers, etc.)
-        for (ability in card.script.triggeredAbilities) {
-            bonus += scoreEffect(ability.effect) * 0.8 // slightly less than spell since conditional
+    private fun effectBonus(card: CardDefinition): Double =
+        EffectWalker.slots(card.script).sumOf { slot ->
+            EffectWalker.fold(slot.effect, LimitedScoreFold) * slot.origin.discount
         }
 
-        // Check activated abilities
-        for (ability in card.script.activatedAbilities) {
-            if (!ability.isManaAbility) {
-                bonus += scoreEffect(ability.effect) * 0.6 // repeatable but costs resources
-            }
-        }
+    /** How a limited rating folds an effect tree. See [EffectWalker.Fold]. */
+    private object LimitedScoreFold : EffectWalker.Fold<Double> {
+        override fun leaf(effect: Effect): Double = scoreEffect(effect)
 
-        return bonus
+        /** Composite — sum children, capped so a long pipeline can't run away with the rating. */
+        override fun composite(parts: List<Double>): Double = parts.sum().coerceAtMost(2.5)
+
+        /** Conditional — discount both branches; neither is guaranteed. */
+        override fun conditional(thenValue: Double, elseValue: Double?): Double =
+            (thenValue + (elseValue ?: 0.0)) * 0.6
+
+        /** Optional "may" — discount the payoff. */
+        override fun may(thenValue: Double): Double = thenValue * 0.8
     }
 
     /**
-     * Walk an effect tree and score it for limited value.
+     * Score one leaf effect for limited value.
      */
     private fun scoreEffect(effect: Effect): Double {
-        // Conditional (lowered to a GatedEffect / Gate.WhenCondition) — discount both branches.
-        effect.asConditional()?.let { conditional ->
-            val thenScore = scoreEffect(conditional.then)
-            val elseScore = conditional.otherwise?.let { scoreEffect(it) } ?: 0.0
-            return (thenScore + elseScore) * 0.6
-        }
-        // Optional "may" (lowered MayEffect / Gate.MayDecide) — discount the payoff.
-        effect.asMayDecide()?.let { return scoreEffect(it.then) * 0.8 }
         return when (effect) {
             // Removal — the most valuable effect type in limited
             is MoveToZoneEffect -> when {
@@ -304,10 +329,8 @@ object LimitedCardRater {
             // Counterspells
             is CounterEffect -> 0.8
 
-            // Composite — sum children
-            is CompositeEffect -> effect.effects.sumOf { scoreEffect(it) }.coerceAtMost(2.5)
-
-            // Everything else
+            // Everything else — including modal interiors and pipeline stages, which
+            // [EffectWalker] deliberately does not descend into.
             else -> 0.0
         }
     }

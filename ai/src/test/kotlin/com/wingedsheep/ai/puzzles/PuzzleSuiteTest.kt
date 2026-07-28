@@ -62,14 +62,11 @@ class PuzzleSuiteTest : ScenarioTestBase() {
          * Puzzles today's AI does not solve. **Shrinking this set is the deliverable of Phases 3–9**
          * of `backlog/engine-ai-improvement.md`; growing it needs a reason in the commit message.
          *
-         * Baselined 2026-07-27 against `AiProfile.PRODUCTION`. Per-category rates are in
-         * `docs/ai/baseline-metrics.md`.
+         * Baselined 2026-07-27 against `AiProfile.PRODUCTION` at 39/48; **44/48 since Phase 6**
+         * (`CardIntent`), which closed noncreature-01/03/04 and instants-01/06. Per-category rates
+         * are in `docs/ai/baseline-metrics.md`.
          */
         val KNOWN_FAILURES: Set<String> = setOf(
-            // Instant timing is ad-hoc: `Strategist` has no notion of "this spell wants a window",
-            // only a hard-coded `passScore - 1.5` on the opponent's end step. Phase 6's `HoldPolicy`.
-            "instants-01",
-            "instants-06",
             // A one-ply evaluator cannot see a prevention effect: the state right after Fog
             // resolves has the same life totals as passing, so Fog is only ever "-1 card".
             // Needs the rollout evaluator (Phase 7) to play out the damage step.
@@ -80,15 +77,14 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             "sequencing-02",
             // No model of "keep a blocker home": every attacker is scored on the damage it deals.
             "race-03",
-            // The headline blindness. `BoardFeatures.permanentValue` flat-values every non-creature
-            // permanent at 0.5 and `heuristicTargetRank` ranks one at 0.0, so destroying an artifact
-            // gains +0.5 board and costs -1 card — the AI would rather hold the removal forever.
-            // Phase 6 (`CardIntent`) exists to fix exactly this; noncreature-05/06 already pass
-            // because their effect shows up in *creature* stats, which the evaluator can see.
-            "noncreature-01",
+            // The same `cardValue(0)` cliff as sequencing-02, measured exactly: with one card in
+            // hand, casting the Disenchant costs 4.0 of card advantage, and destroying an anthem
+            // behind an *empty* board gains 2.4 of board value (weight 1.5 → +3.6). It misses by
+            // 0.40. Phase 6 fixed the blindness — the AI now sees the anthem, ranks it correctly
+            // and casts at noncreature-01/03/04 — but it cannot outvote a hand-drawn constant that
+            // Phase 9 exists to refit. Raising the anthem prior until this passes would be tuning
+            // one guess to cancel another.
             "noncreature-02",
-            "noncreature-03",
-            "noncreature-04",
         )
     }
 }

@@ -63,6 +63,21 @@ object DraftsimData {
         return noDiacritics.replace('_', ' ').trim().lowercase()
     }
 
+    /**
+     * Every set code we ship a ratings table for, from `/draftai/ratings/_manifest.json`.
+     *
+     * Cube tables (the `_cube.json` files) are deliberately absent from the manifest: they rate cards for a
+     * powered cube, not for a set's limited environment, so merging them into a general card-quality
+     * prior would price a Moxen-adjacent card as if every deck could cast it. They stay loadable by
+     * explicit [tablesFor] call, they are just not part of "all sets".
+     */
+    fun ratedSetCodes(): List<String> = manifest
+
+    private val manifest: List<String> by lazy {
+        val text = readResource("/draftai/ratings/_manifest.json") ?: return@lazy emptyList()
+        json.decodeFromString<List<String>>(text)
+    }
+
     /** Joined tables for a pool spanning [setCodes]. Order-independent; cached by the set of codes. */
     fun tablesFor(setCodes: List<String>): DraftsimSetTables {
         val codes = setCodes.map { it.uppercase() }.filter { it.isNotBlank() }.toSortedSet()

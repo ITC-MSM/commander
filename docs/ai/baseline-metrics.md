@@ -682,3 +682,155 @@ top leaf. (After 5a it is 83%, because the change took more out of `process` tha
 **The practical rule for the next perf step:** compare a run against another run from the same
 afternoon on the same machine, and use the profile to say *why*. The recorded absolute figure from
 three months ago is a record of a different workload, not a target.
+
+---
+
+# Phase 6 — `CardIntent`
+
+**Measured:** 2026-07-28, 8-core M1 Pro, BLB sealed, seed 20260727.
+
+```bash
+just arena-puzzles                # the tactical signal — the phase's exit criterion
+just arena v0 v0-intent 1000      # the merge gate
+just arena-pod ffa3 v0-intent v0 300
+```
+
+Phase 6 replaced the AI's card knowledge — 19 hand-written `CardAdvisor`s covering 42 card names
+across 2 sets — with a structural analyzer over every card the engine can load
+(`ai/.../engine/knowledge/`). Three consumers read it: the flat `0.5` every non-creature permanent
+was worth in `BoardPresence`, the flat `0.0` every non-creature permanent ranked at in
+`Strategist.heuristicTargetRank`, and a new intent-driven `HoldPolicy` in place of one hardcoded
+end-step discount.
+
+## Puzzles — 39/48 → 44/48
+
+`AiProfile.PRODUCTION`, the same profile Phase 2 baselined.
+
+| Category | Phase 2 | **Phase 6** | Change |
+|---|---|---|---|
+| lethal | 6/6 | 6/6 | — |
+| blocking | 6/6 | 6/6 | — |
+| removal | 6/6 | 6/6 | — |
+| instants | 3/6 | **5/6** | +2 (`instants-01`, `instants-06`) |
+| sequencing | 5/6 | 5/6 | — |
+| wipe | 6/6 | 6/6 | — |
+| race | 5/6 | 5/6 | — |
+| **noncreature** | **2/6** | **5/6** | **+3** (`noncreature-01`, `-03`, `-04`) |
+| **total** | **39/48 (81%)** | **44/48 (92%)** | **+5** |
+
+**The exit criterion was noncreature 2/6 → ≥5/6, and "holding instants up".** Both are met. The
+discrimination control still holds: `v0-blind` scores 22/48 against 44/48.
+
+Four remain, and none is a Phase 6 problem: `instants-05` (Fog — needs Phase 7's rollout to see a
+prevention effect), `sequencing-02` and `noncreature-02` (both the `cardValue(0)` cliff, below),
+`race-03` (no model of holding a blocker back).
+
+## Arena — neutral, and the exit criterion is *not* met
+
+| Matchup | Win share for A | CI | Null | Games | Verdict |
+|---|---|---|---|---|---|
+| `v0-intent` vs `v0` | 50.9% | [49.1%, 52.8%] | 50.0% | 1,000 | neutral — spans parity |
+| `v0-intent` vs a field of `v0` (`ffa3`) | 35.7% | [32.3%, 39.0%] | 33.3% | 300 | neutral — spans the null |
+
+The pod run is the one that exercises more than one opponent, and the plan asks for it on any change
+to evaluation. It lands the same way: point estimate a little above the null, interval straddling it.
+
+The plan's third exit criterion was "arena lower CI bound above 50%". **It is not met**, and the
+puzzle result above is what makes that interesting rather than merely disappointing: the AI is
+measurably better at the tactical decisions the phase targeted, and no better at winning BLB sealed
+games. Two readings, both probably true in part:
+
+- **BLB sealed is the wrong environment to detect this.** The blindness Phase 6 removes is about
+  artifacts, enchantments and planeswalkers, and a sealed BLB deck is mostly creatures and one or
+  two removal spells. Phase 1 reached the same shape of conclusion about the 42 card advisors
+  (50.0%, CI [49.3%, 50.8%]) and Phase 2 confirmed it independently — this arena is not sensitive to
+  card knowledge. A format with more permanent-based interaction would be a better test, and running
+  one is cheap.
+- **A better leaf evaluator is worth more per rollout than it is per greedy decision.** The plan
+  sequences 6 before 7 precisely because averaging playouts of a blind evaluator produces confident
+  wrong answers; the corollary is that fixing the evaluator pays off *when the rollouts arrive*.
+
+What the number does establish is the thing a merge gate is for: **this is not a regression.**
+
+## What Phase 6 found
+
+### 1. A timing penalty large enough to work is large enough to break the phase
+
+The plan specified a `HoldPolicy` that would "penalize casting an INSTANT COMBAT_TRICK / REMOVAL /
+COUNTERSPELL in our own main phase with no forcing reason". Built as specified, with a −2.0 penalty,
+it **cancelled the phase's own headline fix**: `noncreature-01` is an instant-speed Disenchant cast
+in our own main phase, so the removal branch fired and vetoed exactly the cast that Phase 6 exists
+to enable. The measured margin was +0.35 board points for casting, against a −2.0 penalty.
+
+Lowering the constant does not resolve it, because the two cases are not symmetric:
+
+- **A combat trick outside combat does nothing** — it wears off at cleanup. That is structurally
+  certain, and it can be asserted.
+- **Holding removal is a preference**, not a provable gain: it buys the option of a better target
+  later and costs certainty now. Nothing in the state tells you which is worth more.
+
+So the shipped policy asserts the first and says nothing about the second. Pricing "what if a better
+target shows up" is a rollout question (Phase 7), not a constant.
+
+### 2. A penalty cannot beat a mis-measurement — a *floor* can
+
+`instants-01` (hold Giant Growth in your own main phase) is not close: `ThreatAssessment` reads the
++3/+3 as a permanently faster clock — 2 power to 5 power takes "turns until we kill them" from 10 to
+4 — and pays **+10.8** for it. No defensible penalty constant outvotes that, and the first
+implementation at −3.0 did not.
+
+The fix is not a bigger number but a different *kind* of statement. `TimingVerdict.NoWindow` says
+"whatever the simulation reports, this is not better than passing", and the Strategist scores the
+candidate just below the pass score. That closed `instants-01` and `instants-06` at once. It is
+reserved for cases where "does nothing" is structurally certain, never for a preference — which is
+the same distinction as finding 1, arrived at from the other side.
+
+(The underlying flaw is real and still open: `ThreatAssessment.attackPotential` counts P/T that
+expires at cleanup, while `BoardPresence.creatureValue` already discounts it. Fixing that in the
+feature would be better than flooring it in the policy, but it changes `LEGACY_V0` and so needs its
+own switch and its own arena run.)
+
+### 3. `noncreature-02` fails by 0.40 points, and it is not a card-knowledge failure
+
+Exact arithmetic, `AiProfile.PRODUCTION`, Disenchant in hand against an opposing Glorious Anthem
+behind an empty board:
+
+| | pass | cast | Δ | × weight |
+|---|---|---|---|---|
+| `BoardPresence` | −1.1 | +1.3 | +2.4 | +3.60 |
+| `CardAdvantage` | +4.0 | 0.0 | −4.0 | −4.00 |
+| everything else | — | — | 0 | 0 |
+| **total** | **7.75** | **7.35** | | **−0.40** |
+
+The AI now sees the anthem (prior 3.0, up from 0.5) and ranks it correctly — `noncreature-01`, `-03`
+and `-04` all pass on the same machinery. What it cannot outvote is `CardAdvantage.cardValue(0) =
+−3.0`, which prices emptying your hand as a 4-point disaster. That is the same constant
+`sequencing-02` fails on, and Phase 9's logistic fit is what replaces it. Raising the anthem prior
+from 3.0 to 3.3 would pass this puzzle; it would also be tuning one hand-drawn guess to cancel
+another, so it was not done.
+
+### 4. The two rating stores are not duplicates, and chaining beats consolidating
+
+The plan called `ai/src/main/resources/draftai/ratings/` a "duplicate store" of
+`rules-engine/src/main/resources/ratings/` and asked for consolidation. They hold different things:
+the first is a curated 0–5 pick rating covering **44 sets**, the second is raw 17Lands win-rate and
+game-count data covering **one** (BLB). Deleting either loses information.
+
+`LimitedCardRater.rate` now chains them — measured win rate, then curated pick rating, then the
+heuristic — and both set lists come from a `_manifest.json` instead of a hardcoded
+`listOf("BLB")`. The rater went from real data on one set to real data on 44, with no new files.
+Cube tables (`vintage_cube`, `arena_powered_cube`) are deliberately out of the manifest: they rate
+cards for a powered cube, not for a set's limited environment.
+
+### 5. What the analyzer cannot read, and why that is the safe direction
+
+`EffectWalker` descends through gates (`if`/`may`) and composites, and treats modal interiors,
+pipeline stages and `ForEach` bodies as leaves — the traversal `LimitedCardRater` already had, moved
+out so both scorers share one walk. Widening it would change every limited rating and therefore
+every generated sealed deck, so it is a follow-up rather than a free improvement.
+(`CardIntentAnalyzer` reads `ForEachEffect` itself, which is how a wrath is recognized at all.)
+
+A card the analyzer cannot interpret gets `CardIntent.UNKNOWN`, whose `staticPriorValue` is the
+historical flat `0.5`. And the prior is applied as a **floor**, never a ceiling: no permanent is
+ever valued lower than it was before Phase 6. Both choices point the same way — the failure mode is
+"no better than before", never "confidently wrong".

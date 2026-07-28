@@ -51,12 +51,14 @@ Agents are named in `ai/src/test/kotlin/com/wingedsheep/ai/arena/ArenaAgent.kt`:
 |---|---|
 | `v0` | `AiProfile.LEGACY_V0` — **the permanent reference opponent** |
 | `current` | whatever `AIPlayer.create(registry, playerId)` builds today |
-| `production` | what a player actually faces: BLB + ONS card advisors |
+| `production` | what a player actually faces: BLB + ONS card advisors, and Phase 6 card intent |
 | `blb-advisors` / `ons-advisors` | v0 plus one advisor module |
 | `v0-blind` | all evaluation weights zero. Not playable — it is the harness's own control |
 | `v0-meaningful` | v0 + the Phase 4a meaningful-action filter and target-filling fix |
 | `v0-budget-100` … `-3000` | v0 + a `TieredBudgetPolicy` at that NORMAL-tier size. The scaling ladder |
 | `v0-phase4` | both halves of Phase 4 — the filter plus the tiered budget at nominal sizes |
+| `v0-intent` | v0 + Phase 6's `CardIntent` knowledge: board prior, targeting, and the hold policy |
+| `v0-phase4-intent` | Phases 4 and 6 together — what the plan proposes to ship |
 
 Results land in `benchmarks/arena/<timestamp>-<a>-vs-<b>/` (gitignored): `results.csv` is one row
 per game, `summary.md` is the report below.

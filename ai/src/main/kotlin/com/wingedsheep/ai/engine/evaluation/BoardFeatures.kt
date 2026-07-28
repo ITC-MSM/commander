@@ -4,6 +4,8 @@ import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.ai.engine.OpponentAggregate
+import com.wingedsheep.ai.engine.knowledge.CardIntent
+import com.wingedsheep.ai.engine.knowledge.IntentCatalog
 import com.wingedsheep.ai.engine.lifePoolsOf
 import com.wingedsheep.ai.engine.sidesFor
 import com.wingedsheep.engine.state.GameState
@@ -67,20 +69,43 @@ object LifeDifferential : BoardFeature {
  * side, so their permanents defend each other).
  */
 object BoardPresence : BoardFeature {
-    override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
+    /**
+     * Score with no card knowledge — the pre-Phase-6 behaviour, and what every caller that has no
+     * [IntentCatalog] to hand still gets.
+     */
+    override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double =
+        score(state, projected, playerId, IntentCatalog.NONE)
+
+    /**
+     * Score with [intents] supplying a per-card prior for non-creature permanents.
+     *
+     * `EvaluationWeights.toEvaluator(intents)` binds this into the evaluator; on
+     * [IntentCatalog.NONE] it is exactly [score].
+     */
+    fun score(
+        state: GameState,
+        projected: ProjectedState,
+        playerId: EntityId,
+        intents: IntentCatalog,
+    ): Double {
         val sides = state.sidesFor(playerId) ?: return 0.0
-        val mine = boardValue(state, projected, sides.mine)
+        val mine = boardValue(state, projected, sides.mine, intents)
         return sides.against(OpponentAggregate.THREAT) { opponent ->
-            mine - boardValue(state, projected, opponent)
+            mine - boardValue(state, projected, opponent, intents)
         }
     }
 
-    private fun boardValue(state: GameState, projected: ProjectedState, side: List<EntityId>): Double {
+    private fun boardValue(
+        state: GameState,
+        projected: ProjectedState,
+        side: List<EntityId>,
+        intents: IntentCatalog,
+    ): Double {
         var total = 0.0
         for (playerId in side) {
             for (entityId in projected.getBattlefieldControlledBy(playerId)) {
                 val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
-                total += permanentValue(state, projected, entityId, card)
+                total += permanentValue(state, projected, entityId, card, intents)
             }
         }
         return total
@@ -90,7 +115,8 @@ object BoardPresence : BoardFeature {
         state: GameState,
         projected: ProjectedState,
         entityId: EntityId,
-        card: CardComponent
+        card: CardComponent,
+        intents: IntentCatalog = IntentCatalog.NONE,
     ): Double {
         val container = state.getEntity(entityId) ?: return 0.0
 
@@ -102,20 +128,65 @@ object BoardPresence : BoardFeature {
         if (card.isLand) {
             return if (container.has<TappedComponent>()) 0.3 else 0.6
         }
-        if (card.isPlaneswalker) return 4.0
+
+        // What the structural analyzer makes of the card, if this agent has card knowledge on.
+        // Phase 6: `intent` is a *floor*, never a ceiling. The shape-based values below are read
+        // off live game state (this Aura is attached to something, this O-Ring is holding a card)
+        // and know things a static prior cannot; the prior knows what the card *does*. Taking the
+        // max keeps both, and guarantees no permanent is ever valued lower than it was before
+        // Phase 6 — so a position the AI played correctly on the old numbers still scores at least
+        // as well.
+        val prior = intents.forName(card.name)?.let { intentValue(projected, entityId, it) } ?: 0.0
+
+        // Planeswalkers: the flat 4.0 priced a fresh Jace and a Jace at 1 loyalty identically.
+        // Loyalty is both the walker's life total and its remaining activations, so it is the one
+        // number that has to be in here; the intent prior carries what its abilities *do*.
+        if (card.isPlaneswalker) {
+            val loyalty = container.get<CountersComponent>()?.getCount(CounterType.LOYALTY) ?: 0
+            return maxOf(4.0, prior + loyalty * LOYALTY_VALUE)
+        }
 
         // Auras/equipment attached to something are valuable
-        if (container.has<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()) return 1.5
+        if (container.has<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()) {
+            return maxOf(1.5, prior)
+        }
 
         // Enchantments/artifacts exiling something (O-Ring effects) are valuable
-        if (container.has<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()) return 2.5
+        if (container.has<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()) {
+            return maxOf(2.5, prior)
+        }
 
-        // General non-creature permanents: low baseline value.
-        // Their real impact is through abilities (triggers, static effects) which the
-        // evaluator can't introspect. A low value avoids casting useless enchantments
-        // just to have a permanent on the board.
-        return 0.5
+        // General non-creature permanents. Without card knowledge this is a flat 0.5 regardless of
+        // text — a signet, an Oblivion Ring and a Bitterblossom scoring the same number is the
+        // blindness Phase 6 exists to remove.
+        return maxOf(0.5, prior)
     }
+
+    /**
+     * A permanent's [CardIntent] prior, plus the one board-dependent term that is cheap to read.
+     *
+     * An anthem is the case where a static prior is genuinely not enough: "creatures you control
+     * get +1/+1" behind an empty board and the same card behind five creatures are different cards.
+     * The creatures' own [creatureValue] already contains the pumped stats, so this counts only
+     * what killing the anthem would *take back* — a quarter point per point of P+T handed out,
+     * which is a little over half the rate [creatureValue] itself pays for toughness.
+     */
+    private fun intentValue(
+        projected: ProjectedState,
+        entityId: EntityId,
+        intent: CardIntent,
+    ): Double {
+        if (intent.anthemBonus <= 0) return intent.staticPriorValue
+        val controller = projected.getController(entityId) ?: return intent.staticPriorValue
+        val pumped = projected.getBattlefieldControlledBy(controller).count { projected.isCreature(it) }
+        return intent.staticPriorValue + ANTHEM_VALUE_PER_STAT * intent.anthemBonus * pumped
+    }
+
+    /** Board value of one point of P/T an anthem hands to one creature. */
+    private const val ANTHEM_VALUE_PER_STAT = 0.25
+
+    /** Board value of one loyalty counter. Only reached with card knowledge on. */
+    private const val LOYALTY_VALUE = 0.8
 
     private fun creatureValue(
         state: GameState,

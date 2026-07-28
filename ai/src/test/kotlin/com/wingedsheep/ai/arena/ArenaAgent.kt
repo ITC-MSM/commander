@@ -70,6 +70,12 @@ object ArenaAgents {
         ArenaAgent("v0-budget-3000", budgetAgent(3_000)),
         // Both, at the nominal budget sizes — what Phase 4 proposes to ship.
         ArenaAgent("v0-phase4", AiProfile.PHASE4),
+        // ── Phase 6 ──
+        // Structural card knowledge alone. `just arena v0 v0-intent 1000` is the phase's merge
+        // gate; keeping it off Phase 4 is what makes the number attributable to CardIntent.
+        ArenaAgent("v0-intent", AiProfile.PHASE6),
+        // Phases 4 and 6 together — what the plan proposes to ship.
+        ArenaAgent("v0-phase4-intent", AiProfile.PHASE4_PHASE6),
     )
 
     /** `v0` with nothing changed but the size of a [TieredBudgetPolicy]'s NORMAL tier. */
