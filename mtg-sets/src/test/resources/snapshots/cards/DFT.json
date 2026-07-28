@@ -2164,6 +2164,121 @@
     ]
 }
 
+// Coalstoke Gearhulk
+{
+    "name": "Coalstoke Gearhulk",
+    "manaCost": "{1}{B}{B}{R}{R}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Menace, deathtouch\nWhen this creature enters, put target creature card with mana value 4 or less from a graveyard onto the battlefield under your control with a finality counter on it. That creature gains menace, deathtouch, and haste. At the beginning of your next end step, exile that creature.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card with mana value 4 or less in a graveyard"
+                            },
+                            "destination": "Battlefield",
+                            "controllerOverride": "Controller",
+                            "addCounterType": "FINALITY"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card with mana value 4 or less in a graveyard"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "DEATHTOUCH",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card with mana value 4 or less in a graveyard"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card with mana value 4 or less in a graveyard"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature card with mana value 4 or less in a graveyard"
+                                },
+                                "destination": "Exile"
+                            },
+                            "timing": "NextEndStep",
+                            "fireOnPlayer": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature mv<=4",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card with mana value 4 or less in a graveyard"
+                },
+                "descriptionOverride": "When this creature enters, put target creature card with mana value 4 or less from a graveyard onto the battlefield under your control with a finality counter on it. That creature gains menace, deathtouch, and haste. At the beginning of your next end step, exile that creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "198",
+        "rarity": "MYTHIC",
+        "artist": "Nino Vecia",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73431628-b9b0-41e6-8e9b-8a090939b0c1.jpg?1783907861",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Finality counters work on any permanent, not only creatures. If a permanent with a finality counter on it would be put into a graveyard from the battlefield, exile it instead."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Multiple finality counters on a single permanent are redundant."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Collision Course
 {
     "name": "Collision Course",
@@ -3749,6 +3864,94 @@
     ]
 }
 
+// Gas Guzzler
+{
+    "name": "Gas Guzzler",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Vampire Rogue",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nThis creature enters tapped.\nMax speed — {B}, Sacrifice another creature or Vehicle: Draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature|Vehicle",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Max speed — {B}, Sacrifice another creature or Vehicle: Draw a card"
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "rarity": "RARE",
+        "artist": "Yohann Schepacz",
+        "flavorText": "Gastal's vampires took fuel from the dead.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/d/4db3a28c-e4b4-4b18-8d56-e3842184d105.jpg?1783907896",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "\"Max speed — [ability]\" means \"As long as you have max speed, this object has [ability].\" If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Gastal Blockbuster
 {
     "name": "Gastal Blockbuster",
@@ -3958,6 +4161,102 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Gastal Thrillroller
+{
+    "name": "Gastal Thrillroller",
+    "manaCost": "{2}{R}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Trample, haste\nWhen this Vehicle enters, it becomes an artifact creature until end of turn.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)\n{2}{R}, Discard a card: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HASTE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "When this Vehicle enters, it becomes an artifact creature until end of turn."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{R}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Battlefield"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "finality",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "{2}{R}, Discard a card: Return this card from your graveyard to the battlefield with a finality counter on it"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "rarity": "RARE",
+        "artist": "Caio Monteiro",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d8b1762b-ff03-4312-afcc-cb6b5f280ade.jpg?1783907881"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -5998,6 +6297,141 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Loot, the Pathfinder
+{
+    "name": "Loot, the Pathfinder",
+    "manaCost": "{2}{G}{U}{R}",
+    "typeLine": "Legendary Creature — Beast Noble",
+    "oracleText": "Double strike, vigilance, haste\nExhaust — {G}, {T}: Add three mana of any one color. (Activate each exhaust ability only once.)\nExhaust — {U}, {T}: Draw three cards.\nExhaust — {R}, {T}: Loot deals 3 damage to any target.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "DOUBLE_STRIKE",
+        "VIGILANCE",
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    "Once"
+                ],
+                "isManaAbility": true,
+                "isExhaust": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isExhaust": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "target"
+                    }
+                ],
+                "restrictions": [
+                    "Once"
+                ],
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "212",
+        "rarity": "MYTHIC",
+        "artist": "Ernanda Souza",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33c59c04-4c0b-4a60-826e-3a7757d0b2a2.jpg?1783907856",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Exhaust abilities can be activated any time you could normally activate an ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED",
+        "BLUE"
     ]
 }
 
@@ -9988,6 +10422,93 @@
         "artist": "Elizabeth Peiró",
         "flavorText": "Garima was delighted to finally test out her design. The amazing views were a bonus.",
         "imageUri": "https://cards.scryfall.io/normal/front/5/b/5bc9c501-098d-4560-9826-329b05689e0f.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Slick Imitator
+{
+    "name": "Slick Imitator",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Ooze",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — {1}, Sacrifice this creature: Copy target spell you control. You may choose new targets for the copy. (A copy of a permanent spell becomes a token.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "CopyTargetSpell",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target spell you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "ctrl:you",
+                            "zone": "Stack"
+                        },
+                        "id": "target spell you control"
+                    }
+                ],
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Max speed — {1}, Sacrifice this creature: Copy target spell you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "UNCOMMON",
+        "artist": "Xabi Gaztelua",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/e/3e86ef50-4939-4e7c-853d-438f0f3e0411.jpg?1783907902",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "\"Max speed — [ability]\" means \"As long as you have max speed, this object has [ability].\" If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"

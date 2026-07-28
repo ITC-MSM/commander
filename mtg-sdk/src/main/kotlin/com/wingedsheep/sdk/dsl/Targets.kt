@@ -320,6 +320,13 @@ object Targets {
     val CreatureSpellYouControl: TargetRequirement = TargetSpell(filter = TargetFilter.CreatureSpellOnStack.youControl())
 
     /**
+     * Target spell you control, of any type (e.g. Slick Imitator's "Copy target spell you
+     * control"). The unrestricted sibling of [InstantOrSorcerySpellYouControl] and
+     * [CreatureSpellYouControl].
+     */
+    val SpellYouControl: TargetRequirement = TargetSpell(filter = TargetFilter.SpellOnStack.youControl())
+
+    /**
      * Target spell you don't control.
      * In multiplayer this matches any spell controlled by an opponent.
      */
