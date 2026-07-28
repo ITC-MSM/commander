@@ -5216,6 +5216,115 @@
     ]
 }
 
+// Guidelight Pathmaker
+{
+    "name": "Guidelight Pathmaker",
+    "manaCost": "{4}{W}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Vigilance\nWhen this Vehicle enters, you may search your library for an artifact card and reveal it. Put it onto the battlefield if its mana value is 2 or less. Otherwise, put it into your hand. If you search your library this way, shuffle.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "artifact"
+                                },
+                                "storeAs": "gathered0"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "gathered0",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "selected1",
+                                "prompt": "Search for an artifact card"
+                            },
+                            {
+                                "type": "RevealCollection",
+                                "from": "selected1"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "selected1",
+                                "ifNotEmpty": {
+                                    "type": "MoveCollection",
+                                    "from": "selected1",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Battlefield"
+                                    }
+                                },
+                                "ifEmpty": {
+                                    "type": "MoveCollection",
+                                    "from": "selected1",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Hand"
+                                    }
+                                },
+                                "filter": "mv<=2"
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this Vehicle enters, you may search your library for an artifact card and reveal it. Put it onto the battlefield if its mana value is 2 or less. Otherwise, put it into your hand. If you search your library this way, shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "206",
+        "rarity": "UNCOMMON",
+        "artist": "Stephan Martiniere",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b2e00cd7-925e-4bab-b064-c96aa2935f8c.jpg?1783907857",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Guidelight Pathmaker has received an update to its Oracle text. Specifically, you'll only shuffle if you choose to search your library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Guidelight Synergist
 {
     "name": "Guidelight Synergist",
@@ -7985,6 +8094,116 @@
     ]
 }
 
+// Outpace Oblivion
+{
+    "name": "Outpace Oblivion",
+    "manaCost": "{2}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nWhen this enchantment enters, it deals 5 damage to up to one target creature or planeswalker.\n{2}, Sacrifice this enchantment: It deals 2 damage to each player who doesn't have max speed.",
+    "keywords": [
+        "START_YOUR_ENGINES"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature or planeswalker"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetCreatureOrPlaneswalker",
+                    "optional": true,
+                    "id": "up to one target creature or planeswalker"
+                },
+                "descriptionOverride": "When this enchantment enters, it deals 5 damage to up to one target creature or planeswalker."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "Each"
+                    },
+                    "body": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.WhenCondition",
+                            "condition": {
+                                "type": "Not",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": "Speed",
+                                    "operator": "EQ",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 4
+                                    }
+                                }
+                            }
+                        },
+                        "then": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": "Controller"
+                        }
+                    }
+                },
+                "descriptionOverride": "{2}, Sacrifice this enchantment: It deals 2 damage to each player who doesn't have max speed."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "rarity": "UNCOMMON",
+        "artist": "Raymond Swanland",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c22e415f-636f-4394-9b21-600ab720ac98.jpg?1783907878",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If an effect needs to know what a player's speed is and that player doesn't have a speed, their speed is considered 0."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Pacesetter Paragon
 {
     "name": "Pacesetter Paragon",
@@ -8408,6 +8627,100 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Possession Engine
+{
+    "name": "Possession Engine",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "When this Vehicle enters, gain control of target creature an opponent controls for as long as you control this Vehicle. That creature can't attack or block for as long as you control this Vehicle.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 3
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainControl",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            },
+                            "duration": {
+                                "type": "WhileYouControlSource",
+                                "sourceDescription": "this Vehicle"
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "CantAttack",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature an opponent controls"
+                                    },
+                                    "duration": {
+                                        "type": "WhileYouControlSource",
+                                        "sourceDescription": "this Vehicle"
+                                    }
+                                },
+                                {
+                                    "type": "CantBlockTargetCreatures",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature an opponent controls"
+                                    },
+                                    "duration": {
+                                        "type": "WhileYouControlSource",
+                                        "sourceDescription": "this Vehicle"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                },
+                "descriptionOverride": "When this Vehicle enters, gain control of target creature an opponent controls for as long as you control this Vehicle. That creature can't attack or block for as long as you control this Vehicle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "rarity": "RARE",
+        "artist": "Leroy Steinmann",
+        "flavorText": "\"Here's a tip: If your ride needs souls for fuel, make sure to always keep one handy.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f206b0a1-50d8-4d53-850d-fb15fd328267.jpg?1783907906"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -9527,6 +9840,75 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Roadside Blowout
+{
+    "name": "Roadside Blowout",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "This spell costs {2} less to cast if it targets a permanent with mana value 1.\nReturn target creature or Vehicle an opponent controls to its owner's hand.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or Vehicle an opponent controls"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|Vehicle ctrl:opponent"
+                },
+                "id": "target creature or Vehicle an opponent controls"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "FixedIfAnyTargetMatches",
+                        "amount": 2,
+                        "filter": "permanent mv=1"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "UNCOMMON",
+        "artist": "Michele Giorgi",
+        "flavorText": "\"In cases of extreme emergency, just wing it.\"\n—Rocketeer safety manual, full text",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6153a76-56f7-46ee-bba5-b62c0143388a.jpg?1783907905",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If there's an {X} in a permanent's mana cost, X is 0 when determining its mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -11380,6 +11762,70 @@
         "rarity": "MYTHIC",
         "artist": "Michele Giorgi",
         "imageUri": "https://cards.scryfall.io/normal/front/9/c/9cbb7b4e-bd32-44a0-9396-16738c5e4381.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// The Speed Demon
+{
+    "name": "The Speed Demon",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Legendary Creature — Demon",
+    "oracleText": "Flying, trample\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nAt the beginning of your end step, you draw X cards and lose X life, where X is your speed.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE",
+        "START_YOUR_ENGINES"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": "Speed"
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": "Speed",
+                            "target": "Controller"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your end step, you draw X cards and lose X life, where X is your speed."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "rarity": "MYTHIC",
+        "artist": "Helge C. Balzer",
+        "flavorText": "Caution is for those who falter.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/62242a80-0444-4a0e-a868-97eabcc77648.jpg?1783907890",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If an effect needs to know what a player's speed is and that player doesn't have a speed, their speed is considered 0."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Start your engines! isn't a triggered ability. Increasing your speed to 1 is something that happens as a state-based action as soon as you control a permanent with the ability. Notably, this includes gaining control of a permanent with the ability that another player controls."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLACK"
