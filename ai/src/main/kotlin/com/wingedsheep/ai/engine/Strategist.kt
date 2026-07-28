@@ -7,6 +7,9 @@ import com.wingedsheep.ai.engine.budget.DecisionBudget
 import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.BoardPresence
+import com.wingedsheep.ai.engine.knowledge.HoldPolicy
+import com.wingedsheep.ai.engine.knowledge.IntentCatalog
+import com.wingedsheep.ai.engine.knowledge.TimingVerdict
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.LegalAction
@@ -53,7 +56,15 @@ class Strategist(
     private val useMeaningfulFilter: Boolean = false,
     /** Phase 4b. How much search each decision may spend. */
     private val budgetPolicy: BudgetPolicy = LegacyBudgetPolicy,
+    /**
+     * Phase 6: structural card knowledge. [IntentCatalog.NONE] is the off position and leaves
+     * both consumers here — [heuristicTargetRank] and the hold policy — at their pre-Phase-6
+     * behaviour.
+     */
+    private val intents: IntentCatalog = IntentCatalog.NONE,
 ) {
+    private val holdPolicy = HoldPolicy(intents)
+
     fun chooseAction(
         state: GameState,
         legalActions: List<LegalAction>,
@@ -92,14 +103,19 @@ class Strategist(
             if (budget.expired()) break
         }
 
-        // On the opponent's end step, unspent mana is about to be wasted.
-        // Reduce the pass threshold so the AI is more willing to use instants
-        // rather than letting mana evaporate.
-        val adjustedPassScore = if (state.activePlayerId != playerId && state.step == Step.END) {
-            passScore - 1.5
-        } else {
-            passScore
-        }
+        // On the opponent's end step, unspent mana is about to be wasted. Reduce the pass threshold
+        // so the AI is more willing to use instants rather than letting mana evaporate.
+        //
+        // Phase 6 retires this blanket discount for agents with card knowledge: [HoldPolicy] makes
+        // the same point per card, and better — a removal spell gets a *larger* end-step bonus,
+        // while a pump that is about to wear off in cleanup gets a penalty instead of an
+        // encouragement. Keeping both would double-count the first and cancel the second.
+        val adjustedPassScore =
+            if (!holdPolicy.isEnabled && state.activePlayerId != playerId && state.step == Step.END) {
+                passScore - 1.5
+            } else {
+                passScore
+            }
 
         val best = scored.maxByOrNull { it.second }
         return if (best != null && best.second > adjustedPassScore) {
@@ -162,9 +178,22 @@ class Strategist(
         val result = simulator.simulate(state, simulationAction)
         val defaultScore = evaluator.evaluate(result.state, result.state.projectedState, playerId)
 
-        // Check for card-specific advisor override
         val cardName = resolveCardName(state, action) ?: return defaultScore
-        val advisor = advisorRegistry.getAdvisor(cardName) ?: return defaultScore
+
+        // Phase 6: what the board looks like after this resolves is only half the question; the
+        // other half is whether this was the window.
+        val timing = holdPolicy.verdictFor(state, playerId, cardName)
+        if (timing is TimingVerdict.NoWindow) {
+            // The card does nothing here, so nothing the simulation reports should make it beat
+            // passing. See [TimingVerdict.NoWindow] for why this is a floor and not a penalty.
+            return (passScore ?: evaluator.evaluate(state, state.projectedState, playerId)) - 1.0
+        }
+        val timingDelta = (timing as? TimingVerdict.Adjust)?.delta ?: 0.0
+
+        // Check for card-specific advisor override. Timing is applied outside it, so a per-card
+        // advisor still sees the pure board score as its `defaultScore` and a card with both
+        // keeps both.
+        val advisor = advisorRegistry.getAdvisor(cardName) ?: return defaultScore + timingDelta
         val context = CastContext(
             state = state,
             projected = state.projectedState,
@@ -175,7 +204,7 @@ class Strategist(
             evaluator = evaluator,
             simulator = simulator
         )
-        return advisor.evaluateCast(context) ?: defaultScore
+        return (advisor.evaluateCast(context) ?: defaultScore) + timingDelta
     }
 
     /**
@@ -335,16 +364,25 @@ class Strategist(
         val isPlayer = state.getEntity(entityId)
             ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
 
+        val card = state.getEntity(entityId)?.get<CardComponent>()
+
         return if (isPlayer) {
             // Player target — prefer opponent
             if (isOpponent) 5.0 else -5.0
         } else if (projected.isCreature(entityId)) {
-            val card = state.getEntity(entityId)?.get<CardComponent>()
             val value = if (card != null) {
-                BoardPresence.permanentValue(state, projected, entityId, card)
+                BoardPresence.permanentValue(state, projected, entityId, card, intents)
             } else 0.0
             // Opponent creatures: higher value = better target for removal
             // Own creatures: higher value = better target for pump/bite source
+            if (isOpponent) value + 10.0 else -value
+        } else if (card != null && intents.isEnabled) {
+            // Phase 6. This branch used to be a flat `0.0`, which meant an opponent's Oblivion
+            // Ring ranked exactly as high as an untapped Forest and *equally* as high as nothing —
+            // the AI could not aim a Disenchant. It is the same shape as the creature branch above:
+            // the permanent's board value, with the +10 that keeps any opponent permanent ahead of
+            // any of ours.
+            val value = BoardPresence.permanentValue(state, projected, entityId, card, intents)
             if (isOpponent) value + 10.0 else -value
         } else {
             0.0

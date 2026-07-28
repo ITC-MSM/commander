@@ -7,12 +7,14 @@ import com.wingedsheep.ai.engine.budget.BudgetPolicy
 import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
 import com.wingedsheep.ai.engine.budget.TieredBudgetPolicy
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
+import com.wingedsheep.ai.engine.evaluation.BoardFeature
 import com.wingedsheep.ai.engine.evaluation.BoardPresence
 import com.wingedsheep.ai.engine.evaluation.CardAdvantage
 import com.wingedsheep.ai.engine.evaluation.CompositeBoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.LifeDifferential
 import com.wingedsheep.ai.engine.evaluation.Tempo
 import com.wingedsheep.ai.engine.evaluation.ThreatAssessment
+import com.wingedsheep.ai.engine.knowledge.IntentCatalog
 
 /**
  * Weights for the five features [CompositeBoardEvaluator] combines.
@@ -36,10 +38,19 @@ data class EvaluationWeights(
     /** Tempo (mana development). Matters early, less late. Counts lands only today. */
     val tempo: Double = 0.6,
 ) {
-    fun toEvaluator(): BoardEvaluator = CompositeBoardEvaluator(
+    /**
+     * Build the evaluator these weights describe.
+     *
+     * [intents] is Phase 6's structural card knowledge; on [IntentCatalog.NONE] (the default)
+     * [BoardPresence] behaves exactly as it did before Phase 6, so an agent that does not opt in
+     * evaluates identically.
+     */
+    fun toEvaluator(intents: IntentCatalog = IntentCatalog.NONE): BoardEvaluator = CompositeBoardEvaluator(
         listOf(
             life to LifeDifferential,
-            boardPresence to BoardPresence,
+            boardPresence to BoardFeature { state, projected, playerId ->
+                BoardPresence.score(state, projected, playerId, intents)
+            },
             cardAdvantage to CardAdvantage,
             threatAssessment to ThreatAssessment,
             tempo to Tempo,
@@ -97,6 +108,17 @@ data class AiProfile(
      * constants with no global deadline.
      */
     val budgetPolicy: BudgetPolicy = LegacyBudgetPolicy,
+    /**
+     * Phase 6: structural card knowledge
+     * ([com.wingedsheep.ai.engine.knowledge.CardIntent]).
+     *
+     * Turns on three consumers at once — `BoardPresence.permanentValue`'s flat `0.5` for every
+     * non-creature permanent, `Strategist.heuristicTargetRank`'s flat `0.0` for one, and the
+     * intent-driven [com.wingedsheep.ai.engine.knowledge.HoldPolicy] that replaces the hardcoded
+     * end-step discount. Off for [LEGACY_V0]: the reference opponent has to stay frozen or every
+     * number published against it silently rebases.
+     */
+    val useCardIntent: Boolean = false,
 ) {
     companion object {
         /**
@@ -116,10 +138,15 @@ data class AiProfile(
          * What a player actually faces in a real game — see [EngineAiPlayerController]. Naming it
          * here makes the production configuration arena-runnable instead of a literal buried in a
          * controller constructor.
+         *
+         * Card intent is **on** here: Phase 6's exit criterion is measured on this profile (it is
+         * what `PuzzleSuiteTest` runs), and shipping the analyzer to everything except the AI
+         * players actually face would be pointless.
          */
         val PRODUCTION = AiProfile(
             id = "production",
             advisorModules = listOf(BloomburrowAdvisorModule(), OnslaughtAdvisorModule()),
+            useCardIntent = true,
         )
 
         /**
@@ -130,6 +157,24 @@ data class AiProfile(
             id = "v0-phase4",
             useMeaningfulFilter = true,
             budgetPolicy = TieredBudgetPolicy(),
+        )
+
+        /**
+         * Phase 6's card knowledge alone, on top of [LEGACY_V0]. The arena agent `v0-intent`:
+         * `just arena v0 v0-intent 1000` is the phase's merge gate, and isolating it from Phase 4
+         * is what makes that number attributable.
+         */
+        val PHASE6 = AiProfile(
+            id = "v0-intent",
+            useCardIntent = true,
+        )
+
+        /** Everything Phases 4 and 6 add — what the plan proposes to ship. */
+        val PHASE4_PHASE6 = AiProfile(
+            id = "v0-phase4-intent",
+            useMeaningfulFilter = true,
+            budgetPolicy = TieredBudgetPolicy(),
+            useCardIntent = true,
         )
     }
 }

@@ -3,6 +3,7 @@ package com.wingedsheep.ai.engine
 import com.wingedsheep.ai.engine.advisor.CardAdvisorModule
 import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
 import com.wingedsheep.ai.engine.evaluation.*
+import com.wingedsheep.ai.engine.knowledge.IntentCatalog
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.MeaningfulActionFilter
@@ -174,13 +175,18 @@ class AIPlayer(
             val advisorRegistry = CardAdvisorRegistry()
             profile.advisorModules.forEach { it.register(advisorRegistry) }
 
+            // Phase 6. `IntentCatalog.NONE` answers nothing, and every consumer falls back to its
+            // pre-Phase-6 behaviour — so a profile that doesn't opt in is untouched.
+            val intents = if (profile.useCardIntent) IntentCatalog.of(cardRegistry) else IntentCatalog.NONE
+
             val simulator = GameSimulator(cardRegistry)
-            val evaluator = profile.evaluationWeights.toEvaluator()
+            val evaluator = profile.evaluationWeights.toEvaluator(intents)
             val combatAdvisor = CombatAdvisor(simulator, evaluator, cardRegistry, advisorRegistry)
             val responder = DecisionResponder(
                 simulator, evaluator,
                 advisorRegistry = advisorRegistry,
                 budgetPolicy = profile.budgetPolicy,
+                intents = intents,
             )
 
             // Wire up the decision resolver so simulations can resolve non-trivial
@@ -200,6 +206,7 @@ class AIPlayer(
                     advisorRegistry = advisorRegistry,
                     useMeaningfulFilter = profile.useMeaningfulFilter,
                     budgetPolicy = profile.budgetPolicy,
+                    intents = intents,
                 ),
                 responder = responder,
                 useMeaningfulFilter = profile.useMeaningfulFilter,

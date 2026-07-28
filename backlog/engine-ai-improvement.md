@@ -3,14 +3,14 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** **Phases 0, 1, 2, 3, 4 and 5 shipped** (Phases 4 and 5 on 2026-07-28) — baselines in
-[`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
+**Status:** **Phases 0, 1, 2, 3, 4, 5 and 6 shipped** (Phases 4, 5 and 6 on 2026-07-28) — baselines
+in [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
 [`docs/ai/measurement.md`](../docs/ai/measurement.md). Four scoreboards now exist: the arena
-(`just arena`), the 48-puzzle suite (`just arena-puzzles`, **39/48 today**), the multiplayer pod
+(`just arena`), the 48-puzzle suite (`just arena-puzzles`, **44/48 today**), the multiplayer pod
 arena (`just arena-pod`) and the budget-scaling ladder (`just arena-budget-scaling`, **monotone**).
-Next up is **Phase 6, CardIntent** — the highest strength-per-effort item left, and the first one
-that is meant to move the win rate rather than enable it. Phases are individually shippable and
-ordered by dependency, not by appeal.
+Next up is **Phase 7, the rollout evaluator** — the plan's primary lever, and the first phase whose
+leaf evaluator can now see more than creatures. Phases are individually shippable and ordered by
+dependency, not by appeal.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
 performance phase built on. **Every step in that document is now closed**; Phase 5a was its Step 4
@@ -736,7 +736,44 @@ freshly measured baseline. `just test-rules` and `:game-server:test` green.
 
 ---
 
-### Phase 6 — `CardIntent`: card knowledge that generalizes · *5–7 d*
+### Phase 6 — `CardIntent`: card knowledge that generalizes · *5–7 d* — ✅ **DONE 2026-07-28**
+
+> **Shipped, with one exit criterion met loudly and one missed.**
+> `ai/.../engine/knowledge/{CardIntent,CardIntentAnalyzer,EffectWalker,IntentCatalog,HoldPolicy}.kt`.
+> Numbers and findings:
+> [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-6--cardintent).
+>
+> **Puzzles 39/48 → 44/48.** Non-creature valuation **2/6 → 5/6** (the exit criterion, met) and
+> holding instants **3/6 → 5/6** (up, as required). **The arena is neutral**, 50.9% for `v0-intent`,
+> CI [49.1%, 52.8%], and the `ffa3` pod agrees at 35.7% CI [32.3%, 39.0%] against a 33.3% null — so
+> "arena lower CI bound above 50%" is **not** met. BLB sealed is mostly creatures, which is the same
+> insensitivity Phases 1 and 2 already measured about the 42 card advisors; the merge argument is
+> "clearly better tactically, demonstrably not a regression".
+>
+> Carried on an `AiProfile.useCardIntent` flag, on for `PRODUCTION` and the new `v0-intent` /
+> `v0-phase4-intent` arena agents, off for `LEGACY_V0` — `FrozenBaselineTest` still passes.
+>
+> Four things the build changed about the plan:
+>
+> 1. **The removal half of the `HoldPolicy` was built, measured and removed.** A penalty on
+>    "instant removal in our own main phase" large enough to change behaviour (−2.0) also vetoed
+>    `noncreature-01` — an instant-speed Disenchant in our own main phase — which is the exact cast
+>    this phase exists to enable. A combat trick outside combat provably does nothing; holding
+>    removal is a *preference between futures*, and pricing it is a Phase 7 rollout question, not a
+>    constant. The shipped policy asserts the first and is silent on the second.
+> 2. **A penalty cannot beat a mis-measurement.** `ThreatAssessment` reads a Giant Growth's +3/+3 as
+>    a permanently faster clock and pays **+10.8** for it, so no defensible constant closes
+>    `instants-01`. `TimingVerdict.NoWindow` — "whatever the simulation reports, this is not better
+>    than passing", floored at the pass score — closes it and `instants-06` together. The underlying
+>    flaw (`attackPotential` counts P/T that expires at cleanup, while `creatureValue` already
+>    discounts it) is real, still open, and wants its own switch because it moves `LEGACY_V0`.
+> 3. **`noncreature-02` misses by 0.40 points and is not a card-knowledge failure** — it is
+>    `CardAdvantage.cardValue(0) = −3.0`, the same constant `sequencing-02` fails on. Arithmetic in
+>    the baseline doc. Raising the anthem prior would pass it and would be tuning one guess to cancel
+>    another.
+> 4. **The two rating stores are not duplicates.** One is a curated 0–5 pick rating over 44 sets, the
+>    other raw 17Lands win rates over one. `LimitedCardRater` now *chains* them behind a manifest
+>    instead of consolidating: real data on 44 sets instead of 1, no new files.
 
 Replaces 42 hand-written advisor entries with a structural analyzer covering every card in the
 engine. **Highest strength-per-effort in the plan**, and it raises the leaf evaluator Phase 7 averages
@@ -801,8 +838,16 @@ add JSON for the sets we actually play, and consolidate with the duplicate store
 `CardIntent` reproduces, keeping the ones encoding genuinely card-specific tactics. A principled
 retirement criterion beats a judgment call.
 
+> **As built:** the advisors are untouched and both live side by side —
+> `Strategist.evaluate1Ply` applies the timing verdict *outside* the advisor override, so a card with
+> both keeps both and an advisor still sees the pure board score as its `defaultScore`. The
+> retirement gauntlet is deliberately left for a follow-up: with the arena reading neutral on
+> `v0-intent` it cannot yet separate the three configurations, so retiring anything on it would be
+> reading a coin flip.
+
 **Exit:** puzzle "non-creature valuation" **2/6 → ≥5/6** (Phase 2's measured baseline, not the ~0%
-this plan guessed); "holding instants" up; arena lower CI bound above 50%.
+this plan guessed) — ✅ **5/6**; "holding instants" up — ✅ **3/6 → 5/6**; arena lower CI bound above
+50% — ❌ **not met**, 49.2% CI [47.2%, 51.4%], neutral.
 
 > **Phase 2 sharpened the target.** All four non-creature failures are the AI declining to *cast*
 > the Disenchant, not mis-targeting it: at flat `permanentValue = 0.5`, destroying an artifact is
@@ -1057,25 +1102,31 @@ but tanks a puzzle category, look hard before shipping.
 ## Recommended order
 
 ```
-0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 5̶ → 6 → 7 → 8 → 9 → 10
+0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 5̶ → 6̶ → 7 → 8 → 9 → 10
 ```
 
-Phases 0–5 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
-table, the budget ladder is calibrated and monotone before any rollout depends on it, and the
-engine's quadratic battlefield scans are gone (−21% engine CPU, and `engine-performance.md` is now
-fully closed out). **Phase 5 never was on the critical path** — simulation was already ~2× the speed
-the rollout budget needs — so it was taken as a standing engine win, not a prerequisite.
-Next up is **Phase 6, CardIntent** — the highest strength-per-effort item left, and the first phase
-since 3 that is meant to move a win rate rather than enable one.
+Phases 0–6 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
+table, the budget ladder is calibrated and monotone before any rollout depends on it, the engine's
+quadratic battlefield scans are gone (−21% engine CPU, and `engine-performance.md` is now fully
+closed out), and the leaf evaluator can finally see a permanent that has no power and toughness.
+**Phase 5 never was on the critical path** — simulation was already ~2× the speed the rollout budget
+needs — so it was taken as a standing engine win, not a prerequisite.
+
+Next up is **Phase 7, the rollout evaluator** — the plan's primary lever, and now unblocked in the
+sense gate 3 meant: rollouts average a leaf evaluator, and that evaluator no longer scores an
+Oblivion Ring and a signet as the same number. Phase 6 also left it two pieces of homework: the
+`ThreatAssessment` duration flaw (finding 2 in the baseline doc), and the advisor-retirement
+gauntlet, which needs an arena that can separate `{intent-only, advisors-only, both}` before it can
+retire anything.
 
 Ranked by strength-per-effort, independent of ordering:
 
 | Rank | Phase | Effort | Why |
 |---|---|---|---|
-| 1 | **6** CardIntent | 5–7 d | Removes flat-0.5 blindness to every artifact/enchantment/PW; feeds 4 other consumers. |
+| — | **6̶** CardIntent | 5–7 d | **Done.** Was ranked 1. Removed the flat-0.5 blindness to every artifact/enchantment/PW; puzzles 39/48 → 44/48, arena neutral. Two of its five planned consumers (rollout policy, determinization prior) are Phases 7 and 8 and are still to come. |
 | — | **3̶** multiplayer eval | 1–2 d | **Done.** Was ranked 1: the evaluator scored a whole pod as a duel against one arbitrary neighbour, and read a stale life component in 2HG. |
-| 2 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones. Cheap once the arena exists. |
-| 3 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
+| 1 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones — and Phase 6 raised the stakes: two of the four remaining puzzle failures are *one* constant, `CardAdvantage.cardValue(0) = −3.0`. Cheap once the arena exists. |
+| 2 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
 | 4 | **1̶ / 2̶** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Both done. |
 | — | **4̶a** auto-pass filter | 3–5 d | **Done.** Demoted by Phase 0 and rescoped to "skip the enumeration": 40% of priority windows now never call the enumerator. Also closed Phase 1's 889-of-945 illegal-action finding, which turned out to be a targeting bug. |
 | — | **4̶b** DecisionBudget | 2–3 d | **Done.** Enabling infrastructure, and it measures like it — neutral in the arena, monotone in the scaling ladder. |

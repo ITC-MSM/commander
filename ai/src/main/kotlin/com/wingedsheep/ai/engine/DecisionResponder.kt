@@ -7,6 +7,7 @@ import com.wingedsheep.ai.engine.budget.DecisionBudget
 import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.BoardPresence
+import com.wingedsheep.ai.engine.knowledge.IntentCatalog
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -37,6 +38,13 @@ class DecisionResponder(
     private val evaluator: BoardEvaluator,
     private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry(),
     private val budgetPolicy: BudgetPolicy = LegacyBudgetPolicy,
+    /**
+     * Phase 6: structural card knowledge. Reaches the two places this class ranks *permanents* —
+     * which one to sacrifice, and which one a removal decision should kill — so a mid-resolution
+     * decision prices an opposing Icy Manipulator the way `Strategist` now does.
+     * [IntentCatalog.NONE] is the off position and leaves both at their pre-Phase-6 behaviour.
+     */
+    private val intents: IntentCatalog = IntentCatalog.NONE,
 ) {
     fun respond(state: GameState, decision: PendingDecision, playerId: EntityId): DecisionResponse {
         // Try card-specific advisor first
@@ -210,7 +218,7 @@ class DecisionResponder(
                 // Sacrifice least valuable permanents
                 val ranked = options.sortedBy { entityId ->
                     val card = state.getEntity(entityId)?.get<CardComponent>() ?: return@sortedBy 0.0
-                    BoardPresence.permanentValue(state, state.projectedState, entityId, card)
+                    BoardPresence.permanentValue(state, state.projectedState, entityId, card, intents)
                 }
                 CardsSelectedResponse(decision.id, ranked.take(min.coerceAtLeast(1).coerceAtMost(max)))
             }
@@ -722,6 +730,6 @@ class DecisionResponder(
 
     private fun creatureKillValue(state: GameState, entityId: EntityId): Double {
         val card = state.getEntity(entityId)?.get<CardComponent>() ?: return 0.0
-        return BoardPresence.permanentValue(state, state.projectedState, entityId, card)
+        return BoardPresence.permanentValue(state, state.projectedState, entityId, card, intents)
     }
 }
