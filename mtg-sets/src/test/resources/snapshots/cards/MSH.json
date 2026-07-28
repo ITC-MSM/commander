@@ -1748,6 +1748,83 @@
     ]
 }
 
+// Hidden Lair
+{
+    "name": "Hidden Lair",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{T}: Add {U} or {B}. Activate only if this land entered this turn or if you control a basic land.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": {
+                        "type": "ManaColorSet.Specific",
+                        "colors": [
+                            "BLUE",
+                            "BLACK"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Any",
+                            "conditions": [
+                                {
+                                    "type": "EntityMatches",
+                                    "entity": "Self",
+                                    "filter": {
+                                        "statePredicates": [
+                                            "EnteredThisTurn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "basicland"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "269",
+        "rarity": "RARE",
+        "artist": "Pavel Kolomeyets",
+        "flavorText": "While the Avengers worried over the threat of Ultron-19, in a remote bunker, the construction of Ultron-2458 neared completion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/0742ddb6-71ed-444e-91ad-84f876725a4a.jpg?1783902883"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Hire a Crew
 {
     "name": "Hire a Crew",
