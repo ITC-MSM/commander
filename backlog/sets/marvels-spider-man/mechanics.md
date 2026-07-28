@@ -208,7 +208,18 @@ Blocked cards:
 - **Spider-Slayer, Hatred Honed** [175] — `{2}` Legendary Artifact Creature; "Whenever Spider-Slayer deals damage to a Spider, destroy that creature" (blocked). Its other ability — `{6}`, exile-from-graveyard → two tapped 1/1 flying Robot tokens — works fine.
 </details>
 
-## Chosen card name surviving into a later-firing delayed trigger
+## Chosen card name surviving into a later-firing delayed trigger — ✅ IMPLEMENTED
+
+**Done** (branch `spm-clone-saga`). `CreateDelayedTriggerExecutor.bakeChosenValuesIntoTrigger` now
+also rewrites `NameEqualsChosen(v)` → literal `NameEquals(chosen[v])` and handles a
+`DealsDamageEvent.sourceFilter` (not just `SpellCastEvent.spellFilter`), via a shared
+`bakeChosenValuesIntoFilter` helper. So chapter III models as `Composite(ChooseCardName("clonedName"),
+CreateDelayedTrigger(dealsDamage(Combat, AnyPlayer, Creature.namedFromVariable("clonedName")),
+DrawCards(1)))`. Chapters I (Surveil 3) and II (`CreateDelayedTrigger(YouCastCreature,
+CopyTargetSpell(TriggeringEntity, removeLegendary=true), fireOnce=true)`) needed no engine change.
+Scenario test pins the chapter-III chosen-name combat-damage draw.
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Choose a card name. Whenever a creature with the **chosen name** deals combat damage to a
 > player this turn, draw a card.
@@ -225,6 +236,8 @@ event filters (e.g. `DealsDamageEvent.sourceFilter`), + verify the delayed match
 
 Blocked cards:
 - **The Clone Saga** [28] — `{3}{U}` Enchantment — Saga; chapters I (Surveil 3) and II (copy your next creature spell, non-legendary — both expressible today) are fine, but chapter III ("choose a card name … whenever a creature with the chosen name deals combat damage, draw") is blocked
+
+</details>
 
 ## Exchange life totals with a player (CR 701.12c) + "life you lost this way" draw amount — ✅ IMPLEMENTED
 

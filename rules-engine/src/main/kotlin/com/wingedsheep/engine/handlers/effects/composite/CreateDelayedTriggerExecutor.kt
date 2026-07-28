@@ -30,6 +30,7 @@ import com.wingedsheep.sdk.scripting.effects.MoveTrackedBattlefieldObjectEffect
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -176,20 +177,50 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
     private fun bakeChosenValuesIntoTrigger(trigger: TriggerSpec, context: EffectContext): TriggerSpec {
         val chosen = context.pipeline.chosenValues
         if (chosen.isEmpty()) return trigger
-        val event = trigger.event
-        if (event !is EventPattern.SpellCastEvent) return trigger
-        val filter = event.spellFilter
+        return when (val event = trigger.event) {
+            is EventPattern.SpellCastEvent -> {
+                val newFilter = bakeChosenValuesIntoFilter(event.spellFilter, chosen) ?: return trigger
+                trigger.copy(event = event.copy(spellFilter = newFilter))
+            }
+            // The Clone Saga ch. III: "whenever a creature with the chosen name deals combat damage
+            // to a player this turn, draw a card." The chosen name is baked into the damage source
+            // filter now, so the delayed-trigger matcher can evaluate it without the (gone) pipeline.
+            is EventPattern.DealsDamageEvent -> {
+                val filter = event.sourceFilter ?: return trigger
+                val newFilter = bakeChosenValuesIntoFilter(filter, chosen) ?: return trigger
+                trigger.copy(event = event.copy(sourceFilter = newFilter))
+            }
+            else -> trigger
+        }
+    }
+
+    /**
+     * Rewrite chosen-value-dependent card predicates in [filter] into concrete ones using [chosen]
+     * (= `EffectContext.pipeline.chosenValues`). Returns null when nothing changed so the caller
+     * keeps the original TriggerSpec instance.
+     *
+     *  - `HasSubtypeFromVariable(v)` → `HasSubtype(Subtype(chosen[v]))` (Long List of the Ents)
+     *  - `NameEqualsChosen(v)`       → `NameEquals(chosen[v])`          (The Clone Saga ch. III)
+     */
+    private fun bakeChosenValuesIntoFilter(
+        filter: GameObjectFilter,
+        chosen: Map<String, String>
+    ): GameObjectFilter? {
         val newPredicates = filter.cardPredicates.map { predicate ->
-            if (predicate is CardPredicate.HasSubtypeFromVariable) {
-                val value = chosen[predicate.variableName] ?: return@map predicate
-                CardPredicate.HasSubtype(Subtype(value))
-            } else {
-                predicate
+            when (predicate) {
+                is CardPredicate.HasSubtypeFromVariable -> {
+                    val value = chosen[predicate.variableName] ?: return@map predicate
+                    CardPredicate.HasSubtype(Subtype(value))
+                }
+                is CardPredicate.NameEqualsChosen -> {
+                    val value = chosen[predicate.variableName] ?: return@map predicate
+                    CardPredicate.NameEquals(value)
+                }
+                else -> predicate
             }
         }
-        if (newPredicates == filter.cardPredicates) return trigger
-        val newFilter = filter.copy(cardPredicates = newPredicates)
-        return trigger.copy(event = event.copy(spellFilter = newFilter))
+        if (newPredicates == filter.cardPredicates) return null
+        return filter.copy(cardPredicates = newPredicates)
     }
 
     /**

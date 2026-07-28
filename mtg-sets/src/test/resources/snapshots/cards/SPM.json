@@ -11538,6 +11538,97 @@
     ]
 }
 
+// The Clone Saga
+{
+    "name": "The Clone Saga",
+    "manaCost": "{3}{U}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Surveil 3.\nII — When you next cast a creature spell this turn, copy it, except the copy isn't legendary.\nIII — Choose a card name. Whenever a creature with the chosen name deals combat damage to a player this turn, draw a card.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "Surveil",
+                    "count": 3
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "effect": {
+                        "type": "CopyTargetSpell",
+                        "target": "TriggeringEntity",
+                        "removeLegendary": true
+                    },
+                    "trigger": {
+                        "event": {
+                            "type": "SpellCastEvent",
+                            "spellFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ]
+                            }
+                        },
+                        "binding": "ANY"
+                    },
+                    "fireOnce": true
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ChooseOption",
+                            "optionType": "CARD_NAME",
+                            "storeAs": "clonedName"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "trigger": {
+                                "event": {
+                                    "type": "DealsDamageEvent",
+                                    "damageType": "DamageCombat",
+                                    "recipient": "AnyPlayer",
+                                    "sourceFilter": {
+                                        "cardPredicates": [
+                                            "IsCreature",
+                                            {
+                                                "type": "NameEqualsChosen",
+                                                "variableName": "clonedName"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "binding": "ANY"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "RARE",
+        "artist": "Bill Sienkiewicz",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/7/976432b3-bc17-4edb-86d6-00fd1baf9670.jpg?1783905356"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // The Death of Gwen Stacy
 {
     "name": "The Death of Gwen Stacy",
