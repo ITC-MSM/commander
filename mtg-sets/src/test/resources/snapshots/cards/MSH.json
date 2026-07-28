@@ -924,6 +924,83 @@
     ]
 }
 
+// Dark Fortress
+{
+    "name": "Dark Fortress",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{T}: Add {B} or {R}. Activate only if this land entered this turn or if you control a basic land.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": {
+                        "type": "ManaColorSet.Specific",
+                        "colors": [
+                            "BLACK",
+                            "RED"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Any",
+                            "conditions": [
+                                {
+                                    "type": "EntityMatches",
+                                    "entity": "Self",
+                                    "filter": {
+                                        "statePredicates": [
+                                            "EnteredThisTurn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "basicland"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "264",
+        "rarity": "RARE",
+        "artist": "Arthur Yuan",
+        "flavorText": "\"You talk of freedoms. Liberty. Whose hands do you think built these battlements? In their hearts, peasants want to be ruled.\"\n—Baron Zemo",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c16fd43c-7c47-4c1b-860f-91146532e89d.jpg?1783902885"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Decoy Ploy
 {
     "name": "Decoy Ploy",
@@ -1198,6 +1275,83 @@
     ]
 }
 
+// Gathering Place
+{
+    "name": "Gathering Place",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{T}: Add {G} or {W}. Activate only if this land entered this turn or if you control a basic land.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": {
+                        "type": "ManaColorSet.Specific",
+                        "colors": [
+                            "GREEN",
+                            "WHITE"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Any",
+                            "conditions": [
+                                {
+                                    "type": "EntityMatches",
+                                    "entity": "Self",
+                                    "filter": {
+                                        "statePredicates": [
+                                            "EnteredThisTurn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "basicland"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "266",
+        "rarity": "RARE",
+        "artist": "Pablo Mendoza",
+        "flavorText": "\"Will your friends be staying the night, Master Stark?\"\n—Edwin Jarvis, Avengers Mansion butler",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/081cdbd0-5081-4a9e-90ba-f5baf4ac137e.jpg?1783902886"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
 // Ghost, Spectral Saboteur
 {
     "name": "Ghost, Spectral Saboteur",
@@ -1301,6 +1455,83 @@
         "imageUri": "https://cards.scryfall.io/normal/front/d/a/da529bb3-725b-41aa-ac34-b4117ff5d95b.jpg?1783902958"
     },
     "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Gleaming Bastion
+{
+    "name": "Gleaming Bastion",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {U}. Activate only if this land entered this turn or if you control a basic land.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": {
+                        "type": "ManaColorSet.Specific",
+                        "colors": [
+                            "WHITE",
+                            "BLUE"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Any",
+                            "conditions": [
+                                {
+                                    "type": "EntityMatches",
+                                    "entity": "Self",
+                                    "filter": {
+                                        "statePredicates": [
+                                            "EnteredThisTurn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "basicland"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "267",
+        "rarity": "RARE",
+        "artist": "Arthur Yuan",
+        "flavorText": "\"Welcome to S.H.I.E.L.D. Impressive, huh? Fury needed someplace to park his car.\"\n—Agent Maria Hill",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c9131bf5-17e3-4aa6-97ed-ed6426b247d0.jpg?1783902884"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
         "BLUE"
     ]
 }
@@ -1745,6 +1976,83 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Hidden Lair
+{
+    "name": "Hidden Lair",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{T}: Add {U} or {B}. Activate only if this land entered this turn or if you control a basic land.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": {
+                        "type": "ManaColorSet.Specific",
+                        "colors": [
+                            "BLUE",
+                            "BLACK"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Any",
+                            "conditions": [
+                                {
+                                    "type": "EntityMatches",
+                                    "entity": "Self",
+                                    "filter": {
+                                        "statePredicates": [
+                                            "EnteredThisTurn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "basicland"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "269",
+        "rarity": "RARE",
+        "artist": "Pavel Kolomeyets",
+        "flavorText": "While the Avengers worried over the threat of Ultron-19, in a remote bunker, the construction of Ultron-2458 neared completion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/0742ddb6-71ed-444e-91ad-84f876725a4a.jpg?1783902883"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 
@@ -3957,6 +4265,83 @@
         "imageUri": "https://cards.scryfall.io/normal/front/7/3/73c11aea-4fa4-438d-b886-2fafa60c82f9.jpg?1783902911"
     },
     "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Training Compound
+{
+    "name": "Training Compound",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{T}: Add {R} or {G}. Activate only if this land entered this turn or if you control a basic land.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": {
+                        "type": "ManaColorSet.Specific",
+                        "colors": [
+                            "RED",
+                            "GREEN"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Any",
+                            "conditions": [
+                                {
+                                    "type": "EntityMatches",
+                                    "entity": "Self",
+                                    "filter": {
+                                        "statePredicates": [
+                                            "EnteredThisTurn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "basicland"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "275",
+        "rarity": "RARE",
+        "artist": "Jonas De Ro",
+        "flavorText": "\"I've been authorized to set up a California expansion team. Who's with me?\"\n—Hawkeye, Clint Barton",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c91e28db-307f-462a-88aa-581d10e77f10.jpg?1783902882"
+    },
+    "colorIdentityOverride": [
+        "RED",
         "GREEN"
     ]
 }
