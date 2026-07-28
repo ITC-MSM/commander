@@ -806,6 +806,97 @@
     ]
 }
 
+// Carnage, Crimson Chaos
+{
+    "name": "Carnage, Crimson Chaos",
+    "manaCost": "{2}{B}{R}",
+    "typeLine": "Legendary Creature — Symbiote Villain",
+    "oracleText": "Trample\nWhen Carnage enters, return target creature card with mana value 3 or less from your graveyard to the battlefield. It gains \"This creature attacks each combat if able\" and \"When this creature deals combat damage to a player, sacrifice it.\"\nMayhem {B}{R} (You may cast this card from your graveyard for {B}{R} if you discarded it this turn. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "TRAMPLE",
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{B}{R}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card"
+                            },
+                            "destination": "Battlefield",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "GrantStaticAbility",
+                            "ability": "MustAttack",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "GrantTriggeredAbility",
+                            "ability": {
+                                "id": "ability_2",
+                                "trigger": {
+                                    "type": "DealsDamageEvent",
+                                    "damageType": "DamageCombat",
+                                    "recipient": "AnyPlayer"
+                                },
+                                "effect": "SacrificeSelf"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card"
+                            },
+                            "duration": "Permanent"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature mv<=3 own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "rarity": "RARE",
+        "artist": "Lordigan",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/930befba-6068-493e-baa2-e9371cd99e93.jpg?1783905319"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Chameleon, Master of Disguise
 {
     "name": "Chameleon, Master of Disguise",

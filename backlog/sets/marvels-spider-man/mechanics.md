@@ -92,10 +92,10 @@ Implemented cards (9): **Swarm, Being of Bees** [69] · **Spider-Islanders** [91
 **Rocket-Powered Goblin Glider** [172] (ETB attach gated on `WasCastFromGraveyard`).
 
 Still blocked (not on Mayhem itself):
-- **Carnage, Crimson Chaos** [125] — `{2}{B}{R}` Trample + Mayhem `{B}{R}` work; the ETB "reanimate a creature card
-  with mv ≤ 3, **it gains 'attacks each combat if able' and 'when it deals combat damage to a player, sacrifice it'**"
-  needs a persistent **grant-abilities-to-a-reanimated-target** effect (no clean facade to durably grant a
-  must-attack static + a combat-damage sacrifice trigger to a chosen target). Deferred rather than approximated.
+- **Carnage, Crimson Chaos** [125] — ✅ **IMPLEMENTED** on branch `spm-grant-reanimate`. The persistent
+  grant-abilities-to-a-reanimated-target was expressible after all: `GrantStaticAbilityEffect(MustAttack())`
+  + `GrantTriggeredAbilityEffect(TriggeredAbility.create(DealsCombatDamageToPlayer → SacrificeSelfEffect))`,
+  both `Duration.Permanent`, keyed to the reanimated `Effects.Move(...fromZone = GRAVEYARD)` target.
 - **Oscorp Industries** [182] — ✅ **IMPLEMENTED** on branch `spm-land-plays`. The no-cost 702.187c form is a
   land-play from graveyard: `PlayLandEnumerator` now offers a discarded-this-turn Mayhem land as a `PlayLand`
   action and `PlayLandHandler` allows it (both gated on `MayhemGrants.effectiveMayhem`, via `mayhem("")`). Its

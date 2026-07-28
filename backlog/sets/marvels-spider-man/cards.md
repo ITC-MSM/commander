@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 177 / 188
+**Implemented:** 178 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -16,7 +16,7 @@
 - [x] Behold the Sinister Six!
 - [x] Biorganic Carapace
 - [ ] Black Cat, Cunning Thief
-- [ ] Carnage, Crimson Chaos
+- [x] Carnage, Crimson Chaos
 - [x] Chameleon, Master of Disguise
 - [x] Cheering Crowd
 - [x] City Pigeon
