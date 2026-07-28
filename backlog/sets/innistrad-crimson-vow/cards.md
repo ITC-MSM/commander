@@ -2,6 +2,11 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
+**Implemented:** 153 / 272
+- [x] Abrade
+- [x] Adamant Will
+- [ ] Aim for the Head
+- [ ] Alchemist's Gambit
 **Implemented:** 183 / 272
 - [x] Abrade
 - [x] Adamant Will
@@ -179,6 +184,7 @@
 - [x] Ollenbock Escort
 - [x] Overcharged Amalgam
 - [x] Packsong Pup
+- [ ] Panicked Bystander
 - [x] Panicked Bystander
 - [x] Parasitic Grasp
 - [x] Parish-Blade Trainee
