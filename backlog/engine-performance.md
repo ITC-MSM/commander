@@ -3,7 +3,10 @@
 CPU profile of the rules engine's hot path (legal-action enumeration + action processing),
 with a prioritized plan to cut total CPU. Generated May 2026 from a sampled profiling run.
 
-**Status:** Steps 1–4 shipped (Step 4 on 2026-07-28). **Step 5 outstanding, and profile-gated.**
+**Status:** **Steps 1–4 shipped** (Step 4 on 2026-07-28). **Step 5 dropped** — its profile gate was
+checked and does not open. Every item in this document is now closed; the next perf item is
+`PredicateEvaluator.matchesCardPredicate`, the top leaf in the post-Step-4 profile at **20.4%
+self**, which needs its own analysis rather than a line in this one.
 Items below are ordered by impact ÷ risk; each carries its own status marker.
 
 > ⚠️ **The profile and the May 2026 baseline below predate Steps 1–3.** The measured hotspot table
@@ -227,14 +230,17 @@ had already removed. The cost that remained was the **iteration**, so the fix ha
 one scan in each file was indexed, leaving its four siblings scanning would have left the O(n²)
 in place, so all of them moved.
 
-### Step 5 (optional) — Reduce component-map copy churn ⬜ **NOT DONE** *(only if still hot)*
+### Step 5 (optional) — Reduce component-map copy churn ❌ **DROPPED 2026-07-28** *(gate checked, does not open)*
 
-> Still outstanding. `ComponentContainer.with` / `without` (`:52`, `:59`) rebuild the map on every
-> mutation, and `GameState.withEntity` (`:312`) is `copy(entities = entities + (id to container))` —
-> an O(entities) map copy per single component write, at 125–250 entities.
-> [`engine-ai-improvement.md`](engine-ai-improvement.md) Phase 5c scopes the
-> `kotlinx.collections.immutable` migration, including the serializer work needed to keep the wire
-> format byte-identical. Still profile-gated — don't start it without fresh numbers.
+> The gate is "only if `Arena::grow` is still prominent after 1–4". It is not: in the post-Step-4
+> profile `Arena::grow` is **1.37%** self and `posix_madvise` ~0.7% — about **2%** of the engine,
+> against the 4–6 days plus serializer work [`engine-ai-improvement.md`](engine-ai-improvement.md)
+> Phase 5c scopes. The mechanism below is still correctly described, and the
+> `kotlinx.collections.immutable` migration would still work; there is just no longer a number
+> behind it. Revisit only if a fresh profile puts allocation back near the top.
+>
+> **What is at the top instead:** `PredicateEvaluator.matchesCardPredicate` at **20.4% self**, more
+> than 3× the next entry. That is the next perf item on this plan.
 
 If `Arena::grow` is still prominent after 1–4, reduce the `map + (k to v)` / `map - k` rebuild
 cost in `with` / `without` for hot single-component updates (e.g. a small persistent map or a
@@ -248,21 +254,36 @@ After **each** step:
 2. `just benchmark-random 200 BLB` — compare wall time / throughput against the baseline below.
 3. Re-profile (commands above) — confirm the targeted leaf shrank and nothing regressed.
 
-### Baseline (May 2026, **pre-Steps-1–3** — stale, re-measure before Step 4)
+### Baseline
 
-`just benchmark-random 200 BLB`, 8 threads:
+`just benchmark-random 200 BLB`, 8 threads. **Compare against a run from the same session on the
+same machine** — see the warning below.
+
+**Current (2026-07-28, post-Step-4):**
 
 - Completed 200 / 200, 0 crashes
+- Turns avg 54.8, actions avg 1,528 / game
+- Engine CPU 832 s total — Enumerate 688 s (83%) / Process 144 s (17%)
+- Wall time ~108 s; ~1.9 games/sec wall-clock
+
+**Immediately before Step 4 (2026-07-28, same session):** engine CPU 1,051 s — Enumerate 764 s
+(73%) / Process 287 s (27%); wall ~133 s. So Step 4 is **−21% engine CPU**, with `process` nearly
+halving. Full three-point series, including the intermediate version that regressed 10%:
+[`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-5a--the-on-battlefield-scans).
+
+**Historical (May 2026, pre-Steps-1–3):**
+
 - Turns avg 26.5, actions avg 1,569 / game
 - Throughput ~404 actions/sec per thread
 - Wall time ~98 s; ~2.0 games/sec wall-clock
 - Time split: Enumerate ~57% / Process ~43%
 
-Conservatively, **Steps 1 + 3 alone** should cut total CPU by **~20–30%** at low risk. Start there.
-
-*(Steps 1–3 have since shipped. The realized gain has still never been re-measured with this
-benchmark — that is the first thing to fix. Re-run the benchmark and the profile above, record the
-new baseline here, then start Step 4.)*
+> ⚠️ **The May figure is not a target and never was comparable.** `GameState.turnNumber` counts
+> player turns rather than rounds since the multiplayer fix, so the same game now reports ~2× the
+> turns; and the implemented BLB pool has roughly doubled, so sealed decks are richer and each
+> priority window enumerates more. Two runs three months apart describe two different workloads.
+> Per-game CPU on this box also spans 1 s to 25 s depending on what else is running, so a ±5%
+> difference between two runs means nothing. **Use the profile to say why a number moved.**
 
 ### Related: AI-workload baseline (July 2026)
 

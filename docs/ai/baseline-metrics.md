@@ -563,3 +563,122 @@ swing of lethal. The plan also lists "sweeper castable or on the stack" and "a r
 window". Both need to know what a card *does* — Phase 6's `CardIntent` — and guessing them from a
 mana cost would put the most expensive tier on the wrong windows, which is worse than leaving those
 windows at NORMAL.
+
+---
+
+# Phase 5a — the O(n²) battlefield scans
+
+**Measured:** 2026-07-28. Same hardware. Ships
+[`engine-performance.md`](../../backlog/engine-performance.md) Step 4; the code is
+`mechanics/mana/ManaStaticsIndex.kt` and `event/BattlefieldStaticsIndex.kt`.
+
+## Three points, not two
+
+`just benchmark-random 200 BLB`, 8 threads, all three runs the same afternoon on the same box.
+The middle row is the first cut of this change, which had a bug the profiler found (see finding 1):
+
+| | Before 5a | 5a, eager index | **5a, threaded** |
+|---|---|---|---|
+| Engine CPU, enumerate | 764 s | 894 s | **688 s** |
+| Engine CPU, process | 287 s | 266 s | **144 s** |
+| **Engine CPU, total** | **1,051 s** | 1,159 s (+10%) | **832 s (−21%)** |
+| Wall clock, 200 games | 133 s | 154 s | **108 s** |
+| Completed / crashed | 200/200 · 0 | 200/200 · 0 | 200/200 · 0 |
+
+`process` nearly **halves** — that is the trigger-detection half of the change, which runs inside
+action processing. `enumerate` comes down 10%, which is the mana half.
+
+Take the sizes, not the digits: per-game CPU on this box spans 1 s to 25 s depending on what else is
+running, so ±5% between two runs means nothing. A 21% drop reproduced alongside a profile that shows
+the targeted leaves at zero is a different matter — and the middle column is the useful evidence
+that the benchmark *can* detect a regression of this size, because it detected one.
+
+**The load-independent measurement is still the async-profiler share table below**, and that is
+where the mechanism is demonstrated. Reproduce it with the commands in `engine-performance.md`'s
+"Methodology" (60 games, itimer, 2 ms) — note the agent path must not contain a space, or
+`JAVA_TOOL_OPTIONS` silently fails to start the JVM.
+
+### The targeted leaves, before and after
+
+"Before" is the May 2026 profile in `engine-performance.md` — pre-Steps-1–3, so its absolute shares
+are of a bigger total and are indicative, not exact. "After" is 57,370 samples, 60 BLB games.
+
+| Method | Before (inclusive) | After (inclusive) | Self, after |
+|---|---|---|---|
+| `ManaSolver.findAvailableManaSources` | **~59%** | **3.1%** | 0.10% |
+| `ManaSolver.getStaticGrantedManaAbilities` | 3.5% *self* | **0.00%** | 0.00% |
+| `TriggerAbilityResolver.getWardTriggeredAbilities` | **13.7%** | **0.19%** | 0.05% |
+| `TriggerAbilityResolver.isWardSuppressed` | (inside the above) | **0.00%** | 0.00% |
+| `GameState.getBattlefield()` | 19% | **0.28%** | 0.01% |
+| `TriggerDetector.detectTriggers` | 16.3% | **7.1%** | 0.03% |
+| `StateProjector.project` | 7.4% | **6.8%** | 0.57% |
+
+The two new index types cost **0.58%** (`ManaStaticsIndex`) and **0.13%**
+(`BattlefieldStaticsIndex`) inclusive. `StateProjector.project` is unmoved, which is the control:
+nothing in this change touches it, and it reads the same as it did in May.
+
+## Three findings
+
+### 1. An eagerly-built index is a hotspot of its own, and the first cut had one
+
+The first version gave `getTriggeredAbilities` a **default argument** that built a
+`BattlefieldStaticsIndex`. Kotlin evaluates a default per call, and there are ~19 call sites, many
+inside per-entity loops — so `BattlefieldStaticsIndex.build` came back at **5.2% inclusive / 2.2%
+self**, roughly the size of the hotspot the hoist had just removed. It is threaded on `TriggerIndex`
+now, which `detectTriggers` already builds once per pass: **5.2% → 0.13%**, and
+`detectTriggers` **20.7% → 7.1%**. In the benchmark that is the whole difference between the middle
+column above (10% *worse* than before the change) and the right one (21% better).
+
+`ManaSolver` had the same trap in miniature and is fixed the same way, with a local
+`lazy(LazyThreadSafetyMode.NONE)`: `findAvailableManaSources` runs on every affordability check, and
+a tapped-out player has no candidate source, so eager building charged a battlefield walk to exactly
+the calls that used to do no scanning at all.
+
+**The general lesson for the rest of this plan:** hoisting work out of an inner loop is only half
+the fix. The other half is making sure the hoisted work is paid *once per pass*, not once per call
+that might have needed it — and a Kotlin default argument is the easy way to get that wrong.
+
+### 2. `PredicateEvaluator.matchesCardPredicate` is now the engine's top hotspot
+
+**20.4% self**, more than 3× the next entry (`HashMap.getNode`, 5.9%). Nothing else is close, and it
+is reached from both the enumerator and the filter matching these indexes still do. That is the
+next perf item, and it is a different shape of problem from Step 4 — not a redundant scan but the
+per-call cost of the predicate language itself.
+
+### 3. Phase 5c stays dropped, now with a fresh number
+
+The allocation cluster the persistent-collections idea targets is **`Arena::grow` 1.37% +
+`posix_madvise` ~0.7%** — about 2% of the profile, against the 4–6 days and the serialization work
+`engine-ai-improvement.md` scopes for it. The plan says 5c is profile-gated; the profile does not
+justify it. Leave it dropped until something else changes.
+
+## Why the `~404 actions/sec` comparison is void
+
+The benchmark was re-run at last (Phase 0 left it un-run and said so), which also settles what it
+can be compared against — and the answer is: not its own recorded baseline.
+
+| | May 2026 (pre-Steps-1–3) | 2026-07-28, before 5a |
+|---|---|---|
+| Completed / crashed | 200/200 · 0 | 200/200 · 0 |
+| Turns per game | 26.5 | **54.6** |
+| Actions per game | 1,569 | 1,526 |
+| Throughput per thread | ~404 actions/sec | ~290 actions/sec |
+| Enumerate / Process | 57% / 43% | **73% / 27%** |
+
+**Do not read the throughput row as a regression.** Two things changed underneath it that have
+nothing to do with engine speed:
+
+- **`GameState.turnNumber` counts player turns now, not rounds** (the Phase 3 fix, see
+  `backlog/multiplayer.md`), so the same game reports about twice the turns. The near-identical
+  actions-per-game figure is the giveaway that the games themselves are the same length.
+- **The BLB card pool has roughly doubled** since May, so sealed decks are richer and each priority
+  window enumerates more.
+
+What the row *does* say is that enumeration has grown from 57% to 73% of the workload, which is
+consistent with the second point and is why `PredicateEvaluator` — an enumeration cost — is now the
+top leaf. (After 5a it is 83%, because the change took more out of `process` than out of
+`enumerate`.)
+
+**The practical rule for the next perf step:** compare a run against another run from the same
+afternoon on the same machine, and use the profile to say *why*. The recorded absolute figure from
+three months ago is a record of a different workload, not a target.
