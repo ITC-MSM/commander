@@ -1,6 +1,5 @@
 package com.wingedsheep.engine.legalactions.enumerators
 import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
-import com.wingedsheep.engine.state.components.battlefield.chosenColor
 
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.legalactions.ActionEnumerator
@@ -27,7 +26,6 @@ import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.core.Color
-import com.wingedsheep.sdk.scripting.OverrideEnchantedLandManaColor
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaSpendOnChosenTypeEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
@@ -351,7 +349,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
 
         // Mana-color override from an attached aura (Shimmerwilds Growth etc.).
         if (effect is AddManaEffect) {
-            val override = findEnchantedLandManaColorOverride(state, entityId, context)
+            val override = context.manaStatics.landColorOverrideByTarget[entityId]
             if (override != null) {
                 val costDesc = ability.cost.description
                 return "$costDesc: Add {${override.symbol}}"
@@ -387,34 +385,6 @@ class ManaAbilityEnumerator : ActionEnumerator {
 
         val costDesc = ability.cost.description
         return "$costDesc: Add $count mana of any color ($count ${chosenType}s)"
-    }
-
-    /**
-     * Resolves the mana-color override contributed by auras attached to the source
-     * (via [OverrideEnchantedLandManaColor]). Returns `null` if none applies.
-     * Kept in sync with the identical helpers in `ActivateAbilityHandler` and
-     * `ManaSolver` — all three must agree or UI/label/solver/resolver drift apart.
-     */
-    private fun findEnchantedLandManaColorOverride(
-        state: com.wingedsheep.engine.state.GameState,
-        sourceId: EntityId,
-        context: EnumerationContext
-    ): Color? {
-        var override: Color? = null
-        for (id in state.getBattlefield()) {
-            val container = state.getEntity(id) ?: continue
-            val attachedTo = container.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
-            if (attachedTo?.targetId != sourceId) continue
-            val card = container.get<CardComponent>() ?: continue
-            val cardDef = context.cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            for (staticAbility in cardDef.script.staticAbilities) {
-                val o = staticAbility as? OverrideEnchantedLandManaColor ?: continue
-                override = o.color
-                    ?: container.chosenColor()
-                    ?: continue
-            }
-        }
-        return override
     }
 
     /**

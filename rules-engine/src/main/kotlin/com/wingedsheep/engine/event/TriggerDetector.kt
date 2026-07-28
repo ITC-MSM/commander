@@ -87,30 +87,19 @@ class TriggerDetector(
      *
      * Also pre-computes:
      * - Aura entities indexed by their attachment targets
-     * - Grant providers (GrantTriggeredAbility static abilities)
+     * - Grant providers, ward grants, ward suppressors and attachments-by-target, via
+     *   [BattlefieldStaticsIndex] — one walk that every per-entity ability resolution reads
      * - Damage observer trigger lists for specialized detection methods
      */
     private fun buildTriggerIndex(state: GameState): TriggerIndex {
         val projected = state.projectedState
 
-        // Phase 1: Collect grant providers (needed to compute abilities for each entity)
-        val grantProviders = mutableListOf<TriggerIndex.GrantProviderEntry>()
-        val registry = cardRegistry
-        for (permanentId in state.getBattlefield()) {
-            val container = state.getEntity(permanentId) ?: continue
-            val card = container.get<CardComponent>() ?: continue
-            if (container.has<FaceDownComponent>()) continue
-            val sourceControllerId = projected.getController(permanentId) ?: continue
-            val cardDef = registry.getCard(card.cardDefinitionId) ?: continue
-            val classLevel = container.get<ClassLevelComponent>()?.currentLevel
-            for (ability in cardDef.script.effectiveStaticAbilities(classLevel)) {
-                if (ability is GrantTriggeredAbility &&
-                    ability.filter.scope is com.wingedsheep.sdk.scripting.filters.unified.Scope.Battlefield
-                ) {
-                    grantProviders.add(TriggerIndex.GrantProviderEntry(ability, sourceControllerId, permanentId))
-                }
-            }
-        }
+        // Phase 1: One walk for every battlefield-wide fact the per-entity ability resolution below
+        // needs — the grant providers it already collected, plus the ward grants, ward suppressors
+        // and attachments-by-target that each of the N calls used to re-scan for individually
+        // (see BattlefieldStaticsIndex).
+        val statics = BattlefieldStaticsIndex.build(state, cardRegistry)
+        val grantProviders = statics.triggerGrantProviders
 
         // Phase 2: Index each battlefield entity by trigger categories
         val categoryMap = HashMap<TriggerCategory, MutableList<TriggerIndex.IndexedEntity>>()
@@ -127,7 +116,7 @@ class TriggerDetector(
             if (container.has<FaceDownComponent>()) continue
 
             val abilities = abilityResolver.getTriggeredAbilitiesWithProviders(
-                entityId, cardComponent.cardDefinitionId, state, grantProviders
+                entityId, cardComponent.cardDefinitionId, state, grantProviders, statics
             )
             if (abilities.isEmpty() && container.get<AttachedToComponent>() == null) continue
 
@@ -188,7 +177,8 @@ class TriggerDetector(
                 for (entityId in zoneEntities) {
                     val container = state.getEntity(entityId) ?: continue
                     val cardComponent = container.get<CardComponent>() ?: continue
-                    val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state)
+                    val abilities =
+                        abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, statics)
                     if (abilities.isEmpty()) continue
                     // The controller of a card in the graveyard/exile is its owner.
                     val ownerId = cardComponent.ownerId
