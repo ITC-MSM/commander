@@ -206,6 +206,28 @@ data class AddCountersUpToContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after a player picks how many [counterType] counters to pay (0..their current total),
+ * for `PayCountersEffect` (CR 107.14's "pay {E}" generalized to a chosen amount — "you may pay
+ * any amount of {E}", Galvanic Discharge). The chosen amount is removed from [playerId] through
+ * the standard `RemoveCountersEffect` path and stored in the next frame's pipeline under
+ * [storeAmountAs] so a composed follow-up effect (e.g. `DealDamage(VariableReference(...))`) can
+ * read it. Choosing 0 removes nothing but still stores 0.
+ *
+ * @property playerId The player paying (and whose counters are removed)
+ * @property counterType The counter kind being paid
+ * @property storeAmountAs Pipeline variable name the paid amount is stored under
+ * @property sourceId Source emitting the effect (for the decision prompt context)
+ */
+@Serializable
+data class PayCountersContinuation(
+    override val decisionId: String,
+    val playerId: EntityId,
+    val counterType: String,
+    val storeAmountAs: String,
+    val sourceId: EntityId?
+) : ContinuationFrame
+
+/**
  * Resume after the controller picks how many counters of one kind to move from a
  * [sourceId] permanent onto a [destinationId] permanent. The executor for
  * `MoveChosenCountersToTargetEffect` issues one decision per counter kind on the source;

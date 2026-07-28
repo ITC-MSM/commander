@@ -540,6 +540,11 @@ export interface ClientPlayer {
    * rendered; `4` is max speed, which switches on every "Max speed —" ability they control.
    */
   readonly speed?: number
+  /**
+   * This player's current energy counter total (Kaladesh block onward, CR 107.14). `0` means no
+   * badge is rendered.
+   */
+  readonly energyCounters?: number
 }
 
 /**

@@ -211,6 +211,15 @@ class DynamicAmountEvaluator(
                 state.getEntity(playerId)?.get<ManaPoolComponent>()?.total ?: 0
             }
 
+            // How many counters of a given kind a player has (poison, energy — CR 122.1, 107.14).
+            // Reads the same CountersComponent as any battlefield permanent, just keyed to the
+            // player entity, so this shares counterCountOf with EntityNumericProperty.CounterCount.
+            is DynamicAmount.PlayerCounterCount -> {
+                val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
+                val playerId = playerIds.firstOrNull() ?: return 0
+                counterCountOf(state, playerId, CounterTypeFilter.Named(amount.counterType))
+            }
+
             // Unlocked doors among Rooms the player controls (CR 709.5). Reads per-face door
             // state off each Room's RoomComponent — a single Room entity can contribute two
             // doors, so this can't go through the entity-level AggregateBattlefield. Controller

@@ -77,7 +77,8 @@ enum class CounterType {
     WISH,
     REVIVAL,
     INGENUITY,
-    FILM;
+    FILM,
+    ENERGY;
 
     companion object {
         /**
@@ -369,6 +370,20 @@ object Counters {
      * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val FILM = "film"
+
+    /**
+     * Energy counter (Kaladesh block onward, CR 107.14). Unlike every other entry in this object,
+     * energy counters are placed on **players**, not permanents (CR 122.1 — "a marker placed on an
+     * object or player"), the same way poison counters are (see [CounterType.POISON] usage via
+     * `CountersComponent` on a player entity). "You get {E}{E}{E}" places counters on the controller
+     * (`Effects.AddCounters(Counters.ENERGY, 3, EffectTarget.Controller)` — no new plumbing needed,
+     * `AddCountersExecutor` already supports player-shaped targets for the same reason poison does).
+     * "Pay {E}" (CR 107.14) removes one as part of a cost; "pay any amount of {E}" (Galvanic
+     * Discharge) is the resolution-time variable form — see `Effects.PayCounters`. Reading a
+     * player's current total: `DynamicAmount.PlayerCounterCount(Counters.ENERGY, player)`.
+     * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val ENERGY = "energy"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.
