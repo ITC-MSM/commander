@@ -1145,6 +1145,20 @@ data class CardsDiscardedThisTurnComponent(
 ) : Component
 
 /**
+ * Tracks whether this player has **played a land from a zone other than their hand** this turn
+ * (CR 305.1 special action from graveyard / exile / library). Set by `PlayLandHandler` when a land
+ * is played and `fromZone != HAND`, reset per-turn in `TurnManager`. Backs
+ * `Conditions.YouPlayedLandFromNonHandThisTurn` — the land half of Spider-Man 2099's end-step
+ * intervening-if ("if you've played a land or cast a spell this turn from anywhere other than your
+ * hand"). Land plays are otherwise tracked only as a count (`LandDropsComponent`) with no
+ * zone-of-origin provenance.
+ */
+@Serializable
+data class PlayedLandFromNonHandThisTurnComponent(
+    val played: Boolean = false
+) : Component
+
+/**
  * Tracks the total noncombat damage red sources this player controlled have dealt this turn
  * (controller-scoped). Incremented in `DamageUtils.dealDamageToTarget` on the damage source's
  * controller whenever a red source deals a positive amount of noncombat damage, and cleared at

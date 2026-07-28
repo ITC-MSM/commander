@@ -211,13 +211,20 @@ data class PlayerCastSpellsThisTurn(
     val player: Player = Player.You,
     val filter: GameObjectFilter = GameObjectFilter.Any,
     val atLeast: Int,
-    val fromZone: Zone? = null
+    val fromZone: Zone? = null,
+    /**
+     * When set, counts only spells cast from a zone **other than** this one — "cast a spell this
+     * turn from anywhere other than your hand" (Spider-Man 2099) is `fromZoneOtherThan = Zone.HAND`.
+     * Mutually exclusive with [fromZone] (which requires that specific zone).
+     */
+    val fromZoneOtherThan: Zone? = null
 ) : Condition {
     override val description: String = buildString {
         append("if ${player.description} cast $atLeast or more ")
         if (filter != GameObjectFilter.Any) append("${DynamicAmount.pluralize(filter.description)} ")
         append("spells")
         if (fromZone != null) append(" from ${fromZone.name.lowercase()}")
+        if (fromZoneOtherThan != null) append(" from anywhere other than ${fromZoneOtherThan.name.lowercase()}")
         append(" this turn")
     }
     override fun applyTextReplacement(replacer: TextReplacer): Condition {
@@ -266,6 +273,21 @@ data class PlayerCommittedCrimeThisTurn(
     val player: Player = Player.You
 ) : Condition {
     override val description: String = "if ${player.description} committed a crime this turn"
+}
+
+/**
+ * Condition: "if [player] has played a land this turn from a zone other than their hand" (CR 305.1
+ * special land-play from graveyard / exile / library). Reads the per-player
+ * `PlayedLandFromNonHandThisTurnComponent` flag set by `PlayLandHandler`. The land half of
+ * Spider-Man 2099's end-step intervening-if ("if you've played a land or cast a spell this turn
+ * from anywhere other than your hand").
+ */
+@SerialName("PlayerPlayedLandFromNonHandThisTurn")
+@Serializable
+data class PlayerPlayedLandFromNonHandThisTurn(
+    val player: Player = Player.You
+) : Condition {
+    override val description: String = "if ${player.description} played a land this turn from anywhere other than their hand"
 }
 
 /**

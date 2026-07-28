@@ -96,8 +96,11 @@ Still blocked (not on Mayhem itself):
   with mv ≤ 3, **it gains 'attacks each combat if able' and 'when it deals combat damage to a player, sacrifice it'**"
   needs a persistent **grant-abilities-to-a-reanimated-target** effect (no clean facade to durably grant a
   must-attack static + a combat-damage sacrifice trigger to a chosen target). Deferred rather than approximated.
-- **Oscorp Industries** [182] — land; the no-cost 702.187c form is a **land-play from graveyard** (not a cast),
-  which needs a land-play-from-graveyard action path (`enumerateMayhem` skips lands today). Deferred.
+- **Oscorp Industries** [182] — ✅ **IMPLEMENTED** on branch `spm-land-plays`. The no-cost 702.187c form is a
+  land-play from graveyard: `PlayLandEnumerator` now offers a discarded-this-turn Mayhem land as a `PlayLand`
+  action and `PlayLandHandler` allows it (both gated on `MayhemGrants.effectiveMayhem`, via `mayhem("")`). Its
+  "enters from a graveyard → lose 2 life" uses the `EnteredFromGraveyardComponent` the handler now stamps on
+  graveyard land-plays (lands bypass `ZoneTransitionService`).
 - **Ultimate Green Goblin** [157] — `{1}{B/R}{B/R}` Mayhem `{2}{B/R}`; the upkeep "discard a card, then create a
   Treasure" is expressible, but was not authored in this batch — a straightforward follow-up now that Mayhem exists.
 - **Norman Osborn // Green Goblin** [39] — transform DFC; back's "Goblin Formula" grants Mayhem (cost = mana cost) to
@@ -253,7 +256,20 @@ payment time from whether `AdditionalCostPayment.discardedCards` is non-empty.
 Implemented cards (1): **Pumpkin Bombardment** [139] — `{B/R}` Sorcery; "discard a card or pay {2}. Deals 3
 damage to target creature."
 
-## "Play a land from anywhere other than your hand" trigger
+## "Play a land from anywhere other than your hand" trigger — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-land-plays`. Added an additive `LandPlayedEvent` (engine) emitted by
+`PlayLandHandler` alongside the entry `ZoneChangeEvent` (carrying `fromZone`) — distinct from an effect
+*putting* a land onto the battlefield, so it doesn't over-trigger on fetch/reanimate/ramp. Wired through
+`TriggerIndex` (new `LAND_PLAYED` category, both directions) + `TriggerMatcher` + a
+`EventPattern.LandPlayedEvent(fromZoneOtherThan)` / `Triggers.youPlayLand(fromZoneOtherThan = Zone.HAND)`
+primitive. The **turn-scoped** form: a `PlayedLandFromNonHandThisTurnComponent` flag set by the handler
+(reset per-turn in `TurnManager`) backing `Conditions.YouPlayedLandFromNonHandThisTurn`, plus a
+`fromZoneOtherThan` qualifier added to `Conditions.YouCastSpellsThisTurn` (the cast half). Cards: **Shadow
+of the Goblin** [87] (two triggered abilities — land-play + cast-from-non-hand) and **Spider-Man 2099**
+[150] (`any(YouPlayedLandFromNonHandThisTurn, YouCastSpellsThisTurn(1, fromZoneOtherThan = HAND))`).
+
+<details><summary>Original analysis</summary>
 
 > Whenever you **play a land** or cast a spell from anywhere other than your hand, …
 
@@ -279,6 +295,7 @@ hand** this turn" condition (`YouCastSpellsThisTurn` is single-zone positive equ
 Fix (add-feature): a land-play zone-of-origin turn record + an "other-than" zone qualifier on both
 the land and spell turn-conditions.
 - **Spider-Man 2099** [150] — `{U}{R}` double strike/vigilance; the "From the Future" turn-number cast restriction (`ControllerTurnsTakenAtMost`) and "deal power to any target" are fine, but the end-step intervening-if "if you've played a land or cast a spell this turn from anywhere other than your hand" is the blocker.
+</details>
 
 ## Temporary "play from top of library, paying life = mana value instead of mana cost"
 

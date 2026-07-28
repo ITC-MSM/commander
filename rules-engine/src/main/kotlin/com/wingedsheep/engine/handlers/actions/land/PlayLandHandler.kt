@@ -147,6 +147,29 @@ class PlayLandHandler(
         // Record Muldrotha graveyard land permission usage
         if (fromZone == Zone.GRAVEYARD) {
             newState = recordGraveyardPlayPermissionUsage(newState, action.playerId, CardType.LAND.name)
+            // Mark "entered from a graveyard" for ETB conditions (Oscorp Industries: "when this land
+            // enters from a graveyard, you lose 2 life"). Lands bypass ZoneTransitionService, which
+            // normally stamps this component, so set it here.
+            newState = newState.updateEntity(action.cardId) { c ->
+                c.with(com.wingedsheep.engine.state.components.battlefield.EnteredFromGraveyardComponent)
+            }
+        }
+
+        // The land-play signal (CR 305.1). [landPlayedEvent] rides alongside every entry
+        // ZoneChangeEvent below (like [riderPlayEvent]) so "whenever you play a land …" triggers
+        // (Shadow of the Goblin) fire — distinct from an effect *putting* a land onto the
+        // battlefield, which emits only the ZoneChangeEvent. Playing from a non-hand zone also sets
+        // the turn flag read by Spider-Man 2099's end-step condition.
+        val landPlayedEvent = com.wingedsheep.engine.core.LandPlayedEvent(
+            action.cardId, action.playerId, fromZone
+        )
+        if (fromZone != Zone.HAND) {
+            newState = newState.updateEntity(action.playerId) { c ->
+                c.with(
+                    com.wingedsheep.engine.state.components.player
+                        .PlayedLandFromNonHandThisTurnComponent(played = true)
+                )
+            }
         }
 
         // Add controller component first so projection sees the right controller when
@@ -263,6 +286,7 @@ class PlayLandHandler(
                 )
                 val onEnterEvents = mutableListOf<com.wingedsheep.engine.core.GameEvent>(zoneChangeEvent)
                 riderPlayEvent?.let { onEnterEvents.add(it) }
+                onEnterEvents.add(landPlayedEvent)
                 newState = newState.tick()
 
                 val effectContext = EffectContext(
@@ -329,7 +353,7 @@ class PlayLandHandler(
                         cardComponent = cardComponent,
                         effect = entersAsCopy,
                         fromZone = fromZone,
-                        carryEvents = listOfNotNull(riderPlayEvent),
+                        carryEvents = listOfNotNull(riderPlayEvent, landPlayedEvent),
                     )
                 if (result != null) return result
             }
@@ -370,7 +394,7 @@ class PlayLandHandler(
                         Zone.BATTLEFIELD,
                         action.playerId
                     )
-                    val events = listOf(zoneChangeEvent) + listOfNotNull(riderPlayEvent)
+                    val events = listOf(zoneChangeEvent) + listOfNotNull(riderPlayEvent, landPlayedEvent)
                     newState = newState.tick()
 
                     val decisionId = "pay-life-or-enter-tapped-${action.cardId.value}"
@@ -449,7 +473,7 @@ class PlayLandHandler(
                     Zone.BATTLEFIELD,
                     action.playerId
                 )
-                val events = listOf(zoneChangeEvent) + listOfNotNull(riderPlayEvent)
+                val events = listOf(zoneChangeEvent) + listOfNotNull(riderPlayEvent, landPlayedEvent)
                 newState = newState.tick()
 
                 // Build the choice prompt + entity-keyed continuation via the shared on-battlefield
@@ -488,7 +512,7 @@ class PlayLandHandler(
             action.playerId
         )
 
-        val events = listOf(zoneChangeEvent) + listOfNotNull(riderPlayEvent)
+        val events = listOf(zoneChangeEvent) + listOfNotNull(riderPlayEvent, landPlayedEvent)
         newState = newState.tick()
 
         // Detect and process any triggers from the land entering (e.g., landfall)
@@ -586,7 +610,19 @@ class PlayLandHandler(
         // very action the enumerator advertised.
         if (state.hasMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)) return true
         if (hasLandGraveyardPlayPermission(state, playerId)) return true
-        return findGraveyardPlayPermissionSource(state, playerId, CardType.LAND.name) != null
+        if (findGraveyardPlayPermissionSource(state, playerId, CardType.LAND.name) != null) return true
+        // Mayhem (CR 702.187c): a Mayhem land discarded this turn may be played from the graveyard.
+        val discardedThisTurn = state.getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
+            ?.cardIds ?: emptyList()
+        if (cardId in discardedThisTurn) {
+            val cardDef = state.getEntity(cardId)?.get<CardComponent>()
+                ?.let { cardRegistry.getCard(it.cardDefinitionId) }
+            if (cardDef != null &&
+                com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef) != null
+            ) return true
+        }
+        return false
     }
 
     /**

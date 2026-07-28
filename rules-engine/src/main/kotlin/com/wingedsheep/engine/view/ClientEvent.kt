@@ -780,6 +780,9 @@ object ClientEventTransformer {
         viewingPlayerId: EntityId
     ): ClientEvent? {
         return when (event) {
+            // The land-play signal drives triggers only; the client renders the land entering via
+            // the accompanying ZoneChangeEvent, so no separate client event is emitted.
+            is LandPlayedEvent -> null
             is SpeedChangedEvent -> ClientEvent.SpeedChanged(
                 playerId = event.playerId,
                 oldSpeed = event.oldSpeed,

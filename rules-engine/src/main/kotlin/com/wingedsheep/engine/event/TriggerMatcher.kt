@@ -148,6 +148,14 @@ class TriggerMatcher(
                     event.attackers.size >= trigger.minAttackers
                 }
             }
+            is EventPattern.LandPlayedEvent -> {
+                // "Whenever you play a land …" (Shadow of the Goblin). ANY-binding player trigger:
+                // the playing player must be the trigger's controller. `fromZoneOtherThan` excludes
+                // lands played from that zone (Shadow: not from hand).
+                if (event !is com.wingedsheep.engine.core.LandPlayedEvent) return false
+                if (event.controllerId != controllerId) return false
+                trigger.fromZoneOtherThan == null || event.fromZone != trigger.fromZoneOtherThan
+            }
             is EventPattern.CreaturesAttackYouEvent -> {
                 if (event !is AttackersDeclaredEvent) return false
                 // Only count attackers declared against the player themself, not against

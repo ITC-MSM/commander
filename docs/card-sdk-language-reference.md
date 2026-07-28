@@ -3536,6 +3536,14 @@ caster with `EffectTarget.PlayerRef(Player.TriggeringPlayer)`.
   Master Archer's `Creature.opponentControls()`). Sugar for
   `youCastSpell(requires = setOf(SpellCastPredicate.TargetsMatching(filter)))`.
 
+- `youPlayLand(fromZoneOtherThan: Zone? = null)` — "whenever you play a land" (CR 305.1, the special
+  land-play action). Pass `fromZoneOtherThan = Zone.HAND` for "whenever you play a land … from anywhere
+  other than your hand" (Shadow of the Goblin). Backed by the engine's `LandPlayedEvent`, emitted **only**
+  for a played land — never for a land an effect *puts* onto the battlefield (fetch / reanimate / ramp), so
+  it does not over-trigger. ANY binding (a player-scoped observer). For the union "play a land **or** cast a
+  spell from a non-hand zone", use two triggered abilities — this one plus
+  `youCastSpell(requires = setOf(SpellCastPredicate.CastFromZoneOtherThan(Zone.HAND)))`.
+
 **Factory** — `youCastSpell(spellFilter?, requires: Set<SpellCastPredicate>)`. The
 `requires` set is conjunctive — every predicate must hold for the trigger to fire.
 
@@ -6116,15 +6124,21 @@ default to "you" so card authors don't need to pass it explicitly.
   that turn" (Faramir, Prince of Ithilien: at the chosen opponent's next end step, draw if they didn't
   attack you, else make three Human Soldier tokens). `attacker` is typically `Player.TriggeringPlayer`
   (the player a delayed trigger fired on via `CreateDelayedTriggerEffect.fireOnPlayer`).
-- `YouCastSpellsThisTurn(atLeast, filter, fromZone?)` — Prowess/Magecraft shape. Backed by
-  `PlayerCastSpellsThisTurn(Player.You, filter, atLeast, fromZone)`. `fromZone` (default any) restricts
-  the count to spells cast from that zone, matched independently of `filter` (a face-down/morph spell
-  cast from hand still counts, CR 708.2). With `fromZone = Zone.HAND`, negating gives the Prairie Dog
-  cycle's "you haven't cast a spell from your hand this turn":
+- `YouCastSpellsThisTurn(atLeast, filter, fromZone?, fromZoneOtherThan?)` — Prowess/Magecraft shape.
+  Backed by `PlayerCastSpellsThisTurn(Player.You, filter, atLeast, fromZone, fromZoneOtherThan)`. `fromZone`
+  (default any) restricts the count to spells cast from that zone, matched independently of `filter` (a
+  face-down/morph spell cast from hand still counts, CR 708.2). With `fromZone = Zone.HAND`, negating gives
+  the Prairie Dog cycle's "you haven't cast a spell from your hand this turn":
   `Not(YouCastSpellsThisTurn(1, fromZone = Zone.HAND))` (Inventive Wingsmith, Prairie Dog, Canyon Crab,
-  Emergent Haunting, Wrangler of the Damned). The origin zone is captured on each `CastSpellRecord`
-  (`castFromZone`) at cast time, so flashback/forage (GRAVEYARD), plot/foretell (EXILE), and commander
-  (COMMAND) casts are all distinguished from hand casts.
+  Emergent Haunting, Wrangler of the Damned). `fromZoneOtherThan = Zone.HAND` is the inverse — "cast a spell
+  this turn from anywhere **other than** your hand" (Spider-Man 2099). The origin zone is captured on each
+  `CastSpellRecord` (`castFromZone`) at cast time, so flashback/forage (GRAVEYARD), plot/foretell (EXILE),
+  and commander (COMMAND) casts are all distinguished from hand casts.
+- `YouPlayedLandFromNonHandThisTurn` — "as long as you've **played a land** this turn from a zone other
+  than your hand" (CR 305.1 land-play from graveyard/exile/library). Backed by the per-player
+  `PlayedLandFromNonHandThisTurnComponent` flag set by `PlayLandHandler`. The land half of Spider-Man
+  2099's end-step intervening-if; compose with `YouCastSpellsThisTurn(1, fromZoneOtherThan = Zone.HAND)`
+  via `Any(...)` for the full "played a land or cast a spell this turn from anywhere other than your hand".
 - `YouDrewCardsThisTurn(atLeast = 1)` — "as long as you've drawn N or more cards this turn".
   Backed by `PlayerDrewCardsThisTurn(Player.You, atLeast)`, which reads the per-player
   `CardsDrawnThisTurnComponent` (reset for all players at turn start). Works in resolution and

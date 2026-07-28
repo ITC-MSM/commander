@@ -20,6 +20,7 @@ import com.wingedsheep.engine.state.components.player.AdditionalEndStepsComponen
 import com.wingedsheep.engine.state.components.player.InAdditionalEndStepComponent
 import com.wingedsheep.engine.state.components.player.BendsThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent
+import com.wingedsheep.engine.state.components.player.PlayedLandFromNonHandThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsPutIntoExileThisTurnComponent
 import com.wingedsheep.engine.state.components.player.EquipActivationsThisTurnComponent
@@ -147,6 +148,8 @@ class TurnManager(
                     .with(EquipActivationsThisTurnComponent(count = 0))
                     // Cards discarded this turn reset for every player (Mayhem gate + Green Goblin count).
                     .with(CardsDiscardedThisTurnComponent(cardIds = emptyList()))
+                    // "Played a land from a non-hand zone this turn" reset (Spider-Man 2099).
+                    .with(PlayedLandFromNonHandThisTurnComponent(played = false))
                     // Distinct bends reset each turn for every player ("this turn" is per game-turn).
                     .with(BendsThisTurnComponent(types = emptySet()))
             }
