@@ -437,3 +437,131 @@ is built from `state.getBattlefield()` only, so `getController` on a *player* en
 and the player branch therefore always takes the `else` arm and returns **−5.0**. Every burn spell
 ranks its own controller and its opponent identically badly. Phase 6 should fix this when it
 rewrites the function's `else -> 0.0`.
+
+---
+
+# Phase 4 — Branching factor + budget
+
+**Measured:** 2026-07-28, Phase 4. Same hardware as above.
+
+```bash
+just arena v0 v0-meaningful 1000     # the filter alone
+just arena v0 v0-phase4 1000         # filter + tiered budget — what the phase proposes to ship
+just arena-budget-scaling 300        # the monotonicity ladder
+just arena-pod ffa3 v0-phase4 v0 150 # pod crash check
+```
+
+## Agent baselines
+
+| Matchup | Win share for A | CI | Games | Verdict |
+|---|---|---|---|---|
+| `v0-meaningful` vs `v0` | 51.3% | [49.8%, 52.7%] | 1,000 | neutral — spans parity |
+| `v0-phase4` vs `v0` | 50.8% | [49.4%, 52.2%] | 1,000 | neutral — spans parity |
+| `v0-phase4` vs a field of `v0` (`ffa3`) | 30.0% | [25.3%, 34.7%] | 150 | neutral — spans the 33.3% null |
+
+**Phase 4 is enabling infrastructure and it measures like it.** Neither agent is a demonstrated
+improvement, and neither is a regression — which is the result the phase was designed to produce.
+The exit criterion was `just arena v0 v0-meaningful 1000` **≥50%**, phrased that way precisely
+because a filtered agent that *loses* is discarding a real option. It does not lose.
+
+## Budget scaling — the safety net, and it passes
+
+`just arena-budget-scaling 300`. The same agent, differing in nothing but the size of its
+`DecisionBudget`, played against itself. **Strength is monotone in the budget, with every rung's
+lower CI bound above parity:**
+
+| Rung | Win share for the bigger budget | CI |
+|---|---|---|
+| 1000 ms vs 100 ms | 55.7% | [52.7%, 58.7%] |
+| 3000 ms vs 1000 ms | 54.0% | [51.0%, 57.0%] |
+| 3000 ms vs 100 ms (end to end) | 55.3% | [52.0%, 59.0%] |
+
+This is the single most important number in the phase. It says the search the AI already has
+converts *more thinking* into *more winning*, so when Phase 7 stacks rollouts on top of it there is
+a calibrated instrument that will notice if that stops being true. Note the end-to-end rung is not
+larger than the first: returns diminish above ~1 s, and the three runs share decks and seeds, so
+they are correlated — read the ladder as "monotone", not as "linear".
+
+**Allowances are counted, not timed.** `SearchAllowances` converts a budget into a number of
+simulations once, and the wall clock is only a hard safety stop. A stopwatch-driven search would
+have made the arena non-reproducible and `ArenaHarnessTest`'s "identical at 8 threads and at 1"
+assertion flaky, which would have cost more than it bought.
+
+## Enumeration skipping — what 4a actually saves
+
+Phase 0 re-scoped 4a from "shrink the candidate list" (there are only 1.75 candidates to shrink) to
+"skip the enumeration". `MeaningfulActionFilter.canAutoPassWithoutEnumerating` decides a whole
+priority window from the state alone, without calling `LegalActionEnumerator.enumerate` at all.
+
+Measured over 884 real priority windows from two full AI-vs-AI games (`AutoPassParityTest`, which
+prints the figure): **40% of windows are decided without enumerating.** That is below Phase 0's
+76.2% "windows offering zero candidates" because the fast path deliberately declines every window
+whose verdict depends on what the player is holding — both main phases, both combat declarations,
+first-strike damage, end of combat, and the opponent's end step. At ~0.40 ms per `enumerate` and
+~380 windows per game, it is ~60 ms per game today, and a Phase 7 rollout would have paid it again
+on every window it crossed.
+
+## What Phase 4 found
+
+### 1. The Phase 1 illegal-action finding was a *targeting* bug, not a filtering one
+
+Phase 1 measured the AI proposing ~0.9 illegal actions per game, **889 of 945 being exactly
+`CastSpell: No valid targets available`**, and left it open. The meaningful-action filter was the
+obvious suspect and it turned out not to be the cause at all.
+
+The actual mechanism: `Strategist.resolveTargetsForSimulation` and `chooseCommittedTargets` both
+opened with `if (targetInfos.any { it.validTargets.isEmpty() }) return action.action` — abandoning
+target selection for the **whole spell** the moment *any* requirement had no legal target, and then
+submitting an untargeted cast that the engine rejects. Almost every instance is an **optional**
+trailing slot. Conduct Electricity is "destroy target creature" *and* "up to one target creature
+token"; with no token on the board the AI declines to target the mandatory creature either, and
+throws the card away on a rejection.
+
+`Strategist.fillableRequirements` now fills the slots it can. Targets are submitted as one flat list
+that `TargetValidator` slices back by max counts, so an unfilled slot can only ever be a trailing
+one — the function returns null (old behaviour) when a mandatory slot is empty, or when a *later*
+slot has targets that a skipped one would displace.
+
+Measured effect, mirror matches over 200 games: **`No valid targets available` 36 → 0.** Only 10
+`Not enough mana` rejections remain, a separate bug.
+
+It is behind `AiProfile.useMeaningfulFilter` rather than applied unconditionally. Not because the
+old behaviour is defensible, but because `LEGACY_V0` is the permanent reference opponent and quietly
+strengthening it would silently rebase every number ever published against it. `FrozenBaselineTest`
+would not have caught this: its frozen game is all-vanilla Portal, which has no multi-requirement
+spell.
+
+### 2. `validTargets` cannot see a multi-requirement spell's second slot
+
+The same neighbourhood, a different consumer. `LegalAction.validTargets` and
+`LegalActionInfo.validTargets` only ever mirror the *first* target requirement, so the obvious
+"targeted spell with no legal target" test passes a two-requirement spell whose second mandatory
+slot is empty — an action the engine will reject.
+
+`PriorityAction.hasUnfillableTargetRequirement` asks the real question (any **mandatory**
+requirement with no legal target), and both the AI's candidate filter and the client's auto-pass now
+use it. The client half is a UX fix in its own right: it was stopping the player on spells they
+could not cast.
+
+### 3. The "next stop point" button used a weaker notion of "meaningful" than the stop itself
+
+`GameSession` computed `hasMeaningfulActions` inline as "not PassPriority, and not a plain mana
+ability" — which counts unaffordable spells and zero-target spells that the actual stop decision
+discards. So the Pass button could promise a stop that never arrived. It now calls
+`AutoPassManager.getMeaningfulActions`, the same code path the stop uses.
+
+### 4. Threading a budget through `DecisionResponder` would have changed no number
+
+The plan lists `DecisionResponder` in the budget's threading chain. Every scan in it is already
+bounded by construction — a yes/no is 2 simulations, a colour is 5, a number is sampled to 11,
+targets are pre-ranked and truncated to 8 — which is at or below what even the ROUTINE tier allows.
+The budget is wired into the one place it can bind (the target pre-rank cut) and deliberately not
+into the other twenty responders.
+
+### 5. Two tiers from the plan's table are not implemented, on purpose
+
+`BudgetPolicy`'s CRITICAL tier fires on combat declaration and on either side being within one
+swing of lethal. The plan also lists "sweeper castable or on the stack" and "a real counterspell
+window". Both need to know what a card *does* — Phase 6's `CardIntent` — and guessing them from a
+mana cost would put the most expensive tier on the wrong windows, which is worse than leaving those
+windows at NORMAL.

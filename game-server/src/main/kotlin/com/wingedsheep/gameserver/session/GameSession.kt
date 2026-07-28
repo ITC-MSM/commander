@@ -897,10 +897,10 @@ class GameSession(
         val priorityHolder = state.priorityPlayerId
         val isActorForPriority = priorityHolder != null && state.actorFor(priorityHolder) == playerId
         val nextStopPoint = if (isActorForPriority && playerMode != PriorityMode.FULL_CONTROL) {
-            val hasMeaningfulActions = legalActions.any { action ->
-                action.actionType != "PassPriority" &&
-                (!action.isManaAbility || action.additionalCostInfo?.costType == "SacrificePermanent")
-            }
+            // The same notion of "meaningful" the stop decision itself uses — otherwise the
+            // button can promise a stop (say, at the opponent's end step for a spell we can't
+            // actually pay for) that never arrives.
+            val hasMeaningfulActions = autoPassManager.getMeaningfulActions(legalActions).isNotEmpty()
             autoPassManager.getNextStopPoint(state, playerId, hasMeaningfulActions, myTurnStops = playerOverrides.myTurnStops, opponentTurnStops = playerOverrides.opponentTurnStops, stopsMode = playerMode == PriorityMode.STOPS)
         } else {
             null

@@ -36,10 +36,14 @@ just arena A B [GAMES] [SET] [SEED]
 | Publish | 3,000 | 10 min | ±0.4 pp |
 
 Wall clock is measured on an 8-core M1 Pro at ~5 games/sec. **This is ~100× cheaper than the plan
-assumed**, because the plan budgeted a 2 s `DecisionBudget` that does not exist yet; today the AI
-spends ~1.6 s of wall clock on a whole game. When Phase 4b lands a real budget, re-measure this
-table before promising anyone a 1,000-game gate — it is the budget, not the game count, that makes
-an arena expensive.
+assumed**, because the plan budgeted a 2 s `DecisionBudget` spent as wall clock; today the AI spends
+~1.6 s on a whole game.
+
+**Phase 4b's budget did not change that, by design.** A `DecisionBudget` is converted once into a
+*count* of simulations (`SearchAllowances`) and the millisecond figure is only a hard safety stop —
+so a 2,000 ms NORMAL tier costs what its allowances cost, not two seconds. A stopwatch-driven search
+would have made every arena run irreproducible and `ArenaHarnessTest`'s "identical at 8 threads and
+at 1" assertion flaky. The table above still holds with `v0-phase4` on both seats.
 
 Agents are named in `ai/src/test/kotlin/com/wingedsheep/ai/arena/ArenaAgent.kt`:
 
@@ -50,6 +54,9 @@ Agents are named in `ai/src/test/kotlin/com/wingedsheep/ai/arena/ArenaAgent.kt`:
 | `production` | what a player actually faces: BLB + ONS card advisors |
 | `blb-advisors` / `ons-advisors` | v0 plus one advisor module |
 | `v0-blind` | all evaluation weights zero. Not playable — it is the harness's own control |
+| `v0-meaningful` | v0 + the Phase 4a meaningful-action filter and target-filling fix |
+| `v0-budget-100` … `-3000` | v0 + a `TieredBudgetPolicy` at that NORMAL-tier size. The scaling ladder |
+| `v0-phase4` | both halves of Phase 4 — the filter plus the tiered budget at nominal sizes |
 
 Results land in `benchmarks/arena/<timestamp>-<a>-vs-<b>/` (gitignored): `results.csv` is one row
 per game, `summary.md` is the report below.
@@ -133,8 +140,31 @@ Say these out loud rather than letting a reader assume otherwise.
   but it means the arena tests symmetric matchups only.
 - **Multiplayer.** `just arena` is two seats and always will be — the paired swap has no meaning at
   a bigger table. Pods have their own harness; see [the pod arena](#the-pod-arena) below.
-- **Latency per budget tier.** There are no tiers until Phase 4b.
+- **Wall-clock latency per budget tier.** There are tiers as of Phase 4b, but they are spent as
+  simulation counts, not milliseconds — so "p95 latency at CRITICAL" is not something a
+  reproducible arena can report. Measure it in production instead.
 - **Anything about a real player.** The reference opponent is another bot.
+
+---
+
+## The budget-scaling ladder
+
+```
+just arena-budget-scaling [GAMES] [SET] [SEED]
+```
+
+The same agent, differing in nothing but the size of its `DecisionBudget`, played against itself at
+100 / 1000 / 3000 ms. Four matchups, so budget 4× `GAMES`.
+
+**Read it as one claim: strength must be monotone in the budget.** If it isn't, the search is
+generating noise rather than signal, and the fix is a better leaf evaluator (Phases 6 and 9), not
+more samples — adding rollouts on top of a search that gets worse with more thinking is how you
+spend a week making the AI slower *and* weaker. That is why this ladder was built in Phase 4,
+before any rollouts exist: it needs to be calibrated before it is needed.
+
+The test fails only when a rung's **whole interval** sits below parity. A point estimate under 50%
+at 300 games per rung is inside the noise, and failing on it would train everyone to ignore the
+test. Current numbers: [`baseline-metrics.md`](baseline-metrics.md#budget-scaling--the-safety-net-and-it-passes).
 
 ---
 

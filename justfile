@@ -120,6 +120,14 @@ arena-gauntlet GAMES="200" SET="BLB" SEED="20260727":
     scripts/gradle-locked :ai:test --tests "*.ArenaBenchmark" -Dbenchmark=true -DarenaGauntlet=true \
         -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}}
 
+# Play the same agent against itself at 100 / 1000 / 3000 ms of decision budget. Strength must be
+# MONOTONE in the budget; if it isn't, the search is generating noise and the fix is a better leaf
+# evaluator (phases 6 and 9), not more samples. Runs four matchups, so budget 4x GAMES.
+[group: 'ai']
+arena-budget-scaling GAMES="300" SET="BLB" SEED="20260727":
+    scripts/gradle-locked :ai:test --tests "*.ArenaBudgetScalingTest" -Dbenchmark=true \
+        -DarenaBudgetScaling=true -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}}
+
 # Clean build artifacts
 [group: 'build']
 clean:
