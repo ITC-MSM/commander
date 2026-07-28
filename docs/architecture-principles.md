@@ -761,7 +761,7 @@ The pipeline follows Rule 616.1a–e priority grouping:
 
 ```kotlin
 enum class ReplacementPriorityGroup {
-    SELF_REPLACEMENT,  // CR 616.1a — effects on the affected object itself
+    SELF_REPLACEMENT,  // CR 616.1a — effects that modify resolution of their own source. (e.g. "If a spell was countered this way, exile it instead...")
     CONTROL_CHANGE,    // CR 616.1b — control-changing effects
     COPY,              // CR 616.1c — copy effects
     TRANSFORM,         // CR 616.1d — replacements that cause entering with back face up
