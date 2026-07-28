@@ -416,6 +416,123 @@
     ]
 }
 
+// Archghoul of Thraben
+{
+    "name": "Archghoul of Thraben",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie Cleric",
+    "oracleText": "Whenever this creature or another Zombie you control dies, look at the top card of your library. If it's a Zombie card, you may reveal it and put it into your hand. If you don't put the card into your hand, you may put it into your graveyard.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Zombie ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "Zombie",
+                            "storeSelected": "toHand",
+                            "storeRemainder": "notTaken",
+                            "prompt": "Reveal the Zombie card and put it into your hand?",
+                            "selectedLabel": "Reveal and put into your hand",
+                            "remainderLabel": "Leave it"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toHand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "notTaken",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toGraveyard",
+                            "storeRemainder": "staysOnTop",
+                            "prompt": "Put the card into your graveyard?",
+                            "selectedLabel": "Put into your graveyard",
+                            "remainderLabel": "Leave on top of your library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toGraveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "staysOnTop",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature or another Zombie you control dies, look at the top card of your library. If it's a Zombie card, you may reveal it and put it into your hand. If you don't put the card into your hand, you may put it into your graveyard."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "93",
+        "rarity": "UNCOMMON",
+        "artist": "Johann Bodin",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0cf81c9d-ddb2-470e-8a4a-590049713e95.jpg?1783924876",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If Archghoul of Thraben and another Zombie you control die at the same time, this ability will trigger once for each of them."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Arm the Cathars
 {
     "name": "Arm the Cathars",
@@ -971,6 +1088,163 @@
     ]
 }
 
+// Bloodsworn Squire
+{
+    "name": "Bloodsworn Squire",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Vampire Soldier",
+    "oracleText": "{1}{B}, Discard a card: This creature gains indestructible until end of turn. Tap it. Then if there are four or more creature cards in your graveyard, transform this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "INDESTRUCTIBLE",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "TapUntap",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "Count",
+                                        "player": "You",
+                                        "zone": "Graveyard",
+                                        "filter": "creature"
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 4
+                                    }
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "This creature gains indestructible until end of turn. Tap it. Then if there are four or more creature cards in your graveyard, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Bloodsworn Knight",
+        "manaCost": "",
+        "typeLine": "Creature — Vampire Knight",
+        "oracleText": "Bloodsworn Knight's power and toughness are each equal to the number of creature cards in your graveyard.\n{1}{B}, Discard a card: This creature gains indestructible until end of turn. Tap it.",
+        "creatureStats": {
+            "power": 0,
+            "toughness": 0
+        },
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomMana",
+                                    "cost": "{1}{B}"
+                                }
+                            },
+                            {
+                                "type": "CostAtomWrapper",
+                                "atom": "AtomDiscard"
+                            }
+                        ]
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "INDESTRUCTIBLE",
+                                "target": "Self"
+                            },
+                            {
+                                "type": "TapUntap",
+                                "target": "Self"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "This creature gains indestructible until end of turn. Tap it."
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "SetBasePowerToughnessDynamicStatic",
+                    "power": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "creature"
+                    },
+                    "toughness": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "creature"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "97",
+            "rarity": "UNCOMMON",
+            "artist": "Darren Tan",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/7/a7cbdd54-7685-4921-ab60-dc36e647a4c5.jpg?1783924883"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "rarity": "UNCOMMON",
+        "artist": "Darren Tan",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7cbdd54-7685-4921-ab60-dc36e647a4c5.jpg?1783924883"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Bloodtithe Harvester
 {
     "name": "Bloodtithe Harvester",
@@ -1052,6 +1326,70 @@
     "colorIdentityOverride": [
         "BLACK",
         "RED"
+    ]
+}
+
+// Bloodvial Purveyor
+{
+    "name": "Bloodvial Purveyor",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Vampire Noble",
+    "oracleText": "Flying, trample\nWhenever an opponent casts a spell, that player creates a Blood token. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")\nWhenever this creature attacks, it gets +1/+0 until end of turn for each Blood token defending player controls.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Blood",
+                    "controller": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever an opponent casts a spell, that player creates a Blood token."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "AggregateBattlefield",
+                        "player": "DefendingPlayer",
+                        "filter": "artifact Blood"
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever this creature attacks, it gets +1/+0 until end of turn for each Blood token defending player controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "rarity": "RARE",
+        "artist": "Fesbra",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/4889c58b-8b84-42af-a56c-e886655aa997.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -1556,6 +1894,161 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Concealing Curtains
+{
+    "name": "Concealing Curtains",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Wall",
+    "oracleText": "Defender\n{2}{B}: Transform this creature. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{B}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform this creature. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Revealing Eye",
+        "manaCost": "",
+        "typeLine": "Creature — Eye Horror",
+        "oracleText": "Menace\nWhen this creature transforms into Revealing Eye, target opponent reveals their hand. You may choose a nonland card from it. If you do, that player discards that card, then draws a card.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 4
+        },
+        "keywords": [
+            "MENACE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "TransformEvent",
+                        "intoBackFace": true
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "RevealHand",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target opponent"
+                                }
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "revealedHand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "revealedHand",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "filter": "nonland",
+                                "storeSelected": "chosenCard",
+                                "prompt": "You may choose a nonland card for that player to discard",
+                                "showAllCards": true,
+                                "alwaysPrompt": true
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "chosenCard",
+                                "ifNotEmpty": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "chosenCard",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard",
+                                                "player": {
+                                                    "type": "ContextPlayer",
+                                                    "index": 0
+                                                }
+                                            },
+                                            "moveType": "Discard"
+                                        },
+                                        {
+                                            "type": "DrawCards",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            },
+                                            "target": {
+                                                "type": "BoundVariable",
+                                                "name": "target opponent"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirement": {
+                        "type": "TargetOpponent",
+                        "id": "target opponent"
+                    },
+                    "descriptionOverride": "When this creature transforms into Revealing Eye, target opponent reveals their hand. You may choose a nonland card from it. If you do, that player discards that card, then draws a card."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "101",
+            "rarity": "RARE",
+            "artist": "Brian Valeza",
+            "imageUri": "https://cards.scryfall.io/normal/back/6/1/612b2e6e-fe8d-49ad-b845-6fa7fa59ffd1.jpg?1783924877"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "rarity": "RARE",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/1/612b2e6e-fe8d-49ad-b845-6fa7fa59ffd1.jpg?1783924877"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -2128,6 +2621,69 @@
         "artist": "Sam Guay",
         "flavorText": "\"Do not try to negotiate with me, human. You want power? This is the price.\"\n—Ormendahl",
         "imageUri": "https://cards.scryfall.io/normal/front/8/0/80c3741e-cf04-4aa2-a6a9-ce19f043b22c.jpg?1783924868"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Desperate Farmer
+{
+    "name": "Desperate Farmer",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Peasant",
+    "oracleText": "Lifelink\nWhen another creature you control dies, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "OTHER",
+                "effect": "Transform",
+                "descriptionOverride": "When another creature you control dies, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Depraved Harvester",
+        "manaCost": "",
+        "typeLine": "Creature — Human Knight",
+        "oracleText": "Lifelink",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 3
+        },
+        "keywords": [
+            "LIFELINK"
+        ],
+        "metadata": {
+            "collectorNumber": "104",
+            "artist": "Valera Lutfullina",
+            "imageUri": "https://cards.scryfall.io/normal/back/4/6/467c566e-7f6a-40c9-8fd7-da6ae96df56c.jpg?1783924879"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "104",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/467c566e-7f6a-40c9-8fd7-da6ae96df56c.jpg?1783924879"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -2818,6 +3374,150 @@
     "colorIdentityOverride": [
         "GREEN",
         "BLUE"
+    ]
+}
+
+// Edgar, Charmed Groom
+{
+    "name": "Edgar, Charmed Groom",
+    "manaCost": "{2}{W}{B}",
+    "typeLine": "Legendary Creature — Vampire Noble",
+    "oracleText": "Other Vampires you control get +1/+1.\nWhen Edgar dies, return it to the battlefield transformed under its owner's control.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": "ReturnSelfFromZoneTransformed",
+                "descriptionOverride": "When Edgar dies, return it to the battlefield transformed under its owner's control."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Vampire ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Edgar Markov's Coffin",
+        "manaCost": "",
+        "typeLine": "Legendary Artifact",
+        "oracleText": "At the beginning of your upkeep, create a 1/1 white and black Vampire creature token with lifelink and put a bloodline counter on Edgar Markov's Coffin. Then if there are three or more bloodline counters on it, remove those counters and transform it.",
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE",
+                                    "BLACK"
+                                ],
+                                "creatureTypes": [
+                                    "Vampire"
+                                ],
+                                "keywords": [
+                                    "LIFELINK"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/7/e/7eee78d3-c65f-4454-bd3c-1c55388422f5.jpg?1783924693"
+                            },
+                            {
+                                "type": "AddCounters",
+                                "counterType": "bloodline",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.WhenCondition",
+                                    "condition": {
+                                        "type": "Compare",
+                                        "left": {
+                                            "type": "EntityProperty",
+                                            "entity": "Source",
+                                            "numericProperty": {
+                                                "type": "CounterCount",
+                                                "counterType": {
+                                                    "type": "Named",
+                                                    "name": "bloodline"
+                                                }
+                                            }
+                                        },
+                                        "operator": "GTE",
+                                        "right": {
+                                            "type": "Fixed",
+                                            "amount": 3
+                                        }
+                                    }
+                                },
+                                "then": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "RemoveCounters",
+                                            "counterType": "bloodline",
+                                            "count": 3,
+                                            "target": "Self"
+                                        },
+                                        "Transform"
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "At the beginning of your upkeep, create a 1/1 white and black Vampire creature token with lifelink and put a bloodline counter on Edgar Markov's Coffin. Then if there are three or more bloodline counters on it, remove those counters and transform it."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "236",
+            "rarity": "RARE",
+            "artist": "Volkan Baǵa",
+            "imageUri": "https://cards.scryfall.io/normal/back/6/3/63ba8eef-b834-4031-b0a1-0f8505d53813.jpg?1783924799"
+        },
+        "colorIdentityOverride": [
+            "WHITE",
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "WHITE",
+            "BLACK"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "236",
+        "rarity": "RARE",
+        "artist": "Volkan Baǵa",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63ba8eef-b834-4031-b0a1-0f8505d53813.jpg?1783924799"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
     ]
 }
 
@@ -4335,6 +5035,116 @@
     ]
 }
 
+// Hallowed Haunting
+{
+    "name": "Hallowed Haunting",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "As long as you control seven or more enchantments, creatures you control have flying and vigilance.\nWhenever you cast an enchantment spell, create a white Spirit Cleric creature token with \"This token's power and toughness are each equal to the number of Spirits you control.\"",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsEnchantment"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 0,
+                    "toughness": 0,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Spirit",
+                        "Cleric"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/5/2/5212bae5-d768-45ab-aba8-94c4f9fabc79.jpg?1783924699",
+                    "staticAbilities": [
+                        {
+                            "type": "SetBasePowerToughnessDynamicStatic",
+                            "power": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature Spirit"
+                            },
+                            "toughness": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature Spirit"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you cast an enchantment spell, create a white Spirit Cleric creature token with \"This token's power and toughness are each equal to the number of Spirits you control.\""
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "enchantment"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "enchantment"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "rarity": "MYTHIC",
+        "artist": "David Auden Nash",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/674c0a50-9c37-4c29-84d8-eb3e34f34d37.jpg?1783924918"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Headless Rider
 {
     "name": "Headless Rider",
@@ -4376,6 +5186,202 @@
         "rarity": "RARE",
         "artist": "E. M. Gist",
         "imageUri": "https://cards.scryfall.io/normal/front/5/4/544d7162-b78f-4a70-86e7-83cec7062039.jpg?1782702926"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Henrika Domnathi
+{
+    "name": "Henrika Domnathi",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Legendary Creature — Vampire",
+    "oracleText": "Flying\nAt the beginning of combat on your turn, choose one that hasn't been chosen —\n• Each player sacrifices a creature of their choice.\n• You draw a card and you lose 1 life.\n• Transform Henrika.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Players",
+                                    "players": "Each"
+                                },
+                                "body": {
+                                    "type": "ForceSacrifice",
+                                    "filter": "creature",
+                                    "target": "Controller"
+                                }
+                            },
+                            "description": "Each player sacrifices a creature of their choice"
+                        },
+                        {
+                            "effect": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "DrawCards",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    {
+                                        "type": "LoseLife",
+                                        "amount": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        },
+                                        "target": {
+                                            "type": "PlayerRef",
+                                            "player": "You"
+                                        }
+                                    }
+                                ]
+                            },
+                            "description": "You draw a card and you lose 1 life"
+                        },
+                        {
+                            "effect": "Transform",
+                            "description": "Transform Henrika"
+                        }
+                    ],
+                    "excludePreviouslyChosenModes": true,
+                    "countsAsModalSpell": false
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, choose one that hasn't been chosen —"
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Henrika, Infernal Seer",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Vampire",
+        "oracleText": "Flying, deathtouch, lifelink\n{1}{B}: Each creature you control with flying, deathtouch, and/or lifelink gets +1/+0 until end of turn.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 4
+        },
+        "keywords": [
+            "FLYING",
+            "DEATHTOUCH",
+            "LIFELINK"
+        ],
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{1}{B}"
+                        }
+                    },
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "Or",
+                                            "predicates": [
+                                                {
+                                                    "type": "Or",
+                                                    "predicates": [
+                                                        {
+                                                            "type": "And",
+                                                            "predicates": [
+                                                                "IsCreature",
+                                                                {
+                                                                    "type": "HasKeyword",
+                                                                    "keyword": "FLYING"
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "And",
+                                                            "predicates": [
+                                                                "IsCreature",
+                                                                {
+                                                                    "type": "HasKeyword",
+                                                                    "keyword": "DEATHTOUCH"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "And",
+                                                    "predicates": [
+                                                        "IsCreature",
+                                                        {
+                                                            "type": "HasKeyword",
+                                                            "keyword": "LIFELINK"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "controllerPredicate": "ControlledByYou"
+                                }
+                            }
+                        },
+                        "body": {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "Self"
+                        }
+                    },
+                    "descriptionOverride": "Each creature you control with flying, deathtouch, and/or lifelink gets +1/+0 until end of turn."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "119",
+            "rarity": "MYTHIC",
+            "artist": "Billy Christian",
+            "imageUri": "https://cards.scryfall.io/normal/back/9/4/946ca338-5f43-4cff-bd93-1b28449c5fdc.jpg?1783924867"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "rarity": "MYTHIC",
+        "artist": "Billy Christian",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/4/946ca338-5f43-4cff-bd93-1b28449c5fdc.jpg?1783924867"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -4780,6 +5786,86 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Howling Moon
+{
+    "name": "Howling Moon",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of combat on your turn, target Wolf or Werewolf you control gets +2/+2 until end of turn.\nWhenever an opponent casts their second spell each turn, create a 2/2 green Wolf creature token.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Wolf or Werewolf you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature Wolf ctrl:you",
+                        "alternatives": [
+                            {
+                                "baseFilter": "creature Werewolf ctrl:you"
+                            }
+                        ]
+                    },
+                    "id": "target Wolf or Werewolf you control"
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, target Wolf or Werewolf you control gets +2/+2 until end of turn."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "NthSpellCastEvent",
+                    "nthSpell": 2,
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Wolf"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/d/5/d5f1e139-3054-4273-8a4d-faaaa9c383a8.jpg?1783924694",
+                    "controller": "Controller"
+                },
+                "descriptionOverride": "Whenever an opponent casts their second spell each turn, create a 2/2 green Wolf creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "204",
+        "rarity": "RARE",
+        "artist": "Alessandra Pisano",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca50b6a5-2e58-4de3-b0e1-0b33536f69a6.jpg?1783924810"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -6775,6 +7861,134 @@
     ]
 }
 
+// Panicked Bystander
+{
+    "name": "Panicked Bystander",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Peasant",
+    "oracleText": "Whenever this creature or another creature you control dies, you gain 1 life.\nAt the beginning of your end step, if you gained 3 or more life this turn, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever this creature or another creature you control dies, you gain 1 life."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "LIFE_GAINED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, if you gained 3 or more life this turn, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Cackling Culprit",
+        "manaCost": "",
+        "typeLine": "Creature — Human Rogue",
+        "oracleText": "Whenever this creature or another creature you control dies, you gain 1 life.\n{1}{B}: This creature gains deathtouch until end of turn.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 5
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "ZoneChangeEvent",
+                        "filter": "creature ctrl:you",
+                        "from": "Battlefield",
+                        "to": "Graveyard"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "descriptionOverride": "Whenever this creature or another creature you control dies, you gain 1 life."
+                }
+            ],
+            "activatedAbilities": [
+                {
+                    "id": "ability_4",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{1}{B}"
+                        }
+                    },
+                    "effect": {
+                        "type": "GrantKeyword",
+                        "keyword": "DEATHTOUCH",
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "This creature gains deathtouch until end of turn."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "28",
+            "rarity": "UNCOMMON",
+            "artist": "Aaron Miller",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/3/031c5cff-e579-432a-bcee-864b12eb0558.jpg?1783924920"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "UNCOMMON",
+        "artist": "Aaron Miller",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/031c5cff-e579-432a-bcee-864b12eb0558.jpg?1783924920"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Parasitic Grasp
 {
     "name": "Parasitic Grasp",
@@ -7448,6 +8662,145 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Restless Bloodseeker
+{
+    "name": "Restless Bloodseeker",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "At the beginning of your end step, if you gained life this turn, create a Blood token. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")\nSacrifice two Blood tokens: Transform this creature. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Blood"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "LIFE_GAINED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, if you gained life this turn, create a Blood token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "artifact Blood",
+                        "count": 2
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform this creature. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Bloodsoaked Reveler",
+        "manaCost": "",
+        "typeLine": "Creature — Vampire",
+        "oracleText": "At the beginning of your end step, if you gained life this turn, create a Blood token. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")\n{4}{B}: Each opponent loses 2 life and you gain 2 life.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "END"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "CreatePredefinedToken",
+                        "tokenType": "Blood"
+                    },
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": {
+                            "type": "TurnTracking",
+                            "player": "You",
+                            "tracker": "LIFE_GAINED"
+                        },
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "descriptionOverride": "At the beginning of your end step, if you gained life this turn, create a Blood token."
+                }
+            ],
+            "activatedAbilities": [
+                {
+                    "id": "ability_4",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{4}{B}"
+                        }
+                    },
+                    "effect": {
+                        "type": "DrainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "descriptionOverride": "Each opponent loses 2 life and you gain 2 life."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "128",
+            "rarity": "UNCOMMON",
+            "artist": "Justyna Dura",
+            "imageUri": "https://cards.scryfall.io/normal/back/7/1/71f67ac0-7901-4248-9cb7-2200fb8f893e.jpg?1783924858"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "rarity": "UNCOMMON",
+        "artist": "Justyna Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/71f67ac0-7901-4248-9cb7-2200fb8f893e.jpg?1783924858"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -9366,6 +10719,102 @@
     ]
 }
 
+// Ulvenwald Oddity
+{
+    "name": "Ulvenwald Oddity",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Trample, haste\n{5}{G}{G}: Transform this creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{G}{G}"
+                    }
+                },
+                "effect": "Transform",
+                "descriptionOverride": "Transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Ulvenwald Behemoth",
+        "manaCost": "",
+        "typeLine": "Creature — Beast Horror",
+        "oracleText": "Trample, haste\nOther creatures you control get +1/+1 and have trample and haste.",
+        "creatureStats": {
+            "power": 8,
+            "toughness": 8
+        },
+        "keywords": [
+            "TRAMPLE",
+            "HASTE"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "225",
+            "rarity": "RARE",
+            "artist": "Brent Hollowell",
+            "imageUri": "https://cards.scryfall.io/normal/back/5/f/5fdf5fc4-69c8-4a59-9095-c2feefb64371.jpg?1783924806"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "rarity": "RARE",
+        "artist": "Brent Hollowell",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5fdf5fc4-69c8-4a59-9095-c2feefb64371.jpg?1783924806"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Undead Butler
 {
     "name": "Undead Butler",
@@ -10242,6 +11691,133 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Wedding Announcement
+{
+    "name": "Wedding Announcement",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your end step, put an invitation counter on this enchantment. If you attacked with two or more creatures this turn, draw a card. Otherwise, create a 1/1 white Human creature token. Then if this enchantment has three or more invitation counters on it, transform it.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "invitation",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "PlayerAttackedWithCreaturesThisTurn",
+                                    "filter": "creature",
+                                    "atLeast": 2
+                                }
+                            },
+                            "then": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "otherwise": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d13a93a-a43d-4cf5-8300-8341f3b7f1b1.jpg?1783924701"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": {
+                                            "type": "CounterCount",
+                                            "counterType": {
+                                                "type": "Named",
+                                                "name": "invitation"
+                                            }
+                                        }
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 3
+                                    }
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your end step, put an invitation counter on this enchantment. If you attacked with two or more creatures this turn, draw a card. Otherwise, create a 1/1 white Human creature token. Then if this enchantment has three or more invitation counters on it, transform it."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Wedding Festivity",
+        "manaCost": "",
+        "typeLine": "Enchantment",
+        "oracleText": "Creatures you control get +1/+1.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "45",
+            "rarity": "RARE",
+            "artist": "Caroline Gariba",
+            "imageUri": "https://cards.scryfall.io/normal/back/2/c/2c3ddb1f-a1de-4fea-9042-5e9caa16ceb2.jpg?1783924910"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "rarity": "RARE",
+        "artist": "Caroline Gariba",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2c3ddb1f-a1de-4fea-9042-5e9caa16ceb2.jpg?1783924910"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

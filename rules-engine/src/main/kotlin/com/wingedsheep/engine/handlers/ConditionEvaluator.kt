@@ -123,6 +123,7 @@ import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid
 import com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid
 import com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid
+import com.wingedsheep.sdk.scripting.conditions.MayhemCostWasPaid
 import com.wingedsheep.sdk.scripting.conditions.WaterbendWasPaid
 import com.wingedsheep.sdk.scripting.conditions.SourceIsRingBearer
 import com.wingedsheep.sdk.scripting.conditions.YouChoseOtherCreatureAsRingBearer
@@ -142,6 +143,7 @@ import com.wingedsheep.sdk.scripting.conditions.CreatureWithSubtypeDiedThisTurn
 import com.wingedsheep.engine.state.components.player.CreatureSubtypesDiedThisTurnComponent
 import com.wingedsheep.sdk.scripting.conditions.SourcePlottedOnPriorTurn
 import com.wingedsheep.sdk.scripting.conditions.SourceForetoldOnPriorTurn
+import com.wingedsheep.sdk.scripting.conditions.YouDiscardedThisCardThisTurn
 import com.wingedsheep.engine.handlers.triggers.CreatureDiedThisTurnConditionEvaluator
 import com.wingedsheep.engine.state.components.identity.PlottedComponent
 import com.wingedsheep.engine.state.components.identity.ForetoldComponent
@@ -268,6 +270,18 @@ class ConditionEvaluator(
                 val sourceId = ctx.sourceId
                 val foretold = sourceId?.let { state.getEntity(it)?.get<ForetoldComponent>() }
                 foretold != null && foretold.turnForetold < state.turnNumber
+            }
+
+            is YouDiscardedThisCardThisTurn -> {
+                // The Mayhem gate (CR 702.187b). A discarded card lives only in its owner's
+                // graveyard and entity ids are unique, so "recorded in any player's discard list"
+                // is equivalent to "this card's owner discarded it this turn".
+                val sourceId = ctx.sourceId
+                sourceId != null && state.turnOrder.any { pid ->
+                    state.getEntity(pid)
+                        ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
+                        ?.cardIds?.contains(sourceId) == true
+                }
             }
 
             is SourceCastForImpending -> {
@@ -446,6 +460,7 @@ class ConditionEvaluator(
             is WasKicked -> ifResolution { evaluateWasKicked(state, it) }
             is SneakCostWasPaid -> ifResolution { evaluateSneakCostWasPaid(state, it) }
             is WebSlungCostWasPaid -> ifResolution { evaluateWebSlungCostWasPaid(state, it) }
+            is MayhemCostWasPaid -> ifResolution { evaluateMayhemCostWasPaid(state, it) }
             is BlightWasPaid -> ifResolution { it.wasBlightPaid }
             is WaterbendWasPaid -> ifResolution { evaluateWaterbendWasPaid(state, it) }
             is ManaSpentToCastIncludes -> ifResolution { evaluateManaSpentToCastIncludes(state, condition, it) }
@@ -1170,6 +1185,18 @@ class ConditionEvaluator(
         if (flagged) return true
         // Fall back to the resolution context for a non-permanent spell's own resolving effect.
         return context.wasWebSlung
+    }
+
+    private fun evaluateMayhemCostWasPaid(state: GameState, context: EffectContext): Boolean {
+        // Durable bag on the resolved permanent first (ETB / ongoing reads); fall back to the
+        // resolution context for a non-permanent spell's own resolving effect (Sandman's Quicksand).
+        val sourceId = context.sourceId ?: return context.wasMayhem
+        val flagged = state.getEntity(sourceId)
+            ?.get<CastChoicesComponent>()
+            ?.chosen
+            ?.containsKey(ChoiceSlot.MAYHEM_CAST) == true
+        if (flagged) return true
+        return context.wasMayhem
     }
 
     private fun evaluateWaterbendWasPaid(state: GameState, context: EffectContext): Boolean {

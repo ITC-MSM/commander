@@ -2,8 +2,6 @@ package com.wingedsheep.ai.engine
 
 import com.wingedsheep.ai.ActionResponse
 import com.wingedsheep.ai.AiPlayerController
-import com.wingedsheep.ai.engine.advisor.modules.BloomburrowAdvisorModule
-import com.wingedsheep.ai.engine.advisor.modules.OnslaughtAdvisorModule
 import com.wingedsheep.ai.llm.BottomCardsInfo
 import com.wingedsheep.ai.llm.CardSummary
 import com.wingedsheep.ai.llm.MulliganInfo
@@ -21,8 +19,8 @@ private val logger = LoggerFactory.getLogger(EngineAiPlayerController::class.jav
 /**
  * AI controller powered by the built-in rules-engine [AIPlayer].
  *
- * Runs entirely locally with no API calls. Uses the engine's ActionProcessor,
- * board evaluator, multi-ply searcher, and combat advisor directly.
+ * Runs entirely locally with no API calls. Uses the engine's ActionProcessor, board evaluator,
+ * greedy 1-ply [Strategist] and [CombatAdvisor] directly, configured by [AiProfile.PRODUCTION].
  *
  * Requires a [gameStateProvider] to access the real (unmasked) [GameState] from
  * the [com.wingedsheep.gameserver.session.GameSession]. This allows the engine AI
@@ -34,10 +32,7 @@ class EngineAiPlayerController(
     private val gameStateProvider: () -> GameState?
 ) : AiPlayerController {
 
-    private val aiPlayer = AIPlayer.create(
-        cardRegistry, playerId,
-        advisorModules = listOf(BloomburrowAdvisorModule(), OnslaughtAdvisorModule())
-    )
+    private val aiPlayer = AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION)
 
     override fun chooseAction(
         state: ClientGameState,

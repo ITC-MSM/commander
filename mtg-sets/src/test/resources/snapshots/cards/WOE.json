@@ -226,6 +226,96 @@
     "colorIdentityOverride": []
 }
 
+// Aquatic Alchemist
+{
+    "name": "Aquatic Alchemist",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "Whenever you cast your first instant or sorcery spell each turn, this creature gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "EntityMatches",
+                            "entity": "TriggeringEntity",
+                            "filter": "instant|sorcery"
+                        },
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "PlayerCastSpellsThisTurn",
+                                "filter": "instant|sorcery",
+                                "atLeast": 2
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you cast your first instant or sorcery spell each turn, this creature gets +2/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "artist": "Uriah Voth",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e6f03f21-aeb9-428b-9167-b2604919bdd8.jpg?1783915124"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Bubble Up",
+            "manaCost": "{2}{U}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Put target instant or sorcery card from your graveyard on top of your library. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target instant or sorcery card from your graveyard"
+                    },
+                    "destination": "Library",
+                    "placement": "Top"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "instant|sorcery own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target instant or sorcery card from your graveyard"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Archive Dragon
 {
     "name": "Archive Dragon",
@@ -1883,6 +1973,58 @@
     "colorIdentityOverride": []
 }
 
+// Conceited Witch
+{
+    "name": "Conceited Witch",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Warlock",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "metadata": {
+        "collectorNumber": "84",
+        "artist": "Anna Pavleeva",
+        "flavorText": "She wasn't much for self-reflection.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8a0c0f6-fef9-42c5-934d-a2855c11b440.jpg?1783915109"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Price of Beauty",
+            "manaCost": "{B}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Create a Wicked Role token attached to target creature you control. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1. When this Role is put into a graveyard, each opponent loses 1 life.) (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "CreateRoleToken",
+                    "roleName": "Wicked Role",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Cooped Up
 {
     "name": "Cooped Up",
@@ -2499,6 +2641,64 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Elvish Archivist
+{
+    "name": "Elvish Archivist",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Artificer",
+    "oracleText": "Whenever one or more artifacts you control enter, put two +1/+1 counters on this creature. This ability triggers only once each turn.\nWhenever one or more enchantments you control enter, draw a card. This ability triggers only once each turn.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsEnteredEvent",
+                    "filter": "artifact"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": "Self"
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever one or more artifacts you control enter, put two +1/+1 counters on this creature. This ability triggers only once each turn."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsEnteredEvent",
+                    "filter": "enchantment"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever one or more enchantments you control enter, draw a card. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "rarity": "RARE",
+        "artist": "Mila Pesic",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/0670dbf0-b150-4e8d-bb40-f768b2f06fe5.jpg?1783915083"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -6931,6 +7131,92 @@
     ]
 }
 
+// Picklock Prankster
+{
+    "name": "Picklock Prankster",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flying, vigilance",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "metadata": {
+        "collectorNumber": "64",
+        "rarity": "UNCOMMON",
+        "artist": "Iris Compiet",
+        "flavorText": "You can't cage mischief.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5ebac73a-1ecf-4e6d-87b1-ea560bfeb064.jpg?1783915116"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Free the Fae",
+            "manaCost": "{1}{U}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Mill four cards. Then put an instant, sorcery, or Faerie card from among the milled cards into your hand. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "milled",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "instant|sorcery|Faerie",
+                            "storeSelected": "selected",
+                            "prompt": "Put an instant, sorcery, or Faerie card into your hand",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Leave in graveyard",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Plunge into Winter
 {
     "name": "Plunge into Winter",
@@ -9459,6 +9745,106 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Spellscorn Coven
+{
+    "name": "Spellscorn Coven",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Faerie Warlock",
+    "oracleText": "Flying\nWhen this creature enters, each opponent discards a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this creature enters, each opponent discards a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "UNCOMMON",
+        "artist": "Uriah Voth",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8c112f62-6034-4636-a75b-4a45bc916a91.jpg?1783915062"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Take It Back",
+            "manaCost": "{2}{U}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Return target spell to its owner's hand. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": "ReturnSpellToOwnersHand",
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {},
+                            "zone": "Stack"
+                        },
+                        "id": "spell"
+                    }
+                ]
+            }
+        }
     ]
 }
 

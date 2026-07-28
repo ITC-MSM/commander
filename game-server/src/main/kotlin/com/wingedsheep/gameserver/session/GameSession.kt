@@ -63,7 +63,8 @@ class GameSession(
         debugMode: Boolean = false,
         printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry? = null,
         maxPlayers: Int = 2,
-    ) : this(sessionId, EngineServices(cardRegistry, printingRegistry), if (debugMode) ClientStateTransformer(cardRegistry, debugMode = true) else stateTransformer, useHandSmoother, maxPlayers)
+        tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry? = null,
+    ) : this(sessionId, EngineServices(cardRegistry, printingRegistry, tokenArtRegistry), if (debugMode) ClientStateTransformer(cardRegistry, debugMode = true) else stateTransformer, useHandSmoother, maxPlayers)
 
     private val cardRegistry: CardRegistry get() = services.cardRegistry
     // Lock for synchronizing state modifications to prevent lost updates
@@ -886,7 +887,7 @@ class GameSession(
         // decision to the controller, not the affected player.
         // Enrich with imageUri from card registry since engine doesn't have access to metadata
         val pendingDecision = state.pendingDecision?.takeIf { state.actorFor(it.playerId) == playerId }?.let {
-            decisionEnricher.enrich(it, state)
+            decisionEnricher.enrich(it, state, playerId)
         }
 
         // Calculate next stop point for the Pass button (only if player has priority,
@@ -908,7 +909,7 @@ class GameSession(
         // Include opponent decision status for the player who is NOT driving this
         // decision — i.e. when their seat is not the actor for the affected player.
         val opponentDecisionStatus = state.pendingDecision?.takeIf { state.actorFor(it.playerId) != playerId }?.let {
-            decisionEnricher.createOpponentDecisionStatus(it)
+            decisionEnricher.createOpponentDecisionStatus(it, state, playerId)
         }
 
         val stateWithLog = clientState.copy(gameLog = playerLog.toList())
@@ -1523,6 +1524,18 @@ class GameSession(
      * **WARNING:** This method is for testing only.
      */
     fun getStateForTesting(): GameState? = gameState
+
+    /**
+     * Whether this session resolves set-scoped token art, for testing assertions.
+     *
+     * [tokenArtRegistry] is an optional constructor argument, so a code path that builds a session
+     * and forgets it degrades silently: every token still gets *an* image, just the engine-wide
+     * generic one for its creature type. Nothing fails, the art is merely wrong — which is exactly
+     * how the scenario path shipped without it. Each site that creates a session should assert this.
+     *
+     * **WARNING:** This method is for testing only.
+     */
+    fun hasTokenArtForTesting(): Boolean = services.tokenArtRegistry != null
 
     /**
      * Read-only snapshot of the current game state. Used by the engine AI controller

@@ -32,6 +32,7 @@ class RedisGameRepository(
     private val redisTemplate: RedisTemplate<String, String>,
     private val cardRegistry: CardRegistry,
     private val printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry,
+    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry,
     private val sessionRegistry: SessionRegistry,
     private val redisProperties: RedisProperties,
     // Replay recordings are no longer part of the session blob — they live in the replay store, so a
@@ -79,7 +80,7 @@ class RedisGameRepository(
         return try {
             val json = redisTemplate.opsForValue().get(gameKey(sessionId)) ?: return null
             val persistent = persistenceJson.decodeFromString(PersistentGameSession.serializer(), json)
-            val (session, _) = restoreGameSession(persistent, cardRegistry, printingRegistry)
+            val (session, _) = restoreGameSession(persistent, cardRegistry, printingRegistry, tokenArtRegistry)
             resumeReplayRecording(session)
 
             // Cache the restored session
@@ -196,7 +197,7 @@ class RedisGameRepository(
                 try {
                     val json = redisTemplate.opsForValue().get(key) ?: continue
                     val persistent = persistenceJson.decodeFromString(PersistentGameSession.serializer(), json)
-                    val (session, identities) = restoreGameSession(persistent, cardRegistry, printingRegistry)
+                    val (session, identities) = restoreGameSession(persistent, cardRegistry, printingRegistry, tokenArtRegistry)
                     resumeReplayRecording(session)
 
                     sessionCache[session.sessionId] = session

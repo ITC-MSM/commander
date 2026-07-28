@@ -289,7 +289,8 @@ runtime, so `scripts/card-progress-graph` bakes the series (alongside the root
 
 The denominator (canonical booster + extra front-face card names) isn't knowable at runtime — it
 lives only in the local Scryfall cache. `scripts/gen-set-totals` bakes those canonical cards, split
-into `draft` (Scryfall `booster: true`) and `extra`, each `{ name, img }` (direct CDN art URL), into
+into `draft` (some printing of the card in that set is Scryfall `booster: true`) and `extra`, each
+`{ name, img }` (direct CDN art URL), into
 the committed `game-server/.../resources/coverage/set-totals.json` resource (same partitioning as
 `scripts/card-status`, so the numbers match the mtgish coverage TUI). Baking the art URL lets the
 detail view render set-specific images for *missing* cards too, without hammering the rate-limited

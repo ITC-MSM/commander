@@ -159,9 +159,8 @@ class DecisionResponder(
             return if (controller != playerId) value + 5.0 else -value
         }
 
-        // Players — prefer opponent
-        val isOpponent = targetId == state.soleOpponent(playerId)
-        if (isOpponent) return 3.0
+        // Players — prefer an opponent (any of them; CR 810 teammates are not opponents)
+        if (state.isOpponentTo(targetId, playerId)) return 3.0
 
         return 0.0
     }
@@ -319,7 +318,6 @@ class DecisionResponder(
         playerId: EntityId
     ): DecisionResponse {
         val projected = state.projectedState
-        val opponentId = state.soleOpponent(playerId)
 
         val distribution = mutableMapOf<EntityId, Int>()
         var remaining = decision.totalAmount
@@ -333,8 +331,9 @@ class DecisionResponder(
         // Smart distribution: try to kill creatures, then hit opponent
         val targetPriority = decision.targets.sortedByDescending { target ->
             when {
-                // Opponent player — good target but creatures first
-                target == opponentId -> 5.0
+                // Opponent player — good target but creatures first. Any opponent, not just the
+                // first one in turn order; a teammate is never one (CR 810).
+                state.isOpponentTo(target, playerId) -> 5.0
 
                 // Opponent creature — value killing it
                 isOpponentCreature(state, target, playerId) -> {
@@ -435,6 +434,13 @@ class DecisionResponder(
         val selected = mutableListOf<Int>()
         var remaining = decision.budget
         for ((idx, mode) in sorted) {
+            if (mode.cost > remaining) continue
+            // A free mode never consumes budget, so repeating it would spin forever.
+            // Take it once and move on. (Rare in production, frequent under playouts.)
+            if (mode.cost <= 0) {
+                selected.add(idx)
+                continue
+            }
             while (mode.cost <= remaining) {
                 selected.add(idx)
                 remaining -= mode.cost

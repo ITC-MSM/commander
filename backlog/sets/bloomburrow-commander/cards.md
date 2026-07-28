@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 110 / 312
+**Implemented:** 111 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -297,7 +297,7 @@
 - [ ] Tenuous Truce
 - [x] Terramorphic Expanse
 - [x] Tetsuko Umezawa, Fugitive
-- [ ] The Gitrog Monster
+- [x] The Gitrog Monster
 - [ ] The Odd Acorn Gang
 - [x] Thickest in the Thicket
 - [ ] Thopter Engineer

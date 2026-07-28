@@ -112,6 +112,15 @@ enum class TurnTracker {
      */
     CARDS_DRAWN,
     /**
+     * Number of cards the player has discarded this turn (CR 701.8). Backed by
+     * `CardsDiscardedThisTurnComponent`, reset to an empty list for every player at the start of
+     * each turn. Every discard site (cost, effect, cycling, CR 514.1 hand-size cleanup) records
+     * into it. Powers "draw a card for each card you've discarded this turn" (Green Goblin,
+     * Revenant) and, in threshold form, the Mayhem gate (CR 702.187 — via
+     * `Conditions.YouDiscardedThisCardThisTurn`, a per-card membership check on the same component).
+     */
+    CARDS_DISCARDED,
+    /**
      * Number of cards put into exile this turn, keyed on each card's owner. Summed across every
      * player (via `Player.Each`) it gives the game-wide count of cards put into exile this turn.
      * Backed by `CardsPutIntoExileThisTurnComponent`, reset to 0 for every player at the start of
@@ -166,6 +175,7 @@ enum class TurnTracker {
         CARDS_LEFT_GRAVEYARD -> "the number of cards that left ${player.possessive} graveyard this turn"
         DESCENDED -> "the number of times ${player.description} descended this turn"
         CARDS_DRAWN -> "the number of cards ${player.description} have drawn this turn"
+        CARDS_DISCARDED -> "the number of cards ${player.description} have discarded this turn"
         CARDS_PUT_INTO_EXILE -> "the number of cards put into exile this turn"
         PERMANENTS_SACRIFICED -> "the number of permanents ${player.description} sacrificed this turn"
         RED_NONCOMBAT_DAMAGE_DEALT -> "the noncombat damage red sources ${player.description} controlled dealt this turn"

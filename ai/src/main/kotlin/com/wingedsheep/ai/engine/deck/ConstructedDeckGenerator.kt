@@ -4,6 +4,7 @@ import com.wingedsheep.engine.limited.BoosterGenerator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.core.DeckFormat
 import com.wingedsheep.sdk.model.CardDefinition
+import kotlin.random.Random
 import org.slf4j.LoggerFactory
 
 /**
@@ -27,6 +28,12 @@ import org.slf4j.LoggerFactory
 class ConstructedDeckGenerator(
     private val boosterGenerator: BoosterGenerator,
     private val cardRegistry: CardRegistry,
+    /**
+     * Randomness source for the colour pick, the curve fill and the basic-land art. Defaults to
+     * [Random.Default] so live lobbies keep drawing fresh decks; pass a seeded [Random] to make a
+     * run reproducible — the arena does, so a rerun at the same seed plays the same decks.
+     */
+    private val random: Random = Random.Default,
 ) {
     /**
      * Builds a format-legal deck from the cards printed in [setCodes].
@@ -66,6 +73,7 @@ class ConstructedDeckGenerator(
             cardPool = pool,
             basicLandVariants = basics,
             setCodes = setCodes,
+            random = random,
         ).generate()
     }
 

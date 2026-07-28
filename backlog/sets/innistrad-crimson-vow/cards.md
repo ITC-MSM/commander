@@ -7,6 +7,11 @@
 - [x] Adamant Will
 - [ ] Aim for the Head
 - [ ] Alchemist's Gambit
+**Implemented:** 183 / 272
+- [x] Abrade
+- [x] Adamant Will
+- [ ] Aim for the Head
+- [x] Alchemist's Gambit
 - [x] Alchemist's Retrieval
 - [ ] Alluring Suitor
 - [x] Ancestral Anger
@@ -14,7 +19,7 @@
 - [x] Angelic Quartermaster
 - [x] Anje, Maid of Dishonor
 - [x] Apprentice Sharpshooter
-- [ ] Archghoul of Thraben
+- [x] Archghoul of Thraben
 - [x] Arm the Cathars
 - [x] Ascendant Packleader
 - [ ] Avabruck Caretaker
@@ -28,9 +33,9 @@
 - [x] Blood Petal Celebrant
 - [x] Blood Servitor
 - [x] Bloodcrazed Socialite
-- [ ] Bloodsworn Squire
+- [x] Bloodsworn Squire
 - [x] Bloodtithe Harvester
-- [ ] Bloodvial Purveyor
+- [x] Bloodvial Purveyor
 - [x] Bloody Betrayal
 - [x] Boarded Window
 - [x] Bramble Armor
@@ -51,9 +56,9 @@
 - [ ] Child of the Pack
 - [ ] Chill of the Grave
 - [ ] Circle of Confinement
-- [ ] Cloaked Cadet
+- [x] Cloaked Cadet
 - [x] Cobbled Lancer
-- [ ] Concealing Curtains
+- [x] Concealing Curtains
 - [ ] Consuming Tide
 - [x] Courier Bat
 - [x] Cradle of Safety
@@ -68,11 +73,11 @@
 - [x] Daybreak Combatants
 - [x] Deathcap Glade
 - [x] Demonic Bargain
-- [ ] Desperate Farmer
-- [ ] Dig Up
+- [x] Desperate Farmer
+- [x] Dig Up
 - [x] Diregraf Scavenger
 - [ ] Distracting Geist
-- [ ] Diver Skaab
+- [x] Diver Skaab
 - [ ] Dollhouse of Horrors
 - [x] Dominating Vampire
 - [x] Doomed Dissenter
@@ -86,7 +91,7 @@
 - [ ] Drogskol Infantry
 - [ ] Dying to Serve
 - [ ] Edgar's Awakening
-- [ ] Edgar, Charmed Groom
+- [x] Edgar, Charmed Groom
 - [x] End the Festivities
 - [ ] Eruth, Tormented Prophet
 - [x] Estwald Shieldbasher
@@ -96,8 +101,8 @@
 - [x] Falkenrath Forebear
 - [x] Fear of Death
 - [ ] Fearful Villager
-- [ ] Fell Stinger
-- [ ] Fierce Retribution
+- [x] Fell Stinger
+- [x] Fierce Retribution
 - [x] Flame-Blessed Bolt
 - [x] Fleeting Spirit
 - [x] Flourishing Hunter
@@ -109,18 +114,18 @@
 - [x] Gift of Fangs
 - [x] Glorious Sunrise
 - [x] Gluttonous Guest
-- [ ] Graf Reaver
+- [x] Graf Reaver
 - [x] Grisly Ritual
 - [ ] Grolnok, the Omnivore
 - [x] Groom's Finery
-- [ ] Gryff Rider
+- [x] Gryff Rider
 - [x] Gryffwing Cavalry
 - [ ] Gutter Skulker
 - [x] Halana and Alena, Partners
-- [ ] Hallowed Haunting
+- [x] Hallowed Haunting
 - [ ] Hamlet Vanguard
 - [x] Headless Rider
-- [ ] Henrika Domnathi
+- [x] Henrika Domnathi
 - [x] Hero's Downfall
 - [ ] Heron of Hope
 - [x] Heron-Blessed Geist
@@ -129,7 +134,7 @@
 - [x] Honored Heirloom
 - [ ] Hookhand Mariner
 - [x] Hopeful Initiate
-- [ ] Howling Moon
+- [x] Howling Moon
 - [ ] Howlpack Piper
 - [x] Hullbreaker Horror
 - [x] Hungry Ridgewolf
@@ -161,7 +166,7 @@
 - [x] Markov Waltzer
 - [x] Massive Might
 - [x] Militia Rallier
-- [ ] Mindleech Ghoul
+- [x] Mindleech Ghoul
 - [ ] Mirrorhall Mimic
 - [ ] Mischievous Catgeist
 - [x] Moldgraf Millipede
@@ -177,13 +182,14 @@
 - [ ] Olivia's Attendants
 - [ ] Olivia, Crimson Bride
 - [x] Ollenbock Escort
-- [ ] Overcharged Amalgam
+- [x] Overcharged Amalgam
 - [x] Packsong Pup
 - [ ] Panicked Bystander
+- [x] Panicked Bystander
 - [x] Parasitic Grasp
 - [x] Parish-Blade Trainee
 - [ ] Patchwork Crawler
-- [ ] Path of Peril
+- [x] Path of Peril
 - [x] Persistent Specimen
 - [x] Piercing Light
 - [x] Plains
@@ -194,11 +200,11 @@
 - [x] Reckless Impulse
 - [x] Reclusive Taxidermist
 - [x] Rending Flame
-- [ ] Repository Skaab
+- [x] Repository Skaab
 - [x] Resistance Squad
-- [ ] Restless Bloodseeker
+- [x] Restless Bloodseeker
 - [x] Retrieve
-- [ ] Rot-Tide Gargantua
+- [x] Rot-Tide Gargantua
 - [x] Runebound Wolf
 - [ ] Runo Stromkirk
 - [x] Rural Recruit
@@ -216,7 +222,7 @@
 - [ ] Sigarda's Summons
 - [ ] Sigardian Paladin
 - [x] Skulking Killer
-- [ ] Skull Skaab
+- [x] Skull Skaab
 - [x] Skywarp Skaab
 - [x] Snarling Wolf
 - [ ] Sorin the Mirthless
@@ -227,7 +233,7 @@
 - [x] Sporeback Wolf
 - [x] Steelclad Spirit
 - [x] Stensia Uprising
-- [ ] Stitched Assistant
+- [x] Stitched Assistant
 - [x] Stormcarved Coast
 - [ ] Stormchaser Drake
 - [x] Sundown Pass
@@ -238,12 +244,12 @@
 - [x] Syphon Essence
 - [x] Thalia, Guardian of Thraben
 - [x] Thirst for Discovery
-- [ ] Torens, Fist of the Angels
+- [x] Torens, Fist of the Angels
 - [x] Toxic Scorpion
 - [ ] Toxrill, the Corrosive
 - [x] Traveling Minister
 - [ ] Twinblade Geist
-- [ ] Ulvenwald Oddity
+- [x] Ulvenwald Oddity
 - [x] Undead Butler
 - [x] Undying Malice
 - [x] Unhallowed Phalanx
@@ -261,10 +267,10 @@
 - [ ] Voltaic Visionary
 - [x] Wandering Mind
 - [x] Wanderlight Spirit
-- [ ] Wash Away
+- [x] Wash Away
 - [ ] Weary Prisoner
 - [ ] Weaver of Blossoms
-- [ ] Wedding Announcement
+- [x] Wedding Announcement
 - [x] Wedding Invitation
 - [x] Wedding Security
 - [x] Welcoming Vampire

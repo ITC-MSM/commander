@@ -171,10 +171,24 @@ is replaced by `getOpponents(playerId)` (turn-order, excluding lost players) + `
 vocabulary: `Player.DefendingPlayer` (CR 802.2a, resolved from the source's attack assignment) and
 `Player.AnOpponent` (genuinely non-targeted "an opponent" chooser shapes only — Callous Oppressor,
 Risky Move; resolves to first opponent in turn order until the choose-an-opponent flow exists).
-Central single-player resolution lives in `TargetResolutionUtils.resolvePlayerRef`. The built-in AI
-keeps an explicitly 1v1 `soleOpponent` helper in the `ai` module. Verified by
+Central single-player resolution lives in `TargetResolutionUtils.resolvePlayerRef`. Verified by
 `MultiplayerSmokeTest` (4-player init, priority round-trip, turn cycle, EachOpponent fan-out,
 DefendingPlayer resolution).
+
+The built-in AI kept an explicitly 1v1 `soleOpponent` helper in the `ai` module. **That is gone as of
+2026-07-28** — Phase 3 of [`engine-ai-improvement.md`](engine-ai-improvement.md) replaced it with
+`Sides.kt`, so the evaluator, the combat advisor and the decision responder all fold over every
+opposing team instead of the first opponent in turn order. `just arena-pod` plays FFA and 2HG games.
+See "AI pod players" below.
+
+> **Open engine question that came out of that work: `GameState.turnNumber` stops advancing after
+> the first elimination.** `TurnManager.startTurn` increments it only when
+> `playerId == state.turnOrder.first()`, and `turnOrder` retains eliminated players — so once seat 0
+> is out, a pod plays another twenty turns at the same `turnNumber`. Everything that reads
+> `turnNumber + 1` as "next turn" inherits the freeze: delayed triggers
+> (`CreateDelayedTriggerExecutor`), `ExileTopCardMayPlayFreeExecutor`, `StackResolver`'s
+> `notBeforeTurn`. Fixing it is a rules change with replay and client-display consequences, so it
+> wants its own phase rather than a drive-by.
 
 The riskiest work, done first, while everything is still verifiable against the existing 2-player test corpus.
 
@@ -613,10 +627,14 @@ axis). This is the payoff of keeping them orthogonal.
 
 ## Later — explicitly deferred
 
-- **AI pod players** (its own project): multi-opponent board evaluation (per-opponent threat vector instead
-  of a single differential), attack-target selection (kill priority, retaliation risk), search beyond
-  minimax (max^n or shallow rollouts), LLM formatter multi-opponent prompts, gym terminal rewards for
-  placement. Until then: no AI seats in FFA lobbies; hotseat covers solo dev testing.
+- **AI pod players** (its own project). **Partly done as of 2026-07-28** — Phase 3 of
+  [`engine-ai-improvement.md`](engine-ai-improvement.md) landed multi-opponent board evaluation (a
+  per-opposing-side score folded by a threat- or field-shaped aggregate, teams handled as one side
+  with a shared life pool), attack-target selection by lowest defender life, and a pod scoreboard
+  (`just arena-pod` over `ffa3` / `ffa4` / `2hg`, with an always-on harness). **Still open:** search
+  beyond one ply (max^n or shallow rollouts — Phase 7), politics/threat-assessment modelling of who
+  is likely to attack whom, LLM formatter multi-opponent prompts, gym terminal rewards for placement.
+  Enabling AI seats in FFA lobbies is a product decision on top of that, not a blocked one.
 - **Politics mechanics**: monarch, initiative, voting (council's dilemma), tempting offer. Each is an
   `add-feature` once multiplayer exists; none block the core.
 - **Per-opponent stop configuration** (turn stops per seat).

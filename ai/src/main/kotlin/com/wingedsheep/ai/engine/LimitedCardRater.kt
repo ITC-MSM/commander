@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Rates cards for limited (sealed/draft) play on a 0.0–5.0 scale.
@@ -37,8 +38,13 @@ object LimitedCardRater {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    /** Card name → 17Lands rating data, keyed by set code. Loaded lazily. */
-    private val ratingsCache = mutableMapOf<String, Map<String, CardRating>>()
+    /**
+     * Card name → 17Lands rating data, keyed by set code. Loaded lazily.
+     *
+     * This object is a process-wide singleton read from every AI instance, so the
+     * cache must survive concurrent access — the arena runs games on N threads.
+     */
+    private val ratingsCache = ConcurrentHashMap<String, Map<String, CardRating>>()
 
     /** All loaded ratings merged (name → best available rating). */
     private val allRatings: Map<String, CardRating> by lazy {
@@ -57,7 +63,7 @@ object LimitedCardRater {
     }
 
     private fun loadSetRatings(setCode: String): Map<String, CardRating> {
-        return ratingsCache.getOrPut(setCode) {
+        return ratingsCache.computeIfAbsent(setCode) {
             val resource = LimitedCardRater::class.java.getResourceAsStream("/ratings/$setCode.json")
             if (resource != null) {
                 json.decodeFromString<Map<String, CardRating>>(resource.bufferedReader().readText())

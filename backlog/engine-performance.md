@@ -3,7 +3,22 @@
 CPU profile of the rules engine's hot path (legal-action enumeration + action processing),
 with a prioritized plan to cut total CPU. Generated May 2026 from a sampled profiling run.
 
-**Status:** Analysis complete, no fixes applied yet. Items below are ordered by impact ÷ risk.
+**Status:** Steps 1–3 shipped. **Steps 4–5 outstanding** — Step 4 is now the top remaining hotspot.
+Items below are ordered by impact ÷ risk; each carries its own status marker.
+
+> ⚠️ **The profile and the baseline below predate Steps 1–3.** The measured hotspot table and the
+> `~404 actions/sec/thread` figure describe the engine *before* the component-keying and
+> `getBattlefield()` fixes landed. Percentages for the fixed items are historical; the remaining
+> items' shares are now *larger* than shown. **Re-profile and re-baseline before starting Step 4** —
+> `just benchmark-random 200 BLB` is one command and it has not been re-run.
+>
+> Indirect evidence that Steps 1–3 helped a lot: Phase 0 of
+> [`engine-ai-improvement.md`](engine-ai-improvement.md) measured `ActionProcessor.process` at
+> **~3,400 calls/sec/thread** on the AI-driven workload
+> ([`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md)). Different action mix, so not
+> directly comparable to the 404 figure — but it is ~8× it, and it means **Step 4 is no longer
+> blocking the AI's rollout evaluator.** Step 4 is now worth doing on its own merits (the O(n²) scan
+> is real), not as a prerequisite for anything.
 
 ## Methodology
 
@@ -126,7 +141,9 @@ logic; ignore it for engine optimization.
 Ordered by impact ÷ risk. Steps 1 and 3 are independent, individually shippable, and together
 should be the bulk of the win.
 
-### Step 1 — Remove reflection from component keys *(quick · low risk · ~5–8%)*
+### Step 1 — Remove reflection from component keys ✅ **DONE** *(quick · low risk · ~5–8%)*
+
+> Shipped, and superseded by Step 2 — `ComponentContainer` no longer touches `qualifiedName` at all.
 
 Replace `T::class.qualifiedName` → `T::class.java.name` in all six sites in `ComponentContainer`
 (plus the two raw `::class.qualifiedName` lookups in `DamageUtils` / elsewhere). `Class.getName()`
@@ -137,7 +154,12 @@ serialization shape is **unchanged**. Pure mechanical swap; kills the
 - **Risk:** very low. `qualifiedName` and `java.name` differ only for nested classes (`.` vs `$`),
   and the key is internal — never persisted as a public contract. Verify with `just test-rules`.
 
-### Step 2 — Key components by `Class<*>` instead of `String` *(medium · ~8–12% on top of Step 1)*
+### Step 2 — Key components by `Class<*>` instead of `String` ✅ **DONE** *(medium · ~8–12% on top of Step 1)*
+
+> Shipped. `ComponentContainer.kt:23` is `Map<Class<*>, Component>`; `get`/`has`/`with`/`without`
+> (`:29`, `:45`, `:52`, `:59`) key on `T::class.java`. The required custom serializer exists —
+> `@Serializable(with = ComponentContainerSerializer::class)` (`:21`), `ComponentContainerSerializer`
+> (`:104`) — so the JSON wire format still uses class names and round-trips unchanged.
 
 Change the internal map to `Map<Class<*>, Component>` (`T::class.java` as key). `Class` uses
 identity hashCode — no string hashing at all — eliminating most of `HashMap.getNode` and the
@@ -149,7 +171,14 @@ load (no reflection).
 - **Risk:** medium — touches serialization. Gate behind the serialization tests; confirm a
   save/load round-trip of a live `GameState`.
 
-### Step 3 — Memoize `getBattlefield()` per `GameState` *(quick · low risk · ~10–15%)*
+### Step 3 — Memoize `getBattlefield()` per `GameState` ✅ **DONE** *(quick · low risk · ~10–15%)*
+
+> Shipped. `GameState.kt:808` returns a `by lazy cachedBattlefield` built in a single pass with one
+> list allocation, replacing the `filterKeys` + `flatten` + `filter` chain. A body `val`, so it is
+> not serialized. `allBattlefieldEntities()` (phased-out-inclusive) is unchanged as planned.
+>
+> **Note for Step 4:** this removed the *allocation* cost of the repeated battlefield scans but not
+> the *iteration*. Step 4 is the remaining half, and it is now the larger one.
 
 Make `getBattlefield()` a `by lazy val` mirroring `projectedState` — safe because `GameState` is
 immutable, so the battlefield set is constant for the lifetime of a state instance. Precompute the
@@ -159,7 +188,19 @@ phased-out filter once rather than a reflective `has<PhasedOutComponent>()` per 
   construction — which the immutability invariant already guarantees. Keep `allBattlefieldEntities()`
   (the phased-out-inclusive variant) as-is.
 
-### Step 4 — Hoist battlefield scans in ward / trigger / mana detection *(medium · ~5–8%)*
+### Step 4 — Hoist battlefield scans in ward / trigger / mana detection ⬜ **NOT DONE — top remaining item** *(medium)*
+
+> Verified outstanding 2026-07-27. Both quadratic scans are still live:
+>
+> - `ManaSolver.findAvailableManaSources` (`:916`) loops candidate entities and calls
+>   `getStaticGrantedManaAbilities(entityId, state)` (`:945` → `:1823`), which itself loops
+>   `state.getBattlefield()` → **O(n²) per enumerate**, and enumerate runs at every priority step.
+>   This method was **59% inclusive** in the profile.
+> - `TriggerAbilityResolver.isWardSuppressed` (`:662`) still does `state.getBattlefield().any { … }`
+>   from inside a per-entity path (`:496`).
+>
+> With Step 3's memoization landed, the ~5–8% estimate below is understated — the remaining cost is
+> pure iteration, which memoization did nothing for, and it is now a larger share of a smaller total.
 
 Compute the battlefield list **once** per `detectTriggers` / `findAvailableManaSources` call and
 pass it down to the inner loops instead of re-calling `getBattlefield()`. Fix the O(n²)
@@ -170,7 +211,14 @@ pass it down to the inner loops instead of re-calling `getBattlefield()`. Fix th
 - **Risk:** medium — refactors signatures in `TriggerAbilityResolver` / `ManaSolver`; behavior
   must be identical. Cover with existing ward / trigger scenario tests.
 
-### Step 5 (optional) — Reduce component-map copy churn *(only if still hot)*
+### Step 5 (optional) — Reduce component-map copy churn ⬜ **NOT DONE** *(only if still hot)*
+
+> Still outstanding. `ComponentContainer.with` / `without` (`:52`, `:59`) rebuild the map on every
+> mutation, and `GameState.withEntity` (`:312`) is `copy(entities = entities + (id to container))` —
+> an O(entities) map copy per single component write, at 125–250 entities.
+> [`engine-ai-improvement.md`](engine-ai-improvement.md) Phase 5c scopes the
+> `kotlinx.collections.immutable` migration, including the serializer work needed to keep the wire
+> format byte-identical. Still profile-gated — don't start it without fresh numbers.
 
 If `Arena::grow` is still prominent after 1–4, reduce the `map + (k to v)` / `map - k` rebuild
 cost in `with` / `without` for hot single-component updates (e.g. a small persistent map or a
@@ -184,7 +232,7 @@ After **each** step:
 2. `just benchmark-random 200 BLB` — compare wall time / throughput against the baseline below.
 3. Re-profile (commands above) — confirm the targeted leaf shrank and nothing regressed.
 
-### Baseline (pre-optimization, for comparison)
+### Baseline (May 2026, **pre-Steps-1–3** — stale, re-measure before Step 4)
 
 `just benchmark-random 200 BLB`, 8 threads:
 
@@ -195,3 +243,15 @@ After **each** step:
 - Time split: Enumerate ~57% / Process ~43%
 
 Conservatively, **Steps 1 + 3 alone** should cut total CPU by **~20–30%** at low risk. Start there.
+
+*(Steps 1–3 have since shipped. The realized gain has still never been re-measured with this
+benchmark — that is the first thing to fix. Re-run the benchmark and the profile above, record the
+new baseline here, then start Step 4.)*
+
+### Related: AI-workload baseline (July 2026)
+
+[`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md) measures the same engine under real
+AI games rather than random actions: `ActionProcessor.process` ~3,400/sec/thread, `StateProjector.project`
+~47 µs cold (11% of one `process()`), and 6.36 legal actions per priority window. That confirms the
+"leave projection alone" call above from a second angle — a perfect cross-state projection cache
+caps out near 12%.

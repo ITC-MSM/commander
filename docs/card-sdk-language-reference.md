@@ -1139,13 +1139,71 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CreateMapToken(count?, imageUri?)` — Map artifact tokens. `count` accepts an `Int` or a `DynamicAmount`
   (the latter evaluated at resolution, e.g. Journey On's `CreateMapToken(Add(Fixed(1),
   CountPlayersWith(Player.EachOpponent, Conditions.ControlArtifact)))` — "X is one plus the number
-  of opponents who control an artifact"). `imageUri` overrides the token art (see below).
-- **Set-specific token art (`imageUri` override).** Predefined tokens carry one canonical printing in
-  `PredefinedTokens.kt`, shared engine-wide, but the same token (Treasure, Map, …) has different art in
-  every set. Pass `imageUri` to `CreateTreasure` / `CreateMapToken` (or `CreatePredefinedTokenEffect`
-  directly) so the created token shows that set's printing; `null` (the default) falls back to the
-  predefined token's own image. `CreatePredefinedTokenExecutor` resolves `effect.imageUri ?: cardDef.metadata.imageUri`.
-  Example: LCI cards pass `LciTokenArt.TREASURE` (Scryfall set `tlci`) so their Treasure shows the LCI printing.
+  of opponents who control an artifact"). `imageUri` overrides the token art, but prefer `MtgSet.tokenArt` (see below).
+- **Set-specific token art — declare it on the set, not on the card.** The same token (a 1/1 white Cat,
+  a Treasure, a Map) is printed with different art in every set, and a token has no `CardDefinition` and no
+  `Printing` row to hang that art on. Sets therefore declare their own token printings via
+  **`MtgSet.tokenArt`**, a `List<TokenPrinting>`; the token executors resolve art in three layers:
+
+  1. an explicit `imageUri` on the effect — a deliberate per-card override, always wins;
+  2. the `TokenPrinting` contributed by the set the *creating card was printed in*
+     (`TokenArtRegistry`, keyed off the entity's `Name#SET-CN` definition id), which is the set's own
+     hand-authored `tokenArt` first and then the bulk `TokenArtData` rows synced from Scryfall;
+  3. the engine-wide generic fallback — `TokenArt.IMAGES` by creature type for creature tokens, or the
+     canonical `PredefinedTokens.kt` printing for Treasure/Map/….
+
+  Layer 2's bulk half is `mtg-sets/src/main/resources/tokens.json`, one entry per token printing of every
+  set that has a Scryfall token set (`t<code>`), refreshed with **`just token-art-sync`**. You rarely
+  touch it: it is machine-owned and regenerated wholesale. The two halves are combined by
+  `TokenArtData.forSet(set)` — hand-authored rows plus the synced rows for identities the set doesn't
+  declare itself — so declaring a row is how you override synced art or supply art Scryfall doesn't have.
+  Register a set's art through that function, never by concatenating the two lists yourself.
+
+  ```kotlin
+  object FoundationsSet : MtgSet {
+      override val tokenArt = listOf(
+          // tfdn #1 — Arahbo, the First Fang's 1/1 white Cat.
+          TokenPrinting(name = "Cat", imageUri = "https://cards.scryfall.io/art_crop/front/2/8/2885d54c-….jpg"),
+      )
+  }
+  ```
+
+  `TokenPrinting` matches on `name`, plus `power` / `toughness` / `colors` when you pin them — only needed
+  when one set prints two tokens sharing a name. Use the Scryfall **`art_crop`** URL: the client renders a
+  token as a generated frame and drops this image into its art box, so a full-card `normal` image arrives
+  pre-framed and gets cropped to its middle band.
+
+  **Several arts for one token:** a set that printed the same token with different illustrations declares
+  **one row per art** — nothing on the row changes, the plurality lives in the list. A batch of tokens
+  created at once is dealt out of the matching rows in order and wraps, so Jumpstart's four `Dog` rows put
+  four different dogs on the battlefield for Release the Dogs' four tokens. Indexing is by position in the
+  batch, so it stays deterministic under replay. A row that pins an identity wins outright over a
+  name-only row, so this never bleeds one token's art onto a same-named sibling.
+
+  ```kotlin
+  override val tokenArt = listOf(
+      TokenPrinting(name = "Dog", imageUri = "/images/tokens/jmp-dog1.jpeg", power = 1, toughness = 1, colors = setOf(Color.WHITE)),
+      TokenPrinting(name = "Dog", imageUri = "/images/tokens/jmp-dog2.jpeg", power = 1, toughness = 1, colors = setOf(Color.WHITE)),
+      // … two more
+  )
+  ```
+
+  Prefer this over `imageUri` on the effect. A card that bakes art into its `CreateToken` mints the same
+  art from every printing, which is wrong the moment it is reprinted into a set with its own token —
+  keying on the minting set is what makes reprints come out right.
+
+  Roughly a third of the sets we implement predate token *cards* (Alpha through Invasion, Tempest,
+  Odyssey, Onslaught), so Scryfall has nothing to sync and their tokens would fall back to generic art.
+  Those are all self-hosted now, and `backlog/token-art-gaps.md` reports none outstanding — but adding a
+  card whose set prints an unsynced token reopens the gap. Run **`just token-art-gaps`** for the work
+  list: it names every token with no set-scoped art, the cards that create it, a suggested
+  `web-client/public/images/tokens/<set>-<token>.jpeg` path, and a paste-ready `TokenPrinting(...)` row.
+  Self-hosted art is served from that directory by relative URI — Invasion's Saproling and Reflection
+  are the worked example.
+
+  `TokenArtCoverageTest` walks every registered card and fails the build if any token it can create
+  resolves to no image at all; fix a failure by adding the creature type to `TokenArt.IMAGES`, or the
+  exact printing to the set's `tokenArt`.
 - `CreateDroneToken(count?)` — Drone tokens.
 - `CreateMunitionsToken(count?)` — Munitions noncreature artifact tokens (Weapons Manufacturing); the LTB damage
   trigger lives on the predefined `Munitions` `CardDefinition` and is picked up automatically by the engine's
@@ -5036,7 +5094,7 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 ## 11. Keywords
 
 > **Where set-mechanic helpers live.** The `card { … }` keyword helpers below for *set-specific*
-> mechanics — `mayBeginGameOnBattlefield()`, `flurry { }`, `mobilize(…)`, `firebending(n)`, `sneak(cost)`, `webSlinging(cost)`, `decayed()`,
+> mechanics — `mayBeginGameOnBattlefield()`, `flurry { }`, `mobilize(…)`, `firebending(n)`, `sneak(cost)`, `webSlinging(cost)`, `mayhem(cost)`, `decayed()`,
 > `vividEtb { }` / `vividCostReduction()`, `convergeEntersWithCounters(counterType?)`,
 > `impending(time, cost)`, `renew(cost) { }`, `enduring()`,
 > `craft(filter, cost)`, `station()`, `jobSelect()`, `gift(kind)` — are `CardBuilder` **extension functions** in
@@ -5159,7 +5217,7 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 (`Keyword.NONBASIC_LANDWALK` — unblockable while the defending player controls any non-basic land;
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Defender, Indestructible, Hexproof, Shroud, Haste,
-Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Storm, Flashback, Harmonize, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
+Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Storm, Flashback, Harmonize, Mayhem, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
 Offspring, Persist, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, … (display-only — engine effect lives in handlers or
 composite abilities).
 
@@ -5505,6 +5563,17 @@ composite abilities).
   `ChoiceSlot.WEB_SLUNG` (read via `Conditions.WebSlungCostWasPaid`, e.g. *Spiders-Man, Heroic Horde*'s enters trigger) and
   the returned creature's mana value under `ChoiceSlot.WEB_SLUNG_RETURNED_MV` (read via `DynamicAmount.CastChoice`, e.g.
   *Scarlet Spider, Ben Reilly* enters with that many +1/+1 counters).
+- `Mayhem(cost)` — `card { mayhem("{cost}") }` builder helper (CR 702.187, Marvel's Spider-Man). A **graveyard**
+  alternative cost: *"As long as you discarded this card this turn, you may cast it from your graveyard by paying [cost]
+  rather than paying its mana cost."* Grants **no timing permission** (normal timing — sorcery speed unless the card is an
+  instant or has flash). Crucially, unlike `Flashback`/`Harmonize` the spell is **not exiled on resolution** — a permanent
+  simply enters the battlefield and an instant/sorcery goes to the graveyard as normal. All behavior is in the engine:
+  `CastFromZoneEnumerator.enumerateMayhem` surfaces a `CastWithMayhem` (`AlternativeCostType.MAYHEM`) for a graveyard card
+  gated on the "you discarded this card this turn" tracker (`Conditions.YouDiscardedThisCardThisTurn`, backed by
+  `CardsDiscardedThisTurnComponent`); `CastZoneResolver.hasMayhemPermission` enforces the same gate in `CastSpellHandler`.
+  A resolving spell carries the durable "mayhem cost was paid" fact — `ChoiceSlot.MAYHEM_CAST` on a permanent, the resolution
+  context otherwise — read via `Conditions.MayhemCostWasPaid` (e.g. *Sandman's Quicksand*'s opponents-only rider). Pass `""`
+  for the CR 702.187c no-cost land form. Printed or granted per-entity, resolved through `MayhemGrants.effectiveMayhem`.
 - `Suspend` (CR 702.62) — an **exile-zone** mechanic, unlike Impending/Vanishing which live on the battlefield.
   A suspended card sits in exile with **time counters**; at the beginning of its **owner's** upkeep one is removed,
   and when the last is gone its owner **may play it for free**, with **haste** if it's a creature. The lifecycle is
@@ -5854,6 +5923,8 @@ answer it and would silently return `false`.
 - `WasBargained` — the spell's **bargain** additional cost was declared as it was cast (CR 702.166b, Wilds of Eldraine). A facade over `CastChoiceMade(ChoiceSlot.BARGAINED)`, so bargain needs no condition type of its own. Reads the durable flag on a resolved permanent (an "if it was bargained" enters trigger) *and* the declaration carried on a still-on-the-stack spell (an "if this spell was bargained" rider), and is also the condition a `CostGating.OnlyIf` cost reduction gates on. Never true for a merely kicked spell.
 - `SneakCostWasPaid` — the source was cast for its `Sneak` cost (CR 702.190 — mana + returning an unblocked attacker). Reads the durable `ChoiceSlot.SNEAK` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. Backs riders like Leonardo, Leader in Blue and The Last Ronin's Technique.
 - `WebSlungCostWasPaid` — the source was cast using web-slinging (CR 702.188 — mana + returning a tapped creature you control). Reads the durable `ChoiceSlot.WEB_SLUNG` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. Backs riders like *Spiders-Man, Heroic Horde* and *Scarlet Spider, Ben Reilly*; the latter also reads the returned creature's mana value via `DynamicAmount.CastChoice(ChoiceSlot.WEB_SLUNG_RETURNED_MV)`.
+- `MayhemCostWasPaid` — the source was cast from the graveyard for its Mayhem cost (CR 702.187). Reads the durable `ChoiceSlot.MAYHEM_CAST` flag on a resolved permanent, falling back to the resolution context (`wasMayhem`) for a non-permanent spell's own effect. Backs riders like *Sandman's Quicksand* ("if this spell's mayhem cost was paid, creatures your opponents control get -2/-2 instead").
+- `YouDiscardedThisCardThisTurn` — the source card in a graveyard was discarded by its owner this turn (CR 702.187b). Reads the per-player `CardsDiscardedThisTurnComponent` id list (entity ids are stable across the hand→graveyard move). Engine-internal — the Mayhem enumerator and cast-permission check wire it up; cards don't reference it directly.
 - `GiftWasPromised` — the spell's **gift** additional cost was paid, i.e. "if the gift was promised"
   (CR 702.174a/b, Bloomburrow). A facade over `CastChoiceMade(ChoiceSlot.GIFT_PROMISED)` — the flag the
   engine stamps (together with the promised opponent in `ChoiceSlot.OPPONENT`) on a permanent whose
@@ -6106,6 +6177,12 @@ default to "you" so card authors don't need to pass it explicitly.
   `DynamicAmounts.permanentsSacrificedThisTurn()` amount for "that much" damage (Sawblade Skinripper:
   "At the beginning of your end step, if you sacrificed one or more permanents this turn, this creature
   deals that much damage to any target").
+- `DynamicAmounts.cardsDiscardedThisTurn(player)` / `TurnTracker.CARDS_DISCARDED` — the number of cards
+  `player` has discarded this turn (CR 701.8). Backed by the per-player `CardsDiscardedThisTurnComponent`
+  id list, recorded at **every** discard site (cost, effect, cycling, CR 514.1 hand-size cleanup) via
+  `ZoneTransitionService.trackDiscard` and reset to empty for every player at the start of each turn by
+  `TurnManager`. Powers "draw a card for each card you've discarded this turn" (Green Goblin, Revenant).
+  The same component's membership check backs the Mayhem gate (`Conditions.YouDiscardedThisCardThisTurn`).
 - `YouDealtRedNoncombatDamageThisTurn(atLeast = 1)` — red sources you controlled dealt at least
   `atLeast` noncombat damage this turn. `Compare(TurnTracking(Player.You, TurnTracker.RED_NONCOMBAT_DAMAGE_DEALT),
   GTE, Fixed(atLeast))`, backed by the per-player `RedNoncombatDamageDealtThisTurnComponent`. Gates
@@ -6833,6 +6910,16 @@ the rider twice (Pyromancer's Goggles: "That many copies will be created").
   happens at payment time against the spell's cast characteristics; a non-matching spell is a silent
   no-op. Because the queued trigger's source is the *spell*, it still fires if the mana's producer
   has already left the battlefield.
+- `ManaSpellRider.GrantsKeywordWhenSpent(keyword, spellFilter)` — Carnelian Orb of Dragonkind
+  (`Keyword.HASTE`, `GameObjectFilter.Creature.withSubtype("Dragon")`): "If that mana is spent on a
+  [filter] spell, it gains [keyword] until end of turn." The one rider that puts **nothing** on the
+  stack — the printed effect is continuous, so it floats a `Layer.ABILITY` `GrantKeyword`
+  `Duration.EndOfTurn` modification keyed to the spell's entity id instead of queuing a trigger. A
+  permanent spell keeps that id as it resolves, so the keyword is live the moment the permanent
+  exists (which is what haste needs); on a non-permanent spell the grant never finds a permanent to
+  apply to. Matching happens at payment time against the spell's cast characteristics, per the
+  printed rulings: mana spent on a non-Dragon spell that *becomes* a Dragon later in the turn grants
+  nothing, and an instant or sorcery that makes Dragon tokens is not a Dragon creature spell.
 
 ### `ManaExpiry`<a id="manaexpiry"></a>
 

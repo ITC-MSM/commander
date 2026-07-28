@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid as BlightWasPaidCo
 import com.wingedsheep.sdk.scripting.conditions.WaterbendWasPaid as WaterbendWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid as SneakCostWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid as WebSlungCostWasPaidCondition
+import com.wingedsheep.sdk.scripting.conditions.MayhemCostWasPaid as MayhemCostWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceMade as CastChoiceMadeCondition
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceIs as CastChoiceIsCondition
 import com.wingedsheep.sdk.scripting.conditions.CastTimeFlagSet as CastTimeFlagSetCondition
@@ -822,6 +823,15 @@ object Conditions {
         WebSlungCostWasPaidCondition
 
     /**
+     * If this spell's Mayhem cost was paid (CR 702.187 —
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.Mayhem]). Used for riders like Sandman's
+     * Quicksand whose resolution behavior changes when the spell was cast from the graveyard for
+     * its Mayhem cost.
+     */
+    val MayhemCostWasPaid: ConditionInterface =
+        MayhemCostWasPaidCondition
+
+    /**
      * If this spell's blight additional cost was paid (`AdditionalCost.BlightOrPay`).
      * Used for cards like Cinder Strike whose effect changes when the optional
      * Blight path was chosen during casting.
@@ -1517,6 +1527,14 @@ object Conditions {
      */
     val SourcePlottedOnPriorTurn: ConditionInterface =
         com.wingedsheep.sdk.scripting.conditions.SourcePlottedOnPriorTurn
+
+    /**
+     * Internal: the Mayhem gate (CR 702.187b). True when the source card in a graveyard was
+     * discarded by its owner this turn. Cards never reference this directly — the engine's Mayhem
+     * enumerator and cast-permission check wire it up.
+     */
+    val YouDiscardedThisCardThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.YouDiscardedThisCardThisTurn
 
     /**
      * If it's the first end step of the turn (not an extra end step inserted by

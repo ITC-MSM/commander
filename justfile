@@ -45,9 +45,24 @@ test-class CLASS:
 rebless-cards:
     scripts/gradle-locked :mtg-sets:test --tests "*CardDefinitionSnapshotTest" -DupdateSnapshots=true
 
+# List every token our cards create that has no set-scoped art, so it renders with generic
+# stand-in art. Writes backlog/token-art-gaps.md with a suggested image path and a paste-ready
+# TokenPrinting row per gap. Mostly pre-2001 sets, which have no Scryfall token set to sync.
+[group: 'build']
+token-art-gaps:
+    scripts/gradle-locked :mtg-sets:tokenArtGaps
+
+# Refresh mtg-sets/src/main/resources/tokens.json from Scryfall's token sets (t<code>). Hand-authored
+# art belongs in a set's `tokenArt` (which wins over synced rows) — this file is regenerated wholesale.
+[group: 'build']
+token-art-sync:
+    scripts/gradle-locked :mtg-sets:syncTokenArt
+
 # CLASS options (all in :ai): AdvisorBenchmark   - AI advisor vs random, per-card timing
 #                             GameBenchmark      - full AI-vs-AI games, sealed decks
 #                             RandomActionBenchmark - raw engine throughput (see benchmark-random)
+#                             SimulationThroughputBenchmark - AI-game process/simulate/projection rates
+#                                                     and branching factor (see benchmark-throughput)
 #                             StateCloneBenchmark   - GameState clone speed (uses -DbenchmarkIterations, not GAMES)
 # Run an engine benchmark (e.g., just benchmark, just benchmark GameBenchmark 50)
 [group: 'build']
@@ -58,6 +73,52 @@ benchmark CLASS="AdvisorBenchmark" GAMES="100":
 [group: 'build']
 benchmark-random GAMES="100" SET="POR":
     ./gradlew :ai:test --tests "*.RandomActionBenchmark" -Dbenchmark=true -DbenchmarkGames={{GAMES}} -DbenchmarkSet={{SET}}
+
+# Measure what a rollout evaluator can afford: process()/simulate()/projection rates
+# and branching factor over real AI games (e.g., just benchmark-throughput 40 BLB).
+# Baseline numbers live in docs/ai/baseline-metrics.md.
+[group: 'build']
+benchmark-throughput GAMES="20" SET="BLB":
+    ./gradlew :ai:test --tests "*.SimulationThroughputBenchmark" -Dbenchmark=true -DbenchmarkGames={{GAMES}} -DbenchmarkSet={{SET}}
+
+# Play two AI agents head-to-head over paired-swap games and report a win rate with a confidence
+# interval (e.g., just arena v0 blb-advisors 1000). Agents: v0, current, production, blb-advisors,
+# ons-advisors, v0-blind. 1000 games is the merge gate; 300 is directional; 100 is a smoke test.
+# Results land in benchmarks/arena/. How to read one: docs/ai/measurement.md.
+[group: 'ai']
+arena A B GAMES="300" SET="BLB" SEED="20260727":
+    scripts/gradle-locked :ai:test --tests "*.ArenaBenchmark" -Dbenchmark=true -Darena=true \
+        -DarenaA={{A}} -DarenaB={{B}} -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}}
+
+# Run the 48-puzzle tactical suite (8 categories x 6). Seconds, not minutes: the arena says *that*
+# the AI regressed, a puzzle category says *what*. The gate is "the failing set equals
+# KNOWN_FAILURES", so an unexpected fix fails the test too. Baseline: docs/ai/baseline-metrics.md.
+[group: 'ai']
+arena-puzzles:
+    scripts/gradle-locked :ai:test --tests "*.PuzzleSuiteTest"
+
+# Same 48 puzzles across AI profiles (v0, production) with a side-by-side per-category table.
+[group: 'ai']
+arena-puzzles-compare:
+    scripts/gradle-locked :ai:test --tests "*.PuzzleComparisonBenchmark" -Dbenchmark=true
+
+# Play one agent against a field of another at a multiplayer table and report a win share with a
+# confidence interval (e.g. just arena-pod ffa3 current v0-blind 300). Tables: ffa3, ffa4, 2hg.
+# NOTE the null hypothesis is 1/teams — 33% at ffa3, 25% at ffa4, 50% at 2hg — not 50% everywhere.
+# Results land in benchmarks/arena/. How to read one: docs/ai/measurement.md.
+[group: 'ai']
+arena-pod TABLE A B GAMES="300" SET="BLB" SEED="20260727":
+    scripts/gradle-locked :ai:test --tests "*.ArenaBenchmark" -Dbenchmark=true -DarenaPod=true \
+        -DarenaTable={{TABLE}} -DarenaA={{A}} -DarenaB={{B}} -DarenaGames={{GAMES}} \
+        -DarenaSet={{SET}} -DarenaSeed={{SEED}}
+
+# Run every agent in ai/src/test/resources/arena/gauntlet.json against every other and print the
+# full pairwise matrix plus Bradley-Terry Elo. The matrix is the deliverable — MTG agents are
+# frequently non-transitive, and a single rating erases exactly that.
+[group: 'ai']
+arena-gauntlet GAMES="200" SET="BLB" SEED="20260727":
+    scripts/gradle-locked :ai:test --tests "*.ArenaBenchmark" -Dbenchmark=true -DarenaGauntlet=true \
+        -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}}
 
 # Clean build artifacts
 [group: 'build']
