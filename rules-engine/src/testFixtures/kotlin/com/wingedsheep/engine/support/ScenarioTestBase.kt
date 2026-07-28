@@ -708,6 +708,31 @@ abstract class ScenarioTestBase : FunSpec() {
         }
 
         /**
+         * Cast a spell for its Cleave cost (CR 702.148), targeting a player (e.g. the cleaved Dread
+         * Fugue, which still targets a player but lifts the effect's mana-value cap). Mirrors
+         * [castSpellTargetingPlayer] but pays the cleave alternative cost.
+         */
+        fun castSpellWithCleaveTargetingPlayer(
+            playerNumber: Int,
+            spellName: String,
+            targetPlayerNumber: Int
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val targetPlayerId = if (targetPlayerNumber == 1) player1Id else player2Id
+            val hand = state.getHand(playerId)
+            val cardId = hand.find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's hand")
+
+            return execute(CastSpell(
+                playerId, cardId,
+                targets = listOf(ChosenTarget.Player(targetPlayerId)),
+                useAlternativeCost = true,
+                alternativeCostType = AlternativeCostType.CLEAVE
+            ))
+        }
+
+        /**
          * Cast a spell using a self-alternative cost that requires tapping permanents.
          * Used for cards like Zahid, Djinn of the Lamp.
          */

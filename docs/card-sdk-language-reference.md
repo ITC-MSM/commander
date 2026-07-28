@@ -3029,9 +3029,7 @@ work for abilities-on-stack (which carry no `CardComponent`).
   strips it when the card leaves the graveyard, so a later arrival by a different route
   doesn't carry the earlier claim. The component carries no turn number —
   `BeginningPhaseManager` wipes it from every entity at each turn's untap step, which is what
-  gives both predicates MTG-correct per-turn semantics (the engine's `state.turnNumber`
-  increments per round, not per active player, so a turn-number comparison would be wrong in
-  multiplayer). Used by Abyssal Harvester (FDN) and by Samwise the Stouthearted / Lobelia
+  gives both predicates their per-turn semantics. Used by Abyssal Harvester (FDN) and by Samwise the Stouthearted / Lobelia
   Sackville-Baggins (LTR) respectively — pair with `GameObjectFilter.Creature` or `Permanent`
   on a graveyard-zone `TargetFilter`. Both are false in battlefield-projection / untap /
   trigger-gating contexts (the component only lives on graveyard cards). Note that a card the

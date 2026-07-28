@@ -39,7 +39,7 @@ tasks.withType<Test>().configureEach {
     // and `just arena-gauntlet` reach the test JVM. Both recipes also pass -Dbenchmark=true, which
     // is what relaxes TestHangGuard for a run that legitimately takes half an hour.
     for (prop in listOf(
-        "arena", "arenaGauntlet", "arenaA", "arenaB",
+        "arena", "arenaGauntlet", "arenaPod", "arenaTable", "arenaA", "arenaB",
         "arenaGames", "arenaSeed", "arenaSet", "arenaMaxTurns", "arenaThreads",
     )) {
         System.getProperty(prop)?.let { systemProperty(prop, it) }

@@ -254,7 +254,9 @@ class Strategist(
     private fun heuristicTargetRank(state: GameState, entityId: EntityId, playerId: EntityId): Double {
         val projected = state.projectedState
         val controller = projected.getController(entityId)
-        val isOpponent = controller != null && controller != playerId
+        // CR 810 — a teammate's permanent is not an opponent's, so removal must not rank it as
+        // one. In a game without teams this is exactly the old `controller != playerId`.
+        val isOpponent = controller != null && state.isOpponentTo(controller, playerId)
         val isPlayer = state.getEntity(entityId)
             ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
 

@@ -3,7 +3,9 @@ package com.wingedsheep.ai.engine.evaluation
 import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.ai.engine.soleOpponent
+import com.wingedsheep.ai.engine.OpponentAggregate
+import com.wingedsheep.ai.engine.lifePoolsOf
+import com.wingedsheep.ai.engine.sidesFor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -12,7 +14,6 @@ import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComp
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
@@ -25,14 +26,23 @@ import com.wingedsheep.sdk.model.EntityId
 /**
  * Non-linear life differential. Being at 3 life is exponentially worse
  * than being at 13 — each point near death is worth much more.
+ *
+ * Life is a resource, not a threat — an opponent sitting on 40 does not attack you — so the fold
+ * over a pod is [OpponentAggregate.FIELD]: how the AI is doing against the table, not against its
+ * scariest neighbour. Sides are valued per life *pool*, so a Two-Headed Giant team's shared 30
+ * counts once (CR 810.4).
  */
 object LifeDifferential : BoardFeature {
     override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
-        val opponentId = state.soleOpponent(playerId) ?: return 0.0
-        val myLife = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
-        val theirLife = state.getEntity(opponentId)?.get<LifeTotalComponent>()?.life ?: 0
-        return lifeValue(myLife) - lifeValue(theirLife)
+        val sides = state.sidesFor(playerId) ?: return 0.0
+        val mine = sideLifeValue(state, sides.mine)
+        return sides.against(OpponentAggregate.FIELD) { opponent ->
+            mine - sideLifeValue(state, opponent)
+        }
     }
+
+    private fun sideLifeValue(state: GameState, side: List<EntityId>): Double =
+        state.lifePoolsOf(side).sumOf { lifeValue(it) }
 
     private fun lifeValue(life: Int): Double = when {
         life <= 0 -> -100.0
@@ -51,18 +61,27 @@ object LifeDifferential : BoardFeature {
  * Total effective board value. Creatures are scored by combat stats + keywords.
  * Non-creature permanents get type-appropriate values. Enchantments and artifacts
  * that aren't auras get a flat bonus (they're doing something even without P/T).
+ *
+ * A board is a threat, so a pod folds with [OpponentAggregate.THREAT] — the runaway leader
+ * dominates. A team's board is the sum of its members' (CR 810: teammates attack and block as one
+ * side, so their permanents defend each other).
  */
 object BoardPresence : BoardFeature {
     override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
-        val opponentId = state.soleOpponent(playerId) ?: return 0.0
-        return boardValue(state, projected, playerId) - boardValue(state, projected, opponentId)
+        val sides = state.sidesFor(playerId) ?: return 0.0
+        val mine = boardValue(state, projected, sides.mine)
+        return sides.against(OpponentAggregate.THREAT) { opponent ->
+            mine - boardValue(state, projected, opponent)
+        }
     }
 
-    private fun boardValue(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
+    private fun boardValue(state: GameState, projected: ProjectedState, side: List<EntityId>): Double {
         var total = 0.0
-        for (entityId in projected.getBattlefieldControlledBy(playerId)) {
-            val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
-            total += permanentValue(state, projected, entityId, card)
+        for (playerId in side) {
+            for (entityId in projected.getBattlefieldControlledBy(playerId)) {
+                val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+                total += permanentValue(state, projected, entityId, card)
+            }
         }
         return total
     }
@@ -214,14 +233,22 @@ object BoardPresence : BoardFeature {
 /**
  * Cards in hand with non-linear scaling. Empty hand (topdeck mode) is heavily
  * penalized. Excess cards have diminishing returns since you'll discard at cleanup.
+ *
+ * A resource, so a pod folds with [OpponentAggregate.FIELD]. Hands are per player even in a team
+ * format (CR 810 pools life and poison, not cards), so a side's value is the sum over its members
+ * — two teammates in topdeck mode really is twice the disaster.
  */
 object CardAdvantage : BoardFeature {
     override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
-        val opponentId = state.soleOpponent(playerId) ?: return 0.0
-        val myCards = state.getZone(playerId, Zone.HAND).size
-        val theirCards = state.getZone(opponentId, Zone.HAND).size
-        return cardValue(myCards) - cardValue(theirCards)
+        val sides = state.sidesFor(playerId) ?: return 0.0
+        val mine = sideHandValue(state, sides.mine)
+        return sides.against(OpponentAggregate.FIELD) { opponent ->
+            mine - sideHandValue(state, opponent)
+        }
     }
+
+    private fun sideHandValue(state: GameState, side: List<EntityId>): Double =
+        side.sumOf { cardValue(state.getZone(it, Zone.HAND).size) }
 
     private fun cardValue(count: Int): Double = when {
         count <= 0 -> -3.0
@@ -243,96 +270,117 @@ object CardAdvantage : BoardFeature {
  * This is distinct from LifeDifferential — it measures *potential* damage, not
  * actual life totals. An opponent at 5 life with 15 power on board is more
  * dangerous than one at 5 life with 1 power.
+ *
+ * The whole race calculation runs once per opposing side and folds with
+ * [OpponentAggregate.THREAT]: this is the feature that is *about* who is going to kill whom, so the
+ * matchup the AI is losing has to dominate. A side's clock is the sum of its members' power
+ * (CR 805.10 — teammates attack together) and its life is the *lowest* pool on that side, since a
+ * team dies when any of its pools does.
  */
 object ThreatAssessment : BoardFeature {
     override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
-        val opponentId = state.soleOpponent(playerId) ?: return 0.0
+        val sides = state.sidesFor(playerId) ?: return 0.0
 
-        val myLife = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
-        val theirLife = state.getEntity(opponentId)?.get<LifeTotalComponent>()?.life ?: 20
+        val myLife = sideLife(state, sides.mine)
 
         // Calculate attack potential (power of untapped, non-sick creatures)
-        val myAttackPower = attackPotential(state, projected, playerId)
-        val theirAttackPower = attackPotential(state, projected, opponentId)
+        val myAttackPower = attackPotential(state, projected, sides.mine)
 
         // Calculate defense capability (total toughness of untapped creatures that can block)
-        val myDefense = defensePotential(state, projected, playerId)
-        val theirDefense = defensePotential(state, projected, opponentId)
+        val myDefense = defensePotential(state, projected, sides.mine)
 
-        // How many turns until opponent kills us (if we can't block)
-        val turnsUntilDead = if (theirAttackPower > 0) myLife.toDouble() / theirAttackPower else 99.0
-        val turnsUntilWeKill = if (myAttackPower > 0) theirLife.toDouble() / myAttackPower else 99.0
+        return sides.against(OpponentAggregate.THREAT) { opponent ->
+            val theirLife = sideLife(state, opponent)
+            val theirAttackPower = attackPotential(state, projected, opponent)
+            val theirDefense = defensePotential(state, projected, opponent)
 
-        // Score: positive if we're the faster clock
-        var score = 0.0
+            // How many turns until opponent kills us (if we can't block)
+            val turnsUntilDead = if (theirAttackPower > 0) myLife.toDouble() / theirAttackPower else 99.0
+            val turnsUntilWeKill = if (myAttackPower > 0) theirLife.toDouble() / myAttackPower else 99.0
 
-        // Being closer to killing them is good
-        if (turnsUntilWeKill < turnsUntilDead) {
-            score += (turnsUntilDead - turnsUntilWeKill) * 2.0
-        } else {
-            score -= (turnsUntilWeKill - turnsUntilDead) * 1.5
+            // Score: positive if we're the faster clock
+            var score = 0.0
+
+            // Being closer to killing them is good
+            if (turnsUntilWeKill < turnsUntilDead) {
+                score += (turnsUntilDead - turnsUntilWeKill) * 2.0
+            } else {
+                score -= (turnsUntilWeKill - turnsUntilDead) * 1.5
+            }
+
+            // Lethal on board next turn is very valuable
+            if (myAttackPower >= theirLife && myAttackPower > theirDefense) score += 8.0
+            if (theirAttackPower >= myLife && theirAttackPower > myDefense) score -= 10.0
+
+            // Evasive damage (flying power they can't block)
+            val theirEvasivePower = evasivePower(state, projected, opponent, sides.mine)
+            val myEvasivePower = evasivePower(state, projected, sides.mine, opponent)
+            score += (myEvasivePower - theirEvasivePower) * 0.5
+
+            score
         }
-
-        // Lethal on board next turn is very valuable
-        if (myAttackPower >= theirLife && myAttackPower > theirDefense) score += 8.0
-        if (theirAttackPower >= myLife && theirAttackPower > myDefense) score -= 10.0
-
-        // Evasive damage (flying power they can't block)
-        val theirEvasivePower = evasivePower(state, projected, opponentId, playerId)
-        val myEvasivePower = evasivePower(state, projected, playerId, opponentId)
-        score += (myEvasivePower - theirEvasivePower) * 0.5
-
-        return score
     }
 
-    private fun attackPotential(state: GameState, projected: ProjectedState, playerId: EntityId): Int {
+    /** A side dies when its weakest life pool does, so the clock runs against the minimum. */
+    private fun sideLife(state: GameState, side: List<EntityId>): Int =
+        state.lifePoolsOf(side).minOrNull() ?: 20
+
+    private fun attackPotential(state: GameState, projected: ProjectedState, side: List<EntityId>): Int {
         // Don't filter by TappedComponent — tapped creatures untap on the next
         // turn and can attack again. Filtering them out massively penalizes the
         // post-combat state (where our creatures are tapped from attacking),
         // making the AI think attacking reduced its clock to zero.
-        return projected.getBattlefieldControlledBy(playerId)
-            .filter { entityId ->
-                projected.isCreature(entityId) &&
-                    !projected.cantAttack(entityId) &&
-                    state.getEntity(entityId)?.has<SummoningSicknessComponent>() != true
-            }
-            .sumOf { (projected.getPower(it) ?: 0).coerceAtLeast(0) }
+        return side.sumOf { playerId ->
+            projected.getBattlefieldControlledBy(playerId)
+                .filter { entityId ->
+                    projected.isCreature(entityId) &&
+                        !projected.cantAttack(entityId) &&
+                        state.getEntity(entityId)?.has<SummoningSicknessComponent>() != true
+                }
+                .sumOf { (projected.getPower(it) ?: 0).coerceAtLeast(0) }
+        }
     }
 
-    private fun defensePotential(state: GameState, projected: ProjectedState, playerId: EntityId): Int {
-        return projected.getBattlefieldControlledBy(playerId)
-            .filter { entityId ->
-                projected.isCreature(entityId) &&
-                    !projected.cantBlock(entityId) &&
-                    state.getEntity(entityId)?.has<TappedComponent>() != true
-            }
-            .sumOf { (projected.getToughness(it) ?: 0).coerceAtLeast(0) }
+    private fun defensePotential(state: GameState, projected: ProjectedState, side: List<EntityId>): Int {
+        return side.sumOf { playerId ->
+            projected.getBattlefieldControlledBy(playerId)
+                .filter { entityId ->
+                    projected.isCreature(entityId) &&
+                        !projected.cantBlock(entityId) &&
+                        state.getEntity(entityId)?.has<TappedComponent>() != true
+                }
+                .sumOf { (projected.getToughness(it) ?: 0).coerceAtLeast(0) }
+        }
     }
 
-    /** Power of creatures with flying/evasion that the defender can't block. */
+    /** Power of creatures with flying/evasion that the defending side can't block. */
     private fun evasivePower(
         state: GameState,
         projected: ProjectedState,
-        attackerId: EntityId,
-        defenderId: EntityId
+        attackers: List<EntityId>,
+        defenders: List<EntityId>
     ): Int {
-        val defenderHasFlyers = projected.getBattlefieldControlledBy(defenderId).any { entityId ->
-            projected.isCreature(entityId) &&
-                state.getEntity(entityId)?.has<TappedComponent>() != true &&
-                (Keyword.FLYING.name in projected.getKeywords(entityId) ||
-                    Keyword.REACH.name in projected.getKeywords(entityId))
+        val defenderHasFlyers = defenders.any { defenderId ->
+            projected.getBattlefieldControlledBy(defenderId).any { entityId ->
+                projected.isCreature(entityId) &&
+                    state.getEntity(entityId)?.has<TappedComponent>() != true &&
+                    (Keyword.FLYING.name in projected.getKeywords(entityId) ||
+                        Keyword.REACH.name in projected.getKeywords(entityId))
+            }
         }
 
         if (defenderHasFlyers) return 0 // they can block flyers
 
-        return projected.getBattlefieldControlledBy(attackerId)
-            .filter { entityId ->
-                projected.isCreature(entityId) &&
-                    Keyword.FLYING.name in projected.getKeywords(entityId) &&
-                    state.getEntity(entityId)?.has<TappedComponent>() != true &&
-                    state.getEntity(entityId)?.has<SummoningSicknessComponent>() != true
-            }
-            .sumOf { (projected.getPower(it) ?: 0).coerceAtLeast(0) }
+        return attackers.sumOf { attackerId ->
+            projected.getBattlefieldControlledBy(attackerId)
+                .filter { entityId ->
+                    projected.isCreature(entityId) &&
+                        Keyword.FLYING.name in projected.getKeywords(entityId) &&
+                        state.getEntity(entityId)?.has<TappedComponent>() != true &&
+                        state.getEntity(entityId)?.has<SummoningSicknessComponent>() != true
+                }
+                .sumOf { (projected.getPower(it) ?: 0).coerceAtLeast(0) }
+        }
     }
 }
 
@@ -344,18 +392,25 @@ object ThreatAssessment : BoardFeature {
  * Measures mana development and efficiency. Having more available mana means
  * casting bigger spells and holding up responses. Counts lands (not mana pool)
  * since land count is the durable measure of mana development.
+ *
+ * A resource, so a pod folds with [OpponentAggregate.FIELD]. Mana is *not* pooled by team — CR 810
+ * shares life and poison, never mana — so a side's value is the sum of its members' own land
+ * curves, evaluated one player at a time.
  */
 object Tempo : BoardFeature {
     override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
-        val opponentId = state.soleOpponent(playerId) ?: return 0.0
-
-        val myLands = countLands(state, projected, playerId)
-        val theirLands = countLands(state, projected, opponentId)
+        val sides = state.sidesFor(playerId) ?: return 0.0
 
         // Each land ahead is worth about 1.5 points (mana advantage = tempo)
         // But the first few lands matter more than later ones
-        return landValue(myLands) - landValue(theirLands)
+        val mine = sideLandValue(state, projected, sides.mine)
+        return sides.against(OpponentAggregate.FIELD) { opponent ->
+            mine - sideLandValue(state, projected, opponent)
+        }
     }
+
+    private fun sideLandValue(state: GameState, projected: ProjectedState, side: List<EntityId>): Double =
+        side.sumOf { landValue(countLands(state, projected, it)) }
 
     private fun countLands(state: GameState, projected: ProjectedState, playerId: EntityId): Int {
         return projected.getBattlefieldControlledBy(playerId).count { entityId ->

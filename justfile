@@ -102,6 +102,16 @@ arena-puzzles:
 arena-puzzles-compare:
     scripts/gradle-locked :ai:test --tests "*.PuzzleComparisonBenchmark" -Dbenchmark=true
 
+# Play one agent against a field of another at a multiplayer table and report a win share with a
+# confidence interval (e.g. just arena-pod ffa3 current v0-blind 300). Tables: ffa3, ffa4, 2hg.
+# NOTE the null hypothesis is 1/teams — 33% at ffa3, 25% at ffa4, 50% at 2hg — not 50% everywhere.
+# Results land in benchmarks/arena/. How to read one: docs/ai/measurement.md.
+[group: 'ai']
+arena-pod TABLE A B GAMES="300" SET="BLB" SEED="20260727":
+    scripts/gradle-locked :ai:test --tests "*.ArenaBenchmark" -Dbenchmark=true -DarenaPod=true \
+        -DarenaTable={{TABLE}} -DarenaA={{A}} -DarenaB={{B}} -DarenaGames={{GAMES}} \
+        -DarenaSet={{SET}} -DarenaSeed={{SEED}}
+
 # Run every agent in ai/src/test/resources/arena/gauntlet.json against every other and print the
 # full pairwise matrix plus Bradley-Terry Elo. The matrix is the deliverable — MTG agents are
 # frequently non-transitive, and a single rating erases exactly that.
