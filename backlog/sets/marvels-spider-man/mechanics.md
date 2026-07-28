@@ -36,10 +36,13 @@ Still blocked (not on web-slinging itself):
   opponent's hand, then choose a card type other than creature; spells of the chosen type cost {1}
   more to cast" needs a **durable card-type enters-choice + a chosen-card-type spell-tax static**
   (see the new section below). Deferred rather than approximated.
-- **Peter Parker // Amazing Spider-Man** [10] — transform DFC whose *back face grants* web-slinging to
-  your legendary spells; blocked on transform + a **grant-web-slinging-to-your-spells** static (the
-  keyword is now grantable in principle, but the "your legendary spells have web-slinging" grant is
-  not yet wired — separate follow-up).
+- **Peter Parker // Amazing Spider-Man** [10] — ✅ DONE (branch `spm-peter-parker`). Transform DFC (front:
+  ETB 2/1 green Spider token + sorcery-speed transform, both pre-existing). Back's "each legendary spell
+  you cast that's one or more colors has web-slinging {G}{W}{U}" is the new `GrantWebSlingingToSpells(cost,
+  spellFilter)` static (parallel to `GraveyardCardsHaveMayhem`): `WebSlinging.effectiveWebSlinging` now also
+  scans the battlefield for it (printed → group grant), threaded through `WebSlingingCastEnumerator` +
+  `CastSpellHandler` (validate/cost×2/rider). Filter = `IsLegendary` + `IsColored`. Scenario test pins the
+  grant (legendary+colored → offered; nonlegendary → not; no granter → not).
 
 ## "Choose a card type" durable enters-choice + "spells of the chosen type cost {1} more" static — ✅ IMPLEMENTED
 

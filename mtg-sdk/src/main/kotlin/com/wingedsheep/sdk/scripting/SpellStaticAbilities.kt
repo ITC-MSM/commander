@@ -216,6 +216,32 @@ data class GrantKeywordToOwnSpells(
 }
 
 /**
+ * Grants **web-slinging [cost]** (CR 702.188) to spells the controller casts that match
+ * [spellFilter]. Web-slinging carries a [ManaCost], which the generic [GrantKeywordToOwnSpells]
+ * (keyword + optional int) cannot express, so it gets its own static. Read by the web-slinging cast
+ * enumerator / handler via `WebSlinging.effectiveWebSlinging`, alongside printed web-slinging.
+ *
+ * Amazing Spider-Man: "Each legendary spell you cast that's one or more colors has web-slinging
+ * {G}{W}{U}" → `GrantWebSlingingToSpells({G}{W}{U}, GameObjectFilter.legendary + IsColored)`.
+ *
+ * @property cost The granted web-slinging cost.
+ * @property spellFilter Which spells you cast gain web-slinging (matched against the spell's card).
+ */
+@SerialName("GrantWebSlingingToSpells")
+@Serializable
+data class GrantWebSlingingToSpells(
+    val cost: ManaCost,
+    val spellFilter: GameObjectFilter
+) : StaticAbility {
+    override val description: String =
+        "${spellFilter.description.replaceFirstChar { it.uppercase() }} spells you cast have web-slinging $cost"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = spellFilter.applyTextReplacement(replacer)
+        return if (newFilter !== spellFilter) copy(spellFilter = newFilter) else this
+    }
+}
+
+/**
  * Grants warp (CR 702.185) to cards in the granter's controller's hand that match [filter].
  * Models oracle text like "Artifact cards and red creature cards in your hand have warp {2}{R}."
  *

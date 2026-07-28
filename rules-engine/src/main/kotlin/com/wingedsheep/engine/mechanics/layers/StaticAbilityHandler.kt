@@ -917,6 +917,7 @@ class StaticAbilityHandler(
             // Spells on the stack (StackResolver / GrantedKeywordResolver):
             is GrantCantBeCountered,
             is GrantKeywordToOwnSpells,
+            is com.wingedsheep.sdk.scripting.GrantWebSlingingToSpells,
 
             // Activated abilities (ActivateAbilityHandler / ActivatedAbilityEnumerator):
             is ExtraLoyaltyActivation,

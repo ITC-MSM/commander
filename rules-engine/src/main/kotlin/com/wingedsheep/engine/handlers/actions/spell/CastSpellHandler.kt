@@ -398,7 +398,7 @@ class CastSpellHandler(
         val castingForWebSling = action.useAlternativeCost &&
             action.altAllows(AlternativeCostType.WEB_SLINGING) &&
             cardDef != null &&
-            WebSlinging.webSlingingAbility(cardDef) != null
+            WebSlinging.effectiveWebSlinging(state, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null
         if (castingForWebSling) {
             val bounced = action.additionalCostPayment?.bouncedPermanents ?: emptyList()
             if (bounced.size != 1) {
@@ -878,7 +878,7 @@ class CastSpellHandler(
                     val sneakCost = SneakWindow.effectiveSneakCost(state, cardDef, action.cardId, action.playerId, cardRegistry)
                     // Check web-slinging cost (CR 702.188 — an alternative cost bundling a
                     // return-a-tapped-creature payment, cast at the spell's normal timing).
-                    val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
+                    val webSlingingAbility = WebSlinging.effectiveWebSlinging(state, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     // Check dash cost (CR 702.109 — hand only, printed only for now).
@@ -2134,7 +2134,7 @@ class CastSpellHandler(
                     val sneakCost = SneakWindow.effectiveSneakCost(currentState, cardDef, action.cardId, action.playerId, cardRegistry)
                     // Check web-slinging cost (CR 702.188 — mana portion; the return-a-tapped-creature
                     // bounce is paid separately, alongside).
-                    val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
+                    val webSlingingAbility = WebSlinging.effectiveWebSlinging(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     // Check dash cost (CR 702.109 — hand only, printed only for now).
@@ -3096,7 +3096,7 @@ class CastSpellHandler(
         // (CR 118.9c — its own mana value, needed by Scarlet Spider, Ben Reilly) before it leaves.
         val wasWebSlung = action.useAlternativeCost && cardDef != null &&
             action.altAllows(AlternativeCostType.WEB_SLINGING) &&
-            WebSlinging.webSlingingAbility(cardDef) != null
+            WebSlinging.effectiveWebSlinging(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null
         var webSlungReturnedManaValue = 0
         if (wasWebSlung) {
             val bounceId = action.additionalCostPayment?.bouncedPermanents?.firstOrNull()

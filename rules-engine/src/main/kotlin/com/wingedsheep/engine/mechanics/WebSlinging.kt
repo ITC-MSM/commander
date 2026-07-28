@@ -1,9 +1,14 @@
 package com.wingedsheep.engine.mechanics
 
+import com.wingedsheep.engine.handlers.PredicateContext
+import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.GrantWebSlingingToSpells
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
 /**
@@ -27,6 +32,40 @@ object WebSlinging {
     /** The printed web-slinging ability on [cardDef], or null. */
     fun webSlingingAbility(cardDef: CardDefinition): KeywordAbility.WebSlinging? =
         cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
+
+    /**
+     * The effective web-slinging ability for the spell [spellCardId] (currently in [controllerId]'s
+     * hand), or null. A printed web-slinging on [cardDef] wins; otherwise, when
+     * [controllerId]/[cardRegistry]/[predicateEvaluator] are supplied, a battlefield
+     * [GrantWebSlingingToSpells] static controlled by [controllerId] whose `spellFilter` matches the
+     * spell grants web-slinging at the static's cost. Amazing Spider-Man: "Each legendary spell you
+     * cast that's one or more colors has web-slinging {G}{W}{U}." Mirrors `FlashbackGrants`.
+     */
+    fun effectiveWebSlinging(
+        state: GameState,
+        spellCardId: EntityId,
+        cardDef: CardDefinition?,
+        controllerId: EntityId? = null,
+        cardRegistry: CardRegistry? = null,
+        predicateEvaluator: PredicateEvaluator? = null,
+    ): KeywordAbility.WebSlinging? {
+        cardDef?.let { webSlingingAbility(it) }?.let { return it }
+
+        if (controllerId != null && cardRegistry != null && predicateEvaluator != null) {
+            val context = PredicateContext(controllerId = controllerId)
+            for (granterId in state.controlledBattlefield(controllerId)) {
+                val def = state.getEntity(granterId)?.get<CardComponent>()
+                    ?.let { cardRegistry.getCard(it.cardDefinitionId) } ?: continue
+                for (ability in def.script.staticAbilities) {
+                    if (ability !is GrantWebSlingingToSpells) continue
+                    if (predicateEvaluator.matches(state, state.projectedState, spellCardId, ability.spellFilter, context)) {
+                        return KeywordAbility.WebSlinging(ability.cost)
+                    }
+                }
+            }
+        }
+        return null
+    }
 
     /**
      * The tapped creatures [playerId] controls — the legal pool for the "return a tapped creature

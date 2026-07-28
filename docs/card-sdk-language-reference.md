@@ -6072,6 +6072,12 @@ composite abilities).
   `ChoiceSlot.WEB_SLUNG` (read via `Conditions.WebSlungCostWasPaid`, e.g. *Spiders-Man, Heroic Horde*'s enters trigger) and
   the returned creature's mana value under `ChoiceSlot.WEB_SLUNG_RETURNED_MV` (read via `DynamicAmount.CastChoice`, e.g.
   *Scarlet Spider, Ben Reilly* enters with that many +1/+1 counters).
+- `GrantWebSlingingToSpells(cost, spellFilter)` — a static ability that **grants web-slinging `cost`** to spells the
+  controller casts matching `spellFilter` (web-slinging carries a `ManaCost`, which the generic `GrantKeywordToOwnSpells`
+  can't express). Read through `WebSlinging.effectiveWebSlinging` (printed → this battlefield grant), which the
+  `WebSlingingCastEnumerator` and `CastSpellHandler` consult, so a granted web-slinging behaves exactly like a printed
+  one. Amazing Spider-Man (back of Peter Parker): "Each legendary spell you cast that's one or more colors has web-slinging
+  {G}{W}{U}" → `GrantWebSlingingToSpells({G}{W}{U}, GameObjectFilter(cardPredicates = [IsLegendary, IsColored]))`.
 - `Mayhem(cost)` — `card { mayhem("{cost}") }` builder helper (CR 702.187, Marvel's Spider-Man). A **graveyard**
   alternative cost: *"As long as you discarded this card this turn, you may cast it from your graveyard by paying [cost]
   rather than paying its mana cost."* Grants **no timing permission** (normal timing — sorcery speed unless the card is an

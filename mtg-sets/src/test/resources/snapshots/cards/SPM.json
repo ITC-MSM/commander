@@ -6378,6 +6378,115 @@
     ]
 }
 
+// Peter Parker
+{
+    "name": "Peter Parker",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Human Scientist Hero",
+    "oracleText": "When Peter Parker enters, create a 2/1 green Spider creature token with reach.\n{1}{G}{W}{U}: Transform Peter Parker. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Spider"
+                    ],
+                    "keywords": [
+                        "REACH"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a40f6e1-3545-4503-af3e-f0acfb735e3a.jpg?1783905184"
+                },
+                "descriptionOverride": "When Peter Parker enters, create a 2/1 green Spider creature token with reach."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{G}{W}{U}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Peter Parker. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Amazing Spider-Man",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Spider Human Hero",
+        "oracleText": "Vigilance, reach\nEach legendary spell you cast that's one or more colors has web-slinging {G}{W}{U}. (You may cast a spell for its web-slinging cost if you also return a tapped creature you control to its owner's hand.)",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "keywords": [
+            "VIGILANCE",
+            "REACH"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantWebSlingingToSpells",
+                    "cost": "{G}{W}{U}",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsLegendary",
+                            "IsColored"
+                        ]
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "10",
+            "rarity": "MYTHIC",
+            "artist": "Thanh Tuấn",
+            "imageUri": "https://cards.scryfall.io/normal/back/3/c/3ce33422-5dba-4a42-8375-dd8ccc692a7b.jpg?1783905367"
+        },
+        "colorIdentityOverride": [
+            "GREEN",
+            "WHITE",
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "GREEN",
+            "WHITE",
+            "BLUE"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "rarity": "MYTHIC",
+        "artist": "Thanh Tuấn",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3ce33422-5dba-4a42-8375-dd8ccc692a7b.jpg?1783905367"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Peter Parker's Camera
 {
     "name": "Peter Parker's Camera",
