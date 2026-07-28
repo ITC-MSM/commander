@@ -334,11 +334,11 @@ printing, per the reprint rule (`just check-card-printing "<Card>"`).
       Shang-Chi, Master of Kung Fu · M.O.D.O.K. *(legendary creatures; M.O.D.O.K. is an artifact creature)*
 - [ ] Jennifer Walters // The Sensational She-Hulk *(transforming DFC, mythic)*
 
-**DFT — Aetherdrift (11)**
-- [ ] Guidelight Optimizer · Nesting Bot · Marketback Walker *(artifact creatures)*
-- [ ] Howlsquad Heavy · Marauding Mako · Webstrike Elite *(creatures)*
-- [ ] Lumbering Worldwagon · Monument to Endurance · Perilous Snare · Repurposing Bay *(artifacts)*
-- [ ] Momentum Breaker *(enchantment)*
+**DFT — Aetherdrift (3)**
+- [x] Guidelight Optimizer · Nesting Bot · Marketback Walker *(artifact creatures)*
+- [ ] Howlsquad Heavy · Webstrike Elite *(creatures — Marauding Mako done)*
+- [ ] Monument to Endurance *(artifact — Lumbering Worldwagon, Perilous Snare, Repurposing Bay done)*
+- [x] Momentum Breaker *(enchantment)*
 
 **SPM — Marvel's Spider-Man (6)**
 - [ ] Arachne, Psionic Weaver · Carnage, Crimson Chaos *(legendary creatures)*
