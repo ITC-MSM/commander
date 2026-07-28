@@ -9811,6 +9811,58 @@
     ]
 }
 
+// Spider-Verse
+{
+    "name": "Spider-Verse",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "The \"legend rule\" doesn't apply to Spiders you control.\nWhenever you cast a spell from anywhere other than your hand, you may copy it. If you do, you may choose new targets for the copy. If the copy is a permanent spell, it gains haste. Do this only once each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellCastFromZoneOtherThan",
+                            "zone": "Hand"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CopyTargetSpell",
+                        "target": "TriggeringEntity",
+                        "addedTokenKeywords": [
+                            "HASTE"
+                        ]
+                    }
+                },
+                "oncePerTurn": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "LegendRuleDoesNotApplyTo",
+                "filter": "creature Spider"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "93",
+        "rarity": "MYTHIC",
+        "artist": "Alexander Gering",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8779eb2-1210-430d-8d42-3077053441ee.jpg?1783905331"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Spider-Woman, Stunning Savior
 {
     "name": "Spider-Woman, Stunning Savior",

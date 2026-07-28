@@ -415,7 +415,15 @@ Blocked cards:
 - **With Great Power . . .** [24] — `{3}{W}` Aura; "+2/+2 per attached Aura/Equipment" (fine) + "all damage that would be dealt to you is dealt to enchanted creature instead" (the redirect is the blocker).
 </details>
 
-## "The legend rule doesn't apply to [filter]" exemption
+## "The legend rule doesn't apply to [filter]" exemption — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-keywords-statics`. Added `LegendRuleDoesNotApplyTo(filter)` StaticAbility
+(scan-based) + a consult hook in `LegendRuleCheck.check` (`isExemptFromLegendRule` — excludes matching
+permanents from the duplicate grouping; the check now takes a `CardRegistry`). Card: **Spider-Verse** [93]
+(the copy-spell-from-non-hand clause uses `youCastSpell(CastFromZoneOtherThan(HAND))` + `oncePerTurn` +
+`CopyTargetSpell(addedTokenKeywords = HASTE)`, wrapped in `MayEffect`).
+
+<details><summary>Original analysis</summary>
 
 > The "legend rule" doesn't apply to **Spiders you control**.
 
@@ -429,6 +437,7 @@ fully expressible via `youCastSpell(CastFromZoneOtherThan(HAND))` + `oncePerTurn
 
 Blocked cards:
 - **Spider-Verse** [93] — `{3}{R}{R}` Enchantment; the legend-rule exemption for Spiders is the blocker (the copy-spell-from-non-hand clause is fine).
+</details>
 
 ## Play cards exiled **face down** from an opponent's library (controller may look + cast)
 

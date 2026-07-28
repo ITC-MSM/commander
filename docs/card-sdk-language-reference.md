@@ -4780,6 +4780,9 @@ staticAbility {
   *replaces* other colours with red, this simply keeps that one colour and lets every other colour empty.
   Merged into the `retain` set at `CleanupPhaseManager.emptyManaPools` (control-aware). The static twin of
   the turn-scoped one-shot `RetainUnspentMana(vararg colors)` effect (The Last Agni Kai).
+- `LegendRuleDoesNotApplyTo(filter)` — "The 'legend rule' doesn't apply to [filter] you control"
+  (Spider-Verse — Spiders). Scan-based: `LegendRuleCheck` excludes permanents you control matching
+  `filter` from the same-name duplicate grouping, so you may keep multiple copies (CR 704.5j).
 - `NoMaximumHandSize` — controller has no hand-size limit *while this permanent is on the
   battlefield*. (Thought Vessel, Reliquary Tower) For a one-shot resolution effect that confers a
   *permanent, player-scoped* "no maximum hand size for the rest of the game" (survives the source

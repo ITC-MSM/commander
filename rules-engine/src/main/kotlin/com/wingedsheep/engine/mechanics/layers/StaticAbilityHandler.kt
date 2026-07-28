@@ -915,6 +915,7 @@ class StaticAbilityHandler(
             is PreventManaPoolEmptying,
             is ConvertEmptyingManaToRed,
             is RetainUnspentColoredMana,
+            is com.wingedsheep.sdk.scripting.LegendRuleDoesNotApplyTo,
             is UntapDuringOtherUntapSteps,
             is UntapFilteredDuringOtherUntapSteps,
             is UntapSelfDuringOtherUntapSteps,

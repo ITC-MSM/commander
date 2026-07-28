@@ -14,7 +14,7 @@ class PermanentSbaModule(
         EndedDurationExpiryCheck(),
         AttachedCopyExpiryCheck(),
         PlaneswalkerLoyaltyCheck(),
-        LegendRuleCheck(decisionHandler),
+        LegendRuleCheck(decisionHandler, cardRegistry),
         CounterAnnihilationCheck(),
         UnattachedAurasCheck(cardRegistry),
         SagaSacrificeCheck(cardRegistry),
