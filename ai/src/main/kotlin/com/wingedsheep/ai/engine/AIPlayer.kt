@@ -96,7 +96,11 @@ class AIPlayer(
                         val legalActions = simulator.getLegalActions(current, playerId)
                         val attackAction = legalActions.find { it.actionType == "DeclareAttackers" }
                         val mandatory = attackAction?.mandatoryAttackers ?: emptyList()
-                        val opponentId = current.turnOrder.firstOrNull { it != playerId }
+                        // The enumerator already worked out who may legally be attacked (CR 802.2a
+                        // — opponents plus their planeswalkers, minus anyone this creature can't
+                        // attack). Guessing "the other player in turn order" instead is wrong the
+                        // moment there is more than one, and a teammate is never a legal defender.
+                        val opponentId = attackAction?.validAttackTargets?.firstOrNull()
                         val attackerMap = if (mandatory.isNotEmpty() && opponentId != null) {
                             mandatory.associateWith { opponentId }
                         } else emptyMap()
