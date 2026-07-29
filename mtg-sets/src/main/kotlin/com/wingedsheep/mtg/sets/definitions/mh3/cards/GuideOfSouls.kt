@@ -19,7 +19,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Whenever you attack, you may pay {E}{E}{E}. When you do, put two +1/+1 counters and a flying
  * counter on target attacking creature. It becomes an Angel in addition to its other types.
  *
- * The second ability is a genuine reflexive trigger (CR 603.2, per the 2024-06-07 ruling): the
+ * The second ability is a genuine reflexive trigger (CR 603.12, per the 2024-06-07 ruling): the
  * "may pay {E}{E}{E}" isn't targeted itself — a *second* triggered ability fires when the payment
  * is made, and *that* ability chooses the attacking creature, so opponents get a response window
  * between the payment and the target lock. Modeled with [ReflexiveTriggerEffect] rather than a

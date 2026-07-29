@@ -25,6 +25,13 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * creature token. Then if you have the city's blessing, for each token you control that entered
  * this turn, create a token that's a copy of it.
  *
+ * Ascend is [Keyword.ASCEND] and nothing else. On a permanent it's a *static* ability (CR
+ * 702.131b, "**any time** you control ten or more permanents…"), which the engine handles for
+ * every ascend permanent at once — see
+ * [com.wingedsheep.engine.mechanics.sba.player.AscendCitysBlessingCheck]. Writing it as an
+ * enters-the-battlefield trigger instead would sample the count once, on the turn a one-mana 1/1 is
+ * least likely to see ten permanents, and never look again.
+ *
  * The end-step ability is a genuine intervening-if (CR 603.4, [triggerCondition]): it doesn't
  * trigger at all unless you gained life *before* the end step began, and it re-checks the same
  * condition at resolution — modeled the same way as Resplendent Angel's near-identical ability.
@@ -50,16 +57,10 @@ val OcelotPride = card("Ocelot Pride") {
         "Cat creature token. Then if you have the city's blessing, for each token you control " +
         "that entered this turn, create a token that's a copy of it."
 
+    // Ascend needs no ability here: CR 702.131b makes it a static ability, and the engine's
+    // 702.131b state-based action grants the city's blessing to anyone controlling a permanent
+    // with Keyword.ASCEND once they control ten permanents.
     keywords(Keyword.FIRST_STRIKE, Keyword.LIFELINK, Keyword.ASCEND)
-
-    // Ascend: when this enters, if you control 10+ permanents, gain the city's blessing.
-    triggeredAbility {
-        trigger = Triggers.EntersBattlefield
-        effect = ConditionalEffect(
-            condition = Conditions.ControlPermanentsAtLeast(10),
-            effect = Effects.GainCitysBlessing()
-        )
-    }
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
