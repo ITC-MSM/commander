@@ -1288,6 +1288,10 @@ export interface LobbySettings {
   readonly chaosBoosters: boolean
   /** Host ban list — oracle card names excluded from generated boosters (sorted). */
   readonly bannedCardNames: readonly string[]
+  /** Per-lobby cube summary. Undefined means catalogued sets are the pack source. */
+  readonly cubeName?: string | null
+  readonly cubeCardCount?: number | null
+  readonly packSize?: number | null
   /** Master switch for in-app AI assistance (Suggest Pick / Auto-build). */
   readonly aiAssistEnabled: boolean
   /** Lobby mode axis: bracket of 2-player matches vs one multiplayer Free-for-All game. */
@@ -2268,6 +2272,11 @@ export interface UpdateLobbySettingsMessage {
   readonly chaosBoosters?: boolean
   /** Replace the host ban list (full list, not a delta). Omit to leave unchanged. */
   readonly bannedCardNames?: readonly string[]
+  /** Full cube list; duplicate names represent duplicate physical cards. Empty clears cube mode. */
+  readonly cubeCards?: readonly string[]
+  readonly cubeName?: string
+  readonly packSize?: number
+  readonly cubeBasicLandSetCode?: string
   /** Master switch for in-app AI assistance (Suggest Pick / Auto-build). Omit to leave unchanged. */
   readonly aiAssistEnabled?: boolean
   /** Lobby mode axis ('TOURNAMENT' / 'FREE_FOR_ALL'). Omit to leave unchanged. */
@@ -2506,6 +2515,10 @@ export function createUpdateLobbySettingsMessage(
     deckFormat?: DeckFormat | '' | null
     chaosBoosters?: boolean
     bannedCardNames?: readonly string[]
+    cubeCards?: readonly string[]
+    cubeName?: string
+    packSize?: number
+    cubeBasicLandSetCode?: string
     aiAssistEnabled?: boolean
     gameMode?: LobbyGameMode
     attackMode?: AttackMode

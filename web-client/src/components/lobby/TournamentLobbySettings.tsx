@@ -70,6 +70,7 @@ export function TournamentLobbySettings({
   const isAnyDraft = isDraft || isWinston || isGridDraft || isCommanderDraft
   const isAnyCommander = isCommanderDraft || isCommanderSealed
   const isFfa = s.gameMode === 'FREE_FOR_ALL'
+  const isCube = Boolean(s.cubeName)
 
   const allSets = s.availableSets
   // A selected-set chip is either a concrete set or a deferred "Random Set" placeholder.
@@ -172,7 +173,16 @@ export function TournamentLobbySettings({
 
       {/* Set selection — chips here, the full searchable browser behind a modal. Premade Decks
           generates no boosters, so it needs none of this. */}
-      {!isPremade && (
+      {!isPremade && isCube && (
+        <div className={styles.settingsRow}>
+          <span className={styles.settingsLabel}>Cube</span>
+          <div className={styles.variantCaption}>
+            {s.cubeName} · {s.cubeCardCount ?? 0} cards · {s.packSize ?? 15}-card packs
+          </div>
+        </div>
+      )}
+
+      {!isPremade && !isCube && (
         <>
           <div className={styles.settingsRow} style={{ alignItems: 'flex-start' }}>
             <span className={styles.settingsLabel} style={{ paddingTop: 7 }}>Sets</span>

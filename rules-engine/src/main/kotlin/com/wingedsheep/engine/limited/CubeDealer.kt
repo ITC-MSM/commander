@@ -15,15 +15,25 @@ class CubeDealer(
     private val packSize: Int,
     seed: Long,
 ) {
+    private constructor(
+        remainingCards: List<CardDefinition>,
+        packSize: Int,
+    ) : this(emptyList(), packSize, 0L) {
+        shuffledCube = remainingCards
+    }
+
     init {
         require(packSize > 0) { "Cube pack size must be positive, got $packSize" }
     }
 
-    private val shuffledCube = cube.shuffled(Random(seed))
+    private var shuffledCube = cube.shuffled(Random(seed))
     private var dealt = 0
 
     val remaining: Int
         get() = shuffledCube.size - dealt
+
+    /** Ordered undealt tail, used only to persist and resume an in-flight cube draft safely. */
+    fun remainingCards(): List<CardDefinition> = shuffledCube.subList(dealt, shuffledCube.size).toList()
 
     /**
      * Deal [packs] complete packs and consume them from this dealer.
@@ -44,5 +54,10 @@ class CubeDealer(
             .chunked(packSize)
         dealt += requestedCards
         return result
+    }
+
+    companion object {
+        fun resume(remainingCards: List<CardDefinition>, packSize: Int): CubeDealer =
+            CubeDealer(remainingCards, packSize)
     }
 }

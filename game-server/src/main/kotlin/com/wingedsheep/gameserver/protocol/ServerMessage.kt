@@ -470,6 +470,10 @@ sealed interface ServerMessage {
          * UI order. Empty = no exclusions. Ignored by [TournamentFormat.PREMADE_DECKS].
          */
         val bannedCardNames: List<String> = emptyList(),
+        /** Per-lobby cube summary. Null fields mean catalogued sets are the pack source. */
+        val cubeName: String? = null,
+        val cubeCardCount: Int? = null,
+        val packSize: Int? = null,
         /**
          * Master switch for in-app AI assistance (draft "Suggest Pick" + deckbuild "Auto-build").
          * When false the client hides the controls and the server rejects assist requests.

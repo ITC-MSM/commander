@@ -275,6 +275,7 @@ function tournamentTeams(lobbyState: LobbyState): LobbyTeams {
 
 function tournamentTitle(lobbyState: LobbyState): string {
   const s = lobbyState.settings
+  if (s.cubeName) return s.cubeName
   if (s.format !== 'PREMADE_DECKS') return s.setNames.join(' + ') || 'Lobby'
   switch (s.gameMode) {
     case 'TWO_HEADED_GIANT': return 'Premade Decks Two-Headed Giant'
@@ -316,10 +317,13 @@ function tournamentSubtitle(lobbyState: LobbyState): string {
         return distText ?? `${s.boosterCount} boosters per player`
     }
   })()
+  const source = s.cubeName
+    ? `Cube · ${s.cubeCardCount ?? 0} cards · ${s.packSize ?? 15}-card packs · ${base}`
+    : base
 
   const isMultiplayer = s.gameMode !== 'TOURNAMENT'
   const games = s.gamesPerMatch ?? 1
-  return !isMultiplayer && games > 1 ? `${base} · ${games} games per matchup` : base
+  return !isMultiplayer && games > 1 ? `${source} · ${games} games per matchup` : source
 }
 
 function startLabel(lobbyState: LobbyState): string {
@@ -376,6 +380,19 @@ function startBlockReason(lobbyState: LobbyState): string | null {
   if (s.format === 'PREMADE_DECKS') {
     const allSubmitted = lobbyState.players.filter((p) => p.isConnected).every((p) => p.deckSubmitted)
     return allSubmitted ? null : 'All connected players must submit a deck first'
+  }
+  if (s.cubeName) {
+    const packSize = s.packSize ?? 15
+    const sharedPool = s.format === 'WINSTON_DRAFT' || s.format === 'GRID_DRAFT'
+    const packsNeeded = sharedPool ? s.boosterCount : n * s.boosterCount
+    const cardsNeeded = packsNeeded * packSize
+    const cubeCards = s.cubeCardCount ?? 0
+    if (cardsNeeded > cubeCards) {
+      return sharedPool
+        ? `${s.boosterCount} packs × ${packSize} = ${cardsNeeded} cards needed, cube has ${cubeCards}`
+        : `${n} players × ${s.boosterCount} packs × ${packSize} = ${cardsNeeded} cards needed, cube has ${cubeCards}`
+    }
+    return null
   }
   if (s.setCodes.length === 0) return 'Select at least one set'
   // Extension sets (bonus sheets) can't carry a pool alone. Unknown codes count as regular; the
