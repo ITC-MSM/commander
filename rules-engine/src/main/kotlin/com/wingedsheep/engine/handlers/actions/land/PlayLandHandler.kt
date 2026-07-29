@@ -163,13 +163,14 @@ class PlayLandHandler(
         val landPlayedEvent = com.wingedsheep.engine.core.LandPlayedEvent(
             action.cardId, action.playerId, fromZone
         )
-        if (fromZone != Zone.HAND) {
-            newState = newState.updateEntity(action.playerId) { c ->
-                c.with(
-                    com.wingedsheep.engine.state.components.player
-                        .PlayedLandFromNonHandThisTurnComponent(played = true)
-                )
-            }
+        // Record this land play's zone-of-origin for "played a land this turn from [anywhere other
+        // than] zone X" conditions (Spider-Man 2099). Appended for every play — HAND included — so a
+        // future card can gate on any specific origin, mirroring the spell path's castFromZone.
+        newState = newState.updateEntity(action.playerId) { c ->
+            val prior = c.get<com.wingedsheep.engine.state.components.player
+                .LandsPlayedThisTurnComponent>()
+                ?: com.wingedsheep.engine.state.components.player.LandsPlayedThisTurnComponent()
+            c.with(prior.copy(fromZones = prior.fromZones + fromZone))
         }
 
         // Add controller component first so projection sees the right controller when

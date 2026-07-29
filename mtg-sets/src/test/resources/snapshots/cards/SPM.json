@@ -8874,7 +8874,10 @@
                 "triggerCondition": {
                     "type": "Any",
                     "conditions": [
-                        "PlayerPlayedLandFromNonHandThisTurn",
+                        {
+                            "type": "PlayerPlayedLandThisTurn",
+                            "fromZoneOtherThan": "Hand"
+                        },
                         {
                             "type": "PlayerCastSpellsThisTurn",
                             "atLeast": 1,

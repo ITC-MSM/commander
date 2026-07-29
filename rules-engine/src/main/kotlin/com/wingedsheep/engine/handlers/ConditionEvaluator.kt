@@ -370,11 +370,18 @@ class ConditionEvaluator(
                 val playerId = resolvePlayer(state, condition.player, ctx)
                 playerId != null && playerId in state.playersWhoCommittedCrimeThisTurn
             }
-            is com.wingedsheep.sdk.scripting.conditions.PlayerPlayedLandFromNonHandThisTurn -> {
+            is com.wingedsheep.sdk.scripting.conditions.PlayerPlayedLandThisTurn -> {
                 val playerId = resolvePlayer(state, condition.player, ctx)
-                playerId != null && state.getEntity(playerId)
-                    ?.get<com.wingedsheep.engine.state.components.player.PlayedLandFromNonHandThisTurnComponent>()
-                    ?.played == true
+                val zones = playerId?.let {
+                    state.getEntity(it)
+                        ?.get<com.wingedsheep.engine.state.components.player.LandsPlayedThisTurnComponent>()
+                        ?.fromZones
+                } ?: emptyList()
+                when {
+                    condition.fromZone != null -> zones.any { it == condition.fromZone }
+                    condition.fromZoneOtherThan != null -> zones.any { it != condition.fromZoneOtherThan }
+                    else -> zones.isNotEmpty()
+                }
             }
             is com.wingedsheep.sdk.scripting.conditions.PermanentEnteredFaceDownThisTurn -> {
                 val playerId = resolvePlayer(state, condition.player, ctx)

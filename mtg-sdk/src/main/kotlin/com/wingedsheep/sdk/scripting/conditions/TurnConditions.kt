@@ -219,6 +219,11 @@ data class PlayerCastSpellsThisTurn(
      */
     val fromZoneOtherThan: Zone? = null
 ) : Condition {
+    init {
+        require(fromZone == null || fromZoneOtherThan == null) {
+            "PlayerCastSpellsThisTurn: fromZone and fromZoneOtherThan are mutually exclusive"
+        }
+    }
     override val description: String = buildString {
         append("if ${player.description} cast $atLeast or more ")
         if (filter != GameObjectFilter.Any) append("${DynamicAmount.pluralize(filter.description)} ")
@@ -276,18 +281,34 @@ data class PlayerCommittedCrimeThisTurn(
 }
 
 /**
- * Condition: "if [player] has played a land this turn from a zone other than their hand" (CR 305.1
- * special land-play from graveyard / exile / library). Reads the per-player
- * `PlayedLandFromNonHandThisTurnComponent` flag set by `PlayLandHandler`. The land half of
- * Spider-Man 2099's end-step intervening-if ("if you've played a land or cast a spell this turn
- * from anywhere other than your hand").
+ * Condition: "if [player] has played a land this turn" (CR 305.1 special land-play action), reading
+ * the per-player `LandsPlayedThisTurnComponent` provenance recorded by `PlayLandHandler`. Mirrors
+ * [PlayerCastSpellsThisTurn]'s zone qualifiers:
+ * - no qualifier — any land played this turn;
+ * - [fromZone] — a land played from that specific zone;
+ * - [fromZoneOtherThan] — a land played from a zone other than that one (`Zone.HAND` is the land half
+ *   of Spider-Man 2099's end-step intervening-if, "played a land … from anywhere other than your hand").
+ *
+ * [fromZone] and [fromZoneOtherThan] are mutually exclusive.
  */
-@SerialName("PlayerPlayedLandFromNonHandThisTurn")
+@SerialName("PlayerPlayedLandThisTurn")
 @Serializable
-data class PlayerPlayedLandFromNonHandThisTurn(
-    val player: Player = Player.You
+data class PlayerPlayedLandThisTurn(
+    val player: Player = Player.You,
+    val fromZone: Zone? = null,
+    val fromZoneOtherThan: Zone? = null
 ) : Condition {
-    override val description: String = "if ${player.description} played a land this turn from anywhere other than their hand"
+    init {
+        require(fromZone == null || fromZoneOtherThan == null) {
+            "PlayerPlayedLandThisTurn: fromZone and fromZoneOtherThan are mutually exclusive"
+        }
+    }
+    override val description: String = buildString {
+        append("if ${player.description} played a land")
+        if (fromZone != null) append(" from ${fromZone.name.lowercase()}")
+        if (fromZoneOtherThan != null) append(" from anywhere other than ${fromZoneOtherThan.name.lowercase()}")
+        append(" this turn")
+    }
 }
 
 /**

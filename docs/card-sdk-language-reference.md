@@ -6134,11 +6134,16 @@ default to "you" so card authors don't need to pass it explicitly.
   this turn from anywhere **other than** your hand" (Spider-Man 2099). The origin zone is captured on each
   `CastSpellRecord` (`castFromZone`) at cast time, so flashback/forage (GRAVEYARD), plot/foretell (EXILE),
   and commander (COMMAND) casts are all distinguished from hand casts.
-- `YouPlayedLandFromNonHandThisTurn` — "as long as you've **played a land** this turn from a zone other
-  than your hand" (CR 305.1 land-play from graveyard/exile/library). Backed by the per-player
-  `PlayedLandFromNonHandThisTurnComponent` flag set by `PlayLandHandler`. The land half of Spider-Man
-  2099's end-step intervening-if; compose with `YouCastSpellsThisTurn(1, fromZoneOtherThan = Zone.HAND)`
-  via `Any(...)` for the full "played a land or cast a spell this turn from anywhere other than your hand".
+- `YouPlayedLandThisTurn(fromZone?, fromZoneOtherThan?)` — "as long as you've **played a land** this turn"
+  (CR 305.1 special land-play action), the land mirror of `YouCastSpellsThisTurn`. No qualifier = any land;
+  `fromZone` requires that specific origin; `fromZoneOtherThan` excludes it (mutually exclusive). Backed by
+  `PlayerPlayedLandThisTurn(Player.You, …)`, reading the per-player `LandsPlayedThisTurnComponent` — the
+  zone each land was played from this turn, appended by `PlayLandHandler` (HAND for a normal drop,
+  GRAVEYARD/EXILE/LIBRARY for a play permission).
+  - `YouPlayedLandFromNonHandThisTurn` — convenience for `YouPlayedLandThisTurn(fromZoneOtherThan = Zone.HAND)`.
+    The land half of Spider-Man 2099's end-step intervening-if; compose with
+    `YouCastSpellsThisTurn(1, fromZoneOtherThan = Zone.HAND)` via `Any(...)` for the full "played a land or
+    cast a spell this turn from anywhere other than your hand".
 - `YouDrewCardsThisTurn(atLeast = 1)` — "as long as you've drawn N or more cards this turn".
   Backed by `PlayerDrewCardsThisTurn(Player.You, atLeast)`, which reads the per-player
   `CardsDrawnThisTurnComponent` (reset for all players at turn start). Works in resolution and
