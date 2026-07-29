@@ -748,6 +748,12 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
 
                 // Reuse the early checks for X-variable costs
                 val hasRemoveXCountersCost = hasRemoveXCountersCostEarly
+                // Note: an `ExileXFromGraveyard` cost is deliberately NOT an X-picker cost. There X
+                // *is* the size of the graveyard selection, so the engine pauses for the cards and
+                // derives X from the count rather than asking for a number up front (see
+                // ActivateAbilityHandler's ExileXFromGraveyard pause). A `{X}` alongside it
+                // (Necropolis Fiend) still flags here through [abilityHasXInManaCost], because
+                // there X also has to be paid in mana.
                 val abilityHasXCost = abilityHasXInManaCost || hasRemoveXCountersCost || hasTapXPermanentsCost
 
                 val abilityMaxAffordableX: Int? = if (abilityHasXCost) {

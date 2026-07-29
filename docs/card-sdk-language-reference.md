@@ -294,8 +294,15 @@ excluded.
   counters first, so the resolving effect can still read them via
   `DynamicAmounts.lastKnownSourceCounters(...)`.
 - `Costs.ExileFromGraveyard(count, filter)` — exile N matching cards from your graveyard.
-- `Costs.ExileXFromGraveyard(filter)` — exile X cards from your graveyard (X = the ability's
-  chosen X value).
+- `Costs.ExileXFromGraveyard(filter)` — **variable-count** "exile X cards from your graveyard".
+  X *is* the size of the graveyard selection, so activating raises a single `SelectCardsDecision`
+  over the matching graveyard cards and the count the player picks becomes the ability's X — read it
+  back with `DynamicAmount.XValue`. A `{X}` in the mana cost is therefore optional: **Winter, Cursed
+  Rider** ("{2}{U}{B}, {T}, Exile X artifact cards from your graveyard: Each other nonartifact
+  creature gets -X/-X") has none and the selection is free (0..matching cards); **Necropolis Fiend**
+  ("{X}, {T}, Exile X cards from your graveyard") pays X in mana too, so the mana-X picker fixes the
+  count first and the selection is pinned to exactly that many. Selecting nothing is legal and
+  settles as X = 0.
 - `Costs.ExilePermanents(filter = Any, minCount = 1, excludeSelf = true)` — **variable-count** "exile
   one or more permanents you control matching `filter`" activated-ability cost (CR 601.2b — the
   player chooses how many, at least `minCount`, as the ability is activated). With `excludeSelf` the

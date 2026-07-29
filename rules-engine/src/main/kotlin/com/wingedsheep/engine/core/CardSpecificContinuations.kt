@@ -612,6 +612,30 @@ data class ActivateAbilityExileFromGraveyardContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after a player picks the graveyard cards for an
+ * [com.wingedsheep.sdk.scripting.AbilityCost.ExileXFromGraveyard] cost.
+ *
+ * X *is* the size of that selection, so this is a single decision rather than a number picker
+ * followed by a selection: the resumer re-enters the handler with the chosen cards in
+ * `costPayment.exiledCards` **and** `xValue` set to how many were chosen.
+ *
+ * @property action The original [ActivateAbility] (`costPayment.exiledCards` still empty).
+ * @property exileCandidates The graveyard cards matching the cost's filter, offered as options;
+ *   used to validate the response is a subset of the originally legal candidates.
+ * @property fixedCount Non-null when a `{X}` mana symbol already fixed X (Necropolis Fiend:
+ *   "{X}, {T}, Exile X cards from your graveyard"), in which case the selection must be exactly
+ *   this many. Null when the cost has no mana X (Winter, Cursed Rider), in which case any number
+ *   of candidates may be chosen and the count becomes X.
+ */
+@Serializable
+data class ActivateAbilityExileXFromGraveyardContinuation(
+    override val decisionId: String,
+    val action: ActivateAbility,
+    val exileCandidates: List<EntityId>,
+    val fixedCount: Int? = null
+) : ContinuationFrame
+
+/**
  * Resume after an opponent picks the target(s) for an activated ability's "… of an opponent's
  * choice" requirement (Cuombajj Witches: "{T}: This creature deals 1 damage to any target and 1
  * damage to any target of an opponent's choice").
