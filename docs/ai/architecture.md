@@ -105,8 +105,15 @@ offset cancels and only the differences the Strategist compares survive.
 **3. A pure rollout is weaker than the greedy AI it replaces.** Passing in your own main phase does
 not end the turn, it advances a step — and the playout policy then casts the very spell you just
 declined. Two turns downstream the two lines have converged, the rollout mean cannot see the tempo
-difference, and the tie goes to passing. `RolloutSettings.staticWeight` mixes the static leaf back
-in; the two estimators are blind to different things and the mixture recovers both.
+difference, and the tie goes to passing (48/66 against `v0`'s 55/66).
+`RolloutSettings.staticWeight` mixes the static leaf back in; the two estimators are blind to
+different things and the mixture recovers both.
+
+**4. The horizon has a price, and it shows up as impatience.** `respond-02` — "do not spend the only
+Counterspell on a 2/2 with seven lands still open" — is a puzzle `v0` solves and the rollout does
+not. Countering shows a concrete gain inside the two-turn horizon; the cost of not having the card
+later falls outside it. A longer horizon is not the fix. Knowing what a card is *for* is, which is
+`CardIntent`/`HoldPolicy` territory — `production`, which has both, keeps it.
 
 ### Reproducibility
 

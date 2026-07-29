@@ -329,7 +329,7 @@ printing, per the reprint rule (`just check-card-printing "<Card>"`).
 
 **MSH — Marvel Super Heroes (12)**
 - [ ] Dark Fortress · Gathering Place · Gleaming Bastion · Hidden Lair · Training Compound *(lands)*
-- [ ] Avengers Disassembled *(rare sorcery)*
+- [x] Avengers Disassembled *(rare sorcery)*
 - [ ] Hawkeye, Master Marksman · The Mighty Thor, Jane Foster · The Unbeatable Squirrel Girl ·
       Shang-Chi, Master of Kung Fu · M.O.D.O.K. *(legendary creatures; M.O.D.O.K. is an artifact creature)*
 - [ ] Jennifer Walters // The Sensational She-Hulk *(transforming DFC, mythic)*

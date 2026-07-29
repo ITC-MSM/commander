@@ -674,6 +674,132 @@
     ]
 }
 
+// Avengers Disassembled
+{
+    "name": "Avengers Disassembled",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one or both —\n• Avengers Disassembled deals 3 damage to each creature.\n• Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        },
+                        "body": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": "Self"
+                        }
+                    },
+                    "description": "Avengers Disassembled deals 3 damage to each creature"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target land"
+                                },
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": "Gate.MayDecide",
+                                "then": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Library",
+                                                "player": {
+                                                    "type": "ControllerOf",
+                                                    "targetDescription": "target"
+                                                },
+                                                "filter": "basicland"
+                                            },
+                                            "storeAs": "searchable"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "searchable",
+                                            "selection": {
+                                                "type": "ChooseUpTo",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "chooser": "ControllerOfTarget",
+                                            "storeSelected": "found"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "found",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Battlefield",
+                                                "player": {
+                                                    "type": "ControllerOf",
+                                                    "targetDescription": "target"
+                                                },
+                                                "placement": "Tapped"
+                                            }
+                                        },
+                                        {
+                                            "type": "ShuffleLibrary",
+                                            "target": "TargetController"
+                                        }
+                                    ]
+                                },
+                                "decisionMaker": "TargetController",
+                                "descriptionOverride": "You may search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "land"
+                            },
+                            "id": "target land"
+                        }
+                    ],
+                    "description": "Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle."
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "124",
+        "rarity": "RARE",
+        "artist": "David Szabo",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72d3e750-870b-497d-80d7-e3df097db554.jpg?1783902933"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Avengers Hangar
 {
     "name": "Avengers Hangar",

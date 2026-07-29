@@ -91,22 +91,22 @@ arena A B GAMES="300" SET="BLB" SEED="20260727":
         -DarenaA={{A}} -DarenaB={{B}} -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}}
 
 # Play the rollout evaluator against itself at 4 / 8 / 16 / 32 playouts per decision. Same claim as
-# arena-budget-scaling one level down: strength must be MONOTONE in playouts, or the search is
-# generating noise. Also how you afford a rollout arena at all — a decision at the nominal 64
-# playouts costs ~2,400 process() calls, so a rollout game is ~70s against v0's ~0.07s.
+# arena-budget-scaling one level down: strength must never FALL with more playouts, or the search is
+# generating noise. Measured: it rises to ~8 and then plateaus, which is why NORMAL_PLAYOUTS is 16.
+# Also how you afford a rollout arena at all — a rollout game is ~50x a v0 game.
 # Pick rungs far apart: 4-vs-8 is below this harness's resolution (see docs/ai/measurement.md).
 [group: 'ai']
 arena-rollout-scaling A="v0-rollout-4" B="v0-rollout-32" GAMES="100" SET="BLB" SEED="20260727":
     just arena {{A}} {{B}} {{GAMES}} {{SET}} {{SEED}}
 
-# Run the 48-puzzle tactical suite (8 categories x 6). Seconds, not minutes: the arena says *that*
+# Run the 66-puzzle tactical suite (11 categories x 6). Seconds, not minutes: the arena says *that*
 # the AI regressed, a puzzle category says *what*. The gate is "the failing set equals
 # KNOWN_FAILURES", so an unexpected fix fails the test too. Baseline: docs/ai/baseline-metrics.md.
 [group: 'ai']
 arena-puzzles:
     scripts/gradle-locked :ai:test --tests "*.PuzzleSuiteTest"
 
-# Same 48 puzzles across AI profiles (v0, production) with a side-by-side per-category table.
+# Same 66 puzzles across AI profiles (v0, production) with a side-by-side per-category table.
 [group: 'ai']
 arena-puzzles-compare:
     scripts/gradle-locked :ai:test --tests "*.PuzzleComparisonBenchmark" -Dbenchmark=true

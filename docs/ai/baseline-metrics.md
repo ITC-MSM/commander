@@ -837,6 +837,93 @@ ever valued lower than it was before Phase 6. Both choices point the same way �
 
 ---
 
+# Phase 2b — Puzzle suite, second pass
+
+Measured 2026-07-29. Three of the six planned categories shipped — the three that needed no
+framework change. `just arena-puzzles`.
+
+## Why the suite needed a second pass
+
+Phase 6 took it to 44/48, and **two of the four remaining failures were the same constant**
+(`CardAdvantage.cardValue(0) = −3.0`, which Phase 9 exists to refit). So the plan's most expensive
+phase, the rollout evaluator, had a **two-puzzle** localizing signal — and its written exit
+criterion, phrased over sequencing / race math / board-wipe timing, could move exactly **one**,
+because those categories stood at 5/6, 5/6 and 6/6 and the one sequencing miss is the Phase 9
+constant.
+
+The 48 also shared five properties by construction rather than by choice: every position probed
+`chooseAction` at a clean priority window (so all 18 `PendingDecision` branches in
+`DecisionResponder.kt` were unmeasured), scored **one** action (so a *line* was inexpressible), was
+1v1, never had anything on the stack, and never asserted on an `ActivateAbility` — even though
+`PuzzleMove` had spoken one since Phase 2.
+
+## Per-category baseline — 48 → 66 puzzles
+
+`AiProfile.PRODUCTION`, with the zero-weight `v0-blind` control.
+
+| Category | `production` | `v0-blind` |
+|---|---|---|
+| lethal | 6/6 | 6/6 |
+| blocking | 6/6 | 6/6 |
+| removal | 6/6 | 0/6 |
+| instants | 5/6 | 2/6 |
+| sequencing | 5/6 | 0/6 |
+| wipe | 6/6 | 3/6 |
+| race | 5/6 | 5/6 |
+| noncreature | 5/6 | 0/6 |
+| **respond** *(new)* | **5/6** | **1/6** |
+| **activate** *(new)* | **5/6** | **2/6** |
+| **keywords** *(new)* | **6/6** | **5/6** |
+| **total** | **60/66 (91%)** | **30/66 (45%)** |
+
+The AI solves **16 of the 18** new positions. The discrimination control holds at the new size,
+which was the criterion that mattered: a set of 18 positions that a blind agent solves as often as
+the real one would be 18 coin flips.
+
+## What Phase 2b found
+
+**1. A latent harness bug, hiding behind the fact that no earlier puzzle had twin blockers.**
+`PuzzleMove.blockAssignments` was a `Map<String, List<String>>` keyed by **card name**, so two
+Grizzly Bears gang-blocking one attacker collapsed into a single map entry and
+`shouldBlockWithAtLeast` counted 1. `keywords-03` (menace) therefore reported a failure the AI had
+not made — it finds the double block correctly. It is a `List<Pair<…>>` now.
+
+The engine was never at fault, and `PuzzleRunner` had already said so: it processes every chosen
+move and fails the puzzle when the engine rejects it, and it did not reject this one.
+`BlockPhaseManager.validateMenaceRequirements:504` is correct. **A puzzle reporting an illegal move
+that the engine accepts is a harness bug, every time** — the legality gate is the tell.
+
+**2. `keywords` barely discriminates — 6/6 against 5/6 blind — which is Phase 2's finding again.**
+Combat is carried by `CombatAdvisor`'s seed heuristics, not by `BoardFeatures.kt`, exactly as
+`lethal` and `blocking` already showed. Trample, menace and reach are a regression net for *that*
+code and a `BoardFeatures` change will not move them. The one position in the category that the
+evaluator owns is `keywords-06` — Murder with an indestructible creature and a Craw Wurm to choose
+between — and it passes: `chooseCommittedTargets`' simulation refinement does overrule
+`heuristicTargetRank`'s +3.0 indestructible bonus in time. That was a predicted failure and the
+prediction was wrong, which is worth more than the pass.
+
+**3. Both new failures are `instants-05`'s shape, and that is the deliverable.**
+
+| Puzzle | Why it fails |
+|---|---|
+| `respond-05` | A regeneration shield is bought *before* the destruction it answers. At the moment of the activation the board is unchanged and two mana are gone |
+| `activate-05` | Firebreathing an unblocked attacker pays now for damage that lands at the combat-damage step. `evaluate1Ply` simulates to the next quiet state, which is still inside declare-blockers |
+
+Both are "pay now for an effect that materializes a step later", which is precisely what
+`instants-05` (Fog at 2 life) has failed on since Phase 2. **Phase 7's signal is now four puzzles
+rather than two** — `instants-05`, `race-03`, `respond-05`, `activate-05` — and two of the four are
+non-combat, so `CombatAdvisor` cannot carry them the way it carries `lethal` and `blocking`.
+
+## Not built
+
+`walker`, `lines`, `decisions` and `pod` need framework work first, itemized in
+`backlog/engine-ai-improvement.md` § Phase 2b. One concrete finding from scoping them:
+`withCardOnBattlefield` attaches no `CountersComponent`, so a **planeswalker placed directly on the
+battlefield enters at 0 loyalty and dies to state-based actions immediately** — the walker category
+cannot be written until `ScenarioBuilder` can seed counters.
+
+---
+
 # Phase 7 — Rollout evaluator
 
 Measured 2026-07-29 on this machine (8 arena threads, BLB, seed 20260727). Reproduce with
@@ -852,7 +939,7 @@ right after a candidate resolves — with the mean of several short playouts. Ar
 |---|---|
 | **`just arena v0 v0-rollout 300`** (shipped, 16 playouts) | **`v0-rollout` 56.0%, CI [52.0%, 59.7%]** |
 | `just arena v0 v0-rollout-8 300` | `v0-rollout-8` 57.3%, CI [53.0%, 61.7%] |
-| Puzzle suite, `v0-rollout` vs `v0` | **40/48 vs 39/48** — instants 3/6 → 4/6 |
+| Puzzle suite, `v0-rollout` vs `v0` | **55/66 vs 55/66** — neutral: instants +1, respond −1 |
 | `instants-05` (Fog at 2 life) | **closed** — the puzzle the plan assigned to this phase |
 | Shipped playout count | **16**, measured — not the ~60 a 2 s tier affords |
 
@@ -885,27 +972,44 @@ honest generalization is "few playouts suffice here", not "few playouts suffice"
 
 ## Per-category puzzle scores
 
-`staticWeight` sweep, 48 puzzles. `v0` is the greedy reference; `v0-rollout-pure` is the same agent
-with the static leaf mixed out entirely.
+`staticWeight` sweep on the 66-puzzle suite (Phase 2b's three new categories included). `v0` is the
+greedy reference; `v0-rollout-pure` is the same agent with the static leaf mixed out entirely.
 
 | Category | v0 | v0-rollout-pure | v0-rollout-25 | v0-rollout (0.75) | v0-phase4-intent | +rollout |
 |---|---|---|---|---|---|---|
 | lethal | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 |
 | blocking | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 |
-| removal | 6/6 | 3/6 | 5/6 | 6/6 | 6/6 | 6/6 |
-| **instants** | 3/6 | 4/6 | 4/6 | **4/6** | 3/6 | 3/6 |
-| sequencing | 5/6 | 4/6 | 5/6 | 5/6 | 5/6 | 5/6 |
+| removal | 6/6 | 2/6 | 5/6 | 6/6 | 6/6 | 6/6 |
+| **instants** | 3/6 | 5/6 | 4/6 | **4/6** | 3/6 | 3/6 |
+| sequencing | 5/6 | 3/6 | 5/6 | 5/6 | 5/6 | 5/6 |
 | wipe | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 |
 | race | 5/6 | 5/6 | 5/6 | 5/6 | 5/6 | 5/6 |
-| noncreature | 2/6 | 0/6 | 2/6 | 2/6 | 5/6 | 5/6 |
-| **total** | **39/48** | **34/48** | **39/48** | **40/48** | **42/48** | **42/48** |
+| noncreature | 2/6 | 0/6 | 2/6 | 2/6 | 5/6 | 4/6 |
+| **respond** | 5/6 | 4/6 | 4/6 | **4/6** | 5/6 | 4/6 |
+| activate | 5/6 | 5/6 | 6/6 | 5/6 | 5/6 | 5/6 |
+| keywords | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 |
+| **total** | **55/66** | **48/66** | **55/66** | **55/66** | **58/66** | **56/66** |
 
-The one category the rollouts own is `instants`, and the one puzzle inside it is `instants-05` — Fog
-against a lethal alpha strike, which Phase 2 diagnosed precisely ("a one-ply evaluator cannot see
-prevention: the post-simulation state has the same life totals as passing") and assigned to Phase 7.
-It is now solved. The rollout adds nothing on top of Phases 4 and 6 on this suite (42/48 either
-way), which is a fair reading of a suite whose remaining failures are hand-drawn constants that
-Phase 9 exists to refit.
+**On the suite the rollout is neutral, and the two moves cancel exactly.** It gains `instants-05` —
+Fog against a lethal alpha strike, which Phase 2 diagnosed precisely ("a one-ply evaluator cannot see
+prevention: the post-simulation state has the same life totals as passing") and assigned to this
+phase — and it loses `respond-02`, "do not spend the only Counterspell on a 2/2 with seven lands
+still open".
+
+`respond-02` is a **horizon effect, and the honest cost of the mechanism**: countering the 2/2 shows
+a concrete board gain inside the two-turn horizon, while the price — not having the Counterspell for
+something that matters — falls outside it. A longer horizon is not the fix (it costs samples and the
+card may not be needed for many turns); knowing what the card is *for* is, and that is
+`CardIntent`/`HoldPolicy` territory. Note `production`, which has both, keeps 5/6.
+
+Two readings worth keeping separate. **On top of Phases 4 and 6 the rollout is a small net
+negative** — 56/66 against 58/66, losing `noncreature-05` and `respond-02` — so what ships is not
+"turn everything on"; the arena is what says the rollouts earn their place, and the suite is what
+says where they do not. And the `staticWeight` sweep that looked monotone on 48 puzzles is **flat at
+0.25 / 0.5 / 0.75 on 66** (55 / 55 / 55). Only the pure rollout is clearly bad. So 0.75 is no longer
+*selected* by the suite, merely not contradicted by it — the arena number was measured at 0.75 and
+the value stays there, but it is now an unvalidated choice inside a plateau rather than a peak, and
+it belongs in Phase 9's fit with the rest of the guesses.
 
 ## Five corrections the build produced
 
@@ -920,7 +1024,8 @@ is single digits. At any `SCALE` small enough to discriminate between real candi
 −156 both squash past the clamp to the same number.
 
 Measured before the fix: every candidate on `removal-01` and `instants-05` scored exactly
-`logit(1e-4)`, and the puzzle suite fell to 32/48 with the failures uniformly "chose PassPriority".
+`logit(1e-4)`, and the suite fell to 32/48 — measured on the 48-puzzle suite, before Phase 2b — with
+the failures uniformly "chose PassPriority".
 
 The fix is to squash **the delta from the decision's root**. The baseline is shared by every
 candidate, so the arbitrary offset cancels and only the differences the Strategist actually compares
@@ -935,8 +1040,8 @@ score, and Phase 9's logistic fit should replace it rather than rescale it.
 
 ### 2. A pure rollout is **weaker** than the greedy AI it replaces, for a structural reason
 
-At `staticWeight = 0` the agent scores 34/48, against `v0`'s 39: removal 6/6 → 3/6 and non-creature
-valuation 2/6 → 0/6, every failure an unnecessary pass.
+At `staticWeight = 0` the agent scores 48/66, against `v0`'s 55: removal 6/6 → **2/6**, sequencing
+5/6 → 3/6 and non-creature valuation 2/6 → 0/6, every failure an unnecessary pass.
 
 The cause is not sampling noise. **Passing in your own main phase does not end the turn — it
 advances a step — and the playout policy then casts the very spell you just declined**, a window or
@@ -950,11 +1055,15 @@ The static leaf sees exactly that tempo, and the rollout sees exactly what one p
 
 | `staticWeight` | 0.0 | 0.25 | 0.5 | 0.75 | (1.0 = `v0`) |
 |---|---|---|---|---|---|
-| puzzles | 34/48 | 39/48 | 39/48 | **40/48** | 39/48 |
+| 48-puzzle suite | 34/48 | 39/48 | 39/48 | **40/48** | 39/48 |
+| 66-puzzle suite | 48/66 | 55/66 | 55/66 | 55/66 | 55/66 |
 
-The suite selected 0.75; the arena confirmed it. That is the discipline Phase 9 sets out for the
-evaluation weights, applied one phase early — and the parameter is its own control, since
-`v0-rollout-pure` and `v0` are the two endpoints of the same knob.
+The 48-puzzle suite selected 0.75 and the arena was measured there. **The expanded suite does not
+reproduce the peak** — 0.25, 0.5 and 0.75 are indistinguishable at 55/66 — which is a useful lesson
+about picking a constant on 48 samples, and exactly why Phase 9 fits rather than sweeps. What both
+suites agree on is the shape that matters: mixing *some* static leaf back in is worth ~7 puzzles
+over not mixing at all. The parameter remains its own control, since `v0-rollout-pure` and `v0` are
+the two endpoints of the same knob.
 
 ### 3. Puzzle positions had empty libraries, which is invisible to a greedy agent and fatal to a searching one
 
@@ -964,8 +1073,9 @@ evaluation weights, applied one phase early — and the parameter is its own con
 and **every line ends in a decking race decided by whose draw step comes first** (CR 104.3c).
 
 `PuzzleRunner` now stocks 30 basics per seat through the engine's own `CardEntityFactory`. The
-existing baselines are unchanged by it (`production` is still 44/48, `FrozenBaselineTest` still
-green), which is the evidence that it fixes the harness rather than the positions.
+existing baselines are unchanged by it (`production` still scores what Phase 2b baselined it at,
+`FrozenBaselineTest` still green), which is the evidence that it fixes the harness rather than the
+positions.
 
 ### 4. Phase 7 is the first search whose cost the arena can feel
 

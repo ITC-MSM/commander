@@ -6,7 +6,7 @@ import com.wingedsheep.ai.engine.rollout.RolloutSettings
 import com.wingedsheep.engine.support.ScenarioTestBase
 
 /**
- * The same 48 puzzles across several agents, side by side.
+ * The same 66 puzzles across several agents, side by side.
  *
  * ```
  * just arena-puzzles-compare

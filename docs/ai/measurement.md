@@ -173,18 +173,21 @@ test. Current numbers: [`baseline-metrics.md`](baseline-metrics.md#budget-scalin
 ## Rollout agents are expensive — size the run before you start it
 
 Every scoreboard above assumes an agent that decides in microseconds. Phase 7's rollout evaluator
-does not: a decision is ~64 playouts × ~40 engine actions, so a rollout game costs **~70 seconds**
-where a `v0` game costs ~0.07. The 1,000-game merge gate is 3.5 minutes for every agent in this
-document *except* the rollout ones, where it is hours.
+does not: a decision is *N* playouts × ~40 engine actions, so at the ~60 a 2 s tier affords a game
+costs **~70 seconds** where a `v0` game costs ~0.07. The 1,000-game merge gate is 3.5 minutes for
+every agent in this document *except* the rollout ones, where it is hours. At the shipped 16
+playouts it is ~4× better, and a 300-game run is ~13 minutes.
 
 So the rollout agents come as a ladder, `v0-rollout-4` / `-8` / `-16` / `-32`, differing in nothing
 but how many playouts a decision may spend (`RolloutBudgetPolicy`). Use it two ways:
 
 - **To afford a run.** `just arena v0 v0-rollout-8 300` is ~8 minutes and gave ±4.3% — a real
-  directional read. `v0-rollout` (the nominal 64) is a smoke test at 40 games and nothing more.
-- **As the safety net.** Same claim as the budget ladder, one level down: **strength must be
-  monotone in playouts.** If more samples do not help, the search is generating noise and the fix is
-  the leaf evaluator, not more samples.
+  directional read.
+- **As the safety net.** Same claim as the budget ladder, one level down: **strength must never
+  fall with more playouts**, or the search is generating noise rather than signal. What it measured
+  is *saturation*, which is fine: strength rises from 4 to 8 playouts and then flattens (4-vs-32 is
+  50.7%, CI [47.5%, 53.7%] over 400 games), which is why `NORMAL_PLAYOUTS` ships at 16 rather than
+  the ~60 the budget affords.
 
 One caution the ladder taught: pick rungs far enough apart to resolve. `v0-rollout-4` vs
 `v0-rollout-8` came out at exactly 50.0%, CI [43.3%, 56.7%] over 60 games — one doubling is below
@@ -271,17 +274,17 @@ The arena tells you *that* something regressed. A puzzle tells you *what*.
 
 ```bash
 just arena-puzzles              # the gate — always-on, seconds
-just arena-puzzles-compare      # the same 48 across v0 / production / v0-blind
+just arena-puzzles-compare      # the same 66 across v0 / production / v0-blind
 ```
 
-48 hand-authored positions in `ai/src/test/kotlin/com/wingedsheep/ai/puzzles/`, 8 categories × 6.
+66 hand-authored positions in `ai/src/test/kotlin/com/wingedsheep/ai/puzzles/`, 11 categories × 6.
 Each builds a board with `ScenarioTestBase`, asks the AI for **one** move, and asserts a predicate
-over it. Current per-category numbers: [`baseline-metrics.md`](baseline-metrics.md#phase-2--puzzle-baselines).
+over it. Current per-category numbers: [`baseline-metrics.md`](baseline-metrics.md#phase-2b--puzzle-suite-second-pass).
 
-### The gate is `KNOWN_FAILURES`, not 48/48
+### The gate is `KNOWN_FAILURES`, not 66/66
 
-`PuzzleSuiteTest` asserts the failing-id set **equals** a committed set. Today's AI solves 39 of 48,
-and a suite pinned to 48/48 would be red forever and therefore ignored.
+`PuzzleSuiteTest` asserts the failing-id set **equals** a committed set. Today's AI solves 60 of 66,
+and a suite pinned to 66/66 would be red forever and therefore ignored.
 
 Equality — not "is a subset of" — is the point. It flags a regression *and* an unexpected fix:
 
@@ -312,7 +315,16 @@ Three things the runner enforces so a mis-built position cannot score as a pass:
 `advanceToDeclaration(seat, step)` stops where a seat is asked to declare attackers or blockers;
 `advanceToPriority(seat, step)` stops at the ordinary priority window *after* declarations, which
 is where a combat trick is cast. They differ by one window and using the wrong one is the easiest
-way to write a puzzle that measures the wrong decision.
+way to write a puzzle that measures the wrong decision. `advanceToStackResponse(seat)` stops with
+something still **on the stack** — cast the spell from the other seat first — and fails loudly if
+one pass too many resolved it, because a puzzle asking "do you counter this?" about an empty stack
+scores a decision that no longer exists.
+
+**If a puzzle reports an illegal-looking move that the engine accepted, suspect the harness first.**
+`PuzzleRunner` processes every chosen move and fails the puzzle when the engine rejects it, so a
+"the AI single-blocked a menace creature" report means `PuzzleMove` mis-read the action, not that
+the rules are wrong. That is exactly what happened to `keywords-03`: blocks were keyed by card
+name, and two creatures with the same name collapsed into one entry.
 
 ### Include positive controls
 

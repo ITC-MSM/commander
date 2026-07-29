@@ -72,7 +72,8 @@ data class RolloutSettings(
      * window or a phase later. Two turns downstream the "cast it now" line and the "pass" line have
      * converged to the same board, so the rollout mean cannot see the tempo difference between
      * them, and the Strategist's strict `>` sends the tie to passing. Measured on the puzzle suite:
-     * removal 6/6 → 3/6 and non-creature valuation 2/6 → 0/6, every failure an unnecessary pass.
+     * removal 6/6 → 2/6, sequencing 5/6 → 3/6 and non-creature valuation 2/6 → 0/6, every failure
+     * an unnecessary pass — 48/66 against `v0`'s 55/66.
      *
      * The two estimators are blind to different things. The static leaf sees exactly the tempo the
      * rollout misses — "the board right after this resolves" — and the rollout sees exactly what
@@ -82,9 +83,12 @@ data class RolloutSettings(
      * At 1.0 this is `AiProfile.LEGACY_V0`'s leaf exactly, which makes the parameter its own
      * control: `just arena v0-rollout-pure v0-rollout 1000` prices the mixture directly.
      *
-     * 0.75 is where the puzzle suite peaked in a 0 / 0.25 / 0.5 / 0.75 sweep (34 / 39 / 39 / 40 of
-     * 48, against `v0`'s 39). The suite **selects**; the arena decides — the same discipline Phase 9
-     * sets out for the evaluation weights.
+     * 0.75 is where the 48-puzzle suite peaked (34 / 39 / 39 / **40**, against `v0`'s 39) and where
+     * the arena number was measured. Phase 2b's expanded 66-puzzle suite does **not** reproduce the
+     * peak — 0.25, 0.5 and 0.75 are indistinguishable at 55/66 — so this is now an unvalidated
+     * choice inside a plateau rather than a fitted one. What both suites agree on is that mixing
+     * *some* static leaf back in is worth ~7 puzzles over mixing none. Phase 9's logistic fit is
+     * where a guess like this stops being a guess.
      */
     val staticWeight: Double = 0.75,
 
