@@ -420,3 +420,114 @@
         "WHITE"
     ]
 }
+
+// Thraben Charm
+{
+    "name": "Thraben Charm",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Thraben Charm deals damage equal to twice the number of creatures you control to target creature.\n• Destroy target enchantment.\n• Exile any number of target players' graveyards.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Multiply",
+                            "amount": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature"
+                            },
+                            "multiplier": 2
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target creature"
+                        }
+                    ],
+                    "description": "Thraben Charm deals damage equal to twice the number of creatures you control to target creature"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target enchantment"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "enchantment"
+                            },
+                            "id": "target enchantment"
+                        }
+                    ],
+                    "description": "Destroy target enchantment"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Graveyard",
+                                        "player": {
+                                            "type": "ContextPlayer",
+                                            "index": 0
+                                        }
+                                    },
+                                    "storeAs": "tc_graveyard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "tc_graveyard",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "unlimited": true,
+                            "id": "any number of target players"
+                        }
+                    ],
+                    "description": "Exile any number of target players' graveyards"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "Carlos Palma Cruchaga",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/dd28a646-f38f-4cdf-948c-969cd979e5e6.jpg?1783911295"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
