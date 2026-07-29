@@ -1210,9 +1210,10 @@ object Conditions {
     fun YouCastSpellsThisTurn(
         atLeast: Int,
         filter: com.wingedsheep.sdk.scripting.GameObjectFilter = com.wingedsheep.sdk.scripting.GameObjectFilter.Any,
-        fromZone: com.wingedsheep.sdk.core.Zone? = null
+        fromZone: com.wingedsheep.sdk.core.Zone? = null,
+        fromZoneOtherThan: com.wingedsheep.sdk.core.Zone? = null
     ): ConditionInterface =
-        PlayerCastSpellsThisTurn(Player.You, filter, atLeast, fromZone)
+        PlayerCastSpellsThisTurn(Player.You, filter, atLeast, fromZone, fromZoneOtherThan)
 
     /**
      * As long as you've drawn [atLeast] or more cards this turn (backed by the per-player
@@ -1231,6 +1232,29 @@ object Conditions {
      */
     val YouCommittedCrimeThisTurn: ConditionInterface =
         PlayerCommittedCrimeThisTurn(Player.You)
+
+    /**
+     * If you've **played a land this turn** (CR 305.1 special land-play action). Optionally qualify by
+     * the zone it was played from — `fromZone` requires that specific zone, `fromZoneOtherThan`
+     * excludes it (mutually exclusive). Backed by the per-player `LandsPlayedThisTurnComponent`.
+     */
+    fun YouPlayedLandThisTurn(
+        fromZone: com.wingedsheep.sdk.core.Zone? = null,
+        fromZoneOtherThan: com.wingedsheep.sdk.core.Zone? = null
+    ): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PlayerPlayedLandThisTurn(Player.You, fromZone, fromZoneOtherThan)
+
+    /**
+     * If you've **played a land this turn from a zone other than your hand** (CR 305.1 land-play
+     * from graveyard / exile / library) — convenience for
+     * [YouPlayedLandThisTurn]`(fromZoneOtherThan = Zone.HAND)`. The land half of Spider-Man 2099's
+     * end-step intervening-if; compose with [YouCastSpellsThisTurn]`(1, fromZoneOtherThan = Zone.HAND)`
+     * via [any] for the full "played a land or cast a spell this turn from anywhere other than your hand".
+     */
+    val YouPlayedLandFromNonHandThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PlayerPlayedLandThisTurn(
+            Player.You, fromZoneOtherThan = com.wingedsheep.sdk.core.Zone.HAND
+        )
 
     /**
      * If this is the first spell you've cast this turn that mana from a Treasure was

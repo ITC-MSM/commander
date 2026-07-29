@@ -57,6 +57,7 @@ val engineSerializersModule = SerializersModule {
         subclass(DamageDealtEvent::class)
         subclass(DamagePreventedEvent::class)
         subclass(CardPlayedFromPermissionEvent::class)
+        subclass(LandPlayedEvent::class)
         subclass(SpellCastEvent::class)
         subclass(SpellCopiedEvent::class)
         subclass(AbilityActivatedEvent::class)
@@ -78,6 +79,7 @@ val engineSerializersModule = SerializersModule {
         subclass(TurnChangedEvent::class)
         subclass(PriorityChangedEvent::class)
         subclass(TappedEvent::class)
+        subclass(ExertedEvent::class)
         subclass(BecameSaddledEvent::class)
         subclass(PermanentAttachedEvent::class)
         subclass(PermanentUnattachedEvent::class)
@@ -391,6 +393,7 @@ val engineSerializersModule = SerializersModule {
 
         // Battlefield components
         subclass(TappedComponent::class)
+        subclass(ExertedComponent::class)
         subclass(SummoningSicknessComponent::class)
         subclass(PhasedOutComponent::class)
         subclass(CastFromHandComponent::class)
@@ -513,6 +516,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CantGainLifeComponent::class)
         subclass(CantActivateLoyaltyAbilitiesComponent::class)
         subclass(CardsDiscardedThisTurnComponent::class)
+        subclass(LandsPlayedThisTurnComponent::class)
         subclass(CardsLeftGraveyardThisTurnComponent::class)
         subclass(CardsPutIntoExileThisTurnComponent::class)
         subclass(CreaturesDiedThisTurnComponent::class)

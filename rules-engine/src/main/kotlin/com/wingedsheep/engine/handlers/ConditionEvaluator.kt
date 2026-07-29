@@ -370,6 +370,19 @@ class ConditionEvaluator(
                 val playerId = resolvePlayer(state, condition.player, ctx)
                 playerId != null && playerId in state.playersWhoCommittedCrimeThisTurn
             }
+            is com.wingedsheep.sdk.scripting.conditions.PlayerPlayedLandThisTurn -> {
+                val playerId = resolvePlayer(state, condition.player, ctx)
+                val zones = playerId?.let {
+                    state.getEntity(it)
+                        ?.get<com.wingedsheep.engine.state.components.player.LandsPlayedThisTurnComponent>()
+                        ?.fromZones
+                } ?: emptyList()
+                when {
+                    condition.fromZone != null -> zones.any { it == condition.fromZone }
+                    condition.fromZoneOtherThan != null -> zones.any { it != condition.fromZoneOtherThan }
+                    else -> zones.isNotEmpty()
+                }
+            }
             is com.wingedsheep.sdk.scripting.conditions.PermanentEnteredFaceDownThisTurn -> {
                 val playerId = resolvePlayer(state, condition.player, ctx)
                 val count = playerId?.let {
@@ -1004,6 +1017,8 @@ class ConditionEvaluator(
             // cast from hand still counts as "cast a spell from your hand" even though matchesFilter
             // bails on face-down characteristics (CR 708.2).
             if (condition.fromZone != null && record.castFromZone != condition.fromZone) continue
+            // "…from anywhere other than your hand" (Spider-Man 2099): exclude that one zone.
+            if (condition.fromZoneOtherThan != null && record.castFromZone == condition.fromZoneOtherThan) continue
             if (condition.filter != GameObjectFilter.Any && !evaluator.matchesFilter(record, condition.filter)) continue
             matches++
             if (matches >= condition.atLeast) return true

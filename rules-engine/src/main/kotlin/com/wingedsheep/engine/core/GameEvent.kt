@@ -198,6 +198,26 @@ data class CardPlayedFromPermissionEvent(
 ) : GameEvent
 
 /**
+ * A land was **played** (the special land-play action, CR 305.1) — distinct from a land an effect
+ * puts onto the battlefield (which emits only a [ZoneChangeEvent]). Emitted by
+ * `PlayLandHandler` alongside the entry [ZoneChangeEvent], carrying the zone it was played from so
+ * "whenever you play a land … from anywhere other than your hand" triggers (Shadow of the Goblin)
+ * can gate on [fromZone].
+ *
+ * @property cardId The land that was played
+ * @property controllerId The player who played it
+ * @property fromZone The zone it was played from (HAND for a normal land drop; GRAVEYARD / EXILE /
+ *   LIBRARY for a land played via a play permission)
+ */
+@Serializable
+@SerialName("LandPlayedEvent")
+data class LandPlayedEvent(
+    val cardId: EntityId,
+    val controllerId: EntityId,
+    val fromZone: com.wingedsheep.sdk.core.Zone
+) : GameEvent
+
+/**
  * Stats were modified (e.g., +3/+3 until end of turn).
  */
 @Serializable
@@ -878,6 +898,18 @@ data class PriorityChangedEvent(
 @Serializable
 @SerialName("TappedEvent")
 data class TappedEvent(
+    val entityId: EntityId,
+    val entityName: String
+) : GameEvent
+
+/**
+ * A permanent was exerted (CR 701.43a) — it won't untap during its controller's next untap step.
+ * Lets animations and "whenever you exert a permanent" reactions (none printed yet) fire instead
+ * of the state changing silently.
+ */
+@Serializable
+@SerialName("ExertedEvent")
+data class ExertedEvent(
     val entityId: EntityId,
     val entityName: String
 ) : GameEvent

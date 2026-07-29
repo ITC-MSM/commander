@@ -96,8 +96,11 @@ Still blocked (not on Mayhem itself):
   with mv ≤ 3, **it gains 'attacks each combat if able' and 'when it deals combat damage to a player, sacrifice it'**"
   needs a persistent **grant-abilities-to-a-reanimated-target** effect (no clean facade to durably grant a
   must-attack static + a combat-damage sacrifice trigger to a chosen target). Deferred rather than approximated.
-- **Oscorp Industries** [182] — land; the no-cost 702.187c form is a **land-play from graveyard** (not a cast),
-  which needs a land-play-from-graveyard action path (`enumerateMayhem` skips lands today). Deferred.
+- **Oscorp Industries** [182] — ✅ **IMPLEMENTED** on branch `spm-land-plays`. The no-cost 702.187c form is a
+  land-play from graveyard: `PlayLandEnumerator` now offers a discarded-this-turn Mayhem land as a `PlayLand`
+  action and `PlayLandHandler` allows it (both gated on `MayhemGrants.effectiveMayhem`, via `mayhem("")`). Its
+  "enters from a graveyard → lose 2 life" uses the `EnteredFromGraveyardComponent` the handler now stamps on
+  graveyard land-plays (lands bypass `ZoneTransitionService`).
 - **Ultimate Green Goblin** [157] — `{1}{B/R}{B/R}` Mayhem `{2}{B/R}`; the upkeep "discard a card, then create a
   Treasure" is expressible, but was not authored in this batch — a straightforward follow-up now that Mayhem exists.
 - **Norman Osborn // Green Goblin** [39] — transform DFC; back's "Goblin Formula" grants Mayhem (cost = mana cost) to
@@ -139,7 +142,17 @@ battlefield-exit (or the predicate evaluated against pre-leave state). `add-feat
 Blocked cards:
 - **Costume Closet** [5] — `{1}{W}` Artifact; enters with two +1/+1 counters + sorcery-speed "{T}: move a counter to target creature you control" (both of those work today) + "Whenever a **modified** creature you control leaves the battlefield, put a +1/+1 counter on this artifact" (the blocked part)
 
-## "Deals damage to a [filtered] creature" trigger (RecipientFilter.Matching on a deals-damage trigger)
+## "Deals damage to a [filtered] creature" trigger (RecipientFilter.Matching on a deals-damage trigger) — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-damage-triggers`. Added the missing `is RecipientFilter.Matching` case to
+`TriggerMatcher.matchesDealsDamageTrigger` (evaluate the filter against the recipient in projected state,
+mirroring `DamageCalculator`). The triggering entity is already the recipient (`TriggerContext.fromEvent`
+sets `triggeringEntityId = event.targetId`), so `Effects.Destroy(EffectTarget.TriggeringEntity)` destroys
+the damaged creature. Also repairs the two already-shipped cards with the identical shape (**East-Mark
+Cavalier** LTR, **Mauhur, Uruk-hai Captain**). Card: **Spider-Slayer, Hatred Honed** [175].
+
+<details><summary>Original analysis</summary>
+
 
 > Whenever <this> deals damage to a **Spider**, destroy that creature.
 
@@ -157,6 +170,7 @@ existing `CreatureYouControl` case) to `matchesDealsDamageTrigger`.
 
 Blocked cards:
 - **Spider-Slayer, Hatred Honed** [175] — `{2}` Legendary Artifact Creature; "Whenever Spider-Slayer deals damage to a Spider, destroy that creature" (blocked). Its other ability — `{6}`, exile-from-graveyard → two tapped 1/1 flying Robot tokens — works fine.
+</details>
 
 ## Chosen card name surviving into a later-firing delayed trigger
 
@@ -225,24 +239,37 @@ to a permanent's presence. Fix (add-feature): a color-parameterized `RetainUnspe
 Blocked cards:
 - **Electro, Assaulting Battery** [76] — `{1}{R}{R}` Flying; "You don't lose unspent red mana as steps and phases end." Its other clauses (Flying; cast-instant/sorcery → add {R}; LTB pay-{X} deal X to a player) are all expressible today.
 
-## "Discard a card OR pay {2}" additional cost (DiscardOrPay)
+## "Discard a card OR pay {2}" additional cost (DiscardOrPay) — ✅ IMPLEMENTED
 
 > As an additional cost to cast this spell, **discard a card or pay {2}**.
 
-A choice between a non-mana cost (discard a card) and a **mana** payment as an additional cost.
-Not supported: `Costs.additional.Choice(...)` handles only non-mana options (`ChoiceCostResolver`
-drops any `CostAtom.Mana` branch → the pay-{2} path silently disappears), and the `*OrPay`
-family (`SacrificeOrPay`, `ExileFromGraveyardOrPay`, `BlightOrPay`, `BeholdOrPay`) has **no
-`DiscardOrPay`**. The `ModalEffect` per-mode-cost workaround (Bitter Triumph "discard or pay 3
-life") doesn't transfer because a mode's `CostAtom.Mana` additional cost is treated as a no-op
-by `CastSpellHandler` (the {2} would be free). Fix (add-feature): a `DiscardOrPay(count, filter,
-alternativeManaCost)` member of the `*OrPay` additional-cost family, wired into
-`CastSpellEnumerator` + `CastSpellHandler`.
+**Implemented** on branch `spm-goblins`. A choice between a non-mana cost (discard a card) and a **mana**
+payment as an additional cost. Added `AdditionalCost.DiscardOrPay(alternativeManaCost, filter, count)` +
+`Costs.additional.DiscardOrPay(...)`, mirroring the existing `*OrPay` family (`SacrificeOrPay` /
+`ExileFromGraveyardOrPay` / `BlightOrPay` / `BeholdOrPay`). Wired into `CastSpellEnumerator` (two cast
+paths — discard path with a `costType = "DiscardCard"` hand picker, and pay path folding in the alt mana),
+`CostHandler` (always payable — pay path), and `CastSpellHandler` (validation mana adjustment, payment
+validation, mana application, and the discard-payment application mirroring `CostAtom.Discard`, including
+`ZoneTransitionService.trackDiscard` so it feeds the turn's discard tracking / Mayhem). Path recovered at
+payment time from whether `AdditionalCostPayment.discardedCards` is non-empty.
 
-Blocked cards:
-- **Pumpkin Bombardment** [139] — `{B/R}` Sorcery; "As an additional cost to cast this spell, discard a card or pay {2}. Deals 3 damage to target creature." (the damage half is trivial; the discard-or-pay additional cost is the blocker)
+Implemented cards (1): **Pumpkin Bombardment** [139] — `{B/R}` Sorcery; "discard a card or pay {2}. Deals 3
+damage to target creature."
 
-## "Play a land from anywhere other than your hand" trigger
+## "Play a land from anywhere other than your hand" trigger — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-land-plays`. Added an additive `LandPlayedEvent` (engine) emitted by
+`PlayLandHandler` alongside the entry `ZoneChangeEvent` (carrying `fromZone`) — distinct from an effect
+*putting* a land onto the battlefield, so it doesn't over-trigger on fetch/reanimate/ramp. Wired through
+`TriggerIndex` (new `LAND_PLAYED` category, both directions) + `TriggerMatcher` + a
+`EventPattern.LandPlayedEvent(fromZoneOtherThan)` / `Triggers.youPlayLand(fromZoneOtherThan = Zone.HAND)`
+primitive. The **turn-scoped** form: a `PlayedLandFromNonHandThisTurnComponent` flag set by the handler
+(reset per-turn in `TurnManager`) backing `Conditions.YouPlayedLandFromNonHandThisTurn`, plus a
+`fromZoneOtherThan` qualifier added to `Conditions.YouCastSpellsThisTurn` (the cast half). Cards: **Shadow
+of the Goblin** [87] (two triggered abilities — land-play + cast-from-non-hand) and **Spider-Man 2099**
+[150] (`any(YouPlayedLandFromNonHandThisTurn, YouCastSpellsThisTurn(1, fromZoneOtherThan = HAND))`).
+
+<details><summary>Original analysis</summary>
 
 > Whenever you **play a land** or cast a spell from anywhere other than your hand, …
 
@@ -268,6 +295,7 @@ hand** this turn" condition (`YouCastSpellsThisTurn` is single-zone positive equ
 Fix (add-feature): a land-play zone-of-origin turn record + an "other-than" zone qualifier on both
 the land and spell turn-conditions.
 - **Spider-Man 2099** [150] — `{U}{R}` double strike/vigilance; the "From the Future" turn-number cast restriction (`ControllerTurnsTakenAtMost`) and "deal power to any target" are fine, but the end-step intervening-if "if you've played a land or cast a spell this turn from anywhere other than your hand" is the blocker.
+</details>
 
 ## Temporary "play from top of library, paying life = mana value instead of mana cost"
 
@@ -289,7 +317,15 @@ sites to consult granted statics (mirroring `MayCastFromGraveyard`).
 Blocked cards:
 - **Gwenom, Remorseless** [56] — `{3}{B}{B}` Deathtouch/lifelink; the attack-granted "play from top, pay life = mana value" is the blocker (deathtouch, lifelink, and the attack trigger itself are fine).
 
-## "Prevent damage to this creature, put that many +1/+1 counters on it" self-replacement
+## "Prevent damage to this creature, put that many +1/+1 counters on it" self-replacement — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-damage-triggers`. Added `is RecipientFilter.Self -> targetId == entityId`
+to `DamageUtils.applyReplaceDamageWithCounters`'s recipient matcher, and invoked it on the creature-damage
+paths — the non-player (`else`) branch of `DamageUtils.dealDamageToTarget` and
+`CombatDamageManager.applyDamageToCreature` (before redirection/final marking). Card: **Anti-Venom,
+Horrifying Healer** [1] (its "if he was cast" ETB reanimation uses the existing `Conditions.WasCast`).
+
+<details><summary>Original analysis</summary>
 
 > If damage would be dealt to Anti-Venom, prevent that damage and put that many +1/+1 counters
 > on him.
@@ -308,6 +344,7 @@ and invoke `applyReplaceDamageWithCounters` on the creature-damage paths
 
 Blocked cards:
 - **Anti-Venom, Horrifying Healer** [1] — `{W}{W}{W}{W}{W}` Symbiote Hero; ETB "if cast, reanimate a creature" is fine, but the damage-prevention-to-counters self-replacement is the blocker.
+</details>
 
 ## Granted activated ability with `UntilYourNextTurn` duration never expires
 
@@ -330,7 +367,15 @@ field, like the player-component grants).
 Blocked cards:
 - **Hydro-Man, Fluid Felon** [33] — `{U}{U}`; blue-cast pump (fine) + end-step "untap; until your next turn becomes a non-creature land with '{T}: Add {U}'" — the type-change + untap work, but the granted mana ability never expires.
 
-## Static damage redirect to the enchanted/equipped creature (Pariah-style)
+## Static damage redirect to the enchanted/equipped creature (Pariah-style) — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-damage-triggers`. Extended `DamageUtils.resolveRedirectTarget` with
+`EffectTarget.EnchantedCreature` / `EquippedCreature` / `EnchantedPermanent` → the Aura/Equipment's
+`AttachedToComponent.targetId`. The "+2/+2 for each attached Aura/Equipment" buff uses the new
+`DynamicAmounts.attachmentsOnEnchantedCreature()` (`EntityProperty(EnchantedCreature, AttachmentCount())`)
+over `GroupFilter.attachedCreature()`. Card: **With Great Power . . .** [24].
+
+<details><summary>Original analysis</summary>
 
 > All damage that would be dealt to you is dealt to **enchanted creature** instead.
 
@@ -347,6 +392,7 @@ expressible (`GrantDynamicStatsEffect` over `attachedCreature()` with
 
 Blocked cards:
 - **With Great Power . . .** [24] — `{3}{W}` Aura; "+2/+2 per attached Aura/Equipment" (fine) + "all damage that would be dealt to you is dealt to enchanted creature instead" (the redirect is the blocker).
+</details>
 
 ## "The legend rule doesn't apply to [filter]" exemption
 

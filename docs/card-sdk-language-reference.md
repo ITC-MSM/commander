@@ -215,6 +215,18 @@ excluded.
 - `Costs.Free` — costs nothing (`{0}`).
 - `Costs.Tap` — `{T}`; tap this permanent.
 - `Costs.Untap` — `{Q}`; untap this permanent.
+- `Costs.Exert` — exert this permanent (CR 701.43a, `AbilityCost.Exert`): it won't untap during its
+  controller's next untap step. Always payable regardless of tapped/exerted state (701.43b) —
+  `canPayAbilityCost` returns `true` unconditionally, and re-exerting before the next untap step is
+  a no-op (doesn't stack multiple skips). Backed by a new per-object marker component
+  (`ExertedComponent`), not a continuous static ability like `AbilityFlag.DOESNT_UNTAP` — the
+  untap step (`BeginningPhaseManager`) both skips untapping an exerted permanent and clears the
+  marker *unconditionally* every untap step for that permanent's controller, whether or not it
+  actually prevented an untap (2024-06-07 ruling), unlike a stun counter which is only consumed
+  when it does. Exposed client-side as `ClientCard.isExerted`. Distinct from the "you may exert
+  [this] as it attacks" attack-cost template (701.43d) — that's a separate optional-cost-to-attack
+  shape, not an ability cost; only the cost-component shape is implemented so far. First user: Arena
+  of Glory (MH3) — `Costs.Composite(Costs.Mana("{R}"), Costs.Tap, Costs.Exert)`.
 - `Costs.Mana("{2}{U}")` — pay the given mana cost (string or `ManaCost`).
 - `Costs.PayLife(amount)` — pay N life.
 - `Costs.PayXLife` — pay X life, where X is the value chosen for the ability's `{X}` mana cost
@@ -410,11 +422,24 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   is recovered at payment time from whether the cast action's `additionalCostPayment.sacrificedPermanents`
   is non-empty; the sacrifice path is only offered when you control at least `count` matching
      permanents, so with nothing to sacrifice only the pay path is castable.
+- `Costs.additional.DiscardOrPay(alternativeManaCost, filter = Filters.Any, count = 1)` — "as an
+  additional cost to cast this spell, discard a [filter] or pay {mana}" (Pumpkin Bombardment:
+  "discard a card or pay {2}"). The sibling of `SacrificeOrPay` / `ExileFromGraveyardOrPay` /
+  `BlightOrPay` / `BeholdOrPay` for the "discard a card or pay mana" shape. The enumerator offers up
+  to two cast paths: the **discard path** (base cost + a hand selection of exactly `count` cards
+  matching `filter`, excluding the spell being cast, surfaced as a `costType = "DiscardCard"` cost —
+  the same hand picker used by a plain discard cost like Force of Will) and the **pay path** (base
+  cost + `alternativeManaCost` folded in). The chosen path is recovered at payment time from whether
+  the cast action's `additionalCostPayment.discardedCards` is non-empty; the discard path is only
+  offered when you hold at least `count` other matching cards, so with an empty hand only the pay
+  path is castable. The discard-as-cost still feeds the turn's discard tracking (CR 701.8), so it
+  counts toward `DynamicAmounts.cardsDiscardedThisTurn()` / `Conditions.YouDiscardedThisCardThisTurn`
+  (Mayhem).
 - `Costs.additional.Choice(vararg options)` — **cost-vs-cost**: "as an additional cost to cast this
   spell, pay exactly one of `options`" (Souls of the Lost: *"discard a card **or** sacrifice a
   permanent"*). The general, parameterized form of `Forage` — each option is itself an
   `AdditionalCost` (compose the `Sacrifice` / `Discard` / `ExileFrom` atoms). Distinct from the
-  `*OrPay` family (`SacrificeOrPay` / `ExileFromGraveyardOrPay` / `BeholdOrPay` / `BlightOrPay`): those
+  `*OrPay` family (`SacrificeOrPay` / `DiscardOrPay` / `ExileFromGraveyardOrPay` / `BeholdOrPay` / `BlightOrPay`): those
   fold a **mana** alternative into the spell's cost, whereas `Choice` is for options that are each
   independently payable **non-mana** costs (no mana-cost change). The enumerator emits **one cast
   action per payable option** (`CastSpellEnumerator.expandChoiceAdditionalCosts` +
@@ -889,6 +914,19 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     storeAmountAs = "paid"), DealDamage(VariableReference("paid"), target))`. Paying 0 is legal and does nothing
     (2024-06-07 ruling: "You may pay zero {E}... won't deal any damage"); if the spell's target becomes illegal
     before resolution the whole spell fizzles per the normal CR 608.2b check, so no energy is gained either.
+  - `PayFixedCounters(counterType, amount, player = Player.You)` — the all-or-nothing counterpart to
+    `PayCounters`: pays an exact `amount`, not a chosen one. No decision of its own — designed as the `action`
+    half of a `ReflexiveTriggerEffect` ("you may pay {E}{E}{E}. **When** you do, ...", CR 603.2 — a fresh
+    triggered ability with its own targets, distinct from a same-ability "**If** you do" continuation), where
+    the reflexive's own yes/no *is* the payment decision. Fails outright (no partial removal) if the payer has
+    fewer than `amount` — per the 2024-06-07 {E} ruling, "you can't pay that amount multiple times to multiply
+    the effect... you simply choose whether or not to pay". `ReflexiveTriggerEffectExecutor.isActionFeasible`
+    recognizes `PayFixedCountersEffect` and checks the payer's current total before ever offering the "may pay"
+    prompt, mirroring how it already gates `SacrificeEffect` — so the prompt never appears when unaffordable,
+    it doesn't appear-then-fail. Guide of Souls (MH3): `ReflexiveTriggerEffect(action =
+    PayFixedCounters(Counters.ENERGY, 3), reflexiveEffect = AddCounters(PLUS_ONE_PLUS_ONE, 2, ContextTarget(0))
+    .then(AddCounters(FLYING, 1, ContextTarget(0))).then(AddCreatureType("Angel", ContextTarget(0))),
+    reflexiveTargetRequirements = [Targets.AttackingCreature])`.
   - `DynamicAmount.PlayerCounterCount(counterType, player = Player.You)` / `DynamicAmounts.playerCounterCount(...)`
     — how many counters of `counterType` a player currently has; the player-scoped sibling of
     `EntityProperty(entity, CounterCount(filter))` (which has no case for "a player" — `EntityReference` only
@@ -3523,6 +3561,14 @@ caster with `EffectTarget.PlayerRef(Player.TriggeringPlayer)`.
   Master Archer's `Creature.opponentControls()`). Sugar for
   `youCastSpell(requires = setOf(SpellCastPredicate.TargetsMatching(filter)))`.
 
+- `youPlayLand(fromZoneOtherThan: Zone? = null)` — "whenever you play a land" (CR 305.1, the special
+  land-play action). Pass `fromZoneOtherThan = Zone.HAND` for "whenever you play a land … from anywhere
+  other than your hand" (Shadow of the Goblin). Backed by the engine's `LandPlayedEvent`, emitted **only**
+  for a played land — never for a land an effect *puts* onto the battlefield (fetch / reanimate / ramp), so
+  it does not over-trigger. ANY binding (a player-scoped observer). For the union "play a land **or** cast a
+  spell from a non-hand zone", use two triggered abilities — this one plus
+  `youCastSpell(requires = setOf(SpellCastPredicate.CastFromZoneOtherThan(Zone.HAND)))`.
+
 **Factory** — `youCastSpell(spellFilter?, requires: Set<SpellCastPredicate>)`. The
 `requires` set is conjunctive — every predicate must hold for the trigger to fire.
 
@@ -6103,15 +6149,26 @@ default to "you" so card authors don't need to pass it explicitly.
   that turn" (Faramir, Prince of Ithilien: at the chosen opponent's next end step, draw if they didn't
   attack you, else make three Human Soldier tokens). `attacker` is typically `Player.TriggeringPlayer`
   (the player a delayed trigger fired on via `CreateDelayedTriggerEffect.fireOnPlayer`).
-- `YouCastSpellsThisTurn(atLeast, filter, fromZone?)` — Prowess/Magecraft shape. Backed by
-  `PlayerCastSpellsThisTurn(Player.You, filter, atLeast, fromZone)`. `fromZone` (default any) restricts
-  the count to spells cast from that zone, matched independently of `filter` (a face-down/morph spell
-  cast from hand still counts, CR 708.2). With `fromZone = Zone.HAND`, negating gives the Prairie Dog
-  cycle's "you haven't cast a spell from your hand this turn":
+- `YouCastSpellsThisTurn(atLeast, filter, fromZone?, fromZoneOtherThan?)` — Prowess/Magecraft shape.
+  Backed by `PlayerCastSpellsThisTurn(Player.You, filter, atLeast, fromZone, fromZoneOtherThan)`. `fromZone`
+  (default any) restricts the count to spells cast from that zone, matched independently of `filter` (a
+  face-down/morph spell cast from hand still counts, CR 708.2). With `fromZone = Zone.HAND`, negating gives
+  the Prairie Dog cycle's "you haven't cast a spell from your hand this turn":
   `Not(YouCastSpellsThisTurn(1, fromZone = Zone.HAND))` (Inventive Wingsmith, Prairie Dog, Canyon Crab,
-  Emergent Haunting, Wrangler of the Damned). The origin zone is captured on each `CastSpellRecord`
-  (`castFromZone`) at cast time, so flashback/forage (GRAVEYARD), plot/foretell (EXILE), and commander
-  (COMMAND) casts are all distinguished from hand casts.
+  Emergent Haunting, Wrangler of the Damned). `fromZoneOtherThan = Zone.HAND` is the inverse — "cast a spell
+  this turn from anywhere **other than** your hand" (Spider-Man 2099). The origin zone is captured on each
+  `CastSpellRecord` (`castFromZone`) at cast time, so flashback/forage (GRAVEYARD), plot/foretell (EXILE),
+  and commander (COMMAND) casts are all distinguished from hand casts.
+- `YouPlayedLandThisTurn(fromZone?, fromZoneOtherThan?)` — "as long as you've **played a land** this turn"
+  (CR 305.1 special land-play action), the land mirror of `YouCastSpellsThisTurn`. No qualifier = any land;
+  `fromZone` requires that specific origin; `fromZoneOtherThan` excludes it (mutually exclusive). Backed by
+  `PlayerPlayedLandThisTurn(Player.You, …)`, reading the per-player `LandsPlayedThisTurnComponent` — the
+  zone each land was played from this turn, appended by `PlayLandHandler` (HAND for a normal drop,
+  GRAVEYARD/EXILE/LIBRARY for a play permission).
+  - `YouPlayedLandFromNonHandThisTurn` — convenience for `YouPlayedLandThisTurn(fromZoneOtherThan = Zone.HAND)`.
+    The land half of Spider-Man 2099's end-step intervening-if; compose with
+    `YouCastSpellsThisTurn(1, fromZoneOtherThan = Zone.HAND)` via `Any(...)` for the full "played a land or
+    cast a spell this turn from anywhere other than your hand".
 - `YouDrewCardsThisTurn(atLeast = 1)` — "as long as you've drawn N or more cards this turn".
   Backed by `PlayerDrewCardsThisTurn(Player.You, atLeast)`, which reads the per-player
   `CardsDrawnThisTurnComponent` (reset for all players at turn start). Works in resolution and
@@ -6737,6 +6794,11 @@ For "X = the number of [things] attached to this permanent":
 - `DynamicAmounts.equipmentAttachedToSelf()` — only the Equipment attached to the source (Shagrat,
   Loot Bearer: "amass Orcs X, where X is the number of Equipment attached to Shagrat"). Desugars to
   `EntityProperty(Source, AttachmentCount(AttachmentKind.EQUIPMENT))`.
+- `DynamicAmounts.attachmentsOnEnchantedCreature()` — every Aura/Equipment attached to the
+  *enchanted* creature (the creature the source Aura is attached to), for an Aura that buffs its host
+  by its host's own attachment count (With Great Power…: "enchanted creature gets +2/+2 for each Aura
+  and Equipment attached to it"). Desugars to `EntityProperty(EnchantedCreature, AttachmentCount())`.
+  Distinct from `attachmentsOnSelf()`, which counts attachments on the source itself.
 
 `AttachmentCount(kind)` takes an `AttachmentKind` (`ANY` / `EQUIPMENT` / `AURA`); the evaluator
 counts the source's `attachedIds` whose card type matches the kind.

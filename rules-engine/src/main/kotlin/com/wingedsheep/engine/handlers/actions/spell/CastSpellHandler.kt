@@ -958,6 +958,19 @@ class CastSpellHandler(
             }
         }
 
+        // Apply DiscardOrPay "pay mana" adjustment in validation
+        if (cardDef != null && !playForFree) {
+            val discardOrPay = cardDef.script.additionalCosts
+                .filterIsInstance<AdditionalCost.DiscardOrPay>()
+                .firstOrNull()
+            if (discardOrPay != null) {
+                val choseDiscard = action.additionalCostPayment?.discardedCards?.isNotEmpty() == true
+                if (!choseDiscard) {
+                    effectiveCost = effectiveCost + ManaCost.parse(discardOrPay.alternativeManaCost)
+                }
+            }
+        }
+
         // Apply spell-level waterbend additional cost (Avatar: The Last Airbender). Adds the
         // waterbend amount {N} (or {X}) as generic mana; the tapped artifacts/creatures in
         // alternativePayment reduce that generic below, capped at N.
@@ -1882,6 +1895,31 @@ class CastSpellHandler(
                     }
                     // If sacrificedPermanents is empty, the player is paying extra mana instead
                 }
+                is AdditionalCost.DiscardOrPay -> {
+                    // DiscardOrPay: player chose the discard path if discardedCards is non-empty,
+                    // otherwise they pay extra mana (validated via mana payment).
+                    val discarded = action.additionalCostPayment?.discardedCards ?: emptyList()
+                    if (discarded.isNotEmpty()) {
+                        if (discarded.size != additionalCost.count) {
+                            return "You must discard exactly ${additionalCost.count} card(s) from your hand"
+                        }
+                        val handCards = state.getZone(ZoneKey(action.playerId, Zone.HAND))
+                        val context = PredicateContext(controllerId = action.playerId)
+                        for (cardId in discarded) {
+                            if (cardId !in handCards) {
+                                return "Card to discard is not in your hand"
+                            }
+                            if (cardId == action.cardId) {
+                                return "Cannot discard the spell being cast"
+                            }
+                            if (!predicateEvaluator.matches(state, state.projectedState, cardId, additionalCost.filter, context)) {
+                                val cardName = state.getEntity(cardId)?.get<CardComponent>()?.name ?: "Card"
+                                return "$cardName doesn't match the required filter: ${additionalCost.filter.description}"
+                            }
+                        }
+                    }
+                    // If discardedCards is empty, the player is paying extra mana instead
+                }
                 is AdditionalCost.PayLifePerTarget -> {
                     val required = additionalCost.amountPerTarget * action.targets.size
                     val currentLife = state.lifeTotal(action.playerId) // CR 810.9a — team's shared total
@@ -2169,6 +2207,20 @@ class CastSpellHandler(
                 val choseSacrifice = action.additionalCostPayment?.sacrificedPermanents?.isNotEmpty() == true
                 if (!choseSacrifice) {
                     effectiveCost = effectiveCost + ManaCost.parse(sacOrPay.alternativeManaCost)
+                }
+            }
+        }
+
+        // Apply DiscardOrPay: if player chose the "pay mana" path (no discarded cards), add the
+        // extra mana on top of the base cost.
+        if (cardDef != null && !playForFreeInExecute) {
+            val discardOrPay = cardDef.script.additionalCosts
+                .filterIsInstance<AdditionalCost.DiscardOrPay>()
+                .firstOrNull()
+            if (discardOrPay != null) {
+                val choseDiscard = action.additionalCostPayment?.discardedCards?.isNotEmpty() == true
+                if (!choseDiscard) {
+                    effectiveCost = effectiveCost + ManaCost.parse(discardOrPay.alternativeManaCost)
                 }
             }
         }
@@ -2641,6 +2693,37 @@ class CastSpellHandler(
                                 if (currentState.getEntity(permId) == null) continue
                                 currentState = sacrificePermanentAsCost(currentState, permId, action.playerId, events)
                             }
+                        }
+                    }
+                    is AdditionalCost.DiscardOrPay -> {
+                        // Discard the chosen cards if the player chose the discard path.
+                        // If discardedCards is empty, "pay mana" path — extra mana already added
+                        // above. Mirrors the CostAtom.Discard payment, including the discard
+                        // tracking (CR 701.8) that feeds Mayhem / "discarded this turn" reads.
+                        val discardedCards = action.additionalCostPayment.discardedCards
+                        if (discardedCards.isNotEmpty()) {
+                            discardedAsCostCards.addAll(discardedCards)
+                            for (cardId in discardedCards) {
+                                val cardContainer = currentState.getEntity(cardId) ?: continue
+                                val card = cardContainer.get<CardComponent>() ?: continue
+                                val handZone = ZoneKey(action.playerId, Zone.HAND)
+                                val graveyardZone = ZoneKey(action.playerId, Zone.GRAVEYARD)
+
+                                currentState = currentState.removeFromZone(handZone, cardId)
+                                currentState = currentState.addToZone(graveyardZone, cardId)
+
+                                events.add(ZoneChangeEvent(
+                                    entityId = cardId,
+                                    entityName = card.name,
+                                    fromZone = Zone.HAND,
+                                    toZone = Zone.GRAVEYARD,
+                                    ownerId = action.playerId
+                                ))
+                            }
+                            val discardNames = discardedCards.map { currentState.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
+                            events.add(CardsDiscardedEvent(action.playerId, discardedCards, discardNames))
+                            currentState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                                .trackDiscard(currentState, action.playerId, discardedCards)
                         }
                     }
                     is AdditionalCost.PayLifePerTarget -> {

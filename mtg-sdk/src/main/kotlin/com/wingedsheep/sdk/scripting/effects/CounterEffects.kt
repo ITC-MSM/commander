@@ -198,6 +198,40 @@ data class PayCountersEffect(
 }
 
 /**
+ * Pay an exact, fixed number of player-scoped counters — the all-or-nothing counterpart to
+ * [PayCountersEffect]'s "pay any amount". CR 107.14 energy example: "Whenever you attack, you
+ * may pay {E}{E}{E}. When you do, [...]" (Guide of Souls) — there's no amount to choose, only
+ * whether to pay the named total, and per the 2024-06-07 ruling you can't pay a partial amount
+ * to get a partial effect.
+ *
+ * Designed as the `action` half of a [ReflexiveTriggerEffect] ("When you do" — CR 603.2 — a
+ * fresh triggered ability with its own targets, distinct from a same-ability "If you do"
+ * continuation): the outer yes/no is the payment decision itself, so this effect performs no
+ * decision of its own — it deducts [amount] atomically and fails outright (no partial removal)
+ * if the paying player has fewer than [amount]. `ReflexiveTriggerEffectExecutor.isActionFeasible`
+ * checks affordability *before* offering the "may pay" prompt, so in practice this effect only
+ * ever runs when the payment is guaranteed to succeed; the failure path is defense in depth.
+ *
+ * Composes as:
+ * `ReflexiveTriggerEffect(action = Effects.PayFixedCounters(Counters.ENERGY, 3), reflexiveEffect
+ * = ..., reflexiveTargetRequirements = [...])`.
+ *
+ * @property counterType Which player-scoped counter kind to pay (e.g. [Counters.ENERGY]).
+ * @property amount The exact number of counters paid — not a cap, not a choice.
+ * @property player Whose counters are paid. Defaults to the effect's controller.
+ */
+@SerialName("PayFixedCounters")
+@Serializable
+data class PayFixedCountersEffect(
+    val counterType: String,
+    val amount: Int,
+    val player: Player = Player.You
+) : Effect {
+    override val description: String =
+        "${player.possessive} pay $amount $counterType counter${if (amount != 1) "s" else ""}"
+}
+
+/**
  * "Remove any number of [counterType] counters from [the source]. For each counter removed this
  * way, create one token described by [tokenFactory]." The controller is prompted for a number in
  * `0..(count of [counterType] on the source)`; that many counters are removed from the source and

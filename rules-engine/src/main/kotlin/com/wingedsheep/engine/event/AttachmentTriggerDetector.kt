@@ -112,7 +112,7 @@ class AttachmentTriggerDetector(private val matcher: TriggerMatcher) {
             is EventPattern.DealsDamageEvent -> {
                 event is DamageDealtEvent &&
                     event.sourceId == attachedEntityId &&
-                    matcher.matchesDealsDamageTrigger(trigger, event, state)
+                    matcher.matchesDealsDamageTrigger(trigger, event, state, auraControllerId)
             }
             is EventPattern.AttackEvent -> {
                 event is AttackersDeclaredEvent && attachedEntityId in event.attackers &&

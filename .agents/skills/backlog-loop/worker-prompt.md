@@ -35,7 +35,18 @@ project root for the entire task.
 - If something you did not change is already broken, **report it and stop**. Discriminator:
   `git diff --stat origin/main...HEAD` — if the failing subject isn't in your diff, it isn't yours.
 
-Create your branch: `git switch -c worktree-loop-{SET_CODE}-{UNIT_ID}` (lowercase).
+**Start from the latest `main`, not from whatever the worktree inherited.** Earlier units in this run have
+already merged PRs into `main`, so the checkout you're handed is usually behind — and building on a stale
+base means gating against code that no longer exists, plus a conflict-laden PR later. First thing, before
+any edits:
+
+```
+git fetch origin
+git switch -c worktree-loop-{SET_CODE}-{UNIT_ID} origin/main   # lowercase branch name
+```
+
+If the worktree you were given already has commits of its own that aren't in `origin/main`, don't discard
+them — that's someone else's in-flight work. Report it and stop.
 
 ## Implement
 

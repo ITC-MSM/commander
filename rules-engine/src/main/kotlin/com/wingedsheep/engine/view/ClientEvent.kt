@@ -306,6 +306,14 @@ sealed interface ClientEvent {
     ) : ClientEvent
 
     @Serializable
+    @SerialName("permanentExerted")
+    data class PermanentExerted(
+        val permanentId: EntityId,
+        val permanentName: String,
+        override val description: String = "$permanentName was exerted — it won't untap next turn"
+    ) : ClientEvent
+
+    @Serializable
     @SerialName("permanentUntapped")
     data class PermanentUntapped(
         val permanentId: EntityId,
@@ -780,6 +788,9 @@ object ClientEventTransformer {
         viewingPlayerId: EntityId
     ): ClientEvent? {
         return when (event) {
+            // The land-play signal drives triggers only; the client renders the land entering via
+            // the accompanying ZoneChangeEvent, so no separate client event is emitted.
+            is LandPlayedEvent -> null
             is SpeedChangedEvent -> ClientEvent.SpeedChanged(
                 playerId = event.playerId,
                 oldSpeed = event.oldSpeed,
@@ -979,6 +990,11 @@ object ClientEventTransformer {
             )
 
             is BecameSaddledEvent -> ClientEvent.PermanentSaddled(
+                permanentId = event.entityId,
+                permanentName = event.entityName
+            )
+
+            is ExertedEvent -> ClientEvent.PermanentExerted(
                 permanentId = event.entityId,
                 permanentName = event.entityName
             )

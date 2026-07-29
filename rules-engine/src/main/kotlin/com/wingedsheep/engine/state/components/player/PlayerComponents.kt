@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.BendType
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.HijackScope
 import com.wingedsheep.sdk.scripting.effects.ManaExpiry
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
@@ -1142,6 +1143,20 @@ data class PermanentsSacrificedThisTurnComponent(val count: Int = 0) : Component
 data class CardsDiscardedThisTurnComponent(
     val cardIds: List<EntityId> = emptyList(),
     val count: Int = 0
+) : Component
+
+/**
+ * The zone each land this player **played** this turn (CR 305.1 special action) was played from —
+ * one entry per land play, HAND for a normal land drop and GRAVEYARD / EXILE / LIBRARY for a play
+ * permission (Mayhem, Muldrotha, Crucible, …). Appended by `PlayLandHandler` on every land play,
+ * reset per-turn in `TurnManager`. Backs `Conditions.YouPlayedLandThisTurn(fromZone/fromZoneOtherThan)`
+ * — e.g. the land half of Spider-Man 2099's end-step intervening-if is `fromZoneOtherThan = Zone.HAND`.
+ * Mirrors the spell path's per-cast `castFromZone` provenance; land plays are otherwise tracked only
+ * as a count (`LandDropsComponent`) with no zone-of-origin.
+ */
+@Serializable
+data class LandsPlayedThisTurnComponent(
+    val fromZones: List<Zone> = emptyList()
 ) : Component
 
 /**
