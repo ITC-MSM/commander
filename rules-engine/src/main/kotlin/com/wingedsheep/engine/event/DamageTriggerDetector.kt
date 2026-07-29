@@ -97,7 +97,9 @@ class DamageTriggerDetector(
         for (ability in abilities) {
             val trigger = ability.trigger
             if (trigger is EventPattern.DealsDamageEvent && ability.binding == TriggerBinding.SELF) {
-                if (matcher.matchesDealsDamageTrigger(trigger, event, state)) {
+                // Pass the ability's controller so RecipientFilter.Matching can evaluate
+                // controller-relative recipient filters (e.g. "a creature an opponent controls").
+                if (matcher.matchesDealsDamageTrigger(trigger, event, state, controllerId)) {
                     triggers.add(
                         PendingTrigger(
                             ability = ability,

@@ -62,4 +62,25 @@ class WithGreatPowerScenarioTest : FunSpec({
         driver.getLifeTotal(you) shouldBe before // unchanged — redirected
         (driver.state.getEntity(courser)?.get<DamageComponent>()?.amount ?: 0) shouldBe 3
     }
+
+    test("the +2/+2 scales per attachment: two attachments on the creature grant +4/+4 each") {
+        val (driver, you, _) = newGame()
+        val courser = driver.putCreatureOnBattlefield(you, "Centaur Courser") // 3/3
+
+        // Enchant Centaur Courser with two copies of With Great Power . . . ({3}{W} each). Nothing
+        // stops two of the same Aura on one creature, and it gives a clean two-attachment board
+        // without dragging in Equipment stat bonuses.
+        driver.giveMana(you, Color.WHITE, 8)
+        repeat(2) {
+            val wgp = driver.putCardInHand(you, "With Great Power . . .")
+            driver.castSpellWithTargets(you, wgp, listOf(ChosenTarget.Permanent(courser)))
+            driver.bothPass()
+            resolveStack(driver)
+        }
+
+        // Two Auras attached → each grants +2/+2 *per attachment* = +4/+4 → +8/+8 total → 11/11.
+        // A flat "+2/+2" (ignoring the count) would give only 7/7, so this pins the scaling.
+        driver.state.projectedState.getPower(courser) shouldBe 11
+        driver.state.projectedState.getToughness(courser) shouldBe 11
+    }
 })

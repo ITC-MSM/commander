@@ -1,7 +1,10 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -11,13 +14,18 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 
 /**
- * Anti-Venom, Horrifying Healer (SPM) — "If damage would be dealt to Anti-Venom, prevent that
- * damage and put that many +1/+1 counters on him." Pins the `RecipientFilter.Self`
- * `ReplaceDamageWithCounters` now wired on the creature-damage paths (`DamageUtils.applyDamage`
- * non-player branch + `CombatDamageManager.applyDamageToCreature`).
+ * Anti-Venom, Horrifying Healer (SPM) — a 5/5 with two abilities:
+ *  - "When Anti-Venom enters, if he was cast, return target creature card from your graveyard to
+ *    the battlefield." (an intervening-"if" `Conditions.WasCast` ETB reanimation), and
+ *  - "If damage would be dealt to Anti-Venom, prevent that damage and put that many +1/+1 counters
+ *    on him." — the `RecipientFilter.Self` `ReplaceDamageWithCounters` wired on both creature-damage
+ *    paths: `DamageUtils.applyDamage` (noncombat) and `CombatDamageManager.applyDamageToCreature`
+ *    (combat).
  */
 class AntiVenomHorrifyingHealerScenarioTest : FunSpec({
 
@@ -56,5 +64,60 @@ class AntiVenomHorrifyingHealerScenarioTest : FunSpec({
         (driver.state.getEntity(av)?.get<DamageComponent>()?.amount ?: 0) shouldBe 0
         (driver.state.getEntity(av)?.get<CountersComponent>()?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0) shouldBe 3
         driver.state.getBattlefield().contains(av) shouldBe true
+    }
+
+    test("combat damage to Anti-Venom is prevented and put on him as +1/+1 counters") {
+        val (driver, you, opponent) = newGame()
+        val av = driver.putCreatureOnBattlefield(you, "Anti-Venom, Horrifying Healer") // 5/5
+        driver.removeSummoningSickness(av)
+        val courser = driver.putCreatureOnBattlefield(opponent, "Centaur Courser") // 3/3 blocker
+
+        // Anti-Venom attacks; the 3/3 blocks. The blocker's 3 combat damage hits Anti-Venom via
+        // CombatDamageManager.applyDamageToCreature — the distinct path from the Lightning Bolt case.
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(you, listOf(av), defendingPlayer = opponent).error shouldBe null
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+        driver.declareBlockers(opponent, mapOf(courser to listOf(av)))
+        driver.passPriorityUntil(Step.COMBAT_DAMAGE)
+        resolveStack(driver)
+
+        // The 3 combat damage is replaced entirely — none marked, three +1/+1 counters on him.
+        (driver.state.getEntity(av)?.get<DamageComponent>()?.amount ?: 0) shouldBe 0
+        (driver.state.getEntity(av)?.get<CountersComponent>()?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0) shouldBe 3
+        driver.state.getBattlefield().contains(av) shouldBe true
+        // Anti-Venom still dealt its own 5 — the 3/3 blocker is destroyed.
+        driver.state.getBattlefield().contains(courser) shouldBe false
+    }
+
+    test("cast: the intervening-if ETB returns a creature card from your graveyard to the battlefield") {
+        val (driver, you, _) = newGame()
+        driver.putCardInGraveyard(you, "Centaur Courser")
+        val av = driver.putCardInHand(you, "Anti-Venom, Horrifying Healer")
+        repeat(5) { driver.putLandOnBattlefield(you, "Plains") } // {W}{W}{W}{W}{W}
+
+        driver.submit(
+            CastSpell(playerId = you, cardId = av, paymentStrategy = PaymentStrategy.AutoPay),
+        ).isSuccess shouldBe true
+        driver.bothPass() // resolve Anti-Venom; the was-cast ETB trigger goes on the stack, wants a target
+
+        val courser = driver.getGraveyard(you).first {
+            driver.state.getEntity(it)?.get<CardComponent>()?.name == "Centaur Courser"
+        }
+        driver.pendingDecision.shouldNotBeNull()
+        driver.submitTargetSelection(you, listOf(courser))
+        resolveStack(driver)
+
+        driver.findPermanent(you, "Centaur Courser").shouldNotBeNull()
+    }
+
+    test("not cast: an Anti-Venom put onto the battlefield does not trigger the reanimation") {
+        val (driver, you, _) = newGame()
+        driver.putCardInGraveyard(you, "Centaur Courser")
+
+        // Enters without being cast → Conditions.WasCast is false → no ETB trigger, no target request.
+        driver.putCreatureOnBattlefield(you, "Anti-Venom, Horrifying Healer")
+
+        driver.pendingDecision.shouldBeNull()
+        driver.findPermanent(you, "Centaur Courser").shouldBeNull()
     }
 })

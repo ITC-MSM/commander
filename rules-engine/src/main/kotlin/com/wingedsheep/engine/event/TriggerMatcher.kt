@@ -1347,15 +1347,16 @@ class TriggerMatcher(
                 // Mauhur, Spider-Slayer). Evaluate the filter against the recipient in projected
                 // state — mirrors DamageCalculator's Matching handling. A recipient that left the
                 // battlefield to the same damage is no longer projectable, but there is nothing
-                // left to act on ("destroy that creature"), so a live match is sufficient.
+                // left to act on ("destroy that creature"), so a live match is sufficient. A null
+                // controller can't evaluate controller-relative filters (e.g. "a creature an
+                // opponent controls"), so require it rather than passing an empty sentinel id.
                 val filter = (trigger.recipient as RecipientFilter.Matching).filter
-                event.targetId !in state.turnOrder &&
+                controllerId != null &&
+                    event.targetId !in state.turnOrder &&
                     state.getEntity(event.targetId) != null &&
                     predicateEvaluator.matches(
                         state, state.projectedState, event.targetId, filter,
-                        com.wingedsheep.engine.handlers.PredicateContext(
-                            controllerId = controllerId ?: EntityId("")
-                        )
+                        PredicateContext(controllerId = controllerId)
                     )
             }
             RecipientFilter.Self -> false // handled elsewhere

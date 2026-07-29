@@ -1,7 +1,12 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.mtg.sets.definitions.spm.cards.SpiderSlayerHatredHoned
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
@@ -18,6 +23,8 @@ import io.kotest.matchers.shouldBe
  * (not lethal combat damage) that destroys a Spider, and that a non-Spider is left alone.
  */
 class SpiderSlayerHatredHonedScenarioTest : FunSpec({
+
+    val slayerActivatedAbilityId = SpiderSlayerHatredHoned.activatedAbilities.single().id
 
     // 0 power so Spider-Slayer (a 2/1) survives the block — isolating the destroy *trigger* from
     // lethal combat damage in either direction.
@@ -83,5 +90,33 @@ class SpiderSlayerHatredHonedScenarioTest : FunSpec({
 
         // Non-Spider: no destroy trigger; the 1/3 survives the 2 combat damage.
         driver.state.getBattlefield().contains(bear) shouldBe true
+    }
+
+    test("{6}, exile from graveyard: creates two tapped 1/1 flying Robot artifact tokens") {
+        val (driver, you, _) = newGame()
+        val slayer = driver.putCardInGraveyard(you, "Spider-Slayer, Hatred Honed")
+        driver.giveColorlessMana(you, 6)
+
+        driver.submit(
+            ActivateAbility(playerId = you, sourceId = slayer, abilityId = slayerActivatedAbilityId),
+        ).isSuccess shouldBe true
+        driver.bothPass()
+        resolveStack(driver)
+
+        // Exile is part of the cost — the card leaves the graveyard for exile.
+        driver.getExile(you).contains(slayer) shouldBe true
+        driver.state.getBattlefield().contains(slayer) shouldBe false
+
+        val robots = driver.state.getBattlefield().filter { id ->
+            driver.state.getEntity(id)?.get<CardComponent>()?.name == "Robot Token" &&
+                driver.getController(id) == you
+        }
+        robots.size shouldBe 2
+        robots.forEach { r ->
+            driver.state.getEntity(r)?.has<TappedComponent>() shouldBe true
+            driver.state.projectedState.getPower(r) shouldBe 1
+            driver.state.projectedState.getToughness(r) shouldBe 1
+            driver.state.projectedState.hasKeyword(r, Keyword.FLYING) shouldBe true
+        }
     }
 })
