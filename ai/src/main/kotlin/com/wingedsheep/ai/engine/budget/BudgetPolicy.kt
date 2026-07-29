@@ -54,6 +54,36 @@ object LegacyBudgetPolicy : BudgetPolicy {
 }
 
 /**
+ * [LegacyBudgetPolicy]'s constants with the rollout allowance resized.
+ *
+ * Phase 7 is the first search in this plan whose cost the arena can actually feel: at the nominal
+ * 64 playouts a decision costs ~2,400 `process()` calls, so a rollout game is ~1,000× a `v0` game
+ * and the 1,000-game merge gate goes from 3.5 minutes to hours. Phase 1's report predicted exactly
+ * this ("the budget, not the game count, is what makes an arena expensive") and Phase 4b dodged it
+ * because a filtered greedy agent costs nothing.
+ *
+ * So the arena runs the rollout agents at a reduced playout count, and the ladder of counts is also
+ * the phase's own safety net: **strength must be monotone in playouts**, or the search is
+ * generating noise rather than signal. Same argument as `ArenaBudgetScalingTest`, one level down.
+ */
+class RolloutBudgetPolicy(private val playouts: Int) : BudgetPolicy {
+    private val allowances = SearchAllowances.LEGACY.copy(rolloutPlayouts = playouts)
+
+    override fun budgetFor(
+        state: GameState,
+        playerId: EntityId,
+        meaningfulActions: List<LegalAction>,
+    ): DecisionBudget = budget()
+
+    override fun budgetForDecision(state: GameState, playerId: EntityId): DecisionBudget = budget()
+
+    private fun budget() =
+        DecisionBudget(BudgetTier.NORMAL, allowances, DecisionBudget.UNBOUNDED_MILLIS)
+
+    override fun toString(): String = "rollout($playouts playouts)"
+}
+
+/**
  * The four-tier policy from `backlog/engine-ai-improvement.md` §4b.
  *
  * | Tier | When |

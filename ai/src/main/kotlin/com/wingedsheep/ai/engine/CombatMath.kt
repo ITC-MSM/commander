@@ -573,4 +573,33 @@ object CombatMath {
         if (opponentAttackers.isEmpty()) return 0
         return calculateDamageThroughOptimalBlocking(state, projected, opponentAttackers, myBlockers)
     }
+
+    /**
+     * Would attacking with every creature be lethal even through the opponent's best blocks?
+     *
+     * Three tiers of certainty, cheapest first: total power below their life can never be lethal;
+     * guaranteed evasive damage alone can be; otherwise price the whole attack against optimal
+     * blocking. Pure combat math — no simulation — which is what lets both [CombatSeed] and a
+     * rollout playout ask the question.
+     */
+    fun isLethalAttack(
+        state: GameState,
+        projected: ProjectedState,
+        attackers: List<EntityId>,
+        opponentBlockers: List<EntityId>,
+        opponentLife: Int
+    ): Boolean {
+        val totalPower = attackers.sumOf { (projected.getPower(it) ?: 0).coerceAtLeast(0) }
+        if (totalPower < opponentLife) return false
+
+        // Guaranteed evasive damage
+        val evasiveDamage = calculateEvasiveDamage(state, projected, attackers, opponentBlockers)
+        if (evasiveDamage >= opponentLife) return true
+
+        // Full simulation of optimal blocking
+        val damageThrough = calculateDamageThroughOptimalBlocking(
+            state, projected, attackers, opponentBlockers
+        )
+        return damageThrough >= opponentLife
+    }
 }

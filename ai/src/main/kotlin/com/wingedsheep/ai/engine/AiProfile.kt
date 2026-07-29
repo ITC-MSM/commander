@@ -15,6 +15,7 @@ import com.wingedsheep.ai.engine.evaluation.LifeDifferential
 import com.wingedsheep.ai.engine.evaluation.Tempo
 import com.wingedsheep.ai.engine.evaluation.ThreatAssessment
 import com.wingedsheep.ai.engine.knowledge.IntentCatalog
+import com.wingedsheep.ai.engine.rollout.RolloutSettings
 
 /**
  * Weights for the five features [CompositeBoardEvaluator] combines.
@@ -119,6 +120,20 @@ data class AiProfile(
      * number published against it silently rebases.
      */
     val useCardIntent: Boolean = false,
+    /**
+     * Phase 7: score a candidate by the mean of several short playouts instead of one static
+     * evaluation. Null is the off position and leaves the greedy 1-ply leaf in place.
+     *
+     * This is the plan's primary strength lever, and the only phase so far whose job is to move a
+     * win rate rather than enable one. Off for [LEGACY_V0] for the usual reason — the reference
+     * opponent has to stay frozen — and off for [CURRENT] until the arena says it should ship.
+     *
+     * How *many* playouts a decision gets comes from the budget tier, not from here; see
+     * [com.wingedsheep.ai.engine.budget.SearchAllowances.rolloutPlayouts]. A profile with rollouts
+     * on and [LegacyBudgetPolicy] still gets them, at the nominal NORMAL count — which is what
+     * makes `v0-rollout` an attributable one-variable change from `v0`.
+     */
+    val rollouts: RolloutSettings? = null,
 ) {
     companion object {
         /**
@@ -175,6 +190,25 @@ data class AiProfile(
             useMeaningfulFilter = true,
             budgetPolicy = TieredBudgetPolicy(),
             useCardIntent = true,
+        )
+
+        /**
+         * Phase 7's rollout evaluator alone, on top of [LEGACY_V0]. The arena agent `v0-rollout`:
+         * `just arena v0 v0-rollout 1000` is the phase's merge gate, and isolating it from Phases 4
+         * and 6 is what makes that number attributable to the rollouts.
+         */
+        val PHASE7 = AiProfile(
+            id = "v0-rollout",
+            rollouts = RolloutSettings.DEFAULT,
+        )
+
+        /** Everything Phases 4, 6 and 7 add — what the plan proposes to ship. */
+        val PHASE4_PHASE6_PHASE7 = AiProfile(
+            id = "v0-phase4-intent-rollout",
+            useMeaningfulFilter = true,
+            budgetPolicy = TieredBudgetPolicy(),
+            useCardIntent = true,
+            rollouts = RolloutSettings.DEFAULT,
         )
     }
 }
