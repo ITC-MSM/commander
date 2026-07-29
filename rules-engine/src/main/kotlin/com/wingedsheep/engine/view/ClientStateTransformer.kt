@@ -1908,15 +1908,14 @@ class ClientStateTransformer(
     }
 
     /**
-     * Build per-commander damage tallies against [playerId]. Empty outside `Format.Commander`
+     * Build per-commander damage tallies against [playerId]. Empty when the format has no commanders
      * and for defenders no commander has connected with yet.
      */
     private fun buildCommanderDamage(
         state: GameState,
         playerId: EntityId
     ): List<ClientCommanderDamage> {
-        val format = state.format as? com.wingedsheep.sdk.core.Format.Commander
-            ?: return emptyList()
+        val threshold = state.format.commanderDamageThreshold ?: return emptyList()
         if (state.commanderDamage.isEmpty()) return emptyList()
 
         return state.commanderDamage
@@ -1933,7 +1932,7 @@ class ClientStateTransformer(
                     commanderName = card.name,
                     controllerId = controllerId,
                     amount = entry.amount,
-                    threshold = format.commanderDamageThreshold,
+                    threshold = threshold,
                     imageUri = card.imageUri,
                 )
             }

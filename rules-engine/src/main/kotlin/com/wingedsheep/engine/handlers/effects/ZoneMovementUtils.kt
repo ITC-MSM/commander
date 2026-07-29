@@ -538,7 +538,7 @@ object ZoneMovementUtils {
         }
 
         // Commander zone-change shortcut (CR 903.9). When `alwaysDivertToCommand` is enabled
-        // on Format.Commander, a card with CommanderComponent that would move to
+        // on a Commander-enabled format, a card with CommanderComponent that would move to
         // graveyard / exile / hand / library from any other zone is silently diverted to the
         // command zone. Token copies of a commander aren't the commander itself (CR 903.10a)
         // and never carry CommanderComponent, so the TokenComponent guard is implicit.
@@ -551,7 +551,7 @@ object ZoneMovementUtils {
             fromZone != Zone.COMMAND
         ) {
             val format = state.format
-            if (format is com.wingedsheep.sdk.core.Format.Commander && format.alwaysDivertToCommand) {
+            if (format.usesCommanders && format.alwaysDivertToCommand) {
                 return ZoneChangeRedirectResult(Zone.COMMAND)
             }
         }

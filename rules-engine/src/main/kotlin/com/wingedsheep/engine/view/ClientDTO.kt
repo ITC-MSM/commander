@@ -649,7 +649,7 @@ data class ClientPlayer(
 
     /**
      * Per-commander cumulative combat damage dealt to this player (CR 903.10a). One entry per
-     * commander that has dealt at least 1 damage. Empty outside `Format.Commander`. The client
+     * commander that has dealt at least 1 damage. Empty when the format has no commanders. The client
      * renders these as progress badges (e.g., `⚔ Atraxa 14/21`) under the life orb.
      */
     val commanderDamage: List<ClientCommanderDamage> = emptyList(),
@@ -675,7 +675,7 @@ data class ClientPlayer(
  * Per-commander commander-damage tally against a single defending player. Carried inside
  * [ClientPlayer.commanderDamage].
  *
- * @property threshold Single-source loss threshold from `Format.Commander.commanderDamageThreshold`
+ * @property threshold Single-source loss threshold from `Format.commanderDamageThreshold`
  *   (21 in classic Commander, 16 in the BRAWL preset). Included per-entry so the client doesn't
  *   need to know format internals to render `amount/threshold`.
  */
