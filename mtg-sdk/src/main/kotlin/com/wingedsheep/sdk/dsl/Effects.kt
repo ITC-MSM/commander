@@ -2411,6 +2411,14 @@ object Effects {
         CreatePredefinedTokenEffect("Food", count, controller)
 
     /**
+     * Create a dynamic number of Food tokens — the count is evaluated at resolution time.
+     * Twin of [CreateBlood]'s dynamic overload, for cards whose Food count depends on game state
+     * or on a cast-time choice (The Goose Mother: "create half X Food tokens, rounded up").
+     */
+    fun CreateFood(count: DynamicAmount, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Food", controller = controller, dynamicCount = count)
+
+    /**
      * Create Blood artifact tokens.
      * "{1}, {T}, Discard a card, Sacrifice this artifact: Draw a card."
      *
