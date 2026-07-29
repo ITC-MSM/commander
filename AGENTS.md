@@ -26,6 +26,12 @@ docs it points at; load those when the work needs them.
   613.8 vs 613.7 and 704.5 vs 704.6 are easy to swap. Check the official Comprehensive Rules
   <https://magic.wizards.com/en/rules> — the plain-text `.txt` is too large to fetch into context, so
   `curl -o` it and `grep` locally. If you can't verify, describe the rule by name instead of guessing.
+- **One card, one test file — never batch cards into a shared test.** A scenario test covers exactly one
+  card: `<CardName>ScenarioTest.kt` holding that card's tests. Implementing five cards means five test
+  files, not one `FooBatchScenarioTest`. Batched files hide which card a failure belongs to, make
+  `just test-class` useless for a single card, and turn every later edit into a merge conflict between
+  agents. Engine-level tests (a mechanic, a replacement effect) are the exception — those are named for
+  the mechanic and may exercise several cards.
 - **Keep [`docs/card-sdk-language-reference.md`](docs/card-sdk-language-reference.md) in sync.** Every SDK
   addition or change — effect, trigger, condition, keyword, dynamic amount, modal shape, replacement
   effect — updates it in the *same* change. It's the canonical catalog; drift makes it useless.

@@ -152,6 +152,9 @@ snapshot and lint nets.
 
 **File:** `rules-engine/src/test/kotlin/com/wingedsheep/engine/scenarios/{CardName}ScenarioTest.kt`
 
+**One card per file** — a five-card batch unit gets five test files, never one shared
+`{Something}BatchScenarioTest`. See AGENTS.md → Hard rules.
+
 Set up a minimal board, exercise the new effect in isolation, verify the state changes, and cover the
 edge cases. Templates in [`examples.md`](examples.md); harness details in the **`verify`** skill.
 
