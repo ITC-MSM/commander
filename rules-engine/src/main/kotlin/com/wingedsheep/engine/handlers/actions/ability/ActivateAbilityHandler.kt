@@ -1590,10 +1590,15 @@ class ActivateAbilityHandler(
                 } else emptyList()
 
             // Detect and queue any triggered abilities from the activation — the cost-side events
-            // (a sacrificed source's dies trigger, the {T} TappedEvent for an artifact-tap trigger)
-            // plus the non-{T} mana-ability activation event above. Such triggered abilities still
-            // use the stack even though the mana ability itself resolves off it.
-            val activationTriggerEvents = activationCostEvents + manaAbilityActivatedEvents
+            // (a sacrificed source's dies trigger, the {T} TappedEvent for an artifact-tap trigger),
+            // the non-{T} mana-ability activation event above, and the mana ability's OWN effect
+            // resolution events (e.g. a `ReflexiveTriggerEffect`'s `ReflexiveAbilityTriggeredEvent` —
+            // Rubble Rouser's "Add {R}. When you do, deal 1 damage to each opponent": the reflexive
+            // half is NOT itself a mana ability (CR 605.1a requires it produce mana), so it must go
+            // on the stack normally even though the ability that caused it resolved off it). Such
+            // triggered abilities still use the stack even though the mana ability itself resolves
+            // off it.
+            val activationTriggerEvents = activationCostEvents + manaAbilityActivatedEvents + effectResult.events
             val resultEvents = bonusResult.events + manaAbilityActivatedEvents
             val costTriggers = triggerDetector.detectTriggers(bonusResult.newState, activationTriggerEvents)
             if (costTriggers.isNotEmpty()) {

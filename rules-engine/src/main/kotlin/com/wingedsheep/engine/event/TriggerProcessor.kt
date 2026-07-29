@@ -183,6 +183,10 @@ class TriggerProcessor(
                 controllerId = trigger.controllerId,
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
+                chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
+                storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
+                storedSubtypeGroups = trigger.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
             )
         )
         if (legalTargets.isEmpty() && targetRequirement.effectiveMinCount > 0) return null
@@ -380,6 +384,10 @@ class TriggerProcessor(
                 controllerId = trigger.controllerId,
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
+                chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
+                storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
+                storedSubtypeGroups = trigger.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
             )
         )
 
@@ -486,6 +494,10 @@ class TriggerProcessor(
                 controllerId = trigger.controllerId,
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
+                chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
+                storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
+                storedSubtypeGroups = trigger.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
             )
         )
 
@@ -574,6 +586,10 @@ class TriggerProcessor(
                     controllerId = trigger.controllerId,
                     triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                     triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                    storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
+                    chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
+                    storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
+                    storedSubtypeGroups = trigger.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
                 ),
             )
             allLegalTargets[index] = legalTargets
@@ -626,7 +642,8 @@ class TriggerProcessor(
                 description = req.description,
                 minTargets = effectiveMinTargets,
                 maxTargets = maxTargets,
-                sameOwner = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.sameOwner == true
+                sameOwner = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.sameOwner == true,
+                totalManaValueAtMost = resolveTotalManaValueAtMost(state, trigger, req)
             )
         }
 
@@ -663,7 +680,8 @@ class TriggerProcessor(
                 triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
                 triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
                 triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
-                triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell
+                triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
+                pipeline = trigger.carriedPipeline ?: com.wingedsheep.engine.handlers.PipelineState.EMPTY
             )
             ability.effect.runtimeDescription { amount -> evaluator.evaluate(state, amount, context) }
         } catch (_: Exception) {
@@ -718,7 +736,8 @@ class TriggerProcessor(
             triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
             triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
             triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
-            triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell
+            triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
+            carriedPipeline = trigger.carriedPipeline
         )
 
         // Push the continuation onto the stack
@@ -782,7 +801,8 @@ class TriggerProcessor(
             triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
             triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
             capturedEntityIds = trigger.triggerContext.capturedEntityIds ?: emptyList(),
-            sagaChapterInfo = trigger.sagaChapterInfo
+            sagaChapterInfo = trigger.sagaChapterInfo,
+            carriedPipeline = trigger.carriedPipeline
         )
 
         val causedByAttack = isAttackCausedTrigger(trigger)
@@ -1093,6 +1113,10 @@ class TriggerProcessor(
             controllerId = ability.controllerId,
             triggeringEntityId = ability.triggeringEntityId,
             triggeringPlayerId = ability.triggeringPlayerId,
+            storedCollections = ability.carriedPipeline?.storedCollections ?: emptyMap(),
+            chosenValues = ability.carriedPipeline?.chosenValues ?: emptyMap(),
+            storedStringLists = ability.carriedPipeline?.storedStringLists ?: emptyMap(),
+            storedSubtypeGroups = ability.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
         ),
     )
 
@@ -1255,6 +1279,21 @@ class TriggerProcessor(
                         controllerId = trigger.controllerId,
                         triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                         triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                        xValue = trigger.triggerContext.xValue,
+                        triggerDamageAmount = trigger.triggerContext.damageAmount,
+                        triggerCounterCount = trigger.triggerContext.counterCount,
+                        triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
+                        triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+                        triggerLastKnownDamageDealtByPlayers = trigger.triggerContext.lastKnownDamageDealtByPlayers,
+                        triggerLastKnownBlockingOrBlockedByIds = trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
+                        triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
+                        triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness,
+                        triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
+                        triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
+                        triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
+                        triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
+                        triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
+                        triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
                         // The dynamic cap may read trigger-context properties — e.g. Elrond,
                         // Master of Healing's "up to X target creatures, where X is the number of
                         // cards looked at while scrying" (ContextPropertyKey.TRIGGER_SCRY_COUNT).
@@ -1262,6 +1301,11 @@ class TriggerProcessor(
                         triggerScryCount = trigger.triggerContext.scryCount,
                         triggerDiscardCount = trigger.triggerContext.discardedCardCount,
                         triggerDiscoverValue = trigger.triggerContext.discoverValue,
+                        triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
+                        triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
+                        // A reflexive trigger's dynamic cap may read what its action half stashed
+                        // (e.g. `VariableReference("discarded_count")`, Amass's army reference).
+                        pipeline = trigger.carriedPipeline ?: com.wingedsheep.engine.handlers.PipelineState.EMPTY,
                     )
                     DynamicAmountEvaluator().evaluate(state, dyn, context)
                 } catch (_: Exception) {
@@ -1279,6 +1323,52 @@ class TriggerProcessor(
             if (newBase !== requirement.baseRequirement) requirement.copy(baseRequirement = newBase) else requirement
         }
         else -> requirement
+    }
+
+    /**
+     * Resolve a [TargetObject.totalManaValueAtMost] aggregate cap ("...with total mana value X or
+     * less") to a concrete integer at decision-build time — e.g. Fire Lord Sozin's cap reflecting
+     * the X just paid, or a reflexive trigger's action-half payment (CR 603.12) via
+     * [PendingTrigger.carriedPipeline]. `null` when the requirement carries no such cap.
+     */
+    private fun resolveTotalManaValueAtMost(
+        state: GameState,
+        trigger: PendingTrigger,
+        requirement: TargetRequirement
+    ): Int? {
+        val dyn = (requirement as? TargetObject)?.totalManaValueAtMost ?: return null
+        return try {
+            val context = EffectContext(
+                sourceId = trigger.sourceId,
+                controllerId = trigger.controllerId,
+                triggeringEntityId = trigger.triggerContext.triggeringEntityId,
+                triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                xValue = trigger.triggerContext.xValue,
+                triggerDamageAmount = trigger.triggerContext.damageAmount,
+                triggerCounterCount = trigger.triggerContext.counterCount,
+                triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
+                triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+                triggerLastKnownDamageDealtByPlayers = trigger.triggerContext.lastKnownDamageDealtByPlayers,
+                triggerLastKnownBlockingOrBlockedByIds = trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
+                triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
+                triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness,
+                triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
+                triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
+                triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
+                triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
+                triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
+                triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
+                triggerScryCount = trigger.triggerContext.scryCount,
+                triggerDiscardCount = trigger.triggerContext.discardedCardCount,
+                triggerDiscoverValue = trigger.triggerContext.discoverValue,
+                triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
+                triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
+                pipeline = trigger.carriedPipeline ?: com.wingedsheep.engine.handlers.PipelineState.EMPTY,
+            )
+            DynamicAmountEvaluator().evaluate(state, dyn, context).coerceAtLeast(0)
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**

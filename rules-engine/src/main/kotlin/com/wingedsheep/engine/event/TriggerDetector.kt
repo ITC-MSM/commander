@@ -14,6 +14,7 @@ import com.wingedsheep.engine.core.ControlChangedEvent
 import com.wingedsheep.engine.core.DoorUnlockedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
+import com.wingedsheep.engine.core.ReflexiveAbilityTriggeredEvent
 import com.wingedsheep.engine.core.SpellCastEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
@@ -306,6 +307,12 @@ class TriggerDetector(
         // batching triggers (e.g., Builder's Talent). Groups zone changes to battlefield
         // and fires the trigger at most once per observer.
         detectPermanentsEnteredBatchTriggers(state, events, triggers, index)
+
+        // A `ReflexiveTriggerEffect`'s action half completed — turn it into a real CR 603.12
+        // reflexive triggered ability instead of resolving it inline. Unconditional: the event
+        // itself IS the trigger condition, so this bypasses TriggerIndex/TriggerSpec matching
+        // entirely and constructs one PendingTrigger per event directly.
+        detectReflexiveTriggers(events, triggers)
 
         // Detect "When you unlock this door" triggers (CR 709.5h, DSK Rooms).
         // Face-aware: only the unlocked face's "When you unlock this door" abilities fire.
@@ -1917,6 +1924,46 @@ class TriggerDetector(
                     cardComponent.typeLine.hasSubtype(predicate.subtype)
                 else -> true
             }
+        }
+    }
+
+    /**
+     * Turn each [ReflexiveAbilityTriggeredEvent] into a real [PendingTrigger] for the reflexive
+     * ("when you do") half of a `ReflexiveTriggerEffect` (CR 603.12). Unlike every other detector
+     * in this file, this doesn't scan [TriggerIndex] for a matching registered ability — the event
+     * itself unconditionally IS the trigger, carrying its own effect/target requirements/pipeline
+     * state, so one `PendingTrigger` is built directly per event. Placing it through the normal
+     * `TriggerProcessor`/`StackResolver` pipeline (rather than resolving inline, as the old
+     * `ReflexiveTriggerEffectExecutor` did) is what gives opponents the real priority window CR
+     * 603.12 requires between the reflexive ability's target being locked in and it resolving.
+     */
+    private fun detectReflexiveTriggers(
+        events: List<EngineGameEvent>,
+        triggers: MutableList<PendingTrigger>
+    ) {
+        for (event in events) {
+            if (event !is ReflexiveAbilityTriggeredEvent) continue
+            val reqs = event.reflexiveTargetRequirements
+            val syntheticAbility = TriggeredAbility.create(
+                // Never re-matched — this PendingTrigger is constructed directly, bypassing the
+                // usual TriggerIndex scan, so the trigger pattern itself is inert.
+                trigger = EventPattern.DamageEvent(),
+                effect = event.reflexiveEffect,
+                targetRequirement = reqs.firstOrNull(),
+                additionalTargetRequirements = reqs.drop(1),
+                descriptionOverride = event.descriptionOverride ?: event.reflexiveEffect.description
+            )
+            triggers.add(
+                PendingTrigger(
+                    ability = syntheticAbility,
+                    sourceId = event.sourceId,
+                    sourceName = event.sourceName,
+                    controllerId = event.controllerId,
+                    granterId = event.granterId,
+                    triggerContext = event.carriedTriggerContext,
+                    carriedPipeline = event.carriedPipeline
+                )
+            )
         }
     }
 

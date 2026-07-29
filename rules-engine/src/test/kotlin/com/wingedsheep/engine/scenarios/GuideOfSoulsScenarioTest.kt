@@ -161,4 +161,56 @@ class GuideOfSoulsScenarioTest : FunSpec({
         projected.hasSubtype(wurm, "Angel") shouldBe false
         energyOf(d, active) shouldBe 2
     }
+
+    test("attacker destroyed after the reflexive ability's target is locked in but before it " +
+        "resolves causes it to fizzle (CR 603.12: a real stack object with its own priority window)") {
+        // The "when you do" half of a reflexive trigger is a genuinely separate triggered ability
+        // (CR 603.12) — it goes on the stack with its target already chosen, and opponents get a
+        // real priority window to respond before it resolves. This proves that window actually
+        // exists: the opponent kills the locked-in attacker in response, and CR 608.2b fizzles the
+        // ability (illegal target) instead of it silently resolving anyway.
+        val d = driver()
+        d.initMirrorMatch(deck = Deck.of("Plains" to 40), skipMulligans = true)
+        val active = d.activePlayer!!
+        val opp = d.getOpponent(active)
+        d.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        d.putCreatureOnBattlefield(active, "Guide of Souls")
+        val bears = d.putCreatureOnBattlefield(active, "Grizzly Bears")
+        d.removeSummoningSickness(bears)
+        seedEnergy(d, active, 3)
+
+        val boltId = d.putCardInHand(opp, "Lightning Bolt")
+
+        d.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        d.declareAttackers(active, listOf(bears), opp)
+
+        drainToYesNo(d) shouldBe true
+        d.submitYesNo(active, true)
+        d.submitTargetSelection(active, listOf(bears))
+
+        // Confirm the window actually exists rather than assuming it: the reflexive ability must
+        // be a real, unresolved object on the stack right now, not already-applied counters.
+        d.stackSize shouldBe 1
+        counterOf(d, bears, CounterType.PLUS_ONE_PLUS_ONE) shouldBe 0
+
+        // Mana pools empty at each step change (CR 500.4), so the opponent's red mana is given only
+        // now, right before they need it — not back when the board was set up.
+        d.giveMana(opp, Color.RED, 1)
+
+        // Active player passes priority on the newly-stacked ability; the opponent responds
+        // instead of passing, Bolting the now-locked-in target before it resolves.
+        d.passPriority(active)
+        d.castSpell(opp, boltId, listOf(bears)).isSuccess shouldBe true
+        d.bothPass() // resolve Lightning Bolt: 3 damage kills the 2/2 Grizzly Bears
+        d.bothPass() // the reflexive ability tries to resolve; its only target is now illegal
+
+        // Dying doesn't delete the entity — it moves to the graveyard — so check zone membership,
+        // not existence, and confirm the reflexive payoff never touched it.
+        d.state.getBattlefield().contains(bears) shouldBe false
+        counterOf(d, bears, CounterType.PLUS_ONE_PLUS_ONE) shouldBe 0
+        // Energy was already spent when the action (paying {E}{E}{E}) completed — the fizzle only
+        // affects the reflexive payoff, not the cost that was already paid.
+        energyOf(d, active) shouldBe 0
+    }
 })
