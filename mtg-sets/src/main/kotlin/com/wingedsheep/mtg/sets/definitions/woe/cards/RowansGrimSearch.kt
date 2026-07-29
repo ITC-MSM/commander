@@ -32,6 +32,11 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * library of fewer than four cards simply offers what's there rather than deadlocking, and an
  * empty library skips the choice entirely.
  *
+ * `Patterns.Library.lookAtTopAndKeep` is the same gather → split → keep/rest shape, but it hard-codes
+ * `SelectionMode.ChooseExactly` and this card needs "up to two", so the pipeline is inlined here
+ * rather than the pattern gaining a selection-mode parameter for a single caller. A second
+ * "look at top N, keep up to M" card is the moment to widen the pattern instead of copying this.
+ *
  * The draw and the life loss are unconditional and come *after* the dig, matching the printed
  * order — a bargained cast can therefore bin two cards and then draw into a freshly stacked top.
  */
@@ -86,7 +91,9 @@ val RowansGrimSearch = card("Rowan's Grim Search") {
         )
         ruling(
             "2023-09-01",
-            "If you copy a bargained spell, the copy is also bargained."
+            "If you copy a bargained spell, the copy is also bargained. If a card or token enters " +
+                "the battlefield as a copy of a permanent that's already on the battlefield, the " +
+                "new permanent isn't bargained, even if the original was."
         )
     }
 }

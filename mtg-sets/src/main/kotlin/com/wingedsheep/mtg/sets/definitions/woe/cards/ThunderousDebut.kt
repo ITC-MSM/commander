@@ -61,7 +61,8 @@ val ThunderousDebut = card("Thunderous Debut") {
                 prompt = "Reveal up to two creature cards",
                 showAllCards = true,
             )
-            reveal(chosen)
+            // The controller hand-picked these, so only the opponents need the reveal overlay.
+            reveal(chosen, revealToSelf = false)
             run(
                 ConditionalEffect(
                     condition = Conditions.WasBargained,
@@ -96,7 +97,9 @@ val ThunderousDebut = card("Thunderous Debut") {
         )
         ruling(
             "2023-09-01",
-            "If you copy a bargained spell, the copy is also bargained."
+            "If you copy a bargained spell, the copy is also bargained. If a card or token enters " +
+                "the battlefield as a copy of a permanent that's already on the battlefield, the " +
+                "new permanent isn't bargained, even if the original was."
         )
     }
 }

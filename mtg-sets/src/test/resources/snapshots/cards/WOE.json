@@ -10681,7 +10681,7 @@
             },
             {
                 "date": "2023-09-01",
-                "text": "If you copy a bargained spell, the copy is also bargained."
+                "text": "If you copy a bargained spell, the copy is also bargained. If a card or token enters the battlefield as a copy of a permanent that's already on the battlefield, the new permanent isn't bargained, even if the original was."
             }
         ]
     },
@@ -14025,7 +14025,8 @@
                 },
                 {
                     "type": "RevealCollection",
-                    "from": "selected1"
+                    "from": "selected1",
+                    "revealToSelf": false
                 },
                 {
                     "type": "Gated",
@@ -14073,7 +14074,7 @@
             },
             {
                 "date": "2023-09-01",
-                "text": "If you copy a bargained spell, the copy is also bargained."
+                "text": "If you copy a bargained spell, the copy is also bargained. If a card or token enters the battlefield as a copy of a permanent that's already on the battlefield, the new permanent isn't bargained, even if the original was."
             }
         ]
     },
