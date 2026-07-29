@@ -10744,40 +10744,6 @@
     ]
 }
 
-// Rowdy Research
-{
-    "name": "Rowdy Research",
-    "manaCost": "{6}{U}",
-    "typeLine": "Instant",
-    "oracleText": "This spell costs {1} less to cast for each creature that attacked this turn.\nDraw three cards.",
-    "script": {
-        "spellEffect": {
-            "type": "DrawCards",
-            "count": {
-                "type": "Fixed",
-                "amount": 3
-            }
-        },
-        "staticAbilities": [
-            {
-                "type": "ModifySpellCost",
-                "target": "SelfCast",
-                "modification": {
-                    "type": "ReduceGenericBy",
-                    "source": "CreaturesThatAttackedThisTurn"
-                }
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "312",
-        "rarity": "UNCOMMON",
-        "artist": "Bram Sels",
-        "flavorText": "\"Stolen treasures can be reclaimed, but stolen knowledge is yours forever.\"\n—Alela",
-        "imageUri": "https://cards.scryfall.io/normal/front/8/9/89b7e901-5ba4-4374-9eeb-96354279a123.jpg?1783915040"
-    },
-    "colorIdentityOverride": [
-        "BLUE"
 // Rowan's Grim Search
 {
     "name": "Rowan's Grim Search",
@@ -10905,6 +10871,43 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Rowdy Research
+{
+    "name": "Rowdy Research",
+    "manaCost": "{6}{U}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {1} less to cast for each creature that attacked this turn.\nDraw three cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 3
+            }
+        },
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": "CreaturesThatAttackedThisTurn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "312",
+        "rarity": "UNCOMMON",
+        "artist": "Bram Sels",
+        "flavorText": "\"Stolen treasures can be reclaimed, but stolen knowledge is yours forever.\"\n—Alela",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/89b7e901-5ba4-4374-9eeb-96354279a123.jpg?1783915040"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
