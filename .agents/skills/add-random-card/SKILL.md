@@ -42,7 +42,7 @@ If you're unsure which mode applies, try card-status mode first and fall back to
      ...
    ```
 3. Collect every "Missing" entry (both draft and extras sections) into a single numbered list (0-indexed). Continue to Step 3.
-4. **If `scripts/card-status` errors with "no set found with code X"**: the set isn't scaffolded under `mtg-sets/.../definitions/<code>/` yet. Stop and tell the user — they'll need to scaffold the empty set first (an empty `<Set>Set.kt` registered via ServiceLoader) before this mode can work. Do NOT fall back to picking a card from Scryfall directly; the add-card skill assumes the set is registered.
+4. **If `scripts/card-status` errors with "no set found with code X"**: the set isn't scaffolded under `mtg-sets/.../definitions/<code>/` yet. Stop and tell the user — they'll need to scaffold the empty set first (an empty `<Set>Set.kt` under `definitions/<code>/`, which `MtgSetCatalog` discovers on the classpath) before this mode can work. Do NOT fall back to picking a card from Scryfall directly; the add-card skill assumes the set is scaffolded.
 
 ## Step 3: Pick a truly random card
 
