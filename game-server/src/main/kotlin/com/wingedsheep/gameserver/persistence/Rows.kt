@@ -53,6 +53,21 @@ data class DeckRow(
     val updatedAt: Instant = Instant.now(),
 )
 
+/**
+ * A saved cube — the deck row's twin. [data] is the client's SharedCube JSON verbatim;
+ * [cardCount] is the total physical cards (sum of entry counts), denormalized for list views.
+ */
+@Table("cubes")
+data class CubeRow(
+    @Id val id: Long? = null,
+    val userId: UUID,
+    val name: String,
+    val cardCount: Int = 0,
+    val data: String,
+    val createdAt: Instant = Instant.now(),
+    val updatedAt: Instant = Instant.now(),
+)
+
 @Table("match_results")
 data class MatchResultRow(
     @Id val id: Long? = null,

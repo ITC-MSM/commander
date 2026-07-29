@@ -15,6 +15,7 @@ import { useGameStore } from '@/store/gameStore'
 import type { LobbyState } from '@/store/slices/types'
 import { teamColor } from '@/styles/seatColors'
 import { BanListEditor } from '../ui/BanListEditor'
+import { CubePanel } from './CubePanel'
 import { SetIcon } from '../ui/SetIcon'
 import { SetPickerModal } from '../ui/SetPickerModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
@@ -61,6 +62,7 @@ export function TournamentLobbySettings({
 
   const s = lobbyState.settings
   const format = s.format
+  const isSealed = format === 'SEALED'
   const isCommanderSealed = format === 'COMMANDER_SEALED'
   const isDraft = format === 'DRAFT'
   const isWinston = format === 'WINSTON_DRAFT'
@@ -71,6 +73,9 @@ export function TournamentLobbySettings({
   const isAnyCommander = isCommanderDraft || isCommanderSealed
   const isFfa = s.gameMode === 'FREE_FOR_ALL'
   const isCube = Boolean(s.cubeName)
+  // Pool Play hands out the whole cube instead of dealing packs, so the pack-count controls are
+  // meaningless while it's on. Matches TournamentLobby.isCubePoolPlay.
+  const isPoolPlay = isCube && isSealed && Boolean(s.cubePoolPlay)
 
   const allSets = s.availableSets
   // A selected-set chip is either a concrete set or a deferred "Random Set" placeholder.
@@ -173,11 +178,47 @@ export function TournamentLobbySettings({
 
       {/* Set selection — chips here, the full searchable browser behind a modal. Premade Decks
           generates no boosters, so it needs none of this. */}
-      {!isPremade && isCube && (
+      {/* Cube — a pack source, so it stands in for the set picker rather than adding to it. Always
+          offered (even with no cube yet) so the host can find it; picking one hides the set controls. */}
+      {!isPremade && (
+        <div className={styles.settingsRow} style={{ alignItems: 'flex-start' }}>
+          <span style={{ paddingTop: 7 }}>
+            <SettingsLabel topicId="cards-cube">Cube</SettingsLabel>
+          </span>
+          <CubePanel
+            settings={s}
+            playerCount={view.players.length}
+            updateLobbySettings={updateLobbySettings}
+          />
+        </div>
+      )}
+
+      {/* Pool Play (cube Sealed only): no draft at all — everyone builds from the whole cube. */}
+      {isCube && isSealed && (
         <div className={styles.settingsRow}>
-          <span className={styles.settingsLabel}>Cube</span>
-          <div className={styles.variantCaption}>
-            {s.cubeName} · {s.cubeCardCount ?? 0} cards · {s.packSize ?? 15}-card packs
+          <SettingsLabel topicId="cube-pool-play">Card pool</SettingsLabel>
+          <div className={styles.variantGroup}>
+            <div className={styles.settingsButtons}>
+              <button
+                onClick={() => updateLobbySettings({ cubePoolPlay: false })}
+                className={`${styles.settingsButton} ${!s.cubePoolPlay ? styles.settingsButtonActive : ''}`}
+                title="Deal each player their own sealed pool from the cube"
+              >
+                Sealed packs
+              </button>
+              <button
+                onClick={() => updateLobbySettings({ cubePoolPlay: true })}
+                className={`${styles.settingsButton} ${s.cubePoolPlay ? styles.settingsButtonActive : ''}`}
+                title="Pool Play: every player builds from the entire cube, up to 4 copies of any card"
+              >
+                Pool Play
+              </button>
+            </div>
+            <div className={styles.variantCaption}>
+              {s.cubePoolPlay
+                ? 'Every player builds from the whole cube at once, up to 4 copies of any card. Nothing is dealt, so the cube can be any size and no two players compete for a card.'
+                : 'Each player opens their own packs dealt from the cube. No card appears twice across the table.'}
+            </div>
           </div>
         </div>
       )}
@@ -264,8 +305,9 @@ export function TournamentLobbySettings({
         </>
       )}
 
-      {/* Booster/pack counts. Grid Draft uses fixed counts, Premade generates none. */}
-      {!isPremade && !isGridDraft && (
+      {/* Booster/pack counts. Grid Draft uses fixed counts, Premade generates none, and Pool Play
+          deals no packs at all — so it gets no pack count rather than an inert one. */}
+      {!isPremade && !isGridDraft && !isPoolPlay && (
         perSetCounts ? (
           <div className={styles.settingsRow} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
             <span className={styles.settingsLabel}>{boosterCountLabel(isWinston, countsPacks)}</span>

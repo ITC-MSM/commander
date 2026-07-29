@@ -59,6 +59,7 @@ fun TournamentLobby.toPersistent(): PersistentTournamentLobby {
         cubeBasicLandSetCode = cube?.basicLandSetCode,
         cubePackSize = cube?.packSize,
         cubeDealerRemainingCardNames = cubeDealerRemainingCards().map { it.name },
+        cubePoolPlay = cubePoolPlay,
         bannedCardNames = bannedCardNames,
         currentPackNumber = currentPackNumber,
         currentPickNumber = currentPickNumber,
@@ -132,6 +133,8 @@ fun restoreTournamentLobby(
                 packSize = persistent.cubePackSize,
             )
         )
+        // configureCube() clears the flag (it is cube-scoped), so restore it afterwards.
+        lobby.cubePoolPlay = persistent.cubePoolPlay
         if (persistent.cubeDealerRemainingCardNames.isNotEmpty()) {
             lobby.restoreCubeDealer(
                 persistent.cubeDealerRemainingCardNames.mapNotNull(cardRegistry::getCard)

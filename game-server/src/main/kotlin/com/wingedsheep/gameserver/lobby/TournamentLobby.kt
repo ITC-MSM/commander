@@ -339,6 +339,19 @@ class TournamentLobby(
     val isCube: Boolean get() = cube != null
     val packSize: Int get() = cube?.packSize ?: 0
 
+    /**
+     * Cube Pool Play: instead of dealing packs, every player deckbuilds from the *entire* cube at
+     * once with copies unlimited (up to the normal 4-of cap). Because nothing is dealt there is no
+     * contention between players and no capacity constraint — a 100-card cube is a fine Pool Play
+     * pool. Host-set; only meaningful for a cube [TournamentFormat.SEALED] lobby, which is what
+     * [isCubePoolPlay] gates on (Commander shapes have their own singleton/identity rules and are
+     * deliberately excluded).
+     */
+    var cubePoolPlay: Boolean = false
+
+    /** Whether this lobby actually runs as Pool Play — the single source of that truth. */
+    val isCubePoolPlay: Boolean get() = isCube && cubePoolPlay && format == TournamentFormat.SEALED
+
     private var cubeBoosterGenerator: BoosterGenerator? = null
     private var cubeDealer: CubeDealer? = null
 
@@ -353,6 +366,9 @@ class TournamentLobby(
         require(state == LobbyState.WAITING_FOR_PLAYERS) { "Cannot change cube after start" }
         cube = resolvedCube
         cubeDealer = null
+        // Pool Play is a cube-only mode; leaving it set on a lobby that has gone back to
+        // catalogued sets would be a control that silently does nothing.
+        if (resolvedCube == null) cubePoolPlay = false
         cubeBoosterGenerator = resolvedCube?.let {
             boosterGenerator.withSets(mapOf(CubeSetConfig.SET_CODE to CubeSetConfig.of(it, boosterGenerator)))
         }
@@ -367,15 +383,16 @@ class TournamentLobby(
     fun cubeCapacityError(): String? {
         val resolvedCube = cube ?: return null
         if (format == TournamentFormat.PREMADE_DECKS) return null
+        // Pool Play hands every player the whole cube instead of dealing from it, so no amount of
+        // players or packs can exhaust it.
+        if (isCubePoolPlay) return null
         val packsNeeded = when (format) {
             TournamentFormat.SEALED, TournamentFormat.COMMANDER_SEALED,
             TournamentFormat.DRAFT, TournamentFormat.COMMANDER_DRAFT -> players.size * boosterCount
             TournamentFormat.WINSTON_DRAFT, TournamentFormat.GRID_DRAFT -> boosterCount
             TournamentFormat.PREMADE_DECKS -> 0
         }
-        val usableCards = resolvedCube.cards.count { card ->
-            bannedCardNames.none { it.equals(card.name, ignoreCase = true) }
-        }
+        val usableCards = cubeCardsAfterBans().size
         val cardsNeeded = packsNeeded * resolvedCube.packSize
         if (cardsNeeded <= usableCards) return null
         val calculation = when (format) {
@@ -387,13 +404,18 @@ class TournamentLobby(
         return "$calculation = $cardsNeeded cards needed, cube has $usableCards"
     }
 
+    /** The cube's cards minus the host's ban list — the pack source and the Pool Play pool alike. */
+    fun cubeCardsAfterBans(): List<CardDefinition> =
+        cube?.cards?.filterNot { card ->
+            bannedCardNames.any { it.equals(card.name, ignoreCase = true) }
+        }.orEmpty()
+
     private fun prepareCubeDealer(): Boolean {
         val resolvedCube = cube ?: return true
         if (cubeCapacityError() != null) return false
-        val cards = resolvedCube.cards.filterNot { card ->
-            bannedCardNames.any { it.equals(card.name, ignoreCase = true) }
-        }
-        cubeDealer = CubeDealer(cards, resolvedCube.packSize, System.nanoTime())
+        // Pool Play deals nothing — every player gets the whole cube (see [startDeckBuilding]).
+        if (isCubePoolPlay) return true
+        cubeDealer = CubeDealer(cubeCardsAfterBans(), resolvedCube.packSize, System.nanoTime())
         return true
     }
 
@@ -800,6 +822,17 @@ class TournamentLobby(
         if (players.size < 2) return false
         if (format != TournamentFormat.SEALED && format != TournamentFormat.COMMANDER_SEALED) return false
         if (!prepareCubeDealer()) return false
+
+        if (isCubePoolPlay) {
+            // Every player builds from the same, whole cube. Nothing is consumed, so the pools are
+            // identical and no player's choices constrain another's.
+            val wholeCube = cubeCardsAfterBans()
+            players.forEach { (playerId, playerState) ->
+                players[playerId] = playerState.copy(cardPool = wholeCube)
+            }
+            state = LobbyState.DECK_BUILDING
+            return true
+        }
 
         if (isCube) {
             players.forEach { (playerId, playerState) ->
@@ -1546,10 +1579,12 @@ class TournamentLobby(
         // Sideboard (CR 100.4). In Limited the pool is authoritative, so the sideboard is
         // *derived* as pool − maindeck (CR 100.4b) and any client-sent value is ignored. In
         // PREMADE_DECKS (constructed) there is no pool, so the explicit client sideboard is kept.
-        val effectiveSideboard = if (isPremade) {
-            sideboard
-        } else {
-            SideboardDerivation.fromPool(playerState.cardPool, deckList)
+        // Pool Play's "pool" is the whole cube, so deriving would seed a 300+ card SIDEBOARD zone
+        // (and hand wish effects the entire cube) — it gets no sideboard at all.
+        val effectiveSideboard = when {
+            isPremade -> sideboard
+            isCubePoolPlay -> emptyMap()
+            else -> SideboardDerivation.fromPool(playerState.cardPool, deckList)
         }
 
         players[playerId] = playerState.copy(
@@ -1723,6 +1758,7 @@ class TournamentLobby(
                 cubeName = cube?.name,
                 cubeCardCount = cube?.cards?.size,
                 packSize = cube?.packSize,
+                cubePoolPlay = cubePoolPlay,
                 aiAssistEnabled = aiAssistEnabled,
                 gameMode = gameMode.name,
                 attackMode = attackMode.name,
@@ -1755,13 +1791,22 @@ class TournamentLobby(
         }
         for ((cardName, count) in countsByBaseName) {
             if (cardName in basicLandNames) continue
-            if (count > 4) {
-                return "Cannot have more than 4 copies of $cardName (have $count)"
+            if (count > MAX_COPIES_PER_CARD) {
+                return "Cannot have more than $MAX_COPIES_PER_CARD copies of $cardName (have $count)"
             }
         }
         return null
     }
 
+    /**
+     * Limited deck validation: min 40 cards, every card present in the player's pool, no more copies
+     * than the pool holds, and a hard 4-of cap. Basic lands are exempt throughout (they're supplied,
+     * not drafted).
+     *
+     * In Pool Play ([isCubePoolPlay]) copies are unlimited: the pool is the whole cube and every
+     * player has the same one, so "how many copies did you open" is not a constraint — only
+     * membership in the cube and the 4-of cap survive.
+     */
     private fun validateDeck(pool: List<CardDefinition>, deckList: Map<String, Int>): String? {
         val totalCards = deckList.values.sum()
         if (totalCards < 40) {
@@ -1774,6 +1819,7 @@ class TournamentLobby(
             .eachCount()
 
         val basicLandNames = setOf("Plains", "Island", "Swamp", "Mountain", "Forest")
+        val unlimitedCopies = isCubePoolPlay
 
         for ((cardName, count) in deckList) {
             if (count <= 0) continue
@@ -1781,15 +1827,15 @@ class TournamentLobby(
 
             val availableInPool = poolCounts[cardName] ?: 0
             if (availableInPool == 0) {
-                return "Card not in pool: $cardName"
+                return if (unlimitedCopies) "Card not in cube: $cardName" else "Card not in pool: $cardName"
             }
-            if (count > availableInPool) {
+            if (!unlimitedCopies && count > availableInPool) {
                 return "Not enough copies of $cardName in pool (have $availableInPool, trying to use $count)"
             }
 
             // Enforce 4-copy limit
-            if (count > 4) {
-                return "Cannot have more than 4 copies of $cardName (have $count)"
+            if (count > MAX_COPIES_PER_CARD) {
+                return "Cannot have more than $MAX_COPIES_PER_CARD copies of $cardName (have $count)"
             }
         }
 
@@ -1953,6 +1999,13 @@ class TournamentLobby(
          * key in [setCodes] / [boosterDistribution] and resolves independently.
          */
         const val RANDOM_SET_CODE = "RANDOM"
+
+        /**
+         * Hard per-card copy cap for every deck this lobby validates, and the *only* copy constraint
+         * left in Cube Pool Play (where the pool itself imposes none). Basic lands are exempt
+         * everywhere — they're supplied, not opened.
+         */
+        const val MAX_COPIES_PER_CARD = 4
 
         /** Display name shown for an unresolved [RANDOM_SET_CODE] slot. */
         const val RANDOM_SET_NAME = "Random Set"

@@ -24,6 +24,8 @@ data class PersistentTournamentLobby(
     val cubeBasicLandSetCode: String? = null,
     val cubePackSize: Int? = null,
     val cubeDealerRemainingCardNames: List<String> = emptyList(),
+    /** Cube Pool Play (no draft, whole cube as everyone's pool). Meaningless without a cube. */
+    val cubePoolPlay: Boolean = false,
     val bannedCardNames: Set<String> = emptySet(),
     // Draft-specific state
     val currentPackNumber: Int = 0,

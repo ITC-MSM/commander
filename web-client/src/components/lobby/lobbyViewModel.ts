@@ -317,8 +317,12 @@ function tournamentSubtitle(lobbyState: LobbyState): string {
         return distText ?? `${s.boosterCount} boosters per player`
     }
   })()
+  const poolPlay = Boolean(s.cubeName && s.cubePoolPlay && s.format === 'SEALED')
   const source = s.cubeName
-    ? `Cube · ${s.cubeCardCount ?? 0} cards · ${s.packSize ?? 15}-card packs · ${base}`
+    ? poolPlay
+      // Pool Play deals nothing, so pack size and booster count are meaningless here.
+      ? `Cube Pool Play · ${s.cubeCardCount ?? 0} cards · everyone builds from the whole cube`
+      : `Cube · ${s.cubeCardCount ?? 0} cards · ${s.packSize ?? 15}-card packs · ${base}`
     : base
 
   const isMultiplayer = s.gameMode !== 'TOURNAMENT'
@@ -382,6 +386,9 @@ function startBlockReason(lobbyState: LobbyState): string | null {
     return allSubmitted ? null : 'All connected players must submit a deck first'
   }
   if (s.cubeName) {
+    // Pool Play hands every player the whole cube instead of dealing from it, so it has no capacity
+    // constraint at all — mirrors TournamentLobby.cubeCapacityError.
+    if (s.cubePoolPlay && s.format === 'SEALED') return null
     const packSize = s.packSize ?? 15
     const sharedPool = s.format === 'WINSTON_DRAFT' || s.format === 'GRID_DRAFT'
     const packsNeeded = sharedPool ? s.boosterCount : n * s.boosterCount

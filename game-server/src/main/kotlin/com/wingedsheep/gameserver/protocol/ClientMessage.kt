@@ -294,6 +294,11 @@ sealed interface ClientMessage {
         val cubeName: String? = null,
         val packSize: Int? = null,
         val cubeBasicLandSetCode: String? = null,
+        /**
+         * Cube Pool Play: skip the draft entirely and let every player deckbuild from the whole cube
+         * with copies unlimited. Only honoured on a cube Sealed lobby. Null = unchanged.
+         */
+        val cubePoolPlay: Boolean? = null,
         /** Master switch for in-app AI assistance (Suggest Pick / Auto-build). Null = unchanged. */
         val aiAssistEnabled: Boolean? = null,
         /** Lobby mode axis: "TOURNAMENT" or "FREE_FOR_ALL". Null = unchanged. */
