@@ -14,6 +14,22 @@ section; do not let SDK additions land without a corresponding doc update.
 
 ---
 
+## 0. Game formats
+
+`Format` is the runtime rules configuration, separate from deck-construction `DeckFormat`.
+
+- `Format.Commander` — enables per-player commanders, command zones, commander damage, command-zone
+  casting tax, and the command-zone replacement choice. Its configuration includes
+  `commanderDamageThreshold`, `deckSize`, `startingLife`, `startingHandSize`, and
+  `alwaysDivertToCommand`.
+- `Format.TeamVsTeam` — team membership with individual turns and life totals. By default it is a
+  normal 20-life format with no commanders. Supplying `commanderDamageThreshold` and `deckSize`
+  opts it into the same Commander rules while retaining Team-vs-Team seating and win conditions.
+- `Format.TwoHeadedGiant` — shared life, turns, combat, and team loss. It deliberately does not expose
+  Commander configuration because Two-Headed Giant and Commander have conflicting starting-life rules.
+- `Format.usesCommanders` — capability flag derived from a non-null `commanderDamageThreshold`; engine
+  systems use this instead of checking for one concrete format subtype.
+
 ## 1. Top-level card DSL
 
 **Entry points**

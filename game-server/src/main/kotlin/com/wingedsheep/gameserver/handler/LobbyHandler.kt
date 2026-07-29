@@ -1183,6 +1183,18 @@ class LobbyHandler(
             return
         }
 
+        if (lobby.isTwoHeadedGiant &&
+            ((lobby.format == TournamentFormat.PREMADE_DECKS && lobby.deckFormat?.isCommanderShape == true) ||
+                lobby.format.isCommanderFormat)
+        ) {
+            sender.sendError(
+                session,
+                ErrorCode.INVALID_ACTION,
+                "Two-Headed Giant cannot be combined with Commander, Brawl, or Standard Brawl"
+            )
+            return
+        }
+
         // Reveal any deferred "Random Set" placeholders now that the game is starting — the concrete
         // sets stay hidden in the lobby until this moment (mirrors the Quick Game deferred roll). Done
         // before the extension gate and pool generation so both see concrete, validated set codes.

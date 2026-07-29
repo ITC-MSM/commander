@@ -56,6 +56,16 @@ export interface AxisTriple {
 export const LEGALITY_OPTIONS: ReadonlyArray<{ value: DeckFormat; label: string }> =
   DECK_FORMATS.map((f) => ({ value: f.value.toUpperCase() as DeckFormat, label: f.label }))
 
+export function isCommanderDeckFormat(format: DeckFormat | null): boolean {
+  return format === 'COMMANDER' || format === 'BRAWL' || format === 'STANDARD_BRAWL'
+}
+
+export function legalityOptionsForTable(table: TableAxis): typeof LEGALITY_OPTIONS {
+  return table === 'TWO_HEADED_GIANT'
+    ? LEGALITY_OPTIONS.filter((option) => !isCommanderDeckFormat(option.value))
+    : LEGALITY_OPTIONS
+}
+
 export function cardsLabel(cards: CardsAxis): string {
   switch (cards.kind) {
     case 'BRING_A_DECK':

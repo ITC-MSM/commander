@@ -480,6 +480,13 @@ class QuickGameLobbyHandler(
     }
 
     private fun startGame(lobby: QuickGameLobby) {
+        if (lobby.twoHeadedGiant && lobby.format?.isCommanderShape == true) {
+            logger.warn("Lobby ${lobby.lobbyId}: Two-Headed Giant cannot use a Commander-shaped deck format")
+            broadcastClosed(lobby, "Two-Headed Giant cannot be combined with Commander, Brawl, or Standard Brawl")
+            lobbyRepository.remove(lobby.lobbyId)
+            return
+        }
+
         // Commander-shape lobby with a human player who never designated a commander would crash
         // mid-init when GameInitializer requires `commanderCardName`. Surface the error early so
         // the player can pick a different deck before everyone gets disconnected.

@@ -63,6 +63,12 @@ class FreeForAllHandler(
         // excludes it. Mirrors TournamentMatchHandler.startSingleMatch.
         val isCommanderShape = (lobby.format == com.wingedsheep.gameserver.lobby.TournamentFormat.PREMADE_DECKS &&
             lobby.deckFormat?.isCommanderShape == true) || lobby.format.isCommanderFormat
+        if (isCommanderShape && lobby.isTwoHeadedGiant) {
+            logger.warn(
+                "FFA lobby ${lobby.lobbyId}: cannot start Two-Headed Giant with a Commander-shaped deck format"
+            )
+            return false
+        }
         if (isCommanderShape) {
             val missing = playerStates.filter { it.commander == null }
             if (missing.isNotEmpty()) {
@@ -82,12 +88,11 @@ class FreeForAllHandler(
             tokenArtRegistry = tokenArtRegistry,
             maxPlayers = playerStates.size,
         )
-        if (isCommanderShape) {
-            gameSession.engineFormat = if (lobby.format.isCommanderFormat) {
+        val commanderFormat = when {
+            !isCommanderShape -> null
+            lobby.format.isCommanderFormat ->
                 lobby.commanderPreset.toFormat().copy(deckSize = lobby.deckSizeMin)
-            } else {
-                com.wingedsheep.sdk.core.Format.Commander()
-            }
+            else -> com.wingedsheep.sdk.core.Format.Commander()
         }
         // CR 802 / 803 — the lobby's chosen attack rule applies to this multiplayer game.
         gameSession.attackMode = lobby.attackMode
@@ -102,6 +107,14 @@ class FreeForAllHandler(
         if (lobby.isTeamGame) {
             gameSession.engineFormat = if (lobby.isTwoHeadedGiant) {
                 com.wingedsheep.sdk.core.Format.TwoHeadedGiant()
+            } else if (commanderFormat != null) {
+                com.wingedsheep.sdk.core.Format.TeamVsTeam(
+                    startingLife = commanderFormat.startingLife,
+                    startingHandSize = commanderFormat.startingHandSize,
+                    commanderDamageThreshold = commanderFormat.commanderDamageThreshold,
+                    deckSize = commanderFormat.deckSize,
+                    alwaysDivertToCommand = commanderFormat.alwaysDivertToCommand,
+                )
             } else {
                 com.wingedsheep.sdk.core.Format.TeamVsTeam()
             }
@@ -110,6 +123,8 @@ class FreeForAllHandler(
                 randomTeams = lobby.randomTeams,
                 manualAssignment = lobby.teamAssignments,
             )
+        } else if (commanderFormat != null) {
+            gameSession.engineFormat = commanderFormat
         }
 
         for (playerState in playerStates) {

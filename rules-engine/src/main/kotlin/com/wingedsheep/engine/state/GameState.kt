@@ -247,7 +247,7 @@ data class GameState(
      * Cumulative combat damage dealt by each commander to each player, keyed by
      * `(commanderEntityId, defendingPlayerId)`. Populated by `CombatDamageManager` at the
      * `DamageDealtEvent` emission sites for combat damage to a player. Read by the
-     * `CommanderDamageLossCheck` SBA against [Format.Commander.commanderDamageThreshold].
+     * `CommanderDamageLossCheck` SBA against [Format.commanderDamageThreshold].
      */
     val commanderDamage: List<CommanderDamageEntry> = emptyList(),
 
