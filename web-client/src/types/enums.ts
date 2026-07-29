@@ -422,6 +422,7 @@ export enum CounterType {
   REVIVAL = 'REVIVAL',
   INGENUITY = 'INGENUITY',
   FILM = 'FILM',
+  SKEWER = 'SKEWER',
   ENERGY = 'ENERGY',
 }
 
@@ -490,6 +491,7 @@ export const CounterTypeDisplayNames: Record<CounterType, string> = {
   [CounterType.REVIVAL]: 'Revival',
   [CounterType.INGENUITY]: 'Ingenuity',
   [CounterType.FILM]: 'Film',
+  [CounterType.SKEWER]: 'Skewer',
   [CounterType.ENERGY]: 'Energy',
 }
 
