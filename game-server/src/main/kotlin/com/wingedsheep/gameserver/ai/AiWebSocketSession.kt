@@ -523,6 +523,7 @@ class AiWebSocketSession(
             turnNumber = delta.turnNumber ?: previous.turnNumber,
             isGameOver = delta.isGameOver ?: previous.isGameOver,
             winnerId = if (delta.winnerId != null) delta.winnerId else previous.winnerId,
+            dayNight = delta.dayNight ?: previous.dayNight,
             combat = combat,
             gameLog = gameLog,
         )

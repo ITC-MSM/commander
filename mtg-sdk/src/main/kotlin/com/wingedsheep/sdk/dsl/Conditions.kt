@@ -1270,6 +1270,21 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.VoidCondition
 
     /**
+     * "If it's day" (CR 731). True only while the game's day/night designation is day — a game that
+     * is neither day nor night (its starting state, CR 731.1) does not satisfy this. Mirror of
+     * [IsNight].
+     */
+    val IsDay: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.IsDay
+
+    /**
+     * "If it's night" (CR 731). True only while the game's designation is night, never while it's
+     * neither. Backs Wolf Strike's "if it's night" rider. Mirror of [IsDay].
+     */
+    val IsNight: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.IsNight
+
+    /**
      * Celebration: "if two or more nonland permanents entered the battlefield under your control
      * this turn". Backs the Celebration ability word from Wilds of Eldraine (CR 207.2c — an
      * ability word is italic flavor with no rules meaning, so there is no keyword; only this

@@ -70,6 +70,27 @@ sealed interface ClientEvent {
         }
     ) : ClientEvent
 
+    /**
+     * The game's day/night designation changed (Innistrad, CR 731). [oldDesignation] is `null` when the
+     * game leaves the "neither" state it starts in (CR 731.1); a non-null → non-null change is a
+     * "day becomes night" / "night becomes day" flip (CR 731.1a).
+     *
+     * Surfaced as a real client event rather than left to a silent state diff so the UI can announce the
+     * shift (and any daybound/nightbound permanents transforming with it). [sourceName] attributes the
+     * cause — the untap-step turn-based action, a daybound/nightbound keyword, or an effect.
+     */
+    @Serializable
+    @SerialName("dayNightChanged")
+    data class DayNightChanged(
+        val oldDesignation: com.wingedsheep.sdk.core.DayNight?,
+        val newDesignation: com.wingedsheep.sdk.core.DayNight,
+        val sourceName: String,
+        override val description: String = when (newDesignation) {
+            com.wingedsheep.sdk.core.DayNight.DAY -> "It becomes day"
+            com.wingedsheep.sdk.core.DayNight.NIGHT -> "It becomes night"
+        }
+    ) : ClientEvent
+
     @Serializable
     @SerialName("damageDealt")
     data class DamageDealt(
@@ -785,6 +806,12 @@ object ClientEventTransformer {
                 oldSpeed = event.oldSpeed,
                 newSpeed = event.newSpeed,
                 isYours = event.playerId == viewingPlayerId
+            )
+
+            is DayNightChangedEvent -> ClientEvent.DayNightChanged(
+                oldDesignation = event.oldDesignation,
+                newDesignation = event.newDesignation,
+                sourceName = event.sourceName
             )
 
             is LifeChangedEvent -> ClientEvent.LifeChanged(

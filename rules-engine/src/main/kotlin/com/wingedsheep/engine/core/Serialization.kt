@@ -76,6 +76,7 @@ val engineSerializersModule = SerializersModule {
         subclass(PhaseChangedEvent::class)
         subclass(StepChangedEvent::class)
         subclass(TurnChangedEvent::class)
+        subclass(DayNightChangedEvent::class)
         subclass(PriorityChangedEvent::class)
         subclass(TappedEvent::class)
         subclass(BecameSaddledEvent::class)

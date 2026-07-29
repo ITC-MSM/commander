@@ -240,6 +240,8 @@ export interface StateDelta {
   readonly turnNumber?: number | null
   readonly isGameOver?: boolean | null
   readonly winnerId?: EntityId | null
+  /** Day/night designation (CR 731). Null means unchanged — the game never returns to neither. */
+  readonly dayNight?: ClientGameState['dayNight'] | null
   /** Combat state changes */
   readonly combat?: ClientCombatState | null
   readonly combatCleared?: boolean | null

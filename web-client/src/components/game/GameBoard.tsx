@@ -26,7 +26,7 @@ import { ManaSymbol } from '../ui/ManaSymbols'
 import { Battlefield, CardRow, CommandZone, OpponentBoardArea, CollapsedBoardTab, COLLAPSED_TAB_WIDTH, StackDisplay, ZonePile, ResponsiveContext } from './board'
 import { RenderProfiler } from '@/utils/renderProfiler'
 import { CardPreview } from './card'
-import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, ConcedeButton, FullscreenButton, SpectatorCountBadge } from './overlay'
+import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, DayNightBadge, ConcedeButton, FullscreenButton, SpectatorCountBadge } from './overlay'
 import { HelpDrawer, HelpDrawerButton } from '../help/HelpDrawer'
 import { styles } from './board/styles'
 
@@ -1071,6 +1071,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             </div>
           )
         })()}
+        {/* Game-level day/night designation (CR 731) — one badge for the whole table, not per-player.
+            Renders nothing until a designation exists, so most games never show it. */}
+        <DayNightBadge designation={gameState.dayNight} />
         <StepStrip
           phase={gameState.currentPhase}
           step={gameState.currentStep}

@@ -62,6 +62,21 @@ class BeginningPhaseManager(
             newState = phaseInPermanents(newState, member, events)
         }
 
+        // CR 502.2 / 731.2 — the second turn-based action of the untap step: check the previous turn's
+        // active player's spell count and change the day/night designation if warranted. If it's day and
+        // that player cast no spells, it becomes night; if it's night and they cast two or more, it
+        // becomes day; if it's neither, nothing happens (731.2c). No stack, no priority. The snapshot of
+        // who that player was and how many spells they cast was taken in TurnManager.startTurn before the
+        // per-turn counters reset. Any daybound/nightbound transforms this designation change entails are
+        // cascaded by DayNightService in the same event batch, and those events flow up through advanceStep
+        // to PassPriorityHandler's detectTriggers so "whenever this transforms" abilities fire (CR 702.145b/e).
+        run {
+            val (afterDayNight, dayNightEvents) = com.wingedsheep.engine.mechanics.daynight.DayNightService
+                .checkUntapStepDesignation(newState, cardRegistry)
+            newState = afterDayNight
+            events.addAll(dayNightEvents)
+        }
+
         // Check if the player has a SkipUntapComponent
         val skipUntap = newState.getEntity(activePlayer)?.get<SkipUntapComponent>()
 

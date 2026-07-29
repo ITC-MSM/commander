@@ -10,6 +10,7 @@ class PermanentSbaModule(
     private val cardRegistry: CardRegistry
 ) : StateBasedActionModule {
     override fun checks(): List<StateBasedActionCheck> = listOf(
+        DayNightCheck(cardRegistry),
         EndedDurationExpiryCheck(),
         AttachedCopyExpiryCheck(),
         PlaneswalkerLoyaltyCheck(),

@@ -108,6 +108,13 @@ class TurnManager(
             step = Step.UNTAP,
             priorityPlayerId = null, // No priority during untap
             priorityPassedBy = emptySet(),
+            // CR 731.2 — the untap-step day/night check reads the *previous* turn's active player and
+            // how many spells they cast during that turn. Snapshot both here, the instant the new turn
+            // begins, BEFORE the per-turn spell counters below are zeroed, so the untap step (which runs
+            // after this reset) still sees the departing turn's numbers. `state` is the pre-reset state,
+            // so `state.activePlayerId` is the turn that just ended and its count is still populated.
+            previousTurnActivePlayerId = state.activePlayerId,
+            previousTurnActivePlayerSpellCount = state.playerSpellsCastThisTurn[state.activePlayerId] ?: 0,
             spellsCastThisTurn = 0,
             playerSpellsCastThisTurn = emptyMap(),
             spellsCastThisTurnByPlayer = emptyMap(),

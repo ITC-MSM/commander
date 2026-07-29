@@ -16,6 +16,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
@@ -40,8 +41,6 @@ class TransformEffectExecutor(
     private val cardRegistry: CardRegistry
 ) : EffectExecutor<TransformEffect> {
 
-    private val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
-
     override val effectType: KClass<TransformEffect> = TransformEffect::class
 
     override fun execute(
@@ -52,70 +51,104 @@ class TransformEffectExecutor(
         val targetId = context.resolveTarget(effect.target)
             ?: return EffectResult.error(state, "No valid target for transform")
 
-        val container = state.getEntity(targetId)
-            ?: return EffectResult.error(state, "Target entity not found")
+        if (state.getEntity(targetId) == null) {
+            return EffectResult.error(state, "Target entity not found")
+        }
 
-        val dfc = container.get<DoubleFacedComponent>()
+        // CR 702.145b#3 / 702.145e#2 — a permanent with daybound or nightbound "can't transform except
+        // due to its daybound/nightbound ability." Those keyword-driven transforms don't come through
+        // this executor (they route through DayNightService.flipDfcInPlace on a day/night change), so
+        // any TransformEffect reaching a daybound/nightbound permanent is a disallowed "other" cause
+        // and does nothing.
+        val projected = state.projectedState
+        if (projected.hasKeyword(targetId, Keyword.DAYBOUND) ||
+            projected.hasKeyword(targetId, Keyword.NIGHTBOUND)
+        ) {
+            return EffectResult.success(state)
+        }
+
+        // A non-DFC target is a silent no-op (CR 701.27b — "if a permanent that isn't a
+        // transforming double-faced permanent would transform, nothing happens").
+        val (newState, event) = flipDfcInPlace(state, cardRegistry, targetId)
             ?: return EffectResult.success(state)
 
-        // Rule 701.27a: transforming a DFC flips to the opposite face.
-        val nextFace = when (dfc.currentFace) {
-            DoubleFacedComponent.Face.FRONT -> DoubleFacedComponent.Face.BACK
-            DoubleFacedComponent.Face.BACK -> DoubleFacedComponent.Face.FRONT
-        }
-        val intoBackFace = nextFace == DoubleFacedComponent.Face.BACK
-
-        val nextDefinitionId = when (nextFace) {
-            DoubleFacedComponent.Face.FRONT -> dfc.frontCardDefinitionId
-            DoubleFacedComponent.Face.BACK -> dfc.backCardDefinitionId
-        }
-
-        val nextCardDef = cardRegistry.getCard(nextDefinitionId)
-            ?: return EffectResult.error(state, "Opposite face not registered: $nextDefinitionId")
-
-        val currentCard = container.get<CardComponent>()
-            ?: return EffectResult.error(state, "Target has no CardComponent")
-
-        val swappedCard = buildCardComponentForDfcFace(currentCard, nextCardDef)
-
-        val controllerId = container.get<ControllerComponent>()?.playerId ?: context.controllerId
-
-        // Rule 712.8a: save the front face card so ZoneTransitionService can restore it
-        // without a registry lookup when the DFC leaves the battlefield on its back face.
-        val updatedDfc = if (intoBackFace) {
-            dfc.copy(currentFace = nextFace, frontFaceCard = currentCard)
-        } else {
-            dfc.copy(currentFace = nextFace, frontFaceCard = null)
-        }
-
-        val newState = state.updateEntity(targetId) { c ->
-            var updated = c
-                .with(swappedCard)
-                .with(updatedDfc)
-                // Strip stale static-ability effect components so the layer projector stops
-                // applying the old face's static abilities on the very next projection.
-                .without<ContinuousEffectSourceComponent>()
-                .without<ReplacementEffectSourceComponent>()
-
-            // Re-register the new face's static and replacement effects.
-            updated = staticAbilityHandler.addContinuousEffectComponent(updated, nextCardDef)
-            updated = staticAbilityHandler.addReplacementEffectComponent(updated, nextCardDef)
-            updated
-        }
-
-        return EffectResult.success(
-            newState,
-            listOf(
-                TransformedEvent(
-                    entityId = targetId,
-                    intoBackFace = intoBackFace,
-                    newFaceName = nextCardDef.name,
-                    controllerId = controllerId
-                )
-            )
-        )
+        return EffectResult.success(newState, listOf(event))
     }
 
+}
+
+/**
+ * Flip the double-faced permanent [entityId] to its opposite face **in place** on the battlefield
+ * (CR 701.27a) and return the new state paired with the [TransformedEvent] the flip emits, or `null`
+ * when [entityId] is not a double-faced permanent (the caller decides whether that's a no-op or an
+ * error). The entity id is stable; counters, damage, attachments, controller, and timestamp persist
+ * — only the identity characteristics change, and the new face's static/replacement effects are
+ * re-registered so layer projection picks them up on the next projection.
+ *
+ * The single shared implementation behind both [TransformEffectExecutor] (the [TransformEffect]
+ * one-shot) and [com.wingedsheep.engine.mechanics.daynight.DayNightService] (the immediate
+ * daybound/nightbound transforms of CR 702.145c/f). Routing both through here guarantees a day/night
+ * transform is byte-identical to any other transform and emits the same [TransformedEvent], so
+ * "whenever this transforms" triggers (e.g. Wildsong Howler) fire identically however the flip was
+ * caused.
+ */
+internal fun flipDfcInPlace(
+    state: GameState,
+    cardRegistry: CardRegistry,
+    entityId: EntityId
+): Pair<GameState, TransformedEvent>? {
+    val container = state.getEntity(entityId) ?: return null
+    val dfc = container.get<DoubleFacedComponent>() ?: return null
+    val currentCard = container.get<CardComponent>() ?: return null
+
+    // Rule 701.27a: transforming a DFC flips to the opposite face.
+    val nextFace = when (dfc.currentFace) {
+        DoubleFacedComponent.Face.FRONT -> DoubleFacedComponent.Face.BACK
+        DoubleFacedComponent.Face.BACK -> DoubleFacedComponent.Face.FRONT
+    }
+    val intoBackFace = nextFace == DoubleFacedComponent.Face.BACK
+
+    val nextDefinitionId = when (nextFace) {
+        DoubleFacedComponent.Face.FRONT -> dfc.frontCardDefinitionId
+        DoubleFacedComponent.Face.BACK -> dfc.backCardDefinitionId
+    }
+    val nextCardDef = cardRegistry.getCard(nextDefinitionId) ?: return null
+
+    val swappedCard = buildCardComponentForDfcFace(currentCard, nextCardDef)
+    // A DFC on the battlefield always has a controller; fall back to owner, and treat a truly
+    // owner-less object as un-flippable (null → the caller's no-op contract) rather than fabricate an id.
+    val controllerId = container.get<ControllerComponent>()?.playerId ?: currentCard.ownerId ?: return null
+
+    // Rule 712.8a: save the front face card so ZoneTransitionService can restore it
+    // without a registry lookup when the DFC leaves the battlefield on its back face.
+    val updatedDfc = if (intoBackFace) {
+        dfc.copy(currentFace = nextFace, frontFaceCard = currentCard)
+    } else {
+        dfc.copy(currentFace = nextFace, frontFaceCard = null)
+    }
+
+    val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
+    val newState = state.updateEntity(entityId) { c ->
+        var updated = c
+            .with(swappedCard)
+            .with(updatedDfc)
+            // Strip stale static-ability effect components so the layer projector stops
+            // applying the old face's static abilities on the very next projection.
+            .without<ContinuousEffectSourceComponent>()
+            .without<ReplacementEffectSourceComponent>()
+
+        // Re-register the new face's static and replacement effects.
+        updated = staticAbilityHandler.addContinuousEffectComponent(updated, nextCardDef)
+        updated = staticAbilityHandler.addReplacementEffectComponent(updated, nextCardDef)
+        updated
+    }
+
+    return newState to TransformedEvent(
+        entityId = entityId,
+        intoBackFace = intoBackFace,
+        newFaceName = nextCardDef.name,
+        controllerId = controllerId
+    )
 }
 
 /**

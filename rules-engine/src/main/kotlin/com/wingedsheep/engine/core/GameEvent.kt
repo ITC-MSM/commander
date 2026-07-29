@@ -860,6 +860,21 @@ data class TurnChangedEvent(
 ) : GameEvent
 
 /**
+ * The game's day/night designation changed (CR 731). [oldDesignation] is `null` when the game gains
+ * a designation from the "neither" state it starts in (CR 731.1); a non-null → non-null change is a
+ * "day becomes night" / "night becomes day" flip (CR 731.1a). [sourceName] attributes the change —
+ * the untap-step turn-based action (CR 502.2), a daybound/nightbound keyword (CR 702.145d/g), or an
+ * effect such as Into the Night.
+ */
+@Serializable
+@SerialName("DayNightChangedEvent")
+data class DayNightChangedEvent(
+    val oldDesignation: com.wingedsheep.sdk.core.DayNight?,
+    val newDesignation: com.wingedsheep.sdk.core.DayNight,
+    val sourceName: String
+) : GameEvent
+
+/**
  * Priority changed to a player.
  */
 @Serializable

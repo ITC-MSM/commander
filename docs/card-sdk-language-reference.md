@@ -1495,6 +1495,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   rider that adds an end step *and re-triggers in it* must guard against looping with
   `Conditions.IsFirstEndStepOfTurn` (see Conditions below) — Y'shtola only spawns the extra end step
   during the turn's first (natural) end step.
+- `Effects.BecomeDay` / `Effects.BecomeNight` (`SetDayNightEffect(DayNight.DAY | NIGHT)`) — "it becomes
+  day / night" (CR 731). Sets the game's global `GameState.dayNight` designation. This is the *spell/
+  ability* writer of the designation (Into the Night: "It becomes night"), one of three writers routed
+  through the single `DayNightService` — the other two are the untap-step turn-based action (CR 502.2 /
+  731.2) and the daybound/nightbound designation-start SBA (CR 702.145d/g). Re-declaring the current
+  designation is a no-op (emits nothing). A real flip emits a `DayNightChangedEvent` and, because a
+  designation change reconciles out-of-step daybound/nightbound permanents (CR 702.145c/f), one
+  `TransformedEvent` per permanent the flip cascades through `DayNightService.applyTransformCascade`.
+  Read the designation back with `Conditions.IsDay` / `Conditions.IsNight`.
 - `GatedEffect(gate, then, otherwise?, decisionMaker?)` — **the unified resolution frame for the
   optional / gated-effect cluster** (phase-rs Lesson 1). A `Gate` decides whether `then` runs; if it
   fails, `otherwise` runs. One executor + one continuation/resumer own the canonical unwind order, so
@@ -5152,6 +5161,32 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > fires once per non-flanking blocker with that blocker as the triggering entity, so each blocker
 > independently takes -1/-1; a blocker that also has flanking is excluded (CR 702.25c).
 
+> **Daybound / Nightbound** (CR 702.145, Innistrad: Midnight Hunt / Crimson Vow). The keyword pair on a
+> transforming double-faced werewolf: `card { daybound() }` on the **front** face, `card { nightbound() }`
+> on the **back** (import `com.wingedsheep.sdk.dsl.daybound` / `.nightbound` — extension helpers in
+> `dsl/mechanics/DayNightDsl.kt`). Like Flanking and Ward it is **"just the keyword"** — the DSL only
+> tags `Keyword.DAYBOUND` / `Keyword.NIGHTBOUND`, and every static ability the keywords carry is
+> derived off *projected* state by the engine, so a *granted* daybound/nightbound works with no extra
+> wiring. The behaviors:
+>
+> - **Enters transformed out of designation** (702.145b#1 / e#1) — when a daybound DFC would enter while
+>   it's night (or a nightbound while it's day), `StackResolver` enters it on its other face without
+>   emitting a `TransformedEvent`.
+> - **The designation-change cascade** (702.145b#2 / e#2) — whenever day/night flips,
+>   `DayNightService.applyTransformCascade` scans the battlefield and transforms every daybound
+>   permanent to its back as it becomes night, every nightbound to its front as it becomes day. The
+>   `DayNightCheck` state-based sweep catches permanents that arrive *out of step* (702.145c / f).
+> - **Can't transform except via the keyword** (702.145b#3 / e#2) — any other transform cause (a
+>   "transform target creature" effect) is refused at the `TransformEffect` executor boundary.
+> - **Designation start** (702.145d / g) — controlling a daybound permanent while it's *neither*
+>   day nor night makes it day; controlling a nightbound one with **no** daybound permanent anywhere
+>   makes it night (daybound wins the tie). Handled by the same `DayNightCheck` SBA.
+>
+> The keyword's reminder text is authored into `oracleText`; the display-level `Keyword.DAYBOUND` /
+> `Keyword.NIGHTBOUND` carry no combat behavior. See the `Effects.BecomeDay` / `Effects.BecomeNight`
+> effects (§4) and the `Conditions.IsDay` / `Conditions.IsNight` conditions (§12) for the rest of the
+> day/night surface, and [`com.wingedsheep.sdk.core.DayNight`] for the enum.
+
 **`Keyword` enum (display-level)**
 
 Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Plainswalk … Forestwalk), Desertwalk
@@ -5160,7 +5195,7 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Defender, Indestructible, Hexproof, Shroud, Haste,
 Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Storm, Flashback, Harmonize, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
-Offspring, Persist, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, … (display-only — engine effect lives in handlers or
+Offspring, Persist, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
 composite abilities).
 
 **Parameterized `KeywordAbility.*`**
@@ -5981,6 +6016,13 @@ that works in both resolution and static-ability (projection) contexts.
   (1-indexed once they're partway through their first turn). Reads
   `PlayerTurnsTakenComponent` set by `TurnManager.startTurn`. Used by Starting Town
   ("your first, second, or third turn of the game" → `n = 3`).
+- `IsDay` / `IsNight` — the game's day/night designation is day (resp. night) (CR 731). A global fact
+  read straight off `GameState.dayNight`; a game that is **neither** day nor night (its starting state,
+  CR 731.1) satisfies *neither* condition. Board-derived, so it evaluates identically at resolution and
+  under projection — usable both as a resolution-time gate (`ConditionalEffect(Conditions.IsNight, …)`,
+  Wolf Strike's "+2/+0 … if it's night") and as a `ConditionalStaticAbility` gate ("as long as it's
+  day/night"). Mirror pair; see also the `Effects.BecomeDay` / `Effects.BecomeNight` effects and the
+  `daybound()` / `nightbound()` keywords.
 
 ### Per-turn counts
 

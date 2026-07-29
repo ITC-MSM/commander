@@ -1108,6 +1108,23 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.RemoveMaximumHandSizeEffect(target)
 
     /**
+     * "It becomes day" (CR 731.1). Sets the game's day/night designation to day, cascading any
+     * daybound/nightbound transforms the change entails (CR 702.145e — back-face nightbound
+     * permanents transform to their front). A no-op if it's already day. See
+     * [com.wingedsheep.sdk.scripting.effects.SetDayNightEffect].
+     */
+    val BecomeDay: Effect =
+        com.wingedsheep.sdk.scripting.effects.SetDayNightEffect(com.wingedsheep.sdk.core.DayNight.DAY)
+
+    /**
+     * "It becomes night" (CR 731.1). Sets the game's day/night designation to night, cascading any
+     * daybound/nightbound transforms the change entails (CR 702.145b — front-face daybound
+     * permanents transform to their back). A no-op if it's already night. Used by Into the Night.
+     */
+    val BecomeNight: Effect =
+        com.wingedsheep.sdk.scripting.effects.SetDayNightEffect(com.wingedsheep.sdk.core.DayNight.NIGHT)
+
+    /**
      * "[target]'s maximum hand size is reduced by [amount] for the rest of the game" (Inspired
      * Idea). A one-shot resolution effect that confers a permanent, accumulating, player-scoped
      * reduction (survives the source leaving the stack), distinct from the battlefield-only
