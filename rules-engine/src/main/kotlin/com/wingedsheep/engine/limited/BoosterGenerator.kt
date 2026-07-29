@@ -31,6 +31,16 @@ class BoosterGenerator(
 ) {
 
     /**
+     * Return an isolated generator containing this generator's catalogue plus [extra].
+     *
+     * The original generator and its map are left untouched. Entries in [extra] intentionally
+     * replace entries with the same set code, which lets a lobby install a scoped synthetic set
+     * without mutating the application-wide catalogue.
+     */
+    fun withSets(extra: Map<String, SetConfig>): BoosterGenerator =
+        BoosterGenerator(availableSets + extra)
+
+    /**
      * Configuration for a card set that can be used for sealed.
      */
     data class SetConfig(
