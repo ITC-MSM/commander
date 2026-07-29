@@ -92,6 +92,7 @@ export function suggestBasicLands(input: SuggestLandsInput): Record<string, numb
       for (let i = 0; i < entry.count; i++) spells.push(entry)
     }
   }
+  if (spellCount === 0 && nonBasicLandCount === 0) return result
 
   // Curve-based total land target.
   const manaRockReduction = Math.floor(nonLandManaSourceCount / 2)
@@ -148,6 +149,14 @@ export function suggestBasicLands(input: SuggestLandsInput): Record<string, numb
     }
     basicsByColor[bestColor]++
     remaining--
+  }
+
+  // A partial/custom card catalog may not expose the basic type a deck asks
+  // for. Preserve the promised land total with the first available basic
+  // rather than silently returning an undersized deck.
+  if (remaining > 0) {
+    const fallback = availableBasics[0]
+    if (fallback) basicsByColor[fallback.color] += remaining
   }
 
   for (const color of COLORS) {
