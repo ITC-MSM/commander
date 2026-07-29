@@ -223,7 +223,14 @@ data class TriggeredAbilityOnStackComponent(
     val capturedEntityIds: List<EntityId> = emptyList(),
     /** Set when this triggered ability is a Saga chapter ability; on resolution the engine emits a
      *  SagaChapterResolvedEvent so "final chapter of a Saga resolves" triggers (Tom Bombadil) can fire. */
-    val sagaChapterInfo: com.wingedsheep.engine.event.SagaChapterInfo? = null
+    val sagaChapterInfo: com.wingedsheep.engine.event.SagaChapterInfo? = null,
+    /**
+     * Pipeline state carried from a `ReflexiveTriggerEffect`'s action half (e.g. `Amass`'s army
+     * reference, a discard's resolved count) into this synthetic reflexive ability's resolution —
+     * merged into the built `EffectContext.pipeline` since the reflexive ability builds a fresh
+     * context across the stack round-trip (CR 603.12). Null for ordinary triggered abilities.
+     */
+    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null
 ) : Component {
     val hasTargets: Boolean = false  // Will be updated based on effect
 }

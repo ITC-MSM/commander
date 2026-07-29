@@ -1198,6 +1198,11 @@ is PermanentsSacrificedEvent -> {
                 reason = event.reason
             )
 
+            // Internal signal only — TriggerDetector turns this into a real PendingTrigger for the
+            // reflexive ability, which emits its own AbilityTriggeredEvent/AbilityResolvedEvent (and
+            // AbilityFizzledEvent if its target becomes illegal) once it's actually on the stack.
+            is ReflexiveAbilityTriggeredEvent -> null
+
             is CardRevealedFromDrawEvent -> {
                 ClientEvent.CardsRevealed(
                     revealingPlayerId = event.playerId,

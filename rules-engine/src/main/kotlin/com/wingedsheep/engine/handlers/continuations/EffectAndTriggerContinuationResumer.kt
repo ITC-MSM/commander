@@ -39,8 +39,7 @@ class EffectAndTriggerContinuationResumer(
         resumer(MayRevealCardFromHandContinuation::class, ::resumeMayRevealCardFromHand),
         resumer(BeholdContinuation::class, ::resumeBehold),
         resumer(MayTriggerContinuation::class, ::resumeMayTrigger),
-        resumer(BatchMayTriggerContinuation::class, ::resumeBatchMayTrigger),
-        resumer(ReflexiveTriggerResolveContinuation::class, ::resumeReflexiveTriggerResolve)
+        resumer(BatchMayTriggerContinuation::class, ::resumeBatchMayTrigger)
     )
 
     private fun resumeEffect(
@@ -128,7 +127,8 @@ class EffectAndTriggerContinuationResumer(
                 triggerManaSpentOnTriggeringSpell = continuation.triggerManaSpentOnTriggeringSpell,
                 triggerColorsSpentOnTriggeringSpell = continuation.triggerColorsSpentOnTriggeringSpell,
                 triggerManaValueOfTriggeringSpell = continuation.triggerManaValueOfTriggeringSpell,
-                triggerXValueOfTriggeringSpell = continuation.triggerXValueOfTriggeringSpell
+                triggerXValueOfTriggeringSpell = continuation.triggerXValueOfTriggeringSpell,
+                carriedPipeline = continuation.carriedPipeline
             )
             val stackResult = services.stackResolver.putTriggeredAbility(state, elseComponent, emptyList())
             if (!stackResult.isSuccess) return stackResult
@@ -183,7 +183,8 @@ class EffectAndTriggerContinuationResumer(
             triggerManaSpentOnTriggeringSpell = continuation.triggerManaSpentOnTriggeringSpell,
             triggerColorsSpentOnTriggeringSpell = continuation.triggerColorsSpentOnTriggeringSpell,
             triggerManaValueOfTriggeringSpell = continuation.triggerManaValueOfTriggeringSpell,
-            triggerXValueOfTriggeringSpell = continuation.triggerXValueOfTriggeringSpell
+            triggerXValueOfTriggeringSpell = continuation.triggerXValueOfTriggeringSpell,
+            carriedPipeline = continuation.carriedPipeline
         )
 
         val stackResult = services.stackResolver.putTriggeredAbility(
@@ -580,41 +581,4 @@ class EffectAndTriggerContinuationResumer(
         return checkForMore(result.state, events + result.events.toList())
     }
 
-    private fun resumeReflexiveTriggerResolve(
-        state: GameState,
-        continuation: ReflexiveTriggerResolveContinuation,
-        response: DecisionResponse,
-        checkForMore: CheckForMore
-    ): ExecutionResult {
-        if (response !is TargetsResponse) {
-            return ExecutionResult.error(state, "Expected target selection response for reflexive trigger")
-        }
-
-        val selectedTargets = response.selectedTargets.flatMap { (_, targetIds) ->
-            targetIds.map { entityId -> entityIdToChosenTarget(state, entityId) }
-        }
-
-        if (selectedTargets.isEmpty()) {
-            // Player declined targets (optional) or no valid targets selected
-            return checkForMore(state, emptyList())
-        }
-
-        // Execute the reflexive effect with the chosen targets
-        val context = continuation.effectContext.copy(
-            targets = selectedTargets,
-            pipeline = continuation.effectContext.pipeline.copy(
-                namedTargets = com.wingedsheep.engine.handlers.EffectContext.buildNamedTargets(
-                    continuation.reflexiveTargetRequirements, selectedTargets
-                )
-            )
-        )
-
-        val result = services.effectExecutorRegistry.execute(state, continuation.reflexiveEffect, context).toExecutionResult()
-
-        if (result.isPaused) {
-            return result
-        }
-
-        return checkForMore(result.state, result.events.toList())
-    }
 }

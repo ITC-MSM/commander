@@ -179,23 +179,19 @@ class CoreAutoResumerModule(
             )
         },
 
+        // The action half of a `ReflexiveTriggerEffect` completed after pausing for its own
+        // decision (e.g. "sacrifice a creature" needing target selection) — emit the reflexive
+        // trigger event now instead of resolving it inline (CR 603.12).
         autoResumer(ReflexiveTriggerTargetContinuation::class) { state, continuation, events, checkForMore ->
-            // After the action completes, present target selection for the reflexive effect
-            val executor = com.wingedsheep.engine.handlers.effects.composite.ReflexiveTriggerEffectExecutor(
-                effectExecutor = services.effectExecutorRegistry::execute,
-                targetFinder = services.targetFinder,
-                decisionHandler = com.wingedsheep.engine.handlers.DecisionHandler()
-            )
-            val result = executor.presentReflexiveTargets(
-                state,
-                continuation.reflexiveEffect,
-                continuation.reflexiveTargetRequirements,
-                continuation.effectContext,
-                events
-            )
-            // Don't mergeAndContinue here — presentReflexiveTargets already returns
-            // the correct result (paused with target decision, or success if no targets)
-            result.toExecutionResult()
+            val event = com.wingedsheep.engine.handlers.effects.composite.ReflexiveTriggerEffectExecutor
+                .buildReflexiveTriggeredEvent(
+                    state,
+                    continuation.reflexiveEffect,
+                    continuation.reflexiveTargetRequirements,
+                    continuation.descriptionOverride,
+                    continuation.effectContext
+                )
+            checkForMore(state, events + event)
         }
     )
 }

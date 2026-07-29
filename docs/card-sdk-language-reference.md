@@ -1829,15 +1829,24 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   validation error — state `SuccessCriterion.Always` / `CollectionNonEmpty(name, min)` explicitly
   there (and use them whenever the inference is wrong). Wrap with `MayEffect` for the optional
   "You may [action]. If you do, [effect]" shape.
-- `ReflexiveTriggerEffect(action, reflexive, optional)` — same shape but the reflexive effect goes on the stack.
-  Targets in `reflexiveTargetRequirements` are chosen *after* `action` resolves, against the resolving
-  ability's live pipeline. A `TargetObject.dynamicMaxCount` on a reflexive requirement is therefore
-  resolved against that pipeline — so "up to **that many** target …" can read a count a preceding action
-  stored, e.g. `dynamicMaxCount = DynamicAmount.VariableReference("discarded_count")` paired with
+- `ReflexiveTriggerEffect(action, reflexive, optional)` — "You may/do [action]. **When you do**,
+  [reflexiveEffect]." **The reflexive half is a genuinely separate CR 603.12 triggered ability — a
+  real second stack object**, not something resolved inline as part of the original ability. Once
+  `action` completes, `ReflexiveTriggerEffectExecutor` emits a `ReflexiveAbilityTriggeredEvent`;
+  `TriggerDetector.detectReflexiveTriggers` turns that into a real `PendingTrigger` and hands it to
+  the ordinary `TriggerProcessor` pipeline — the same target-selection/stack-placement code path any
+  other triggered ability uses. Concretely this means: the reflexive ability's target(s) are chosen
+  as it's placed on the stack (not while the action resolves), players get a genuine priority window
+  before it resolves (so an opponent can respond and make its target illegal), and CR 608.2b
+  illegal-target fizzle applies automatically — none of which an inline resolution could offer.
+  `reflexiveTargetRequirements` targets are found against the resolving ability's live pipeline, so a
+  `TargetObject.dynamicMaxCount` on a reflexive requirement can read a count the *action* stored, e.g.
+  `dynamicMaxCount = DynamicAmount.VariableReference("discarded_count")` paired with
   `Patterns.Hand.discardAnyNumber()` (Miasma Demon: "you may discard any number of cards. When you do, up
-  to that many target creatures each get -2/-2"). This differs from the cast-time path
-  (`TargetValidator.effectiveMaxCount`), where the pipeline isn't live yet — pipeline-linked caps only
-  work on reflexive/resolution-time targets.
+  to that many target creatures each get -2/-2") — this pipeline state is carried across the stack
+  round-trip via `PendingTrigger.carriedPipeline`/`TriggeredAbilityOnStackComponent.carriedPipeline`.
+  This differs from the cast-time path (`TargetValidator.effectiveMaxCount`), where the pipeline isn't
+  live yet — pipeline-linked caps only work on reflexive/resolution-time targets.
 - **Branching on gathered properties** — "reveal/look, if it's a [type] do X, otherwise Y" needs no
   bespoke effect type; it is the partition + collection-gate composition:
   1. **Partition:** `FilterCollection(from, CollectionFilter.MatchesFilter(filter), storeMatching,
