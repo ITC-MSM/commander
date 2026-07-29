@@ -134,6 +134,11 @@ data class AiProfile(
      * makes `v0-rollout` an attributable one-variable change from `v0`.
      */
     val rollouts: RolloutSettings? = null,
+    /**
+     * Phase 8: sample opponent hand identities and library order before rollout evaluation.
+     * Off preserves the historical full-information agents used as arena controls.
+     */
+    val determinizeHiddenInformation: Boolean = false,
 ) {
     companion object {
         /**
@@ -200,6 +205,13 @@ data class AiProfile(
         val PHASE7 = AiProfile(
             id = "v0-rollout",
             rollouts = RolloutSettings.DEFAULT,
+        )
+
+        /** Phase 7 search over a fair, sampled hidden-information state. */
+        val PHASE8 = AiProfile(
+            id = "v0-rollout-determinized",
+            rollouts = RolloutSettings.DEFAULT,
+            determinizeHiddenInformation = true,
         )
 
         /** Everything Phases 4, 6 and 7 add — what the plan proposes to ship. */

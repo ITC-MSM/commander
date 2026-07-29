@@ -56,6 +56,27 @@ is `map(::score)`, so `LEGACY_V0` is bit-identical; `FrozenBaselineTest` is what
 
 ---
 
+## Hidden information (Phase 8)
+
+Rollout profiles may enable determinization. Before any candidate is simulated, `Strategist` asks
+`Determinizer` for one world consistent with the acting player's view and uses that same root for
+every candidate. Sampling before the one-ply simulation matters because pending decisions reached
+by that simulation can inspect hidden zones too. Sharing the world is essential: independently
+sampling candidates would make hidden-information variance look like move quality.
+
+`Visibility` in `rules-engine/view` is the common oracle for both client masking and AI
+determinization. The determinizer rewrites identities, never entities: entity IDs, zone membership,
+pending decisions, targets and continuations remain intact. Individually revealed cards and cards
+carrying runtime state are pinned. With a known decklist it samples from `decklist − seen`;
+otherwise it permutes the existing hidden multiset. That fallback removes exact hand and
+library-order knowledge, but remains “cheating-lite” because it knows which cards exist unseen.
+
+Phase 8 starts with one shared determinization per search. More worlds compete directly with rollout
+count, so raising K requires an arena result showing it buys more strength at the same wall-clock
+budget.
+
+---
+
 ## Scores are in raw evaluator units, everywhere above the leaf
 
 The pass comparison, the hold policy's `±1.5`, and a `CardAdvisor` returning `defaultScore + 2.0`

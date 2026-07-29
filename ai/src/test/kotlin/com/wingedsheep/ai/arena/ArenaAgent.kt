@@ -8,6 +8,7 @@ import com.wingedsheep.ai.engine.advisor.modules.OnslaughtAdvisorModule
 import com.wingedsheep.ai.engine.budget.RolloutBudgetPolicy
 import com.wingedsheep.ai.engine.budget.TieredBudgetPolicy
 import com.wingedsheep.ai.engine.rollout.RolloutSettings
+import com.wingedsheep.ai.engine.hidden.OpponentModel
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.model.EntityId
 
@@ -20,8 +21,17 @@ import com.wingedsheep.sdk.model.EntityId
  * recursion guard across concurrent games.
  */
 data class ArenaAgent(val name: String, val profile: AiProfile) {
-    fun createPlayer(registry: CardRegistry, playerId: EntityId): AIPlayer =
-        AIPlayer.create(registry, playerId, profile)
+    fun createPlayer(
+        registry: CardRegistry,
+        playerId: EntityId,
+        opponentDecks: Map<EntityId, Map<String, Int>> = emptyMap(),
+    ): AIPlayer =
+        AIPlayer.create(
+            registry,
+            playerId,
+            profile,
+            opponentDecks.mapValues { OpponentModel.KnownDecklist(it.value) },
+        )
 }
 
 /**
@@ -83,6 +93,7 @@ object ArenaAgents {
         // is what makes its number attributable to the rollouts. Still ~50× a `v0` game, so size
         // runs accordingly.
         ArenaAgent("v0-rollout", AiProfile.PHASE7),
+        ArenaAgent("v0-rollout-determinized", AiProfile.PHASE8),
         // The rollout ladder: the same agent at four playout counts. Two jobs. It makes the arena
         // affordable, and it is Phase 7's safety net — the direct analogue of
         // `ArenaBudgetScalingTest`. What it measured: strength rises from 4 to 8 playouts and then

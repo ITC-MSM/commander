@@ -4,6 +4,8 @@ import com.wingedsheep.ai.engine.advisor.CardAdvisorModule
 import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
 import com.wingedsheep.ai.engine.evaluation.*
 import com.wingedsheep.ai.engine.knowledge.IntentCatalog
+import com.wingedsheep.ai.engine.hidden.Determinizer
+import com.wingedsheep.ai.engine.hidden.OpponentModel
 import com.wingedsheep.ai.engine.rollout.CandidateEvaluator
 import com.wingedsheep.ai.engine.rollout.FastDecisionResponder
 import com.wingedsheep.ai.engine.rollout.PlayoutEngine
@@ -176,7 +178,8 @@ class AIPlayer(
         fun create(
             cardRegistry: CardRegistry,
             playerId: EntityId,
-            profile: AiProfile
+            profile: AiProfile,
+            opponentModels: Map<EntityId, OpponentModel> = emptyMap(),
         ): AIPlayer {
             val advisorRegistry = CardAdvisorRegistry()
             profile.advisorModules.forEach { it.register(advisorRegistry) }
@@ -216,6 +219,15 @@ class AIPlayer(
                     candidateEvaluator = candidateEvaluatorFor(
                         cardRegistry, profile, evaluator, advisorRegistry, intents
                     ),
+                    stateSampler = if (profile.determinizeHiddenInformation) {
+                        val determinizer = Determinizer(cardRegistry)
+                        val sampler: (GameState, EntityId) -> GameState = { state, viewer ->
+                            determinizer.sampleForSearch(state, viewer, opponentModels)
+                        }
+                        sampler
+                    } else {
+                        null
+                    },
                 ),
                 responder = responder,
                 useMeaningfulFilter = profile.useMeaningfulFilter,
@@ -252,7 +264,11 @@ class AIPlayer(
                 decisions = FastDecisionResponder(intents),
                 settings = settings,
             )
-            return RolloutCandidateEvaluator(engine, evaluator, settings)
+            return RolloutCandidateEvaluator(
+                playouts = engine,
+                staticEvaluator = evaluator,
+                settings = settings,
+            )
         }
 
         /**

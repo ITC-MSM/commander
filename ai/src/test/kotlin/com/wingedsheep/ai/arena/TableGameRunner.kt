@@ -202,7 +202,15 @@ object TableGameRunner {
         // startingPlayerIndex = 0 keeps turnOrder aligned with the configured player order, so
         // seat index and turnOrder index are the same thing.
         val seatIds = init.state.turnOrder
-        val players = seatIds.mapIndexed { seat, id -> agents[seat].createPlayer(registry, id) }
+        val decklistsByPlayer = seatIds.mapIndexed { seat, id ->
+            val deck = decks[seat]
+            val names = if (deck.cardEntries.isNotEmpty()) deck.cardEntries.map { it.name } else deck.cards
+            val allNames = names + listOfNotNull(deck.commander)
+            id to allNames.groupingBy { it }.eachCount()
+        }.toMap()
+        val players = seatIds.mapIndexed { seat, id ->
+            agents[seat].createPlayer(registry, id, decklistsByPlayer)
+        }
         val bySeat = seatIds.withIndex().associate { (seat, id) -> id to seat }
         fun seatOf(playerId: EntityId) = bySeat[playerId] ?: -1
         fun aiFor(playerId: EntityId) = players[seatOf(playerId)]
