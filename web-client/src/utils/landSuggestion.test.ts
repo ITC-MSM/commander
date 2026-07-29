@@ -90,6 +90,37 @@ describe('suggestBasicLands', () => {
     expect((result.Plains ?? 0) + (result.Island ?? 0)).toBe(17)
   })
 
+  it('suggests no off-color basic for a hybrid pip the deck can already pay', () => {
+    const result = suggestBasicLands({
+      entries: [
+        spell('Green one-drop', '{G}', 1, 8),
+        spell('Black one-drop', '{B}', 1, 7),
+        spell('Green three-drop', '{2}{G}', 3, 7),
+        spell('Wary Farmer', '{1}{G/W}{G/W}', 3, 1),
+      ],
+      availableBasics: basics,
+      minDeckSize: 40,
+    })
+
+    expect(result.Plains).toBe(0)
+    expect((result.Forest ?? 0) + (result.Swamp ?? 0)).toBe(17)
+  })
+
+  it('charges a two-color hybrid to whichever of its colors the deck needs most', () => {
+    const result = suggestBasicLands({
+      entries: [
+        spell('Green one-drop', '{G}', 1, 14),
+        spell('Black splash', '{3}{B}', 4, 1),
+        spell('Golgari hybrid', '{4}{B/G}', 5, 8),
+      ],
+      availableBasics: basics,
+      minDeckSize: 40,
+    })
+
+    expect(result.Swamp).toBeLessThanOrEqual(3)
+    expect((result.Forest ?? 0) + (result.Swamp ?? 0)).toBe(17)
+  })
+
   it('puts every basic into the sole color of a mono-color Limited deck', () => {
     const result = suggestBasicLands({
       entries: [spell('Green spell', '{2}{G}', 3, 23)],

@@ -106,7 +106,7 @@ export function suggestBasicLands(input: SuggestLandsInput): Record<string, numb
     minDeckSize > 0 && minBasedBasics > 0 ? minBasedBasics : Math.max(ratioBasedBasics, 0)
   if (targetBasics === 0) return result
 
-  const requirements = spells.flatMap(colorRequirements)
+  const requirements = deckColorRequirements(spells)
   const usedColors = new Set(requirements.map((r) => r.color))
 
   // Colorless deck: dump everything into the first available basic.
@@ -219,10 +219,33 @@ interface ColorRequirement {
   readonly weight: number
 }
 
-function colorRequirements(card: DeckEntry): ColorRequirement[] {
+interface ParsedCost {
+  /** Mandatory single-color pips — the colors the deck is committed to. */
+  readonly plain: Record<LandColor, number>
+  /** One entry per hybrid symbol, holding the colors that can pay it. */
+  readonly hybrids: readonly LandColor[][]
+  readonly turn: number
+}
+
+/**
+ * Two passes: first tally the deck's mandatory pips, then resolve every hybrid
+ * symbol against them. A hybrid whose sides include a color the deck already
+ * needs is always payable there, so it must not manufacture demand for its
+ * other side — a green deck with a {G/W}{G/W} creature wants Forests, never
+ * Plains.
+ */
+function deckColorRequirements(spells: readonly DeckEntry[]): ColorRequirement[] {
+  const costs = spells.map(parseCost)
+  const deckPlainPips: Record<LandColor, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 }
+  for (const cost of costs) {
+    for (const color of COLORS) deckPlainPips[color] += cost.plain[color]
+  }
+  return costs.flatMap((cost) => colorRequirements(cost, deckPlainPips))
+}
+
+function parseCost(card: DeckEntry): ParsedCost {
   const plain: Record<LandColor, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 }
-  const hybridPips: Record<LandColor, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 }
-  const hybridWeights: Record<LandColor, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 }
+  const hybrids: LandColor[][] = []
   // Faces are alternative costs, never one combined cost. Card summaries use
   // the front/primary face first, matching what the deckbuilder displays.
   const primaryCost = card.manaCost.split('//', 1)[0] ?? card.manaCost
@@ -237,15 +260,36 @@ function colorRequirements(card: DeckEntry): ColorRequirement[] {
     // a mandatory colored-source requirement.
     if (rawSides.includes('P')) continue
     const sides = rawSides.filter((s): s is LandColor => COLORS.includes(s as LandColor))
-    if (sides.length > 0) {
-      for (const side of sides) {
-        hybridPips[side]++
-        hybridWeights[side] += 1 / sides.length
-      }
+    if (sides.length > 0) hybrids.push(sides)
+  }
+  return { plain, hybrids, turn: Math.max(1, Math.ceil(card.cmc)) }
+}
+
+function colorRequirements(
+  cost: ParsedCost,
+  deckPlainPips: Record<LandColor, number>,
+): ColorRequirement[] {
+  const plain: Record<LandColor, number> = { ...cost.plain }
+  const hybridPips: Record<LandColor, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 }
+  const hybridWeights: Record<LandColor, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 }
+  for (const sides of cost.hybrids) {
+    const covered = sides.filter((side) => deckPlainPips[side] > 0)
+    if (covered.length > 0) {
+      // Charge the pip to the color the deck leans on hardest: that's how it
+      // will actually be paid, and it keeps pip density on the real color.
+      const host = covered.reduce((a, b) => (deckPlainPips[b] > deckPlainPips[a] ? b : a))
+      plain[host]++
+      continue
+    }
+    // No side is a color the deck otherwise needs, so split the demand and let
+    // the allocator decide which half to support.
+    for (const side of sides) {
+      hybridPips[side]++
+      hybridWeights[side] += 1 / sides.length
     }
   }
 
-  const turn = Math.max(1, Math.ceil(card.cmc))
+  const turn = cost.turn
   const out: ColorRequirement[] = []
   for (const color of COLORS) {
     // Missing the second/third source for a pip-dense spell is more damaging
