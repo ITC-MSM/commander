@@ -347,7 +347,7 @@ class ManaSolver(
             .filter { it.entityId !in excludeSources }
             // Auto-pay must not silently sacrifice permanents (e.g. Treasure tokens).
             // The bonus-mana accounting in canPay() still counts these via
-            // calculateSacrificeSelfBonusMana(), but the solver itself never picks them.
+            // sacrificeSelfManaBySource(), but the solver itself never picks them.
             .filter { !it.requiresSacrifice }
             // Same rule for composite Tap+TapPermanents sources (Springleaf Drum) — the
             // resumer must prompt the player to pick which creature gets tapped, so the
@@ -1225,7 +1225,14 @@ class ManaSolver(
                 // so route them through the bonus-mana channel. Only unconditional AddMana/
                 // AddColorlessMana leaves are folded — anything gated/choice-based stays with the
                 // primary path to avoid over-counting.
-                if (ability.effect is CompositeEffect && manaEffect is AddManaEffect) {
+                // …but only from an ability auto-pay is actually allowed to activate. The bonus-mana
+                // channel carries no provenance, so a sacrifice-gated (Ancient Spring's "{T},
+                // Sacrifice this land: Add {W}{B}") or tap-another-permanent ability would donate
+                // free floating mana on top of the source's sacrifice-free tap — letting auto-pay
+                // spend {W}{B} it never paid for. The primary leaf's color is already fenced off by
+                // colorsRequiringSacrifice / tapPermanentsSubCost; the extra leaves are dropped here.
+                val abilityIsAutoPayable = !abilityRequiresSacrifice && abilityTapPermanentsSubCost == null
+                if (abilityIsAutoPayable && ability.effect is CompositeEffect && manaEffect is AddManaEffect) {
                     var seenPrimary = false
                     for (leaf in (ability.effect as CompositeEffect).effects) {
                         when (leaf) {
@@ -1969,8 +1976,9 @@ class ManaSolver(
         //     ability directly. But the spell is still *affordable* — we just need to know it.
         //  3. Cost shapes findAvailableManaSources doesn't model at all (Ashnod's Altar's
         //     "Sacrifice a creature: Add {C}{C}" — no {T} anywhere in the cost).
+        val sacrificeManaBySource = sacrificeSelfManaBySource(state, playerId)
         val bonus = calculateTapPermanentsBonusMana(state, playerId)
-            .plus(calculateSacrificeSelfBonusMana(state, playerId))
+            .plus(sacrificeManaBySource.values.fold(TapPermanentsBonusMana()) { acc, p -> acc + p })
             .plus(calculateCompositeTapPermanentsBonusMana(state, playerId))
             .plus(calculateExplicitActivationBonusMana(state, playerId))
         if (bonus.totalMana == 0) return false
@@ -1994,7 +2002,20 @@ class ManaSolver(
         val augmentedXRemaining = totalXMana - augmentedXPaid
 
         if (augmentedRemaining.isEmpty() && augmentedXRemaining == 0) return true
-        return solve(state, playerId, augmentedRemaining, augmentedXRemaining, excludeSources, spellContext, precomputedSources) != null
+        // Spending a permanent's tap+sacrifice ability uses up its {T}, so it can't also be
+        // auto-tapped for the rest of the cost. Pure sacrifice sources (Treasures) are already
+        // dropped by solve(); this only bites *mixed* sources like Ancient Spring, where counting
+        // both abilities would claim {U} and {W}{B} from one land.
+        val sacrificeConsumedIds = sacrificeManaBySource.keys
+        return solve(
+            state,
+            playerId,
+            augmentedRemaining,
+            augmentedXRemaining,
+            excludeSources + sacrificeConsumedIds,
+            spellContext,
+            precomputedSources
+        ) != null
     }
 
     /**
@@ -2027,17 +2048,33 @@ class ManaSolver(
         // Sacrifice-self sources (treasures) and composite tap+TapPermanents sources
         // (Springleaf Drum) are counted below via their dedicated bonus helpers, so skip
         // them here to avoid double-counting.
-        val sourceMana = (precomputedSources ?: findAvailableManaSources(state, playerId))
+        val sacrificeManaBySource = sacrificeSelfManaBySource(state, playerId)
+        val autoTappableSources = (precomputedSources ?: findAvailableManaSources(state, playerId))
             .filter { !it.requiresSacrifice && it.tapPermanentsSubCost == null }
-            .sumOf { it.manaAmount + it.bonusManaPerTap }
+        val sourceMana = autoTappableSources
+            // A *mixed* source (Ancient Spring — "{T}: Add {U}" plus "{T}, Sacrifice this land:
+            // Add {W}{B}") is auto-tappable and so counted here, but its sacrifice ability is also
+            // counted by the extras helper below. Both abilities spend the same {T}, so the
+            // permanent yields the better of the two — never their sum.
+            .sumOf { source ->
+                maxOf(
+                    source.manaAmount + source.bonusManaPerTap,
+                    sacrificeManaBySource[source.entityId]?.totalMana ?: 0
+                )
+            }
 
         // Add extra mana from "extras" abilities the solver doesn't pick:
         //  - TapPermanents (e.g., Birchlore Rangers)
         //  - Tap+SacrificeSelf mana abilities (e.g., Treasure tokens)
         //  - Composite Tap+TapPermanents mana abilities (e.g., Springleaf Drum)
         //  - Costs with no {T} at all, which the solver doesn't model (e.g., Ashnod's Altar)
+        val autoTappableIds = autoTappableSources.map { it.entityId }.toSet()
+        val sacrificeExtras = sacrificeManaBySource
+            .filterKeys { it !in autoTappableIds }
+            .values
+            .sumOf { it.totalMana }
         val extrasMana = calculateTapPermanentsBonusMana(state, playerId).totalMana +
-            calculateSacrificeSelfBonusMana(state, playerId).totalMana +
+            sacrificeExtras +
             calculateCompositeTapPermanentsBonusMana(state, playerId).totalMana +
             calculateExplicitActivationBonusMana(state, playerId).totalMana
 
@@ -2212,7 +2249,7 @@ class ManaSolver(
      * `canPay` and `getAvailableManaCount`.
      *
      * Mirrors the accept conditions of `abilityCanBeUsed` inside [findAvailableManaSources] and the
-     * cost shapes matched by [calculateTapPermanentsBonusMana], [calculateSacrificeSelfBonusMana]
+     * cost shapes matched by [calculateTapPermanentsBonusMana], [sacrificeSelfManaBySource]
      * and [calculateCompositeTapPermanentsBonusMana]. `ManaSolverExtrasNoDoubleCountTest` pins the
      * two together: it asserts the available-mana count for a Treasure / Birchlore / Springleaf
      * board is unchanged by this helper.
@@ -2330,17 +2367,19 @@ class ManaSolver(
      * be silently paid by the auto-pay flow — the player has to activate the ability directly so
      * the sacrifice is explicit. But the spell is still *affordable* when the player has these
      * permanents available, so `canPay` and `getAvailableManaCount` must count their production.
+     *
+     * Reported per permanent because both callers also count a permanent's *sacrifice-free* mana
+     * ability, and the two share one {T}: a mixed source (Ancient Spring — "{T}: Add {U}" plus
+     * "{T}, Sacrifice this land: Add {W}{B}") produces one or the other, never the sum.
      */
-    internal fun calculateSacrificeSelfBonusMana(
+    internal fun sacrificeSelfManaBySource(
         state: GameState,
         playerId: EntityId
-    ): TapPermanentsBonusMana {
+    ): Map<EntityId, TapPermanentsBonusMana> {
         val projected = state.projectedState
         val battlefieldCards = projected.getBattlefieldControlledBy(playerId)
 
-        var anyColorTotal = 0
-        val specificColorTotal = mutableMapOf<Color, Int>()
-        var colorlessTotal = 0
+        val bySource = mutableMapOf<EntityId, TapPermanentsBonusMana>()
 
         for (entityId in battlefieldCards) {
             val container = state.getEntity(entityId) ?: continue
@@ -2383,21 +2422,17 @@ class ManaSolver(
                 // `Effects.Composite(AddMana(GREEN), AddMana(BLUE))`) are counted in full
                 // rather than dropping to the unhandled `else` branch and contributing zero.
                 val produced = manaProducedByEffect(ability.effect)
-                anyColorTotal += produced.anyColorMana
-                for ((color, amount) in produced.specificMana) {
-                    specificColorTotal[color] = (specificColorTotal[color] ?: 0) + amount
-                }
-                colorlessTotal += produced.colorlessMana
+                bySource[entityId] = (bySource[entityId] ?: TapPermanentsBonusMana()) + produced
             }
         }
 
-        return TapPermanentsBonusMana(anyColorTotal, specificColorTotal, colorlessTotal)
+        return bySource
     }
 
     /**
      * Mana produced by a single mana-ability effect, recursing into [CompositeEffect].
      *
-     * Used by the "bonus mana" affordability helpers (e.g. [calculateSacrificeSelfBonusMana])
+     * Used by the "bonus mana" affordability helpers (e.g. [sacrificeSelfManaBySource])
      * so an ability that adds several mana via `Effects.Composite(AddMana(...), AddMana(...))`
      * is counted in full. Without the recursion such an effect falls into the `else` branch and
      * contributes nothing, so a spell payable only by that ability is wrongly reported
@@ -2493,7 +2528,7 @@ class ManaSolver(
                     .firstNotNullOfOrNull { (it as? AbilityCost.Atom)?.atom as? CostAtom.TapPermanents }
                 if (!hasTap || tapPermanentsCost == null) continue
                 // Skip composites that also bundle SacrificeSelf or a mana sub-cost — those are
-                // handled by other helpers (calculateSacrificeSelfBonusMana) and would
+                // handled by other helpers (sacrificeSelfManaBySource) and would
                 // double-count or complicate color resolution here.
                 if (composite.costs.any { it is AbilityCost.SacrificeSelf || it.manaCostOrNull != null }) continue
 
