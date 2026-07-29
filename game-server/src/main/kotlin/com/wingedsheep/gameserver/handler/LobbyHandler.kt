@@ -22,6 +22,10 @@ import com.wingedsheep.gameserver.config.GameProperties
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.gameserver.deck.DeckValidator
 import com.wingedsheep.gameserver.deck.EasterEggDeckInjector
+import com.wingedsheep.gameserver.cube.CubeCardEntry
+import com.wingedsheep.gameserver.cube.CubeList
+import com.wingedsheep.gameserver.cube.CubeResolution
+import com.wingedsheep.gameserver.cube.CubeResolver
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import jakarta.annotation.PostConstruct
@@ -1198,12 +1202,17 @@ class LobbyHandler(
         // Reveal any deferred "Random Set" placeholders now that the game is starting — the concrete
         // sets stay hidden in the lobby until this moment (mirrors the Quick Game deferred roll). Done
         // before the extension gate and pool generation so both see concrete, validated set codes.
-        lobby.resolveRandomSets()
+        if (!lobby.isCube) lobby.resolveRandomSets()
+
+        lobby.cubeCapacityError()?.let { error ->
+            sender.sendError(session, ErrorCode.INVALID_ACTION, error)
+            return
+        }
 
         // Booster-based formats can't run on extension sets alone (Premade brings its own decks
         // and ignores the set selection). The lobby may hold an extension-only selection while
         // the host is still assembling it, so this start gate is where the rule is enforced.
-        if (lobby.format != TournamentFormat.PREMADE_DECKS) {
+        if (lobby.format != TournamentFormat.PREMADE_DECKS && !lobby.isCube) {
             extensionOnlyError(lobby.setCodes.mapNotNull { boosterGenerator.getSetConfig(it) })?.let { error ->
                 sender.sendError(session, ErrorCode.INVALID_ACTION, error)
                 return
@@ -2014,8 +2023,54 @@ class LobbyHandler(
             return
         }
 
+        // Cube settings are a full replacement, like the ban list. Resolve immediately so an
+        // unplayable list never becomes lobby state. Empty returns to catalogued-set mode.
+        message.cubeCards?.let { rawNames ->
+            val names = rawNames.map { it.trim() }.filter { it.isNotEmpty() }
+            if (names.isEmpty()) {
+                lobby.configureCube(null)
+                lobby.setCodes = emptyList()
+                lobby.setNames = emptyList()
+                lobby.boosterDistribution = emptyMap()
+            } else {
+                val name = message.cubeName?.trim().orEmpty()
+                if (name.isEmpty()) {
+                    sender.sendError(session, ErrorCode.INVALID_ACTION, "Cube name is required")
+                    return
+                }
+                val basicLandSetCode = message.cubeBasicLandSetCode?.trim().orEmpty()
+                if (boosterGenerator.getSetConfig(basicLandSetCode) == null) {
+                    sender.sendError(session, ErrorCode.INVALID_ACTION, "Invalid cube basic-land set code: $basicLandSetCode")
+                    return
+                }
+                val cubeList = runCatching {
+                    CubeList(
+                        name = name,
+                        cards = names.map { CubeCardEntry(it) },
+                        basicLandSetCode = basicLandSetCode,
+                        packSize = message.packSize ?: CubeList.DEFAULT_PACK_SIZE,
+                    )
+                }.getOrElse {
+                    sender.sendError(session, ErrorCode.INVALID_ACTION, it.message ?: "Invalid cube settings")
+                    return
+                }
+                when (val resolution = CubeResolver(cardRegistry, printingRegistry).resolve(cubeList)) {
+                    is CubeResolution.Success -> lobby.configureCube(resolution.cube)
+                    is CubeResolution.Failure -> {
+                        val misses = resolution.unresolved.joinToString(", ") { it.name }
+                        sender.sendError(
+                            session,
+                            ErrorCode.INVALID_ACTION,
+                            "${resolution.unresolved.size} cube cards aren't implemented: $misses",
+                        )
+                        return
+                    }
+                }
+            }
+        }
+
         // Update sets if provided (can be empty to disable start)
-        message.setCodes?.let { newSetCodes ->
+        if (!lobby.isCube) message.setCodes?.let { newSetCodes ->
             // Allow empty setCodes to disable start button (but won't be able to start)
             // An extension-only selection is allowed here as an intermediate state (the host may
             // add the extension set first, then the base set) — the start handler is the gate.
@@ -2166,7 +2221,7 @@ class LobbyHandler(
         }
 
         // Manual booster distribution override (apply after boosterCount)
-        message.boosterDistribution?.let { dist ->
+        if (!lobby.isCube) message.boosterDistribution?.let { dist ->
             // Validate: all keys must be in setCodes, values must be positive, total must equal boosterCount
             val validKeys = dist.keys.all { it in lobby.setCodes }
             val allPositive = dist.values.all { it >= 0 }
@@ -2219,7 +2274,7 @@ class LobbyHandler(
             }
         }
 
-        message.chaosBoosters?.let { lobby.chaosBoosters = it }
+        if (!lobby.isCube) message.chaosBoosters?.let { lobby.chaosBoosters = it }
 
         // Host ban list — the full list is sent each time (not a delta). Trim, drop blanks and
         // duplicates; unknown names are kept as-is (they simply never match a card in the pool),

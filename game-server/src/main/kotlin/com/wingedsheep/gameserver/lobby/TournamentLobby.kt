@@ -1,8 +1,11 @@
 package com.wingedsheep.gameserver.lobby
 
 import com.wingedsheep.gameserver.deck.SideboardDerivation
+import com.wingedsheep.gameserver.cube.CubeSetConfig
+import com.wingedsheep.gameserver.cube.ResolvedCube
 import com.wingedsheep.gameserver.protocol.ServerMessage
 import com.wingedsheep.engine.limited.BoosterGenerator
+import com.wingedsheep.engine.limited.CubeDealer
 import com.wingedsheep.gameserver.session.PlayerIdentity
 import com.wingedsheep.sdk.limited.BoosterStrategy
 import com.wingedsheep.sdk.limited.CommanderDraftBooster
@@ -330,6 +333,99 @@ class TournamentLobby(
      */
     var ranked: Boolean = false,
 ) {
+    var cube: ResolvedCube? = null
+        private set
+
+    val isCube: Boolean get() = cube != null
+    val packSize: Int get() = cube?.packSize ?: 0
+
+    private var cubeBoosterGenerator: BoosterGenerator? = null
+    private var cubeDealer: CubeDealer? = null
+
+    fun cubeDealerRemainingCards(): List<CardDefinition> = cubeDealer?.remainingCards().orEmpty()
+
+    fun restoreCubeDealer(remainingCards: List<CardDefinition>) {
+        val resolvedCube = requireNotNull(cube) { "Cannot restore a cube dealer without a cube" }
+        cubeDealer = CubeDealer.resume(remainingCards, resolvedCube.packSize)
+    }
+
+    fun configureCube(resolvedCube: ResolvedCube?) {
+        require(state == LobbyState.WAITING_FOR_PLAYERS) { "Cannot change cube after start" }
+        cube = resolvedCube
+        cubeDealer = null
+        cubeBoosterGenerator = resolvedCube?.let {
+            boosterGenerator.withSets(mapOf(CubeSetConfig.SET_CODE to CubeSetConfig.of(it, boosterGenerator)))
+        }
+        if (resolvedCube != null) {
+            setCodes = listOf(CubeSetConfig.SET_CODE)
+            setNames = listOf(resolvedCube.name)
+            boosterDistribution = emptyMap()
+            chaosBoosters = false
+        }
+    }
+
+    fun cubeCapacityError(): String? {
+        val resolvedCube = cube ?: return null
+        if (format == TournamentFormat.PREMADE_DECKS) return null
+        val packsNeeded = when (format) {
+            TournamentFormat.SEALED, TournamentFormat.COMMANDER_SEALED,
+            TournamentFormat.DRAFT, TournamentFormat.COMMANDER_DRAFT -> players.size * boosterCount
+            TournamentFormat.WINSTON_DRAFT, TournamentFormat.GRID_DRAFT -> boosterCount
+            TournamentFormat.PREMADE_DECKS -> 0
+        }
+        val usableCards = resolvedCube.cards.count { card ->
+            bannedCardNames.none { it.equals(card.name, ignoreCase = true) }
+        }
+        val cardsNeeded = packsNeeded * resolvedCube.packSize
+        if (cardsNeeded <= usableCards) return null
+        val calculation = when (format) {
+            TournamentFormat.SEALED, TournamentFormat.COMMANDER_SEALED,
+            TournamentFormat.DRAFT, TournamentFormat.COMMANDER_DRAFT ->
+                "${players.size} players × $boosterCount packs × ${resolvedCube.packSize}"
+            else -> "$boosterCount packs × ${resolvedCube.packSize}"
+        }
+        return "$calculation = $cardsNeeded cards needed, cube has $usableCards"
+    }
+
+    private fun prepareCubeDealer(): Boolean {
+        val resolvedCube = cube ?: return true
+        if (cubeCapacityError() != null) return false
+        val cards = resolvedCube.cards.filterNot { card ->
+            bannedCardNames.any { it.equals(card.name, ignoreCase = true) }
+        }
+        cubeDealer = CubeDealer(cards, resolvedCube.packSize, System.nanoTime())
+        return true
+    }
+
+    private fun packsFor(count: Int): List<List<CardDefinition>> {
+        cubeDealer?.let { return it.deal(count) }
+
+        val strategy = strategyOverrideForFormat()
+        val sequence = if (!chaosBoosters && boosterDistribution.isNotEmpty()) {
+            boosterDistribution.flatMap { (code, packs) -> List(packs) { code } }
+        } else {
+            emptyList()
+        }
+        return List(count) { index ->
+            val sequenceIndex =
+                if (format == TournamentFormat.DRAFT || format == TournamentFormat.COMMANDER_DRAFT) {
+                    currentPackNumber - 1
+                } else {
+                    index
+                }
+            val setCode = sequence.getOrNull(sequenceIndex)
+            if (setCode != null) {
+                boosterGenerator.generateBooster(setCode, strategy, bannedCardNames)
+            } else {
+                boosterGenerator.generateBooster(
+                    setCodes,
+                    strategy,
+                    chaos = chaosBoosters,
+                    bannedCardNames = bannedCardNames,
+                )
+            }
+        }
+    }
 
     /** Whether this lobby may be ranked at all: only a TOURNAMENT-mode bracket has 1v1 matches. */
     val rankedEligible: Boolean get() = gameMode == LobbyGameMode.TOURNAMENT
@@ -381,6 +477,7 @@ class TournamentLobby(
      */
     fun updateSets(newSetCodes: List<String>): Boolean {
         if (state != LobbyState.WAITING_FOR_PLAYERS) return false
+        if (isCube) return false
         if (newSetCodes.isEmpty()) return false
 
         // Validate concrete codes; random placeholders are validated only when resolved at start.
@@ -429,7 +526,7 @@ class TournamentLobby(
      * Recalculate the booster distribution after boosterCount changes.
      */
     fun recalculateDistribution() {
-        boosterDistribution = calculateDefaultDistribution(setCodes, boosterCount)
+        boosterDistribution = if (isCube) emptyMap() else calculateDefaultDistribution(setCodes, boosterCount)
     }
 
     /** Players indexed by player ID */
@@ -473,9 +570,9 @@ class TournamentLobby(
      * Basic lands available for deck building: the set's standard art, one printing per type. Shown
      * to the player while building and stamped onto the submitted deck, so both agree.
      */
-    val basicLands: Map<String, CardDefinition> by lazy {
-        if (setCodes.isEmpty()) emptyMap() else boosterGenerator.getBasicLands(setCodes)
-    }
+    val basicLands: Map<String, CardDefinition>
+        get() = if (setCodes.isEmpty()) emptyMap()
+        else (cubeBoosterGenerator ?: boosterGenerator).getBasicLands(setCodes)
 
     /** Players who are ready for the next round */
     private val playersReadyForNextRound = mutableSetOf<EntityId>()
@@ -702,6 +799,15 @@ class TournamentLobby(
         if (state != LobbyState.WAITING_FOR_PLAYERS) return false
         if (players.size < 2) return false
         if (format != TournamentFormat.SEALED && format != TournamentFormat.COMMANDER_SEALED) return false
+        if (!prepareCubeDealer()) return false
+
+        if (isCube) {
+            players.forEach { (playerId, playerState) ->
+                players[playerId] = playerState.copy(cardPool = packsFor(boosterCount).flatten())
+            }
+            state = LobbyState.DECK_BUILDING
+            return true
+        }
 
         val strategy = strategyOverrideForFormat()
 
@@ -752,6 +858,7 @@ class TournamentLobby(
         if (state != LobbyState.WAITING_FOR_PLAYERS) return false
         if (players.size < 2) return false
         if (format != TournamentFormat.DRAFT && format != TournamentFormat.COMMANDER_DRAFT) return false
+        if (!prepareCubeDealer()) return false
 
         // Set up player order (for pack passing)
         playerOrder = players.keys.toList().shuffled()
@@ -773,24 +880,17 @@ class TournamentLobby(
      * E.g., with {ONS: 1, LGN: 1, SCG: 1}, pack 1 = ONS, pack 2 = LGN, pack 3 = SCG.
      */
     private fun distributeNewPacks() {
-        // Build a sequence of set codes from the distribution (e.g., [ONS, LGN, SCG] for 1/1/1).
-        // Chaos mode ignores per-pack assignments and pulls every pack from the combined pool.
-        val setSequence = if (!chaosBoosters && boosterDistribution.isNotEmpty()) {
-            boosterDistribution.flatMap { (code, count) -> List(count) { code } }
-        } else {
-            null
+        if (isCube) {
+            players.values.zip(packsFor(players.size)).forEach { (playerState, newPack) ->
+                playerState.currentPack = newPack
+                playerState.packQueue.clear()
+                playerState.poolSizeAtRoundStart = playerState.cardPool.size
+            }
+            return
         }
-        // Pick the set for this pack round (1-indexed currentPackNumber)
-        val packSetCode = setSequence?.getOrNull(currentPackNumber - 1)
-
-        val strategy = strategyOverrideForFormat()
 
         players.forEach { (_, playerState) ->
-            val newPack = if (packSetCode != null) {
-                boosterGenerator.generateBooster(packSetCode, strategy, bannedCardNames)
-            } else {
-                boosterGenerator.generateBooster(setCodes, strategy, chaos = chaosBoosters, bannedCardNames = bannedCardNames)
-            }
+            val newPack = packsFor(1).single()
             playerState.currentPack = newPack
             playerState.packQueue.clear()
             playerState.poolSizeAtRoundStart = playerState.cardPool.size
@@ -946,15 +1046,13 @@ class TournamentLobby(
         if (state != LobbyState.WAITING_FOR_PLAYERS) return false
         if (players.size != 2) return false
         if (format != TournamentFormat.WINSTON_DRAFT) return false
+        if (!prepareCubeDealer()) return false
 
         // Set up player order (randomize who goes first)
         playerOrder = players.keys.toList().shuffled()
 
         // Generate boosters and shuffle into main deck
-        val allCards = mutableListOf<CardDefinition>()
-        repeat(boosterCount) {
-            allCards.addAll(boosterGenerator.generateBooster(setCodes, chaos = chaosBoosters, bannedCardNames = bannedCardNames))
-        }
+        val allCards = packsFor(boosterCount).flatten().toMutableList()
         allCards.shuffle()
 
         winstonMainDeck.clear()
@@ -990,6 +1088,7 @@ class TournamentLobby(
         if (state != LobbyState.WAITING_FOR_PLAYERS) return false
         if (players.size < 2 || players.size > 4) return false
         if (format != TournamentFormat.GRID_DRAFT) return false
+        if (!prepareCubeDealer()) return false
 
         val allPlayers = players.keys.toList().shuffled()
 
@@ -998,8 +1097,7 @@ class TournamentLobby(
             // (ensures balanced rarity distribution per group)
             val boostersPerGroup = boosterCount / 2
             fun generateGroupPool(count: Int): MutableList<CardDefinition> {
-                val pool = mutableListOf<CardDefinition>()
-                repeat(count) { pool.addAll(boosterGenerator.generateBooster(setCodes, chaos = chaosBoosters, bannedCardNames = bannedCardNames)) }
+                val pool = packsFor(count).flatten().toMutableList()
                 pool.shuffle()
                 return pool
             }
@@ -1009,8 +1107,7 @@ class TournamentLobby(
             )
         } else {
             // 2-3 players: 1 group with all players
-            val pool = mutableListOf<CardDefinition>()
-            repeat(boosterCount) { pool.addAll(boosterGenerator.generateBooster(setCodes, chaos = chaosBoosters, bannedCardNames = bannedCardNames)) }
+            val pool = packsFor(boosterCount).flatten().toMutableList()
             pool.shuffle()
             gridGroups = listOf(
                 GridGroup(mainDeck = pool, playerOrder = allPlayers)
@@ -1623,6 +1720,9 @@ class TournamentLobby(
                 commanderPreset = commanderPreset.name,
                 chaosBoosters = chaosBoosters,
                 bannedCardNames = bannedCardNames.sorted(),
+                cubeName = cube?.name,
+                cubeCardCount = cube?.cards?.size,
+                packSize = cube?.packSize,
                 aiAssistEnabled = aiAssistEnabled,
                 gameMode = gameMode.name,
                 attackMode = attackMode.name,

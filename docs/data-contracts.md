@@ -347,7 +347,19 @@ deckbuilder's `setDeck`. `lockedDeck` empty = build fresh; non-empty = keep thos
 the rest (**heuristic** engine). The **draftsim** engine ignores `lockedDeck`/`targetSize` and always
 returns a fresh 40-card limited build (23 nonland + 17 lands), matching the original Auto-Build.
 
-## 3c. Free-for-All Lobby Mode (WebSocket)
+## 3c. Cube Pack Source (WebSocket)
+
+`UpdateLobbySettings` may replace the lobby's normal set source with a cube by sending the full
+`cubeCards` name list plus `cubeName`, `packSize`, and `cubeBasicLandSetCode`. Duplicate names are
+duplicate physical cards. The server resolves the entire list atomically; an unresolved card rejects
+the update, and `cubeCards: []` clears cube mode. While a cube is active, `setCodes` changes,
+`boosterDistribution`, and `chaosBoosters` are inert.
+
+`LobbySettings` broadcasts only the public summary: `cubeName`, `cubeCardCount`, and `packSize`.
+The synthetic `CUBE` set is deliberately absent from `availableSets`. The server rejects starting
+when the selected format would need more cards than the cube contains.
+
+## 3d. Free-for-All Lobby Mode (WebSocket)
 
 A lobby carries two orthogonal axes: the **format** (`SEALED` / `DRAFT` / `PREMADE_DECKS` / …,
 how the card pool is built) and a new **mode** (`gameMode`: `TOURNAMENT` or `FREE_FOR_ALL`, what

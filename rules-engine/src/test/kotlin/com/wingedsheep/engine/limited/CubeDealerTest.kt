@@ -67,4 +67,16 @@ class CubeDealerTest : FunSpec({
         dealer.deal(0) shouldBe emptyList()
         dealer.remaining shouldBeExactly cube.size
     }
+
+    test("resumes from the ordered undealt tail without reshuffling") {
+        val dealer = CubeDealer(cube, packSize = 3, seed = 42L)
+        val firstPack = dealer.deal(1).single()
+        val remaining = dealer.remainingCards()
+
+        val resumed = CubeDealer.resume(remaining, packSize = 3)
+        val resumedPacks = resumed.deal(2).flatten()
+
+        (firstPack + resumedPacks).map { it.name }.toSet().size shouldBe 9
+        resumedPacks shouldBe remaining.take(6)
+    }
 })
