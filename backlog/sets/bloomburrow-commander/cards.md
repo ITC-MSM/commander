@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 112 / 312
+**Implemented:** 113 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -232,7 +232,7 @@
 - [x] Rootbound Crag
 - [ ] Rootcast Apprenticeship
 - [ ] Rose Room Treasurer
-- [ ] Rowdy Research
+- [x] Rowdy Research
 - [ ] Rugged Prairie
 - [x] Sakura-Tribe Elder
 - [ ] Saw in Half

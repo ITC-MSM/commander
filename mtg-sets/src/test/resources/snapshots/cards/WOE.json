@@ -4120,6 +4120,102 @@
     ]
 }
 
+// Faerie Slumber Party
+{
+    "name": "Faerie Slumber Party",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return all creatures to their owners' hands. For each opponent who controlled a creature returned this way, you create two 1/1 blue Faerie creature tokens with flying and \"This token can block only creatures with flying.\"",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "StoreNumber",
+                    "name": "faerieSlumberPartyOpponents",
+                    "amount": {
+                        "type": "CountPlayersWith",
+                        "scope": "EachOpponent",
+                        "condition": {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "creature"
+                        }
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "creature"
+                            },
+                            "storeAs": "returnAllToHand_gathered"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "returnAllToHand_gathered",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "VariableReference",
+                            "variableName": "faerieSlumberPartyOpponents"
+                        },
+                        "multiplier": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Faerie"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f9a993f-1f2b-4b17-b415-e975b7873e18.jpg?1783914992",
+                    "staticAbilities": [
+                        {
+                            "type": "CanOnlyBlockCreaturesWith",
+                            "blockerFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "HasKeyword",
+                                        "keyword": "FLYING"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "311",
+        "rarity": "RARE",
+        "artist": "Lie Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8e5de58-cc4c-40b2-94c8-4e4d7cebfaf8.jpg?1783915040"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Farsight Ritual
 {
     "name": "Farsight Ritual",
@@ -6371,6 +6467,95 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Hylda's Crown of Winter
+{
+    "name": "Hylda's Crown of Winter",
+    "manaCost": "{3}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "{1}, {T}: Tap target creature. This ability costs {1} less to activate during your turn.\n{3}, Sacrifice Hylda's Crown of Winter: Draw a card for each tapped creature your opponents control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{1}, {T}: Tap target creature. This ability costs {1} less to activate during your turn.",
+                "genericCostReduction": {
+                    "type": "Conditional",
+                    "condition": "IsYourTurn",
+                    "ifTrue": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "ifFalse": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "AggregateBattlefield",
+                        "player": "EachOpponent",
+                        "filter": "creature tapped"
+                    }
+                },
+                "descriptionOverride": "{3}, Sacrifice Hylda's Crown of Winter: Draw a card for each tapped creature your opponents control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "rarity": "RARE",
+        "artist": "Volkan Baǵa",
+        "flavorText": "With each day she wore the crown, her icy kingdom spread, and her heart grew ever colder.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b0d4a6c0-f00e-45a7-9c88-899460007020.jpg?1783915057"
+    }
 }
 
 // Ice Out
@@ -10557,6 +10742,43 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Rowdy Research
+{
+    "name": "Rowdy Research",
+    "manaCost": "{6}{U}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {1} less to cast for each creature that attacked this turn.\nDraw three cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 3
+            }
+        },
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": "CreaturesThatAttackedThisTurn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "312",
+        "rarity": "UNCOMMON",
+        "artist": "Bram Sels",
+        "flavorText": "\"Stolen treasures can be reclaimed, but stolen knowledge is yours forever.\"\n—Alela",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/89b7e901-5ba4-4374-9eeb-96354279a123.jpg?1783915040"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
