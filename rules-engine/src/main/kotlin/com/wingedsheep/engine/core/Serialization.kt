@@ -333,6 +333,7 @@ val engineSerializersModule = SerializersModule {
         subclass(StaticDrawReplacementContinuation::class)
         subclass(TokenCreationReplacementContinuation::class)
         subclass(LeylineDecisionContinuation::class)
+        subclass(LeylinePhaseContinuation::class)
         subclass(ActivateAbilityChooseXContinuation::class)
         subclass(ActivateAbilityChooseManaXContinuation::class)
         subclass(ActivateAbilityTapXTargetsContinuation::class)
