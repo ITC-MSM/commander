@@ -31,8 +31,9 @@ A PR per unit, each one:
 
 - a batch of ~5 cards that compose existing primitives, or a single card that needed a new one
 - gated green (`just build`, or `just test` when engine behavior changed)
-- reviewed by an agent that did not write it, against `docs/sdk-design-principles.md`, with the full
-  review posted as a comment on the PR
+- reviewed by an agent that did not write it — depth scaled to the diff, against
+  `docs/sdk-design-principles.md` where the diff touches the SDK — with the review posted as a comment on
+  the PR
 - corrected by a third agent, which pushes the fixes and replies saying what it fixed and what it declined
 - with a body that says what was checked **and what wasn't** — no manual playthrough, no UX pass from
   both seats, no e2e
@@ -50,6 +51,11 @@ Four stages, each a fresh agent:
 | **implement** | per unit | own worktree, cards via `add-card`, one gate run, pushes and opens the PR |
 | **review** | per unit | different agent, same worktree, reviews the diff and comments its findings on the PR — changes nothing |
 | **correct** | per unit, if needed | third agent, fixes the findings that hold up, re-gates, pushes to the same PR, replies with the accounting |
+
+The review sizes itself to the diff. Engine or SDK files changed → the full `review-changes` pass. Card
+definitions only → a targeted card check (Oracle text, composition, printing placement, projection, tests)
+without loading the engine-review material. Nothing but `Printing(...)` rows and bookkeeping → no review at
+all, just a comment on the PR saying so. Each PR comment states which of the three it got.
 
 The correct stage only runs when the review turned up something Blocking or Important. A review with only
 Minor findings ships as-is — the comment is the record.

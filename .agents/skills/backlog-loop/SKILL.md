@@ -93,10 +93,15 @@ verdict.
 write the code — with [`reviewer-prompt.md`](reviewer-prompt.md). It reviews **in place in the same
 worktree** (no new worktree; `review-changes` §1 explicitly supports reviewing on the branch when it's
 already checked out and clean), writes `review.md`, and posts it as a comment on the PR. It changes no
-code:
+code.
+
+The reviewer sizes its own pass to the diff — full `review-changes` when engine or SDK files changed, a
+targeted card check when only card definitions did, and a skip when the diff is reprint rows and
+bookkeeping. That call needs the file list, so it belongs to the stage that can see it; don't try to
+pre-decide it from the unit's kind:
 
 - `reviewed` → read only the `FINDINGS:` counts. Blocking or Important > 0 → stage C. Otherwise the unit
-  is done: mark `[x]` with the PR number and the finding counts.
+  is done: mark `[x]` with the PR number, the finding counts, and the `SCOPE:` word.
 - `failed` → mark `[!]` with the reason. The PR stays open, unreviewed; a human picks it up.
 
 **Stage C — correct.** Only when stage B found something worth acting on. Flip the unit to `[c]`. Spawn a
@@ -133,8 +138,9 @@ gets recorded rather than turned into a bad commit.
 The PR opens before review deliberately: the review, the corrections, and the reasoning for both live in
 the PR timeline where a human reviewing later can see them, instead of in a worktree file nobody opens.
 
-Review is also where to economize if you need to: review accuracy holds up well at lower effort, while
-implementation is the demanding half. Don't cut effort on stage A to save tokens.
+Review is also where to economize if you need to: review accuracy holds up well at lower effort, and the
+reviewer already scales its own depth to the diff. Implementation is the demanding half — don't cut effort
+on stage A to save tokens.
 
 ## Step 2: Final report
 
@@ -177,6 +183,7 @@ Stage B ends with exactly:
 UNIT: u07
 STATUS: reviewed | failed
 PR: #1511
+SCOPE: full | cards | skipped
 FINDINGS: 0 blocking, 2 important, 3 minor
 NOTE: <one line, only if failed or if any finding is blocking>
 ```
