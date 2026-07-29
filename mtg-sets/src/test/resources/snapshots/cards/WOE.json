@@ -960,29 +960,24 @@
                     "type": "Composite",
                     "effects": [
                         {
-                            "type": "Composite",
-                            "effects": [
-                                {
-                                    "type": "GatherCards",
-                                    "source": {
-                                        "type": "TopOfLibrary",
-                                        "count": {
-                                            "type": "Fixed",
-                                            "amount": 7
-                                        },
-                                        "isMill": true
-                                    },
-                                    "storeAs": "milled"
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 7
                                 },
-                                {
-                                    "type": "MoveCollection",
-                                    "from": "milled",
-                                    "destination": {
-                                        "type": "ToZone",
-                                        "zone": "Graveyard"
-                                    }
-                                }
-                            ]
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
                         },
                         {
                             "type": "MoveCollection",

@@ -33,9 +33,8 @@ import com.wingedsheep.sdk.scripting.values.TurnTracker
  *
  * Burn Together is the Self-Destruct shape — the chosen creature (target index 0) is the
  * `damageSource`, so the damage is dealt *by it* (deathtouch, lifelink and damage-redirection all
- * read off it) and [DynamicAmounts.targetPower]`(0)` is its power at resolution. "Any other target"
- * is [TargetOther] over [AnyTarget], which enforces distinctness from target 0 rather than merely
- * offering a second any-target.
+ * read off it). "Any other target" is [TargetOther] over [AnyTarget], which enforces distinctness
+ * from target 0 rather than merely offering a second any-target.
  *
  * Both rulings about illegal targets fall out of the ordering: if the creature is gone the damage
  * step has no source and the sacrifice finds nothing, and if only the second target is gone the

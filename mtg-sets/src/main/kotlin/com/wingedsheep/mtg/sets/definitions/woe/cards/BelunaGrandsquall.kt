@@ -28,11 +28,18 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
  *
  * The discount is `YouCast(Permanent ∧ HasAdventure)` + [CostModification.ReduceGeneric] — "permanent
  * spells" is the load-bearing half of the wording. An adventurer card cast as its Adventure is an
- * instant or sorcery spell with only the Adventure's characteristics (CR 715.3), so the discount must
- * not touch it; the engine enforces that structurally, because secondary faces price through
- * `calculateEffectiveCostWithAlternativeBase`, which only ever applies `AnyCaster` *increases*. The
- * creature half cast from hand — or cast from exile after its Adventure resolved — goes through the
- * normal path with the adventurer card's own type line, so it gets the {1}.
+ * instant or sorcery spell with only the Adventure's characteristics (CR 715.3b), so the discount must
+ * not touch it.
+ *
+ * What actually keeps it off is the engine's *pricing path*, not the [Filters.Permanent] predicate:
+ * cost filters are matched against the card definition (`CostCalculator.matchesCardDefinition`), i.e.
+ * the front face, which is a permanent either way. Secondary faces price through
+ * `calculateEffectiveCostWithAlternativeBase`, which consults only `AnyCaster` *increases* and never
+ * `YouCast` reductions — an engine-wide simplification that CR 118.9d does not license in general.
+ * `WoeCardsBatch12ScenarioTest` therefore pins the outcome ("Rip the Seams still costs {2}{W} with
+ * Beluna out"), so closing that gap turns a silent rules break into a red test. The creature half cast
+ * from hand — or cast from exile after its Adventure resolved — goes through the normal path with the
+ * adventurer card's own type line, so it gets the {1}.
  *
  * Seek Thrills is [Patterns.Library.mill] (an `isMill = true` gather into the `"milled"` collection,
  * then a move to the graveyard) followed by a filtered [MoveCollectionEffect] back out of that same
@@ -72,8 +79,7 @@ val BelunaGrandsquall = card("Beluna Grandsquall") {
             "(Then exile this card. You may cast the creature later from exile.)"
         spell {
             effect = Effects.Composite(
-                Patterns.Library.mill(7),
-                MoveCollectionEffect(
+                Patterns.Library.mill(7).effects + MoveCollectionEffect(
                     from = "milled",
                     destination = CardDestination.ToZone(Zone.HAND),
                     filter = Filters.HasAdventure,

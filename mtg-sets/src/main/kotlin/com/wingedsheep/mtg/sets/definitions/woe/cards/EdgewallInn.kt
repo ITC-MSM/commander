@@ -23,11 +23,9 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * {3}, {T}, Sacrifice this land: Return target card that has an Adventure from your graveyard to
  * your hand.
  *
- * The mana half is the Uncharted Haven shape: [EntersTapped] plus [EntersWithChoice] of
- * [ChoiceType.COLOR] (an "as this enters" replacement, so the color is locked in before the land is
- * ever on the battlefield to tap), and the mana ability reads it back via
- * [Effects.AddManaOfChosenColor] — `ManaColorSet.SourceChosenColor` on this permanent's
- * `ChosenColorComponent`, not a fresh choice per activation.
+ * The mana half is the Uncharted Haven shape. [EntersWithChoice] is an "as this enters" replacement,
+ * so the color is locked in before the land is ever on the battlefield to tap, and every activation
+ * reads that one recorded choice back — it is not a fresh choice per activation.
  *
  * "A card that has an Adventure" is [Filters.HasAdventure] — `CardPredicate.HasAdventure`, a
  * characteristic of the whole card in every zone. That is deliberately *not* the same thing as

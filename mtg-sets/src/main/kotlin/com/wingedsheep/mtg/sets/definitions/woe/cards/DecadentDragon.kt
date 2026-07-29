@@ -10,7 +10,6 @@ import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
-import com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect
 import com.wingedsheep.sdk.scripting.effects.MayPlayExpiry
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.references.Player
@@ -39,7 +38,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    `LookAudience.Controller`, which persists a private reveal to the caster. That reveal survives
  *    the move to exile, so the caster (and only the caster — their owner never learns what they are
  *    until they're played, per the ruling) sees through the face-down back.
- *  - **and play them for as long as they remain exiled** — [GrantMayPlayFromExileEffect] with
+ *  - **and play them for as long as they remain exiled** — [Effects.GrantMayPlayFromExile] with
  *    [MayPlayExpiry.Permanent]. "Play", not "cast", so land cards among them are playable too, and
  *    normal timing rules and mana costs still apply — all of which the permission machinery already
  *    enforces. The grant is not tied to the Dragon: it outlives the Adventure card leaving exile.
@@ -83,7 +82,7 @@ val DecadentDragon = card("Decadent Dragon") {
                         destination = CardDestination.ToZone(Zone.EXILE),
                         faceDown = FaceDownMode.HIDDEN,
                     ),
-                    GrantMayPlayFromExileEffect(from = "stolen", expiry = MayPlayExpiry.Permanent),
+                    Effects.GrantMayPlayFromExile(from = "stolen", expiry = MayPlayExpiry.Permanent),
                 ),
             )
         }

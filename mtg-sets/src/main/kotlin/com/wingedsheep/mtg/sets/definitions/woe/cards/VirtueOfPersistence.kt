@@ -28,9 +28,10 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * conditional on the creature dying, so it happens even if the target is gone on resolution
  * (the whole spell fizzles only because that is its sole target).
  *
- * Note the front face is an **enchantment**, not a creature — the Adventure rules (CR 715) are about
- * permanent spells generally, so this is the same `adventure { }` shape as the creature adventurers,
- * and the enchantment is what you cast from exile afterwards.
+ * Note the front face is an **enchantment**, not a creature — CR 715.3d says only that the controller
+ * exiles the Adventure as it resolves and "may play it" from there, with no restriction on the card's
+ * type, so this is the same `adventure { }` shape as the creature adventurers and the enchantment is
+ * what you cast from exile afterwards.
  */
 val VirtueOfPersistence = card("Virtue of Persistence") {
     manaCost = "{5}{B}{B}"
