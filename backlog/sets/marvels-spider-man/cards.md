@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 170 / 188
+**Implemented:** 173 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -83,7 +83,7 @@
 - [ ] Norman Osborn // Green Goblin
 - [x] Ominous Asylum
 - [x] Origin of Spider-Man
-- [ ] Oscorp Industries
+- [x] Oscorp Industries
 - [x] Oscorp Research Team
 - [x] Parker Luck
 - [x] Passenger Ferry
@@ -115,7 +115,7 @@
 - [x] Scout the City
 - [x] Secret Identity
 - [x] Selfless Police Captain
-- [ ] Shadow of the Goblin
+- [x] Shadow of the Goblin
 - [x] Shock
 - [x] Shocker, Unshakable
 - [x] Shriek, Treblemaker
@@ -132,7 +132,7 @@
 - [x] Spider-Gwen, Free Spirit
 - [x] Spider-Ham, Peter Porker
 - [x] Spider-Islanders
-- [ ] Spider-Man 2099
+- [x] Spider-Man 2099
 - [x] Spider-Man India
 - [x] Spider-Man No More
 - [x] Spider-Man Noir

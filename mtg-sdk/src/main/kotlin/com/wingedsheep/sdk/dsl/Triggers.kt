@@ -343,6 +343,17 @@ object Triggers {
     )
 
     /**
+     * When you play a land (CR 305.1). Pass [fromZoneOtherThan] to restrict to lands played from a
+     * zone other than that one — Shadow of the Goblin: "whenever you play a land … from anywhere
+     * other than your hand" is `youPlayLand(fromZoneOtherThan = Zone.HAND)`. Fires only for the
+     * land-play action, not for a land an effect puts onto the battlefield.
+     */
+    fun youPlayLand(fromZoneOtherThan: com.wingedsheep.sdk.core.Zone? = null): TriggerSpec = TriggerSpec(
+        event = LandPlayedEvent(fromZoneOtherThan = fromZoneOtherThan),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * When one or more creatures attack you.
      * Fires once per combat (not per attacker) when the trigger's controller is
      * declared as defender for at least one creature.
