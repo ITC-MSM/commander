@@ -2545,6 +2545,15 @@
                     "storeMatching": "clobberers"
                 },
                 {
+                    "type": "FilterCollection",
+                    "from": "allTargets",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "creature ctrl:opponent"
+                    },
+                    "storeMatching": "victim"
+                },
+                {
                     "type": "ForEach",
                     "space": {
                         "type": "IterationSpace.Collection",
@@ -2569,8 +2578,8 @@
                             "numericProperty": "Power"
                         },
                         "target": {
-                            "type": "ContextTarget",
-                            "index": 0
+                            "type": "PipelineTarget",
+                            "collectionName": "victim"
                         },
                         "damageSource": "Self"
                     }
