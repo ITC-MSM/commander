@@ -267,7 +267,8 @@ class LobbyHandler(
                     setCodes = lobby.setCodes,
                     setNames = lobby.setNames,
                     cardPool = playerState.cardPool.map { ConnectionHandler.cardToSealedCardInfo(it) },
-                    basicLands = basicLandInfos
+                    basicLands = basicLandInfos,
+                    poolPlay = lobby.isCubePoolPlay,
                 ))
             }
         }
@@ -812,7 +813,8 @@ class LobbyHandler(
                     setCodes = lobby.setCodes,
                     setNames = lobby.setNames,
                     cardPool = poolInfos,
-                    basicLands = basicLandInfos
+                    basicLands = basicLandInfos,
+                    poolPlay = lobby.isCubePoolPlay,
                 ))
                 ctx.broadcastLobbyUpdate(lobby)
 
@@ -866,7 +868,8 @@ class LobbyHandler(
             setCodes = lobby.setCodes,
             setNames = lobby.setNames,
             cardPool = poolInfos,
-            basicLands = basicLandInfos
+            basicLands = basicLandInfos,
+            poolPlay = lobby.isCubePoolPlay,
         ))
         sender.send(session, lobby.buildLobbyUpdate(identity.playerId, aiGameManager::isAiPlayer))
 
@@ -890,7 +893,8 @@ class LobbyHandler(
             setCodes = lobby.setCodes,
             setNames = lobby.setNames,
             cardPool = poolInfos,
-            basicLands = basicLandInfos
+            basicLands = basicLandInfos,
+            poolPlay = lobby.isCubePoolPlay,
         ))
         sender.send(session, lobby.buildLobbyUpdate(identity.playerId, aiGameManager::isAiPlayer))
 
@@ -1254,7 +1258,8 @@ class LobbyHandler(
                             setCodes = lobby.setCodes,
                             setNames = lobby.setNames,
                             cardPool = poolInfos,
-                            basicLands = basicLandInfos
+                            basicLands = basicLandInfos,
+                            poolPlay = lobby.isCubePoolPlay,
                         ))
                     }
                 }
@@ -2069,6 +2074,22 @@ class LobbyHandler(
             }
         }
 
+        // Pool Play is cube-Sealed-only: on a set-based lobby there is no whole pool to build from,
+        // and every drafting format contradicts "no draft". Reject rather than accept-and-ignore.
+        message.cubePoolPlay?.let { poolPlay ->
+            val requestedFormat = message.format?.let { runCatching { TournamentFormat.valueOf(it) }.getOrNull() }
+                ?: lobby.format
+            if (poolPlay && !lobby.isCube) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "Pool Play requires a cube")
+                return
+            }
+            if (poolPlay && requestedFormat != TournamentFormat.SEALED) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "Pool Play is only available for Sealed")
+                return
+            }
+            lobby.cubePoolPlay = poolPlay
+        }
+
         // Update sets if provided (can be empty to disable start)
         if (!lobby.isCube) message.setCodes?.let { newSetCodes ->
             // Allow empty setCodes to disable start button (but won't be able to start)
@@ -2098,6 +2119,9 @@ class LobbyHandler(
             if (newFormat != lobby.format) {
                 val wasCommander = lobby.format.isCommanderFormat
                 lobby.format = newFormat
+                // Pool Play only exists for cube Sealed; don't leave it set (and shown) on a format
+                // that ignores it.
+                if (newFormat != TournamentFormat.SEALED) lobby.cubePoolPlay = false
                 if (newFormat == TournamentFormat.WINSTON_DRAFT) {
                     lobby.maxPlayers = 2
                 } else if (newFormat == TournamentFormat.GRID_DRAFT) {

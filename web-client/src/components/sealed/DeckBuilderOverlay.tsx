@@ -21,6 +21,12 @@ import {
 } from '@/utils/landSuggestion'
 
 /**
+ * Hard per-card copy cap while deckbuilding (basic lands exempt, managed via `landCounts`). Mirrors
+ * `TournamentLobby.MAX_COPIES_PER_CARD` and the cap enforced in `addCardToDeck`.
+ */
+const MAX_COPIES_PER_CARD = 4
+
+/**
  * Deck Builder overlay for sealed draft mode.
  */
 export function DeckBuilderOverlay() {
@@ -374,10 +380,14 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
       }
     }
 
-    const groups: { card: SealedCardInfo; availableCount: number }[] = []
+    const groups: { card: SealedCardInfo; availableCount: number; inDeckCount: number }[] = []
     for (const [name, { card, totalCount }] of Object.entries(poolCardCounts)) {
       const inDeckCount = deckCardCounts[name] || 0
-      const availableCount = totalCount - inDeckCount
+      // In Pool Play the pool is the whole cube and copies are unlimited, so a card is never
+      // consumed — what's left to add is the 4-of cap minus what's already in the deck.
+      const availableCount = state.poolPlay
+        ? MAX_COPIES_PER_CARD - inDeckCount
+        : totalCount - inDeckCount
       if (availableCount > 0) {
         if (archetypeFilter) {
           const cardColors = getCardColors(card)
@@ -421,7 +431,7 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
         if (searchText) {
           if (!matchesSearch(card, searchText)) continue
         }
-        groups.push({ card, availableCount })
+        groups.push({ card, availableCount, inDeckCount })
       }
     }
 
@@ -434,14 +444,18 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
         return getRarityOrder(a.card) - getRarityOrder(b.card) || getCmc(a.card) - getCmc(b.card)
       }
     })
-  }, [state.cardPool, state.deck, sortBy, colorFilter, colorMode, typeFilter, creatureTypeFilter, searchText, archetypeFilter, commanderIdentity, restrictToCommanderIdentity])
+  }, [state.cardPool, state.deck, state.poolPlay, sortBy, colorFilter, colorMode, typeFilter, creatureTypeFilter, searchText, archetypeFilter, commanderIdentity, restrictToCommanderIdentity])
 
-  const totalPoolCards = poolCardGroups.reduce((sum, g) => sum + g.availableCount, 0)
+  // "Cards left to add" is only a meaningful total when the pool is finite. In Pool Play every card
+  // is always available, so count distinct cards on offer instead of copies.
+  const totalPoolCards = state.poolPlay
+    ? poolCardGroups.length
+    : poolCardGroups.reduce((sum, g) => sum + g.availableCount, 0)
 
   const poolByRarity = useMemo(() => {
     if (sortBy !== 'rarity') return null
 
-    type PoolGroup = { card: SealedCardInfo; availableCount: number }
+    type PoolGroup = { card: SealedCardInfo; availableCount: number; inDeckCount: number }
     const mythic: PoolGroup[] = []
     const rare: PoolGroup[] = []
     const uncommon: PoolGroup[] = []
@@ -535,6 +549,7 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <h2 style={{ color: 'white', margin: 0, fontSize: responsive.isMobile ? 16 : 20 }}>
             Deck Builder - {state.setNames.join(' + ')}
+            {state.poolPlay ? ' (Pool Play)' : ''}
           </h2>
           <SetSynergiesButton
             setCodes={state.setCodes}
@@ -923,8 +938,15 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
               )}
             </div>
 
-            <span style={{ color: '#666', fontSize: 12, marginLeft: 'auto' }}>
-              Pool: {totalPoolCards}
+            <span
+              style={{ color: '#666', fontSize: 12, marginLeft: 'auto' }}
+              title={
+                state.poolPlay
+                  ? `Pool Play: the whole cube is available, up to ${MAX_COPIES_PER_CARD} copies of any card`
+                  : undefined
+              }
+            >
+              {state.poolPlay ? `Cube: ${totalPoolCards} cards` : `Pool: ${totalPoolCards}`}
             </span>
           </div>
 
@@ -1044,7 +1066,9 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
                 {(['MYTHIC', 'RARE', 'UNCOMMON', 'COMMON'] as const).map((rarity) => {
                   const groups = poolByRarity[rarity] ?? []
                   if (groups.length === 0) return null
-                  const totalInSection = groups.reduce((sum, g) => sum + g.availableCount, 0)
+                  const totalInSection = state.poolPlay
+                    ? groups.length
+                    : groups.reduce((sum, g) => sum + g.availableCount, 0)
                   return (
                     <div key={rarity}>
                       <RaritySectionHeader rarity={rarity} count={totalInSection} />
@@ -1056,11 +1080,12 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
                           justifyContent: 'flex-start',
                         }}
                       >
-                        {groups.map(({ card, availableCount }) => (
+                        {groups.map(({ card, availableCount, inDeckCount }) => (
                           <PoolCard
                             key={card.name}
                             card={card}
                             count={availableCount}
+                            inDeckCount={state.poolPlay ? inDeckCount : undefined}
                             onClick={() => {
                               if (isSubmitted) return
                               addCardToDeck(card.name)
@@ -1087,11 +1112,12 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
                   justifyContent: 'flex-start',
                 }}
               >
-                {poolCardGroups.map(({ card, availableCount }) => (
+                {poolCardGroups.map(({ card, availableCount, inDeckCount }) => (
                   <PoolCard
                     key={card.name}
                     card={card}
                     count={availableCount}
+                    inDeckCount={state.poolPlay ? inDeckCount : undefined}
                     onClick={() => {
                       if (isSubmitted) return
                       addCardToDeck(card.name)
@@ -1811,6 +1837,7 @@ function DeckStat({ label, value, color }: { label: string; value: number; color
 function PoolCard({
   card,
   count,
+  inDeckCount,
   onClick,
   onHover,
   disabled,
@@ -1820,6 +1847,12 @@ function PoolCard({
 }: {
   card: SealedCardInfo
   count: number
+  /**
+   * Pool Play only: copies of this card already in the deck. When set, the badge reports that
+   * instead of a stack count — with the whole cube available at 4-of, "how many can I still add"
+   * is the same number on every card and tells the player nothing.
+   */
+  inDeckCount?: number | undefined
   onClick: () => void
   onHover: (card: SealedCardInfo | null, e?: React.MouseEvent) => void
   disabled: boolean
@@ -1876,23 +1909,42 @@ function PoolCard({
           objectFit: 'cover',
         }}
       />
-      {count > 1 && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 4,
-            right: 4,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            color: '#4fc3f7',
-            borderRadius: 4,
-            padding: '2px 6px',
-            fontSize: 12,
-            fontWeight: 600,
-          }}
-        >
-          x{count}
-        </div>
-      )}
+      {inDeckCount != null
+        ? inDeckCount > 0 && (
+            <div
+              title={`${inDeckCount} in your deck`}
+              style={{
+                position: 'absolute',
+                bottom: 4,
+                right: 4,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                color: '#81c784',
+                borderRadius: 4,
+                padding: '2px 6px',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              {inDeckCount} in deck
+            </div>
+          )
+        : count > 1 && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 4,
+                right: 4,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                color: '#4fc3f7',
+                borderRadius: 4,
+                padding: '2px 6px',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              x{count}
+            </div>
+          )}
       {score != null && (
         <div
           style={{

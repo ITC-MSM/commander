@@ -171,26 +171,26 @@ must be inert (not merely ignored) in cube mode.
 
 ## Phase 2 — Lobby wiring (Draft / Winston / Grid / Sealed from a cube)
 
-- [ ] **2.1 — `TournamentLobby` cube fields.** `var cube: ResolvedCube? = null`, a lazily-built
+- [x] **2.1 — `TournamentLobby` cube fields.** `var cube: ResolvedCube? = null`, a lazily-built
   cube-scoped generator, `cubeDealer`, and `packSize`. `val isCube: Boolean get() = cube != null`.
-- [ ] **2.2 — One pack-source helper, five call sites.** Add a private
+- [x] **2.2 — One pack-source helper, five call sites.** Add a private
   `fun packsFor(count: Int): List<List<CardDefinition>>` that deals from `cubeDealer` when
   `isCube`, else delegates to the existing `boosterGenerator` calls. Route `startDeckBuilding`,
   `distributeNewPacks`, `startWinstonDraft`, and `startGridDraft` through it. Resist inventing a
   `PackSource` interface until there is a third source — one nullable field plus one helper covers
   both cases (see `feedback_no_singleuse_patterns`).
-- [ ] **2.3 — Capacity + start-gating.** Reject `startDraft` / `startDeckBuilding` on a cube lobby
+- [x] **2.3 — Capacity + start-gating.** Reject `startDraft` / `startDeckBuilding` on a cube lobby
   when `players × packsPerPlayer × packSize > cube.size`, with a host-readable message
   ("8 players × 3 packs × 15 = 360 cards needed, cube has 313"). Also reject a cube with unresolved
   names.
-- [ ] **2.4 — `UpdateLobbySettings.cubeCards` (+ `cubeName`, `packSize`, `cubeBasicLandSetCode`).**
+- [x] **2.4 — `UpdateLobbySettings.cubeCards` (+ `cubeName`, `packSize`, `cubeBasicLandSetCode`).**
   Full list every time, exactly like `bannedCardNames`. Server resolves and stores; clearing it
   (`[]`) returns the lobby to normal set-based play. Cube lobbies set `setCodes`/`setNames` directly
   and **must not** go through `updateSets`.
-- [ ] **2.5 — Inert-in-cube-mode settings.** `chaosBoosters`, `boosterDistribution`, and the set
+- [x] **2.5 — Inert-in-cube-mode settings.** `chaosBoosters`, `boosterDistribution`, and the set
   picker are meaningless with a cube: reject or ignore them server-side *and* hide them client-side
   (don't leave a control that silently does nothing — see `feedback_suppress_stale_ui_state`).
-- [ ] **2.6 — Broadcast.** Extend the lobby state message with `cubeName` / `cubeCardCount` /
+- [x] **2.6 — Broadcast.** Extend the lobby state message with `cubeName` / `cubeCardCount` /
   `packSize` so joiners and spectators see "Drafting: Vincent's Standard Cube (360)" instead of a
   set name. Do **not** add the cube to `AvailableSet` lists.
 
@@ -198,42 +198,44 @@ must be inert (not merely ignored) in cube mode.
 
 ## Phase 3 — Cube library, import, and editor UI
 
-- [ ] **3.1 — `cubes` table** (new Flyway migration, next free version — `V11` is the highest today):
+- [x] **3.1 — `cubes` table** (Flyway `V12__cubes.sql`):
   `id, user_id → users(id) ON DELETE CASCADE, name, card_count, data TEXT NOT NULL, created_at,
   updated_at` + `idx_cubes_user`. `data` is the cube JSON verbatim; `name`/`card_count` denormalized
   for list views. Straight copy of the `decks` table's shape and rationale.
-- [ ] **3.2 — `CubeRow` + `CubeRepository` + `AccountCubeController`** at `/api/account/cubes`,
+- [x] **3.2 — `CubeRow` + `CubeRepository` + `AccountCubeController`** at `/api/account/cubes`,
   mirroring `AccountDeckController` (Spring Data JDBC, kotlinx.serialization, `?full` list variant,
   every operation scoped to the authenticated user). Gate on
   `@ConditionalOnProperty("accounts.enabled")` like the deck controller.
-- [ ] **3.3 — `cubeLibrary` (localStorage) + `useUnifiedCubes`.** Mirror `banListLibrary.ts` for the
+- [x] **3.3 — `cubeLibrary` (localStorage) + `useUnifiedCubes`.** Mirror `banListLibrary.ts` for the
   guest path and `useUnifiedDecks` for the local+cloud merge, so a guest can still build and use a
   cube without an account.
-- [ ] **3.4 — Cube import.** Reuse `parseArenaDeckList` + the deckbuilder's `resolveAgainstCatalog`,
+- [x] **3.4 — Cube import.** Reuse `parseArenaDeckList` + the deckbuilder's `resolveAgainstCatalog`,
   and reuse the existing coverage readout ("313 matched of 360 (47 placeholder)"). Cube-specific
   addition: since an unresolved cube is unplayable, offer **"Drop the 47 unimplemented cards"** and
   block "Use this cube" until the list resolves cleanly.
-- [ ] **3.5 — Cube editor.** `BanListEditor.tsx` is the closest existing component (catalog search,
+- [x] **3.5 — Cube editor.** `BanListEditor.tsx` is the closest existing component (catalog search,
   chips, save/load named lists) but a 360-card cube needs more: colour/type/CMC curve summary,
   section grouping, and duplicate/count handling. Prefer reusing the deckbuilder's search panel and
   `cardFilter`/`cardGrouping` over growing the ban-list editor.
-- [ ] **3.6 — Lobby host control.** A "Cube" panel next to the set picker: pick a cube from the
+- [x] **3.6 — Lobby host control.** A "Cube" panel next to the set picker: pick a cube from the
   library / paste a list, choose pack size and packs per player, and see the capacity check live
   ("360 cards — seats 8 players at 3×15").
 
 ## Phase 4 — Pool Play (no draft, unlimited copies)
 
-- [ ] **4.1 — `cubePoolPlay: Boolean` lobby flag** (the checkbox). On `startDeckBuilding`, every
+- [x] **4.1 — `cubePoolPlay: Boolean` lobby flag** (shipped as a Sealed-packs / Pool-Play toggle). On `startDeckBuilding`, every
   player's `cardPool` is the **entire cube** and the lobby goes straight to `DECK_BUILDING`. No
   dealer involvement, so the capacity check in 2.3 does not apply — a 100-card cube is a perfectly
   fine Pool Play pool.
-- [ ] **4.2 — Validation.** Reuse the pool validator but drop the "copies available in pool" check;
-  keep min 40 and the copy cap. Default cap: **4 copies** (constructed-normal), with the existing
-  `allowDuplicates`-style host toggle for a singleton house rule. Basics stay unlimited.
-- [ ] **4.3 — Suppress the derived sideboard.** `SideboardDerivation.fromPool(wholeCube, deck)` would
+- [x] **4.2 — Validation.** Reuse the pool validator but drop the "copies available in pool" check;
+  keep min 40 and the copy cap. Cap is **4 copies** (constructed-normal, `POOL_PLAY_COPY_LIMIT`);
+  basics stay unlimited. A host-settable cap / singleton house rule was *not* built — nobody has asked
+  for one, and a toggle with no second value behind it is the kind of setting that later has to be
+  un-shipped. Add it when a group actually wants singleton Pool Play.
+- [x] **4.3 — Suppress the derived sideboard.** `SideboardDerivation.fromPool(wholeCube, deck)` would
   seed a 300+ card SIDEBOARD zone. For Pool Play, submit an empty sideboard (or an explicit
   player-chosen one) — do not derive it from the pool.
-- [ ] **4.4 — Deckbuilder overlay at cube scale.** `DeckBuilderOverlay` renders a sealed pool
+- [x] **4.4 — Deckbuilder overlay at cube scale.** `DeckBuilderOverlay` renders a sealed pool
   (~90 cards, per-copy). A 360-card unlimited-copies pool needs the deckbuilder's search/filter
   ergonomics, not the sealed pool grid. Check performance and the "copies owned" affordance, which is
   meaningless here. **UX-review this flow end to end** (`feedback_ux_review`).
@@ -303,7 +305,8 @@ must be inert (not merely ignored) in cube mode.
 
 ## Open questions
 
-- **Pool Play copy cap:** 4-of (recommended default) vs. singleton vs. host-set number?
+- ~~**Pool Play copy cap:** 4-of vs. singleton vs. host-set number?~~ **Resolved: 4-of, fixed** (see
+  4.2). Revisit only on a real request for singleton Pool Play.
 - **Cube rarity/pack shape:** some cubes want a guaranteed "bomb" slot per pack. Out of scope here —
   worth confirming nobody expects it in v1.
 - **Cube visibility:** are cubes private to their owner, or should there be a public/shared cube
