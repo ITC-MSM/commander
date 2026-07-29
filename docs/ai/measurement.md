@@ -170,6 +170,31 @@ test. Current numbers: [`baseline-metrics.md`](baseline-metrics.md#budget-scalin
 
 ---
 
+## Rollout agents are expensive — size the run before you start it
+
+Every scoreboard above assumes an agent that decides in microseconds. Phase 7's rollout evaluator
+does not: a decision is *N* playouts × ~40 engine actions, so at the ~60 a 2 s tier affords a game
+costs **~70 seconds** where a `v0` game costs ~0.07. The 1,000-game merge gate is 3.5 minutes for
+every agent in this document *except* the rollout ones, where it is hours. At the shipped 16
+playouts it is ~4× better, and a 300-game run is ~13 minutes.
+
+So the rollout agents come as a ladder, `v0-rollout-4` / `-8` / `-16` / `-32`, differing in nothing
+but how many playouts a decision may spend (`RolloutBudgetPolicy`). Use it two ways:
+
+- **To afford a run.** `just arena v0 v0-rollout-8 300` is ~8 minutes and gave ±4.3% — a real
+  directional read.
+- **As the safety net.** Same claim as the budget ladder, one level down: **strength must never
+  fall with more playouts**, or the search is generating noise rather than signal. What it measured
+  is *saturation*, which is fine: strength rises from 4 to 8 playouts and then flattens (4-vs-32 is
+  50.7%, CI [47.5%, 53.7%] over 400 games), which is why `NORMAL_PLAYOUTS` ships at 16 rather than
+  the ~60 the budget affords.
+
+One caution the ladder taught: pick rungs far enough apart to resolve. `v0-rollout-4` vs
+`v0-rollout-8` came out at exactly 50.0%, CI [43.3%, 56.7%] over 60 games — one doubling is below
+this harness's resolution at that sample size. Compare 4 against 32, not 4 against 8.
+
+---
+
 ## The pod arena
 
 Two-player pairing does not generalize. At a bigger table there is no "swap the seats" — there are

@@ -5,7 +5,9 @@ import com.wingedsheep.ai.engine.AiProfile
 import com.wingedsheep.ai.engine.EvaluationWeights
 import com.wingedsheep.ai.engine.advisor.modules.BloomburrowAdvisorModule
 import com.wingedsheep.ai.engine.advisor.modules.OnslaughtAdvisorModule
+import com.wingedsheep.ai.engine.budget.RolloutBudgetPolicy
 import com.wingedsheep.ai.engine.budget.TieredBudgetPolicy
+import com.wingedsheep.ai.engine.rollout.RolloutSettings
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.model.EntityId
 
@@ -76,6 +78,41 @@ object ArenaAgents {
         ArenaAgent("v0-intent", AiProfile.PHASE6),
         // Phases 4 and 6 together — what the plan proposes to ship.
         ArenaAgent("v0-phase4-intent", AiProfile.PHASE4_PHASE6),
+        // ── Phase 7 ──
+        // The rollout evaluator alone, at the shipped 16 playouts. Keeping it off Phases 4 and 6
+        // is what makes its number attributable to the rollouts. Still ~50× a `v0` game, so size
+        // runs accordingly.
+        ArenaAgent("v0-rollout", AiProfile.PHASE7),
+        // The rollout ladder: the same agent at four playout counts. Two jobs. It makes the arena
+        // affordable, and it is Phase 7's safety net — the direct analogue of
+        // `ArenaBudgetScalingTest`. What it measured: strength rises from 4 to 8 playouts and then
+        // **plateaus** (4-vs-32 is 50.7%, CI [47.5%, 53.7%] over 400 games), which is why
+        // `SearchAllowances.NORMAL_PLAYOUTS` is 16 rather than the 60-odd a 2 s tier affords.
+        ArenaAgent("v0-rollout-4", rolloutAgent(4)),
+        ArenaAgent("v0-rollout-8", rolloutAgent(8)),
+        ArenaAgent("v0-rollout-16", rolloutAgent(16)),
+        ArenaAgent("v0-rollout-32", rolloutAgent(32)),
+        // The same agent with sequential halving off — the honest control for the *allocation*
+        // rather than for the rollouts. `just arena v0-rollout-flat v0-rollout 1000` prices what
+        // spending the budget on the contenders is worth on its own.
+        ArenaAgent("v0-rollout-flat", AiProfile.PHASE7.copy(
+            id = "v0-rollout-flat",
+            rollouts = RolloutSettings.DEFAULT.copy(sequentialHalving = false),
+        )),
+        // A deeper horizon at the same playout count. Depth and samples compete for one budget, so
+        // this is the A/B that says which the budget should buy.
+        ArenaAgent("v0-rollout-deep", AiProfile.PHASE7.copy(
+            id = "v0-rollout-deep",
+            rollouts = RolloutSettings.DEFAULT.copy(horizonPlayerTurns = 4),
+        )),
+        // Everything Phases 4, 6 and 7 add — what the plan proposes to ship.
+        ArenaAgent("v0-phase4-intent-rollout", AiProfile.PHASE4_PHASE6_PHASE7),
+    )
+
+    /** `v0` plus rollouts, with nothing changed but how many playouts a decision may spend. */
+    private fun rolloutAgent(playouts: Int): AiProfile = AiProfile.PHASE7.copy(
+        id = "v0-rollout-$playouts",
+        budgetPolicy = RolloutBudgetPolicy(playouts),
     )
 
     /** `v0` with nothing changed but the size of a [TieredBudgetPolicy]'s NORMAL tier. */

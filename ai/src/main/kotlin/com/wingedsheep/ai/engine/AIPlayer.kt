@@ -4,6 +4,12 @@ import com.wingedsheep.ai.engine.advisor.CardAdvisorModule
 import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
 import com.wingedsheep.ai.engine.evaluation.*
 import com.wingedsheep.ai.engine.knowledge.IntentCatalog
+import com.wingedsheep.ai.engine.rollout.CandidateEvaluator
+import com.wingedsheep.ai.engine.rollout.FastDecisionResponder
+import com.wingedsheep.ai.engine.rollout.PlayoutEngine
+import com.wingedsheep.ai.engine.rollout.PlayoutPolicy
+import com.wingedsheep.ai.engine.rollout.RolloutCandidateEvaluator
+import com.wingedsheep.ai.engine.rollout.StaticCandidateEvaluator
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.MeaningfulActionFilter
@@ -207,10 +213,46 @@ class AIPlayer(
                     useMeaningfulFilter = profile.useMeaningfulFilter,
                     budgetPolicy = profile.budgetPolicy,
                     intents = intents,
+                    candidateEvaluator = candidateEvaluatorFor(
+                        cardRegistry, profile, evaluator, advisorRegistry, intents
+                    ),
                 ),
                 responder = responder,
                 useMeaningfulFilter = profile.useMeaningfulFilter,
             )
+        }
+
+        /**
+         * Phase 7. The rollout stack, or the pre-Phase-7 static leaf when the profile doesn't ask
+         * for one.
+         *
+         * The [PlayoutEngine] gets its **own** processor, enumerator, `GameSimulator` and
+         * `CombatAdvisor` rather than sharing the Strategist's. `GameSimulator.isResolving` is a
+         * mutable recursion guard and `decisionResolver` is a mutable `var`, so a playout running
+         * inside a simulation on a shared instance would corrupt the guard of the very simulation
+         * that spawned it. The playout's `CombatAdvisor` is only ever asked for its heuristic seed
+         * (`useSimulation = false`), so its simulator is never actually driven — it exists so the
+         * blocking heuristic has one implementation rather than two.
+         */
+        private fun candidateEvaluatorFor(
+            cardRegistry: CardRegistry,
+            profile: AiProfile,
+            evaluator: BoardEvaluator,
+            advisorRegistry: CardAdvisorRegistry,
+            intents: IntentCatalog,
+        ): CandidateEvaluator {
+            val settings = profile.rollouts ?: return StaticCandidateEvaluator(evaluator)
+            val playoutCombat = CombatAdvisor(
+                GameSimulator(cardRegistry), evaluator, cardRegistry, advisorRegistry
+            )
+            val engine = PlayoutEngine(
+                cardRegistry = cardRegistry,
+                evaluator = evaluator,
+                policy = PlayoutPolicy(playoutCombat, intents, settings),
+                decisions = FastDecisionResponder(intents),
+                settings = settings,
+            )
+            return RolloutCandidateEvaluator(engine, evaluator, settings)
         }
 
         /**

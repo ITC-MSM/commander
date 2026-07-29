@@ -3,8 +3,12 @@ package com.wingedsheep.ai.puzzles
 import com.wingedsheep.ai.engine.AIPlayer
 import com.wingedsheep.ai.engine.AiProfile
 import com.wingedsheep.engine.core.ActionProcessor
+import com.wingedsheep.engine.core.CardEntityFactory
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.support.ScenarioTestBase
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.EntityId
 
 /** How one agent did on one puzzle. [failure] is null exactly when [passed] is true. */
 data class PuzzleResult(
@@ -40,6 +44,8 @@ class PuzzleRunner(
         } catch (e: Throwable) {
             return PuzzleResult(puzzle, false, "—", "position failed to build: ${e.message}")
         }
+
+        stockLibraries(game)
 
         val state = game.state
         val aiId = game.seatId(puzzle.aiSeat)
@@ -80,11 +86,43 @@ class PuzzleRunner(
         }
     }
 
+    /**
+     * Give every seat a library, because `ScenarioBuilder.withPlayers` leaves it empty.
+     *
+     * Invisible to a 1-ply agent and fatal to a searching one, which is why it went unnoticed until
+     * Phase 7. `BoardFeatures` never reads library size and a single simulated action never crosses
+     * a draw step, so `v0` cannot tell the difference — but a rollout plays two turns forward, hits
+     * the draw step with nothing to draw, and every playout ends in a decking race decided by whose
+     * draw step comes first (CR 104.3c). A puzzle answered that way measures the harness.
+     *
+     * Basic lands specifically: a land is the most inert card in Magic, so a stocked library adds a
+     * clock and nothing else. Deep enough that no horizon reaches the bottom.
+     */
+    private fun stockLibraries(game: ScenarioTestBase.TestGame) {
+        val forest = registry.getCard("Forest") ?: return
+        var state = game.state
+        var counter = 0
+        for (playerId in state.turnOrder) {
+            val zone = ZoneKey(playerId, Zone.LIBRARY)
+            if (state.zones[zone]?.isNotEmpty() == true) continue
+            repeat(LIBRARY_SIZE) {
+                val cardId = EntityId.of("puzzle-library-${playerId.value}-${counter++}")
+                state = state
+                    .withEntity(cardId, CardEntityFactory.create(forest, playerId))
+                    .addToZone(zone, cardId)
+            }
+        }
+        game.state = state
+    }
+
     fun runAll(puzzles: List<AiPuzzle>, profile: AiProfile): List<PuzzleResult> =
         puzzles.map { run(it, profile) }
 
     private companion object {
         /** Same date-stamp convention as the arena's `ArenaConfig.DEFAULT_SEED`. */
         const val PUZZLE_SEED = 20260727L
+
+        /** Deeper than any rollout horizon can reach, and shorter than a real deck. */
+        const val LIBRARY_SIZE = 30
     }
 }

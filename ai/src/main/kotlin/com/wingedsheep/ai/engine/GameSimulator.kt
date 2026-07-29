@@ -159,96 +159,13 @@ class GameSimulator(
 
     /**
      * Returns a trivial response if there's exactly one legal choice, null otherwise.
+     *
+     * The rules live in [TrivialDecisions] so a rollout playout answers a forced decision exactly
+     * as the simulator does — a playout that diverged here would make rollout scores incomparable
+     * with the static ones they replace, for no benefit.
      */
-    private fun trivialResponseFor(decision: PendingDecision): DecisionResponse? = when (decision) {
-        // Single target, single requirement → auto-select
-        is ChooseTargetsDecision -> {
-            val allSingle = decision.targetRequirements.all { req ->
-                val targets = decision.legalTargets[req.index] ?: emptyList()
-                targets.size == 1 && req.minTargets == 1 && req.maxTargets == 1
-            }
-            if (allSingle) {
-                TargetsResponse(
-                    decisionId = decision.id,
-                    selectedTargets = decision.targetRequirements.associate { req ->
-                        req.index to decision.legalTargets[req.index]!!
-                    }
-                )
-            } else null
-        }
-
-        // Forced card selection (min == max == options.size)
-        is SelectCardsDecision -> {
-            if (decision.minSelections == decision.options.size &&
-                decision.maxSelections == decision.options.size
-            ) {
-                CardsSelectedResponse(decision.id, decision.options)
-            } else null
-        }
-
-        // Damage assignment with defaults
-        is AssignDamageDecision -> {
-            if (decision.defaultAssignments.isNotEmpty()) {
-                DamageAssignmentResponse(decision.id, decision.defaultAssignments)
-            } else null
-        }
-
-        // Mana sources — auto-pay is trivial only when the solver actually found a
-        // solution. When autoPaySuggestion is empty (e.g. the only available mana
-        // requires sacrificing a Treasure), autoPay=true errors and the resumer
-        // would re-prompt the same decision; fall through so the pluggable
-        // resolver (DecisionResponder.respondManaSelection) handles it.
-        is SelectManaSourcesDecision -> {
-            if (decision.autoPaySuggestion.isNotEmpty()) {
-                ManaSourcesSelectedResponse(decision.id, autoPay = true)
-            } else null
-        }
-
-        // Single option
-        is ChooseOptionDecision -> {
-            if (decision.options.size == 1) {
-                OptionChosenResponse(decision.id, 0)
-            } else null
-        }
-
-        // Single color
-        is ChooseColorDecision -> {
-            if (decision.availableColors.size == 1) {
-                ColorChosenResponse(decision.id, decision.availableColors.first())
-            } else null
-        }
-
-        // Single mode, min==max==1
-        is ChooseModeDecision -> {
-            val available = decision.modes.filter { it.available }
-            if (available.size == 1 && decision.minModes == 1) {
-                ModesChosenResponse(decision.id, listOf(available.first().index))
-            } else null
-        }
-
-        // Number with single valid value
-        is ChooseNumberDecision -> {
-            if (decision.minValue == decision.maxValue) {
-                NumberChosenResponse(decision.id, decision.minValue)
-            } else null
-        }
-
-        // Single object ordering
-        is OrderObjectsDecision -> {
-            if (decision.objects.size <= 1) {
-                OrderedResponse(decision.id, decision.objects)
-            } else null
-        }
-
-        // Library reordering with single card
-        is ReorderLibraryDecision -> {
-            if (decision.cards.size <= 1) {
-                OrderedResponse(decision.id, decision.cards)
-            } else null
-        }
-
-        else -> null
-    }
+    private fun trivialResponseFor(decision: PendingDecision): DecisionResponse? =
+        TrivialDecisions.responseFor(decision)
 }
 
 /**

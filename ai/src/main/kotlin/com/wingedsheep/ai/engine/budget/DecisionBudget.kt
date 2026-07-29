@@ -49,6 +49,17 @@ data class SearchAllowances(
     val attackSearchIterations: Int,
     /** Wall-clock cap on the combat local searches specifically. Today's hardcoded 1000 ms. */
     val combatSearchMillis: Long,
+    /**
+     * Phase 7. Playouts one decision may spend across *all* its candidates, which
+     * [com.wingedsheep.ai.engine.rollout.RolloutCandidateEvaluator] allocates by sequential
+     * halving. Zero on every tier that gets the static evaluator instead.
+     *
+     * This is what keeps the rollout search reproducible. Spending a rollout budget as wall clock
+     * would produce a different move under load than idle, which would make every arena rerun a
+     * different game — the same argument that made the rest of this class a work count rather than
+     * a stopwatch, applied to the one consumer that could actually spend an unbounded amount.
+     */
+    val rolloutPlayouts: Int = 0,
 ) {
     companion object {
         /** The tier the allowances are calibrated against. */
@@ -64,7 +75,36 @@ data class SearchAllowances(
             blockSimulations = 10,
             attackSearchIterations = 3,
             combatSearchMillis = 1_000,
+            // V0 has no rollouts, but `LegacyBudgetPolicy` is also what an agent that opts into
+            // rollouts *without* opting into the tiered budget runs on — which is exactly the
+            // isolation `v0-rollout` needs to be attributable. So the legacy allowance carries the
+            // nominal count rather than zero, and the static evaluator simply never reads it.
+            rolloutPlayouts = NORMAL_PLAYOUTS,
         )
+
+        /**
+         * Playouts a [BudgetTier.NORMAL] decision may spend.
+         *
+         * **Measured, not budgeted.** Phase 0's arithmetic says a 2 s tier *affords* ~60 playouts,
+         * and the first cut spent them. Affording is not a reason to spend: the arena says strength
+         * rises from 4 to 8 playouts and then flattens.
+         *
+         * | matchup | result |
+         * |---|---|
+         * | `v0` vs `v0-rollout-4` (300) | 53.7%, CI [49.3%, 57.3%] — spans parity |
+         * | `v0` vs `v0-rollout-8` (300) | **57.3%, CI [53.0%, 61.7%]** |
+         * | `v0-rollout-4` vs `v0-rollout-32` (400) | 50.7%, CI [47.5%, 53.7%] — flat |
+         *
+         * The plateau is not the usual "more samples always help a bit"; it says the rollout term
+         * is **bias-limited rather than variance-limited**. It carries a quarter of the score
+         * (`RolloutSettings.staticWeight`), common random numbers already pair its comparisons, and
+         * what it cannot see — tempo — no amount of sampling reveals.
+         *
+         * So 16: comfortably above the 8 that demonstrated the win, well below the 32 that
+         * demonstrably adds nothing, and 4× cheaper than the nominal budget. The headroom is
+         * deliberate — the plateau was measured on one set at one `staticWeight`.
+         */
+        const val NORMAL_PLAYOUTS = 16
 
         /**
          * Scale [LEGACY] to a tier of [millis].
@@ -85,6 +125,11 @@ data class SearchAllowances(
                 blockSimulations = scaled(LEGACY.blockSimulations, scale, floor = 10, ceiling = 80),
                 attackSearchIterations = scaled(LEGACY.attackSearchIterations, scale, floor = 1, ceiling = 12),
                 combatSearchMillis = millis,
+                // Below NORMAL the rollout evaluator falls back to the static one anyway (see
+                // `RolloutCandidateEvaluator.scoreAll`), so the scaling only has to be sane from
+                // NORMAL up. The ceiling keeps a pathological budget from turning one decision into
+                // thousands of playouts.
+                rolloutPlayouts = scaled(NORMAL_PLAYOUTS, scale, floor = 0, ceiling = 512),
             )
         }
 
@@ -95,6 +140,7 @@ data class SearchAllowances(
             blockSimulations = 0,
             attackSearchIterations = 0,
             combatSearchMillis = 0,
+            rolloutPlayouts = 0,
         )
 
         private fun scaled(base: Int, scale: Double, floor: Int, ceiling: Int): Int =

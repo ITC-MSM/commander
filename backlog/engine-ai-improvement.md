@@ -3,14 +3,16 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** **Phases 0, 1, 2, 3, 4, 5 and 6 shipped** (Phases 4, 5 and 6 on 2026-07-28) — baselines
-in [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
+**Status:** **Phases 0–7 shipped**, plus 3 of Phase 2b's 6 categories (Phase 7 on 2026-07-29) —
+baselines in [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
 [`docs/ai/measurement.md`](../docs/ai/measurement.md). Four scoreboards now exist: the arena
-(`just arena`), the 48-puzzle suite (`just arena-puzzles`, **44/48 today**), the multiplayer pod
+(`just arena`), the 66-puzzle suite (`just arena-puzzles`, **60/66 today**), the multiplayer pod
 arena (`just arena-pod`) and the budget-scaling ladder (`just arena-budget-scaling`, **monotone**).
-Next up is **Phase 7, the rollout evaluator** — the plan's primary lever, and the first phase whose
-leaf evaluator can now see more than creatures. Phases are individually shippable and ordered by
-dependency, not by appeal.
+The primary strength lever is in: the rollout evaluator beats `v0` **56.0%, CI [52.0%, 59.7%]**.
+Next up is **Phase 8, determinization** — the one phase that deliberately *costs* strength, because
+search over a cheated state is search over a lie, and a search is exactly the thing that turns
+cheating into an advantage. Phases are individually shippable and ordered by dependency, not by
+appeal.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
 performance phase built on. **Every step in that document is now closed**; Phase 5a was its Step 4
@@ -450,6 +452,11 @@ Files: `ai/src/test/.../puzzles/{AiPuzzle,PuzzleRunner,PuzzleSuiteTest}.kt` + `c
 sequencing / race math / board-wipe timing", is arithmetically capped at **one** puzzle — those
 categories sit at 5/6, 5/6 and 6/6, and the one sequencing miss is the Phase 9 constant. A lever
 this expensive deserves more than a one-bit localizing signal.
+
+> **It was done before Phase 7, and it earned it.** The three shipped categories gave Phase 7 a
+> signal the 48 could not: the rollout closes `instants-05` and *loses* `respond-02` — a horizon
+> effect nobody predicted — for a net 55/66, exactly `v0`'s score. On the old suite the same agent
+> read as a clean +1. Both readings are true; only the second is useful.
 
 The suite also can't see whole regions of the AI. Five structural gaps, each of which the 48
 positions share by construction rather than by choice:
@@ -1102,7 +1109,75 @@ this plan guessed) — ✅ **5/6**; "holding instants" up — ✅ **3/6 → 5/6*
 
 ---
 
-### Phase 7 — Rollout evaluator · *6–9 d* — the primary lever
+### Phase 7 — Rollout evaluator · *6–9 d* — ✅ **DONE 2026-07-29** — the primary lever
+
+> **Shipped.** `ai/.../engine/rollout/` owns the whole stack: `CandidateEvaluator` (the seam),
+> `WinProbability` (the scale conversion), `PlayoutEngine` + `PlayoutPolicy` +
+> `FastDecisionResponder` (one cheap game forward) and `RolloutCandidateEvaluator` (sequential
+> halving over a shared seed grid). `CombatSeed` and `TargetSelection` are the heuristic halves of
+> `CombatAdvisor` and `Strategist`, extracted so a playout can use them without simulating. New
+> doc: [`docs/ai/architecture.md`](../docs/ai/architecture.md). Numbers and findings:
+> [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#phase-7--rollout-evaluator).
+>
+> **`just arena v0 v0-rollout 300` → 56.0%, CI [52.0%, 59.7%]** at the shipped 16 playouts, and
+> 57.3% CI [53.0%, 61.7%] at 8 — clearing the exit criterion (≥53%, lower bound above parity).
+> On Phase 2b's expanded 66-puzzle suite the rollout is **neutral — 55/66, exactly `v0`'s score —
+> and the two moves cancel**: it closes **`instants-05`**, the Fog puzzle Phase 2 explicitly assigned
+> to this phase, and it loses **`respond-02`** ("do not spend the only Counterspell on a 2/2 with
+> seven lands still open"). The loss is a horizon effect and the honest price of the mechanism:
+> countering shows a gain inside the two-turn horizon, the cost of not holding the card falls outside
+> it. On top of Phases 4 and 6 it is a small net negative (56/66 against 58/66), so what ships is not
+> "turn everything on" — the arena says the rollouts earn their place, the suite says where they do
+> not.
+>
+> Also found, and **not fixed** (pre-existing, and an affordability bug rather than evaluator work):
+> every agent that plays different lines from `v0` surfaces a `CastSpell: Not enough mana to cast
+> this spell` rejection at ~0.05/game — `blb-advisors` 42 per 300 games, `v0-intent` 19,
+> `v0-rollout` **13**. `v0` never reaches those states, which is why `ArenaHarnessTest`'s
+> `v0`-mirror clean-games assertion stays green. Quantified in the baseline doc.
+>
+> Five corrections the build produced:
+>
+> 1. **Squashing the *absolute* board score makes the search report "certain loss" for every
+>    candidate.** The plan says to squash and average; it does not say *what* to squash, and the
+>    obvious reading fails because the evaluator has no calibrated zero. `ThreatAssessment` prices
+>    "we can never kill them" with a 99-turn sentinel, so an ordinary turn-1 position where one side
+>    has no creatures scores **−176** while a close board is single digits — and at any `SCALE` small
+>    enough to separate real candidates, −176 and −156 both squash past the clamp to the same number.
+>    Measured: the puzzle suite fell to 32/48, every failure "chose PassPriority". The fix is to
+>    squash the **delta from the decision's root**, which is shared by every candidate, so the
+>    arbitrary offset cancels and only the differences the Strategist compares survive.
+> 2. **A pure rollout is *weaker* than the greedy AI it replaces, structurally rather than
+>    statistically.** Passing in your own main phase does not end the turn — it advances a step — and
+>    the playout policy then casts the very spell you just declined. Two turns downstream the lines
+>    have converged, the mean cannot see the tempo difference, and the strict `best > pass` sends the
+>    tie to passing (48/66 against `v0`'s 55/66; removal 6/6 → 2/6, non-creature 2/6 → 0/6).
+>    `RolloutSettings.staticWeight` mixes the static leaf back in — the two estimators are blind to
+>    different things — and it is its own control at 0.0 and 1.0.
+> 3. **Puzzle positions had empty libraries** — invisible to a 1-ply agent, fatal to a searching one,
+>    since a two-turn playout hits the draw step with nothing to draw and every line ends in a
+>    decking race (CR 104.3c). `PuzzleRunner` stocks 30 basics per seat now; the existing baselines
+>    are unchanged by it, which is the evidence it fixed the harness rather than the positions.
+> 4. **Phase 7 is the first search whose cost the arena can feel, and it does not need the cost.**
+>    At the ~60 playouts a 2 s tier affords, a game is ~70 s against `v0`'s ~0.07 s and the
+>    1,000-game gate is hours — Phase 1 predicted exactly this ("the budget, not the game count, is
+>    what makes an arena expensive") and Phase 4b escaped it. But the ladder says the money is
+>    wasted: **strength rises from 4 to 8 playouts and then plateaus** (`v0` vs `v0-rollout-4` =
+>    53.7% CI [49.3%, 57.3%]; vs `v0-rollout-8` = 57.3% CI [53.0%, 61.7%]; `-4` vs `-32` = 50.7% CI
+>    [47.5%, 53.7%] over 400 games). That is saturation, not the risk register's failure mode of
+>    strength *falling* with more search — the rollout term is bias-limited rather than
+>    variance-limited, because it carries a quarter of the score, common random numbers already pair
+>    it, and no amount of sampling reveals the tempo it cannot see. So `NORMAL_PLAYOUTS` ships at
+>    **16**, not 64, and the feature is 4× cheaper than its own budget.
+> 5. **The plan's one-candidate `score(...)` API cannot express sequential halving.** An evaluator
+>    that sees one candidate cannot decide to spend 4× on it. `scoreAll` is the resolution, and it
+>    defaults to `map(::score)` — so `StaticCandidateEvaluator` needs no override and `LEGACY_V0`
+>    comes out bit-identical, which `FrozenBaselineTest` proves.
+>
+> **Not done, deliberately:** the `earlyCutoffMargin` flag exists and is off — it trades a real bias
+> for speed and deserves its own A/B rather than shipping on by default. `RolloutSettings.determinizations`
+> is present and pinned at 1: the seed grid is `(d, r)` so Phase 8 can add worlds without rewriting
+> the common-random-number scheme, but with no `Determinizer` yet every world is the same world.
 
 **Plug point is one line:** `Strategist.kt:160`'s
 `evaluator.evaluate(result.state, result.state.projectedState, playerId)`.
@@ -1347,22 +1422,29 @@ but tanks a puzzle category, look hard before shipping.
 ## Recommended order
 
 ```
-0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 5̶ → 6̶ → 2b → 7 → 8 → 9 → 10
+0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 5̶ → 6̶ → 2b🟡 → 7̶ → 8 → 9 → 10
 ```
 
-Phases 0–6 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
+Phases 0–7 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
 table, the budget ladder is calibrated and monotone before any rollout depends on it, the engine's
 quadratic battlefield scans are gone (−21% engine CPU, and `engine-performance.md` is now fully
-closed out), and the leaf evaluator can finally see a permanent that has no power and toughness.
-**Phase 5 never was on the critical path** — simulation was already ~2× the speed the rollout budget
-needs — so it was taken as a standing engine win, not a prerequisite.
+closed out), the leaf evaluator can see a permanent that has no power and toughness, and the primary
+strength lever is in at **57.3%, CI [53.0%, 61.7%]** against `v0`. **Phase 5 never was on the
+critical path** — simulation was already ~2× the speed the rollout budget needs — so it was taken as
+a standing engine win, not a prerequisite.
 
-Next up is **Phase 7, the rollout evaluator** — the plan's primary lever, and now unblocked in the
-sense gate 3 meant: rollouts average a leaf evaluator, and that evaluator no longer scores an
-Oblivion Ring and a signet as the same number. Phase 6 also left it two pieces of homework: the
-`ThreatAssessment` duration flaw (finding 2 in the baseline doc), and the advisor-retirement
-gauntlet, which needs an arena that can separate `{intent-only, advisors-only, both}` before it can
-retire anything.
+Next up is **Phase 8, determinization** — the one phase that deliberately *costs* strength, and the
+one to do next anyway, because a search is exactly the thing that turns cheating into an advantage.
+The AI reads the opponent's unmasked hand and library order, and Phase 7 just gave it the machinery
+to play twenty lines against that knowledge instead of one.
+
+Phase 7 leaves three pieces of homework of its own. **`ThreatAssessment`'s 99-turn sentinel** is now
+a measured hazard rather than a suspected one (correction 1 above): it puts ±176 of uncalibrated
+offset into every absolute score, and Phase 9's fit should replace it rather than rescale it.
+**`staticWeight` is a fifth hand-set constant** — the mixture is real, its value is a guess selected
+on 48 puzzles, and it belongs in the same logistic fit. And the **rollout arena is expensive
+enough** that Phase 8's "record the determinization dip as a deliverable" needs the playout ladder to
+be affordable at all.
 
 **Phase 2b is inserted before it, by the same argument that put Phase 2 before everything.** Phase 6
 took the suite to 44/48, which leaves the plan's most expensive phase with a two-puzzle localizing
@@ -1376,13 +1458,13 @@ Ranked by strength-per-effort, independent of ordering:
 |---|---|---|---|
 | — | **6̶** CardIntent | 5–7 d | **Done.** Was ranked 1. Removed the flat-0.5 blindness to every artifact/enchantment/PW; puzzles 39/48 → 44/48, arena neutral. Two of its five planned consumers (rollout policy, determinization prior) are Phases 7 and 8 and are still to come. |
 | — | **3̶** multiplayer eval | 1–2 d | **Done.** Was ranked 1: the evaluator scored a whole pod as a duel against one arbitrary neighbour, and read a stale life component in 2HG. |
-| 1 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones — and Phase 6 raised the stakes: two of the four remaining puzzle failures are *one* constant, `CardAdvantage.cardValue(0) = −3.0`. Cheap once the arena exists. |
-| 2 | **7** rollout evaluator | 6–9 d | Highest *ceiling*; the real lever. Costly, and worthless without the rest. |
-| 3 | **2b** puzzle suite, second pass | 4–6 d | No direct strength — but at 44/48 the suite can move **two** puzzles for Phase 7, and its five structural gaps (decisions, lines, pods, the stack, activated abilities) hide the AI's least-measured code. Same argument as Phase 2, one phase later. |
+| 1 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones, and each later phase raises the stakes: two of the remaining puzzle failures are *one* constant (`CardAdvantage.cardValue(0) = −3.0`), Phase 7 added a fifth guess (`staticWeight`), and `ThreatAssessment`'s 99-turn sentinel is now a measured hazard rather than a suspected one. Cheap once the arena exists. |
+| — | **7̶** rollout evaluator | 6–9 d | **Done.** The real lever, and it delivered against `v0`; the Fog puzzle Phase 2 assigned to it is closed. Two surprises worth carrying forward: squashing an *absolute* board score destroys the search, and a *pure* rollout is weaker than the greedy AI it replaces. |
+| 3 | **2b**🟡 puzzle suite, second pass | 4–6 d | **3 of 6 categories shipped.** No direct strength — but it took the suite from 48 to 66 and gave Phase 7 a real localizing signal where 44/48 had left two puzzles. The three unshipped categories need framework changes. |
 | 4 | **1̶ / 2̶** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Both done. |
 | — | **4̶a** auto-pass filter | 3–5 d | **Done.** Demoted by Phase 0 and rescoped to "skip the enumeration": 40% of priority windows now never call the enumerator. Also closed Phase 1's 889-of-945 illegal-action finding, which turned out to be a targeting bug. |
 | — | **4̶b** DecisionBudget | 2–3 d | **Done.** Enabling infrastructure, and it measures like it — neutral in the arena, monotone in the scaling ladder. |
-| 7 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
+| 2 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
 | — | **5̶a** hoist O(n²) scans | 3–5 d | **Done.** Demoted by Phase 0 (not a rollout prerequisite), taken as a standing engine win anyway: `findAvailableManaSources` 59% → 3.1% inclusive, −21% engine CPU. Closed `engine-performance.md` Step 4. |
 | — | **5̶c** persistent collections | 4–6 d | **Dropped**, gate checked. Post-5a profile puts the allocation cluster at ~2% (`Arena::grow` 1.37%). The top leaf is now `PredicateEvaluator.matchesCardPredicate` at 20.4% self. |
 | — | projection incrementalization | 2+ wk | **Skip.** 7.4% in the profile, 11% measured cold, and already cached. |
@@ -1402,7 +1484,11 @@ two phases' worth of assumed work.
 | **Overfitting to self-play** | Held-out set + gauntlet + puzzles | ≥3 collecting agents; hold out by game *and* by set; arena is the arbiter, not log-loss |
 | **Non-transitive strength** | Full pairwise matrix, not just Elo | Must beat V0 *and* previous version; lose to no gauntlet member worse than 45% |
 | ~~**Combat's 1 s cap fights the global budget**~~ | Blocking puzzle category; `DecisionBudgetTest` | **Closed in Phase 4b** — combat declaration is always CRITICAL and `MAX_BLOCK_SIMULATIONS = 10` is a floor on every tier, asserted directly, so combat can never search *less* than it did before the budget existed |
-| **`GameSimulator.isResolving` / `decisionResolver` thread-safety** | Nondeterminism across arena reruns at the same seed | One `AIPlayer` per *seat* per game, never shared. `ArenaHarnessTest` asserts identical outcomes at 8 threads and at 1 — **green as of Phase 1**, so the AI is deterministic today. `PlayoutEngine` must own its own processor when Phase 7 lands |
+| ~~**`GameSimulator.isResolving` / `decisionResolver` thread-safety**~~ | Nondeterminism across arena reruns at the same seed | **Closed in Phase 7.** One `AIPlayer` per *seat* per game, never shared, and `PlayoutEngine` owns its own `ActionProcessor`, enumerator and `CombatAdvisor` as required. `ArenaHarnessTest` (identical at 8 threads and at 1) and `FrozenBaselineTest` are both green with rollouts on, which also proves the search reads no clock |
+| **A rollout search quietly becomes irreproducible** | `ArenaHarnessTest`; `RolloutCandidateEvaluatorTest` asserts scores are a pure function of the position | Every playout seed derives from the root state and every allocation from `SearchAllowances.rolloutPlayouts`. `DecisionBudget.expired()` is a safety stop only — a search that spent wall clock would play a different game under load than idle |
+| ~~**Averaging a `Double.MAX_VALUE / 2` win score**~~ | Certain, on the first won playout | **Closed in Phase 7** — `WinProbability` squashes to a probability, averages there, and converts back; a proven win is ±55 raw points, which dominates every board score finitely |
+| **Squashing an *absolute* board score** | Every candidate scores identically at the clamp; puzzles collapse to "chose PassPriority" | Squash the **delta from the decision's root**, which is shared by all candidates. The absolute scale is uncalibrated: `ThreatAssessment`'s 99-turn sentinel puts an ordinary position at −176. Cost the phase 7 puzzle points before it was found |
+| **A rollout mean cannot see tempo** | Removal and Disenchant puzzles fail by passing | Passing advances a step, not the turn, so the playout re-casts the declined spell and the lines converge. `RolloutSettings.staticWeight` mixes the static leaf back in; it is its own control at 0.0 and 1.0 |
 | **A pod result is read against 50%** | Certain to happen — every other number in this plan is | The null is **1/teams**: 33% at `ffa3`, 25% at `ffa4`, 50% at `2hg`. `ArenaReport.podSummary` prints the null on the same line as the win share and states it in the verdict sentence |
 | **A multiplayer harness trusts `GameState.turnNumber`** | Used to read every pod game as wedged after the first elimination | `turnNumber` was a round counter that only advanced for `turnOrder.first()`, who may be dead. **Closed**: it counts player turns now, so it is a sound clock at any table size (`backlog/multiplayer.md`) |
 | **Persistent collections break persisted sessions / committed replays** | `GameStateSerializationFormatStabilityTest` golden JSON | Serializers delegate to standard `MapSerializer`/`ListSerializer` ⇒ byte-identical wire format |

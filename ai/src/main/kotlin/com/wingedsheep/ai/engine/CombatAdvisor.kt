@@ -68,7 +68,8 @@ class CombatAdvisor(
      *
      * Two-phase approach:
      * 1. Heuristic seed: always-attack creatures (evasive, vigilance, indestructible),
-     *    plus lethal alpha-strike detection
+     *    plus lethal alpha-strike detection. Lives in [CombatSeed] since Phase 7, because a
+     *    rollout playout needs the seed without the simulation-driven second phase.
      * 2. Local search: try adding/removing one attacker at a time, simulate each through
      *    the engine (opponent blocks via heuristic, combat resolves), keep improvements
      */
@@ -80,134 +81,18 @@ class CombatAdvisor(
     ): GameAction {
         val projected = state.projectedState
         val validAttackers = legalAction.validAttackers ?: emptyList()
-        val defendingPlayers = legalAction.validAttackTargets ?: emptyList()
-
-        if (validAttackers.isEmpty() || defendingPlayers.isEmpty()) {
-            return DeclareAttackers(playerId, emptyMap())
-        }
-
-        // CR 802.2a — who we attack is a choice, and `validAttackTargets` mixes players with
-        // opponent planeswalkers. Pick the *player* closest to dying: in 1v1 that is the sole
-        // opponent (unchanged), and in a pod it is the seat an alpha strike can actually finish.
-        val opponentId = defendingPlayers.filter { it in state.turnOrder }
-            .minByOrNull { state.lifeTotal(it) }
-            ?: defendingPlayers.first()
-        val opponentLife = if (opponentId in state.turnOrder) state.lifeTotal(opponentId) else 20
-        val opponentCreatures = CombatMath.getOpponentUntappedCreatures(state, projected, opponentId)
         val mandatory = legalAction.mandatoryAttackers ?: emptyList()
 
-        // ── Lethal check: alpha-strike if damage gets through even with optimal blocking ──
-        if (isLethalAttack(state, projected, validAttackers, opponentCreatures, opponentLife)) {
-            return DeclareAttackers(playerId, validAttackers.associateWith { opponentId })
-        }
+        val seed = CombatSeed.attackers(
+            state, projected, legalAction, playerId, cardRegistry,
+            attackPenalty = { entityId ->
+                attackPenaltyFor(state, projected, listOf(entityId), playerId)
+            },
+        )
+        val opponentId = seed.defenderId ?: return DeclareAttackers(playerId, emptyMap())
+        if (seed.lethal) return DeclareAttackers(playerId, seed.attackers)
 
-        // ── Heuristic seed: no-downside and clearly profitable attackers ──
-        // Creatures an advisor discourages from attacking are left out of the seed;
-        // the local search below can still add them back when it pays.
-        val discouraged = validAttackers.filter { entityId ->
-            entityId !in mandatory &&
-                attackPenaltyFor(state, projected, listOf(entityId), playerId) > 0.0
-        }.toSet()
-
-        val seedMap = mutableMapOf<EntityId, EntityId>()
-        for (entityId in mandatory) {
-            seedMap[entityId] = opponentId
-        }
-        for (entityId in validAttackers) {
-            if (entityId in seedMap || entityId in discouraged) continue
-            val power = projected.getPower(entityId) ?: 0
-            if (power <= 0) continue
-
-            val toughness = projected.getToughness(entityId) ?: 0
-            val keywords = projected.getKeywords(entityId)
-            val isEvasive = CombatMath.isEvasive(state, projected, entityId, opponentCreatures)
-
-            // Always attack: no risk
-            if (Keyword.VIGILANCE.name in keywords ||
-                Keyword.INDESTRUCTIBLE.name in keywords ||
-                opponentCreatures.isEmpty() ||
-                isEvasive
-            ) {
-                seedMap[entityId] = opponentId
-                continue
-            }
-
-            // Attack if we survive any single blocker
-            val survivesAllBlockers = opponentCreatures.all { blockerId ->
-                val bPower = projected.getPower(blockerId) ?: 0
-                toughness > bPower
-            }
-            if (survivesAllBlockers) {
-                seedMap[entityId] = opponentId
-                continue
-            }
-
-            // Attack if trample and we'd deal significant damage through
-            if (Keyword.TRAMPLE.name in keywords) {
-                val bestBlockerToughness = opponentCreatures
-                    .filter { CombatMath.canBeBlockedBy(state, projected, entityId, it) }
-                    .maxOfOrNull { projected.getToughness(it) ?: 0 } ?: 0
-                val damageThrough = (power - bestBlockerToughness).coerceAtLeast(0)
-                if (damageThrough > 0 && toughness > (opponentCreatures.minOfOrNull { projected.getPower(it) ?: 0 } ?: 0)) {
-                    seedMap[entityId] = opponentId
-                    continue
-                }
-            }
-
-            // Attack if every blocking option is worse for the opponent than taking the damage
-            // (e.g., a 3/3 into a board of 2/2s — opponent must take 3 or trade down)
-            // Accept even trades when we have more creatures — trading favors the larger army
-            if (CombatMath.isProfitableAttack(
-                    state, projected, entityId, opponentCreatures, cardRegistry,
-                    myCreatureCount = validAttackers.size,
-                    opponentCreatureCount = opponentCreatures.size
-                )) {
-                seedMap[entityId] = opponentId
-                continue
-            }
-        }
-
-        // Attack if we have more attackers than they have blockers (excess gets through)
-        if (seedMap.size < validAttackers.size) {
-            val unblockedSlots = validAttackers.size - opponentCreatures.size
-            if (unblockedSlots > 0) {
-                // Sort remaining by value ascending — send cheapest creatures first,
-                // hold back the most valuable ones in case we need a blocker
-                val remaining = validAttackers
-                    .filter { it !in seedMap && it !in discouraged && (projected.getPower(it) ?: 0) > 0 }
-                    .sortedBy { CombatMath.creatureValue(state, projected, it) }
-
-                // Estimate opponent's crack-back damage through our optimal blocking.
-                // Accounts for evasion — flying creatures we can't block deal guaranteed damage.
-                val myLife = state.lifeTotal(playerId)
-                val allOpponentAttackers = projected.getBattlefieldControlledBy(opponentId).filter {
-                    projected.isCreature(it) && Keyword.DEFENDER.name !in projected.getKeywords(it)
-                }
-                val myPotentialBlockers = validAttackers.filter { it !in seedMap }
-                val crackBackDamage = if (allOpponentAttackers.isNotEmpty()) {
-                    CombatMath.calculateDamageThroughOptimalBlocking(
-                        state, projected, allOpponentAttackers, myPotentialBlockers
-                    )
-                } else 0
-
-                // If opponent threatens near-lethal damage next turn, hold back our best blocker.
-                // Prefer deathtouch creatures as hold-backs (they trade with anything).
-                val holdBack = if (crackBackDamage > 0 && myLife <= crackBackDamage * 1.5) {
-                    remaining.maxByOrNull { entityId ->
-                        val keywords = projected.getKeywords(entityId)
-                        val hasDeathtouch = Keyword.DEATHTOUCH.name in keywords
-                        val toughness = projected.getToughness(entityId) ?: 0
-                        if (hasDeathtouch) 1000 + toughness else toughness
-                    }
-                } else null
-
-                for (entityId in remaining) {
-                    if (entityId != holdBack) {
-                        seedMap[entityId] = opponentId
-                    }
-                }
-            }
-        }
+        val seedMap = seed.attackers.toMutableMap()
 
         // ── Local search: try add/remove mutations via simulation ──
         // Only run if we're at DECLARE_ATTACKERS (simulation needs to submit DeclareAttackers).
@@ -937,32 +822,6 @@ class CombatAdvisor(
     }
 
 
-
-    // ── Lethal Analysis ─────────────────────────────────────────────────
-
-    /**
-     * Check if attacking with all creatures would be lethal even through optimal blocking.
-     */
-    private fun isLethalAttack(
-        state: GameState,
-        projected: ProjectedState,
-        attackers: List<EntityId>,
-        opponentBlockers: List<EntityId>,
-        opponentLife: Int
-    ): Boolean {
-        val totalPower = attackers.sumOf { (projected.getPower(it) ?: 0).coerceAtLeast(0) }
-        if (totalPower < opponentLife) return false
-
-        // Guaranteed evasive damage
-        val evasiveDamage = CombatMath.calculateEvasiveDamage(state, projected, attackers, opponentBlockers)
-        if (evasiveDamage >= opponentLife) return true
-
-        // Full simulation of optimal blocking
-        val damageThrough = CombatMath.calculateDamageThroughOptimalBlocking(
-            state, projected, attackers, opponentBlockers
-        )
-        return damageThrough >= opponentLife
-    }
 
     /**
      * Simulate a full attack with an arbitrary set of attackers: declare attackers,

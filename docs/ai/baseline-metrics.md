@@ -921,3 +921,208 @@ non-combat, so `CombatAdvisor` cannot carry them the way it carries `lethal` and
 `withCardOnBattlefield` attaches no `CountersComponent`, so a **planeswalker placed directly on the
 battlefield enters at 0 loyalty and dies to state-based actions immediately** — the walker category
 cannot be written until `ScenarioBuilder` can seed counters.
+
+---
+
+# Phase 7 — Rollout evaluator
+
+Measured 2026-07-29 on this machine (8 arena threads, BLB, seed 20260727). Reproduce with
+`just arena v0 v0-rollout-8 300` and `just arena-puzzles-compare`.
+
+`RolloutCandidateEvaluator` replaces the greedy leaf — one `BoardEvaluator.evaluate` on the state
+right after a candidate resolves — with the mean of several short playouts. Architecture and seams:
+[`architecture.md`](architecture.md).
+
+## Headline
+
+| Measurement | Result |
+|---|---|
+| **`just arena v0 v0-rollout 300`** (shipped, 16 playouts) | **`v0-rollout` 56.0%, CI [52.0%, 59.7%]** |
+| `just arena v0 v0-rollout-8 300` | `v0-rollout-8` 57.3%, CI [53.0%, 61.7%] |
+| Puzzle suite, `v0-rollout` vs `v0` | **55/66 vs 55/66** — neutral: instants +1, respond −1 |
+| `instants-05` (Fog at 2 life) | **closed** — the puzzle the plan assigned to this phase |
+| Shipped playout count | **16**, measured — not the ~60 a 2 s tier affords |
+
+The exit criterion was "arena ≥53% with the lower CI bound above 50%". 57.3% with a lower bound of
+53.0% clears it, on 300 paired games rather than the nominal 1,000 — see correction 4 for why.
+
+### Strength rises to ~8 playouts, then plateaus
+
+The rollout ladder, which is Phase 7's own safety net:
+
+| matchup | games | result |
+|---|---|---|
+| `v0` vs `v0-rollout-4` | 300 | 53.7%, CI [49.3%, 57.3%] — spans parity |
+| `v0` vs `v0-rollout-8` | 300 | **57.3%, CI [53.0%, 61.7%]** |
+| `v0-rollout-4` vs `v0-rollout-32` | 400 | 50.7%, CI [47.5%, 53.7%] — flat |
+
+**Not the alarming shape.** The risk register's failure mode is strength *falling* with more search,
+which would mean the rollouts are noise; this is saturation, which means they are signal with a
+ceiling. The gain appears between 4 and 8 playouts and 8× more buys nothing measurable.
+
+The plateau says the rollout term is **bias-limited, not variance-limited**. It carries a quarter of
+each score (`staticWeight = 0.75`), common random numbers already pair its comparisons so its
+between-candidate noise is small at any count, and what it *cannot* see — tempo, correction 2 — no
+amount of sampling reveals. More samples sharpen an estimate that was never the bottleneck.
+
+So `SearchAllowances.NORMAL_PLAYOUTS` ships at **16**: above the 8 that demonstrated the win, below
+the 32 that demonstrably adds nothing, and 4× cheaper than the budget arithmetic would have spent.
+The headroom is deliberate — the plateau was measured on one set at one `staticWeight`, and the
+honest generalization is "few playouts suffice here", not "few playouts suffice".
+
+## Per-category puzzle scores
+
+`staticWeight` sweep on the 66-puzzle suite (Phase 2b's three new categories included). `v0` is the
+greedy reference; `v0-rollout-pure` is the same agent with the static leaf mixed out entirely.
+
+| Category | v0 | v0-rollout-pure | v0-rollout-25 | v0-rollout (0.75) | v0-phase4-intent | +rollout |
+|---|---|---|---|---|---|---|
+| lethal | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 |
+| blocking | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 |
+| removal | 6/6 | 2/6 | 5/6 | 6/6 | 6/6 | 6/6 |
+| **instants** | 3/6 | 5/6 | 4/6 | **4/6** | 3/6 | 3/6 |
+| sequencing | 5/6 | 3/6 | 5/6 | 5/6 | 5/6 | 5/6 |
+| wipe | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 |
+| race | 5/6 | 5/6 | 5/6 | 5/6 | 5/6 | 5/6 |
+| noncreature | 2/6 | 0/6 | 2/6 | 2/6 | 5/6 | 4/6 |
+| **respond** | 5/6 | 4/6 | 4/6 | **4/6** | 5/6 | 4/6 |
+| activate | 5/6 | 5/6 | 6/6 | 5/6 | 5/6 | 5/6 |
+| keywords | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 |
+| **total** | **55/66** | **48/66** | **55/66** | **55/66** | **58/66** | **56/66** |
+
+**On the suite the rollout is neutral, and the two moves cancel exactly.** It gains `instants-05` —
+Fog against a lethal alpha strike, which Phase 2 diagnosed precisely ("a one-ply evaluator cannot see
+prevention: the post-simulation state has the same life totals as passing") and assigned to this
+phase — and it loses `respond-02`, "do not spend the only Counterspell on a 2/2 with seven lands
+still open".
+
+`respond-02` is a **horizon effect, and the honest cost of the mechanism**: countering the 2/2 shows
+a concrete board gain inside the two-turn horizon, while the price — not having the Counterspell for
+something that matters — falls outside it. A longer horizon is not the fix (it costs samples and the
+card may not be needed for many turns); knowing what the card is *for* is, and that is
+`CardIntent`/`HoldPolicy` territory. Note `production`, which has both, keeps 5/6.
+
+Two readings worth keeping separate. **On top of Phases 4 and 6 the rollout is a small net
+negative** — 56/66 against 58/66, losing `noncreature-05` and `respond-02` — so what ships is not
+"turn everything on"; the arena is what says the rollouts earn their place, and the suite is what
+says where they do not. And the `staticWeight` sweep that looked monotone on 48 puzzles is **flat at
+0.25 / 0.5 / 0.75 on 66** (55 / 55 / 55). Only the pure rollout is clearly bad. So 0.75 is no longer
+*selected* by the suite, merely not contradicted by it — the arena number was measured at 0.75 and
+the value stays there, but it is now an unvalidated choice inside a plateau rather than a peak, and
+it belongs in Phase 9's fit with the rest of the guesses.
+
+## Five corrections the build produced
+
+### 1. Squashing the *absolute* board score makes the search report "certain loss" for every line
+
+The plan says to squash a score into a win probability with `1 / (1 + exp(-s / SCALE))` and average
+there. It does not say what to squash, and the obvious reading — the leaf's own score — does not
+work, because **the evaluator has no calibrated zero**. `ThreatAssessment` prices "we can never kill
+them" with a 99-turn sentinel (`turnsUntilWeKill = 99.0`, `score -= (99 - turnsUntilDead) * 1.5`),
+so an ordinary turn-1 position where one side has no creatures scores **−176** while a close board
+is single digits. At any `SCALE` small enough to discriminate between real candidates, −176 and
+−156 both squash past the clamp to the same number.
+
+Measured before the fix: every candidate on `removal-01` and `instants-05` scored exactly
+`logit(1e-4)`, and the suite fell to 32/48 — measured on the 48-puzzle suite, before Phase 2b — with
+the failures uniformly "chose PassPriority".
+
+The fix is to squash **the delta from the decision's root**. The baseline is shared by every
+candidate, so the arbitrary offset cancels and only the differences the Strategist actually compares
+survive — which also lets `SCALE` be calibrated against score *differences* (single digits) instead
+of absolute scores. `WinProbability.asBaseline` guards the terminal sentinel; everything else passes
+through raw, because routing the baseline through `squash` first would clamp away exactly the
+magnitude it exists to subtract.
+
+The 99-turn sentinel is not itself a bug for a greedy agent — both candidates carry the same offset,
+so only the difference matters — but it is a standing hazard for anything that reads an absolute
+score, and Phase 9's logistic fit should replace it rather than rescale it.
+
+### 2. A pure rollout is **weaker** than the greedy AI it replaces, for a structural reason
+
+At `staticWeight = 0` the agent scores 48/66, against `v0`'s 55: removal 6/6 → **2/6**, sequencing
+5/6 → 3/6 and non-creature valuation 2/6 → 0/6, every failure an unnecessary pass.
+
+The cause is not sampling noise. **Passing in your own main phase does not end the turn — it
+advances a step — and the playout policy then casts the very spell you just declined**, a window or
+a phase later. Two turns downstream the "cast it now" line and the "pass" line have converged to the
+same board, so the rollout mean genuinely cannot see the tempo difference between them, and the
+Strategist's strict `best > pass` sends the tie to passing.
+
+The static leaf sees exactly that tempo, and the rollout sees exactly what one ply cannot
+(prevention, the crack-back, whether a race is won). Mixing them recovers both.
+`RolloutSettings.staticWeight` is the mixing fraction; the sweep is monotone up to 0.75:
+
+| `staticWeight` | 0.0 | 0.25 | 0.5 | 0.75 | (1.0 = `v0`) |
+|---|---|---|---|---|---|
+| 48-puzzle suite | 34/48 | 39/48 | 39/48 | **40/48** | 39/48 |
+| 66-puzzle suite | 48/66 | 55/66 | 55/66 | 55/66 | 55/66 |
+
+The 48-puzzle suite selected 0.75 and the arena was measured there. **The expanded suite does not
+reproduce the peak** — 0.25, 0.5 and 0.75 are indistinguishable at 55/66 — which is a useful lesson
+about picking a constant on 48 samples, and exactly why Phase 9 fits rather than sweeps. What both
+suites agree on is the shape that matters: mixing *some* static leaf back in is worth ~7 puzzles
+over not mixing at all. The parameter remains its own control, since `v0-rollout-pure` and `v0` are
+the two endpoints of the same knob.
+
+### 3. Puzzle positions had empty libraries, which is invisible to a greedy agent and fatal to a searching one
+
+`ScenarioBuilder.withPlayers` initialises every zone to empty and no puzzle stocked a library.
+`BoardFeatures` never reads library size and a single simulated action never crosses a draw step, so
+`v0` cannot tell — but a playout runs two turns forward, hits the draw step with nothing to draw,
+and **every line ends in a decking race decided by whose draw step comes first** (CR 104.3c).
+
+`PuzzleRunner` now stocks 30 basics per seat through the engine's own `CardEntityFactory`. The
+existing baselines are unchanged by it (`production` still scores what Phase 2b baselined it at,
+`FrozenBaselineTest` still green), which is the evidence that it fixes the harness rather than the
+positions.
+
+### 4. Phase 7 is the first search whose cost the arena can feel
+
+A rollout decision is *N* playouts × ~40 engine actions, so at the 64 the budget arithmetic
+suggested it is ~2,400 `process()` calls: **~70 s per rollout-vs-`v0` game** against `v0`'s ~0.07 s,
+and the nominal 1,000-game merge gate goes from 3.5 minutes to hours. At the shipped 16 it is ~4×
+better and a 300-game run is minutes.
+
+Phase 1's report predicted exactly this ("the budget, not the game count, is what makes an arena
+expensive") and Phase 4b did not need the mitigation because a filtered greedy agent costs nothing.
+Phase 7 does. `RolloutBudgetPolicy` resizes the playout allowance, and the ladder of counts
+(`v0-rollout-4/8/16/32`) is both what makes the arena affordable and the phase's own safety net:
+strength must be monotone in playouts, or the search is generating noise rather than signal.
+
+One caution the ladder taught about itself: `v0-rollout-4` vs `v0-rollout-8` measured 50.0%, CI
+[43.3%, 56.7%] over 60 games. That is a statement about the sample size, not about the agents —
+size a rung to the gap you expect to see, and prefer 4-against-32 to 4-against-8.
+
+### 5. A pre-existing "Not enough mana" rejection, surfaced but not caused
+
+The 300-game shipped run reports **13 rejected actions**, all `CastSpell: Not enough mana to cast
+this spell` — the enumerator marked a spell affordable and the processor disagreed. Phase 1's
+illegal-action finding was closed in Phase 4a, so this looks like a regression and is not one:
+
+| agent pair | 300 games | rejections |
+|---|---|---|
+| `v0` vs `blb-advisors` (pre-Phase-6) | 300 | **42** |
+| `v0` vs `v0-intent` (Phase 6) | 300 | 19 |
+| `v0` vs `v0-rollout` (Phase 7) | 300 | **13** |
+
+Every agent that plays *different lines from `v0`* surfaces it, at rates that put the rollout agent
+at the bottom of the three. `v0` never reaches the states that trigger it, which is why
+`ArenaHarnessTest`'s clean-games assertion — a `v0` mirror — stays green and why this went unnoticed
+until an expensive run printed a histogram.
+
+Left open, deliberately, the same posture Phase 1 took with its own illegal-action finding: it is an
+affordability bug somewhere in the enumerator or the mana solver, not evaluator work, and diagnosing
+it inside a phase about leaf scoring would be scope creep. It wants its own reproduction — the
+histogram gives the error string and the arena gives the seed.
+
+### 6. The batch scoring API is what makes sequential halving possible at all
+
+The plan specifies `CandidateEvaluator.score(root, afterAction, playerId, budget)` — one candidate —
+and separately specifies sequential halving over candidates. Those are incompatible: an evaluator
+that sees one candidate cannot decide to spend four times as much on it as on its siblings.
+
+`scoreAll` is the resolution, and it defaults to `map(::score)`, so `StaticCandidateEvaluator` needs
+no override and `LEGACY_V0` comes out bit-identical — `FrozenBaselineTest` is what proves it. The
+Strategist's loop became three passes (simulate all, score all, adjust all) which is also simply a
+clearer shape than the old interleaving.
