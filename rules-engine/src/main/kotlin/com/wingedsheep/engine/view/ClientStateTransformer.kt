@@ -1346,7 +1346,13 @@ class ClientStateTransformer(
             isWarped = isWarped,
             morphCost = if (isFaceDown && morphData != null) morphData.morphCost.description else null,
             targets = targets,
-            imageUri = state.imageOverrideFor(entityId) ?: cardComponent.imageUri ?: cardDef?.metadata?.imageUri,
+            imageUri = state.imageOverrideFor(entityId)
+                ?: cardDef?.metadata?.imageUriByCreatureSubtype
+                    ?.entries
+                    ?.firstOrNull { (subtype) -> subtype in displaySubtypes }
+                    ?.value
+                ?: cardComponent.imageUri
+                ?: cardDef?.metadata?.imageUri,
             imageRotation = cardDef?.metadata?.imageRotation ?: 0,
             activeEffects = activeEffects,
             rulings = cardDef?.metadata?.rulings?.map {

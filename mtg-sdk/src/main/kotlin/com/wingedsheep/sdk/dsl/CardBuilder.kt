@@ -1708,6 +1708,7 @@ class MetadataBuilder {
     var artist: String? = null
     var flavorText: String? = null
     var imageUri: String? = null
+    var imageUriByCreatureSubtype: Map<String, String> = emptyMap()
     var inBooster: Boolean = true
 
     /**
@@ -1733,6 +1734,7 @@ class MetadataBuilder {
         artist = artist,
         flavorText = flavorText,
         imageUri = imageUri,
+        imageUriByCreatureSubtype = imageUriByCreatureSubtype,
         rulings = _rulings.toList(),
         inBooster = inBooster,
         imageRotation = imageRotation

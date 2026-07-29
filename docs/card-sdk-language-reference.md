@@ -157,6 +157,10 @@ section; do not let SDK additions land without a corresponding doc update.
 - `artist: String` — illustrator credit.
 - `flavorText: String` — italicized flavor.
 - `imageUri: String?` — art URL; auto-fetched from Scryfall if omitted.
+- `imageUriByCreatureSubtype: Map<String, String>` — optional display-only alternate art selected
+  from a battlefield permanent's projected creature subtypes. Because the server evaluates the
+  projected subtype, the art appears and reverts with continuous type-changing effects; the client
+  only renders the selected URI.
 - `imageRotation: Int` — clockwise degrees to rotate the art when rendered (default `0`). Set `180` for
   flip-layout tokens whose only Scryfall image shows the other face upright — the WOE Role tokens are printed
   two-to-a-card (`Wicked // Cursed`, `Monster // Sorcerer`), so the bottom face (`Cursed`, `Sorcerer`) reads
