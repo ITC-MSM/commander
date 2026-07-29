@@ -149,7 +149,7 @@ import com.wingedsheep.engine.state.components.identity.PlottedComponent
 import com.wingedsheep.engine.state.components.identity.ForetoldComponent
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
 import com.wingedsheep.sdk.scripting.conditions.VoidCondition
-import com.wingedsheep.engine.state.components.player.PlayerCitysBlessingComponent
+import com.wingedsheep.engine.mechanics.citysblessing.CitysBlessingService
 import com.wingedsheep.engine.state.components.player.TheRingComponent
 
 /**
@@ -1032,7 +1032,12 @@ class ConditionEvaluator(
         ctx: ConditionEvaluationContext
     ): Boolean {
         val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
-        return state.getEntity(playerId)?.has<PlayerCitysBlessingComponent>() == true
+        // Not a bare component read: CR 702.131b's ascend is continuous, so a player who has just
+        // crossed ten permanents mid-resolution already has the blessing, before the state-based
+        // action writes the marker. The ctx projection (not state.projectedState) is what keeps the
+        // projection-mode caller — Tendershoot Dryad's city's-blessing static gate — from
+        // re-entering the lazy projection initializer. See CitysBlessingService.
+        return CitysBlessingService.has(state, playerId, ctx.projectedStateFor(state))
     }
 
     private fun evaluatePermanentTypeEnteredBattlefieldThisTurnCtx(

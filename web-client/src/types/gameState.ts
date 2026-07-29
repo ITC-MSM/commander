@@ -202,7 +202,7 @@ export interface ClientCard {
 
   /** State flags */
   readonly isTapped: boolean
-  /** Exerted (CR 701.39a) — won't untap during its controller's next untap step. */
+  /** Exerted (CR 701.43a) — won't untap during its controller's next untap step. */
   readonly isExerted?: boolean
   readonly hasSummoningSickness: boolean
   readonly isTransformed: boolean

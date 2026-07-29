@@ -3,6 +3,7 @@ package com.wingedsheep.engine.view
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.engine.mechanics.citysblessing.CitysBlessingService
 import com.wingedsheep.engine.mechanics.combat.rules.DefenderBypass
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
@@ -2148,10 +2149,13 @@ class ClientStateTransformer(
             )
         }
 
-        // Check for PlayerCitysBlessingComponent (Ascend / city's blessing, CR 702.131).
-        // Surface the actual Scryfall "City's Blessing" marker card (tblc #40) as the badge
-        // image so it matches the physical-game marker players know.
-        if (container.has<PlayerCitysBlessingComponent>()) {
+        // Ascend / city's blessing (CR 702.131). Read through CitysBlessingService rather than the
+        // component so the badge tracks the rule: ascend on a permanent is continuous, and a player
+        // who has just crossed ten permanents already has the blessing even though the state-based
+        // action that writes the marker hasn't been polled yet. Surface the actual Scryfall "City's
+        // Blessing" marker card (tblc #40) as the badge image so it matches the physical-game
+        // marker players know.
+        if (CitysBlessingService.has(state, playerId)) {
             effects.add(
                 ClientPlayerEffect(
                     effectId = "citys_blessing",

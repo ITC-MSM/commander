@@ -204,7 +204,7 @@ data class PayCountersEffect(
  * whether to pay the named total, and per the 2024-06-07 ruling you can't pay a partial amount
  * to get a partial effect.
  *
- * Designed as the `action` half of a [ReflexiveTriggerEffect] ("When you do" — CR 603.2 — a
+ * Designed as the `action` half of a [ReflexiveTriggerEffect] ("When you do" — CR 603.12 — a
  * fresh triggered ability with its own targets, distinct from a same-ability "If you do"
  * continuation): the outer yes/no is the payment decision itself, so this effect performs no
  * decision of its own — it deducts [amount] atomically and fails outright (no partial removal)
