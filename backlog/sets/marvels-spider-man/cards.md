@@ -2,12 +2,12 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 167 / 188
+**Implemented:** 170 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
 - [x] Amazing Acrobatics
-- [ ] Anti-Venom, Horrifying Healer
+- [x] Anti-Venom, Horrifying Healer
 - [ ] Arachne, Psionic Weaver
 - [x] Araña, Heart of the Spider
 - [x] Aunt May
@@ -142,7 +142,7 @@
 - [ ] Spider-Punk
 - [x] Spider-Rex, Daring Dino
 - [x] Spider-Sense
-- [ ] Spider-Slayer, Hatred Honed
+- [x] Spider-Slayer, Hatred Honed
 - [x] Spider-Suit
 - [x] Spider-UK
 - [ ] Spider-Verse
@@ -189,5 +189,5 @@
 - [x] Whoosh!
 - [x] Wild Pack Squad
 - [x] Wisecrack
-- [ ] With Great Power . . .
+- [x] With Great Power . . .
 - [x] Wraith, Vicious Vigilante

@@ -139,7 +139,17 @@ battlefield-exit (or the predicate evaluated against pre-leave state). `add-feat
 Blocked cards:
 - **Costume Closet** [5] — `{1}{W}` Artifact; enters with two +1/+1 counters + sorcery-speed "{T}: move a counter to target creature you control" (both of those work today) + "Whenever a **modified** creature you control leaves the battlefield, put a +1/+1 counter on this artifact" (the blocked part)
 
-## "Deals damage to a [filtered] creature" trigger (RecipientFilter.Matching on a deals-damage trigger)
+## "Deals damage to a [filtered] creature" trigger (RecipientFilter.Matching on a deals-damage trigger) — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-damage-triggers`. Added the missing `is RecipientFilter.Matching` case to
+`TriggerMatcher.matchesDealsDamageTrigger` (evaluate the filter against the recipient in projected state,
+mirroring `DamageCalculator`). The triggering entity is already the recipient (`TriggerContext.fromEvent`
+sets `triggeringEntityId = event.targetId`), so `Effects.Destroy(EffectTarget.TriggeringEntity)` destroys
+the damaged creature. Also repairs the two already-shipped cards with the identical shape (**East-Mark
+Cavalier** LTR, **Mauhur, Uruk-hai Captain**). Card: **Spider-Slayer, Hatred Honed** [175].
+
+<details><summary>Original analysis</summary>
+
 
 > Whenever <this> deals damage to a **Spider**, destroy that creature.
 
@@ -157,6 +167,7 @@ existing `CreatureYouControl` case) to `matchesDealsDamageTrigger`.
 
 Blocked cards:
 - **Spider-Slayer, Hatred Honed** [175] — `{2}` Legendary Artifact Creature; "Whenever Spider-Slayer deals damage to a Spider, destroy that creature" (blocked). Its other ability — `{6}`, exile-from-graveyard → two tapped 1/1 flying Robot tokens — works fine.
+</details>
 
 ## Chosen card name surviving into a later-firing delayed trigger
 
@@ -289,7 +300,15 @@ sites to consult granted statics (mirroring `MayCastFromGraveyard`).
 Blocked cards:
 - **Gwenom, Remorseless** [56] — `{3}{B}{B}` Deathtouch/lifelink; the attack-granted "play from top, pay life = mana value" is the blocker (deathtouch, lifelink, and the attack trigger itself are fine).
 
-## "Prevent damage to this creature, put that many +1/+1 counters on it" self-replacement
+## "Prevent damage to this creature, put that many +1/+1 counters on it" self-replacement — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-damage-triggers`. Added `is RecipientFilter.Self -> targetId == entityId`
+to `DamageUtils.applyReplaceDamageWithCounters`'s recipient matcher, and invoked it on the creature-damage
+paths — the non-player (`else`) branch of `DamageUtils.dealDamageToTarget` and
+`CombatDamageManager.applyDamageToCreature` (before redirection/final marking). Card: **Anti-Venom,
+Horrifying Healer** [1] (its "if he was cast" ETB reanimation uses the existing `Conditions.WasCast`).
+
+<details><summary>Original analysis</summary>
 
 > If damage would be dealt to Anti-Venom, prevent that damage and put that many +1/+1 counters
 > on him.
@@ -308,6 +327,7 @@ and invoke `applyReplaceDamageWithCounters` on the creature-damage paths
 
 Blocked cards:
 - **Anti-Venom, Horrifying Healer** [1] — `{W}{W}{W}{W}{W}` Symbiote Hero; ETB "if cast, reanimate a creature" is fine, but the damage-prevention-to-counters self-replacement is the blocker.
+</details>
 
 ## Granted activated ability with `UntilYourNextTurn` duration never expires
 
@@ -330,7 +350,15 @@ field, like the player-component grants).
 Blocked cards:
 - **Hydro-Man, Fluid Felon** [33] — `{U}{U}`; blue-cast pump (fine) + end-step "untap; until your next turn becomes a non-creature land with '{T}: Add {U}'" — the type-change + untap work, but the granted mana ability never expires.
 
-## Static damage redirect to the enchanted/equipped creature (Pariah-style)
+## Static damage redirect to the enchanted/equipped creature (Pariah-style) — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-damage-triggers`. Extended `DamageUtils.resolveRedirectTarget` with
+`EffectTarget.EnchantedCreature` / `EquippedCreature` / `EnchantedPermanent` → the Aura/Equipment's
+`AttachedToComponent.targetId`. The "+2/+2 for each attached Aura/Equipment" buff uses the new
+`DynamicAmounts.attachmentsOnEnchantedCreature()` (`EntityProperty(EnchantedCreature, AttachmentCount())`)
+over `GroupFilter.attachedCreature()`. Card: **With Great Power . . .** [24].
+
+<details><summary>Original analysis</summary>
 
 > All damage that would be dealt to you is dealt to **enchanted creature** instead.
 
@@ -347,6 +375,7 @@ expressible (`GrantDynamicStatsEffect` over `attachedCreature()` with
 
 Blocked cards:
 - **With Great Power . . .** [24] — `{3}{W}` Aura; "+2/+2 per attached Aura/Equipment" (fine) + "all damage that would be dealt to you is dealt to enchanted creature instead" (the redirect is the blocker).
+</details>
 
 ## "The legend rule doesn't apply to [filter]" exemption
 
