@@ -78,10 +78,10 @@ Write exactly this shape to `{LEDGER_PATH}`, creating parent directories as need
 ```markdown
 # Loop run: {RUN_ID}
 source: {SOURCE}
-policy: open-pr after independent review (never merge)
+policy: open-pr, then independent review + correction on the PR (never merge)
 started: <today's date>
 
-legend: [ ] pending · [~] implementing · [r] in review · [x] PR opened · [!] blocked, needs human · [-] skipped
+legend: [ ] pending · [~] implementing · [r] in review · [c] correcting · [x] done · [!] needs human · [-] skipped
 
 ## Units
 - [ ] u01 | batch | Adept Watershaper, Ajani Outland Chaperone, Boggart Forager, Cloudgoat Ranger, Dawnglare Invoker |

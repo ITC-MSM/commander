@@ -1,14 +1,16 @@
 ---
 name: backlog-loop
-description: Work autonomously through a set's missing cards or a backlog checklist, delivering one reviewed PR per self-contained unit of work. A planner agent builds the queue, then a fresh implement agent and a fresh review agent run each unit, so the orchestrator's context stays flat over long runs. Use when asked to "work through set X", "burn down backlog Y", or "keep shipping PRs until done".
+description: Work autonomously through a set's missing cards or a backlog checklist, delivering one reviewed PR per self-contained unit of work. A planner agent builds the queue, then each unit runs a fresh implement agent (which opens the PR), a fresh review agent (which comments its findings on it), and a fresh correct agent (which pushes the fixes), so the orchestrator's context stays flat over long runs. Use when asked to "work through set X", "burn down backlog Y", or "keep shipping PRs until done".
 argument-hint: --set <CODE> | <backlog-file> [--units N] [--include-blocked]
 ---
 
 # Backlog loop
 
-You are the **orchestrator**. You do not plan, implement, or review — you dispatch and you record. A
-planner builds the queue once, then each unit runs through two stages, implement and review. Every stage
-is a fresh subagent with its own context; the only thing that crosses back into yours is its verdict block.
+You are the **orchestrator**. You do not plan, implement, review, or fix — you dispatch and you record. A
+planner builds the queue once, then each unit runs through up to three stages: implement (which opens the
+PR), review (which comments its findings on that PR), and correct (which pushes the fixes to it). Every
+stage is a fresh subagent with its own context; the only thing that crosses back into yours is its verdict
+block.
 
 The whole design exists to keep *your* context flat. A run of 40 units must cost you roughly what a run of
 4 units costs. That property is the feature — protect it.
@@ -19,16 +21,17 @@ The whole design exists to keep *your* context flat. A run of 40 units must cost
   `card-status` / `coverage` output, not a subagent's transcript file. The verdict block is the answer.
 - **Never run `just`, `./gradlew`, or any build.** Stages own the gates. You'd take the machine-global
   gradle lock away from the stage that needs it.
-- **Never plan, implement, or review a unit yourself**, even a "quick" one. That is how the loop dies —
-  one inlined card pulls Scryfall lookups, card DSL, and test output into your context, and every later
-  dispatch pays for it.
+- **Never plan, implement, review, or correct a unit yourself**, even a "quick" one. That is how the loop
+  dies — one inlined card pulls Scryfall lookups, card DSL, and test output into your context, and every
+  later dispatch pays for it. Review findings are fixed by stage C, never by you; you decide only *whether*
+  stage C runs, from the finding counts.
 - **The ledger is your memory, not this conversation.** Re-read it before every dispatch. If your context
   is compacted mid-run you must be able to resume from the ledger alone, and you can.
-- **Exactly one subagent in flight at a time**: one planner per run, then two per unit (implement,
-  review). `scripts/gradle-locked` serializes every build machine-wide with a 30-minute wait, and 3
-  concurrent worktree builds have OOM'd the Kotlin daemon here before. Serial is the correct setting, not
+- **Exactly one subagent in flight at a time**: one planner per run, then up to three per unit (implement,
+  review, correct). `scripts/gradle-locked` serializes every build machine-wide with a 30-minute wait, and
+  3 concurrent worktree builds have OOM'd the Kotlin daemon here before. Serial is the correct setting, not
   a limitation to route around.
-- **Never merge and never fix review findings yourself.** The run ends with PRs open for a human.
+- **Never merge.** The run ends with PRs open — reviewed, corrected, and waiting for a human.
 
 ## Step 0: Plan the run (once, delegated)
 
@@ -59,10 +62,10 @@ The planner writes it; you only ever edit single lines in it.
 ```markdown
 # Loop run: ecl-cards
 source: --set ECL
-policy: open-pr after independent review (never merge)
+policy: open-pr, then independent review + correction on the PR (never merge)
 started: 2026-07-29
 
-legend: [ ] pending · [~] implementing · [r] in review · [x] PR opened · [!] blocked, needs human · [-] skipped
+legend: [ ] pending · [~] implementing · [r] in review · [c] correcting · [x] done · [!] needs human · [-] skipped
 
 ## Units
 - [ ] u01 | batch | Adept Watershaper, Ajani Outland Chaperone, Boggart Forager, Cloudgoat Ranger, Dawnglare Invoker |
@@ -73,26 +76,37 @@ legend: [ ] pending · [~] implementing · [r] in review · [x] PR opened · [!]
 One unit per line. State transitions are a single-character edit plus an appended result, so updating the
 ledger costs you almost nothing.
 
-## Step 1: Two-stage dispatch loop
+## Step 1: Three-stage dispatch loop
 
 Repeat until no `[ ]` units remain (or `--units N` is exhausted).
 
 **Stage A — implement.** Flip the unit to `[~]`. Spawn one background subagent, `isolation: "worktree"`,
 with [`worker-prompt.md`](worker-prompt.md), values substituted. It fetches and branches off the current
 `origin/main` before touching anything — units run serially, so by unit 5 the checkout it inherits is
-several merged PRs behind — then implements, gates, commits, and **pushes a branch — it does not open a
-PR.** Wait for its verdict.
+several merged PRs behind — then implements, gates, commits, pushes, and **opens the PR**. Wait for its
+verdict.
 
-- `branch-pushed` → go to stage B.
-- `failed` → mark `[!]` with the one-line reason. No stage B; there's nothing to review.
+- `pr-opened` → record the PR number in the ledger line, then go to stage B.
+- `failed` → mark `[!]` with the one-line reason. No PR, so no stage B or C; there's nothing to review.
 
 **Stage B — review.** Flip the unit to `[r]`. Spawn a **new** subagent — a fresh context that did not
 write the code — with [`reviewer-prompt.md`](reviewer-prompt.md). It reviews **in place in the same
 worktree** (no new worktree; `review-changes` §1 explicitly supports reviewing on the branch when it's
-already checked out and clean). It is the gate that opens the PR:
+already checked out and clean), writes `review.md`, and posts it as a comment on the PR. It changes no
+code:
 
-- `pr-opened` → mark `[x]` with the PR number.
-- `blocked` → mark `[!]` with the reason. The branch and `review.md` stay for a human.
+- `reviewed` → read only the `FINDINGS:` counts. Blocking or Important > 0 → stage C. Otherwise the unit
+  is done: mark `[x]` with the PR number and the finding counts.
+- `failed` → mark `[!]` with the reason. The PR stays open, unreviewed; a human picks it up.
+
+**Stage C — correct.** Only when stage B found something worth acting on. Flip the unit to `[c]`. Spawn a
+**third** subagent with [`corrector-prompt.md`](corrector-prompt.md), same worktree, passing the `FINDINGS`
+line verbatim. It reads `review.md`, fixes what holds up, re-gates, pushes to the same branch, and replies
+on the PR with an accounting of what it fixed and what it declined:
+
+- `corrected` → mark `[x]` with the PR number.
+- `needs-human` → mark `[!]`: a Blocking finding survived and the corrector converted the PR to a draft.
+- `failed` → mark `[!]` with the reason. The PR stays as the reviewer left it.
 
 Then take the next `[ ]` unit.
 
@@ -102,20 +116,31 @@ slot on a problem you cannot see from here.
 **Stop the whole run and report** if three consecutive units fail — that is environmental (lock
 contention, broken `main`, expired auth), not bad luck, and further dispatches will fail too.
 
-### Why the reviewer is a separate agent
+### Why review and correction are separate agents
 
 The implementer is the worst reviewer of its own work: it will re-derive the same reasoning that produced
 the bug. A fresh agent reading only the diff catches what the author's context hides. It also means every
 PR you hand back has had an independent pass against `docs/sdk-design-principles.md`, which is the check
-`CONTRIBUTING.md` asks for before an agent-produced card batch is opened.
+`CONTRIBUTING.md` asks for on an agent-produced card batch.
+
+Splitting the fix off from the review keeps that independence intact. A reviewer that also fixes starts
+grading its own patch halfway through, and quietly softens findings it doesn't want to deal with. Keeping
+the reviewer a pure gate — findings out, no commits — means the record on the PR is the review as it was
+actually found, and the corrector's reply says plainly what happened to each finding. It also gives the
+corrector permission to *decline*: it checks each finding against the code fresh, and a reviewer mistake
+gets recorded rather than turned into a bad commit.
+
+The PR opens before review deliberately: the review, the corrections, and the reasoning for both live in
+the PR timeline where a human reviewing later can see them, instead of in a worktree file nobody opens.
 
 Review is also where to economize if you need to: review accuracy holds up well at lower effort, while
 implementation is the demanding half. Don't cut effort on stage A to save tokens.
 
 ## Step 2: Final report
 
-When the queue drains, give the user a short table: unit, kind, cards, PR number or block reason. Then the
-totals — PRs opened, cards shipped, units blocked. Nothing else; the PRs speak for themselves.
+When the queue drains, give the user a short table: unit, kind, cards, PR number (marked *draft* where the
+corrector left one) or block reason. Then the totals — PRs opened, cards shipped, findings fixed, units
+needing a human. Nothing else; the PRs speak for themselves.
 
 Each unit leaves its worktree behind (its branch is pushed, so nothing is lost). Once the PRs are merged,
 those are reclaimable with `git worktree list` → `git worktree remove <path>` → `git worktree prune`.
@@ -138,8 +163,9 @@ Stage A ends with exactly:
 
 ```
 UNIT: u07
-STATUS: branch-pushed | failed
+STATUS: pr-opened | failed
 BRANCH: worktree-loop-ecl-u07
+PR: #1511
 CARDS: 5 shipped, 0 dropped
 GATE: just build — passed
 NOTE: <one line, only if failed>
@@ -149,10 +175,21 @@ Stage B ends with exactly:
 
 ```
 UNIT: u07
-STATUS: pr-opened | blocked
+STATUS: reviewed | failed
 PR: #1511
 FINDINGS: 0 blocking, 2 important, 3 minor
-NOTE: <one line, only if blocked>
+NOTE: <one line, only if failed or if any finding is blocking>
+```
+
+Stage C ends with exactly:
+
+```
+UNIT: u07
+STATUS: corrected | needs-human | failed
+PR: #1511
+FIXED: 2 of 2 findings, 0 declined
+GATE: just build — passed
+NOTE: <one line, only if needs-human or failed>
 ```
 
 If a subagent returns prose instead, take the first status word you can find and move on. Do not read its

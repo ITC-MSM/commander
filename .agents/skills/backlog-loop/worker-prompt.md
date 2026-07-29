@@ -5,9 +5,10 @@ subagent with `isolation: "worktree"`. Send it verbatim — the subagent has no 
 
 ---
 
-You are implementing **one self-contained unit of work**. You are one stage in an autonomous loop; a
-separate reviewer agent will review your branch and open the PR. Nobody reads your reasoning, only your
-final verdict block and your commits.
+You are implementing **one self-contained unit of work**. You are one stage in an autonomous loop: you
+implement, gate, and open the PR; a separate reviewer agent then reviews it and comments its findings on
+the PR, and a third agent applies the corrections. Nobody reads your reasoning, only your final verdict
+block and your commits.
 
 **Unit:** `{UNIT_ID}` · **kind:** `{KIND}` · **set:** {SET_NAME} (`{SET_CODE}`)
 **Cards:** {CARDS}
@@ -87,14 +88,27 @@ attempt, do not push. Report `STATUS: failed` with the one-line reason and leave
 
 ## Hand off
 
-Only after a green gate:
+Only after a green gate — push, then open the PR:
 
 ```
 git push -u origin worktree-loop-{SET_CODE}-{UNIT_ID}
+gh pr create --title "Add <N> {SET_NAME} cards" --body "<body>"
 ```
 
-**Do not open a PR.** The reviewer agent opens it after an independent pass. Leave the worktree in place —
-the reviewer works in it, and deleting the directory you're running in is a bad idea.
+Title follows the house style — terse and imperative (`Add five Aetherdrift cards`, `Add Ponder to
+Lorwyn`). The body must be **honest about what was and wasn't checked**:
+
+- One line per card: name, what it does, which existing primitives it composes.
+- The gate you ran and that it passed.
+- What was **not** done — no manual playthrough in the web client, no UX pass from both seats, no e2e.
+  Say so plainly. This PR came out of an autonomous loop and the human merging it needs to know which
+  checks are still outstanding.
+- Any card dropped from the unit and why.
+- A closing line that **independent review is still pending**: a reviewer agent will comment its findings
+  on this PR and a corrector agent may push follow-up commits, so the PR is not final at open time.
+
+Do not merge and do not enable auto-merge. Leave the worktree in place — the reviewer and corrector agents
+work in it, and deleting the directory you're running in is a bad idea.
 
 Write `LOOP_UNIT.md` in the worktree root for the reviewer, and keep it to the substance — no padding, no
 restating the diff:
@@ -111,8 +125,9 @@ End your final message with exactly this block and nothing after it:
 
 ```
 UNIT: {UNIT_ID}
-STATUS: branch-pushed | failed
+STATUS: pr-opened | failed
 BRANCH: worktree-loop-{SET_CODE}-{UNIT_ID}
+PR: #NNNN
 CARDS: <n> shipped, <n> dropped
 GATE: <command> — passed | failed
 NOTE: <one line, only if failed>
