@@ -42,6 +42,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
+import com.wingedsheep.sdk.scripting.predicates.evaluateWith
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.predicates.StatePredicate
 import com.wingedsheep.sdk.scripting.references.Player
@@ -1172,6 +1173,31 @@ class PredicateEvaluator {
                 if (attachments == null || attachments.attachedIds.isEmpty()) return false
                 attachments.attachedIds.any { attachId ->
                     state.getEntity(attachId)?.get<CardComponent>()?.typeLine?.isAura == true
+                }
+            }
+
+            // Aura state scoped by who controls the Aura — "enchanted by Auras you control"
+            // (Archon of the Wild Rose). "You" is this evaluation's controller.
+            is StatePredicate.IsEnchantedByAura -> {
+                val attachments = container.get<AttachmentsComponent>()
+                if (attachments == null || attachments.attachedIds.isEmpty()) return false
+                // Fail closed with no context: "Auras you control" has no meaning without a "you",
+                // and matching every Aura would silently widen the filter.
+                val you = context?.controllerId ?: return false
+                attachments.attachedIds.any { attachId ->
+                    val aura = state.getEntity(attachId) ?: return@any false
+                    if (aura.get<CardComponent>()?.typeLine?.isAura != true) return@any false
+                    val auraController = aura.get<ControllerComponent>()?.playerId ?: return@any false
+                    predicate.auraController.evaluateWith { leaf ->
+                        when (leaf) {
+                            ControllerPredicate.ControlledByYou -> auraController == you
+                            ControllerPredicate.ControlledByOpponent -> auraController != you
+                            ControllerPredicate.ControlledByAny -> true
+                            ControllerPredicate.ControlledByActivePlayer ->
+                                auraController == state.activePlayerId
+                            else -> null
+                        }
+                    }
                 }
             }
 

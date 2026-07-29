@@ -78,6 +78,7 @@ enum class CounterType {
     REVIVAL,
     INGENUITY,
     FILM,
+    SKEWER,
     ENERGY;
 
     companion object {
@@ -370,6 +371,15 @@ object Counters {
      * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val FILM = "film"
+
+    /**
+     * Skewer counter (WOE — Rotisserie Elemental). A tally counter with no inherent rule: the
+     * Elemental accumulates one per combat-damage hit, and the size of the impulse-exile it can
+     * cash itself in for is read straight off the tally. Same shape as `Counters.FILM` /
+     * `Counters.WISH`. NOT a keyword counter, so it is intentionally absent from
+     * `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val SKEWER = "skewer"
 
     /**
      * Energy counter (Kaladesh block onward, CR 107.14). Unlike every other entry in this object,

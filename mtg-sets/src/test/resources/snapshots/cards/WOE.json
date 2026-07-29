@@ -366,6 +366,89 @@
     ]
 }
 
+// Archon of the Wild Rose
+{
+    "name": "Archon of the Wild Rose",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Archon",
+    "oracleText": "Flying\nOther creatures you control that are enchanted by Auras you control have base power and toughness 4/4 and have flying.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CompositeStaticAbility",
+                "abilities": [
+                    {
+                        "type": "SetBasePowerToughnessStatic",
+                        "power": 4,
+                        "toughness": 4,
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "IsEnchantedByAura",
+                                        "auraController": "ControlledByYou"
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            },
+                            "excludeSelf": true
+                        }
+                    },
+                    {
+                        "type": "GrantKeyword",
+                        "keyword": "FLYING",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "IsEnchantedByAura",
+                                        "auraController": "ControlledByYou"
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            },
+                            "excludeSelf": true
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "rarity": "RARE",
+        "artist": "Chris Rahn",
+        "flavorText": "The curse of Redtooth Keep could only be broken by a mystical rose that blooms in moonlight.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/00174be7-0dc8-43b9-81b6-f25a8c3fb4eb.jpg?1783915137",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Archon of the Wild Rose's ability overwrites all previous effects that set the affected creatures' power and/or toughness to specific values. Other effects that set these characteristics to specific values that start to apply after Archon of the Wild Rose enters the battlefield will overwrite this effect."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Effects that modify a creature's power and/or toughness without setting it will apply to the affected creatures no matter when they started to take effect. The same is true for counters that change a creature's power and/or toughness."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Archon's Glory
 {
     "name": "Archon's Glory",
@@ -3166,6 +3249,113 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Discerning Financier
+{
+    "name": "Discerning Financier",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Noble",
+    "oracleText": "At the beginning of your upkeep, if an opponent controls more lands than you, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\n{2}{W}: Choose another player. That player gains control of target Treasure you control. You draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "EachOpponent",
+                        "filter": "land"
+                    },
+                    "operator": "GT",
+                    "right": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "land"
+                    }
+                },
+                "descriptionOverride": "At the beginning of your upkeep, if an opponent controls more lands than you, create a Treasure token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ChooseOpponentForSource",
+                            "prompt": "Choose another player to gain control of the Treasure"
+                        },
+                        {
+                            "type": "GiveControlToTargetPlayer",
+                            "permanent": {
+                                "type": "BoundVariable",
+                                "name": "target Treasure you control"
+                            },
+                            "newController": {
+                                "type": "PlayerRef",
+                                "player": "ChosenOpponent"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact Treasure ctrl:you"
+                        },
+                        "id": "target Treasure you control"
+                    }
+                ],
+                "descriptionOverride": "Choose another player. That player gains control of target Treasure you control. You draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/584774b5-640f-45e0-810b-f5faf119645b.jpg?1783915133",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If the target Treasure is an illegal target as Discerning Financier's last ability tries to resolve, it won't resolve. You won't draw a card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -10744,6 +10934,108 @@
     ]
 }
 
+// Rotisserie Elemental
+{
+    "name": "Rotisserie Elemental",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "Menace\nWhenever this creature deals combat damage to a player, put a skewer counter on this creature. Then you may sacrifice it. If you do, exile the top X cards of your library, where X is the number of skewer counters on this creature. You may play those cards this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "skewer",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.MayDecide",
+                                "sourceRequiredZone": "Battlefield"
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "TopOfLibrary",
+                                            "count": {
+                                                "type": "EntityProperty",
+                                                "entity": "Source",
+                                                "numericProperty": {
+                                                    "type": "CounterCount",
+                                                    "counterType": {
+                                                        "type": "Named",
+                                                        "name": "skewer"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "storeAs": "skeweredCards"
+                                    },
+                                    "SacrificeSelf",
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "skeweredCards",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Exile"
+                                        }
+                                    },
+                                    {
+                                        "type": "GrantMayPlayFromExile",
+                                        "from": "skeweredCards"
+                                    }
+                                ]
+                            },
+                            "descriptionOverride": "You may sacrifice Rotisserie Elemental to exile that many cards from the top of your library and play them this turn."
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, put a skewer counter on this creature. Then you may sacrifice it. If you do, exile the top X cards of your library, where X is the number of skewer counters on this creature. You may play those cards this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "RARE",
+        "artist": "Leonardo Santanna",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d787045-3918-4ed6-85ea-843d1f2356f2.jpg?1783915089",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You choose whether to sacrifice Rotisserie Elemental as its triggered ability resolves. No player may respond between the time you sacrifice it and the time you exile cards from the top of your library."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You pay all costs and follow all normal timing rules for cards played from exile this way. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Rowan's Grim Search
 {
     "name": "Rowan's Grim Search",
@@ -13950,6 +14242,113 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// The Princess Takes Flight
+{
+    "name": "The Princess Takes Flight",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Exile up to one target creature.\nII — Target creature you control gets +2/+2 and gains flying until end of turn.\nIII — Return the exiled card to the battlefield under its owner's control.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature"
+                    },
+                    "destination": "Exile",
+                    "linkToSource": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "princessExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "princessExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Metzger",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/dad7bd06-22e4-40f8-bda9-bcdbb2d8f632.jpg?1783915128",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If The Princess Takes Flight's first chapter ability exiled more than one creature (usually because the ability was copied), its third chapter ability will return all of the exiled cards to the battlefield under their owners' control."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

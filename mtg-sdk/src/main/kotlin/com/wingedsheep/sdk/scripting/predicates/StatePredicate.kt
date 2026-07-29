@@ -421,6 +421,29 @@ sealed interface StatePredicate {
         override val description: String = "enchanted"
     }
 
+    /**
+     * Has at least one attached Aura whose *controller* satisfies [auraController] — the narrower
+     * "enchanted by Auras you control" (Archon of the Wild Rose) as opposed to plain [IsEnchanted],
+     * which is agnostic about who controls the Aura (CR 303.4).
+     *
+     * The two are genuinely different adjectives and both appear in print: A Tale for the Ages
+     * buffs your creatures whoever's Aura is on them, while Archon of the Wild Rose only cares
+     * about Auras *you* control. Control is read off the Aura at evaluation time, so an Aura
+     * changing hands turns the predicate on or off continuously.
+     *
+     * "You" is the controller of the ability doing the filtering — the source's controller during
+     * layer projection, the evaluation context's controller for targets and conditions.
+     */
+    @SerialName("IsEnchantedByAura")
+    @Serializable
+    data class IsEnchantedByAura(val auraController: ControllerPredicate) : Entity {
+        override val description: String = when (auraController) {
+            ControllerPredicate.ControlledByYou -> "enchanted by Auras you control"
+            ControllerPredicate.ControlledByOpponent -> "enchanted by Auras an opponent controls"
+            else -> "enchanted"
+        }
+    }
+
     /** Has an Equipment attached, an Aura attached, or any counter (MTG "modified" definition) */
     @SerialName("IsModified")
     @Serializable

@@ -3069,6 +3069,17 @@ work for abilities-on-stack (which carry no `CardComponent`).
   Skitter's Blessing's `Conditions.YouControlAtLeast(1, …)` draw-step gate). Role tokens are Auras
   (CR 113.2c), which makes this the Wilds of Eldraine Roles payoff predicate. Resolves in both
   `PredicateEvaluator` (targets/conditions) and `AffectsFilterResolver` (layer-7c group projection).
+- `IsEnchantedByAura(auraController)` (filter builder `enchantedByAura(controller = ControlledByYou)`)
+  — the aura-control-scoped `IsEnchanted`: has at least one attached Aura whose **controller** matches
+  the given `ControllerPredicate`. "Enchanted by Auras you control" (Archon of the Wild Rose) is a
+  genuinely different adjective from plain `enchanted()` — an opponent's Aura or Role on your creature
+  does *not* satisfy it. Compose with `youControl()` to constrain the enchanted permanent's controller
+  as well; the two bind to different objects:
+  `GameObjectFilter.Creature.youControl().enchantedByAura()`. The "you" is the controller of the
+  ability doing the filtering — the static's source controller during layer projection, the evaluation
+  context's controller for targets/conditions — and both evaluators **fail closed** with no controller
+  rather than matching every Aura. The Aura's control is read through the projection (Layer 2), so an
+  Aura that changes hands turns the predicate off continuously.
 - `IsModified` — has an Equipment attached, an Aura attached, **or** any counter (the MTG "modified"
   definition). For the source-relative form use `Conditions.SourceIsModified`.
 - `AttachedToCardType(cardType)` — Aura/Equipment whose `AttachedToComponent` points to a
@@ -7822,6 +7833,10 @@ substitution.
   tutor ability spends one via `Costs.RemoveCounterFromSelf(Counters.WISH, 1)`). A pure "uses left" counter
   with no inherent rule — when it hits zero the activation cost is simply unpayable, which is exactly the
   printed ruling that the Talisman then sits inert on the battlefield.
+  `skewer` (`Counters.SKEWER`): WOE — Rotisserie Elemental (its combat-damage trigger adds one via
+  `AddCounters(Counters.SKEWER, 1, EffectTarget.Self)`, and the optional self-sacrifice cashes the tally in
+  for an impulse-exile sized by `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.SKEWER))`).
+  A pure tally counter with no inherent rule.
 - `stun` — CR 122.1d, a built-in replacement: "If a permanent with a stun counter on it would become untapped,
   instead remove a stun counter from it." Engine-wired through `untapOrConsumeStun` (`rules-engine/core/UntapHelpers.kt`),
   which is invoked from the untap step (`BeginningPhaseManager`), from `TapUntapExecutor`'s untap branch, and from the

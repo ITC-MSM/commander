@@ -942,6 +942,16 @@ data class GameObjectFilter(
     )
 
     /**
+     * Must have at least one attached Aura controlled by [auraController] — the aura-control-scoped
+     * form of [enchanted] ("enchanted by Auras you control", Archon of the Wild Rose). Compose with
+     * [youControl] to constrain the enchanted permanent's controller too; the two bind to different
+     * objects. See [StatePredicate.IsEnchantedByAura].
+     */
+    fun enchantedByAura(auraController: ControllerPredicate = ControllerPredicate.ControlledByYou) = copy(
+        statePredicates = statePredicates + StatePredicate.IsEnchantedByAura(auraController)
+    )
+
+    /**
      * Must be marked as a "warped card in exile" (CR 702.185b) — i.e., the
      * engine wrote a `WarpExiledComponent` when the warped permanent left the
      * battlefield at end of turn. Use this when filtering candidates in the
