@@ -1155,6 +1155,10 @@ class CostHandler {
                 // Always payable: player can always choose the "pay mana" path
                 true
             }
+            is AdditionalCost.DiscardOrPay -> {
+                // Always payable: player can always choose the "pay mana" path
+                true
+            }
             is AdditionalCost.Composite -> {
                 // All steps must be payable
                 cost.steps.all { canPayAdditionalCost(state, it, controllerId) }

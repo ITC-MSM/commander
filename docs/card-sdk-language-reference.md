@@ -422,11 +422,24 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   is recovered at payment time from whether the cast action's `additionalCostPayment.sacrificedPermanents`
   is non-empty; the sacrifice path is only offered when you control at least `count` matching
      permanents, so with nothing to sacrifice only the pay path is castable.
+- `Costs.additional.DiscardOrPay(alternativeManaCost, filter = Filters.Any, count = 1)` — "as an
+  additional cost to cast this spell, discard a [filter] or pay {mana}" (Pumpkin Bombardment:
+  "discard a card or pay {2}"). The sibling of `SacrificeOrPay` / `ExileFromGraveyardOrPay` /
+  `BlightOrPay` / `BeholdOrPay` for the "discard a card or pay mana" shape. The enumerator offers up
+  to two cast paths: the **discard path** (base cost + a hand selection of exactly `count` cards
+  matching `filter`, excluding the spell being cast, surfaced as a `costType = "DiscardCard"` cost —
+  the same hand picker used by a plain discard cost like Force of Will) and the **pay path** (base
+  cost + `alternativeManaCost` folded in). The chosen path is recovered at payment time from whether
+  the cast action's `additionalCostPayment.discardedCards` is non-empty; the discard path is only
+  offered when you hold at least `count` other matching cards, so with an empty hand only the pay
+  path is castable. The discard-as-cost still feeds the turn's discard tracking (CR 701.8), so it
+  counts toward `DynamicAmounts.cardsDiscardedThisTurn()` / `Conditions.YouDiscardedThisCardThisTurn`
+  (Mayhem).
 - `Costs.additional.Choice(vararg options)` — **cost-vs-cost**: "as an additional cost to cast this
   spell, pay exactly one of `options`" (Souls of the Lost: *"discard a card **or** sacrifice a
   permanent"*). The general, parameterized form of `Forage` — each option is itself an
   `AdditionalCost` (compose the `Sacrifice` / `Discard` / `ExileFrom` atoms). Distinct from the
-  `*OrPay` family (`SacrificeOrPay` / `ExileFromGraveyardOrPay` / `BeholdOrPay` / `BlightOrPay`): those
+  `*OrPay` family (`SacrificeOrPay` / `DiscardOrPay` / `ExileFromGraveyardOrPay` / `BeholdOrPay` / `BlightOrPay`): those
   fold a **mana** alternative into the spell's cost, whereas `Choice` is for options that are each
   independently payable **non-mana** costs (no mana-cost change). The enumerator emits **one cast
   action per payable option** (`CastSpellEnumerator.expandChoiceAdditionalCosts` +
