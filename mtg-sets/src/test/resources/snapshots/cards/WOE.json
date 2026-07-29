@@ -890,6 +890,115 @@
     ]
 }
 
+// Beluna Grandsquall
+{
+    "name": "Beluna Grandsquall",
+    "manaCost": "{G}{U}{R}",
+    "typeLine": "Legendary Creature — Giant Noble",
+    "oracleText": "Trample\nPermanent spells you cast that have an Adventure cost {1} less to cast.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsPermanent",
+                            "HasAdventure"
+                        ]
+                    }
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "rarity": "MYTHIC",
+        "artist": "Victor Adame Minguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3f5acc0d-33a6-476f-95ca-a1ad788334dd.jpg?1783915067",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "An effect may refer to a card, spell, or permanent that \"has an Adventure.\" This refers to a card, spell, or permanent that has an adventurer card's set of alternative characteristics, even if they're not being used and even if that card was never cast as an Adventure."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "When casting a spell as an Adventure, use the alternative characteristics and ignore all of the card's normal characteristics. The spell's color, mana cost, mana value, and so on are determined by only those alternative characteristics."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "An adventurer card is a permanent card in every zone except the stack, as well as while on the stack if not cast as an Adventure. Ignore its alternative characteristics in those cases."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE",
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Seek Thrills",
+            "manaCost": "{2}{G}{U}{R}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Mill seven cards. Then put all cards that have an Adventure from among the milled cards into your hand. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 7
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "filter": {
+                                "cardPredicates": [
+                                    "HasAdventure"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Beluna's Gatekeeper
 {
     "name": "Beluna's Gatekeeper",
@@ -1689,6 +1798,103 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Callous Sell-Sword
+{
+    "name": "Callous Sell-Sword",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "This creature enters with a +1/+1 counter on it for each creature that died under your control this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": {
+                    "type": "TurnTracking",
+                    "player": "You",
+                    "tracker": "CREATURES_DIED"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "221",
+        "rarity": "UNCOMMON",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/770ee3da-d33e-466f-9a2e-ad2d08ef5012.jpg?1783915066",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If the first target of Burn Together is an illegal target as the spell resolves but the last target is still legal, Burn Together will resolve, but no damage will be dealt and nothing will be sacrificed."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the last target of Burn Together is an illegal target as the spell resolves but the first target is still legal, Burn Together will still resolve and you'll still sacrifice the first target."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Burn Together",
+            "manaCost": "{R}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Target creature you control deals damage equal to its power to any other target. Then sacrifice it. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Target",
+                                "numericProperty": "Power"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any other target"
+                            },
+                            "damageSource": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "SacrificeTarget",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    },
+                    {
+                        "type": "TargetOther",
+                        "baseRequirement": "AnyTarget",
+                        "id": "any other target"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -2697,6 +2903,110 @@
     ]
 }
 
+// Decadent Dragon
+{
+    "name": "Decadent Dragon",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying, trample\nWhenever this creature attacks, create a Treasure token.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "descriptionOverride": "Whenever this creature attacks, create a Treasure token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "223",
+        "rarity": "RARE",
+        "artist": "Wylie Beckert",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/315cbbf7-a2ad-4565-9877-1e903d7fd797.jpg?1783915066",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Only you get to look at the cards exiled with Expensive Taste. Their owner doesn't get to know what they are while they're in exile until you play them."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may play the cards exiled with Expensive Taste even if they are land cards."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You must still follow all normal timing rules to play cards exiled with Expensive Taste."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Expensive Taste",
+            "manaCost": "{2}{B}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Exile the top two cards of target opponent's library face down. You may look at and play those cards for as long as they remain exiled. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "stolen"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "stolen",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "stolen",
+                            "expiry": "Permanent"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetOpponent",
+                        "id": "target opponent"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Devouring Sugarmaw
 {
     "name": "Devouring Sugarmaw",
@@ -2973,6 +3283,84 @@
     "colorIdentityOverride": [
         "WHITE"
     ]
+}
+
+// Edgewall Inn
+{
+    "name": "Edgewall Inn",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\nAs this land enters, choose a color.\n{T}: Add one mana of the chosen color.\n{3}, {T}, Sacrifice this land: Return target card that has an Adventure from your graveyard to your hand.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": "ManaColorSet.SourceChosenColor"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add one mana of the chosen color."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target card that has an Adventure in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "HasAdventure"
+                                ],
+                                "controllerPredicate": "OwnedByYou"
+                            },
+                            "zone": "Graveyard"
+                        },
+                        "id": "target card that has an Adventure in your graveyard"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}, Sacrifice this land: Return target card that has an Adventure from your graveyard to your hand."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped",
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "COLOR"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "255",
+        "rarity": "UNCOMMON",
+        "artist": "Alayna Danner",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec435e54-628a-43bd-8804-cbc37e375bce.jpg?1783915055"
+    },
+    "colorIdentityOverride": []
 }
 
 // Edgewall Pack
@@ -14457,6 +14845,110 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Virtue of Persistence
+{
+    "name": "Virtue of Persistence",
+    "manaCost": "{5}{B}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your upkeep, put target creature card from a graveyard onto the battlefield under your control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card in a graveyard"
+                    },
+                    "destination": "Battlefield",
+                    "controllerOverride": "Controller"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card in a graveyard"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, put target creature card from a graveyard onto the battlefield under your control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "115",
+        "rarity": "MYTHIC",
+        "artist": "Piotr Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f1e5cafb-b0e6-4ee5-8c58-6f8e5ef2b9da.jpg?1783915099",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If a spell is cast as an Adventure, its controller exiles it instead of putting it into its owner's graveyard as it resolves. For as long as it remains exiled, that player may cast it as a permanent spell."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You must still follow any timing restrictions and permissions for the permanent spell you cast from exile. Normally, you'll be able to cast it only during your main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Locthwain Scorn",
+            "manaCost": "{1}{B}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Target creature gets -3/-3 until end of turn. You gain 2 life. (Then exile this card. You may cast the enchantment later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": -3
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": -3
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        }
     ]
 }
 
