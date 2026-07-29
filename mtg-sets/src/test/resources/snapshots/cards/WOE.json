@@ -4131,47 +4131,45 @@
             "type": "Composite",
             "effects": [
                 {
-                    "type": "StoreNumber",
-                    "name": "faerieSlumberPartyOpponents",
-                    "amount": {
-                        "type": "CountPlayersWith",
-                        "scope": "EachOpponent",
-                        "condition": {
-                            "type": "Exists",
-                            "player": "You",
-                            "zone": "Battlefield",
-                            "filter": "creature"
-                        }
-                    }
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "creature"
+                    },
+                    "storeAs": "faerieSlumberPartyCreatures"
                 },
                 {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "BattlefieldMatching",
-                                "filter": "creature"
-                            },
-                            "storeAs": "returnAllToHand_gathered"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "returnAllToHand_gathered",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Hand"
-                            }
-                        }
-                    ]
+                    "type": "FilterCollection",
+                    "from": "faerieSlumberPartyCreatures",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "creature ctrl:opponent"
+                    },
+                    "storeMatching": "faerieSlumberPartyOpponentCreatures",
+                    "storeNonMatching": "faerieSlumberPartyOwnCreatures"
+                },
+                {
+                    "type": "CaptureControllers",
+                    "from": "faerieSlumberPartyOpponentCreatures",
+                    "storeAs": "faerieSlumberPartyControllers"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "faerieSlumberPartyCreatures",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
                 },
                 {
                     "type": "CreateToken",
                     "count": {
                         "type": "Multiply",
                         "amount": {
-                            "type": "VariableReference",
-                            "variableName": "faerieSlumberPartyOpponents"
+                            "type": "DistinctEntitiesInCollections",
+                            "collections": [
+                                "faerieSlumberPartyControllers"
+                            ]
                         },
                         "multiplier": 2
                     },
@@ -4202,7 +4200,8 @@
                         }
                     ]
                 }
-            ]
+            ],
+            "descriptionOverride": "Return all creatures to their owners' hands. For each opponent who controlled a creature returned this way, you create two 1/1 blue Faerie creature tokens with flying and \"This token can block only creatures with flying.\""
         }
     },
     "metadata": {

@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Hylda's Crown of Winter (WOE #247) — Legendary Artifact.
@@ -80,7 +81,7 @@ class HyldasCrownOfWinterScenarioTest : ScenarioTestBase() {
                 val tapAbility = cardRegistry.getCard("Hylda's Crown of Winter")!!
                     .activatedAbilities[0].id
 
-                game.execute(
+                val result = game.execute(
                     ActivateAbility(
                         playerId = game.player1Id,
                         sourceId = crown,
@@ -89,6 +90,9 @@ class HyldasCrownOfWinterScenarioTest : ScenarioTestBase() {
                     )
                 )
 
+                withClue("the activation is rejected outright, not merely left unpaid") {
+                    result.error shouldNotBe null
+                }
                 withClue("off-turn with no mana the {1} cannot be paid, so nothing is tapped") {
                     game.state.getEntity(bears)?.has<TappedComponent>() shouldBe false
                     game.state.getEntity(crown)?.has<TappedComponent>() shouldBe false

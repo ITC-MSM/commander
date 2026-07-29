@@ -14,11 +14,13 @@ import io.kotest.matchers.shouldBe
  *   returned this way, you create two 1/1 blue Faerie creature tokens with flying and
  *   "This token can block only creatures with flying."
  *
- * The ordering is the trap: the count has to be taken *before* the bounce (afterwards there is
- * nothing left to count) while the tokens have to be created *after* it (created first, they are
- * creatures and would be returned themselves, ceasing to exist). Both directions are pinned here —
- * "two tokens survive on the battlefield" fails if the tokens are made too early, and "two tokens"
- * rather than "zero" fails if the count is taken too late.
+ * The ordering is the trap: the controllers have to be snapshotted *before* the bounce (afterwards
+ * `ControllerComponent` is gone and a hand is keyed by owner) while the tokens have to be created
+ * *after* it (created first, they are creatures and would be returned themselves, ceasing to
+ * exist). Both directions are pinned here — "two tokens survive on the battlefield" fails if the
+ * tokens are made too early, and "two tokens" rather than "zero" fails if the count is taken too
+ * late. The first test also separates "per opponent" from "per creature": one opponent with two
+ * creatures is still two Faeries, which is what de-duplicating the captured controller list buys.
  */
 class FaerieSlumberPartyScenarioTest : ScenarioTestBase() {
 

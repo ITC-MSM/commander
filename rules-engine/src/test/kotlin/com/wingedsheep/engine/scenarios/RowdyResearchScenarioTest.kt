@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Phase
@@ -109,6 +110,37 @@ class RowdyResearchScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("an opponent's attackers discount it too — the count is unioned over every player") {
+                // The card's whole use case: an instant you hold up while the opponent swings.
+                // CostCalculator sums PlayerAttackersThisTurnComponent across state.turnOrder, so
+                // attackers you do not control still pay for it.
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Rowdy Research")
+                    .withCardOnBattlefield(2, "Grizzly Bears", summoningSickness = false)
+                    .withCardOnBattlefield(2, "Hill Giant", summoningSickness = false)
+                    .withCardInLibrary(1, "Island")
+                    .withCardInLibrary(2, "Forest")
+                    .withActivePlayer(2)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackers(
+                    mapOf("Grizzly Bears" to 1, "Hill Giant" to 1)
+                ).error shouldBe null
+
+                val cost = CostCalculator(cardRegistry).calculateEffectiveCost(
+                    game.state,
+                    cardRegistry.requireCard("Rowdy Research"),
+                    game.player1Id,
+                )
+
+                withClue("player 2's two attackers reduce player 1's spell from 6 to 4 generic") {
+                    cost.genericAmount shouldBe 4
+                }
+            }
+
             test("the reduction never eats the {U}") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
@@ -173,6 +205,47 @@ class RowdyResearchScenarioTest : ScenarioTestBase() {
                 }
                 withClue("all three library cards were drawn") {
                     game.librarySize(1) shouldBe 0
+                }
+            }
+
+            test("a real cast pays the reduced cost — two attackers make five Islands enough") {
+                // Tests 1-4 read the calculator directly; this one proves the reduction survives
+                // the enumerator + payment path. Five Islands cannot pay {6}{U}, so the cast only
+                // succeeds if the two attackers actually took it down to {4}{U}.
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Rowdy Research")
+                    .withCardOnBattlefield(1, "Grizzly Bears", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Hill Giant", summoningSickness = false)
+                    .withLandsOnBattlefield(1, "Island", 5)
+                    .withCardInLibrary(1, "Savannah Lions")
+                    .withCardInLibrary(1, "Air Elemental")
+                    .withCardInLibrary(1, "Craw Wurm")
+                    .withCardInLibrary(2, "Forest")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackers(
+                    mapOf("Grizzly Bears" to 2, "Hill Giant" to 2)
+                ).error shouldBe null
+                game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
+
+                val handBefore = game.handSize(1)
+
+                game.castSpell(1, "Rowdy Research").error shouldBe null
+                if (game.hasPendingDecision()) game.submitManaSourcesAutoPay()
+
+                withClue("the reduction only eats generic mana, never the printed mana value") {
+                    val spellId = game.state.stack.last()
+                    game.state.getEntity(spellId)?.get<CardComponent>()?.manaValue shouldBe 7
+                }
+
+                game.resolveStack()
+
+                withClue("the spell leaves hand (-1) and draws three (+3)") {
+                    game.handSize(1) shouldBe handBefore - 1 + 3
                 }
             }
         }
