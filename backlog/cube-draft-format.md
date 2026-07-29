@@ -145,23 +145,23 @@ must be inert (not merely ignored) in cube mode.
 
 ## Phase 1 — `Cube` model, resolution, and `CubeDealer` (engine + tests)
 
-- [ ] **1.1 — `CubeList` SDK/server model.** Card **names + counts** (a cube is usually singleton but
+- [x] **1.1 — `CubeList` SDK/server model.** Card **names + counts** (a cube is usually singleton but
   some run duplicates), optional pinned `PrintingRef` per card (so a cube can specify art), a
   `basicLandSetCode` for the basic-land art source, `name`, and `packSize` default. Where it lives
   depends on 1.2 — if only the server resolves cubes, `game-server/.../cube/` is the right home and
   `mtg-sdk` stays untouched.
-- [ ] **1.2 — `CubeResolver`.** `(CubeList, CardRegistry, PrintingRegistry) → ResolvedCube` with an
+- [x] **1.2 — `CubeResolver`.** `(CubeList, CardRegistry, PrintingRegistry) → ResolvedCube` with an
   explicit failure list for unresolvable names. **A cube with unresolved names is not playable** —
   return the misses so the host sees "47 cards in this cube aren't implemented yet" rather than
   silently drafting a 313-card cube. Applies pinned printings via `CardDefinition.withPrinting`.
-- [ ] **1.3 — `CubeDealer`** in `rules-engine/.../engine/limited/`. Shuffle once with a seeded
+- [x] **1.3 — `CubeDealer`** in `rules-engine/.../engine/limited/`. Shuffle once with a seeded
   `Random(seed)`, deal by slicing, expose `remaining`. Pure, no Spring. Unit tests: no duplicate card
   identity across all dealt packs; exact pack sizes; `deal` past capacity fails loudly with a message
   naming the shortfall; same seed ⇒ same deal.
-- [ ] **1.4 — `BoosterGenerator.withSets(extra)`** returning a new generator with
+- [x] **1.4 — `BoosterGenerator.withSets(extra)`** returning a new generator with
   `availableSets + extra`. Keeps the generator immutable and the global bean untouched. Tiny, but it
   is what makes the synthetic-`SetConfig` trick safe.
-- [ ] **1.5 — `CubeSetConfig.of(resolvedCube, boosterGenerator)`** building the synthetic
+- [x] **1.5 — `CubeSetConfig.of(resolvedCube, boosterGenerator)`** building the synthetic
   `SetConfig`: `cards` from the cube, `basicLands` from `basicLandSetCode`, `sealedSupported = true`,
   `incomplete = false`, `extensionSet = false`, `variantChance = 0.0`, `boosterStrategy` =
   a strategy that is never actually consulted in cube mode (dealer path) — assert that rather than
