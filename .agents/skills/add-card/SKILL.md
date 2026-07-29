@@ -90,8 +90,9 @@ generated card is worse than none.
        `&set=<earliest-code>` for authoritative metadata) and add a `Printing` row in the asked-for set.
      - *earliest is not scaffolded* → scaffold it: a minimal `MtgSet` object under
        `mtg-sets/.../definitions/<earliest-code>/<EarliestSet>Set.kt` (mirror an existing set such as
-       `definitions/tmp/TempestSet.kt`), wired into `META-INF/services/com.wingedsheep.sdk.MtgSet`. Then
-       the canonical goes there and the asked-for set gets a `Printing` row.
+       `definitions/tmp/TempestSet.kt`). `MtgSetCatalog` discovers it on the classpath — there's no list
+       to append to and no service file. Then the canonical goes there and the asked-for set gets a
+       `Printing` row.
 
      If scaffolding the earliest set would balloon the change set beyond this PR's scope, **ask the user**
      before falling back to a later set as canonical, and document the deviation in the commit message.
@@ -116,6 +117,9 @@ generated card is worse than none.
 
 **File:** `mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/{set}/cards/{CardName}.kt`
 
+There is no registration step — `CardDiscovery` scans the `{set}/cards/` package for top-level `val`s, so
+a card in the right package with `val {CardName} = card("{Card Name}") { … }` is picked up automatically.
+
 1. Write it with DSL facades over raw constructors. If Step 0 produced a draft, start from it rather than
    a blank page. [`examples.md`](examples.md) has a template for every common shape.
 
@@ -124,12 +128,9 @@ generated card is worse than none.
    remembered one will be wrong in a way nothing catches. Verify: `curl -sI "<url>" | head -1` must be
    HTTP 200.
 
-3. **Register** in `mtg-sets/.../definitions/{set}/{Set}Set.kt` — add to `allCards`, alphabetically or by
-   collector number.
+3. **Auras** need `typeLine = "Enchantment — Aura"` (modern Oracle errata) and an `auraTarget` in the script.
 
-4. **Auras** need `typeLine = "Enchantment — Aura"` (modern Oracle errata) and an `auraTarget` in the script.
-
-5. **Token images** — look the token up on Scryfall and pass `imageUri` to `Effects.CreateToken`:
+4. **Token images** — look the token up on Scryfall and pass `imageUri` to `Effects.CreateToken`:
    `…/search?q=t%3Atoken+name%3A%22<TokenName>%22+set%3At<set-code>` (token sets prefix with `t`, e.g.
    `tblb`). Not in the set? Drop the set filter and use the most recent printing. No token on Scryfall at
    all? Omit `imageUri`.

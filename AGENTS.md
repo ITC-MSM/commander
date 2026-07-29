@@ -16,10 +16,12 @@ docs it points at; load those when the work needs them.
   the user confirms it's safe to continue.
 - **Route to the matching skill, don't freelance:**
   - Implementing a card, from a backlog file or by name → **`add-card`** (Scryfall lookup, oracle
-    errata, canonical-printing placement, set registration, scenario test).
+    errata, canonical-printing placement, scenario test).
   - Any engine/SDK/server/client capability that isn't a single card — effect, trigger, condition,
     keyword, decision flow → **`add-feature`** (composition-first design, cross-layer tracing, perf + UX).
   - Running the build/test gates and reading the results → **`verify`**.
+  - Working autonomously through a whole set or backlog, one PR per unit → **`backlog-loop`** (queue +
+    one background worker at a time; the orchestrator never implements or builds).
 - **Verify MTG rule numbers before citing them** in code, comments, commit messages, PR bodies, or chat.
   613.8 vs 613.7 and 704.5 vs 704.6 are easy to swap. Check the official Comprehensive Rules
   <https://magic.wizards.com/en/rules> — the plain-text `.txt` is too large to fetch into context, so
@@ -65,8 +67,10 @@ These are the ones that have actually caused bugs here.
 
 ## Card / effect authoring
 
-- **Cards are data** — `cardDef { }` DSL, never class inheritance. Register in
-  `definitions/{set}/{Set}Set.kt`; the engine auto-loads via `ServiceLoader`.
+- **Cards are data** — `cardDef { }` DSL, never class inheritance. No registration step: `CardDiscovery`
+  scans `definitions/{set}/cards/` for top-level `val`s, so a card in the right package is picked up
+  automatically. A new *set* only needs an `MtgSet` object under `definitions/` — `MtgSetCatalog` finds it
+  the same way.
 - **Facades, not raw constructors** — `Effects.DrawCards(1)`, `Effects.Destroy()`. `FacadeBoundaryTest`
   enforces this for cards. Compositions (Scry, Mill, SearchLibrary) live behind the single `Patterns`
   index: `Patterns.Library`, `.Hand`, `.Group`, `.Exile`, `.CreatureType`, `.Mechanic`, `.Sideboard`.

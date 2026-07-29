@@ -106,7 +106,8 @@ printings and exits non-zero unless:
 
 If the earliest real set isn't scaffolded under `mtg-sets/.../definitions/<setcode>/`,
 the script reports it as drift. The expectation in that case is to scaffold the earliest
-set (minimal `MtgSet` object + `META-INF/services` entry) and host the canonical there.
+set (a minimal `MtgSet` object under `definitions/` — `MtgSetCatalog` discovers it on the
+classpath, there is no registration list or service file) and host the canonical there.
 Flag it as **Blocking** if the diff put the canonical in a later set without scaffolding
 the original; the only acceptable miss is when the author documents in the PR body why
 scaffolding the earlier set is out of scope.
