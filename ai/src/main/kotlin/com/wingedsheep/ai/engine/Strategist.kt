@@ -75,6 +75,8 @@ class Strategist(
      * a caller that doesn't opt in gets the greedy 1-ply AI unchanged.
      */
     private val candidateEvaluator: CandidateEvaluator = StaticCandidateEvaluator(evaluator),
+    /** Phase 8: a fair complete world, sampled once before any candidate simulation. */
+    private val stateSampler: ((GameState, EntityId) -> GameState)? = null,
 ) {
     private val holdPolicy = HoldPolicy(intents)
 
@@ -83,13 +85,14 @@ class Strategist(
         legalActions: List<LegalAction>,
         playerId: EntityId
     ): LegalAction {
+        val evaluationState = stateSampler?.invoke(state, playerId) ?: state
         // Combat declaration steps need the CombatAdvisor to fill in attacker/blocker maps
         // even when there's only one legal action (which is the common case — the enumerator
         // returns a single DeclareAttackers/DeclareBlockers with an empty default map).
         val combatAction = legalActions.find { it.actionType == "DeclareAttackers" || it.actionType == "DeclareBlockers" }
         if (combatAction != null) {
             val budget = budgetPolicy.budgetFor(state, playerId, listOf(combatAction))
-            return handleCombatDeclaration(state, combatAction, playerId, budget)
+            return handleCombatDeclaration(evaluationState, combatAction, playerId, budget)
         }
 
         if (legalActions.size == 1) return legalActions.first()
@@ -112,29 +115,29 @@ class Strategist(
         val leafStates = mutableListOf<GameState>()
         if (pass != null) {
             leaves += pass
-            leafStates += simulator.simulate(state, pass.action).state
+            leafStates += simulator.simulate(evaluationState, pass.action).state
         }
         for (action in affordable) {
             leaves += action
             leafStates += simulator.simulate(
-                state, chooseCommittedTargets(state, action, playerId, budget)
+                evaluationState, chooseCommittedTargets(evaluationState, action, playerId, budget)
             ).state
             if (budget.expired()) break
         }
 
         // ── Pass 2: score every leaf at once ──
-        val leafScores = candidateEvaluator.scoreAll(state, leafStates, playerId, budget)
+        val leafScores = candidateEvaluator.scoreAll(evaluationState, leafStates, playerId, budget)
         val passScore = if (pass != null) {
             leafScores.first()
         } else {
             // No pass on offer: the "do nothing" reference is the current position itself.
-            candidateEvaluator.score(state, state, playerId, budget)
+            candidateEvaluator.score(evaluationState, evaluationState, playerId, budget)
         }
 
         // ── Pass 3: per-card timing and advisor adjustments, in raw evaluator units ──
         val firstCandidate = if (pass != null) 1 else 0
         val scored = (firstCandidate until leaves.size).map { i ->
-            leaves[i] to adjustScore(state, leaves[i], playerId, leafScores[i], passScore)
+            leaves[i] to adjustScore(evaluationState, leaves[i], playerId, leafScores[i], passScore)
         }
 
         // On the opponent's end step, unspent mana is about to be wasted. Reduce the pass threshold
@@ -158,7 +161,7 @@ class Strategist(
             // AI sees the real resolved board, including effects already on the stack.
             val chosen = best.first
             if (chosen.requiresTargets) {
-                chosen.copy(action = chooseCommittedTargets(state, chosen, playerId, budget))
+                chosen.copy(action = chooseCommittedTargets(evaluationState, chosen, playerId, budget))
             } else {
                 chosen
             }

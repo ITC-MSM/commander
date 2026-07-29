@@ -1126,3 +1126,31 @@ that sees one candidate cannot decide to spend four times as much on it as on it
 no override and `LEGACY_V0` comes out bit-identical — `FrozenBaselineTest` is what proves it. The
 Strategist's loop became three passes (simulate all, score all, adjust all) which is also simply a
 clearer shape than the old interleaving.
+
+---
+
+# Phase 8 — Determinization
+
+Measured 2026-07-29, 8-core M1 Pro, BLB sealed, seed 20260727.
+
+```bash
+just arena v0-rollout v0-rollout-determinized 100
+just arena v0 v0-rollout-determinized 100
+```
+
+The initial paired smoke found no detectable fairness cost:
+
+| Matchup | Win share for A | Pair CI | Games | Completed |
+|---|---:|---:|---:|---:|
+| full-information rollout vs determinized rollout | 49.0% | [43.0%, 55.0%] | 100 | 100% |
+| determinized rollout vs frozen `v0` | **55.0%** | [48.0%, 62.0%] | 100 | 100% |
+
+This sample prices only a large regression; it does not prove equivalence. Its useful result is that
+sampling one shared known-deck world did not produce the expected catastrophic dip or destabilize
+games. The fair agent's 55% point estimate against `v0` retains Phase 7's strength signal, while the
+smoke-sized interval still spans parity. The 1,000-game merge-sized run remains the
+publication-quality measurement.
+
+The run reported three `CastSpell: Not enough mana to cast this spell` rejections, all on one paired
+seed and present in both seat orientations. That is the same pre-existing enumerator/processor
+disagreement Phase 7 records above, not a new error class introduced by determinization.

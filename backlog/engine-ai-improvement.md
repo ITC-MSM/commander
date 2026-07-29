@@ -3,16 +3,17 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** **Phases 0–7 shipped**, plus 3 of Phase 2b's 6 categories (Phase 7 on 2026-07-29) —
+**Status:** **Phases 0–8 shipped**, plus 3 of Phase 2b's 6 categories (Phase 8 on 2026-07-29) —
 baselines in [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
 [`docs/ai/measurement.md`](../docs/ai/measurement.md). Four scoreboards now exist: the arena
 (`just arena`), the 66-puzzle suite (`just arena-puzzles`, **60/66 today**), the multiplayer pod
 arena (`just arena-pod`) and the budget-scaling ladder (`just arena-budget-scaling`, **monotone**).
 The primary strength lever is in: the rollout evaluator beats `v0` **56.0%, CI [52.0%, 59.7%]**.
-Next up is **Phase 8, determinization** — the one phase that deliberately *costs* strength, because
-search over a cheated state is search over a lie, and a search is exactly the thing that turns
-cheating into an advantage. Phases are individually shippable and ordered by dependency, not by
-appeal.
+Phase 8 removes exact opponent-hand and library-order knowledge from rollout search. Its paired
+smoke found no detectable dip against the full-information control (49%, CI [43%, 55%]) and retained
+the Phase 7 strength point estimate against `v0` (55%, CI [48%, 62%]); the merge-sized measurement
+remains intentionally separate because rollout arenas are expensive. Next up is **Phase 9,
+Texel-style evaluation tuning**.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
 performance phase built on. **Every step in that document is now closed**; Phase 5a was its Step 4
@@ -1265,7 +1266,7 @@ puzzle gains in sequencing / race math / board-wipe timing; p95 latency ≤5 s.
 
 ---
 
-### Phase 8 — Determinization (fair play) · *5–7 d*
+### Phase 8 — Determinization (fair play) · *5–7 d* — ✅ **DONE 2026-07-29**
 
 #### 8a. Extract the visibility oracle
 
@@ -1425,7 +1426,7 @@ but tanks a puzzle category, look hard before shipping.
 0̶ → 1̶ → 2̶ → 3̶ → 4̶ → 5̶ → 6̶ → 2b🟡 → 7̶ → 8 → 9 → 10
 ```
 
-Phases 0–7 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
+Phases 0–8 are done — all four scoreboards exist, the evaluator is no longer one-eyed at a pod
 table, the budget ladder is calibrated and monotone before any rollout depends on it, the engine's
 quadratic battlefield scans are gone (−21% engine CPU, and `engine-performance.md` is now fully
 closed out), the leaf evaluator can see a permanent that has no power and toughness, and the primary
@@ -1433,10 +1434,9 @@ strength lever is in at **57.3%, CI [53.0%, 61.7%]** against `v0`. **Phase 5 nev
 critical path** — simulation was already ~2× the speed the rollout budget needs — so it was taken as
 a standing engine win, not a prerequisite.
 
-Next up is **Phase 8, determinization** — the one phase that deliberately *costs* strength, and the
-one to do next anyway, because a search is exactly the thing that turns cheating into an advantage.
-The AI reads the opponent's unmasked hand and library order, and Phase 7 just gave it the machinery
-to play twenty lines against that knowledge instead of one.
+Next up is **Phase 9, Texel-style evaluation tuning**. Phase 8 now samples one viewer-consistent
+world before any candidate simulation, so search no longer plays twenty lines against exact hidden
+hand identities and library order.
 
 Phase 7 leaves three pieces of homework of its own. **`ThreatAssessment`'s 99-turn sentinel** is now
 a measured hazard rather than a suspected one (correction 1 above): it puts ±176 of uncalibrated
@@ -1456,7 +1456,7 @@ Ranked by strength-per-effort, independent of ordering:
 
 | Rank | Phase | Effort | Why |
 |---|---|---|---|
-| — | **6̶** CardIntent | 5–7 d | **Done.** Was ranked 1. Removed the flat-0.5 blindness to every artifact/enchantment/PW; puzzles 39/48 → 44/48, arena neutral. Two of its five planned consumers (rollout policy, determinization prior) are Phases 7 and 8 and are still to come. |
+| — | **6̶** CardIntent | 5–7 d | **Done.** Was ranked 1. Removed the flat-0.5 blindness to every artifact/enchantment/PW; puzzles 39/48 → 44/48, arena neutral. Its rollout-policy and determinization-prior consumers shipped in Phases 7 and 8. |
 | — | **3̶** multiplayer eval | 1–2 d | **Done.** Was ranked 1: the evaluator scored a whole pod as a duel against one arbitrary neighbour, and read a stale life component in 2HG. |
 | 1 | **9** Texel tuning | 4–6 d | Replaces ~25 guessed constants with fitted ones, and each later phase raises the stakes: two of the remaining puzzle failures are *one* constant (`CardAdvantage.cardValue(0) = −3.0`), Phase 7 added a fifth guess (`staticWeight`), and `ThreatAssessment`'s 99-turn sentinel is now a measured hazard rather than a suspected one. Cheap once the arena exists. |
 | — | **7̶** rollout evaluator | 6–9 d | **Done.** The real lever, and it delivered against `v0`; the Fog puzzle Phase 2 assigned to it is closed. Two surprises worth carrying forward: squashing an *absolute* board score destroys the search, and a *pure* rollout is weaker than the greedy AI it replaces. |
@@ -1464,7 +1464,7 @@ Ranked by strength-per-effort, independent of ordering:
 | 4 | **1̶ / 2̶** arena + puzzles | 7–10 d | No direct strength — but nothing above is *knowable* without them. Both done. |
 | — | **4̶a** auto-pass filter | 3–5 d | **Done.** Demoted by Phase 0 and rescoped to "skip the enumeration": 40% of priority windows now never call the enumerator. Also closed Phase 1's 889-of-945 illegal-action finding, which turned out to be a targeting bug. |
 | — | **4̶b** DecisionBudget | 2–3 d | **Done.** Enabling infrastructure, and it measures like it — neutral in the arena, monotone in the scaling ladder. |
-| 2 | **8** determinization | 5–7 d | **Costs** strength (fairness price). Do it because search over a cheated state is search over a lie. |
+| — | **8̶** determinization | 5–7 d | **Done.** Search samples a shared viewer-consistent world; the paired smoke found no detectable dip and retained a 55% point estimate against `v0`. |
 | — | **5̶a** hoist O(n²) scans | 3–5 d | **Done.** Demoted by Phase 0 (not a rollout prerequisite), taken as a standing engine win anyway: `findAvailableManaSources` 59% → 3.1% inclusive, −21% engine CPU. Closed `engine-performance.md` Step 4. |
 | — | **5̶c** persistent collections | 4–6 d | **Dropped**, gate checked. Post-5a profile puts the allocation cluster at ~2% (`Arena::grow` 1.37%). The top leaf is now `PredicateEvaluator.matchesCardPredicate` at 20.4% self. |
 | — | projection incrementalization | 2+ wk | **Skip.** 7.4% in the profile, 11% measured cold, and already cached. |
