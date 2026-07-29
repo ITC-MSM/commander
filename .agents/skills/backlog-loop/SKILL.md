@@ -78,8 +78,10 @@ ledger costs you almost nothing.
 Repeat until no `[ ]` units remain (or `--units N` is exhausted).
 
 **Stage A — implement.** Flip the unit to `[~]`. Spawn one background subagent, `isolation: "worktree"`,
-with [`worker-prompt.md`](worker-prompt.md), values substituted. It implements, gates, commits, and
-**pushes a branch — it does not open a PR.** Wait for its verdict.
+with [`worker-prompt.md`](worker-prompt.md), values substituted. It fetches and branches off the current
+`origin/main` before touching anything — units run serially, so by unit 5 the checkout it inherits is
+several merged PRs behind — then implements, gates, commits, and **pushes a branch — it does not open a
+PR.** Wait for its verdict.
 
 - `branch-pushed` → go to stage B.
 - `failed` → mark `[!]` with the one-line reason. No stage B; there's nothing to review.
