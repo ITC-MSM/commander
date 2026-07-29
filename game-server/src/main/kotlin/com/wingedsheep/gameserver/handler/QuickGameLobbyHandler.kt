@@ -5,6 +5,7 @@ import com.wingedsheep.gameserver.ai.AiGameManager
 import com.wingedsheep.gameserver.ai.RandomDeckResolver
 import com.wingedsheep.gameserver.config.GameProperties
 import com.wingedsheep.gameserver.deck.DeckValidator
+import com.wingedsheep.gameserver.deck.EasterEggDeckInjector
 import com.wingedsheep.gameserver.lobby.AiDeckSpec
 import com.wingedsheep.gameserver.lobby.AiDeckSpecView
 import com.wingedsheep.gameserver.lobby.MomirBasicSetup
@@ -570,7 +571,10 @@ class QuickGameLobbyHandler(
                 emptyMap()
             } else {
                 val randomFallbackSet = if (lobby.vsAi) aiSetCode else deckGenerator.randomSetCode()
-                resolveDeck(lobbyPlayer, randomFallbackSet, lobby.format)
+                EasterEggDeckInjector.maybeInjectEasterEggs(
+                    lobbyPlayer.playerName,
+                    resolveDeck(lobbyPlayer, randomFallbackSet, lobby.format),
+                )
             }
             val playerSession = sessionRegistry
                 .getAllIdentities()

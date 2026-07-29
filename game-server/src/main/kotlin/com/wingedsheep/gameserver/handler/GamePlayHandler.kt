@@ -16,6 +16,7 @@ import com.wingedsheep.gameserver.session.GameSession
 import com.wingedsheep.gameserver.session.PlayerSession
 import com.wingedsheep.gameserver.session.SessionRegistry
 import com.wingedsheep.gameserver.config.GameProperties
+import com.wingedsheep.gameserver.deck.EasterEggDeckInjector
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.PlayerLostEvent
 import com.wingedsheep.engine.registry.CardRegistry
@@ -117,13 +118,14 @@ class GamePlayHandler(
             message.setCode ?: deckGenerator.randomSetCode()
         } else null
 
-        val deckList = if (quickGameSetCode != null) {
+        val baseDeck = if (quickGameSetCode != null) {
             val randomDeck = deckGenerator.generate(quickGameSetCode)
             logger.info("Generated random deck for ${playerSession.playerName} from set $quickGameSetCode: ${randomDeck.entries.take(5)}... (${randomDeck.values.sum()} cards)")
             randomDeck
         } else {
             message.deckList
         }
+        val deckList = EasterEggDeckInjector.maybeInjectEasterEggs(playerSession.playerName, baseDeck)
 
         val gameSession = GameSession(
             cardRegistry = cardRegistry,
@@ -262,7 +264,7 @@ class GamePlayHandler(
             return
         }
 
-        val deckList = if (message.deckList.isEmpty()) {
+        val baseDeck = if (message.deckList.isEmpty()) {
             val setCode = gameSession.quickGameSetCode ?: deckGenerator.randomSetCode()
             val randomDeck = deckGenerator.generate(setCode)
             logger.info("Generated random deck for ${playerSession.playerName} from set $setCode: ${randomDeck.entries.take(5)}... (${randomDeck.values.sum()} cards)")
@@ -270,6 +272,7 @@ class GamePlayHandler(
         } else {
             message.deckList
         }
+        val deckList = EasterEggDeckInjector.maybeInjectEasterEggs(playerSession.playerName, baseDeck)
 
         // A generated random deck (empty submission) has no sideboard.
         val sideboard = if (message.deckList.isEmpty()) emptyMap() else message.sideboard
