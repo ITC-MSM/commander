@@ -1311,6 +1311,127 @@
     ]
 }
 
+// Bramble Familiar
+{
+    "name": "Bramble Familiar",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elemental Raccoon",
+    "oracleText": "{T}: Add {G}.\n{1}{G}, {T}, Discard a card: Return this creature to its owner's hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{G}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "RARE",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/475d7e9a-759d-4523-a5cd-2a6e0d1b14ea.jpg?1783915084"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Fetch Quest",
+            "manaCost": "{5}{G}{G}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Mill seven cards. Then put a creature, enchantment, or land card from among the milled cards onto the battlefield. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 7
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "fetch_milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fetch_milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "fetch_milled",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "creature|enchantment|land",
+                            "storeSelected": "fetch_selected",
+                            "prompt": "Put a creature, enchantment, or land card onto the battlefield",
+                            "selectedLabel": "Put onto the battlefield",
+                            "remainderLabel": "Leave in graveyard",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fetch_selected",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Brave the Wilds
 {
     "name": "Brave the Wilds",
@@ -5733,6 +5854,81 @@
     ]
 }
 
+// Horned Loch-Whale
+{
+    "name": "Horned Loch-Whale",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Whale",
+    "oracleText": "Flash\nWard {2} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)\nThis creature enters tapped unless it's your turn.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLASH",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        }
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "rarity": "RARE",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96a05063-0556-42e4-8d4c-8e92be160ef5.jpg?1783915120",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The creature's owner chooses whether to put it on the top or bottom of their library. If multiple cards are put into the library this way (such as when the spell targets a melded permanent), that creature's owner puts all the cards on top or all the cards on the bottom. They put them in whatever order they wish, and do not need to reveal the order."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Lagoon Breach",
+            "manaCost": "{1}{U}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "The owner of target attacking creature you don't control puts it on their choice of the top or bottom of their library. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "PutOnLibraryPositionOfChoice",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target attacking creature you don't control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature attacking ctrl:opponent"
+                        },
+                        "id": "target attacking creature you don't control"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Howling Galefang
 {
     "name": "Howling Galefang",
@@ -8714,6 +8910,123 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Questing Druid
+{
+    "name": "Questing Druid",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Druid",
+    "oracleText": "Whenever you cast a spell that's white, blue, black, or red, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasColor",
+                                        "color": "WHITE"
+                                    },
+                                    {
+                                        "type": "HasColor",
+                                        "color": "BLUE"
+                                    },
+                                    {
+                                        "type": "HasColor",
+                                        "color": "BLACK"
+                                    },
+                                    {
+                                        "type": "HasColor",
+                                        "color": "RED"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "RARE",
+        "artist": "Jason A. Engle",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72c130e2-1e17-4996-a5ae-231155d68261.jpg?1783915063",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If you cast a spell that's more than one of the listed colors, Questing Druid's ability still triggers only once."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You pay all costs and follow all normal timing rules for cards played from exile with Seek the Beast. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Seek the Beast",
+            "manaCost": "{1}{R}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Exile the top two cards of your library. Until your next end step, you may play those cards. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "seek_the_beast_exiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "seek_the_beast_exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "seek_the_beast_exiled",
+                            "expiry": {
+                                "type": "UntilControllerStep",
+                                "step": "END"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
     ]
 }
 
@@ -13546,6 +13859,88 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Twining Twins
+{
+    "name": "Twining Twins",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying, vigilance, ward {1} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {1}.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{1}"
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "RARE",
+        "artist": "Fajareka Setiawan",
+        "flavorText": "\"We spin and spin to keep us busy, but somehow you're the one who's dizzy.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/043718ea-59f6-4d1a-94c5-271704c1a38a.jpg?1783915061"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Swift Spiral",
+            "manaCost": "{1}{W}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Exile target nontoken creature. Return it to the battlefield under its owner's control at the beginning of the next end step. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target nontoken creature"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target nontoken creature"
+                                },
+                                "destination": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature nontoken"
+                        },
+                        "id": "target nontoken creature"
+                    }
+                ]
+            }
+        }
     ]
 }
 
