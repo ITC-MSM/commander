@@ -46,7 +46,7 @@ fun BridgeBuilder.energy() {
     // `_Cost: PayEnergy` — a *fixed* amount, nested inside a `MayCost` envelope: "you may pay
     // {E}{E}{E}. When you do, ..." (Guide of Souls, MH3). Distinct from PayAnyAmountOfEnergy (a
     // chosen amount 0..current, no separate reflexive trigger) — here the amount is fixed and the
-    // payoff is a genuine CR 603.2 reflexive trigger with its own targets, not a same-ability "if
+    // payoff is a genuine CR 603.12 reflexive trigger with its own targets, not a same-ability "if
     // you do" continuation. A new leaf effect (PayFixedCountersEffect, @SerialName
     // "PayFixedCounters"): fails outright rather than clamping when the payer has fewer than the
     // named amount, so `ReflexiveTriggerEffectExecutor.isActionFeasible` can gate the "may pay"

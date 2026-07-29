@@ -916,7 +916,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     before resolution the whole spell fizzles per the normal CR 608.2b check, so no energy is gained either.
   - `PayFixedCounters(counterType, amount, player = Player.You)` — the all-or-nothing counterpart to
     `PayCounters`: pays an exact `amount`, not a chosen one. No decision of its own — designed as the `action`
-    half of a `ReflexiveTriggerEffect` ("you may pay {E}{E}{E}. **When** you do, ...", CR 603.2 — a fresh
+    half of a `ReflexiveTriggerEffect` ("you may pay {E}{E}{E}. **When** you do, ...", CR 603.12 — a fresh
     triggered ability with its own targets, distinct from a same-ability "**If** you do" continuation), where
     the reflexive's own yes/no *is* the payment decision. Fails outright (no partial removal) if the payer has
     fewer than `amount` — per the 2024-06-07 {E} ruling, "you can't pay that amount multiple times to multiply
@@ -8021,8 +8021,20 @@ Card authors rarely reference these directly; they are created/updated by the ma
   Rendezvous (end-step trigger gated on `Conditions.OpponentHasMoreCardsInHand`).
 - **Hideaway N** — `KeywordAbility.hideaway(n)` (display, "Hideaway N") + `MoveCollectionEffect(faceDown = FaceDownMode.HIDDEN,
   linkToSource = true)` + `CardSource.FromLinkedExile()`; no special engine plumbing needed.
-- **Ascend / City's Blessing** — `Keyword.ASCEND` + `Effects.GainCitysBlessing()` + `Conditions.YouHaveCitysBlessing` /
-  `SourceProjectionCondition.ControllerHasCitysBlessing` + `PlayerCitysBlessingComponent`.
+- **Ascend / City's Blessing** (CR 702.131) — on a **permanent**, `keywords(Keyword.ASCEND)` is the whole
+  implementation: ascend there is a *static* ability (702.131b, "**any time** you control ten or more
+  permanents…"), and the engine's `AscendCitysBlessingCheck` state-based action grants the designation to
+  any player controlling an ascend permanent once they control ten permanents. Do **not** write it as an
+  enters-the-battlefield trigger — that samples the count once, on the turn a cheap creature is least
+  likely to meet it, and never looks again. On an **instant or sorcery** ascend is a spell ability
+  (702.131a), so those cards spell it out with `Effects.GainCitysBlessing()` in the spell's effect, as does
+  any card that just says "you get the city's blessing".
+  Read it back with `Conditions.YouHaveCitysBlessing` / `SourceProjectionCondition.ControllerHasCitysBlessing`;
+  the marker is `PlayerCitysBlessingComponent` and is never removed (702.131b/c, "for the rest of the game").
+  Both the read and the two writers go through `CitysBlessingService`, which also evaluates the ascend
+  condition *live* — that is what makes "create a token, then if you have the city's blessing…" come out
+  right when the token itself is your tenth permanent (Ocelot Pride), since state-based actions aren't
+  polled mid-resolution.
 - **Speed / Start your engines! / Max speed** (Aetherdrift, CR 702.178–702.179) — a player's speed is
   an `Int` 0–4 (`Speed.NONE` / `Speed.STARTING` / `Speed.MAX` in `core/Speed.kt`) held by
   `PlayerSpeedComponent`. It only ever rises, is clamped at 4, and is never removed — like the city's

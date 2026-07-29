@@ -1324,7 +1324,7 @@ function GameCardImpl({
         </div>
       )}
 
-      {/* Exerted indicator (CR 701.39a) — won't untap during its controller's next untap step. */}
+      {/* Exerted indicator (CR 701.43a) — won't untap during its controller's next untap step. */}
       {battlefield && card.isExerted && (
         <div
           aria-label="Exerted — won't untap next turn"
