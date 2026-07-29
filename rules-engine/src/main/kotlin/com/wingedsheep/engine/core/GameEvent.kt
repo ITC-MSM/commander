@@ -883,7 +883,7 @@ data class TappedEvent(
 ) : GameEvent
 
 /**
- * A permanent was exerted (CR 701.39a) — it won't untap during its controller's next untap step.
+ * A permanent was exerted (CR 701.43a) — it won't untap during its controller's next untap step.
  * Lets animations and "whenever you exert a permanent" reactions (none printed yet) fire instead
  * of the state changing silently.
  */

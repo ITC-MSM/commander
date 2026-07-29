@@ -429,7 +429,7 @@ data class LastKnownPermanentComponent(
 data object EnteredThisTurnComponent : Component
 
 /**
- * Permanent was exerted (CR 701.39a) — it won't untap during its controller's next untap step.
+ * Permanent was exerted (CR 701.43a) — it won't untap during its controller's next untap step.
  *
  * Unlike a stun counter (CR 122.1d), which is only consumed when it actually prevents an untap,
  * this marker is unconditionally cleared the next time its controller's untap step is processed
@@ -437,7 +437,7 @@ data object EnteredThisTurnComponent : Component
  * permanent is already untapped during your next untap step ... exert's effect ... expires
  * without having done anything"). See [BeginningPhaseManager]'s untap-step handling, which both
  * skips untapping an exerted permanent and clears this marker every untap step regardless.
- * Exerting an already-exerted permanent again before the next untap step is a no-op (701.39b) —
+ * Exerting an already-exerted permanent again before the next untap step is a no-op (701.43b) —
  * `with(ExertedComponent)` on an already-exerted entity doesn't create a second marker to track.
  */
 @Serializable

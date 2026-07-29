@@ -215,8 +215,8 @@ excluded.
 - `Costs.Free` — costs nothing (`{0}`).
 - `Costs.Tap` — `{T}`; tap this permanent.
 - `Costs.Untap` — `{Q}`; untap this permanent.
-- `Costs.Exert` — exert this permanent (CR 701.39a, `AbilityCost.Exert`): it won't untap during its
-  controller's next untap step. Always payable regardless of tapped/exerted state (701.39b) —
+- `Costs.Exert` — exert this permanent (CR 701.43a, `AbilityCost.Exert`): it won't untap during its
+  controller's next untap step. Always payable regardless of tapped/exerted state (701.43b) —
   `canPayAbilityCost` returns `true` unconditionally, and re-exerting before the next untap step is
   a no-op (doesn't stack multiple skips). Backed by a new per-object marker component
   (`ExertedComponent`), not a continuous static ability like `AbilityFlag.DOESNT_UNTAP` — the
@@ -224,7 +224,7 @@ excluded.
   marker *unconditionally* every untap step for that permanent's controller, whether or not it
   actually prevented an untap (2024-06-07 ruling), unlike a stun counter which is only consumed
   when it does. Exposed client-side as `ClientCard.isExerted`. Distinct from the "you may exert
-  [this] as it attacks" attack-cost template (701.39d) — that's a separate optional-cost-to-attack
+  [this] as it attacks" attack-cost template (701.43d) — that's a separate optional-cost-to-attack
   shape, not an ability cost; only the cost-component shape is implemented so far. First user: Arena
   of Glory (MH3) — `Costs.Composite(Costs.Mana("{R}"), Costs.Tap, Costs.Exert)`.
 - `Costs.Mana("{2}{U}")` — pay the given mana cost (string or `ManaCost`).

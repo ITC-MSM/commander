@@ -14,7 +14,7 @@ import io.kotest.matchers.shouldBe
 
 /**
  * Arena of Glory (MH3) — proves the two genuinely new pieces this land needed: the Exert cost
- * (CR 701.39a, [com.wingedsheep.sdk.scripting.AbilityCost.Exert] — a wholly new engine primitive,
+ * (CR 701.43a, [com.wingedsheep.sdk.scripting.AbilityCost.Exert] — a wholly new engine primitive,
  * no prior user) and the checkland-style conditional tapped entry, plus that the haste rider
  * ([com.wingedsheep.sdk.scripting.effects.ManaSpellRider.GrantsKeywordWhenSpent], already proven
  * by Carnelian Orb of Dragonkind) correctly distinguishes the exert ability's {R}{R} from the

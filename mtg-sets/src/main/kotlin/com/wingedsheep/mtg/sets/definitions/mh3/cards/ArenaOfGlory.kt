@@ -23,9 +23,9 @@ import com.wingedsheep.sdk.scripting.references.Player
  * {R}, {T}, Exert this land: Add {R}{R}. If that mana is spent on a creature spell, it gains
  * haste until end of turn. (An exerted permanent won't untap during your next untap step.)
  *
- * The exert cost (CR 701.39a — [com.wingedsheep.sdk.scripting.AbilityCost.Exert], a new engine
+ * The exert cost (CR 701.43a — [com.wingedsheep.sdk.scripting.AbilityCost.Exert], a new engine
  * primitive) isn't otherwise implemented in this codebase, so this is its first user: it's
- * always payable regardless of tapped/exerted state (701.39b), and the marker it sets clears
+ * always payable regardless of tapped/exerted state (701.43b), and the marker it sets clears
  * unconditionally at the controller's next untap step (2024-06-07 ruling) rather than only when
  * it actually prevents an untap, distinguishing it from a stun counter.
  *
