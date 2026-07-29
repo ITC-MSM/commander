@@ -120,7 +120,7 @@ describe('suggestBasicLands', () => {
     expect((result.Mountain ?? 0) + (result.Swamp ?? 0)).toBe(17)
   })
 
-  it('scales the land total for a normal 60-card constructed curve', () => {
+  it('fills a normal constructed deck to exactly 60 cards', () => {
     const result = suggestBasicLands({
       entries: [
         spell('White two-drop', '{1}{W}', 2, 18),
@@ -130,7 +130,7 @@ describe('suggestBasicLands', () => {
       minDeckSize: 60,
     })
 
-    expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(27)
+    expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(24)
     expect(Math.abs((result.Plains ?? 0) - (result.Island ?? 0))).toBeLessThanOrEqual(1)
   })
 
@@ -171,5 +171,98 @@ describe('suggestBasicLands', () => {
     const result = suggestBasicLands({ entries: [], availableBasics: basics, minDeckSize: 40 })
 
     expect(result).toEqual({ Plains: 0, Island: 0, Swamp: 0, Mountain: 0, Forest: 0 })
+  })
+
+  it('treats two hybrid symbols as needing two combined white-or-blue sources', () => {
+    const result = suggestBasicLands({
+      entries: [
+        spell('Red two-drop', '{1}{R}', 2, 12),
+        spell('Double hybrid spell', '{W/U}{W/U}', 2, 2),
+        spell('Colorless filler', '{3}', 3, 9),
+      ],
+      availableBasics: basics,
+      minDeckSize: 40,
+    })
+
+    expect((result.Plains ?? 0) + (result.Island ?? 0)).toBeGreaterThanOrEqual(7)
+    expect((result.Plains ?? 0) + (result.Island ?? 0) + (result.Mountain ?? 0)).toBe(17)
+  })
+
+  it('does not require a colored source for a purely Phyrexian pip', () => {
+    const result = suggestBasicLands({
+      entries: [
+        spell('Red spell', '{1}{R}', 2, 22),
+        spell('Phyrexian spell', '{W/P}', 1, 1),
+      ],
+      availableBasics: basics,
+      minDeckSize: 40,
+    })
+
+    expect(result.Plains).toBe(0)
+    expect(result.Mountain).toBe(17)
+  })
+
+  it('does not merge the colored requirements of mutually exclusive card faces', () => {
+    const result = suggestBasicLands({
+      entries: [
+        spell('White spell', '{1}{W}', 2, 22),
+        spell('Two-faced spell', '{1}{W} // {3}{U}{U}', 2, 1),
+      ],
+      availableBasics: basics,
+      minDeckSize: 40,
+    })
+
+    expect(result.Island).toBe(0)
+    expect(result.Plains).toBe(17)
+  })
+
+  it('keeps every represented color alive in a five-color Limited deck', () => {
+    const result = suggestBasicLands({
+      entries: [
+        spell('White spell', '{2}{W}', 3, 5),
+        spell('Blue spell', '{2}{U}', 3, 5),
+        spell('Black spell', '{2}{B}', 3, 5),
+        spell('Red spell', '{2}{R}', 3, 4),
+        spell('Green spell', '{2}{G}', 3, 4),
+      ],
+      availableBasics: basics,
+      minDeckSize: 40,
+    })
+
+    for (const land of basics) expect(result[land.name] ?? 0).toBeGreaterThanOrEqual(3)
+    expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(17)
+  })
+
+  it('adds no basics when existing lands already meet the target', () => {
+    const fiveColorLand: DeckEntry = {
+      name: 'Five-color land',
+      manaCost: '',
+      cmc: 0,
+      count: 20,
+      isLand: true,
+      isBasicLand: false,
+      producedColors: ['W', 'U', 'B', 'R', 'G'],
+    }
+    const result = suggestBasicLands({
+      entries: [spell('Gold spell', '{W}{U}{B}{R}{G}', 5, 23), fiveColorLand],
+      availableBasics: basics,
+      minDeckSize: 40,
+    })
+
+    expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(0)
+  })
+
+  it('uses only the first available printing for a basic-land color', () => {
+    const result = suggestBasicLands({
+      entries: [spell('White spell', '{1}{W}', 2, 23)],
+      availableBasics: [
+        { name: 'Plains A', color: 'W' },
+        { name: 'Plains B', color: 'W' },
+      ],
+      minDeckSize: 40,
+    })
+
+    expect(result['Plains A']).toBe(17)
+    expect(result['Plains B']).toBe(0)
   })
 })

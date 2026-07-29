@@ -99,7 +99,11 @@ export function suggestBasicLands(input: SuggestLandsInput): Record<string, numb
   const curveTotal = curveBasedLandCount(spells)
   const ratioBasedBasics = curveTotal - nonBasicLandCount - manaRockReduction
   const minBasedBasics = Math.max(minDeckSize - spellCount - nonBasicLandCount, 0)
-  const targetBasics = Math.max(ratioBasedBasics, minBasedBasics, 0)
+  // When the caller names a deck size and the deck is still short, fill
+  // exactly that many slots. The curve estimate is useful when no target is
+  // known, but must not turn a 36-spell constructed deck into 63 cards.
+  const targetBasics =
+    minDeckSize > 0 && minBasedBasics > 0 ? minBasedBasics : Math.max(ratioBasedBasics, 0)
   if (targetBasics === 0) return result
 
   const requirements = spells.flatMap(colorRequirements)
@@ -217,16 +221,27 @@ interface ColorRequirement {
 
 function colorRequirements(card: DeckEntry): ColorRequirement[] {
   const plain: Record<LandColor, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 }
+  const hybridPips: Record<LandColor, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 }
   const hybridWeights: Record<LandColor, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 }
-  for (const match of card.manaCost.matchAll(/\{([^}]+)\}/g)) {
+  // Faces are alternative costs, never one combined cost. Card summaries use
+  // the front/primary face first, matching what the deckbuilder displays.
+  const primaryCost = card.manaCost.split('//', 1)[0] ?? card.manaCost
+  for (const match of primaryCost.matchAll(/\{([^}]+)\}/g)) {
     const symbol = match[1]!.toUpperCase()
     if (COLORS.includes(symbol as LandColor)) {
       plain[symbol as LandColor]++
       continue
     }
-    const sides = symbol.split('/').filter((s): s is LandColor => COLORS.includes(s as LandColor))
+    const rawSides = symbol.split('/')
+    // A Phyrexian symbol can always be paid with life, so it does not impose
+    // a mandatory colored-source requirement.
+    if (rawSides.includes('P')) continue
+    const sides = rawSides.filter((s): s is LandColor => COLORS.includes(s as LandColor))
     if (sides.length > 0) {
-      for (const side of sides) hybridWeights[side] += 1 / sides.length
+      for (const side of sides) {
+        hybridPips[side]++
+        hybridWeights[side] += 1 / sides.length
+      }
     }
   }
 
@@ -240,7 +255,14 @@ function colorRequirements(card: DeckEntry): ColorRequirement[] {
     if (plain[color] > 0) {
       out.push({ color, pips: plain[color], turn, weight: pipSeverity(plain[color]) })
     }
-    if (hybridWeights[color] > 0) out.push({ color, pips: 1, turn, weight: hybridWeights[color] })
+    if (hybridPips[color] > 0) {
+      out.push({
+        color,
+        pips: hybridPips[color],
+        turn,
+        weight: pipSeverity(hybridPips[color]) * hybridWeights[color],
+      })
+    }
   }
   return out
 }
