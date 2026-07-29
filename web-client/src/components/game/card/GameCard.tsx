@@ -1324,6 +1324,25 @@ function GameCardImpl({
         </div>
       )}
 
+      {/* Exerted indicator (CR 701.39a) — won't untap during its controller's next untap step. */}
+      {battlefield && card.isExerted && (
+        <div
+          aria-label="Exerted — won't untap next turn"
+          title="Exerted — won't untap next turn"
+          style={{
+            position: 'absolute',
+            top: 3,
+            right: 3,
+            fontSize: responsive.badges.sicknessIconSize,
+            opacity: 0.85,
+            zIndex: 7,
+            pointerEvents: 'none',
+          }}
+        >
+          🔒
+        </div>
+      )}
+
       {/* Ring-bearer badge (CR 701.54) — a prominent golden Ring marker pinned to the top-left of
           the creature a player designated as their Ring-bearer. Gold fill + glow makes the bearer
           unmistakable at a glance across the battlefield, using the mana-font

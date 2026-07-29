@@ -871,6 +871,7 @@ class ClientStateTransformer(
 
         // Get state components
         val isTapped = container.has<TappedComponent>()
+        val isExerted = container.has<com.wingedsheep.engine.state.components.battlefield.ExertedComponent>()
         val isPhasedOut = container.has<PhasedOutComponent>()
         // Summoning sickness doesn't affect creatures with haste. The engine attaches the
         // marker to every entering permanent (so Vehicles / animated lands inherit it when
@@ -979,6 +980,7 @@ class ClientStateTransformer(
                 hexproofFromColors = faceDownHexproofFromColors,
                 counters = container.get<CountersComponent>()?.counters ?: emptyMap(),
                 isTapped = isTapped,
+                isExerted = isExerted,
                 hasSummoningSickness = hasSummoningSickness,
                 isTransformed = false,
                 isPhasedOut = isPhasedOut,
@@ -1316,6 +1318,7 @@ class ClientStateTransformer(
             hexproofFromMonocolored = hexproofFromMonocolored,
             counters = counters,
             isTapped = isTapped,
+            isExerted = isExerted,
             hasSummoningSickness = hasSummoningSickness,
             isTransformed = false, // TODO: Add transformed support
             isPhasedOut = isPhasedOut,

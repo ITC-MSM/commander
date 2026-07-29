@@ -215,6 +215,18 @@ excluded.
 - `Costs.Free` — costs nothing (`{0}`).
 - `Costs.Tap` — `{T}`; tap this permanent.
 - `Costs.Untap` — `{Q}`; untap this permanent.
+- `Costs.Exert` — exert this permanent (CR 701.43a, `AbilityCost.Exert`): it won't untap during its
+  controller's next untap step. Always payable regardless of tapped/exerted state (701.43b) —
+  `canPayAbilityCost` returns `true` unconditionally, and re-exerting before the next untap step is
+  a no-op (doesn't stack multiple skips). Backed by a new per-object marker component
+  (`ExertedComponent`), not a continuous static ability like `AbilityFlag.DOESNT_UNTAP` — the
+  untap step (`BeginningPhaseManager`) both skips untapping an exerted permanent and clears the
+  marker *unconditionally* every untap step for that permanent's controller, whether or not it
+  actually prevented an untap (2024-06-07 ruling), unlike a stun counter which is only consumed
+  when it does. Exposed client-side as `ClientCard.isExerted`. Distinct from the "you may exert
+  [this] as it attacks" attack-cost template (701.43d) — that's a separate optional-cost-to-attack
+  shape, not an ability cost; only the cost-component shape is implemented so far. First user: Arena
+  of Glory (MH3) — `Costs.Composite(Costs.Mana("{R}"), Costs.Tap, Costs.Exert)`.
 - `Costs.Mana("{2}{U}")` — pay the given mana cost (string or `ManaCost`).
 - `Costs.PayLife(amount)` — pay N life.
 - `Costs.PayXLife` — pay X life, where X is the value chosen for the ability's `{X}` mana cost
@@ -889,6 +901,19 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     storeAmountAs = "paid"), DealDamage(VariableReference("paid"), target))`. Paying 0 is legal and does nothing
     (2024-06-07 ruling: "You may pay zero {E}... won't deal any damage"); if the spell's target becomes illegal
     before resolution the whole spell fizzles per the normal CR 608.2b check, so no energy is gained either.
+  - `PayFixedCounters(counterType, amount, player = Player.You)` — the all-or-nothing counterpart to
+    `PayCounters`: pays an exact `amount`, not a chosen one. No decision of its own — designed as the `action`
+    half of a `ReflexiveTriggerEffect` ("you may pay {E}{E}{E}. **When** you do, ...", CR 603.2 — a fresh
+    triggered ability with its own targets, distinct from a same-ability "**If** you do" continuation), where
+    the reflexive's own yes/no *is* the payment decision. Fails outright (no partial removal) if the payer has
+    fewer than `amount` — per the 2024-06-07 {E} ruling, "you can't pay that amount multiple times to multiply
+    the effect... you simply choose whether or not to pay". `ReflexiveTriggerEffectExecutor.isActionFeasible`
+    recognizes `PayFixedCountersEffect` and checks the payer's current total before ever offering the "may pay"
+    prompt, mirroring how it already gates `SacrificeEffect` — so the prompt never appears when unaffordable,
+    it doesn't appear-then-fail. Guide of Souls (MH3): `ReflexiveTriggerEffect(action =
+    PayFixedCounters(Counters.ENERGY, 3), reflexiveEffect = AddCounters(PLUS_ONE_PLUS_ONE, 2, ContextTarget(0))
+    .then(AddCounters(FLYING, 1, ContextTarget(0))).then(AddCreatureType("Angel", ContextTarget(0))),
+    reflexiveTargetRequirements = [Targets.AttackingCreature])`.
   - `DynamicAmount.PlayerCounterCount(counterType, player = Player.You)` / `DynamicAmounts.playerCounterCount(...)`
     — how many counters of `counterType` a player currently has; the player-scoped sibling of
     `EntityProperty(entity, CounterCount(filter))` (which has no case for "a player" — `EntityReference` only

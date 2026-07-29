@@ -202,6 +202,8 @@ export interface ClientCard {
 
   /** State flags */
   readonly isTapped: boolean
+  /** Exerted (CR 701.39a) — won't untap during its controller's next untap step. */
+  readonly isExerted?: boolean
   readonly hasSummoningSickness: boolean
   readonly isTransformed: boolean
   /** Phased out (Rule 702.26) — treated as though it doesn't exist; rendered translucent. */

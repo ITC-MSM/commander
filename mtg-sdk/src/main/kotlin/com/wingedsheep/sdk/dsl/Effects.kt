@@ -1719,6 +1719,16 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.PayCountersEffect(counterType, player, storeAmountAs)
 
     /**
+     * [player] pays an exact [amount] of [counterType] counters — the all-or-nothing counterpart
+     * to [PayCounters]'s "pay any amount". Use as the `action` half of a [ReflexiveTrigger] for
+     * "you may pay {E}{E}{E}. When you do, [...]" (Guide of Souls): the reflexive's own "may" gate
+     * is the payment decision, and per the 2024-06-07 ruling on {E} you can't pay a partial amount
+     * for a partial effect, so this fails outright rather than clamping when unaffordable.
+     */
+    fun PayFixedCounters(counterType: String, amount: Int, player: Player = Player.You): Effect =
+        com.wingedsheep.sdk.scripting.effects.PayFixedCountersEffect(counterType, amount, player)
+
+    /**
      * Move one counter of each kind on [source] that [destination] does not already have,
      * from the source onto the destination. Deterministic (no player choice). Used by
      * Goldberry, River-Daughter's first ability.
