@@ -27,6 +27,11 @@ data class ScryfallMetadata(
     val artist: String? = null,
     val flavorText: String? = null,
     val imageUri: String? = null,
+    /**
+     * Display-only art selected from the permanent's projected creature subtypes. This lets art
+     * follow continuous type-changing effects without making the client infer game rules.
+     */
+    val imageUriByCreatureSubtype: Map<String, String> = emptyMap(),
     val scryfallId: String? = null,
     val releaseDate: String? = null,
     val rulings: List<Ruling> = emptyList(),
