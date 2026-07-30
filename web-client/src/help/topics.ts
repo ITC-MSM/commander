@@ -147,19 +147,21 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
   {
     id: 'axes',
     section: 'modes',
-    title: 'The three choices: Cards, Table, Event',
+    title: 'The four choices: Cards, Rules, Table, Event',
     summary:
-      'Every game here is three independent picks: where your cards come from, who is at the table, and whether it is one game or a series.',
+      'Every game here is four independent picks: where your cards come from, which rules they are played under, who is at the table, and whether it is one game or a series.',
     body: [
       { kind: 'ul', items: [
         'Cards — bring a deck, a random pool, Momir Basic, Sealed, or one of the four drafts.',
+        'Rules — Standard, or Commander.',
         'Table — 1v1, Free-for-All, Two-Headed Giant, or Team vs. Team.',
         'Event — a single game, or a round-robin bracket with standings.',
       ] },
-      { kind: 'p', text: 'They are independent: “Sealed” is not an alternative to “Tournament”, it is an alternative to “Draft”. A tournament is an alternative to a single game. That is why a 1v1 sealed game with one friend and an eight-player bracket are the same screen with different settings.' },
-      { kind: 'p', text: 'The home screen asks for them one at a time and only offers what is actually reachable; the lobby then lets you change any of them.' },
+      { kind: 'p', text: 'Read them in that order: what deck, under what rules, at what table, over how many games.' },
+      { kind: 'p', text: 'They are independent: “Sealed” is not an alternative to “Tournament”, it is an alternative to “Draft”. A tournament is an alternative to a single game. And Commander is not a kind of draft — it is the rules row, so you can play Commander with a deck you built, with a sealed pool, or with a draft. That is why a 1v1 sealed game with one friend and an eight-player bracket are the same screen with different settings.' },
+      { kind: 'p', text: 'The home screen asks about Cards, Table and Event and picks the Rules to match (a Commander draft or sealed means Commander rules); the lobby then lets you change any of the four, Rules included.' },
     ],
-    related: ['cards-sealed', 'table-free-for-all', 'event-round-robin', 'axis-limits', 'lobby-switching'],
+    related: ['cards-sealed', 'rules-commander', 'table-free-for-all', 'event-round-robin', 'axis-limits', 'lobby-switching'],
   },
   {
     id: 'cards-bring-a-deck',
@@ -251,6 +253,28 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     related: ['cards-cube', 'cube-building', 'cards-sealed', 'limited-deckbuilding'],
   },
   {
+    id: 'rules-standard',
+    section: 'modes',
+    title: 'Rules: Standard',
+    summary:
+      'The ordinary rules for whichever table you picked — 20 life at 1v1, no command zone, and 4 copies of a card if the deck legality allows it.',
+    related: ['rules-commander', 'axes'],
+  },
+  {
+    id: 'rules-commander',
+    section: 'modes',
+    title: 'Rules: Commander',
+    summary:
+      'Everyone designates a commander. It starts in the command zone, can be cast from there (paying {2} more each time it has been cast that way), returns there when it would die, and 21 combat damage from a single commander knocks a player out (CR 903).',
+    body: [
+      { kind: 'p', text: 'Rules is its own row, independent of where the cards came from: you can play Commander with a deck you built, with a sealed pool, or with any draft. “Commander Draft” and “Commander Sealed” are about the *packs* — Commander-Legends-shaped 20-card boosters with a legend in every one — and they simply switch this row on for you.' },
+      { kind: 'p', text: 'Life totals: a pod plays paper multiplayer Commander’s 40. A 1v1 limited Commander game is tuned faster — the host picks Brawl (25 life, 16 commander damage) or Commander (30/21) — and a bracket honours that choice, while any multiplayer table overrides it back to 40.' },
+      { kind: 'p', text: 'It plays at every table except Two-Headed Giant, whose team shares one life total (CR 810.4) and so has nowhere to put Commander’s per-player 40. Free-for-All and Team vs. Team pods are the ones to use.' },
+      { kind: 'p', text: 'Setting the deck legality to Commander, Brawl or Standard Brawl is a *deck-construction* restriction — singleton, colour identity, card legality — and it turns this row on by default, but the two are separate afterwards: you can require Commander-legal decks and still play under Standard rules, or the reverse.' },
+    ],
+    related: ['rules-standard', 'axes', 'axis-limits', 'cards-bring-a-deck'],
+  },
+  {
     id: 'table-1v1',
     section: 'modes',
     title: 'Table: 1v1',
@@ -321,7 +345,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'modes',
     title: 'Combinations that aren’t available yet',
     summary:
-      'Not every point in the Cards × Table × Event space is wired up. Options that can’t be picked are shown disabled with the reason attached, rather than hidden.',
+      'Not every point in the Cards × Rules × Table × Event space is wired up. Options that can’t be picked are shown disabled with the reason attached, rather than hidden.',
     body: [
       { kind: 'p', text: 'Everything below is a gap in the plumbing, not a rules decision — an option you can see and can’t use tells you the shape of the system; one that isn’t rendered just looks like nobody thought of it.' },
       { kind: 'ul', items: [
@@ -329,8 +353,8 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         'A limited pool always runs as a bracket. Sealed and draft build a pool that is meant to be played more than once; with two players and one game per matchup, that is a single game anyway.',
         'Ranked is 1v1 only. Multiplayer tables are always casual.',
         'The AI can only be added to a 1v1 lobby. It cannot take a seat in a Free-for-All or a team game, or bring a deck to a “Bring a deck” lobby.',
-        'The AI cannot play the Commander limited formats at all: its automatic deckbuilding never picks a commander, so it would sit down without one.',
-        'Commander Draft and Commander Sealed cannot be played as Two-Headed Giant: a 2HG team shares one life total, and Commander gives every player their own 40. A 1v1 bracket, a Free-for-All pod and Team vs. Team all work.',
+        'The AI cannot deckbuild from a Commander pool (Commander Draft / Commander Sealed): its automatic deckbuilding never picks a commander, so it would sit down without one.',
+        'Commander rules cannot be played as Two-Headed Giant: a 2HG team shares one life total, and Commander gives every player their own 40. A 1v1 bracket, a Free-for-All pod and Team vs. Team all work.',
         'Momir Basic and a rolled random pool are 1v1 single games only. Neither exists at a multiplayer table or in a bracket.',
       ] },
     ],

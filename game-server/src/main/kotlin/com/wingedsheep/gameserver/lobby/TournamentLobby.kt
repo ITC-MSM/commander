@@ -44,7 +44,12 @@ enum class TournamentFormat {
     PREMADE_DECKS
     ;
 
-    /** True if this format produces a Commander-shaped match (Brawl / Commander 1v1). */
+    /**
+     * True for the two Commander-Legends-shaped pack formats — a fact about the **pool**, not about
+     * the rules the game runs under. It defaults [TournamentLobby.rules] to
+     * [com.wingedsheep.sdk.core.GameRules.COMMANDER] and picks the 20-card booster; it is not the
+     * answer to "does this game use commanders?". Ask [TournamentLobby.usesCommanderRules] for that.
+     */
     val isCommanderFormat: Boolean
         get() = this == COMMANDER_DRAFT || this == COMMANDER_SEALED
 
@@ -52,6 +57,34 @@ enum class TournamentFormat {
     val usesCommanderDraftBooster: Boolean
         get() = isCommanderFormat
 }
+
+/**
+ * Why Commander rules cannot be played at this table, or null.
+ *
+ * The single statement of the one Rules × Table conflict there is. CR 810.4 gives a Two-Headed
+ * Giant team **one shared life total** while Commander gives each player their own 40, so
+ * [com.wingedsheep.sdk.core.Format.TwoHeadedGiant] deliberately exposes no commander configuration
+ * and there is nothing for a commander-configured 2HG game to be. Every surface that has to refuse
+ * the combination — the tournament start gate, the Free-for-All game builder, the lobby's game-mode
+ * switch, and the quick lobby's start — reads this rather than restating it, which is what stopped
+ * the earlier copies from drifting apart (one refused at Start, another accepted and crashed).
+ *
+ * Free-for-All and Team vs. Team pods are fine: CR 808.5 keeps a Team-vs-Team player's life total
+ * their own, so a commander-configured [com.wingedsheep.sdk.core.Format.TeamVsTeam] is coherent.
+ *
+ * @param isTwoHeadedGiant whether the *prospective* table is 2HG — passed in rather than read off a
+ *   lobby so a settings handler can ask about a mode it has not applied yet.
+ */
+fun commanderRulesTableConflict(
+    rules: com.wingedsheep.sdk.core.GameRules,
+    isTwoHeadedGiant: Boolean,
+): String? =
+    if (rules.usesCommanders && isTwoHeadedGiant) COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL else null
+
+/** The reason behind [commanderRulesTableConflict], phrased for the host who has to act on it. */
+const val COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL: String =
+    "Commander can't be played as Two-Headed Giant — a 2HG team shares one life total (CR 810.4) " +
+        "and Commander gives every player their own 40. Free-for-All and Team vs. Team pods work."
 
 /**
  * What happens when the lobby's pool-building phase finishes (the *mode* axis, orthogonal to the
@@ -179,9 +212,9 @@ data class LobbyPlayerState(
      */
     var submittedSideboard: Map<String, Int> = emptyMap(),
     /**
-     * Commander card name when the lobby's [TournamentLobby.deckFormat] is commander-shape
-     * (Commander / Brawl / Standard Brawl). Null otherwise. The card name is expected to
-     * appear in [submittedDeck]; the engine and validator both rely on this invariant.
+     * Commander card name when the lobby runs Commander rules ([TournamentLobby.usesCommanderRules]).
+     * Null otherwise. The card name is expected to appear in [submittedDeck]; the engine and
+     * validator both rely on this invariant.
      */
     var commander: String? = null,
 ) {
@@ -268,6 +301,16 @@ class TournamentLobby(
      * restriction.
      */
     var deckFormat: com.wingedsheep.sdk.core.DeckFormat? = null,
+    /**
+     * Which rules this lobby's games run under — the Rules axis, independent of [format] (where the
+     * cards come from), [deckFormat] (what may go in a deck), and [gameMode] (who is at the table).
+     *
+     * Host-settable, and merely *defaulted* by the other two: choosing a Commander pack shape or a
+     * commander-shaped [deckFormat] sets it to `COMMANDER` unless the host said otherwise, and
+     * switching the pack shape back does not reset it. Read [usesCommanderRules] rather than this
+     * field wherever the question is "does this game use commanders?".
+     */
+    var rules: com.wingedsheep.sdk.core.GameRules = com.wingedsheep.sdk.core.GameRules.STANDARD,
     /**
      * Minimum deck size enforced by the deck validator for [TournamentFormat.COMMANDER_DRAFT] and
      * [TournamentFormat.COMMANDER_SEALED]. Defaults to 60 (Brawl shape). Has no effect on other
@@ -449,6 +492,23 @@ class TournamentLobby(
             }
         }
     }
+
+    /**
+     * **The** answer to "does this lobby's game run Commander rules?" — one property, one field.
+     *
+     * Before the Rules axis existed the same disjunction (`PREMADE_DECKS` with a commander-shaped
+     * `deckFormat`, or a Commander pack format) was written out at four call sites plus three more
+     * spellings elsewhere, and the copies could not see each other: the client's Table gate asked
+     * only about the pack format, so premade Commander in a pod was blocked by a rule that could not
+     * even observe it. Everything now reads this.
+     */
+    val usesCommanderRules: Boolean get() = rules.usesCommanders
+
+    /**
+     * Why this lobby's Rules and Table contradict each other, or null. See
+     * [commanderRulesTableConflict] — the reason lives there, once.
+     */
+    val rulesTableConflict: String? get() = commanderRulesTableConflict(rules, isTwoHeadedGiant)
 
     /** Whether this lobby may be ranked at all: only a TOURNAMENT-mode bracket has 1v1 matches. */
     val rankedEligible: Boolean get() = gameMode == LobbyGameMode.TOURNAMENT
@@ -1550,7 +1610,8 @@ class TournamentLobby(
     /**
      * Submit a deck for a player.
      *
-     * For commander-shape [deckFormat]s, [commander] designates the player's commander; it
+     * When the lobby runs Commander rules ([usesCommanderRules]), [commander] designates the
+     * player's commander; it
      * MUST already be counted inside [deckList] (the wire convention — picker emits the merged
      * deck). Storage follows that convention: the merged [deckList] is kept verbatim in
      * [LobbyPlayerState.submittedDeck] and the commander is held alongside in
@@ -1610,9 +1671,8 @@ class TournamentLobby(
         players[playerId] = playerState.copy(
             submittedDeck = deckList,
             submittedSideboard = effectiveSideboard,
-            // Commander is meaningful only for commander-shape deckFormats; keep whatever the
-            // caller passed (LobbyHandler is responsible for clearing it for non-commander
-            // submissions).
+            // Commander is meaningful only under Commander rules; keep whatever the caller passed
+            // (LobbyHandler is responsible for clearing it for non-commander submissions).
             commander = commander,
         )
 
@@ -1770,6 +1830,7 @@ class TournamentLobby(
                 gamesPerMatch = gamesPerMatch,
                 isPublic = isPublic,
                 deckFormat = deckFormat?.name,
+                rules = rules.name,
                 deckSizeMin = deckSizeMin,
                 allowDuplicates = allowDuplicates,
                 commanderPreset = commanderPreset.name,

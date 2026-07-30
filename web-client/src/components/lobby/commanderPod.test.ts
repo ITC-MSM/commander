@@ -11,6 +11,10 @@
  * (`lobbyViewModel.startBlockReason`). They are separate modules because the wording differs per
  * situation, but a table one offers and another refuses is a bug — that is what this pins, together
  * with the life total a pod actually starts at.
+ *
+ * This file stays scoped to the *drafted / sealed* Commander pod, which is what PR #1552 opened up.
+ * The Rules axis those surfaces now ask — Commander over any Cards value, and the single predicate
+ * they all read — is `rulesAxis.test.ts`.
  */
 import { describe, expect, it } from 'vitest'
 import {
@@ -59,6 +63,7 @@ function settings(overrides: Partial<LobbySettings>): LobbySettings {
     picksPerRound: 2,
     gamesPerMatch: 1,
     isPublic: false,
+    rules: 'COMMANDER',
     deckSizeMin: 60,
     allowDuplicates: true,
     commanderPreset: 'BRAWL',

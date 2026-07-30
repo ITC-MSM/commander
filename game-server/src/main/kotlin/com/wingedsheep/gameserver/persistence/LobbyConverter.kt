@@ -33,6 +33,7 @@ fun TournamentLobby.toPersistent(): PersistentTournamentLobby {
         setCodes = setCodes,
         setNames = setNames,
         format = format.name,
+        rules = rules.name,
         boosterCount = boosterCount,
         maxPlayers = maxPlayers,
         pickTimeSeconds = pickTimeSeconds,
@@ -101,12 +102,23 @@ fun restoreTournamentLobby(
     cardRegistry: CardRegistry,
     boosterGenerator: BoosterGenerator
 ): Pair<TournamentLobby, List<PlayerIdentity>> {
+    val format = TournamentFormat.valueOf(persistent.format)
     val lobby = TournamentLobby(
         lobbyId = persistent.lobbyId,
         setCodes = persistent.setCodes,
         setNames = persistent.setNames,
         boosterGenerator = boosterGenerator,
-        format = TournamentFormat.valueOf(persistent.format),
+        format = format,
+        // A row written before the Rules axis existed carries null and has to be inferred. Its
+        // deckFormat was never persisted either (a pre-existing gap), so the pack shape is all
+        // there is to go on — which is exactly what the old code derived commander-ness from
+        // whenever it read a restored lobby.
+        rules = persistent.rules
+            ?.let { runCatching { com.wingedsheep.sdk.core.GameRules.valueOf(it) }.getOrNull() }
+            ?: com.wingedsheep.sdk.core.GameRules.inferred(
+                commanderPackShape = format.isCommanderFormat,
+                deckFormat = null,
+            ),
         boosterCount = persistent.boosterCount,
         maxPlayers = persistent.maxPlayers,
         pickTimeSeconds = persistent.pickTimeSeconds,

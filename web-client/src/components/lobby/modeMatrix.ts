@@ -33,13 +33,13 @@
  *   one game"; they said there were five of them. Rendering that as a limitation would teach
  *   something false about the system.
  */
-import type { LobbyGameMode, TournamentFormat } from '@/types'
+import type { GameRules, LobbyGameMode, TournamentFormat } from '@/types'
 import {
-  COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL,
   cardsKindLabel,
   cardsLabel,
   cardsSeatCap,
-  isCommanderLimited,
+  rulesForCards,
+  rulesTableBlock,
   tournamentFormatForCards,
   gameModeForTable,
   type CardsAxis,
@@ -282,11 +282,11 @@ export function shapeChoices(roster: Roster, cards: CardsAxis): Choice<ShapeId>[
     // Commander is the exception at exactly one table: a Free-for-All or Team vs. Team pod plays it,
     // but Two-Headed Giant's shared team life total has nowhere to put Commander's per-player 40.
     const quickOnly = isQuickOnly(kind) ? quickOnlyReason(kind) : undefined
+    // Asked through the shared predicate, of the rules this Cards value implies — so the wizard and
+    // the lobby cannot disagree about which table Commander can sit at. The wizard deliberately does
+    // not ask about Rules (it is three questions); the host changes it in the lobby.
     const reasonFor = (shape: ShapeId): string | undefined =>
-      quickOnly ??
-      (shape === 'TWO_HEADED_GIANT' && isCommanderLimited(cards)
-        ? COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL
-        : undefined)
+      quickOnly ?? rulesTableBlock(rulesForCards(cards), shapeAxes(shape).table) ?? undefined
     return [
       choice('BRACKET', quickOnly),
       ...MULTIPLAYER_SHAPES.map((s) => choice(s, reasonFor(s))),
@@ -457,6 +457,12 @@ export type LaunchSpec =
   | {
       kind: 'TOURNAMENT'
       format: TournamentFormat
+      /**
+       * Rules axis, *inferred* from the Cards answer rather than asked: the wizard is deliberately
+       * three questions. Sent explicitly all the same, so the lobby that comes back is the one the
+       * wizard's own 2HG check was reasoning about.
+       */
+      rules: GameRules
       gameMode: LobbyGameMode
       maxPlayers: number
       /** AI seats to fill after the lobby exists. Only ever non-zero for a solo limited pod. */
@@ -497,6 +503,7 @@ export function resolveLaunch(selection: Selection): LaunchSpec {
   return {
     kind: 'TOURNAMENT',
     format,
+    rules: rulesForCards(cards),
     gameMode: gameModeForTable(shapeAxes(shape).table),
     maxPlayers: seats,
     aiSeats: roster === 'SOLO' ? Math.max(0, seats - 1) : 0,

@@ -177,6 +177,12 @@ sealed interface ClientMessage {
          * At start, if not every seat is a signed-in human the game still runs — just unranked.
          */
         val ranked: Boolean = true,
+        /**
+         * Rules axis: [com.wingedsheep.sdk.core.GameRules] name. Null (an older client, or a client
+         * that doesn't care) means the server derives it from [format] — a Commander pack shape
+         * defaults to Commander rules.
+         */
+        val rules: String? = null,
     ) : ClientMessage
 
     /**
@@ -273,6 +279,12 @@ sealed interface ClientMessage {
          * [com.wingedsheep.sdk.core.DeckFormat]; "" or "NONE" clears the restriction.
          */
         val deckFormat: String? = null,
+        /**
+         * Rules axis: [com.wingedsheep.sdk.core.GameRules] name. Null leaves it unchanged — except
+         * that a message which switches [format] to a Commander pack shape, or sets a
+         * commander-shaped [deckFormat], defaults it to "COMMANDER" (the host can then change it).
+         */
+        val rules: String? = null,
         /** Commander Draft/Sealed only — minimum deck size (default 60). */
         val deckSizeMin: Int? = null,
         /** Commander Draft/Sealed only — singleton toggle (default true = duplicates allowed). */

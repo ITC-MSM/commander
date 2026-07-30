@@ -63,14 +63,17 @@ export function TournamentLobbySettings({
   const s = lobbyState.settings
   const format = s.format
   const isSealed = format === 'SEALED'
-  const isCommanderSealed = format === 'COMMANDER_SEALED'
   const isDraft = format === 'DRAFT'
   const isWinston = format === 'WINSTON_DRAFT'
   const isGridDraft = format === 'GRID_DRAFT'
   const isCommanderDraft = format === 'COMMANDER_DRAFT'
   const isPremade = format === 'PREMADE_DECKS'
   const isAnyDraft = isDraft || isWinston || isGridDraft || isCommanderDraft
-  const isAnyCommander = isCommanderDraft || isCommanderSealed
+  // The Commander deckbuild knobs (life preset, minimum deck size, singleton) tune a *pool-built*
+  // 60-card Commander deck, which is what the server validates against — so they follow the Rules
+  // axis rather than the pack format (a Commander game over ordinary draft packs wants them too),
+  // minus the brought-deck case, where paper Commander's own construction rules apply instead.
+  const isPoolBuiltCommander = view.axes.rules === 'COMMANDER' && !isPremade
   // A pod overrides the host's 1v1 life tuning with paper Commander's 40 (see
   // TournamentLobby.effectiveCommanderPreset), so the picker reports rather than offers.
   const effectivePreset = effectiveCommanderPreset(s.commanderPreset, s.gameMode)
@@ -401,8 +404,8 @@ export function TournamentLobbySettings({
         </div>
       )}
 
-      {/* Commander preset + Brawl knobs — Commander Draft / Sealed only. */}
-      {isAnyCommander && (
+      {/* Commander preset + deck-shape knobs — a Commander game built from a generated pool. */}
+      {isPoolBuiltCommander && (
         <>
           <div className={styles.settingsRow}>
             <span className={styles.settingsLabel}>Preset</span>

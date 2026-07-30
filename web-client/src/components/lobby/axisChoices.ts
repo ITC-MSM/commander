@@ -25,19 +25,21 @@
 import type { DeckFormat, LobbyGameMode, TournamentFormat } from '@/types'
 import {
   CARDS_KINDS,
-  COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL,
+  RULES_VALUES,
   TABLE_VALUES,
   cardsFromTournamentFormat,
   cardsKindLabel,
   eventFromGameMode,
   eventLabel,
   gameModeForTable,
-  isCommanderLimited,
+  rulesLabel,
+  rulesTableBlock,
   tableFromGameMode,
   tableLabel,
   tournamentFormatForCards,
   type CardsKind,
   type EventAxis,
+  type RulesAxis,
   type TableAxis,
 } from './axes'
 import type { LobbyKind, UnifiedLobbyView } from './lobbyViewModel'
@@ -136,6 +138,38 @@ function cardsAvailability(view: UnifiedLobbyView, kind: CardsKind): ChoiceAvail
   }
 }
 
+/* ── Rules ──────────────────────────────────────────────────────────────── */
+
+/** Asking for a rules change on the lobby kind that derives them instead of offering them. */
+const RULES_ARE_DERIVED_ON_A_QUICK_GAME =
+  'A single 1v1 game takes its rules from the deck legality you pick — choose Commander, Brawl or Standard Brawl under Cards to play Commander here.'
+
+export function rulesChoices(view: UnifiedLobbyView): AxisChoice<RulesAxis>[] {
+  return RULES_VALUES.map((rules) => ({
+    value: rules,
+    label: rulesLabel(rules),
+    selected: rules === view.axes.rules,
+    availability: rulesAvailability(view, rules),
+  }))
+}
+
+/**
+ * Note the table conflict is checked *before* the "already selected" shortcut every other axis takes
+ * first. A lobby can hold a contradiction — setting commander deck legality at a Two-Headed Giant
+ * table defaults the Rules axis to Commander — and when it does, the honest rendering is the selected
+ * value shown disabled with the reason on it and the other value there to fix it, not a happy button
+ * over a Start that refuses.
+ */
+function rulesAvailability(view: UnifiedLobbyView, rules: RulesAxis): ChoiceAvailability {
+  const conflict = rulesTableBlock(rules, view.axes.table)
+  if (conflict !== null) return blocked(conflict)
+  if (rules === view.axes.rules) return DIRECT
+  // A quick lobby has no Rules field: the server derives it from deck legality (see
+  // `QuickGameLobby.applyFormat`), so the control that changes it is the legality dropdown.
+  if (view.kind === 'QUICK') return blocked(RULES_ARE_DERIVED_ON_A_QUICK_GAME)
+  return DIRECT
+}
+
 /* ── Table ──────────────────────────────────────────────────────────────── */
 
 /**
@@ -174,10 +208,11 @@ function tableAvailability(view: UnifiedLobbyView, table: TableAxis): ChoiceAvai
     return blocked(tooManySeats(table, view.players.length))
   }
   // Commander plays at any table except Two-Headed Giant, whose shared team life total (CR 810.4)
-  // has nowhere to put Commander's per-player 40.
-  if (table === 'TWO_HEADED_GIANT' && isCommanderLimited(view.axes.cards)) {
-    return blocked(COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL)
-  }
+  // has nowhere to put Commander's per-player 40. Asked of the Rules axis, so it now also catches a
+  // Commander lobby whose decks were brought rather than drafted — the case the old
+  // `isCommanderLimited` check structurally could not see.
+  const conflict = rulesTableBlock(view.axes.rules, table)
+  if (conflict !== null) return blocked(conflict)
 
   if (view.kind === 'TOURNAMENT') return DIRECT
 

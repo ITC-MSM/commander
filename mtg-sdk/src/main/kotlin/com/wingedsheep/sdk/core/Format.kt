@@ -177,6 +177,62 @@ sealed interface Format {
 }
 
 /**
+ * Which rules a lobby's games run under — the lobby-facing selection that resolves to a [Format]
+ * at match start.
+ *
+ * The engine has exactly one notion of commander-ness, [Format.usesCommanders], but the lobby used
+ * to reach it through three unrelated fields: the *pool-building* format (Commander Draft /
+ * Commander Sealed), the *deck-legality* restriction (Commander / Brawl / Standard Brawl), and the
+ * quick lobby's own format field. Every consumer therefore re-derived the same question, and the
+ * copies disagreed. This is the axis those reads should have been asking about all along:
+ *
+ * - Orthogonal to **[DeckFormat]**, which says what may go *in* a deck (Scryfall legality plus
+ *   singleton / size rules the deck validator enforces). Picking deck legality "Commander" no
+ *   longer implies 40 life and a command zone; that is this enum's job.
+ * - Orthogonal to **where the cards came from**. A Commander game can be played with a brought
+ *   deck, a sealed pool, or a draft — including a plain 15-card booster draft. The
+ *   Commander-Legends-shaped 20-card pack is a property of the pool, not of the rules.
+ * - Orthogonal to the **table**. Commander plays 1v1, in a Free-for-All pod and in Team vs. Team;
+ *   the one table it cannot have is Two-Headed Giant, whose shared team life total (CR 810.4) has
+ *   nowhere to put Commander's per-player 40 — which is why [Format.TwoHeadedGiant] exposes no
+ *   commander configuration.
+ *
+ * It is also the named slot the remaining commander variants become values of rather than new
+ * draft shapes: Oathbreaker and Pauper Commander (both Phase 4 in `backlog/commander-format.md`)
+ * are `Commander`-shaped data with different field values, so they belong here.
+ */
+@Serializable
+enum class GameRules {
+    /** The default: whatever [Format] the table implies, with no command zone. */
+    STANDARD,
+
+    /**
+     * Commander (CR 903): each player designates a commander, gets a command zone, and can lose to
+     * 21 commander damage. Resolves to [Format.Commander] — or to a commander-configured
+     * [Format.TeamVsTeam] at a team table.
+     */
+    COMMANDER;
+
+    /** Whether games under these rules use the engine's commander code path. */
+    val usesCommanders: Boolean get() = this == COMMANDER
+
+    companion object {
+        /**
+         * The rules an older client or an older persisted lobby meant, derived from the two fields
+         * that used to imply them.
+         *
+         * The only place that inference lives: a lobby created before the Rules axis existed said
+         * "Commander" either by choosing a Commander-Legends pack shape ([commanderPackShape]) or
+         * by restricting deck legality to a commander-shaped [DeckFormat]. Both now merely
+         * *default* the axis, so anything that reads a lobby without an explicit selection reads
+         * this instead of re-deriving the disjunction.
+         */
+        fun inferred(commanderPackShape: Boolean, deckFormat: DeckFormat?): GameRules =
+            if (commanderPackShape || deckFormat?.isCommanderShape == true) COMMANDER else STANDARD
+    }
+}
+
+/**
  * Preset shapes for drafted/sealed commander formats. Each preset selects a [Format.Commander]
  * configuration tuned for 60-card limited play; the match builder converts it to a
  * [Format.Commander] instance at game start.

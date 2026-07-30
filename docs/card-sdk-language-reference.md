@@ -34,6 +34,13 @@ section; do not let SDK additions land without a corresponding doc update.
   Commander configuration because Two-Headed Giant and Commander have conflicting starting-life rules.
 - `Format.usesCommanders` — capability flag derived from a non-null `commanderDamageThreshold`; engine
   systems use this instead of checking for one concrete format subtype.
+- `GameRules` — the *lobby-facing* rules selection (`STANDARD` / `COMMANDER`) that resolves to a
+  `Format` at match start, with `usesCommanders` mirroring the engine's flag. It is its own axis:
+  orthogonal to `DeckFormat` (what may go in a deck), to where the cards came from (a brought deck,
+  a sealed pool or any draft shape — the Commander-Legends 20-card pack is a pool property, not a
+  rules one), and to the table. `GameRules.inferred(commanderPackShape, deckFormat)` is the single
+  back-compat derivation for lobbies created before the axis existed. Oathbreaker and Pauper
+  Commander become values here rather than new draft shapes.
 
 ## 1. Top-level card DSL
 

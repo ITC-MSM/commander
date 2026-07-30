@@ -2,7 +2,7 @@
  * Lobby slice - handles tournament lobbies, spectating, and lobby management.
  */
 import type { SliceCreator, LobbyState, TournamentState, FfaState, SpectatingState } from './types'
-import type { DeckFormat, TournamentFormat, LobbyGameMode, AttackMode } from '@/types'
+import type { DeckFormat, GameRules, TournamentFormat, LobbyGameMode, AttackMode } from '@/types'
 import {
   createCreateTournamentLobbyMessage,
   createJoinLobbyMessage,
@@ -33,12 +33,12 @@ export interface LobbySliceState {
 }
 
 export interface LobbySliceActions {
-  createTournamentLobby: (setCodes: string[], format?: TournamentFormat, boosterCount?: number, maxPlayers?: number, pickTimeSeconds?: number, isPublic?: boolean, gameMode?: LobbyGameMode) => void
+  createTournamentLobby: (setCodes: string[], format?: TournamentFormat, boosterCount?: number, maxPlayers?: number, pickTimeSeconds?: number, isPublic?: boolean, gameMode?: LobbyGameMode, rules?: GameRules) => void
   joinLobby: (lobbyId: string) => void
   startLobby: () => void
   leaveLobby: () => void
   stopLobby: () => void
-  updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; chaosBoosters?: boolean; bannedCardNames?: string[]; cubeCards?: string[]; cubeName?: string; packSize?: number; cubeBasicLandSetCode?: string; cubePoolPlay?: boolean; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode; attackMode?: AttackMode; randomTeams?: boolean; teamAssignments?: Record<string, number>; ranked?: boolean }) => void
+  updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; rules?: GameRules; chaosBoosters?: boolean; bannedCardNames?: string[]; cubeCards?: string[]; cubeName?: string; packSize?: number; cubeBasicLandSetCode?: string; cubePoolPlay?: boolean; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode; attackMode?: AttackMode; randomTeams?: boolean; teamAssignments?: Record<string, number>; ranked?: boolean }) => void
   addAiToLobby: () => void
   removeAiFromLobby: (playerId: string) => void
   readyForNextRound: () => void
@@ -73,11 +73,11 @@ export const createLobbySlice: SliceCreator<LobbySlice> = (set, get) => ({
   disconnectedPlayers: {},
 
   // Actions
-  createTournamentLobby: (setCodes, format = 'SEALED', boosterCount = 6, maxPlayers = 8, pickTimeSeconds = 45, isPublic = false, gameMode = 'TOURNAMENT') => {
+  createTournamentLobby: (setCodes, format = 'SEALED', boosterCount = 6, maxPlayers = 8, pickTimeSeconds = 45, isPublic = false, gameMode = 'TOURNAMENT', rules = 'STANDARD') => {
     clearDeckState()
     set({ deckBuildingState: null })
-    trackEvent('tournament_lobby_created', { set_codes: setCodes, format, booster_count: boosterCount, max_players: maxPlayers, is_public: isPublic, game_mode: gameMode })
-    getWebSocket()?.send(createCreateTournamentLobbyMessage(setCodes, format, boosterCount, maxPlayers, pickTimeSeconds, isPublic, gameMode))
+    trackEvent('tournament_lobby_created', { set_codes: setCodes, format, booster_count: boosterCount, max_players: maxPlayers, is_public: isPublic, game_mode: gameMode, rules })
+    getWebSocket()?.send(createCreateTournamentLobbyMessage(setCodes, format, boosterCount, maxPlayers, pickTimeSeconds, isPublic, gameMode, rules))
   },
 
   joinLobby: (lobbyId) => {

@@ -14,7 +14,7 @@
 import { useMemo } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import type { DeckFormat, TournamentFormat } from '@/types'
-import { gameModeForTable, type CardsKind, type TableAxis } from './axes'
+import { gameModeForTable, type CardsKind, type RulesAxis, type TableAxis } from './axes'
 import type { RecreateSpec } from './axisChoices'
 import type { UnifiedLobbyView } from './lobbyViewModel'
 import { setPendingDeckTab } from './pendingDeckTab'
@@ -36,6 +36,12 @@ export interface LobbyCommands {
   setLegality: (format: DeckFormat | null) => void
   /** Cards → Sealed / Draft sub-shape, as a concrete tournament format. */
   setCardsShape: (format: TournamentFormat) => void
+  /**
+   * Which rules the game runs under. Tournament-backed only: a quick lobby derives its rules from
+   * deck legality server-side and offers no control, so this is a no-op there (and `rulesChoices`
+   * says so rather than letting the button lie).
+   */
+  setRules: (rules: RulesAxis) => void
   setTable: (table: TableAxis) => void
   /** Move one seat to the other team, sending the full explicit assignment for every seat. */
   togglePlayerTeam: (playerId: string) => void
@@ -57,6 +63,7 @@ const NO_LOBBY: LobbyCommands = {
   setCards: noop,
   setLegality: noop,
   setCardsShape: noop,
+  setRules: noop,
   setTable: noop,
   togglePlayerTeam: noop,
   setPublic: noop,
@@ -142,6 +149,10 @@ export function useLobbyCommands(
 
       setCardsShape: (format) => {
         if (!isQuick) s().updateLobbySettings({ format })
+      },
+
+      setRules: (rules) => {
+        if (!isQuick) s().updateLobbySettings({ rules })
       },
 
       setTable: (table) => {

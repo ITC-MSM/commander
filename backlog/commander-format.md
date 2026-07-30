@@ -289,6 +289,14 @@ there. What was left was small, and it shipped:
 - ✅ Pod-tuned config. `CommanderPreset.POD` (60 cards / 40 life / 21 damage) is what every multiplayer
   table plays at, resolved from the table by `TournamentLobby.effectiveCommanderPreset`. The host's
   Brawl-25 / Commander-30 choice stays a 1v1 pacing knob.
+- ✅ **Commander is a lobby axis, not three fields.** Opening pods up exposed the taxonomy problem
+  underneath: "this game runs Commander" was reachable through the pool-building `TournamentFormat`, the
+  deck-legality `DeckFormat`, and the quick lobby's own format, so every consumer re-derived it — and the
+  gate that blocked premade Commander pods was a copy that structurally could not see the premade path.
+  `GameRules` (`mtg-sdk/.../core/Format.kt`) is now the lobby's counterpart to `Format.usesCommanders`:
+  `TournamentLobby.rules` / `usesCommanderRules` is the single authority, `commanderRulesTableConflict`
+  is the single statement of the 2HG conflict, and the client renders a **Rules** row between Cards and
+  Table. The Commander pack formats and commander deck legality now only *default* the axis.
 
 Deliberately still open:
 
@@ -306,7 +314,8 @@ Deliberately still open:
 - Companion sideboard slot (Companion is technically a separate mechanic, but lives naturally near commander zone
   setup).
 - Commander variants: Brawl (60 cards, standard-legal), Oathbreaker (planeswalker + signature spell, 60 cards,
-  30 starting life), Pauper Commander (uncommon commander, common deck).
+  30 starting life), Pauper Commander (uncommon commander, common deck). These are **values of `GameRules`**,
+  not new draft shapes or deck formats — that is the slot the Rules axis was built to have (see Phase 3).
 
 ---
 

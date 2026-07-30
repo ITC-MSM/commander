@@ -175,7 +175,7 @@ export function HomeScreen({
     // Sets are configured inside the lobby; this is only the starting selection, and is ignored
     // entirely by PREMADE_DECKS (which generates no boosters).
     createTournamentLobby(
-      [DEFAULT_LOBBY_SET_CODE], spec.format, 6, spec.maxPlayers, 45, false, spec.gameMode,
+      [DEFAULT_LOBBY_SET_CODE], spec.format, 6, spec.maxPlayers, 45, false, spec.gameMode, spec.rules,
     )
     // Fill the AI seats of a solo pod. Sent straight after the create rather than on the lobby
     // update, because the screen that would observe that update is not this one — and messages go

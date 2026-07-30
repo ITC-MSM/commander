@@ -217,6 +217,12 @@ class FreeForAllLobbyTest : FunSpec() {
         }
 
         test("4-player Commander FFA pod: every seat starts at 40 life with its own commander in its own command zone") {
+            // Reached the old way, through commander deck legality — which is now the *back-compat
+            // inference* path: this lobby never sends `rules`, exactly as an older client wouldn't, so
+            // setting a commander-shaped `deckFormat` has to default the Rules axis to Commander. A
+            // saved premade Commander lobby must keep playing Commander, and this is what proves it.
+            // The explicit `rules = "COMMANDER"` path is the test below.
+            //
             // A mono-green commander behind 99 Forests: 100 cards including the commander, singleton
             // apart from basics, one colour identity — the smallest deck that passes the Commander
             // validator, so the test is about the pod rather than about deck construction.
@@ -310,7 +316,80 @@ class FreeForAllLobbyTest : FunSpec() {
             }
         }
 
-        test("Two-Headed Giant refuses a Commander deck format before touching submitted decks") {
+        test("4-player Commander FFA pod reached explicitly through the Rules axis, with no deck-format restriction") {
+            // The path the current client takes: Commander is asked for as *rules*, not smuggled in as
+            // deck legality. Nothing here restricts what may go in a deck — the lobby's deckFormat
+            // stays null — which is exactly the separation the axis exists for, and it still has to
+            // produce a Commander game: 40 life and a command zone per seat.
+            val commanderName = "Dwynen, Gilt-Leaf Daen"
+            val commanderDeck = mapOf("Forest" to 99, commanderName to 1)
+
+            val host = createClient()
+            host.connectAs("Rules Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "PREMADE_DECKS",
+                maxPlayers = 4,
+                gameMode = "FREE_FOR_ALL",
+                rules = "COMMANDER",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+            val lobbyId = host.messages.filterIsInstance<ServerMessage.LobbyCreated>().first().lobbyId
+
+            val guests = listOf("Rules Two", "Rules Three", "Rules Four").map { name ->
+                createClient().also { it.connectAs(name); it.send(ClientMessage.JoinLobby(lobbyId)) }
+            }
+            val pod = listOf(host) + guests
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 4
+            }
+            // The axis is reported back on its own field, and it did not drag a deck restriction in.
+            host.latestLobbyUpdate()?.settings?.rules shouldBe "COMMANDER"
+            host.latestLobbyUpdate()?.settings?.deckFormat shouldBe null
+
+            for (client in pod) {
+                client.send(ClientMessage.SubmitSealedDeck(
+                    deckList = commanderDeck,
+                    commander = commanderName,
+                ))
+            }
+            eventually(5.seconds) {
+                pod.all { c -> c.messages.any { it is ServerMessage.DeckSubmitted } } shouldBe true
+            }
+            host.messages.none { it is ServerMessage.Error } shouldBe true
+
+            host.send(ClientMessage.StartTournamentLobby)
+            eventually(15.seconds) {
+                pod.all { c -> c.messages.any { it is ServerMessage.FreeForAllGameStarting } } shouldBe true
+            }
+            eventually(15.seconds) {
+                pod.all { c ->
+                    c.messages.filterIsInstance<ServerMessage.GameStarted>().any { it.players.size == 4 } &&
+                        c.messages.any { it is ServerMessage.MulliganDecision }
+                } shouldBe true
+            }
+            for (client in pod) client.send(ClientMessage.KeepHand)
+
+            host.send(ClientMessage.RequestResync)
+            eventually(15.seconds) {
+                val state = host.latestState()
+                state.shouldNotBeNull()
+                state.players shouldHaveSize 4
+                state.players.all { it.life == 40 } shouldBe true
+                for (player in state.players) {
+                    val commandZone = state.zones.firstOrNull {
+                        it.zoneId.ownerId == player.playerId &&
+                            it.zoneId.zoneType == com.wingedsheep.sdk.core.Zone.COMMAND
+                    }
+                    commandZone.shouldNotBeNull()
+                    commandZone.size shouldBe 1
+                }
+            }
+        }
+
+        test("Two-Headed Giant refuses Commander rules before touching submitted decks") {
             val host = createClient()
             host.connectAs("Host")
             host.send(ClientMessage.CreateTournamentLobby(
@@ -334,10 +413,14 @@ class FreeForAllLobbyTest : FunSpec() {
                 host.latestLobbyUpdate()?.players?.size shouldBe 4
             }
 
+            // Commander deck legality still defaults the Rules axis, whatever the table — the default
+            // is a convenience, not a lock, so the host can back out of it on the Rules row. What it
+            // must not do is let the game start.
             host.send(ClientMessage.UpdateLobbySettings(deckFormat = "COMMANDER"))
             eventually(5.seconds) {
                 host.latestLobbyUpdate()?.settings?.deckFormat shouldBe "COMMANDER"
             }
+            host.latestLobbyUpdate()?.settings?.rules shouldBe "COMMANDER"
             host.send(ClientMessage.StartTournamentLobby)
 
             eventually(5.seconds) {
@@ -346,6 +429,34 @@ class FreeForAllLobbyTest : FunSpec() {
                 } shouldBe true
             }
             host.messages.none { it is ServerMessage.FreeForAllGameStarting } shouldBe true
+        }
+
+        test("switching a Commander lobby to Two-Headed Giant is refused at the switch, not at Start") {
+            // The other direction of the same conflict, and the reason it is one shared statement: a
+            // host who is told "no" only after pressing Start has already assembled a lobby around a
+            // combination that was never going to run.
+            val host = createClient()
+            host.connectAs("Switch Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "PREMADE_DECKS",
+                maxPlayers = 4,
+                gameMode = "FREE_FOR_ALL",
+                rules = "COMMANDER",
+            ))
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.settings?.rules shouldBe "COMMANDER"
+            }
+
+            host.send(ClientMessage.UpdateLobbySettings(gameMode = "TWO_HEADED_GIANT"))
+            eventually(5.seconds) {
+                host.messages.filterIsInstance<ServerMessage.Error>().any {
+                    it.message.contains("Two-Headed Giant") && it.message.contains("Commander")
+                } shouldBe true
+            }
+            // The lobby is unchanged: the rejected switch left a coherent Commander pod behind.
+            host.latestLobbyUpdate()?.settings?.gameMode shouldBe "FREE_FOR_ALL"
+            host.latestLobbyUpdate()?.settings?.rules shouldBe "COMMANDER"
         }
     }
 

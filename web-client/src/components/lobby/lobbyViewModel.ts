@@ -18,12 +18,14 @@ import type { LobbyState } from '@/store/slices/types'
 import type { QuickGameLobbyStateMessage } from '@/types'
 import type { DeckPickerTab } from '../ui/DeckPicker'
 import {
-  COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL,
   axesFromLobbySettings,
   axesFromQuickGameLobby,
   effectiveCommanderPreset,
   isCommanderLimited,
-  type AxisTriple,
+  rulesFromLobbySettings,
+  rulesTableBlock,
+  tableFromGameMode,
+  type AxisSelection,
   type CardsKind,
 } from './axes'
 
@@ -87,8 +89,8 @@ export interface UnifiedLobbyView {
   isWaiting: boolean
   /** A vs-AI lobby has nobody to invite, so it shows no code and no QR. */
   invitable: boolean
-  /** Where this lobby sits in the Cards / Table / Event space. */
-  axes: AxisTriple
+  /** Where this lobby sits in the Cards / Rules / Table / Event space. */
+  axes: AxisSelection
   players: readonly LobbyViewPlayer[]
   you: LobbyViewPlayer | undefined
   maxPlayers: number
@@ -297,31 +299,38 @@ function tournamentSubtitle(lobbyState: LobbyState): string {
         })
         .join(' + ')
     : null
-  // The subtitle names the life total the game will actually start at, which for a pod is the
-  // server's override rather than the host's 1v1 choice.
+  // A Commander game names the life total it will actually start at — which for a pod is the server's
+  // override rather than the host's 1v1 choice. Keyed on the Rules axis, so it shows up on any
+  // Commander lobby rather than only on the two Commander pack shapes; a brought deck is paper
+  // Commander's 40 whatever the table (the preset only tunes a 60-card limited deck).
   const preset = effectiveCommanderPreset(s.commanderPreset, s.gameMode)
   const presetLabel = preset === 'POD' ? 'Pod 40 life'
     : preset === 'COMMANDER' ? 'Commander 30 life'
     : 'Brawl 25 life'
+  const commanderNote = rulesFromLobbySettings(s) !== 'COMMANDER' ? null
+    : s.format === 'PREMADE_DECKS' ? 'Commander 40 life'
+    : presetLabel
   const pick2 = s.picksPerRound === 2 ? ' · Pick 2' : ''
 
   const base = (() => {
-    switch (s.format) {
-      case 'GRID_DRAFT':
-        return `Grid Draft · ${s.boosterCount} boosters · ${s.pickTimeSeconds}s per pick`
-      case 'WINSTON_DRAFT':
-        return `Winston Draft · ${distText ?? `${s.boosterCount} boosters`} · ${s.pickTimeSeconds}s per turn`
-      case 'COMMANDER_DRAFT':
-        return `${distText ?? `${s.boosterCount} packs`} · ${s.pickTimeSeconds}s per pick${pick2} · ${presetLabel}`
-      case 'COMMANDER_SEALED':
-        return `${distText ?? `${s.boosterCount} packs`} · ${presetLabel}`
-      case 'DRAFT':
-        return `${distText ?? `${s.boosterCount} packs`} · ${s.pickTimeSeconds}s per pick${pick2}`
-      case 'PREMADE_DECKS':
-        return 'Premade Decks · bring your own ≥40-card deck'
-      case 'SEALED':
-        return distText ?? `${s.boosterCount} boosters per player`
-    }
+    const pool = (() => {
+      switch (s.format) {
+        case 'GRID_DRAFT':
+          return `Grid Draft · ${s.boosterCount} boosters · ${s.pickTimeSeconds}s per pick`
+        case 'WINSTON_DRAFT':
+          return `Winston Draft · ${distText ?? `${s.boosterCount} boosters`} · ${s.pickTimeSeconds}s per turn`
+        case 'COMMANDER_DRAFT':
+        case 'DRAFT':
+          return `${distText ?? `${s.boosterCount} packs`} · ${s.pickTimeSeconds}s per pick${pick2}`
+        case 'COMMANDER_SEALED':
+          return `${distText ?? `${s.boosterCount} packs`}`
+        case 'PREMADE_DECKS':
+          return 'Premade Decks · bring your own ≥40-card deck'
+        case 'SEALED':
+          return distText ?? `${s.boosterCount} boosters per player`
+      }
+    })()
+    return commanderNote ? `${pool} · ${commanderNote}` : pool
   })()
   const poolPlay = Boolean(s.cubeName && s.cubePoolPlay && s.format === 'SEALED')
   const source = s.cubeName
@@ -373,18 +382,16 @@ function startBlockReason(lobbyState: LobbyState): string | null {
     case 'GRID_DRAFT':
       if (n < 2 || n > 4) return `Grid Draft seats 2 to 4 players — this lobby has ${n}`
       break
-    case 'COMMANDER_DRAFT':
-    case 'COMMANDER_SEALED':
-      // Not a seat limit. Sharing a *pool* and sharing a *game* are separate questions: eight people
-      // can draft Commander and play it as a 1v1 bracket or as one pod, and the server restricts
-      // neither. The one combination that can't work is Two-Headed Giant, whose shared team life
-      // total contradicts Commander's per-player 40 — the same rejection
-      // `LobbyHandler.handleStartTournamentLobby` sends, said before the host presses Start.
-      if (s.gameMode === 'TWO_HEADED_GIANT') return COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL
-      break
     default:
       break
   }
+  // The Rules × Table conflict, asked of the Rules axis rather than of the pack format. Sharing a
+  // *pool* and sharing a *game* are separate questions — eight people can draft Commander and play a
+  // 1v1 bracket or one pod — so this is not a seat limit; it is the one table Commander cannot have,
+  // and it now also catches a Commander lobby whose decks were brought rather than drafted. Same
+  // rejection the server's start gate sends, said before the host presses Start.
+  const rulesConflict = rulesTableBlock(rulesFromLobbySettings(s), tableFromGameMode(s.gameMode))
+  if (rulesConflict !== null) return rulesConflict
   if (n < 2) return 'Need at least 2 players'
 
   if (s.format === 'PREMADE_DECKS') {

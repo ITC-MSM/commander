@@ -1,5 +1,5 @@
 /**
- * The three independent axes every game in Argentum is a point in.
+ * The independent axes every game in Argentum is a point in.
  *
  * Before this, the client had two overloaded words: "Format" meant deck legality in the quick
  * lobby and pool type in the tournament lobby, and "Mode" meant quick-vs-tournament on the home
@@ -7,14 +7,32 @@
  * like "4-player free-for-all with my own deck" reachable by reasoning instead of by accident.
  *
  * - **Cards** — where your deck comes from.
+ * - **Rules** — which rules the game runs under (Standard or Commander).
  * - **Table** — who is at it.
  * - **Event** — one game, or a series.
  *
+ * Reading order: what deck → under what rules → at what table → over how many games.
+ *
+ * Rules is the fourth and newest. It exists because "this game runs Commander" was reachable
+ * through three unrelated fields — the pool-building format (Commander Draft / Sealed), the
+ * deck-legality restriction (Commander / Brawl / Standard Brawl) and the quick lobby's own format —
+ * so every surface re-derived it and the copies disagreed. Notably `isCommanderLimited` could only
+ * see the first, which is why premade Commander in a pod was blocked by a rule that could not
+ * observe it. The engine has exactly one such concept (`Format.usesCommanders`), and now so does the
+ * lobby: the server's `GameRules`, reported as `LobbySettings.rules`.
+ *
  * Sub-options hang off their own axis only (Draft → Booster/Winston/Grid/Commander), never off a
- * different one. A new mode should add a *value* here, not a new axis: if something ever needs a
- * fourth axis or a new top-level home button, the taxonomy was wrong.
+ * different one. A new mode should add a *value* here, not a new axis: Oathbreaker and Pauper
+ * Commander are values of Rules, not new draft shapes.
  */
-import type { CommanderPreset, DeckFormat, LobbyGameMode, LobbySettings, TournamentFormat } from '@/types'
+import type {
+  CommanderPreset,
+  DeckFormat,
+  GameRules,
+  LobbyGameMode,
+  LobbySettings,
+  TournamentFormat,
+} from '@/types'
 import { DECK_FORMATS, labelForFormat } from '@/utils/deckLegality'
 
 /** Where the cards come from. */
@@ -33,6 +51,15 @@ export type CardsKind = CardsAxis['kind']
 
 export const CARDS_KINDS: readonly CardsKind[] = ['BRING_A_DECK', 'RANDOM', 'MOMIR', 'SEALED', 'DRAFT']
 
+/**
+ * Which rules the game runs under. Mirrors the SDK's `GameRules`, and is deliberately the *same*
+ * closed set: a value here is a value there, so the client never invents a rules option the server
+ * cannot honour.
+ */
+export type RulesAxis = GameRules
+
+export const RULES_VALUES: readonly RulesAxis[] = ['STANDARD', 'COMMANDER']
+
 /** Who is at the table. */
 export type TableAxis = 'ONE_V_ONE' | 'FREE_FOR_ALL' | 'TWO_HEADED_GIANT' | 'TEAM_VS_TEAM'
 
@@ -42,8 +69,10 @@ export const TABLE_VALUES: readonly TableAxis[] =
 /** One game, or a series. */
 export type EventAxis = 'SINGLE_GAME' | 'ROUND_ROBIN'
 
-export interface AxisTriple {
+/** Where a lobby sits in the Cards × Rules × Table × Event space. */
+export interface AxisSelection {
   cards: CardsAxis
+  rules: RulesAxis
   table: TableAxis
   event: EventAxis
 }
@@ -56,14 +85,17 @@ export interface AxisTriple {
 export const LEGALITY_OPTIONS: ReadonlyArray<{ value: DeckFormat; label: string }> =
   DECK_FORMATS.map((f) => ({ value: f.value.toUpperCase() as DeckFormat, label: f.label }))
 
-export function isCommanderDeckFormat(format: DeckFormat | null): boolean {
+/**
+ * Whether a deck-legality value is one of the singleton commander formats.
+ *
+ * Only a *default* for the Rules axis now, never the answer to "is this Commander?": a host may
+ * require Commander-legal decks and still play under Standard rules (the server keeps the two
+ * fields independent), which is the whole point of separating them. Deck legality is therefore
+ * offered identically at every table — the Rules × Table conflict lives in
+ * {@link rulesTableBlock}, once.
+ */
+export function isCommanderDeckLegality(format: DeckFormat | null): boolean {
   return format === 'COMMANDER' || format === 'BRAWL' || format === 'STANDARD_BRAWL'
-}
-
-export function legalityOptionsForTable(table: TableAxis): typeof LEGALITY_OPTIONS {
-  return table === 'TWO_HEADED_GIANT'
-    ? LEGALITY_OPTIONS.filter((option) => !isCommanderDeckFormat(option.value))
-    : LEGALITY_OPTIONS
 }
 
 export function cardsLabel(cards: CardsAxis): string {
@@ -132,9 +164,44 @@ export function cardsSeatCap(cards: CardsAxis): number {
   }
 }
 
-/** The drafted / sealed Commander formats — `TournamentFormat.isCommanderFormat` on the server. */
+/**
+ * The Commander-Legends-shaped pack formats — `TournamentFormat.isCommanderFormat` on the server.
+ *
+ * A fact about the **pool**, not about the rules: it says the packs are the 20-card commander shape
+ * and the pool is meant to be built into a 60-card deck around a legend. Since the Rules axis
+ * landed, this is only asked where that pack shape is what matters — the AI's limited-deckbuild gap
+ * ({@link COMMANDER_LIMITED_HAS_NO_AI}, issue #1453) is about auto-building from a *pool*, so it
+ * stays keyed here rather than widening to every Commander game.
+ */
 export function isCommanderLimited(cards: CardsAxis): boolean {
   return (cards.kind === 'SEALED' || cards.kind === 'DRAFT') && cards.shape === 'COMMANDER'
+}
+
+/**
+ * The rules a Cards value implies when nothing else has said. The pre-lobby twin of the server's
+ * defaulting: picking a Commander pack shape means you want Commander rules.
+ *
+ * The wizard uses it so its Rules answer is derived rather than asked — it is deliberately three
+ * questions, and Rules is changed in the lobby.
+ */
+export function rulesForCards(cards: CardsAxis): RulesAxis {
+  return isCommanderLimited(cards) ? 'COMMANDER' : 'STANDARD'
+}
+
+/**
+ * Why these Rules can't be played at this Table, or null — **the** statement of that rule on the
+ * client, mirroring the server's `commanderRulesTableConflict`.
+ *
+ * Every surface reads this one function: the lobby's Rules, Table and Cards rows, the wizard's shape
+ * step, and the Start button. Before it there were nine copies of "Commander can't be Two-Headed
+ * Giant", including two that expressed it by *filtering commander deck legality out of the
+ * dropdown* — a different rule wearing the same words, and wrong now that deck legality no longer
+ * implies Commander rules.
+ */
+export function rulesTableBlock(rules: RulesAxis, table: TableAxis): string | null {
+  return rules === 'COMMANDER' && table === 'TWO_HEADED_GIANT'
+    ? COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL
+    : null
 }
 
 /**
@@ -145,8 +212,11 @@ export function isCommanderLimited(cards: CardsAxis): boolean {
  * 903.9a zone choice loops the turn order), so Free-for-All and Team vs. Team just play it. Two-Headed
  * Giant can't, because CR 810.4 gives the *team* one shared life total while Commander gives each
  * player their own 40 — `Format.TwoHeadedGiant` deliberately exposes no commander configuration, and
- * `LobbyHandler.handleStartTournamentLobby` refuses the combination server-side. Blocking it here
- * turns that rejection into a reason the host can read before pressing Start.
+ * the server refuses the combination in `commanderRulesTableConflict`. Saying it here turns that
+ * rejection into a reason the host can read before pressing Start.
+ *
+ * Read it through {@link rulesTableBlock} rather than testing the pair by hand; the copies are what
+ * let a table one surface offered and another refused.
  */
 export const COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL =
   'Commander can’t be played as Two-Headed Giant — a 2HG team shares one life total, and Commander gives every player their own 40. Free-for-All and Team vs. Team pods work.'
@@ -193,6 +263,13 @@ export function effectiveCommanderPreset(preset: CommanderPreset, gameMode: Lobb
   return gameMode === 'TOURNAMENT' ? preset : 'POD'
 }
 
+export function rulesLabel(rules: RulesAxis): string {
+  switch (rules) {
+    case 'STANDARD': return 'Standard'
+    case 'COMMANDER': return 'Commander'
+  }
+}
+
 export function tableLabel(table: TableAxis): string {
   switch (table) {
     case 'ONE_V_ONE': return '1v1'
@@ -209,9 +286,17 @@ export function eventLabel(event: EventAxis): string {
   }
 }
 
-/** "Sealed · 1v1 · Round-robin bracket" — the one-line summary of an axis triple. */
-export function axisSummary(axes: AxisTriple): string {
-  return [cardsLabel(axes.cards), tableLabel(axes.table), eventLabel(axes.event)].join(' · ')
+/**
+ * "Sealed · 1v1 · Round-robin bracket" — the one-line summary of an axis selection. Rules only
+ * appears when it is Commander: naming the default in every summary would be noise.
+ */
+export function axisSummary(axes: AxisSelection): string {
+  return [
+    cardsLabel(axes.cards),
+    ...(axes.rules === 'COMMANDER' ? [rulesLabel(axes.rules)] : []),
+    tableLabel(axes.table),
+    eventLabel(axes.event),
+  ].join(' · ')
 }
 
 /** The help topic that explains an axis value, so a control can bind its `?` to what is selected. */
@@ -227,6 +312,10 @@ export function cardsKindTopicId(kind: CardsKind): string {
     case 'SEALED': return 'cards-sealed'
     case 'DRAFT': return 'cards-draft'
   }
+}
+
+export function rulesTopicId(rules: RulesAxis): string {
+  return rules === 'COMMANDER' ? 'rules-commander' : 'rules-standard'
 }
 
 export function tableTopicId(table: TableAxis): string {
@@ -322,9 +411,27 @@ export function cardsFromTournamentFormat(
   }
 }
 
-export function axesFromLobbySettings(settings: LobbySettings): AxisTriple {
+/**
+ * The Rules axis of a tournament lobby, straight from the server field — falling back to the two
+ * fields that used to imply it when the server is older than the axis.
+ *
+ * The single place the client derives commander-ness from a lobby, so anything outside this
+ * directory that needs the answer (the limited deckbuilder, auto-build's target deck size, the
+ * premade deck-submit panel) reads it here rather than growing a second copy.
+ */
+export function rulesFromLobbySettings(settings: LobbySettings): RulesAxis {
+  if (settings.rules !== undefined && settings.rules !== null) return settings.rules
+  return settings.format === 'COMMANDER_DRAFT' ||
+    settings.format === 'COMMANDER_SEALED' ||
+    isCommanderDeckLegality(settings.deckFormat ?? null)
+    ? 'COMMANDER'
+    : 'STANDARD'
+}
+
+export function axesFromLobbySettings(settings: LobbySettings): AxisSelection {
   return {
     cards: cardsFromTournamentFormat(settings.format, settings.deckFormat),
+    rules: rulesFromLobbySettings(settings),
     table: tableFromGameMode(settings.gameMode),
     event: eventFromGameMode(settings.gameMode),
   }
@@ -346,10 +453,14 @@ export function axesFromLobbySettings(settings: LobbySettings): AxisTriple {
  *   "Random Pool").
  */
 export function axesFromQuickGameLobby(
-  lobby: { readonly momirBasic?: boolean | null; readonly format?: DeckFormat | null },
+  lobby: {
+    readonly momirBasic?: boolean | null
+    readonly format?: DeckFormat | null
+    readonly rules?: GameRules | null
+  },
   you?: { readonly deckSelected: boolean; readonly deckCardCount: number } | undefined,
   deckTab?: 'saved' | 'examples' | 'paste' | 'random' | undefined,
-): AxisTriple {
+): AxisSelection {
   const rollsAPool = !lobby.momirBasic && (
     deckTab !== undefined
       ? deckTab === 'random'
@@ -361,6 +472,11 @@ export function axesFromQuickGameLobby(
       : rollsAPool
         ? { kind: 'RANDOM' }
         : { kind: 'BRING_A_DECK', legality: lobby.format ?? null },
+    // A quick lobby derives its rules from deck legality server-side (it offers no Rules control),
+    // but reads the field rather than re-deriving it — same shape as the tournament lobby. The
+    // fallback covers a server older than the axis.
+    rules: lobby.rules
+      ?? (isCommanderDeckLegality(lobby.format ?? null) ? 'COMMANDER' : 'STANDARD'),
     table: 'ONE_V_ONE',
     event: 'SINGLE_GAME',
   }

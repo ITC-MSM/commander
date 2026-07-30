@@ -5,6 +5,7 @@ import com.wingedsheep.gameserver.ai.AiWebSocketSession
 import com.wingedsheep.gameserver.handler.ConnectionHandler.Companion.cardToSealedCardInfo
 import com.wingedsheep.gameserver.lobby.LobbyGameMode
 import com.wingedsheep.gameserver.lobby.LobbyState
+import com.wingedsheep.gameserver.lobby.commanderRulesTableConflict
 import com.wingedsheep.gameserver.lobby.TournamentFormat
 import com.wingedsheep.gameserver.lobby.TournamentLobby
 import com.wingedsheep.gameserver.protocol.ClientMessage
@@ -680,8 +681,17 @@ class LobbyHandler(
             picksPerRound = initialPicksPerRound,
             isPublic = message.isPublic,
             // Commander formats enable Chaos boosters by default — 20-card commander packs
-            // need to mix sets to give a workable pool when multiple sets are selected.
+            // need to mix sets to give a workable pool when multiple sets are selected. A pack-shape
+            // fact, so it stays keyed on the format rather than on the Rules axis.
             chaosBoosters = format.isCommanderFormat,
+            // Rules axis. An explicit value wins; otherwise a Commander pack shape defaults it, which
+            // is what an older client (which never sends `rules`) meant by picking one.
+            rules = message.rules
+                ?.let { runCatching { com.wingedsheep.sdk.core.GameRules.valueOf(it.uppercase()) }.getOrNull() }
+                ?: com.wingedsheep.sdk.core.GameRules.inferred(
+                    commanderPackShape = format.isCommanderFormat,
+                    deckFormat = null,
+                ),
             aiAssistEnabled = message.aiAssistEnabled,
             gameMode = gameMode,
             attackMode = runCatching { com.wingedsheep.sdk.core.AttackMode.valueOf(message.attackMode.uppercase()) }
@@ -1191,15 +1201,9 @@ class LobbyHandler(
             return
         }
 
-        if (lobby.isTwoHeadedGiant &&
-            ((lobby.format == TournamentFormat.PREMADE_DECKS && lobby.deckFormat?.isCommanderShape == true) ||
-                lobby.format.isCommanderFormat)
-        ) {
-            sender.sendError(
-                session,
-                ErrorCode.INVALID_ACTION,
-                "Two-Headed Giant cannot be combined with Commander, Brawl, or Standard Brawl"
-            )
+        // The one Rules × Table conflict, stated once in `commanderRulesTableConflict`.
+        lobby.rulesTableConflict?.let { conflict ->
+            sender.sendError(session, ErrorCode.INVALID_ACTION, conflict)
             return
         }
 
@@ -2160,6 +2164,39 @@ class LobbyHandler(
             }
         }
 
+        // Deck legality (Cards → Bring a deck). Applied here, before the Rules axis and the game-mode
+        // switch, because both of those have to see the value this message is setting rather than the
+        // previous one. Empty string or the sentinel "NONE" clears the restriction; unknown values are
+        // silently ignored so a future client/server skew can't break older lobbies.
+        message.deckFormat?.let { value ->
+            lobby.deckFormat = if (value.isBlank() || value.equals("NONE", ignoreCase = true)) {
+                null
+            } else {
+                runCatching { com.wingedsheep.sdk.core.DeckFormat.valueOf(value.uppercase()) }
+                    .getOrNull() ?: lobby.deckFormat
+            }
+        }
+
+        // Rules axis. An explicit value always wins — the host owns this row. Otherwise a message that
+        // switched the pack shape into Commander, or set a commander-shaped deck legality, *defaults*
+        // it: those used to be the only ways to ask for Commander, so a client that doesn't know about
+        // the axis still gets what it meant. Nothing here resets it — switching the pack shape back
+        // leaves Commander rules on, because the axes are independent.
+        val requestedRules = message.rules
+            ?.let { runCatching { com.wingedsheep.sdk.core.GameRules.valueOf(it.uppercase()) }.getOrNull() }
+        // Only what *this* message set can default the axis — re-inferring from the lobby's standing
+        // fields would overrule the host every time they touched an unrelated setting.
+        val defaultedByThisMessage = com.wingedsheep.sdk.core.GameRules.inferred(
+            commanderPackShape = message.format != null && lobby.format.isCommanderFormat,
+            deckFormat = if (message.deckFormat != null) lobby.deckFormat else null,
+        )
+        when {
+            requestedRules != null -> lobby.rules = requestedRules
+            // An unparseable value leaves the axis alone, matching how commanderPreset is parsed.
+            message.rules != null -> Unit
+            defaultedByThisMessage.usesCommanders -> lobby.rules = defaultedByThisMessage
+        }
+
         // Game-mode switch (mode axis is orthogonal to format). Switching to FREE_FOR_ALL caps the
         // pod at 6 seats and requires a humans-only roster (AI pod players are a deferred project).
         message.gameMode?.let { modeStr ->
@@ -2169,6 +2206,15 @@ class LobbyHandler(
                 return
             }
             if (newMode != lobby.gameMode) {
+                // Rules × Table: refuse the one combination that can't exist here rather than
+                // accepting it and refusing at Start. Same statement the start gate reads.
+                commanderRulesTableConflict(
+                    lobby.rules,
+                    isTwoHeadedGiant = newMode == LobbyGameMode.TWO_HEADED_GIANT,
+                )?.let { conflict ->
+                    sender.sendError(session, ErrorCode.INVALID_ACTION, conflict)
+                    return
+                }
                 if (newMode != LobbyGameMode.TOURNAMENT) {
                     if (lobby.players.keys.any { aiGameManager.isAiPlayer(it) }) {
                         val label = when (newMode) {
@@ -2276,20 +2322,10 @@ class LobbyHandler(
         message.pickTimeSeconds?.let { lobby.pickTimeSeconds = it.coerceIn(15, 180) }
         message.picksPerRound?.let { lobby.picksPerRound = it.coerceIn(1, 2) }
         message.isPublic?.let { lobby.isPublic = it }
-        message.deckFormat?.let { value ->
-            // Empty string or sentinel "NONE" clears the restriction. Unknown values are silently
-            // ignored so a future client/server skew can't break older lobbies.
-            lobby.deckFormat = if (value.isBlank() || value.equals("NONE", ignoreCase = true)) {
-                null
-            } else {
-                runCatching { com.wingedsheep.sdk.core.DeckFormat.valueOf(value.uppercase()) }
-                    .getOrNull() ?: lobby.deckFormat
-            }
-        }
 
-        // Commander Draft / Sealed knobs. Silently ignored on non-commander formats so a
-        // client sending stale settings can't break the lobby.
-        if (lobby.format.isCommanderFormat) {
+        // Commander deckbuild knobs. Silently ignored when the lobby isn't running Commander rules,
+        // so a client sending stale settings can't break the lobby.
+        if (lobby.usesCommanderRules) {
             message.deckSizeMin?.let { lobby.deckSizeMin = it.coerceIn(40, 100) }
             message.allowDuplicates?.let { lobby.allowDuplicates = it }
             message.commanderPreset?.let { value ->
@@ -2339,19 +2375,19 @@ class LobbyHandler(
             return
         }
 
-        // Commander applies in two cases: (a) a PREMADE_DECKS lobby with a commander-shape
-        // deckFormat (paper Commander / Brawl), or (b) a drafted/sealed Commander format that
-        // picks its commander out of the generated pool. Outside those, drop a stale commander
-        // so a saved deck doesn't leak its commander into a Standard game.
-        val commanderShape = (lobby.format == TournamentFormat.PREMADE_DECKS &&
-            lobby.deckFormat?.isCommanderShape == true) || lobby.format.isCommanderFormat
+        // A commander is meaningful exactly when the lobby runs Commander rules — one question, one
+        // field, whether the cards came from a brought deck, a sealed pool or any draft shape.
+        // Outside those, drop a stale commander so a saved deck doesn't leak its commander into a
+        // Standard game.
+        val commanderShape = lobby.usesCommanderRules
         val effectiveCommander = if (commanderShape) commander?.takeIf { it.isNotBlank() } else null
         val effectiveCommanderPrinting = if (commanderShape) commanderPrinting else null
 
-        // Drafted/Sealed Commander formats validate against the player's pool (legality universe)
-        // rather than Scryfall's deckFormat legality. Singleton + min-size knobs come from the
-        // lobby's host configuration.
-        if (lobby.format.isCommanderFormat) {
+        // A pool-built lobby validates the commander deck against the player's *pool* (its legality
+        // universe) rather than against Scryfall legality — so the branch is "Commander rules over a
+        // generated pool", i.e. anything that isn't PREMADE_DECKS. Singleton + min-size knobs come
+        // from the lobby's host configuration.
+        if (commanderShape && lobby.format != TournamentFormat.PREMADE_DECKS) {
             val pool = lobby.players[identity.playerId]?.cardPool ?: emptyList()
             val withoutCommander = effectiveCommander
                 ?.let { stripCommanderFromCards(deckList, it) }
