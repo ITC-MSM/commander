@@ -17,15 +17,16 @@
  * Reading order is the order of the rows: what deck → under what rules → at what table → over how
  * many games.
  */
+import { useEffect } from 'react'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import {
   COMMANDER_LIMITED_HAS_NO_AI,
-  LEGALITY_OPTIONS,
   cardsKindTopicId,
   cardsLabel,
   cardsSeatCap,
   isCommanderLimited,
   eventTopicId,
+  legalityOptionsForTable,
   rulesTableBlock,
   rulesTopicId,
   tableTopicId,
@@ -85,13 +86,25 @@ export function LobbyAxes({
   onRecreate: (spec: RecreateSpec) => void
 }) {
   const cards = view.axes.cards
-  // Deck legality is offered in full at every table. It used to be filtered — commander formats were
-  // hidden at a Two-Headed Giant table and an effect cleared them if you got there another way —
-  // because picking "Commander" legality silently turned Commander *rules* on. With Rules as its own
-  // axis it no longer does: a 2HG lobby may perfectly well require Commander-legal decks and play
-  // them under 2HG's shared 30 life. So the two former copies of the 2HG rule are gone from here and
-  // the conflict is stated once, on the Rules row, where the thing it is actually about lives.
   const rulesConflict = rulesTableBlock(view.axes.rules, view.axes.table)
+  // Deck legality is filtered by table, but *derived* from the Rules × Table rule rather than
+  // restating it: commander legality implies Commander rules (CR 903.4 anchors colour identity to
+  // the commander), so a table that can't have those can't offer it either.
+  const legalityOptions = legalityOptionsForTable(view.axes.table)
+
+  // Clear a legality the current table can't offer. Reachable when the host sets Commander legality,
+  // switches Rules back to Standard — which the server allows, the axes being independent — and then
+  // moves to a 2HG table, leaving a restriction whose defining rule the validator would silently
+  // skip. Keyed off the same filtered list so it can never disagree with the dropdown.
+  useEffect(() => {
+    if (
+      cards.kind === 'BRING_A_DECK' &&
+      cards.legality !== null &&
+      !legalityOptions.some((option) => option.value === cards.legality)
+    ) {
+      commands.setLegality(null)
+    }
+  }, [cards, commands, legalityOptions])
 
   return (
     <>
@@ -119,7 +132,7 @@ export function LobbyAxes({
             title="Restrict submitted decks to a constructed format. No restriction = anything the engine implements."
           >
             <option value="">No restriction</option>
-            {LEGALITY_OPTIONS.map((f) => (
+            {legalityOptions.map((f) => (
               <option key={f.value} value={f.value}>{f.label}</option>
             ))}
           </select>

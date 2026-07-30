@@ -88,14 +88,39 @@ export const LEGALITY_OPTIONS: ReadonlyArray<{ value: DeckFormat; label: string 
 /**
  * Whether a deck-legality value is one of the singleton commander formats.
  *
- * Only a *default* for the Rules axis now, never the answer to "is this Commander?": a host may
- * require Commander-legal decks and still play under Standard rules (the server keeps the two
- * fields independent), which is the whole point of separating them. Deck legality is therefore
- * offered identically at every table — the Rules × Table conflict lives in
- * {@link rulesTableBlock}, once.
+ * Never the answer to "is this Commander?" — ask the Rules axis. But not independent of it either:
+ * see {@link rulesForLegality}.
  */
 export function isCommanderDeckLegality(format: DeckFormat | null): boolean {
   return format === 'COMMANDER' || format === 'BRAWL' || format === 'STANDARD_BRAWL'
+}
+
+/**
+ * The rules a deck-legality value implies. The pre-lobby twin of the server's defaulting.
+ *
+ * This is an implication, not a coincidence: commander deck legality is *defined relative to a
+ * commander*. CR 903.4 makes every card's colour identity a subset of the commander's, so with no
+ * commander there is no anchor — and `DeckValidator`'s legacy entry point proves it, passing
+ * `commanderAware = false` and silently dropping the identity check along with MISSING_COMMANDER.
+ * "Commander legality, Standard rules" is therefore not Commander deck construction; it is 100
+ * singleton cards with the format's defining rule quietly switched off, and a commander the server
+ * would discard. Commander legality presupposes Commander rules.
+ */
+export function rulesForLegality(format: DeckFormat | null): RulesAxis {
+  return isCommanderDeckLegality(format) ? 'COMMANDER' : 'STANDARD'
+}
+
+/**
+ * The deck-legality values offerable at a table.
+ *
+ * Not a second statement of the Rules × Table rule — a *consequence* of it, derived rather than
+ * restated so the two cannot drift. Commander legality implies Commander rules
+ * ({@link rulesForLegality}), and a table that cannot have those cannot have it either.
+ */
+export function legalityOptionsForTable(table: TableAxis): typeof LEGALITY_OPTIONS {
+  return LEGALITY_OPTIONS.filter(
+    (option) => rulesTableBlock(rulesForLegality(option.value), table) === null,
+  )
 }
 
 export function cardsLabel(cards: CardsAxis): string {
@@ -193,10 +218,11 @@ export function rulesForCards(cards: CardsAxis): RulesAxis {
  * client, mirroring the server's `commanderRulesTableConflict`.
  *
  * Every surface reads this one function: the lobby's Rules, Table and Cards rows, the wizard's shape
- * step, and the Start button. Before it there were nine copies of "Commander can't be Two-Headed
- * Giant", including two that expressed it by *filtering commander deck legality out of the
- * dropdown* — a different rule wearing the same words, and wrong now that deck legality no longer
- * implies Commander rules.
+ * step, and the Start button. Before it there were nine hand-written copies of "Commander can't be
+ * Two-Headed Giant", which is what let them drift. Two of those copies filtered commander deck
+ * legality out of the dropdown; that consequence is real — commander legality implies Commander
+ * rules — so {@link legalityOptionsForTable} still draws it, but *from here* rather than by saying
+ * it again.
  */
 export function rulesTableBlock(rules: RulesAxis, table: TableAxis): string | null {
   return rules === 'COMMANDER' && table === 'TWO_HEADED_GIANT'

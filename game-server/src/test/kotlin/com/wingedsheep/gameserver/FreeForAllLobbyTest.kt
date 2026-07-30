@@ -413,22 +413,29 @@ class FreeForAllLobbyTest : FunSpec() {
                 host.latestLobbyUpdate()?.players?.size shouldBe 4
             }
 
-            // Commander deck legality still defaults the Rules axis, whatever the table — the default
-            // is a convenience, not a lock, so the host can back out of it on the Rules row. What it
-            // must not do is let the game start.
+            // Commander deck legality defaults the Rules axis, and it means it: CR 903.4 anchors
+            // colour identity to the commander, so there is no such thing as Commander-legal deck
+            // construction without Commander rules. Asking for it at a 2HG table is therefore asking
+            // for Commander at a 2HG table, and it is refused on the spot — not accepted and refused
+            // at Start, which would leave a lobby the host can't start and can't see why.
             host.send(ClientMessage.UpdateLobbySettings(deckFormat = "COMMANDER"))
-            eventually(5.seconds) {
-                host.latestLobbyUpdate()?.settings?.deckFormat shouldBe "COMMANDER"
-            }
-            host.latestLobbyUpdate()?.settings?.rules shouldBe "COMMANDER"
-            host.send(ClientMessage.StartTournamentLobby)
-
             eventually(5.seconds) {
                 host.messages.filterIsInstance<ServerMessage.Error>().any {
                     it.message.contains("Two-Headed Giant") && it.message.contains("Commander")
                 } shouldBe true
             }
-            host.messages.none { it is ServerMessage.FreeForAllGameStarting } shouldBe true
+            // Nothing was written: the refused message left a coherent 2HG lobby behind, rather than
+            // a Commander-legality one that could never run.
+            host.latestLobbyUpdate()?.settings?.deckFormat shouldBe null
+            host.latestLobbyUpdate()?.settings?.rules shouldBe "STANDARD"
+
+            // A legality that doesn't imply Commander rules is unaffected — the restriction is a
+            // consequence of the Rules × Table conflict, not a blanket ban on the dropdown.
+            host.send(ClientMessage.UpdateLobbySettings(deckFormat = "MODERN"))
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.settings?.deckFormat shouldBe "MODERN"
+            }
+            host.latestLobbyUpdate()?.settings?.rules shouldBe "STANDARD"
         }
 
         test("switching a Commander lobby to Two-Headed Giant is refused at the switch, not at Start") {

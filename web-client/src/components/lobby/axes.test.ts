@@ -1,36 +1,73 @@
 /**
- * Deck legality is a property of the deck, not of the table.
+ * Deck legality is filtered by table — but as a *consequence* of the Rules × Table rule, never as a
+ * second copy of it.
  *
- * This file used to assert the opposite: `legalityOptionsForTable(table)` filtered Commander, Brawl
- * and Standard Brawl out of the dropdown at a Two-Headed Giant table, and an effect in `LobbyAxes`
- * cleared the value if you reached it another way. Both were really the *Commander × 2HG* rule
- * wearing deck-legality's clothes, and they only made sense while picking commander legality
- * silently turned Commander rules on.
+ * The distinction is the whole point of the Rules axis, and it is easy to get backwards. Commander
+ * deck legality is not an independent property that merely pairs badly with Two-Headed Giant: it is
+ * *defined relative to a commander*. CR 903.4 makes every card's colour identity a subset of the
+ * commander's, so with no commander there is no anchor — and `DeckValidator` proves it, passing
+ * `commanderAware = false` on the legacy entry point and silently dropping both MISSING_COMMANDER
+ * and the identity check. "Commander legality, Standard rules" is therefore not Commander deck
+ * construction under house rules; it is 100 singleton cards with the format's defining rule switched
+ * off and a commander the server discards.
  *
- * With Rules as its own axis it doesn't: a 2HG lobby may require Commander-legal decks — singleton,
- * colour identity, Commander's card legality — and play them under 2HG's shared 30 life, which is a
- * perfectly ordinary house rule. So the filter is gone (the option list takes no table at all any
- * more, which is what this pins), and the one real conflict is stated once in `rulesTableBlock` —
- * see `rulesAxis.test.ts`.
+ * So commander legality implies Commander rules, a 2HG table can't have those, and it can't offer
+ * that legality either. What this file pins is that the implication is *derived* from
+ * `rulesTableBlock` rather than restated — the failure mode being two rules that agree today and
+ * drift tomorrow, which is exactly how the bug in #1552 came about.
  */
 import { describe, expect, it } from 'vitest'
-import { LEGALITY_OPTIONS, isCommanderDeckLegality } from './axes'
+import {
+  LEGALITY_OPTIONS,
+  TABLE_VALUES,
+  isCommanderDeckLegality,
+  legalityOptionsForTable,
+  rulesForLegality,
+  rulesTableBlock,
+} from './axes'
 
 describe('deck legality options', () => {
-  it('are one table-independent list that includes the commander formats', () => {
-    const values = LEGALITY_OPTIONS.map((option) => option.value)
-
-    expect(values).toContain('COMMANDER')
-    expect(values).toContain('BRAWL')
-    expect(values).toContain('STANDARD_BRAWL')
-    expect(values).toContain('STANDARD')
-  })
-
-  it('name the commander-shaped ones, which default the Rules axis without being it', () => {
+  it('name the commander-shaped formats, which imply Commander rules', () => {
     expect(isCommanderDeckLegality('COMMANDER')).toBe(true)
     expect(isCommanderDeckLegality('BRAWL')).toBe(true)
     expect(isCommanderDeckLegality('STANDARD_BRAWL')).toBe(true)
     expect(isCommanderDeckLegality('STANDARD')).toBe(false)
     expect(isCommanderDeckLegality(null)).toBe(false)
+
+    expect(rulesForLegality('COMMANDER')).toBe('COMMANDER')
+    expect(rulesForLegality('BRAWL')).toBe('COMMANDER')
+    expect(rulesForLegality('STANDARD')).toBe('STANDARD')
+    expect(rulesForLegality(null)).toBe('STANDARD')
+  })
+
+  it('are offered in full at every table that can host the rules they imply', () => {
+    for (const table of TABLE_VALUES) {
+      if (table === 'TWO_HEADED_GIANT') continue
+      expect(legalityOptionsForTable(table), table).toEqual(LEGALITY_OPTIONS)
+    }
+  })
+
+  it('drop exactly the commander formats at a Two-Headed Giant table', () => {
+    const values = legalityOptionsForTable('TWO_HEADED_GIANT').map((o) => o.value)
+
+    expect(values).not.toContain('COMMANDER')
+    expect(values).not.toContain('BRAWL')
+    expect(values).not.toContain('STANDARD_BRAWL')
+    expect(values).toContain('STANDARD')
+    expect(values).toContain('MODERN')
+  })
+
+  it('agree with the Rules × Table rule at every table, because they are derived from it', () => {
+    // The assertion that matters: no option survives whose implied rules that table would refuse,
+    // and none is dropped whose rules it would accept. Restating the rule instead of deriving it is
+    // what this catches — a hand-written filter passes the two cases above and fails this one as
+    // soon as either side changes.
+    for (const table of TABLE_VALUES) {
+      const offered = legalityOptionsForTable(table)
+      for (const option of LEGALITY_OPTIONS) {
+        const blocked = rulesTableBlock(rulesForLegality(option.value), table) !== null
+        expect(offered.includes(option), `${option.value} @ ${table}`).toBe(!blocked)
+      }
+    }
   })
 })

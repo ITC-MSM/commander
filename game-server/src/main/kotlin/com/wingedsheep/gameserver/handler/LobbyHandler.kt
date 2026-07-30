@@ -2164,18 +2164,23 @@ class LobbyHandler(
             }
         }
 
-        // Deck legality (Cards → Bring a deck). Applied here, before the Rules axis and the game-mode
-        // switch, because both of those have to see the value this message is setting rather than the
-        // previous one. Empty string or the sentinel "NONE" clears the restriction; unknown values are
-        // silently ignored so a future client/server skew can't break older lobbies.
-        message.deckFormat?.let { value ->
-            lobby.deckFormat = if (value.isBlank() || value.equals("NONE", ignoreCase = true)) {
-                null
-            } else {
-                runCatching { com.wingedsheep.sdk.core.DeckFormat.valueOf(value.uppercase()) }
-                    .getOrNull() ?: lobby.deckFormat
+        // Deck legality (Cards → Bring a deck) and the Rules axis are *resolved* here and applied
+        // below, because the conflict check between them has to see the values this message is
+        // setting rather than the previous ones — and has to run before anything is written, so a
+        // refused message leaves the lobby exactly as it was.
+        //
+        // Empty string or the sentinel "NONE" clears the restriction; unknown values are silently
+        // ignored so a future client/server skew can't break older lobbies.
+        val nextDeckFormat: com.wingedsheep.sdk.core.DeckFormat? =
+            if (message.deckFormat == null) lobby.deckFormat
+            else message.deckFormat.let { value ->
+                if (value.isBlank() || value.equals("NONE", ignoreCase = true)) {
+                    null
+                } else {
+                    runCatching { com.wingedsheep.sdk.core.DeckFormat.valueOf(value.uppercase()) }
+                        .getOrNull() ?: lobby.deckFormat
+                }
             }
-        }
 
         // Rules axis. An explicit value always wins — the host owns this row. Otherwise a message that
         // switched the pack shape into Commander, or set a commander-shaped deck legality, *defaults*
@@ -2188,14 +2193,33 @@ class LobbyHandler(
         // fields would overrule the host every time they touched an unrelated setting.
         val defaultedByThisMessage = com.wingedsheep.sdk.core.GameRules.inferred(
             commanderPackShape = message.format != null && lobby.format.isCommanderFormat,
-            deckFormat = if (message.deckFormat != null) lobby.deckFormat else null,
+            deckFormat = if (message.deckFormat != null) nextDeckFormat else null,
         )
-        when {
-            requestedRules != null -> lobby.rules = requestedRules
+        val nextRules = when {
+            requestedRules != null -> requestedRules
             // An unparseable value leaves the axis alone, matching how commanderPreset is parsed.
-            message.rules != null -> Unit
-            defaultedByThisMessage.usesCommanders -> lobby.rules = defaultedByThisMessage
+            message.rules != null -> lobby.rules
+            defaultedByThisMessage.usesCommanders -> defaultedByThisMessage
+            else -> lobby.rules
         }
+
+        // Rules × Table, against the table this message leaves the lobby at — the single statement in
+        // `commanderRulesTableConflict`, checked once for every way in. Commander deck legality counts
+        // as asking for Commander rules because it defaults them, and it means it: CR 903.4 anchors
+        // colour identity to the commander, so "Commander legality, Standard rules" is a deck the
+        // validator can only half-check. Refusing here rather than at Start is what keeps a lobby from
+        // reaching a state it can never leave.
+        val nextIsTwoHeadedGiant = message.gameMode
+            ?.let { runCatching { LobbyGameMode.valueOf(it.uppercase()) }.getOrNull() }
+            ?.let { it == LobbyGameMode.TWO_HEADED_GIANT }
+            ?: lobby.isTwoHeadedGiant
+        commanderRulesTableConflict(nextRules, nextIsTwoHeadedGiant)?.let { conflict ->
+            sender.sendError(session, ErrorCode.INVALID_ACTION, conflict)
+            return
+        }
+
+        lobby.deckFormat = nextDeckFormat
+        lobby.rules = nextRules
 
         // Game-mode switch (mode axis is orthogonal to format). Switching to FREE_FOR_ALL caps the
         // pod at 6 seats and requires a humans-only roster (AI pod players are a deferred project).
@@ -2206,15 +2230,9 @@ class LobbyHandler(
                 return
             }
             if (newMode != lobby.gameMode) {
-                // Rules × Table: refuse the one combination that can't exist here rather than
-                // accepting it and refusing at Start. Same statement the start gate reads.
-                commanderRulesTableConflict(
-                    lobby.rules,
-                    isTwoHeadedGiant = newMode == LobbyGameMode.TWO_HEADED_GIANT,
-                )?.let { conflict ->
-                    sender.sendError(session, ErrorCode.INVALID_ACTION, conflict)
-                    return
-                }
+                // Rules × Table is already settled above, against the mode this message is switching
+                // to — checked there rather than here so the deck-legality route through the same
+                // conflict is covered by the same line.
                 if (newMode != LobbyGameMode.TOURNAMENT) {
                     if (lobby.players.keys.any { aiGameManager.isAiPlayer(it) }) {
                         val label = when (newMode) {
