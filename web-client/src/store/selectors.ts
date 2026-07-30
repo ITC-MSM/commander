@@ -393,7 +393,7 @@ export function useIsAlly(playerId: EntityId | null): boolean {
 const EMPTY_ACTIONS: readonly LegalActionInfo[] = Object.freeze([])
 
 /** Extract the card-id this legal action is anchored to, if any. */
-function cardIdForAction(info: LegalActionInfo): EntityId | undefined {
+export function cardIdForAction(info: LegalActionInfo): EntityId | undefined {
   const a = info.action
   switch (a.type) {
     case 'PlayLand':
@@ -417,7 +417,7 @@ function cardIdForAction(info: LegalActionInfo): EntityId | undefined {
   }
 }
 
-function isHighlightable(a: LegalActionInfo): boolean {
+export function isHighlightable(a: LegalActionInfo): boolean {
   return (!a.isManaAbility || a.additionalCostInfo != null || a.manaCostString != null) && a.isAffordable !== false
 }
 
