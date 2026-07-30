@@ -355,6 +355,30 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
                 onError={(e) => handleImageError(e, topSuspendedCard.name, 'normal')}
               />
             )}
+            {/* Live time-counter countdown for the top card — same info Impending shows
+                continuously on the battlefield, kept visible here without opening the pile. */}
+            {topSuspendedCard && getTimeCounters(topSuspendedCard) > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: 2,
+                left: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                backgroundColor: 'rgba(40, 30, 70, 0.95)',
+                border: '1px solid rgba(170, 140, 230, 0.7)',
+                borderRadius: 4,
+                padding: '1px 3px',
+                color: '#cbb6f0',
+                fontWeight: 700,
+                fontSize: 10,
+                lineHeight: 1,
+                textShadow: '0 0 4px rgba(170, 140, 230, 0.8)',
+              }}>
+                <i className={`ms ms-${counterManaClass.TIME}`} style={{ fontSize: 9 }} />
+                {getTimeCounters(topSuspendedCard)}
+              </div>
+            )}
             <div style={{ ...styles.pileCount, ...styles.suspendedPileCount, fontSize: responsive.fontSize.small }}>
               {suspendedCards.length}
             </div>
