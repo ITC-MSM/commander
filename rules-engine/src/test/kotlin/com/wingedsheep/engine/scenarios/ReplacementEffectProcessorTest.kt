@@ -200,11 +200,11 @@ class ReplacementEffectProcessorTest : ScenarioTestBase() {
 
             driver.addPermanentWithReplacement(
                 opponentId, "Opponent Booster",
-                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawEvent(Player.You))
+                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawCardsEvent(Player.You))
             )
 
             val processor = ReplacementEffectProcessor()
-            val event = PendingGameEvent.DrawPending(playerId, 1)
+            val event = PendingGameEvent.DrawAmountPending(playerId, 1)
 
             val gathered = processor.gatherReplacements(driver.state, event)
             gathered.size shouldBe 0
@@ -218,16 +218,20 @@ class ReplacementEffectProcessorTest : ScenarioTestBase() {
 
             driver.addPermanentWithReplacement(
                 opponentId, "Opponent Modifier",
-                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawEvent(Player.EachOpponent))
+                ModifyDrawAmount(modifier = 1, appliesTo = EventPattern.DrawCardsEvent(Player.EachOpponent))
             )
 
             val processor = ReplacementEffectProcessor()
             // Active player draws → opponent's EachOpponent matches
-            val gathered = processor.gatherReplacements(driver.state, PendingGameEvent.DrawPending(playerId, 1))
+            val gathered = processor.gatherReplacements(
+                driver.state, PendingGameEvent.DrawAmountPending(playerId, 1)
+            )
             gathered.size shouldBe 1
 
             // Opponent draws → opponent's EachOpponent does NOT match (source controller is drawing)
-            val gathered2 = processor.gatherReplacements(driver.state, PendingGameEvent.DrawPending(opponentId, 1))
+            val gathered2 = processor.gatherReplacements(
+                driver.state, PendingGameEvent.DrawAmountPending(opponentId, 1)
+            )
             gathered2.size shouldBe 0
         }
 

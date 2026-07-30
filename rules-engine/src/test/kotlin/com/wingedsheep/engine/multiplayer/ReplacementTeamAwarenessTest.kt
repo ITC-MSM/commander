@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.ModifyDrawAmount
+import com.wingedsheep.sdk.scripting.PreventDraw
 import com.wingedsheep.sdk.scripting.ReplacementEffect
 import com.wingedsheep.sdk.scripting.references.Player
 import io.kotest.assertions.withClue
@@ -89,12 +90,12 @@ class ReplacementTeamAwarenessTest : FunSpec({
         val (source, teammate) = players[0] to players[1]
         val opponent = players[2]
 
+        // PreventDraw rather than ModifyDrawAmount: the per-card DrawEvent is the pattern under
+        // test here, and ModifyDrawAmount is announcement-only (its appliesTo is typed as
+        // DrawCardsEvent). The player filter is shared, so either carrier exercises it.
         val state = booted.state.withReplacementPermanent(
-            source, "Opposing Draw Taxer",
-            ModifyDrawAmount(
-                modifier = 1,
-                appliesTo = EventPattern.DrawEvent(player = Player.EachOpponent)
-            )
+            source, "Opposing Draw Preventer",
+            PreventDraw(appliesTo = EventPattern.DrawEvent(player = Player.EachOpponent))
         )
         val processor = ReplacementEffectProcessor()
 
@@ -155,11 +156,8 @@ class ReplacementTeamAwarenessTest : FunSpec({
         val source = players[0]
 
         val state = booted.state.withReplacementPermanent(
-            source, "Opposing Draw Taxer",
-            ModifyDrawAmount(
-                modifier = 1,
-                appliesTo = EventPattern.DrawEvent(player = Player.EachOpponent)
-            )
+            source, "Opposing Draw Preventer",
+            PreventDraw(appliesTo = EventPattern.DrawEvent(player = Player.EachOpponent))
         )
         val processor = ReplacementEffectProcessor()
 

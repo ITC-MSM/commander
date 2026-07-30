@@ -75,16 +75,27 @@ data class DrawUpToContinuation(
  * "each player returns a permanent" part. This continuation tracks remaining draws
  * so execution can resume drawing after the pipeline finishes.
  *
+ * This is CR 614.11a in continuation form: "if an effect replaces a draw within a
+ * sequence of card draws, all actions required by the replacement are completed, if
+ * possible, before resuming the sequence" — the frame sits below the replacement's own
+ * work on the stack, so the sequence resumes only once that work is done.
+ *
  * @property drawingPlayerId The player who was drawing (whose draw was replaced)
  * @property remainingDraws Number of draws left to process after the bounce pipeline
  * @property isDrawStep Whether this is from the draw step (vs spell/ability draws)
+ * @property announcementApplied Whether the draw instruction's announcement-level
+ *     replacements (CR 121.2a — `ModifyDrawAmount`) have already been applied to this
+ *     instruction. True whenever these draws are the tail of an instruction that was
+ *     announced before it paused; re-announcing on resume would apply the same
+ *     `ModifyDrawAmount` a second time.
  */
 @Serializable
 data class DrawReplacementRemainingDrawsContinuation(
     override val decisionId: String = "remaining-draws",
     val drawingPlayerId: EntityId,
     val remainingDraws: Int,
-    val isDrawStep: Boolean
+    val isDrawStep: Boolean,
+    val announcementApplied: Boolean = false
 ) : ContinuationFrame
 
 /**

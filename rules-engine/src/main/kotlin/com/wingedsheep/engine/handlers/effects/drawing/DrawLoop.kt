@@ -55,7 +55,11 @@ object DrawLoop {
 
         var remaining = count
         while (remaining > 0) {
-            // 1. Check replacements.
+            // 1. Check replacements. This runs *before* the primitive draw and before any
+            //    empty-library check, and CR 614.11 requires exactly that ordering: effects
+            //    that replace a card draw "are applied even if no cards could be drawn because
+            //    there are no cards in the affected player's library". Hoisting an empty-library
+            //    short-circuit above this would silently break every draw-replacement shield.
             if (dispatcher != null) {
                 val dispatch = dispatcher.checkBeforeDraw(
                     state = newState,
@@ -78,9 +82,12 @@ object DrawLoop {
                         continue
                     }
                     is DrawReplacementDispatcher.DispatchResult.Modified -> {
-                        newState = dispatch.state
-                        remaining += dispatch.delta
-                        continue
+                        // Only the announcement check (CR 121.2a) can modify a draw count,
+                        // and it runs once, before this loop. Adjusting `remaining` here
+                        // instead would not terminate: no card is drawn and nothing about
+                        // the game state changes, so the same effect matches again on the
+                        // next iteration and `remaining` only ever grows.
+                        error("checkBeforeDraw must not modify the draw count")
                     }
                     is DrawReplacementDispatcher.DispatchResult.None -> {
                         // fall through to primitive draw

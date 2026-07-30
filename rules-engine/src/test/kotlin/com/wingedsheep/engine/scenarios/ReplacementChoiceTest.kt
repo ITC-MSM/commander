@@ -23,6 +23,7 @@ import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect
 import com.wingedsheep.sdk.scripting.RedirectZoneChange
 import com.wingedsheep.sdk.scripting.ReplacementEffect
+import com.wingedsheep.sdk.scripting.ReplacementPriorityGroup
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -75,17 +76,21 @@ class ReplacementChoiceTest : FunSpec({
     }
 
     test("two competing SELF_REPLACEMENT effects present a choice (CR 616.1a)") {
-        // RedirectZoneChange(selfOnly = true) is used purely as a carrier: it is the shipped
-        // SDK type that declares a non-ANY priorityGroup, and the processor's group bucketing
+        // RedirectZoneChange is used purely as a carrier: it is the shipped SDK type that
+        // takes priorityGroup as a constructor parameter, and the processor's group bucketing
         // is documented as domain-agnostic, so it is exactly the branch under test. Pointing
         // its appliesTo at a DrawEvent is what routes it into the one wired PendingGameEvent.
+        // The group is passed explicitly because no shipped effect classifies itself as
+        // SELF_REPLACEMENT — CR 614.15 self-replacements aren't modelled yet — so without it
+        // this would land in ANY and duplicate the 616.1e test below.
         val d = driver()
         val me = d.player1
         val selfReplacement = { name: String ->
             RedirectZoneChange(
                 newDestination = Zone.EXILE,
                 appliesTo = EventPattern.DrawEvent(),
-                selfOnly = true
+                selfOnly = true,
+                priorityGroup = ReplacementPriorityGroup.SELF_REPLACEMENT
             ).let { name to it }
         }
 

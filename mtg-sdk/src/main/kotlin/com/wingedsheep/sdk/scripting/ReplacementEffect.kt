@@ -815,7 +815,9 @@ data class SetMinimumDamage(
  * modification fires once per draw instruction (CR 121.2a: "An instruction to draw multiple
  * cards can be modified by replacement effects that refer to the number of cards drawn. This
  * modification occurs before considering any of the individual card draws.") and is not
- * re-applied when a paused per-card draw loop resumes.
+ * re-applied when a paused per-card draw loop resumes. CR 616.1g is what makes that two-level
+ * split legal: the announced draw *contains* the individual draws, and a replacement applying
+ * to the contained event can't be chosen until the containing one has been.
  *
  * Two independent knobs so one type covers the whole family: [multiplier] for the doubling
  * wording ("if you would draw a card, draw two cards instead" — which per the Vnwxt rulings
@@ -833,16 +835,23 @@ data class SetMinimumDamage(
  * `DrawEvent(player = Player.EachOpponent)` card whose restriction means "you" = source
  * controller would need a source-relative condition instead.
  *
+ * [appliesTo] is deliberately typed as [EventPattern.DrawCardsEvent] rather than the general
+ * [EventPattern], so the announcement-only contract above is a compile error to violate rather
+ * than a runtime surprise. The per-card [EventPattern.DrawEvent] does not terminate for this
+ * type: modifying a draw count without drawing a card leaves the game state unchanged, so the
+ * draw loop would re-check, re-match and re-apply forever. Use [ReplaceDrawWithEffect] for a
+ * genuinely per-card replacement.
+ *
  * Examples:
  * - Quantum Riddler ("As long as you have one or fewer cards in hand, if you would draw
  *   one or more cards, you draw that many cards plus one instead"):
  *     `ModifyDrawAmount(modifier = 1,
  *                       restrictions = listOf(Conditions.CardsInHandAtMost(1)),
- *                       appliesTo = DrawEvent(player = Player.You))`
+ *                       appliesTo = DrawCardsEvent(player = Player.You))`
  * - Vnwxt, Verbose Host ("Max speed — If you would draw a card, draw two cards instead"):
  *     `ModifyDrawAmount(multiplier = 2,
  *                       restrictions = listOf(Conditions.YouHaveMaxSpeed),
- *                       appliesTo = DrawEvent(player = Player.You))`
+ *                       appliesTo = DrawCardsEvent(player = Player.You))`
  *
  * @param multiplier Factor the announced draw count is multiplied by. `2` is the "draw twice
  *        that many instead" wording; the default `1` leaves the count alone.
@@ -850,6 +859,8 @@ data class SetMinimumDamage(
  *        (clamped to ≥ 0 by the caller).
  * @param restrictions Additional [Condition]s gating when the modification applies. Evaluated
  *        against the drawing player as controller; ALL must hold.
+ * @param appliesTo Which announced draws are affected — the drawing player relative to the
+ *        source's controller, and the threshold count.
  */
 @SerialName("ModifyDrawAmount")
 @Serializable
@@ -857,7 +868,7 @@ data class ModifyDrawAmount(
     val modifier: Int = 0,
     val multiplier: Int = 1,
     override val restrictions: List<Condition> = emptyList(),
-    override val appliesTo: EventPattern = EventPattern.DrawEvent()
+    override val appliesTo: EventPattern.DrawCardsEvent = EventPattern.DrawCardsEvent()
 ) : ReplacementEffect {
     override val description: String = buildString {
         val restrictionDesc = restrictions.joinToString(" and ") { it.description.removePrefix("if ") }
@@ -881,7 +892,7 @@ data class ModifyDrawAmount(
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
-        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer) as? EventPattern.DrawCardsEvent ?: appliesTo
         val newRestrictions = restrictions.map { it.applyTextReplacement(replacer) }
         val anyChanged = newAppliesTo !== appliesTo ||
             newRestrictions.zip(restrictions).any { (n, o) -> n !== o }

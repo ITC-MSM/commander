@@ -115,14 +115,17 @@ class DrawReplacementDispatcher(
                         return DispatchResult.Replaced(processorResult.state, emptyList())
                     }
                     is ReplacementOutcome.Modified -> {
-                        val modifiedEvent = outcome.modifiedEvent as? PendingGameEvent.DrawPending
-                        val newRemaining = modifiedEvent?.remainingDraws ?: remainingDraws
-                        val delta = newRemaining - remainingDraws
-                        if (delta != 0) {
-                            val state = consumeIfFloating(processorResult.state, processorResult.identity)
-                            val cleared = state.copy(activeReplacementChain = null)
-                            return DispatchResult.Modified(cleared, delta)
-                        }
+                        // Unreachable by construction: the only replacement that produces a
+                        // Modified outcome is ModifyDrawAmount, whose `appliesTo` is typed as
+                        // EventPattern.DrawCardsEvent and so can never match DrawPending. Kept
+                        // as an error rather than a fallthrough because a per-card count
+                        // modification does not terminate — the loop would re-check an
+                        // unchanged game state and re-apply the same effect forever.
+                        error(
+                            "Per-card draw replacement produced a Modified outcome " +
+                                "(${outcome.modifiedEvent::class.simpleName}); draw-count " +
+                                "modification belongs at the announcement (CR 121.2a)"
+                        )
                     }
                 }
             }
@@ -249,7 +252,9 @@ class DrawReplacementDispatcher(
                 DrawReplacementRemainingDrawsContinuation(
                     drawingPlayerId = playerId,
                     remainingDraws = remainingDraws,
-                    isDrawStep = isDrawStep
+                    isDrawStep = isDrawStep,
+                    // Tail of an instruction already announced by executeDraws (CR 121.2a).
+                    announcementApplied = true
                 )
             )
         }

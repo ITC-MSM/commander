@@ -90,7 +90,17 @@ class ReplacementContinuationResumer(
                     }
                     is ReplacementOutcome.Consumed -> checkForMore(stateAfterLifecycle, emptyList())
                     is ReplacementOutcome.Modified -> {
-                        handleReplacedOutcome(stateAfterLifecycle, outcome, context, checkForMore)
+                        // Unlike Replaced/Consumed — where the replacement *is* what happens —
+                        // a Modified outcome leaves the (modified) event still to be performed.
+                        // The call site that would have performed it returned when this paused,
+                        // so the event supplies a frame that performs it on resume. Without
+                        // this the whole instruction is silently dropped.
+                        val performFrame = outcome.modifiedEvent.performContinuation(stateAfterLifecycle)
+                        // CR 614.5 is per-event: this event is done being replaced, so the
+                        // chain must not leak into the events performing it carries.
+                        val cleared = stateAfterLifecycle.copy(activeReplacementChain = null)
+                        val stateToResume = performFrame?.let { cleared.pushContinuation(it) } ?: cleared
+                        checkForMore(stateToResume, emptyList())
                     }
                 }
             }
@@ -127,7 +137,7 @@ class ReplacementContinuationResumer(
      */
     private fun handleReplacedOutcome(
         state: GameState,
-        outcome: ReplacementOutcome,
+        outcome: ReplacementOutcome.Replaced,
         context: EffectContext?,
         checkForMore: CheckForMore
     ): ExecutionResult {
@@ -138,7 +148,7 @@ class ReplacementContinuationResumer(
         val stateWithResumeFrame = state.pushContinuation(resumeContinuation)
 
         // Execute the new effect
-        if (context != null && outcome is ReplacementOutcome.Replaced) {
+        if (context != null) {
             // The processor stamped activeReplacementChain onto stateWithResumeFrame
             // with all effects applied in this chain, so nested effect execution
             // won't re-trigger them. Clear the chain after execution so the

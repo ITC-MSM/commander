@@ -126,14 +126,23 @@ class DrawPhaseManager(
      *
      * Delegates to [DrawCardsExecutor.executeDraws] so the draw-step path and
      * the spell/ability path share the same primitives.
+     *
+     * @param announce `false` when [count] is the tail of a draw that was already
+     *     announced and then paused — see [DrawCardsExecutor.executeDraws].
      */
-    fun drawCards(state: GameState, playerId: EntityId, count: Int): ExecutionResult {
+    fun drawCards(
+        state: GameState,
+        playerId: EntityId,
+        count: Int,
+        announce: Boolean = true
+    ): ExecutionResult {
         return drawExecutor.executeDraws(
             state = state,
             playerId = playerId,
             count = count,
             isDrawStep = true,
-            emptyLibraryReason = "Library is empty"
+            emptyLibraryReason = "Library is empty",
+            announce = announce
         ).toExecutionResult()
     }
 }

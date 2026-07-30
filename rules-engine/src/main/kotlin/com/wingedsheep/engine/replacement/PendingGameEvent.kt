@@ -88,10 +88,29 @@ sealed interface PendingGameEvent {
      *
      * For [DrawPending] with remaining draws, this returns a
      * [DrawReplacementRemainingDrawsContinuation] so the draw loop can
-     * continue after an optional or competing replacement resolves.
+     * continue after an optional or competing replacement resolves
+     * (CR 614.11a — complete the replacement, then resume the sequence).
      * Most event domains return null (no remainder concept).
      */
     fun remainderContinuation(state: GameState): ContinuationFrame? = null
+
+    /**
+     * Return a continuation frame that **performs this event** once every
+     * replacement has been applied to it, or null if the caller performs it
+     * itself.
+     *
+     * Only reached on the paused path: when applying a replacement needed a
+     * player decision, the call site that would have performed the event has
+     * already returned, so the (modified) event has to be carried forward on
+     * the continuation stack instead. A [ReplacementOutcome.Modified] leaves
+     * the event still to happen — unlike `Replaced`/`Consumed`, where the
+     * replacement *is* what happens — so without this the modified event is
+     * silently dropped.
+     *
+     * Called on the **modified** event, so implementations read their own
+     * post-replacement fields.
+     */
+    fun performContinuation(state: GameState): ContinuationFrame? = null
 
     /**
      * Draw event: a player is about to draw cards from their library.
@@ -120,13 +139,15 @@ sealed interface PendingGameEvent {
             return matchesPlayerFilter(drawEvent.player, playerId, sourceControllerId, state)
         }
 
+        /**
+         * [ModifyDrawAmount] is deliberately absent: it only ever applies to the
+         * announcement (CR 121.2a), and its `appliesTo` is typed as
+         * [EventPattern.DrawCardsEvent] so it can never match this per-card event.
+         * Adjusting a draw *count* here would not terminate — the draw loop would
+         * re-check an unchanged game state and re-match the same effect forever.
+         */
         override fun applyReplacement(effect: ReplacementEffect, state: GameState): ReplacementOutcome {
             return when (effect) {
-                is ModifyDrawAmount -> {
-                    ReplacementOutcome.Modified(
-                        copy(remainingDraws = remainingDraws + effect.modifier)
-                    )
-                }
                 is PreventDraw -> ReplacementOutcome.Consumed
                 is ReplaceDrawWithEffect -> ReplacementOutcome.Replaced(effect.replacementEffect)
                 else -> error("Unsupported replacement effect type '${effect::class.simpleName}' for ${this::class.simpleName}")
@@ -138,7 +159,10 @@ sealed interface PendingGameEvent {
                 return DrawReplacementRemainingDrawsContinuation(
                     drawingPlayerId = playerId,
                     remainingDraws = remainingDraws,
-                    isDrawStep = isDrawStep
+                    isDrawStep = isDrawStep,
+                    // Part of an instruction that was announced before the per-card
+                    // loop started — re-announcing would apply ModifyDrawAmount twice.
+                    announcementApplied = true
                 )
             }
             return null
@@ -229,7 +253,9 @@ sealed interface PendingGameEvent {
         override fun applyReplacement(effect: ReplacementEffect, state: GameState): ReplacementOutcome {
             return when (effect) {
                 is ModifyDrawAmount -> ReplacementOutcome.Modified(
-                    copy(totalCount = (totalCount + effect.modifier).coerceAtLeast(0))
+                    copy(
+                        totalCount = (totalCount * effect.multiplier + effect.modifier).coerceAtLeast(0)
+                    )
                 )
                 is PreventDraw -> ReplacementOutcome.Consumed
                 is ReplaceDrawWithEffect -> ReplacementOutcome.Replaced(effect.replacementEffect)
@@ -237,6 +263,21 @@ sealed interface PendingGameEvent {
             }
         }
 
+        /**
+         * The announcement itself performs no draws — the per-card loop does. When a
+         * competing-replacement choice paused the announcement, the executor that would
+         * have run that loop has already returned, so the modified instruction is carried
+         * forward as a draw of [totalCount] with the announcement marked as done.
+         */
+        override fun performContinuation(state: GameState): ContinuationFrame? {
+            if (totalCount <= 0) return null
+            return DrawReplacementRemainingDrawsContinuation(
+                drawingPlayerId = playerId,
+                remainingDraws = totalCount,
+                isDrawStep = isDrawStep,
+                announcementApplied = true
+            )
+        }
     }
 }
 

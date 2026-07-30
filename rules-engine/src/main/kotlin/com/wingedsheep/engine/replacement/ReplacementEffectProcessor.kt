@@ -441,7 +441,8 @@ class ReplacementEffectProcessor {
         }
 
         // 4. Self-redirect components — "from anywhere" effects on the card entity itself
-        //    (Darksteel Colossus, Progenitus). These function in every zone (CR 614.12).
+        //    (Darksteel Colossus, Progenitus). The ability names the zones it works from
+        //    ("from anywhere"), so it functions from all of them (CR 113.6b).
         //    Skip entities on the battlefield since their effects are already gathered
         //    via ReplacementEffectSourceComponent above (source 1).
         for ((entityId, container) in state.entities) {

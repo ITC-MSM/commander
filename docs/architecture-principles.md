@@ -754,14 +754,16 @@ serialize the state even when a replacement choice is pending.
 
 **Ordering multiple replacement effects (Rule 616.1).** When multiple replacement effects would apply
 to the same event, the `ReplacementEffectProcessor` implements the full CR 616.1 pipeline as a
-domain-agnostic central dispatcher. It is the single entry point for all replacement-effect
-resolution, shared across draw, damage, life-gain, token-creation, and zone-change domains.
+domain-agnostic central dispatcher. It is designed as the single entry point for all
+replacement-effect resolution across every domain — draw, damage, life-gain, token-creation,
+zone-change. **Only the draw domain is migrated onto it today**; the others still run through their
+own dispatchers and will move over one domain at a time.
 
 The pipeline follows Rule 616.1a–e priority grouping:
 
 ```kotlin
 enum class ReplacementPriorityGroup {
-    SELF_REPLACEMENT,  // CR 616.1a — effects that modify resolution of their own source. (e.g. "If a spell was countered this way, exile it instead...")
+    SELF_REPLACEMENT,  // CR 616.1a → 614.15 — an effect of a resolving spell/ability that replaces that same spell/ability's own effect (e.g. "If a spell was countered this way, exile it instead...")
     CONTROL_CHANGE,    // CR 616.1b — control-changing effects
     COPY,              // CR 616.1c — copy effects
     TRANSFORM,         // CR 616.1d — replacements that cause entering with back face up
@@ -770,8 +772,10 @@ enum class ReplacementPriorityGroup {
 ```
 
 The processor:
-1. **Gathers** all active replacement effects from battlefield permanents and floating
-   effects, filtering by `EventPattern` match.
+1. **Gathers** all active replacement effects from four sources — battlefield permanents with a
+   `ReplacementEffectSourceComponent`, floating effects carrying a replacement modification (the
+   Words cycle shields), `GameState.grantedReplacementEffects`, and entities with a
+   `SelfZoneRedirectComponent` — filtering by `EventPattern` match.
 2. **Filters out** effects already applied in the current chain (CR 614.5), tracked via
    `GameState.activeReplacementChain` — a set of `ReplacementEffectIdentity` values stamped
    onto state as replacements are consumed, preventing infinite loops.
@@ -795,10 +799,10 @@ replayed when the shield is consumed.
 **Why a central processor instead of per-category dispatchers?**
 - **Uniform Rule 616 semantics.** Every replacement, regardless of domain, follows the same
   priority-groups-and-choice flow. Adding a new domain (e.g., damage replacement) requires only
-  a new `PendingGameEvent` subtype and a new `REPLACEMENT_*` domain atom — no new ordering code.
+  a new `PendingGameEvent` subtype implementing `matches` / `applyReplacement` — no new ordering code.
 - **CR 614.5 loop prevention.** The `activeReplacementChain` is maintained in one place and
   automatically merged across nested executions, so a replacement that would re-trigger itself
-  (e.g., a ModifyDrawAmount on an already-modified event) is correctly skipped.
+  (e.g., a `ModifyDrawAmount` on an already-modified event) is correctly skipped.
 - **Composable with continuations.** Player choice between competing replacements pauses the
   pipeline and saves a `ReplacementChoiceContinuation`, which the `ReplacementContinuationResumer`
   pops when the decision arrives — no per-card bespoke dispatchers for each choice point.

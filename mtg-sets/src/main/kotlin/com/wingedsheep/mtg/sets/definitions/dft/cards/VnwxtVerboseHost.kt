@@ -53,7 +53,7 @@ val VnwxtVerboseHost = card("Vnwxt, Verbose Host") {
         ModifyDrawAmount(
             multiplier = 2,
             restrictions = listOf(Conditions.YouHaveMaxSpeed),
-            appliesTo = EventPattern.DrawEvent(player = Player.You),
+            appliesTo = EventPattern.DrawCardsEvent(player = Player.You),
         )
     )
 

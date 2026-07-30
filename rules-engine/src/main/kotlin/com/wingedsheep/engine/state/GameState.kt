@@ -552,7 +552,8 @@ data class GameState(
      * per-creature defending player — CR 802.2a).
      */
     fun getOpponents(playerId: EntityId): List<EntityId> {
-        // CR 810: an opponent is a player on an opposing team, so exclude the player's whole team
+        // CR 102.3: in a multiplayer game between teams a player's opponents are all players not
+        // on their team, so exclude the player's whole team
         // (themselves and any teammates), not just themselves. In a non-team game a player is its
         // own team, so this is identical to "everyone but me".
         val ownTeam = teamOf(playerId).toHashSet()

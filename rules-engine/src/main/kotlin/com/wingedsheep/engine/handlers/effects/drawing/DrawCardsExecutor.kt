@@ -75,6 +75,10 @@ class DrawCardsExecutor(
      * @param emptyLibraryReason message on draw failure when library is empty.
      *     Draw-step callers pass `"Library is empty"`; spell/ability callers
      *     pass `"Empty library"`.
+     * @param announce whether to run the CR 121.2a announcement check. Pass `false`
+     *     when [count] is the tail of a draw instruction that was already announced —
+     *     the resumers for a paused draw do, so `ModifyDrawAmount` isn't applied twice
+     *     to the same instruction.
      */
     fun executeDraws(
         state: GameState,
@@ -82,18 +86,25 @@ class DrawCardsExecutor(
         count: Int,
         isDrawStep: Boolean = false,
         emptyLibraryReason: String = "Empty library",
-        context: EffectContext? = null
+        context: EffectContext? = null,
+        announce: Boolean = true
     ): EffectResult {
         // Pre-loop announcement check (CR 121.2a): static replacement effects like
         // ModifyDrawAmount (e.g., Quantum Riddler's "draw that many cards plus one")
         // fire here against the total draw count before any individual card is drawn.
         var adjustedCount = count
         var currentState = state
-        val announceResult = dispatcher.checkDrawAmount(
-            currentState, playerId, count, isDrawStep, context
-        )
+        val announceResult = if (announce) {
+            dispatcher.checkDrawAmount(currentState, playerId, count, isDrawStep, context)
+        } else {
+            null
+        }
         when (announceResult) {
             is DrawReplacementDispatcher.DispatchResult.Modified -> {
+                // Keep the chain the processor stamped: CR 614.5 covers "an event or any
+                // modified events that may replace that event", so a sub-draw spawned while
+                // resolving this instruction must not re-apply the same announcement effect.
+                // DrawLoop clears it once the instruction finishes.
                 currentState = announceResult.state
                 adjustedCount = count + announceResult.delta
             }
@@ -108,7 +119,7 @@ class DrawCardsExecutor(
                 )
             }
             is DrawReplacementDispatcher.DispatchResult.None -> { /* no replacement */ }
-            null -> { /* no announcement replacement — proceed normally */ }
+            null -> { /* announcement skipped, or no announcement replacement matched */ }
         }
 
         return DrawLoop.run(

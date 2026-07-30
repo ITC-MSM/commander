@@ -76,8 +76,10 @@ class DrawReplacementContinuationResumer(
                 cardRegistry = services.cardRegistry,
                 effectExecutor = services.effectExecutorRegistry::execute
             )
+            // announce = false: this is one card of a draw instruction that already went
+            // through the CR 121.2a announcement before it paused on the prompt.
             val singleDrawResult = singleDrawExecutor.executeDraws(
-                stateWithDeclined, playerId, 1
+                stateWithDeclined, playerId, 1, announce = false
             ).toExecutionResult()
             if (singleDrawResult.isPaused) {
                 return ExecutionResult.paused(
@@ -103,9 +105,9 @@ class DrawReplacementContinuationResumer(
                     cardRegistry = services.cardRegistry,
                     effectExecutor = services.effectExecutorRegistry::execute
                 )
-                turnManager.drawCards(newState, playerId, remainingDraws)
+                turnManager.drawCards(newState, playerId, remainingDraws, announce = false)
             } else {
-                drawExecutor.executeDraws(newState, playerId, remainingDraws).toExecutionResult()
+                drawExecutor.executeDraws(newState, playerId, remainingDraws, announce = false).toExecutionResult()
             }
             if (drawResult.isPaused) {
                 return ExecutionResult.paused(
