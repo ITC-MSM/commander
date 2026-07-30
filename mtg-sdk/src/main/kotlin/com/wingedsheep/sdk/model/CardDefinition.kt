@@ -27,6 +27,11 @@ data class ScryfallMetadata(
     val artist: String? = null,
     val flavorText: String? = null,
     val imageUri: String? = null,
+    /**
+     * Display-only art selected from the permanent's projected creature subtypes. This lets art
+     * follow continuous type-changing effects without making the client infer game rules.
+     */
+    val imageUriByCreatureSubtype: Map<String, String> = emptyMap(),
     val scryfallId: String? = null,
     val releaseDate: String? = null,
     val rulings: List<Ruling> = emptyList(),
@@ -208,7 +213,17 @@ data class CardDefinition(
     val colorIdentityOverride: Set<Color>? = null,  // Authoritative Scryfall color identity; null = derive from heuristic
     val colorIndicator: Set<Color>? = null,  // Explicit color indicator (CR 204); null = no indicator, color comes from mana cost
     val layout: CardLayout = CardLayout.NORMAL,
-    val cardFaces: List<CardFace> = emptyList()  // Populated for non-NORMAL layouts (e.g. SPLIT Rooms)
+    val cardFaces: List<CardFace> = emptyList(),  // Populated for non-NORMAL layouts (e.g. SPLIT Rooms)
+    /**
+     * True when the card is printed with genuinely no mana cost — not even "{0}" — so it can
+     * never be cast normally (CR 202.1b: having no mana cost represents an unpayable cost;
+     * CR 118.6: attempting to pay an unpayable cost is illegal), only via an alternative cost or
+     * a "play without paying its mana cost" effect (e.g. Ancestral Vision's Suspend). Set by the
+     * `card { }` DSL exactly when its `manaCost` string is blank; distinct from [manaCost] being
+     * [ManaCost.ZERO] for other reasons (a printed "{0}" cost parses to a non-empty one-symbol
+     * list and leaves this false).
+     */
+    val hasNoManaCost: Boolean = false
 ) {
     init {
         if (typeLine.isCreature) {

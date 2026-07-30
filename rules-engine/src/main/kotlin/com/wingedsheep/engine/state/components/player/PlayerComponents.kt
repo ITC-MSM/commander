@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.BendType
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.HijackScope
 import com.wingedsheep.sdk.scripting.effects.ManaExpiry
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
@@ -1117,6 +1118,46 @@ data object SacrificedFoodThisTurnComponent : Component
  */
 @Serializable
 data class PermanentsSacrificedThisTurnComponent(val count: Int = 0) : Component
+
+/**
+ * Tracks the (graveyard-resident) entity ids of this player's cards that were discarded this turn.
+ * Every discard site records its cards here via `ZoneTransitionService.trackDiscard`, regardless of
+ * where the card ultimately ends up (a discard diverted onto the battlefield by a replacement still
+ * counts as a discard). Reset to an empty list for every player at the start of each turn by
+ * [com.wingedsheep.engine.core.TurnManager].
+ *
+ * Two roles with deliberately different lifetimes:
+ *  - [count] — total cards discarded this turn (monotonic). Backs `TurnTracker.CARDS_DISCARDED`
+ *    (`DynamicAmount.TurnTracking`) — e.g. Green Goblin, Revenant "draw a card for each card you've
+ *    discarded this turn". Never decremented mid-turn: a discarded card that later leaves the
+ *    graveyard was still discarded this turn.
+ *  - [cardIds] — entity ids of discarded-this-turn cards **still identifiable as that discarded
+ *    object**. Membership (`sourceId in cardIds`) backs the `YouDiscardedThisCardThisTurn` condition
+ *    that gates the Mayhem keyword (CR 702.187b). Entity ids are stable across the hand→graveyard
+ *    move, so the id recorded at discard equals the object now in the graveyard — but per CR 400.7 a
+ *    card that leaves the graveyard (cast via Mayhem, reanimated, exiled, bounced) becomes a **new
+ *    object** on any later return, so its id is pruned from this list when it leaves the graveyard or
+ *    is cast via Mayhem. That stops a Mayhem spell being recast every time it resolves back.
+ */
+@Serializable
+data class CardsDiscardedThisTurnComponent(
+    val cardIds: List<EntityId> = emptyList(),
+    val count: Int = 0
+) : Component
+
+/**
+ * The zone each land this player **played** this turn (CR 305.1 special action) was played from —
+ * one entry per land play, HAND for a normal land drop and GRAVEYARD / EXILE / LIBRARY for a play
+ * permission (Mayhem, Muldrotha, Crucible, …). Appended by `PlayLandHandler` on every land play,
+ * reset per-turn in `TurnManager`. Backs `Conditions.YouPlayedLandThisTurn(fromZone/fromZoneOtherThan)`
+ * — e.g. the land half of Spider-Man 2099's end-step intervening-if is `fromZoneOtherThan = Zone.HAND`.
+ * Mirrors the spell path's per-cast `castFromZone` provenance; land plays are otherwise tracked only
+ * as a count (`LandDropsComponent`) with no zone-of-origin.
+ */
+@Serializable
+data class LandsPlayedThisTurnComponent(
+    val fromZones: List<Zone> = emptyList()
+) : Component
 
 /**
  * Tracks the total noncombat damage red sources this player controlled have dealt this turn

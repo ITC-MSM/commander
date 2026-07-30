@@ -122,6 +122,14 @@ class TriggerMatcher(
                     event.attackers.size >= trigger.minAttackers
                 }
             }
+            is EventPattern.LandPlayedEvent -> {
+                // "Whenever you play a land …" (Shadow of the Goblin). ANY-binding player trigger:
+                // the playing player must be the trigger's controller. `fromZoneOtherThan` excludes
+                // lands played from that zone (Shadow: not from hand).
+                if (event !is com.wingedsheep.engine.core.LandPlayedEvent) return false
+                if (event.controllerId != controllerId) return false
+                trigger.fromZoneOtherThan == null || event.fromZone != trigger.fromZoneOtherThan
+            }
             is EventPattern.CreaturesAttackYouEvent -> {
                 if (event !is AttackersDeclaredEvent) return false
                 // Only count attackers declared against the player themself, not against
@@ -1093,8 +1101,9 @@ class TriggerMatcher(
             }
             // Resolution-time only — TriggerMatcher has no X context, so the predicate never matches here.
             com.wingedsheep.sdk.scripting.predicates.CardPredicate.ToughnessAtMostX -> false
-            // Resolution-time chosen-number predicate; TriggerMatcher has no chosen-number context.
+            // Resolution-time chosen-number predicates; TriggerMatcher has no chosen-number context.
             com.wingedsheep.sdk.scripting.predicates.CardPredicate.PowerEqualsX -> false
+            com.wingedsheep.sdk.scripting.predicates.CardPredicate.PowerAtLeastX -> false
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.ToughnessEquals -> {
                 val toughness = if (isFaceDown) 2
                     else lastKnownToughness ?: projected.getToughness(entityId) ?: cardComponent.baseStats?.baseToughness ?: 0
@@ -1316,6 +1325,23 @@ class TriggerMatcher(
                 recipientControllerLki(event, state) == controllerId
             }
             RecipientFilter.AnyPermanent -> event.targetId !in state.turnOrder
+            is RecipientFilter.Matching -> {
+                // "deals damage to a [filtered] creature/permanent" (East-Mark Cavalier,
+                // Mauhur, Spider-Slayer). Evaluate the filter against the recipient in projected
+                // state — mirrors DamageCalculator's Matching handling. A recipient that left the
+                // battlefield to the same damage is no longer projectable, but there is nothing
+                // left to act on ("destroy that creature"), so a live match is sufficient. A null
+                // controller can't evaluate controller-relative filters (e.g. "a creature an
+                // opponent controls"), so require it rather than passing an empty sentinel id.
+                val filter = (trigger.recipient as RecipientFilter.Matching).filter
+                controllerId != null &&
+                    event.targetId !in state.turnOrder &&
+                    state.getEntity(event.targetId) != null &&
+                    predicateEvaluator.matches(
+                        state, state.projectedState, event.targetId, filter,
+                        PredicateContext(controllerId = controllerId)
+                    )
+            }
             RecipientFilter.Self -> false // handled elsewhere
             else -> false
         }
@@ -1570,6 +1596,16 @@ class TriggerMatcher(
                 )
             }
         }
+        // Cast as an Adventure (CR 715.3): an ADVENTURE-layout card declares exactly one face —
+        // the Adventure — so a recorded faceIndex on an adventurer card means the alternative
+        // characteristics were used. Casting the same card as its creature half leaves faceIndex
+        // null and does not match.
+        SpellCastPredicate.CastAsAdventure -> {
+            val spellComponent = state.getEntity(event.spellEntityId)?.get<SpellOnStackComponent>()
+            val hasAdventure = state.getEntity(event.spellEntityId)
+                ?.get<CardComponent>()?.hasAdventure == true
+            hasAdventure && spellComponent?.faceIndex != null
+        }
         SpellCastPredicate.NotOwnedByController -> {
             val ownerId = state.getEntity(event.spellEntityId)
                 ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()
@@ -1799,6 +1835,7 @@ class TriggerMatcher(
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.WasCastFromZone,
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.AttachedToCardType -> true
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.AttachedTo -> true
+        is com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEnchantedByAura -> true
         // Counter predicates require last-known-info to evaluate a creature that has already left
         // the battlefield; the zone-change path ([matchesStatePredicateForZoneChangeTrigger])
         // handles them against the event's captured counters. This entity-only fallback has no LKI,

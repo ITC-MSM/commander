@@ -23,18 +23,38 @@ import kotlinx.serialization.Serializable
  *
  * The [keyword] field stores the enum name (e.g., "FLYING", "DOESNT_UNTAP")
  * which the engine uses for string-based keyword checks in projected state.
+ *
+ * @property condition When non-null, the granted keyword is only *live* while this condition
+ *   holds. This is not a gate on whether the grant happens — the grant always happens and lasts
+ *   for [duration]; the condition rides along on the resulting continuous effect and is
+ *   re-evaluated on every projection, exactly like the condition of a printed
+ *   [com.wingedsheep.sdk.scripting.ConditionalStaticAbility]. It is the durational sibling of a
+ *   printed "as long as …, this creature has …" clause, and the way to model a quoted conditional
+ *   ability handed out by an animate effect: Restless Spire's "{U}{R}: … becomes a 2/1 … creature
+ *   with 'During your turn, this creature has first strike.'" composes
+ *   `BecomeCreature(...)` with `GrantKeyword(FIRST_STRIKE, Self, EndOfTurn, Conditions.IsYourTurn)`.
+ *   "You" in the condition is the *source's* current controller under projection, so the clause
+ *   correctly stops applying if another player gains control of the permanent mid-turn. Unlike the
+ *   `Duration.While…` family this never latches off: the keyword comes back if the condition
+ *   becomes true again within [duration].
  */
 @SerialName("GrantKeyword")
 @Serializable
 data class GrantKeywordEffect(
     val keyword: String,
     val target: EffectTarget,
-    val duration: Duration = Duration.EndOfTurn
+    val duration: Duration = Duration.EndOfTurn,
+    val condition: com.wingedsheep.sdk.scripting.conditions.Condition? = null
 ) : Effect {
-    constructor(keyword: Keyword, target: EffectTarget, duration: Duration = Duration.EndOfTurn) :
-        this(keyword.name, target, duration)
+    constructor(
+        keyword: Keyword,
+        target: EffectTarget,
+        duration: Duration = Duration.EndOfTurn,
+        condition: com.wingedsheep.sdk.scripting.conditions.Condition? = null
+    ) : this(keyword.name, target, duration, condition)
 
     override val description: String = buildString {
+        if (condition != null) append("${condition.description.replaceFirstChar { it.uppercase() }}, ")
         append("${target.description} gains ${keyword.lowercase().replace('_', ' ')}")
         if (duration.description.isNotEmpty()) append(" ${duration.description}")
     }

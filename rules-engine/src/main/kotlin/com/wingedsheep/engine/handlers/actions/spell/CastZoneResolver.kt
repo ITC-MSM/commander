@@ -328,6 +328,39 @@ class CastZoneResolver(
     }
 
     /**
+     * Check if a card in the graveyard has a Mayhem keyword ability — printed or granted (Green
+     * Goblin's Goblin Formula) — AND you discarded it this turn (CR 702.187b), allowing it to be
+     * cast from the graveyard for its mayhem cost. Unlike flashback/harmonize the spell is NOT
+     * exiled on resolution.
+     */
+    fun hasMayhemPermission(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): Boolean {
+        val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
+        if (cardId !in state.getZone(graveyardZone)) return false
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return false
+        // Lands use the no-cost "play from graveyard" form (CR 702.187c), not the cast path.
+        if (cardComponent.typeLine.isLand) return false
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        if (com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef) == null) return false
+        // The Mayhem gate: you must have discarded this card this turn.
+        return state.getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
+            ?.cardIds?.contains(cardId) == true
+    }
+
+    /**
+     * Get the mayhem cost for a card, or null if it doesn't have mayhem.
+     */
+    fun getMayhemCost(cardId: EntityId, state: GameState): com.wingedsheep.sdk.core.ManaCost? {
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        return com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef)?.cost
+    }
+
+    /**
      * Get the flashback cost for a card, or null if it doesn't have flashback.
      */
     fun getFlashbackCost(cardId: EntityId, state: GameState): com.wingedsheep.sdk.core.ManaCost? {
@@ -361,6 +394,22 @@ class CastZoneResolver(
             if (warp.fromGraveyard && cardId in state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))) return true
         }
         return WarpGrants.hasGrantedWarpInHand(state, cardId, playerId, cardRegistry, predicateEvaluator)
+    }
+
+    /**
+     * Check if a card has an active Dash keyword ability that can be used from its current
+     * zone. Hand-only (CR 702.109a) — printed only for now, no granted-dash resolver exists yet
+     * (mirrors [hasWarpPermission]'s shape, minus the graveyard/grant branches Warp alone has).
+     */
+    fun hasDashPermission(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): Boolean {
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return false
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: return false
+        if (cardDef.keywordAbilities.none { it is KeywordAbility.Dash }) return false
+        return cardId in state.getZone(ZoneKey(playerId, Zone.HAND))
     }
 
     /**
@@ -740,6 +789,7 @@ class CastZoneResolver(
                 is CardPredicate.ManaValueAtMostColorsSpent,
                 is CardPredicate.ManaValueAtMostDynamic,
                 is CardPredicate.PowerEqualsX,
+                is CardPredicate.PowerAtLeastX,
                 is CardPredicate.ToughnessAtMostX,
                 is CardPredicate.PowerAtMostEntity,
                 is CardPredicate.PowerGreaterThanEntity,

@@ -1,10 +1,11 @@
 package com.wingedsheep.gameserver.handler
 
 import com.wingedsheep.ai.engine.SealedDeckGenerator
-import com.wingedsheep.gameserver.ai.AiDeckResolver
 import com.wingedsheep.gameserver.ai.AiGameManager
+import com.wingedsheep.gameserver.ai.RandomDeckResolver
 import com.wingedsheep.gameserver.config.GameProperties
 import com.wingedsheep.gameserver.deck.DeckValidator
+import com.wingedsheep.gameserver.deck.EasterEggDeckInjector
 import com.wingedsheep.gameserver.lobby.AiDeckSpec
 import com.wingedsheep.gameserver.lobby.AiDeckSpecView
 import com.wingedsheep.gameserver.lobby.MomirBasicSetup
@@ -53,11 +54,12 @@ class QuickGameLobbyHandler(
     private val sender: MessageSender,
     private val cardRegistry: CardRegistry,
     private val printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry,
+    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry,
     private val deckValidator: DeckValidator,
     private val deckGenerator: SealedDeckGenerator,
     private val gameProperties: GameProperties,
     private val aiGameManager: AiGameManager,
-    private val aiDeckResolver: AiDeckResolver,
+    private val randomDeckResolver: RandomDeckResolver,
     private val boosterGenerator: com.wingedsheep.engine.limited.BoosterGenerator,
     private val gamePlayHandler: GamePlayHandler,
 ) {
@@ -479,6 +481,13 @@ class QuickGameLobbyHandler(
     }
 
     private fun startGame(lobby: QuickGameLobby) {
+        if (lobby.twoHeadedGiant && lobby.format?.isCommanderShape == true) {
+            logger.warn("Lobby ${lobby.lobbyId}: Two-Headed Giant cannot use a Commander-shaped deck format")
+            broadcastClosed(lobby, "Two-Headed Giant cannot be combined with Commander, Brawl, or Standard Brawl")
+            lobbyRepository.remove(lobby.lobbyId)
+            return
+        }
+
         // Commander-shape lobby with a human player who never designated a commander would crash
         // mid-init when GameInitializer requires `commanderCardName`. Surface the error early so
         // the player can pick a different deck before everyone gets disconnected.
@@ -511,6 +520,7 @@ class QuickGameLobbyHandler(
             useHandSmoother = gameProperties.handSmoother.enabled,
             debugMode = gameProperties.debugMode,
             printingRegistry = printingRegistry,
+            tokenArtRegistry = tokenArtRegistry,
             // Four seats for Two-Headed Giant (CR 810), two otherwise.
             maxPlayers = lobby.maxPlayers,
         )
@@ -561,7 +571,10 @@ class QuickGameLobbyHandler(
                 emptyMap()
             } else {
                 val randomFallbackSet = if (lobby.vsAi) aiSetCode else deckGenerator.randomSetCode()
-                resolveDeck(lobbyPlayer, randomFallbackSet)
+                EasterEggDeckInjector.maybeInjectEasterEggs(
+                    lobbyPlayer.playerName,
+                    resolveDeck(lobbyPlayer, randomFallbackSet, lobby.format),
+                )
             }
             val playerSession = sessionRegistry
                 .getAllIdentities()
@@ -607,7 +620,7 @@ class QuickGameLobbyHandler(
             val aiDeck = if (lobby.momirBasic) {
                 MomirBasicSetup.fixedBasicDeck
             } else {
-                aiDeckResolver.resolve(lobby.aiDeckSpec, lobby.format, aiSetCode)
+                randomDeckResolver.resolve(lobby.aiDeckSpec, lobby.format, aiSetCode)
             }
             aiGameManager.createAiOpponent(
                 gameSession = gameSession,
@@ -675,13 +688,20 @@ class QuickGameLobbyHandler(
     private fun userIdOf(playerId: com.wingedsheep.sdk.model.EntityId): java.util.UUID? =
         sessionRegistry.getAllIdentities().firstOrNull { it.playerId == playerId }?.userId
 
-    private fun resolveDeck(player: QuickGameLobbyPlayer, randomFallbackSet: String): Map<String, Int> {
+    private fun resolveDeck(
+        player: QuickGameLobbyPlayer,
+        randomFallbackSet: String,
+        format: DeckFormat?,
+    ): Map<String, Int> {
         val submitted = player.deckList ?: emptyMap()
         if (submitted.isEmpty()) {
-            // Player chose Random — honor their per-player set choice; fall back to the caller's
+            // Player chose Random. Under a constructed format that means a legal 60-card deck built
+            // from the format's pool — the same thing the AI seat's Auto gets — not a sealed pool
+            // that ignores the restriction their opponent's list was validated against. Without a
+            // format it stays a sealed pool from their own set choice, falling back to the caller's
             // pre-resolved set (shared with the AI in a vs-AI lobby so both play the same set).
             val setCode = player.setCode ?: randomFallbackSet
-            return deckGenerator.generate(setCode)
+            return randomDeckResolver.randomDeck(format, emptyList(), setCode)
         }
         return submitted
     }

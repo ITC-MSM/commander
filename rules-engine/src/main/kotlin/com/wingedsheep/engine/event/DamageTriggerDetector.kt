@@ -30,6 +30,7 @@ class DamageTriggerDetector(
      */
     fun detectDamageReceivedTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: DamageDealtEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -47,7 +48,7 @@ class DamageTriggerDetector(
         // the creature died via SBAs before trigger detection runs.
         if (container.has<FaceDownComponent>() || event.targetWasFaceDown) return
 
-        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, statics)
 
         for (ability in abilities) {
             val trigger = ability.trigger
@@ -74,6 +75,7 @@ class DamageTriggerDetector(
 
     fun detectDamageSourceTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: DamageDealtEvent,
         triggers: MutableList<PendingTrigger>,
         projected: ProjectedState
@@ -90,12 +92,14 @@ class DamageTriggerDetector(
         // Face-down creatures have no abilities (Rule 708.2)
         if (container.has<FaceDownComponent>()) return
 
-        val abilities = abilityResolver.getTriggeredAbilities(sourceId, cardComponent.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(sourceId, cardComponent.cardDefinitionId, state, statics)
 
         for (ability in abilities) {
             val trigger = ability.trigger
             if (trigger is EventPattern.DealsDamageEvent && ability.binding == TriggerBinding.SELF) {
-                if (matcher.matchesDealsDamageTrigger(trigger, event, state)) {
+                // Pass the ability's controller so RecipientFilter.Matching can evaluate
+                // controller-relative recipient filters (e.g. "a creature an opponent controls").
+                if (matcher.matchesDealsDamageTrigger(trigger, event, state, controllerId)) {
                     triggers.add(
                         PendingTrigger(
                             ability = ability,
@@ -127,6 +131,7 @@ class DamageTriggerDetector(
      */
     fun detectDamagedBySourceTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: DamageDealtEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -142,7 +147,7 @@ class DamageTriggerDetector(
         // Face-down creatures have no abilities (Rule 708.2)
         if (container.has<FaceDownComponent>() || event.targetWasFaceDown) return
 
-        val abilities = abilityResolver.getTriggeredAbilities(damagedEntityId, cardComponent.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(damagedEntityId, cardComponent.cardDefinitionId, state, statics)
 
         // Determine source type
         val sourceContainer = state.getEntity(sourceId) ?: return

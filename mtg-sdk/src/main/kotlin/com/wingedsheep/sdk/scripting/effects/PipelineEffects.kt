@@ -1369,11 +1369,22 @@ data class GrantMayPlayFromExileEffect(
      * Usurper). The timing rider is honored by both the from-exile cast enumerator and the
      * authoritative cast handler; it does not waive any cost.
      */
-    val asThoughFlash: Boolean = false
+    val asThoughFlash: Boolean = false,
+    /**
+     * When true, the permission covers casting spells only — a land card among the granted
+     * cards can never be played through it. Models "you may **cast** that card" wording (Ragavan,
+     * Nimble Pilferer) as distinct from "you may **play** those cards" (Light Up the Stage):
+     * "cast" never applies to a land (CR 305.1 — playing a land is a special action, not a cast),
+     * so the granting effect exiles the card regardless of type but the permission itself excludes
+     * lands. Read by the from-exile enumerator, which otherwise offers a `PlayLand` action for any
+     * exiled land under an active permission.
+     */
+    val nonLandOnly: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         val who = if (ownerControls) "its owner" else "you"
-        append("${expiry.description.replaceFirstChar { it.uppercase() }}, $who may play those cards from exile")
+        val verb = if (nonLandOnly) "cast" else "play"
+        append("${expiry.description.replaceFirstChar { it.uppercase() }}, $who may $verb ${if (nonLandOnly) "that card" else "those cards"} from exile")
         if (fixedAlternativeCostIsManaValue) {
             append(if (waterbend) " by waterbending {X} rather than paying their mana cost, where X is their mana value"
                    else " for their mana value rather than their mana cost")

@@ -180,6 +180,12 @@ Flyway migration `V7__friends.sql` adds `users.hide_presence` (boolean, default 
 | `friendships` | one directed row per relationship: `requester_id` / `addressee_id` (both → `users(id)`, cascade), `status` (`PENDING` while awaiting the addressee, `ACCEPTED` once mutual), `created_at` / `responded_at`. `CHECK (requester_id <> addressee_id)` + `UNIQUE (requester_id, addressee_id)`. Declining / cancelling / unfriending all delete the row. |
 | `users.hide_presence` | per-account presence opt-out — when true the account appears offline to its friends even while connected. |
 
+Flyway migration `V12__cubes.sql` adds saved cubes — deliberately the `decks` table's shape:
+
+| Table / columns | Purpose |
+|-----------------|---------|
+| `cubes` | saved cube: denormalized `name` / `card_count` + full `SharedCube` JSON in `data` (name, card names + counts, basic-land art set, pack size), `user_id` → `users(id)` cascade, `idx_cubes_user`. `card_count` is total *physical* cards (sum of entry counts), which is what the lobby's capacity rule is measured against. |
+
 ## Auth flow (magic link)
 
 1. `POST /api/auth/request-login { email }` → upsert account, email a single-use link (logged to
@@ -232,9 +238,23 @@ Every admin endpoint (`/api/admin/**` and `/api/stats/admin/**`) accepts either 
 | POST | `/api/account/decks` | body = `SharedDeck` JSON → created deck |
 | PUT | `/api/account/decks/{id}` | replace |
 | DELETE | `/api/account/decks/{id}` | |
+| GET | `/api/account/cubes` | list summaries (`{ id, name, cardCount, updatedAt }`) |
+| GET | `/api/account/cubes?full` | every cube in full (one round-trip; powers the unified cube library) |
+| GET | `/api/account/cubes/{id}` | full cube |
+| POST | `/api/account/cubes` | body = `SharedCube` JSON → created cube |
+| PUT | `/api/account/cubes/{id}` | replace |
+| DELETE | `/api/account/cubes/{id}` | |
 
 > `/api/account/decks` is intentionally separate from the existing stateless `/api/decks`
 > (validation, formats, examples).
+
+> **Cubes** (`AccountCubeController`) are a deliberate copy of the deck controller's shape, down to
+> the `?full` list variant, so the client's local+cloud merge (`useUnifiedCubes`) can mirror
+> `useUnifiedDecks`. A cube is stored as card **names + counts** and is *not* resolved against the
+> card registry here: names outlive both the catalog (a cube may name a card that isn't implemented
+> yet and become playable when it lands) and any printing. Resolution happens per-lobby in
+> `CubeResolver`, and the lobby never reads this table — a cube reaches a lobby as a full card-name
+> list over `UpdateLobbySettings.cubeCards`, which is what keeps guests and unsaved cubes working.
 
 ### Stats (all under `/api/stats`)
 

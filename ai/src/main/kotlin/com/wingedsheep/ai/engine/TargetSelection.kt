@@ -1,0 +1,244 @@
+package com.wingedsheep.ai.engine
+
+import com.wingedsheep.ai.engine.evaluation.BoardPresence
+import com.wingedsheep.ai.engine.knowledge.IntentCatalog
+import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.GameAction
+import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.legalactions.TargetInfo
+import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.identity.PlayerComponent
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.EntityId
+
+/**
+ * Picking targets for a spell or ability without simulating anything.
+ *
+ * Lifted out of `Strategist` in Phase 7, where it gained a second caller: a rollout
+ * ([com.wingedsheep.ai.engine.rollout.PlayoutPolicy]) has to fill targets on every spell it plays
+ * and is forbidden from simulating to do it — anything that simulates *inside* a playout makes the
+ * playout quadratic. The Strategist still refines the targets it actually commits to by simulation
+ * (`chooseCommittedTargets`); this is the heuristic floor both paths start from.
+ *
+ * The one thing everything here protects is that an action the AI submits is *legal*. Phase 1
+ * measured the AI proposing ~0.9 illegal actions per game, 889 of 945 being "No valid targets
+ * available", and [fillableRequirements] is where that was fixed.
+ */
+object TargetSelection {
+
+    /**
+     * Heuristic desirability of a target: higher = better. Opponent removal targets rank highest.
+     *
+     * @param intents Phase 6's card knowledge. On [IntentCatalog.NONE] an opponent's non-creature
+     *   permanent falls back to the pre-Phase-6 flat `0.0`.
+     */
+    fun rank(
+        state: GameState,
+        entityId: EntityId,
+        playerId: EntityId,
+        intents: IntentCatalog = IntentCatalog.NONE,
+    ): Double {
+        val projected = state.projectedState
+        val controller = projected.getController(entityId)
+        // CR 810 — a teammate's permanent is not an opponent's, so removal must not rank it as
+        // one. In a game without teams this is exactly the old `controller != playerId`.
+        val isOpponent = controller != null && state.isOpponentTo(controller, playerId)
+        val isPlayer = state.getEntity(entityId)?.get<PlayerComponent>() != null
+
+        val card = state.getEntity(entityId)?.get<CardComponent>()
+
+        return if (isPlayer) {
+            // Player target — prefer opponent
+            if (isOpponent) 5.0 else -5.0
+        } else if (projected.isCreature(entityId)) {
+            val value = if (card != null) {
+                BoardPresence.permanentValue(state, projected, entityId, card, intents)
+            } else 0.0
+            // Opponent creatures: higher value = better target for removal
+            // Own creatures: higher value = better target for pump/bite source
+            if (isOpponent) value + 10.0 else -value
+        } else if (card != null && intents.isEnabled) {
+            // Phase 6. This branch used to be a flat `0.0`, which meant an opponent's Oblivion
+            // Ring ranked exactly as high as an untapped Forest and *equally* as high as nothing —
+            // the AI could not aim a Disenchant. It is the same shape as the creature branch above:
+            // the permanent's board value, with the +10 that keeps any opponent permanent ahead of
+            // any of ours.
+            val value = BoardPresence.permanentValue(state, projected, entityId, card, intents)
+            if (isOpponent) value + 10.0 else -value
+        } else {
+            0.0
+        }
+    }
+
+    /**
+     * For spells/abilities that require target selection, fill in heuristic
+     * targets so the action can actually resolve.
+     *
+     * Multi-target spells: for each requirement, pick the highest-value
+     * opponent creature (or lowest-value own creature, depending on context).
+     * Single-target spells: pick the best target by creature value.
+     *
+     * This is the cheap path — one heuristic target per requirement, no simulation. The action the
+     * Strategist actually commits routes through `chooseCommittedTargets`, which refines it.
+     */
+    fun fillHeuristically(
+        state: GameState,
+        action: LegalAction,
+        playerId: EntityId,
+        fillPartialRequirements: Boolean,
+        intents: IntentCatalog = IntentCatalog.NONE,
+    ): GameAction {
+        if (!action.requiresTargets) return action.action
+        // Only CastSpell and ActivateAbility carry a `targets` list the AI fills in. A targeted
+        // activated ability (e.g. "{4}{R}, Sacrifice: deal 3 damage to target") that isn't handled
+        // here is submitted with no target, rejected by the engine ("requires a target"), and the
+        // AI re-picks it forever — an infinite loop.
+        val baseAction = action.action
+        if (targetsAlreadyFilled(baseAction) != false) return action.action
+        val targetInfos = fillableRequirements(action, fillPartialRequirements) ?: return action.action
+
+        val chosenTargets = targetInfos.map { info ->
+            bestTarget(state, info, playerId, intents)
+        }
+        return applyTargets(baseAction, chosenTargets)
+    }
+
+    /** The heuristically best [ChosenTarget] for one requirement. */
+    fun bestTarget(
+        state: GameState,
+        info: TargetInfo,
+        playerId: EntityId,
+        intents: IntentCatalog = IntentCatalog.NONE,
+    ): ChosenTarget {
+        val best = info.validTargets.maxByOrNull { rank(state, it, playerId, intents) }
+            ?: info.validTargets.first()
+        return toChosenTarget(state, info, best, playerId)
+    }
+
+    /**
+     * Whether [baseAction]'s targets are already filled. `null` = the action type carries no
+     * AI-filled target list (only CastSpell / ActivateAbility do), `true`/`false` otherwise.
+     */
+    fun targetsAlreadyFilled(baseAction: GameAction): Boolean? =
+        when (baseAction) {
+            is CastSpell -> baseAction.targets.isNotEmpty()
+            is ActivateAbility -> baseAction.targets.isNotEmpty()
+            else -> null
+        }
+
+    /**
+     * The target requirements the AI will actually fill, or null when it cannot build a legal
+     * target list at all and should leave the action's targets alone.
+     *
+     * Targets are submitted as one **flat** list, which the engine slices back into requirements
+     * by their max counts (`TargetValidator.validateTargets`). An unfilled slot can therefore only
+     * ever be a trailing one — there is no way to say "requirement 0 got nothing, requirement 1
+     * got this".
+     *
+     * That mattered more than it sounds. V0 bails on the *whole spell* the moment any requirement
+     * has no legal target, and then submits no targets at all, which the engine rejects with "No
+     * valid targets available" — Phase 1 measured that as ~0.9 rejected actions per game, 889 of
+     * 945 rejections. The shape behind almost all of them is an **optional** trailing slot:
+     * Conduct Electricity's "up to one target creature token" with no token on the board makes the
+     * AI decline to target the mandatory creature either.
+     *
+     * @param fillPartial the Phase 4a fix, gated by `AiProfile.useMeaningfulFilter` — not because
+     *   the old behaviour is defensible, but because `AiProfile.LEGACY_V0` is the permanent
+     *   reference opponent that every published number is quoted against, and quietly making it
+     *   stronger would silently rebase months of arena results.
+     */
+    fun fillableRequirements(action: LegalAction, fillPartial: Boolean): List<TargetInfo>? {
+        val all = targetInfosFor(action) ?: return null
+        val fillable = all.takeWhile { it.validTargets.isNotEmpty() }
+        if (fillable.size == all.size) return all
+        if (!fillPartial) return null
+        val unfilled = all.drop(fillable.size)
+        // A mandatory slot with no legal target means the spell cannot be cast at all, and a
+        // later slot that *does* have targets cannot be reached past a skipped one.
+        if (unfilled.any { it.minTargets > 0 || it.validTargets.isNotEmpty() }) return null
+        return fillable
+    }
+
+    /** Normalize an action's target metadata into requirements (multi-target or single-target). */
+    fun targetInfosFor(action: LegalAction): List<TargetInfo>? =
+        action.targetRequirements
+            ?: action.validTargets?.let { targets ->
+                listOf(
+                    TargetInfo(
+                        index = 0,
+                        description = action.targetDescription ?: "",
+                        minTargets = action.minTargets,
+                        maxTargets = action.targetCount,
+                        validTargets = targets,
+                        targetZone = null
+                    )
+                )
+            }
+
+    /** Build the right [ChosenTarget] variant for [entityId] given the requirement's zone. */
+    fun toChosenTarget(
+        state: GameState,
+        info: TargetInfo,
+        entityId: EntityId,
+        playerId: EntityId
+    ): ChosenTarget = when (info.targetZone) {
+        "GRAVEYARD" -> {
+            val ownerId = state.getEntity(entityId)?.get<OwnerComponent>()?.playerId ?: playerId
+            ChosenTarget.Card(entityId, ownerId, Zone.GRAVEYARD)
+        }
+        "STACK" -> ChosenTarget.Spell(entityId)
+        else -> {
+            // `targetZone` is only populated for multi-requirement spells; a single-target
+            // spell/ability (Reprieve, or Sandman's "target land card from your graveyard")
+            // surfaces `validTargets` with `targetZone = null`. So fall back to authoritative
+            // game state and build the variant the target's actual zone demands:
+            //  - a spell on the stack must become a `ChosenTarget.Spell`, not a `Permanent`
+            //    (else the engine rejects the cast, "Target must be a spell on the stack");
+            //  - a card in a non-battlefield zone (graveyard/exile/hand/library/command) must
+            //    become a `ChosenTarget.Card` carrying that zone, not a `Permanent` (else the
+            //    engine rejects it — e.g. Sandman's graveyard land — and the AI re-picks the
+            //    same failing activation forever).
+            // Mirrors the web client's target-payload builder (pipelinePhases.ts).
+            val isSpell = state.isSpellOnStack(entityId)
+            val isPlayer = state.getEntity(entityId)?.get<PlayerComponent>() != null
+            val cardZone = zoneOfCardTarget(state, entityId)
+            when {
+                isSpell -> ChosenTarget.Spell(entityId)
+                isPlayer -> ChosenTarget.Player(entityId)
+                cardZone != null -> {
+                    val ownerId = state.getEntity(entityId)?.get<OwnerComponent>()?.playerId
+                        ?: cardZone.ownerId
+                    ChosenTarget.Card(entityId, ownerId, cardZone.zoneType)
+                }
+                else -> ChosenTarget.Permanent(entityId)
+            }
+        }
+    }
+
+    /**
+     * The [ZoneKey] of [entityId] when it is a card in a non-battlefield "card target" zone
+     * (graveyard, exile, hand, library, command) — the zones a `ChosenTarget.Card` addresses.
+     * Returns `null` for battlefield permanents and the stack, which are handled by the
+     * `Permanent`/`Spell` variants. Mirrors the client's `CARD_TARGET_ZONES` set.
+     */
+    private fun zoneOfCardTarget(state: GameState, entityId: EntityId): ZoneKey? {
+        val key = state.zones.entries.firstOrNull { entityId in it.value }?.key ?: return null
+        return when (key.zoneType) {
+            Zone.GRAVEYARD, Zone.EXILE, Zone.HAND, Zone.LIBRARY, Zone.COMMAND -> key
+            else -> null
+        }
+    }
+
+    /** Return [baseAction] with its target list replaced. */
+    fun applyTargets(baseAction: GameAction, targets: List<ChosenTarget>): GameAction =
+        when (baseAction) {
+            is CastSpell -> baseAction.copy(targets = targets)
+            is ActivateAbility -> baseAction.copy(targets = targets)
+            else -> baseAction
+        }
+}

@@ -54,11 +54,13 @@ fun restoreGameSession(
     persistent: PersistentGameSession,
     cardRegistry: CardRegistry,
     printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry? = null,
+    tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry? = null,
 ): Pair<GameSession, List<PlayerIdentity>> {
     val session = GameSession(
         sessionId = persistent.sessionId,
         cardRegistry = cardRegistry,
         printingRegistry = printingRegistry,
+        tokenArtRegistry = tokenArtRegistry,
     )
 
     logger.info("Restoring game ${persistent.sessionId}: gameState=${if (persistent.gameState != null) "present" else "NULL"}, players=${persistent.playerInfos.size}")

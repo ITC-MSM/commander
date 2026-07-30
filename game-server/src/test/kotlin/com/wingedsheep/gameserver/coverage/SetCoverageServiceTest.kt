@@ -3,7 +3,9 @@ package com.wingedsheep.gameserver.coverage
 import com.wingedsheep.mtg.sets.MtgSetCatalog
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
@@ -54,13 +56,29 @@ class SetCoverageServiceTest : FunSpec({
         dates shouldBe dates.sortedDescending()
     }
 
-    test("a set with all booster cards implemented reads 100% — Bloomburrow is 261/261 draft") {
+    test("a set with all booster cards implemented reads 100% — Bloomburrow is 266/266 draft") {
         val blb = coverage.find { it.code == "BLB" }.shouldNotBeNull()
-        blb.total shouldBe 261
-        blb.implemented shouldBe 261
+        // 261 numbered main-set cards plus the 5 basic lands, which are Play Booster cards at
+        // #262–281 even though Scryfall's preferred printing for each is the full-art promo.
+        blb.total shouldBe 266
+        blb.implemented shouldBe 266
         blb.percent shouldBe 100.0
-        // The 18 completionist extras are reported separately, not folded into the headline %.
-        blb.extraTotal shouldBe 18
+        // The 13 completionist extras are reported separately, not folded into the headline %.
+        blb.extraTotal shouldBe 13
+    }
+
+    test("a card counts as draft when *any* of its printings in the set is boosterable") {
+        // Regression: the booster flag used to be read off a single arbitrary printing per name
+        // (`unique=cards`), so a card Scryfall happened to serve as its non-booster printing was
+        // filed as a completionist extra. Foundations is the worst case — 14 of its Play Booster
+        // cards (collector # 1–291) also have a Beginner Box or 2026 set-extension reprint, and
+        // the arbitrary pick landed on the reprint, shrinking the booster denominator to 262.
+        val fdn = coverage.find { it.code == "FDN" }.shouldNotBeNull()
+        fdn.total shouldBe 276
+        val detail = service.detail("FDN").shouldNotBeNull()
+        // Serra Angel is FDN #147 (booster) and #740 (Beginner Box); it belongs to the draft pool.
+        detail.draft.map { it.name } shouldContain "Serra Angel"
+        detail.extra.map { it.name } shouldNotContain "Serra Angel"
     }
 
     test("a set with no booster falls back to the whole set — Bloomburrow Commander has cards, not 0%") {

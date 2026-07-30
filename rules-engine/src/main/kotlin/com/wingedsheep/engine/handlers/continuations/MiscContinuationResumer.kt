@@ -32,6 +32,7 @@ class MiscContinuationResumer(
         resumer(DistributeCountersContinuation::class, ::resumeDistributeCounters),
         resumer(RemoveAnyNumberOfCountersContinuation::class, ::resumeRemoveAnyNumberOfCounters),
         resumer(AddCountersUpToContinuation::class, ::resumeAddCountersUpTo),
+        resumer(PayCountersContinuation::class, ::resumePayCounters),
         resumer(ConvertCountersToTokensContinuation::class, ::resumeConvertCountersToTokens),
         resumer(MoveChosenCountersToTargetContinuation::class, ::resumeMoveChosenCountersToTarget),
         resumer(ProliferateContinuation::class, ::resumeProliferate),
@@ -197,6 +198,44 @@ class MiscContinuationResumer(
         }
 
         return checkForMore(result.state, result.events.toList())
+    }
+
+    private fun resumePayCounters(
+        state: GameState,
+        continuation: PayCountersContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is NumberChosenResponse) {
+            return ExecutionResult.error(state, "Expected number response for pay-counters")
+        }
+
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+
+        val chosen = response.number.coerceAtLeast(0)
+        val counterType = com.wingedsheep.engine.handlers.effects.permanent.counters
+            .resolveCounterType(continuation.counterType)
+
+        if (chosen > 0) {
+            val current = newState.getEntity(continuation.playerId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
+                ?: com.wingedsheep.engine.state.components.battlefield.CountersComponent()
+            newState = newState.updateEntity(continuation.playerId) { container ->
+                container.with(current.withRemoved(counterType, chosen))
+            }
+            events.add(
+                CountersRemovedEvent(continuation.playerId, continuation.counterType, chosen)
+            )
+        }
+
+        // Store the paid amount for a composed follow-up effect (e.g. DealDamage) to read via
+        // DynamicAmount.VariableReference — same mechanism DrawUpToEffect.storeAs uses.
+        val storeResult = com.wingedsheep.engine.handlers.effects.drawing.DrawUpToExecutor
+            .injectStoredNumber(newState, continuation.storeAmountAs, chosen)
+        newState = storeResult.newState
+
+        return checkForMore(newState, events)
     }
 
     private fun resumeDrawUpTo(

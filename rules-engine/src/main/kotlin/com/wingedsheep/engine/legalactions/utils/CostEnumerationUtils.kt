@@ -549,14 +549,27 @@ class CostEnumerationUtils(
             Int.MAX_VALUE
         }
 
-        // Cap by graveyard size if ExileXFromGraveyard
-        val hasExileXCost = when (abilityCost) {
-            is AbilityCost.Composite -> abilityCost.costs.any { it is AbilityCost.ExileXFromGraveyard }
-            else -> false
+        // Cap by the graveyard cards an ExileXFromGraveyard cost could actually exile. The cap must
+        // honor the cost's own filter, not just the graveyard size: Winter, Cursed Rider exiles X
+        // *artifact* cards, so a graveyard of five with two artifacts affords X = 2, not X = 5.
+        // Offering the larger X would let the player pick an activation whose payment then fails in
+        // CostHandler (which does apply the filter). A filter-less cost (Necropolis Fiend) matches
+        // every card, so this stays the plain graveyard size there.
+        val exileXCosts = when (abilityCost) {
+            is AbilityCost.Composite -> abilityCost.costs.filterIsInstance<AbilityCost.ExileXFromGraveyard>()
+            is AbilityCost.ExileXFromGraveyard -> listOf(abilityCost)
+            else -> emptyList()
         }
-        if (hasExileXCost) {
-            val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
-            maxX = minOf(maxX, state.getZone(graveyardZone).size)
+        if (exileXCosts.isNotEmpty()) {
+            val graveyard = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
+            val projected = state.projectedState
+            val context = PredicateContext(controllerId = playerId)
+            exileXCosts.forEach { cost ->
+                val matching = graveyard.count { cardId ->
+                    predicateEvaluator.matches(state, projected, cardId, cost.filter, context)
+                }
+                maxX = minOf(maxX, matching)
+            }
         }
 
         // Cap by the counters available for any X-valued counter-removal cost. Use projected

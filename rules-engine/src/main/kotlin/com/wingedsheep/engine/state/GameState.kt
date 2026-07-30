@@ -41,7 +41,18 @@ data class GameState(
     /** Zone contents - maps zone keys to lists of entity IDs */
     val zones: Map<ZoneKey, List<EntityId>> = emptyMap(),
 
-    /** Current turn number (starts at 0, becomes 1 when first player's turn starts) */
+    /**
+     * Current turn number, counting **player turns** — every turn the game begins gets its own
+     * number, including extra turns (CR 500.7) and every seat's turn in a multiplayer pod. Starts
+     * at 0 and becomes 1 when the first player's turn starts, so in a four-player pod the opening
+     * round is turns 1, 2, 3, 4 and the second round is 5, 6, 7, 8.
+     *
+     * This is deliberately *not* a round counter. `turnNumber + 1` is read across the engine as
+     * "the next turn" (delayed triggers, rebound, may-play expiries) and `stamp == turnNumber` as
+     * "this turn" (graveyard/exile entry stamps) — both of which are only true of a per-turn count.
+     * A round counter also stops advancing entirely once the first seat is eliminated, because the
+     * seat that used to mark the round boundary never takes another turn.
+     */
     val turnNumber: Int = 0,
 
     /** ID of the player whose turn it is */
@@ -112,6 +123,37 @@ data class GameState(
 
     /** Per-player spell records cast this turn, for conditional evasion and "first of type" triggers */
     val spellsCastThisTurnByPlayer: Map<EntityId, List<CastSpellRecord>> = emptyMap(),
+
+    /**
+     * The game's **day/night** designation (CR 731, "Day and Night"). `null` models the CR 731.1
+     * "neither day nor night" state the game starts in; once it has become day or night it is always
+     * exactly one of the two thereafter. All writes go through
+     * [com.wingedsheep.engine.mechanics.daynight.DayNightService] (the single writer, mirroring
+     * `SpeedService`), which also cascades the daybound/nightbound transforms (CR 702.145b/c/e/f) that
+     * "become day"/"become night" entails. Read directly by the `IsDay`/`IsNight` conditions and by
+     * the untap-step turn-based action (CR 502.2 / 731.2).
+     */
+    val dayNight: com.wingedsheep.sdk.core.DayNight? = null,
+
+    /**
+     * Entity id of the **previous turn's active player**, snapshotted by
+     * [com.wingedsheep.engine.core.TurnManager.startTurn] the instant a new turn begins — before the
+     * per-turn spell counters are zeroed. `null` on the game's first turn (there is no previous turn).
+     * Read together with [previousTurnActiveTeamSpellCounts] by the untap-step day/night check
+     * (CR 502.2 / 731.2), which must know how many spells the active player—or each player on the
+     * active team in a shared-team-turns game—cast during that turn even though the counters for the
+     * new turn have already reset.
+     */
+    val previousTurnActivePlayerId: EntityId? = null,
+
+    /**
+     * Per-player spell counts for the previous turn's active side, snapshotted in
+     * [com.wingedsheep.engine.core.TurnManager.startTurn] before the counters reset. This is a
+     * singleton map in ordinary games and contains every member of the previous active team when
+     * the format uses shared team turns. The untap-step day/night action becomes night if none of
+     * those players cast a spell, and becomes day if any one of them cast two or more.
+     */
+    val previousTurnActiveTeamSpellCounts: Map<EntityId, Int> = emptyMap(),
 
     /** Pending spell copies — copy the next instant/sorcery spell cast by a player (e.g., Howl of the Horde) */
     val pendingSpellCopies: List<PendingSpellCopy> = emptyList(),
@@ -237,7 +279,7 @@ data class GameState(
      * Cumulative combat damage dealt by each commander to each player, keyed by
      * `(commanderEntityId, defendingPlayerId)`. Populated by `CombatDamageManager` at the
      * `DamageDealtEvent` emission sites for combat damage to a player. Read by the
-     * `CommanderDamageLossCheck` SBA against [Format.Commander.commanderDamageThreshold].
+     * `CommanderDamageLossCheck` SBA against [Format.commanderDamageThreshold].
      */
     val commanderDamage: List<CommanderDamageEntry> = emptyList(),
 

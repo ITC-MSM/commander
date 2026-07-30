@@ -58,6 +58,21 @@ export const StepDisplayNames: Record<Step, string> = {
 }
 
 /**
+ * The game's day/night designation (Innistrad, CR 731), matching backend DayNight.kt. The game starts
+ * as neither (represented by the absence of this value on the state) and, once a designation is gained,
+ * is always exactly one of these.
+ */
+export enum DayNight {
+  DAY = 'DAY',
+  NIGHT = 'NIGHT',
+}
+
+export const DayNightDisplayNames: Record<DayNight, string> = {
+  [DayNight.DAY]: 'Day',
+  [DayNight.NIGHT]: 'Night',
+}
+
+/**
  * Short step names for compact UI elements like the pass button.
  */
 export const StepShortNames: Record<Step, string> = {
@@ -194,6 +209,7 @@ export enum Keyword {
   SNEAK = 'SNEAK',
   NINJUTSU = 'NINJUTSU',
   WEB_SLINGING = 'WEB_SLINGING',
+  MAYHEM = 'MAYHEM',
   IMPENDING = 'IMPENDING',
   CLEAVE = 'CLEAVE',
   CONSPIRE = 'CONSPIRE',
@@ -221,6 +237,9 @@ export enum Keyword {
   DECAYED = 'DECAYED',
   // Attack-triggered self-buff (Innistrad: Midnight Hunt)
   TRAINING = 'TRAINING',
+  // Day/night transforming DFCs (Innistrad, CR 702.145)
+  DAYBOUND = 'DAYBOUND',
+  NIGHTBOUND = 'NIGHTBOUND',
   // Equipment that makes its own bearer (Final Fantasy)
   JOB_SELECT = 'JOB_SELECT',
   // Ability words
@@ -276,6 +295,7 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.SNEAK]: 'Sneak',
   [Keyword.NINJUTSU]: 'Ninjutsu',
   [Keyword.WEB_SLINGING]: 'Web-slinging',
+  [Keyword.MAYHEM]: 'Mayhem',
   [Keyword.IMPENDING]: 'Impending',
   [Keyword.CLEAVE]: 'Cleave',
   [Keyword.CONSPIRE]: 'Conspire',
@@ -295,6 +315,8 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.MAX_SPEED]: 'Max speed',
   [Keyword.DECAYED]: 'Decayed',
   [Keyword.TRAINING]: 'Training',
+  [Keyword.DAYBOUND]: 'Daybound',
+  [Keyword.NIGHTBOUND]: 'Nightbound',
   [Keyword.JOB_SELECT]: 'Job select',
   [Keyword.EERIE]: 'Eerie',
   [Keyword.REBOUND]: 'Rebound',
@@ -420,6 +442,8 @@ export enum CounterType {
   REVIVAL = 'REVIVAL',
   INGENUITY = 'INGENUITY',
   FILM = 'FILM',
+  SKEWER = 'SKEWER',
+  ENERGY = 'ENERGY',
 }
 
 export const CounterTypeDisplayNames: Record<CounterType, string> = {
@@ -487,6 +511,8 @@ export const CounterTypeDisplayNames: Record<CounterType, string> = {
   [CounterType.REVIVAL]: 'Revival',
   [CounterType.INGENUITY]: 'Ingenuity',
   [CounterType.FILM]: 'Film',
+  [CounterType.SKEWER]: 'Skewer',
+  [CounterType.ENERGY]: 'Energy',
 }
 
 /**

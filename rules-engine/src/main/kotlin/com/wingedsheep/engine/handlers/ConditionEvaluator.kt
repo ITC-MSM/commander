@@ -123,6 +123,7 @@ import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid
 import com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid
 import com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid
+import com.wingedsheep.sdk.scripting.conditions.MayhemCostWasPaid
 import com.wingedsheep.sdk.scripting.conditions.WaterbendWasPaid
 import com.wingedsheep.sdk.scripting.conditions.SourceIsRingBearer
 import com.wingedsheep.sdk.scripting.conditions.YouChoseOtherCreatureAsRingBearer
@@ -142,12 +143,13 @@ import com.wingedsheep.sdk.scripting.conditions.CreatureWithSubtypeDiedThisTurn
 import com.wingedsheep.engine.state.components.player.CreatureSubtypesDiedThisTurnComponent
 import com.wingedsheep.sdk.scripting.conditions.SourcePlottedOnPriorTurn
 import com.wingedsheep.sdk.scripting.conditions.SourceForetoldOnPriorTurn
+import com.wingedsheep.sdk.scripting.conditions.YouDiscardedThisCardThisTurn
 import com.wingedsheep.engine.handlers.triggers.CreatureDiedThisTurnConditionEvaluator
 import com.wingedsheep.engine.state.components.identity.PlottedComponent
 import com.wingedsheep.engine.state.components.identity.ForetoldComponent
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
 import com.wingedsheep.sdk.scripting.conditions.VoidCondition
-import com.wingedsheep.engine.state.components.player.PlayerCitysBlessingComponent
+import com.wingedsheep.engine.mechanics.citysblessing.CitysBlessingService
 import com.wingedsheep.engine.state.components.player.TheRingComponent
 
 /**
@@ -270,6 +272,18 @@ class ConditionEvaluator(
                 foretold != null && foretold.turnForetold < state.turnNumber
             }
 
+            is YouDiscardedThisCardThisTurn -> {
+                // The Mayhem gate (CR 702.187b). A discarded card lives only in its owner's
+                // graveyard and entity ids are unique, so "recorded in any player's discard list"
+                // is equivalent to "this card's owner discarded it this turn".
+                val sourceId = ctx.sourceId
+                sourceId != null && state.turnOrder.any { pid ->
+                    state.getEntity(pid)
+                        ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
+                        ?.cardIds?.contains(sourceId) == true
+                }
+            }
+
             is SourceCastForImpending -> {
                 val sourceId = ctx.sourceId
                 sourceId != null && state.getEntity(sourceId)?.has<CastForImpendingComponent>() == true
@@ -356,6 +370,19 @@ class ConditionEvaluator(
                 val playerId = resolvePlayer(state, condition.player, ctx)
                 playerId != null && playerId in state.playersWhoCommittedCrimeThisTurn
             }
+            is com.wingedsheep.sdk.scripting.conditions.PlayerPlayedLandThisTurn -> {
+                val playerId = resolvePlayer(state, condition.player, ctx)
+                val zones = playerId?.let {
+                    state.getEntity(it)
+                        ?.get<com.wingedsheep.engine.state.components.player.LandsPlayedThisTurnComponent>()
+                        ?.fromZones
+                } ?: emptyList()
+                when {
+                    condition.fromZone != null -> zones.any { it == condition.fromZone }
+                    condition.fromZoneOtherThan != null -> zones.any { it != condition.fromZoneOtherThan }
+                    else -> zones.isNotEmpty()
+                }
+            }
             is com.wingedsheep.sdk.scripting.conditions.PermanentEnteredFaceDownThisTurn -> {
                 val playerId = resolvePlayer(state, condition.player, ctx)
                 val count = playerId?.let {
@@ -407,6 +434,14 @@ class ConditionEvaluator(
             is VoidCondition ->
                 state.nonlandPermanentLeftBattlefieldThisTurn || state.spellWarpedThisTurn
 
+            // Day/night designation (CR 731). Global game state read straight off GameState.dayNight;
+            // works identically in resolution and projection. Neither designation (null) satisfies
+            // neither condition — the game starts neither day nor night (CR 731.1).
+            is com.wingedsheep.sdk.scripting.conditions.IsDay ->
+                state.dayNight == com.wingedsheep.sdk.core.DayNight.DAY
+            is com.wingedsheep.sdk.scripting.conditions.IsNight ->
+                state.dayNight == com.wingedsheep.sdk.core.DayNight.NIGHT
+
             // Global, subtype-filtered death tracker — matched against each dying creature's
             // last-known subtypes recorded across every player. present=true: some dead creature
             // had the subtype; present=false: some dead creature lacked it ("a non-Zombie died").
@@ -446,6 +481,7 @@ class ConditionEvaluator(
             is WasKicked -> ifResolution { evaluateWasKicked(state, it) }
             is SneakCostWasPaid -> ifResolution { evaluateSneakCostWasPaid(state, it) }
             is WebSlungCostWasPaid -> ifResolution { evaluateWebSlungCostWasPaid(state, it) }
+            is MayhemCostWasPaid -> ifResolution { evaluateMayhemCostWasPaid(state, it) }
             is BlightWasPaid -> ifResolution { it.wasBlightPaid }
             is WaterbendWasPaid -> ifResolution { evaluateWaterbendWasPaid(state, it) }
             is ManaSpentToCastIncludes -> ifResolution { evaluateManaSpentToCastIncludes(state, condition, it) }
@@ -989,6 +1025,8 @@ class ConditionEvaluator(
             // cast from hand still counts as "cast a spell from your hand" even though matchesFilter
             // bails on face-down characteristics (CR 708.2).
             if (condition.fromZone != null && record.castFromZone != condition.fromZone) continue
+            // "…from anywhere other than your hand" (Spider-Man 2099): exclude that one zone.
+            if (condition.fromZoneOtherThan != null && record.castFromZone == condition.fromZoneOtherThan) continue
             if (condition.filter != GameObjectFilter.Any && !evaluator.matchesFilter(record, condition.filter)) continue
             matches++
             if (matches >= condition.atLeast) return true
@@ -1002,7 +1040,12 @@ class ConditionEvaluator(
         ctx: ConditionEvaluationContext
     ): Boolean {
         val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
-        return state.getEntity(playerId)?.has<PlayerCitysBlessingComponent>() == true
+        // Not a bare component read: CR 702.131b's ascend is continuous, so a player who has just
+        // crossed ten permanents mid-resolution already has the blessing, before the state-based
+        // action writes the marker. The ctx projection (not state.projectedState) is what keeps the
+        // projection-mode caller — Tendershoot Dryad's city's-blessing static gate — from
+        // re-entering the lazy projection initializer. See CitysBlessingService.
+        return CitysBlessingService.has(state, playerId, ctx.projectedStateFor(state))
     }
 
     private fun evaluatePermanentTypeEnteredBattlefieldThisTurnCtx(
@@ -1170,6 +1213,18 @@ class ConditionEvaluator(
         if (flagged) return true
         // Fall back to the resolution context for a non-permanent spell's own resolving effect.
         return context.wasWebSlung
+    }
+
+    private fun evaluateMayhemCostWasPaid(state: GameState, context: EffectContext): Boolean {
+        // Durable bag on the resolved permanent first (ETB / ongoing reads); fall back to the
+        // resolution context for a non-permanent spell's own resolving effect (Sandman's Quicksand).
+        val sourceId = context.sourceId ?: return context.wasMayhem
+        val flagged = state.getEntity(sourceId)
+            ?.get<CastChoicesComponent>()
+            ?.chosen
+            ?.containsKey(ChoiceSlot.MAYHEM_CAST) == true
+        if (flagged) return true
+        return context.wasMayhem
     }
 
     private fun evaluateWaterbendWasPaid(state: GameState, context: EffectContext): Boolean {

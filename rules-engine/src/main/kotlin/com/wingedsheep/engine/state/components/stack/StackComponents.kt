@@ -51,6 +51,7 @@ data class SpellOnStackComponent(
     val additionalCostPayXLifeAmount: Int? = null,  // For pay-X-life additional costs (e.g., Vicious Rivalry); non-null (incl. 0) marks the spell and is coalesced into xValue at resolution
     val castFromZone: Zone? = null,  // Zone the spell was cast from (e.g., HAND for normal casting)
     val wasWarped: Boolean = false,  // For warp - permanent is exiled at end step
+    val wasDashed: Boolean = false,  // For dash (CR 702.109) - permanent gains haste, returns to hand at next end step
     val wasEvoked: Boolean = false,  // For evoke - permanent is sacrificed on ETB
     val wasImpending: Boolean = false,  // For impending - permanent enters with time counters and isn't a creature until they're gone
     val wasCleaved: Boolean = false,  // For cleave (CR 702.148) - spell resolves with its brackets-removed effect/target variant
@@ -72,6 +73,8 @@ data class SpellOnStackComponent(
      * like Scarlet Spider, Ben Reilly can enter with that many +1/+1 counters. 0 when not web-slung.
      */
     val webSlungReturnedManaValue: Int = 0,
+    /** For mayhem (CR 702.187) — the mayhem cost was paid; readable via MayhemCostWasPaid. */
+    val wasMayhem: Boolean = false,
     val beheldCards: List<EntityId> = emptyList(),  // Cards chosen via Behold (stored in pipeline as named collection)
     /**
      * Entity ids of cards discarded to pay this spell's additional discard cost
@@ -221,7 +224,14 @@ data class TriggeredAbilityOnStackComponent(
     val capturedEntityIds: List<EntityId> = emptyList(),
     /** Set when this triggered ability is a Saga chapter ability; on resolution the engine emits a
      *  SagaChapterResolvedEvent so "final chapter of a Saga resolves" triggers (Tom Bombadil) can fire. */
-    val sagaChapterInfo: com.wingedsheep.engine.event.SagaChapterInfo? = null
+    val sagaChapterInfo: com.wingedsheep.engine.event.SagaChapterInfo? = null,
+    /**
+     * Pipeline state carried from a `ReflexiveTriggerEffect`'s action half (e.g. `Amass`'s army
+     * reference, a discard's resolved count) into this synthetic reflexive ability's resolution —
+     * merged into the built `EffectContext.pipeline` since the reflexive ability builds a fresh
+     * context across the stack round-trip (CR 603.12). Null for ordinary triggered abilities.
+     */
+    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null
 ) : Component {
     val hasTargets: Boolean = false  // Will be updated based on effect
 }

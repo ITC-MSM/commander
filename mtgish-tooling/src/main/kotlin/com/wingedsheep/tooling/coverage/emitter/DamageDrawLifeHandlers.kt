@@ -179,6 +179,12 @@ internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers
     // Willbender). Pairs with `Targets.SpellOrAbilityWithSingleTarget`.
     simple("ChangeTargetsOfSpellOrAbility", dsl = "Effects.ChangeTarget()")
     simple("Shuffle", dsl = "ShuffleLibraryEffect()")
+    // "It becomes day/night" (CR 731.1). Both are argument-free constants — the DayNight designation
+    // is baked into the `Effects.BecomeDay` / `Effects.BecomeNight` vals (SetDayNight), which cascade
+    // the daybound/nightbound transforms the change entails. Member-qualified vals, so paren-free like
+    // `Effects.AddCombatPhase`; importsFor resolves the single `Effects` import (Into the Night).
+    simple("BecomeDay", dsl = "Effects.BecomeDay")
+    simple("BecomeNight", dsl = "Effects.BecomeNight")
     // Investigate (keyword action, CR 701.36): create a Clue token. Argument-free constant action
     // (Malcolm, the Eyes — "investigate"). "Investigate N times" appears as N stacked actions.
     simple("Investigate", dsl = "Effects.Investigate()")

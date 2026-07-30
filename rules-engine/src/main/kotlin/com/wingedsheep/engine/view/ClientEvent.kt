@@ -70,6 +70,27 @@ sealed interface ClientEvent {
         }
     ) : ClientEvent
 
+    /**
+     * The game's day/night designation changed (Innistrad, CR 731). [oldDesignation] is `null` when the
+     * game leaves the "neither" state it starts in (CR 731.1); a non-null → non-null change is a
+     * "day becomes night" / "night becomes day" flip (CR 731.1a).
+     *
+     * Surfaced as a real client event rather than left to a silent state diff so the UI can announce the
+     * shift (and any daybound/nightbound permanents transforming with it). [sourceName] attributes the
+     * cause — the untap-step turn-based action, a daybound/nightbound keyword, or an effect.
+     */
+    @Serializable
+    @SerialName("dayNightChanged")
+    data class DayNightChanged(
+        val oldDesignation: com.wingedsheep.sdk.core.DayNight?,
+        val newDesignation: com.wingedsheep.sdk.core.DayNight,
+        val sourceName: String,
+        override val description: String = when (newDesignation) {
+            com.wingedsheep.sdk.core.DayNight.DAY -> "It becomes day"
+            com.wingedsheep.sdk.core.DayNight.NIGHT -> "It becomes night"
+        }
+    ) : ClientEvent
+
     @Serializable
     @SerialName("damageDealt")
     data class DamageDealt(
@@ -303,6 +324,14 @@ sealed interface ClientEvent {
         val permanentId: EntityId,
         val permanentName: String,
         override val description: String = "$permanentName became saddled"
+    ) : ClientEvent
+
+    @Serializable
+    @SerialName("permanentExerted")
+    data class PermanentExerted(
+        val permanentId: EntityId,
+        val permanentName: String,
+        override val description: String = "$permanentName was exerted — it won't untap next turn"
     ) : ClientEvent
 
     @Serializable
@@ -780,11 +809,20 @@ object ClientEventTransformer {
         viewingPlayerId: EntityId
     ): ClientEvent? {
         return when (event) {
+            // The land-play signal drives triggers only; the client renders the land entering via
+            // the accompanying ZoneChangeEvent, so no separate client event is emitted.
+            is LandPlayedEvent -> null
             is SpeedChangedEvent -> ClientEvent.SpeedChanged(
                 playerId = event.playerId,
                 oldSpeed = event.oldSpeed,
                 newSpeed = event.newSpeed,
                 isYours = event.playerId == viewingPlayerId
+            )
+
+            is DayNightChangedEvent -> ClientEvent.DayNightChanged(
+                oldDesignation = event.oldDesignation,
+                newDesignation = event.newDesignation,
+                sourceName = event.sourceName
             )
 
             is LifeChangedEvent -> ClientEvent.LifeChanged(
@@ -979,6 +1017,11 @@ object ClientEventTransformer {
             )
 
             is BecameSaddledEvent -> ClientEvent.PermanentSaddled(
+                permanentId = event.entityId,
+                permanentName = event.entityName
+            )
+
+            is ExertedEvent -> ClientEvent.PermanentExerted(
                 permanentId = event.entityId,
                 permanentName = event.entityName
             )
@@ -1181,6 +1224,11 @@ is PermanentsSacrificedEvent -> {
                 abilityDescription = event.description,
                 reason = event.reason
             )
+
+            // Internal signal only — TriggerDetector turns this into a real PendingTrigger for the
+            // reflexive ability, which emits its own AbilityTriggeredEvent/AbilityResolvedEvent (and
+            // AbilityFizzledEvent if its target becomes illegal) once it's actually on the stack.
+            is ReflexiveAbilityTriggeredEvent -> null
 
             is CardRevealedFromDrawEvent -> {
                 ClientEvent.CardsRevealed(

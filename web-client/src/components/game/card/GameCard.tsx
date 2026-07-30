@@ -452,7 +452,8 @@ function GameCardImpl({
            (action.type === 'CastSpell' && action.cardId === card.id) ||
            (action.type === 'CycleCard' && action.cardId === card.id) ||
            (action.type === 'TypecycleCard' && action.cardId === card.id) ||
-           (action.type === 'PlotCard' && action.cardId === card.id)
+           (action.type === 'PlotCard' && action.cardId === card.id) ||
+           (action.type === 'SuspendCardFromHand' && action.cardId === card.id)
   }), [legalActions, card.id])
   const playableAction = playableActions[0]
   // Open the action menu when the card has more than one way to be played — including cards
@@ -1324,6 +1325,25 @@ function GameCardImpl({
         </div>
       )}
 
+      {/* Exerted indicator (CR 701.43a) — won't untap during its controller's next untap step. */}
+      {battlefield && card.isExerted && (
+        <div
+          aria-label="Exerted — won't untap next turn"
+          title="Exerted — won't untap next turn"
+          style={{
+            position: 'absolute',
+            top: 3,
+            right: 3,
+            fontSize: responsive.badges.sicknessIconSize,
+            opacity: 0.85,
+            zIndex: 7,
+            pointerEvents: 'none',
+          }}
+        >
+          🔒
+        </div>
+      )}
+
       {/* Ring-bearer badge (CR 701.54) — a prominent golden Ring marker pinned to the top-left of
           the creature a player designated as their Ring-bearer. Gold fill + glow makes the bearer
           unmistakable at a glance across the battlefield, using the mana-font
@@ -1546,6 +1566,15 @@ function GameCardImpl({
             Warped
           </div>
         </>
+      )}
+
+      {/* Dash (CR 702.109, Khans of Tarkir): a permanent cast for its dash cost — hasty, returned to
+          its owner's hand at the beginning of the next end step. */}
+      {battlefield && card.isDashed && !faceDown && (
+        <div style={styles.dashedBadge} title="Dashed (Khans of Tarkir) — has haste; returned to its owner's hand at the beginning of the next end step">
+          <span aria-hidden="true">⚡</span>
+          Dashed
+        </div>
       )}
 
       {/* Counter badge for creatures with +1/+1 or -1/-1 counters */}

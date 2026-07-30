@@ -14,9 +14,10 @@ For each set we've catalogued (a `definitions/<code>/` folder with a `*Set.kt`):
   - reads the set `code` and `displayName` from the Kotlin source
   - loads the canonical card list from `~/.cache/scryfall/<code>.json`
     (same cache `scripts/card-status` reads/writes)
-  - partitions canonical front-face names into draft (Scryfall `booster: true`)
-    and extras, deduping extras against draft — identical semantics to
-    `card-status`, so the numbers match the mtgish coverage TUI
+  - partitions canonical front-face names into draft (some printing of the card
+    in that set has Scryfall `booster: true`) and extras, deduping extras against
+    draft — identical semantics to `card-status`, so the numbers match the mtgish
+    coverage TUI
 
 Output: `game-server/src/main/resources/coverage/set-totals.json`, an array of
   { code, name, releaseDate, setType, standardLegal,
@@ -59,7 +60,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFINITIONS_ROOT = REPO_ROOT / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
 OUTPUT = REPO_ROOT / "game-server/src/main/resources/coverage/set-totals.json"
 CACHE_ROOT = Path.home() / ".cache" / "scryfall"
-CACHE_SCHEMA_VERSION = 6
+CACHE_SCHEMA_VERSION = 7
 REFRESH_WINDOW_DAYS = 30
 
 # Standard-format membership, computed here (not at runtime) because the signal lives only in the

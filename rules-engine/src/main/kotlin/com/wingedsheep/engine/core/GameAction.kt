@@ -200,8 +200,22 @@ enum class AlternativeCostType {
     FLASHBACK,
     /** Harmonize ([com.wingedsheep.sdk.scripting.KeywordAbility.Harmonize], printed or granted) — graveyard. */
     HARMONIZE,
+    /**
+     * Mayhem ([com.wingedsheep.sdk.scripting.KeywordAbility.Mayhem], printed or granted, CR 702.187)
+     * — graveyard, at the spell's normal timing, only if you discarded the card this turn. Pays the
+     * mayhem mana instead of the mana cost. Unlike [FLASHBACK]/[HARMONIZE] the spell is NOT exiled
+     * on resolution.
+     */
+    MAYHEM,
     /** Warp ([com.wingedsheep.sdk.scripting.KeywordAbility.Warp], printed or granted) — hand (graveyard if opted in). */
     WARP,
+    /**
+     * Dash ([com.wingedsheep.sdk.scripting.KeywordAbility.Dash], CR 702.109) — hand only. The
+     * resulting permanent gains haste and returns to its owner's hand at the beginning of the
+     * next end step, tracked by `DashedComponent` + a delayed trigger (mirrors Warp's shape,
+     * but returns to hand instead of exiling, and grants haste while the marker persists).
+     */
+    DASH,
     /** Evoke ([com.wingedsheep.sdk.scripting.KeywordAbility.Evoke]) — hand. */
     EVOKE,
     /**
@@ -381,6 +395,28 @@ data class PlotCard(
 @Serializable
 @SerialName("ForetellCard")
 data class ForetellCard(
+    override val playerId: EntityId,
+    val cardId: EntityId,
+    val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay
+) : GameAction
+
+/**
+ * Player suspends a card from their hand (CR 702.62, Time Spiral).
+ *
+ * Suspend is a special action (CR 116.2f) — unlike [ForetellCard]/[PlotCard], it isn't just
+ * "does not use the stack once announced"; the card is never cast at all. The player pays
+ * the card's printed suspend cost and exiles it from hand with a number of time counters
+ * equal to its suspend value. The exiled card counts down at its owner's upkeep — driven by
+ * the engine's synthesized [com.wingedsheep.sdk.scripting.Suspend.countdownAbility], granted
+ * to any exiled card carrying the suspended marker — and when the last counter is removed,
+ * its owner may play it for free (with haste, if it becomes a creature).
+ *
+ * @property playerId The player suspending the card
+ * @property cardId The card being suspended
+ */
+@Serializable
+@SerialName("SuspendCardFromHand")
+data class SuspendCardFromHand(
     override val playerId: EntityId,
     val cardId: EntityId,
     val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay

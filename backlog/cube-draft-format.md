@@ -145,23 +145,23 @@ must be inert (not merely ignored) in cube mode.
 
 ## Phase 1 — `Cube` model, resolution, and `CubeDealer` (engine + tests)
 
-- [ ] **1.1 — `CubeList` SDK/server model.** Card **names + counts** (a cube is usually singleton but
+- [x] **1.1 — `CubeList` SDK/server model.** Card **names + counts** (a cube is usually singleton but
   some run duplicates), optional pinned `PrintingRef` per card (so a cube can specify art), a
   `basicLandSetCode` for the basic-land art source, `name`, and `packSize` default. Where it lives
   depends on 1.2 — if only the server resolves cubes, `game-server/.../cube/` is the right home and
   `mtg-sdk` stays untouched.
-- [ ] **1.2 — `CubeResolver`.** `(CubeList, CardRegistry, PrintingRegistry) → ResolvedCube` with an
+- [x] **1.2 — `CubeResolver`.** `(CubeList, CardRegistry, PrintingRegistry) → ResolvedCube` with an
   explicit failure list for unresolvable names. **A cube with unresolved names is not playable** —
   return the misses so the host sees "47 cards in this cube aren't implemented yet" rather than
   silently drafting a 313-card cube. Applies pinned printings via `CardDefinition.withPrinting`.
-- [ ] **1.3 — `CubeDealer`** in `rules-engine/.../engine/limited/`. Shuffle once with a seeded
+- [x] **1.3 — `CubeDealer`** in `rules-engine/.../engine/limited/`. Shuffle once with a seeded
   `Random(seed)`, deal by slicing, expose `remaining`. Pure, no Spring. Unit tests: no duplicate card
   identity across all dealt packs; exact pack sizes; `deal` past capacity fails loudly with a message
   naming the shortfall; same seed ⇒ same deal.
-- [ ] **1.4 — `BoosterGenerator.withSets(extra)`** returning a new generator with
+- [x] **1.4 — `BoosterGenerator.withSets(extra)`** returning a new generator with
   `availableSets + extra`. Keeps the generator immutable and the global bean untouched. Tiny, but it
   is what makes the synthetic-`SetConfig` trick safe.
-- [ ] **1.5 — `CubeSetConfig.of(resolvedCube, boosterGenerator)`** building the synthetic
+- [x] **1.5 — `CubeSetConfig.of(resolvedCube, boosterGenerator)`** building the synthetic
   `SetConfig`: `cards` from the cube, `basicLands` from `basicLandSetCode`, `sealedSupported = true`,
   `incomplete = false`, `extensionSet = false`, `variantChance = 0.0`, `boosterStrategy` =
   a strategy that is never actually consulted in cube mode (dealer path) — assert that rather than
@@ -171,26 +171,26 @@ must be inert (not merely ignored) in cube mode.
 
 ## Phase 2 — Lobby wiring (Draft / Winston / Grid / Sealed from a cube)
 
-- [ ] **2.1 — `TournamentLobby` cube fields.** `var cube: ResolvedCube? = null`, a lazily-built
+- [x] **2.1 — `TournamentLobby` cube fields.** `var cube: ResolvedCube? = null`, a lazily-built
   cube-scoped generator, `cubeDealer`, and `packSize`. `val isCube: Boolean get() = cube != null`.
-- [ ] **2.2 — One pack-source helper, five call sites.** Add a private
+- [x] **2.2 — One pack-source helper, five call sites.** Add a private
   `fun packsFor(count: Int): List<List<CardDefinition>>` that deals from `cubeDealer` when
   `isCube`, else delegates to the existing `boosterGenerator` calls. Route `startDeckBuilding`,
   `distributeNewPacks`, `startWinstonDraft`, and `startGridDraft` through it. Resist inventing a
   `PackSource` interface until there is a third source — one nullable field plus one helper covers
   both cases (see `feedback_no_singleuse_patterns`).
-- [ ] **2.3 — Capacity + start-gating.** Reject `startDraft` / `startDeckBuilding` on a cube lobby
+- [x] **2.3 — Capacity + start-gating.** Reject `startDraft` / `startDeckBuilding` on a cube lobby
   when `players × packsPerPlayer × packSize > cube.size`, with a host-readable message
   ("8 players × 3 packs × 15 = 360 cards needed, cube has 313"). Also reject a cube with unresolved
   names.
-- [ ] **2.4 — `UpdateLobbySettings.cubeCards` (+ `cubeName`, `packSize`, `cubeBasicLandSetCode`).**
+- [x] **2.4 — `UpdateLobbySettings.cubeCards` (+ `cubeName`, `packSize`, `cubeBasicLandSetCode`).**
   Full list every time, exactly like `bannedCardNames`. Server resolves and stores; clearing it
   (`[]`) returns the lobby to normal set-based play. Cube lobbies set `setCodes`/`setNames` directly
   and **must not** go through `updateSets`.
-- [ ] **2.5 — Inert-in-cube-mode settings.** `chaosBoosters`, `boosterDistribution`, and the set
+- [x] **2.5 — Inert-in-cube-mode settings.** `chaosBoosters`, `boosterDistribution`, and the set
   picker are meaningless with a cube: reject or ignore them server-side *and* hide them client-side
   (don't leave a control that silently does nothing — see `feedback_suppress_stale_ui_state`).
-- [ ] **2.6 — Broadcast.** Extend the lobby state message with `cubeName` / `cubeCardCount` /
+- [x] **2.6 — Broadcast.** Extend the lobby state message with `cubeName` / `cubeCardCount` /
   `packSize` so joiners and spectators see "Drafting: Vincent's Standard Cube (360)" instead of a
   set name. Do **not** add the cube to `AvailableSet` lists.
 
@@ -198,42 +198,44 @@ must be inert (not merely ignored) in cube mode.
 
 ## Phase 3 — Cube library, import, and editor UI
 
-- [ ] **3.1 — `cubes` table** (new Flyway migration, next free version — `V11` is the highest today):
+- [x] **3.1 — `cubes` table** (Flyway `V12__cubes.sql`):
   `id, user_id → users(id) ON DELETE CASCADE, name, card_count, data TEXT NOT NULL, created_at,
   updated_at` + `idx_cubes_user`. `data` is the cube JSON verbatim; `name`/`card_count` denormalized
   for list views. Straight copy of the `decks` table's shape and rationale.
-- [ ] **3.2 — `CubeRow` + `CubeRepository` + `AccountCubeController`** at `/api/account/cubes`,
+- [x] **3.2 — `CubeRow` + `CubeRepository` + `AccountCubeController`** at `/api/account/cubes`,
   mirroring `AccountDeckController` (Spring Data JDBC, kotlinx.serialization, `?full` list variant,
   every operation scoped to the authenticated user). Gate on
   `@ConditionalOnProperty("accounts.enabled")` like the deck controller.
-- [ ] **3.3 — `cubeLibrary` (localStorage) + `useUnifiedCubes`.** Mirror `banListLibrary.ts` for the
+- [x] **3.3 — `cubeLibrary` (localStorage) + `useUnifiedCubes`.** Mirror `banListLibrary.ts` for the
   guest path and `useUnifiedDecks` for the local+cloud merge, so a guest can still build and use a
   cube without an account.
-- [ ] **3.4 — Cube import.** Reuse `parseArenaDeckList` + the deckbuilder's `resolveAgainstCatalog`,
+- [x] **3.4 — Cube import.** Reuse `parseArenaDeckList` + the deckbuilder's `resolveAgainstCatalog`,
   and reuse the existing coverage readout ("313 matched of 360 (47 placeholder)"). Cube-specific
   addition: since an unresolved cube is unplayable, offer **"Drop the 47 unimplemented cards"** and
   block "Use this cube" until the list resolves cleanly.
-- [ ] **3.5 — Cube editor.** `BanListEditor.tsx` is the closest existing component (catalog search,
+- [x] **3.5 — Cube editor.** `BanListEditor.tsx` is the closest existing component (catalog search,
   chips, save/load named lists) but a 360-card cube needs more: colour/type/CMC curve summary,
   section grouping, and duplicate/count handling. Prefer reusing the deckbuilder's search panel and
   `cardFilter`/`cardGrouping` over growing the ban-list editor.
-- [ ] **3.6 — Lobby host control.** A "Cube" panel next to the set picker: pick a cube from the
+- [x] **3.6 — Lobby host control.** A "Cube" panel next to the set picker: pick a cube from the
   library / paste a list, choose pack size and packs per player, and see the capacity check live
   ("360 cards — seats 8 players at 3×15").
 
 ## Phase 4 — Pool Play (no draft, unlimited copies)
 
-- [ ] **4.1 — `cubePoolPlay: Boolean` lobby flag** (the checkbox). On `startDeckBuilding`, every
+- [x] **4.1 — `cubePoolPlay: Boolean` lobby flag** (shipped as a Sealed-packs / Pool-Play toggle). On `startDeckBuilding`, every
   player's `cardPool` is the **entire cube** and the lobby goes straight to `DECK_BUILDING`. No
   dealer involvement, so the capacity check in 2.3 does not apply — a 100-card cube is a perfectly
   fine Pool Play pool.
-- [ ] **4.2 — Validation.** Reuse the pool validator but drop the "copies available in pool" check;
-  keep min 40 and the copy cap. Default cap: **4 copies** (constructed-normal), with the existing
-  `allowDuplicates`-style host toggle for a singleton house rule. Basics stay unlimited.
-- [ ] **4.3 — Suppress the derived sideboard.** `SideboardDerivation.fromPool(wholeCube, deck)` would
+- [x] **4.2 — Validation.** Reuse the pool validator but drop the "copies available in pool" check;
+  keep min 40 and the copy cap. Cap is **4 copies** (constructed-normal, `POOL_PLAY_COPY_LIMIT`);
+  basics stay unlimited. A host-settable cap / singleton house rule was *not* built — nobody has asked
+  for one, and a toggle with no second value behind it is the kind of setting that later has to be
+  un-shipped. Add it when a group actually wants singleton Pool Play.
+- [x] **4.3 — Suppress the derived sideboard.** `SideboardDerivation.fromPool(wholeCube, deck)` would
   seed a 300+ card SIDEBOARD zone. For Pool Play, submit an empty sideboard (or an explicit
   player-chosen one) — do not derive it from the pool.
-- [ ] **4.4 — Deckbuilder overlay at cube scale.** `DeckBuilderOverlay` renders a sealed pool
+- [x] **4.4 — Deckbuilder overlay at cube scale.** `DeckBuilderOverlay` renders a sealed pool
   (~90 cards, per-copy). A 360-card unlimited-copies pool needs the deckbuilder's search/filter
   ergonomics, not the sealed pool grid. Check performance and the "copies owned" affordance, which is
   meaningless here. **UX-review this flow end to end** (`feedback_ux_review`).
@@ -303,7 +305,8 @@ must be inert (not merely ignored) in cube mode.
 
 ## Open questions
 
-- **Pool Play copy cap:** 4-of (recommended default) vs. singleton vs. host-set number?
+- ~~**Pool Play copy cap:** 4-of vs. singleton vs. host-set number?~~ **Resolved: 4-of, fixed** (see
+  4.2). Revisit only on a real request for singleton Pool Play.
 - **Cube rarity/pack shape:** some cubes want a guaranteed "bomb" slot per pack. Out of scope here —
   worth confirming nobody expects it in v1.
 - **Cube visibility:** are cubes private to their owner, or should there be a public/shared cube
@@ -319,7 +322,7 @@ oracle errata, set registration, and the scenario test). Set codes are the *cano
 printing, per the reprint rule (`just check-card-printing "<Card>"`).
 
 **WOE — Wilds of Eldraine (12)**
-- [ ] Restless Bivouac · Restless Cottage · Restless Fortress · Restless Spire · Restless Vinestalk
+- [x] Restless Bivouac · Restless Cottage · Restless Fortress · Restless Spire · Restless Vinestalk
       *(land cycle — five of the same shape, do them as one batch)*
 - [ ] Torch the Tower *(common instant)* · Royal Treatment *(uncommon instant)*
 - [ ] Syr Ginger, the Meal Ender *(legendary artifact creature)*
@@ -329,16 +332,16 @@ printing, per the reprint rule (`just check-card-printing "<Card>"`).
 
 **MSH — Marvel Super Heroes (12)**
 - [ ] Dark Fortress · Gathering Place · Gleaming Bastion · Hidden Lair · Training Compound *(lands)*
-- [ ] Avengers Disassembled *(rare sorcery)*
+- [x] Avengers Disassembled *(rare sorcery)*
 - [ ] Hawkeye, Master Marksman · The Mighty Thor, Jane Foster · The Unbeatable Squirrel Girl ·
       Shang-Chi, Master of Kung Fu · M.O.D.O.K. *(legendary creatures; M.O.D.O.K. is an artifact creature)*
 - [ ] Jennifer Walters // The Sensational She-Hulk *(transforming DFC, mythic)*
 
-**DFT — Aetherdrift (11)**
-- [ ] Guidelight Optimizer · Nesting Bot · Marketback Walker *(artifact creatures)*
-- [ ] Howlsquad Heavy · Marauding Mako · Webstrike Elite *(creatures)*
-- [ ] Lumbering Worldwagon · Monument to Endurance · Perilous Snare · Repurposing Bay *(artifacts)*
-- [ ] Momentum Breaker *(enchantment)*
+**DFT — Aetherdrift (3)**
+- [x] Guidelight Optimizer · Nesting Bot · Marketback Walker *(artifact creatures)*
+- [ ] Howlsquad Heavy · Webstrike Elite *(creatures — Marauding Mako done)*
+- [ ] Monument to Endurance *(artifact — Lumbering Worldwagon, Perilous Snare, Repurposing Bay done)*
+- [x] Momentum Breaker *(enchantment)*
 
 **SPM — Marvel's Spider-Man (6)**
 - [ ] Arachne, Psionic Weaver · Carnage, Crimson Chaos *(legendary creatures)*

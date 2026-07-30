@@ -368,6 +368,110 @@
     ]
 }
 
+// Alacrian Armory
+{
+    "name": "Alacrian Armory",
+    "manaCost": "{3}{W}",
+    "typeLine": "Artifact",
+    "oracleText": "Creatures you control get +0/+1 and have vigilance.\nAt the beginning of combat on your turn, choose up to one target Mount or Vehicle you control. Until end of turn, that permanent becomes saddled if it's a Mount and becomes an artifact creature if it's a Vehicle.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": "Mount"
+                                }
+                            },
+                            "then": {
+                                "type": "BecomeSaddled",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target Mount or Vehicle you control"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": "Vehicle"
+                                }
+                            },
+                            "then": {
+                                "type": "AddCardType",
+                                "cardType": "CREATURE",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target Mount or Vehicle you control"
+                                },
+                                "duration": "EndOfTurn"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "Mount|Vehicle ctrl:you"
+                    },
+                    "id": "up to one target Mount or Vehicle you control"
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, choose up to one target Mount or Vehicle you control. Until end of turn, that permanent becomes saddled if it's a Mount and becomes an artifact creature if it's a Vehicle."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 0,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "UNCOMMON",
+        "artist": "Artur Nakhodkin",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d39f7f98-ad5e-4e5e-9f7b-abe0984ffe17.jpg?1783907923"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Alacrian Jaguar
 {
     "name": "Alacrian Jaguar",
@@ -1037,6 +1141,109 @@
     "colorIdentityOverride": [
         "BLACK",
         "WHITE"
+    ]
+}
+
+// Boommobile
+{
+    "name": "Boommobile",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "When this Vehicle enters, add four mana of any one color. Spend this mana only to activate abilities.\nExhaust — {X}{2}{R}: This Vehicle deals X damage to any target. Put a +1/+1 counter on this Vehicle. (Activate each exhaust ability only once.)\nCrew 2",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "restriction": "AbilityActivationOnly"
+                },
+                "descriptionOverride": "When this Vehicle enters, add four mana of any one color. Spend this mana only to activate abilities."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{X}{2}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": "XValue",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "This Vehicle deals X damage to any target. Put a +1/+1 counter on this Vehicle.",
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "113",
+        "rarity": "RARE",
+        "artist": "Alexandr Leskinen",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/930c8289-4043-401a-8a7f-22349b7148b4.jpg?1783907886",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "You may spend the four mana added by the first ability on the same ability or on multiple abilities."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -1924,6 +2131,130 @@
     "colorIdentityOverride": []
 }
 
+// Caradora, Heart of Alacria
+{
+    "name": "Caradora, Heart of Alacria",
+    "manaCost": "{2}{G}{W}",
+    "typeLine": "Legendary Creature — Human Knight",
+    "oracleText": "When Caradora enters, you may search your library for a Mount or Vehicle card, reveal it, put it into your hand, then shuffle.\nIf one or more +1/+1 counters would be put on a creature or Vehicle you control, that many plus one +1/+1 counters are put on it instead.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "HasAnyOfSubtypes",
+                                            "subtypes": [
+                                                "Mount",
+                                                "Vehicle"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "descriptionOverride": "When Caradora enters, you may search your library for a Mount or Vehicle card, reveal it, put it into your hand, then shuffle."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "ModifyCounterPlacement",
+                "appliesTo": {
+                    "type": "CounterPlacementEvent",
+                    "counterType": "PlusOnePlusOne",
+                    "recipient": {
+                        "type": "RecipientMatching",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        "IsCreature",
+                                        {
+                                            "type": "And",
+                                            "predicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Vehicle"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ],
+                            "controllerPredicate": "ControlledByYou"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "RARE",
+        "artist": "Mirko Failoni",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/1256d22d-a2a9-41fb-b669-0661ba230bc7.jpg?1783907860",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If a creature or Vehicle you control would enter the battlefield with a number of +1/+1 counters on it, it enters with that many plus one instead."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If you somehow control multiple copies of Caradora, they would each increase the number of +1/+1 counters put on a creature or Vehicle you control by one."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Carrion Cruiser
 {
     "name": "Carrion Cruiser",
@@ -2161,6 +2492,121 @@
     "colorIdentityOverride": [
         "RED",
         "WHITE"
+    ]
+}
+
+// Coalstoke Gearhulk
+{
+    "name": "Coalstoke Gearhulk",
+    "manaCost": "{1}{B}{B}{R}{R}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Menace, deathtouch\nWhen this creature enters, put target creature card with mana value 4 or less from a graveyard onto the battlefield under your control with a finality counter on it. That creature gains menace, deathtouch, and haste. At the beginning of your next end step, exile that creature.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card with mana value 4 or less in a graveyard"
+                            },
+                            "destination": "Battlefield",
+                            "controllerOverride": "Controller",
+                            "addCounterType": "FINALITY"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card with mana value 4 or less in a graveyard"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "DEATHTOUCH",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card with mana value 4 or less in a graveyard"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card with mana value 4 or less in a graveyard"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature card with mana value 4 or less in a graveyard"
+                                },
+                                "destination": "Exile"
+                            },
+                            "timing": "NextEndStep",
+                            "fireOnPlayer": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature mv<=4",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card with mana value 4 or less in a graveyard"
+                },
+                "descriptionOverride": "When this creature enters, put target creature card with mana value 4 or less from a graveyard onto the battlefield under your control with a finality counter on it. That creature gains menace, deathtouch, and haste. At the beginning of your next end step, exile that creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "198",
+        "rarity": "MYTHIC",
+        "artist": "Nino Vecia",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73431628-b9b0-41e6-8e9b-8a090939b0c1.jpg?1783907861",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Finality counters work on any permanent, not only creatures. If a permanent with a finality counter on it would be put into a graveyard from the battlefield, exile it instead."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Multiple finality counters on a single permanent are redundant."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -3616,6 +4062,155 @@
     ]
 }
 
+// Fearless Swashbuckler
+{
+    "name": "Fearless Swashbuckler",
+    "manaCost": "{1}{U}{R}",
+    "typeLine": "Creature — Fish Pirate",
+    "oracleText": "Haste\nVehicles you control have haste.\nWhenever you attack, if a Pirate and a Vehicle attacked this combat, draw three cards, then discard two cards.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 2 cards to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsCreature",
+                                        {
+                                            "type": "HasSubtype",
+                                            "subtype": "Pirate"
+                                        }
+                                    ],
+                                    "statePredicates": [
+                                        "AttackedThisCombat"
+                                    ]
+                                }
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "HasSubtype",
+                                            "subtype": "Vehicle"
+                                        }
+                                    ],
+                                    "statePredicates": [
+                                        "AttackedThisCombat"
+                                    ]
+                                }
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you attack, if a Pirate and a Vehicle attacked this combat, draw three cards, then discard two cards."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE",
+                "filter": {
+                    "baseFilter": "Vehicle ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "204",
+        "rarity": "RARE",
+        "artist": "Konstantin Porubov",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0d86d66b-481f-44ec-86d8-6fc91b52ef38.jpg?1783907859",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If you attack with a single creature that is both a Pirate and a Vehicle, the last ability triggers."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Flood the Engine
 {
     "name": "Flood the Engine",
@@ -3746,6 +4341,94 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Gas Guzzler
+{
+    "name": "Gas Guzzler",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Vampire Rogue",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nThis creature enters tapped.\nMax speed — {B}, Sacrifice another creature or Vehicle: Draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature|Vehicle",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Max speed — {B}, Sacrifice another creature or Vehicle: Draw a card"
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "rarity": "RARE",
+        "artist": "Yohann Schepacz",
+        "flavorText": "Gastal's vampires took fuel from the dead.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/d/4db3a28c-e4b4-4b18-8d56-e3842184d105.jpg?1783907896",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "\"Max speed — [ability]\" means \"As long as you have max speed, this object has [ability].\" If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -3958,6 +4641,102 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Gastal Thrillroller
+{
+    "name": "Gastal Thrillroller",
+    "manaCost": "{2}{R}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Trample, haste\nWhen this Vehicle enters, it becomes an artifact creature until end of turn.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)\n{2}{R}, Discard a card: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HASTE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "When this Vehicle enters, it becomes an artifact creature until end of turn."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{R}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Battlefield"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "finality",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "{2}{R}, Discard a card: Return this card from your graveyard to the battlefield with a finality counter on it"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "rarity": "RARE",
+        "artist": "Caio Monteiro",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d8b1762b-ff03-4312-afcc-cb6b5f280ade.jpg?1783907881"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -4917,6 +5696,115 @@
     ]
 }
 
+// Guidelight Pathmaker
+{
+    "name": "Guidelight Pathmaker",
+    "manaCost": "{4}{W}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Vigilance\nWhen this Vehicle enters, you may search your library for an artifact card and reveal it. Put it onto the battlefield if its mana value is 2 or less. Otherwise, put it into your hand. If you search your library this way, shuffle.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "artifact"
+                                },
+                                "storeAs": "gathered0"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "gathered0",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "selected1",
+                                "prompt": "Search for an artifact card"
+                            },
+                            {
+                                "type": "RevealCollection",
+                                "from": "selected1"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "selected1",
+                                "ifNotEmpty": {
+                                    "type": "MoveCollection",
+                                    "from": "selected1",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Battlefield"
+                                    }
+                                },
+                                "ifEmpty": {
+                                    "type": "MoveCollection",
+                                    "from": "selected1",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Hand"
+                                    }
+                                },
+                                "filter": "mv<=2"
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this Vehicle enters, you may search your library for an artifact card and reveal it. Put it onto the battlefield if its mana value is 2 or less. Otherwise, put it into your hand. If you search your library this way, shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "206",
+        "rarity": "UNCOMMON",
+        "artist": "Stephan Martiniere",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b2e00cd7-925e-4bab-b064-c96aa2935f8c.jpg?1783907857",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Guidelight Pathmaker has received an update to its Oracle text. Specifically, you'll only shuffle if you choose to search your library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Guidelight Synergist
 {
     "name": "Guidelight Synergist",
@@ -5170,6 +6058,110 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Hazoret, Godseeker
+{
+    "name": "Hazoret, Godseeker",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — God",
+    "oracleText": "Indestructible, haste\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{1}, {T}: Target creature with power 2 or less can't be blocked this turn.\nHazoret can't attack or block unless you have max speed.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "keywords": [
+        "INDESTRUCTIBLE",
+        "HASTE",
+        "START_YOUR_ENGINES"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature pow<=2"
+                        },
+                        "id": "creature"
+                    }
+                ],
+                "descriptionOverride": "Target creature with power 2 or less can't be blocked this turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantAttackUnless",
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            },
+            {
+                "type": "CantBlockUnless",
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "133",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rallis",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2f66043-0872-4334-a91f-0e9bbbdddf66.jpg?1783907881",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Hazoret's activated ability must be used prior to declaring blockers to be effective. Activating it targeting a creature that has already been blocked will not cause that creature to become unblocked."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "After the activated ability resolves, the creature can't be blocked this turn even if its power later increases to 3 or greater."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -5821,6 +6813,174 @@
     ]
 }
 
+// Kolodin, Triumph Caster
+{
+    "name": "Kolodin, Triumph Caster",
+    "manaCost": "{R}{W}",
+    "typeLine": "Legendary Creature — Human Pilot",
+    "oracleText": "Mounts and Vehicles you control have haste.\nWhenever a Mount you control enters, it becomes saddled until end of turn.\nWhenever a Vehicle you control enters, it becomes an artifact creature until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Mount ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "BecomeSaddled",
+                    "target": "TriggeringEntity"
+                },
+                "descriptionOverride": "Whenever a Mount you control enters, it becomes saddled until end of turn."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Vehicle ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCardType",
+                    "cardType": "Creature",
+                    "target": "TriggeringEntity",
+                    "duration": "EndOfTurn"
+                },
+                "descriptionOverride": "Whenever a Vehicle you control enters, it becomes an artifact creature until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsPermanent",
+                            {
+                                "type": "HasAnyOfSubtypes",
+                                "subtypes": [
+                                    "Mount",
+                                    "Vehicle"
+                                ]
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "rarity": "RARE",
+        "artist": "Michal Ivan",
+        "flavorText": "\"Stay in formation! We win this together, or not at all.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/36bcd476-a236-4434-b191-5c8b6fa7be7b.jpg?1783907857"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
+// Lagorin, Soul of Alacria
+{
+    "name": "Lagorin, Soul of Alacria",
+    "manaCost": "{G}{W}",
+    "typeLine": "Legendary Creature — Beast Mount",
+    "oracleText": "Flying\nWhenever Lagorin attacks while saddled, put a +1/+1 counter on each of up to two target Mounts and/or Vehicles.\nSaddle 1 (Tap any number of other creatures you control with total power 1 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "SADDLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "SADDLE",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 2,
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsPermanent",
+                                {
+                                    "type": "HasAnyOfSubtypes",
+                                    "subtypes": [
+                                        "Mount",
+                                        "Vehicle"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "id": "two target Mounts and/or Vehicles"
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsSaddled"
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever Lagorin attacks while saddled, put a +1/+1 counter on each of up to two target Mounts and/or Vehicles."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "rarity": "UNCOMMON",
+        "artist": "Mirko Failoni",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/b/7b04e3f4-103b-4845-b3f0-5417971c7666.jpg?1783907856",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "An ability that triggers when a creature \"attacks while saddled\" will trigger only if that creature was saddled when it was declared as an attacker."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Leonin Surveyor
 {
     "name": "Leonin Surveyor",
@@ -5951,6 +7111,70 @@
     ]
 }
 
+// Lightwheel Enhancements
+{
+    "name": "Lightwheel Enhancements",
+    "manaCost": "{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature or Vehicle\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nEnchanted permanent gets +1/+1 and has vigilance.\nMax speed — You may cast this card from your graveyard.",
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            },
+            {
+                "type": "MayCastSelfFromZones",
+                "zones": [
+                    "Graveyard"
+                ],
+                "condition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature|Vehicle"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "artist": "Yeong-Hao Han",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/a/9ab169c1-4e25-4a5d-8961-4f06298c3781.jpg?1783907917",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "\"Max speed — [ability]\" means \"As long as you have max speed, this object has [ability].\" If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Locust Spray
 {
     "name": "Locust Spray",
@@ -5998,6 +7222,141 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Loot, the Pathfinder
+{
+    "name": "Loot, the Pathfinder",
+    "manaCost": "{2}{G}{U}{R}",
+    "typeLine": "Legendary Creature — Beast Noble",
+    "oracleText": "Double strike, vigilance, haste\nExhaust — {G}, {T}: Add three mana of any one color. (Activate each exhaust ability only once.)\nExhaust — {U}, {T}: Draw three cards.\nExhaust — {R}, {T}: Loot deals 3 damage to any target.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "DOUBLE_STRIKE",
+        "VIGILANCE",
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    "Once"
+                ],
+                "isManaAbility": true,
+                "isExhaust": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isExhaust": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "target"
+                    }
+                ],
+                "restrictions": [
+                    "Once"
+                ],
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "212",
+        "rarity": "MYTHIC",
+        "artist": "Ernanda Souza",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33c59c04-4c0b-4a60-826e-3a7757d0b2a2.jpg?1783907856",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Exhaust abilities can be activated any time you could normally activate an ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED",
+        "BLUE"
     ]
 }
 
@@ -6132,6 +7491,141 @@
     ]
 }
 
+// Lumbering Worldwagon
+{
+    "name": "Lumbering Worldwagon",
+    "manaCost": "{2}{G}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "This Vehicle's power is equal to the number of lands you control.\nWhenever this Vehicle enters or attacks, you may search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\nCrew 4",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "land"
+            }
+        },
+        "toughness": 4
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 4
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield",
+                                    "placement": "Tapped"
+                                }
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield",
+                                    "placement": "Tapped"
+                                }
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "rarity": "RARE",
+        "artist": "Raph Lomotan",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9f989c59-7b2a-4036-9ea2-cd0c7e85c15b.jpg?1783907870"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Magmakin Artillerist
 {
     "name": "Magmakin Artillerist",
@@ -6248,6 +7742,77 @@
     ]
 }
 
+// March of the World Ooze
+{
+    "name": "March of the World Ooze",
+    "manaCost": "{3}{G}{G}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Creatures you control have base power and toughness 6/6 and are Oozes in addition to their other types.\nWhenever an opponent casts a spell, if it's not their turn, you create a 3/3 green Elephant creature token.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Elephant"
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "IsPlayersTurn",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever an opponent casts a spell, if it's not their turn, you create a 3/3 green Elephant creature token."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CompositeStaticAbility",
+                "abilities": [
+                    {
+                        "type": "SetBasePowerToughnessStatic",
+                        "power": 6,
+                        "toughness": 6,
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    {
+                        "type": "GrantSubtype",
+                        "subtype": "Ooze",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "169",
+        "rarity": "MYTHIC",
+        "artist": "Helge C. Balzer",
+        "flavorText": "\"The fauna here functions as a planar antibody.\"\n—Rashmi, aether-seer",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/1/b1964ec5-0dd1-4b54-917c-cbeab05aba79.jpg?1783907868"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Marketback Walker
 {
     "name": "Marketback Walker",
@@ -6311,6 +7876,129 @@
         "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2152030-6007-493f-a616-545723a00249.jpg?1783907848"
     },
     "colorIdentityOverride": []
+}
+
+// Marshals' Pathcruiser
+{
+    "name": "Marshals' Pathcruiser",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "When this Vehicle enters, search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nExhaust — {W}{U}{B}{R}{G}: This Vehicle becomes an artifact creature. Put two +1/+1 counters on it. (Activate each exhaust ability only once.)\nCrew 5 (Tap any number of creatures you control with total power 5 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 5
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}{U}{B}{R}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "BecomeCreature",
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 6
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 5
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 2,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Exhaust — {W}{U}{B}{R}{G}: This Vehicle becomes an artifact creature. Put two +1/+1 counters on it.",
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "236",
+        "rarity": "UNCOMMON",
+        "artist": "Javier Charro",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f920f83-6380-4e4f-be68-6bf9df3110d8.jpg?1783907847"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
 }
 
 // Maximum Overdrive
@@ -6653,6 +8341,125 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Momentum Breaker
+{
+    "name": "Momentum Breaker",
+    "manaCost": "{1}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nWhen this enchantment enters, each opponent sacrifices a creature or Vehicle of their choice. Each opponent who can't discards a card.\n{2}, Sacrifice this enchantment: You gain life equal to your speed.",
+    "keywords": [
+        "START_YOUR_ENGINES"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.WhenCondition",
+                            "condition": {
+                                "type": "Exists",
+                                "player": "You",
+                                "zone": "Battlefield",
+                                "filter": "creature|Vehicle"
+                            }
+                        },
+                        "then": {
+                            "type": "ForceSacrifice",
+                            "filter": "creature|Vehicle",
+                            "target": "Controller"
+                        },
+                        "otherwise": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": "Speed"
+                },
+                "descriptionOverride": "{2}, Sacrifice this enchantment: You gain life equal to your speed."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "rarity": "UNCOMMON",
+        "artist": "Dmitry Burmak",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/38513b53-384f-45e7-9905-80dd2c3c4918.jpg?1783907891",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If an effect needs to know what a player's speed is and that player doesn't have a speed, their speed is considered 0."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -7174,6 +8981,116 @@
     ]
 }
 
+// Outpace Oblivion
+{
+    "name": "Outpace Oblivion",
+    "manaCost": "{2}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nWhen this enchantment enters, it deals 5 damage to up to one target creature or planeswalker.\n{2}, Sacrifice this enchantment: It deals 2 damage to each player who doesn't have max speed.",
+    "keywords": [
+        "START_YOUR_ENGINES"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature or planeswalker"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetCreatureOrPlaneswalker",
+                    "optional": true,
+                    "id": "up to one target creature or planeswalker"
+                },
+                "descriptionOverride": "When this enchantment enters, it deals 5 damage to up to one target creature or planeswalker."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "Each"
+                    },
+                    "body": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.WhenCondition",
+                            "condition": {
+                                "type": "Not",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": "Speed",
+                                    "operator": "EQ",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 4
+                                    }
+                                }
+                            }
+                        },
+                        "then": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": "Controller"
+                        }
+                    }
+                },
+                "descriptionOverride": "{2}, Sacrifice this enchantment: It deals 2 damage to each player who doesn't have max speed."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "rarity": "UNCOMMON",
+        "artist": "Raymond Swanland",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c22e415f-636f-4394-9b21-600ab720ac98.jpg?1783907878",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If an effect needs to know what a player's speed is and that player doesn't have a speed, their speed is considered 0."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Pacesetter Paragon
 {
     "name": "Pacesetter Paragon",
@@ -7600,6 +9517,100 @@
     ]
 }
 
+// Possession Engine
+{
+    "name": "Possession Engine",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "When this Vehicle enters, gain control of target creature an opponent controls for as long as you control this Vehicle. That creature can't attack or block for as long as you control this Vehicle.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 3
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainControl",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            },
+                            "duration": {
+                                "type": "WhileYouControlSource",
+                                "sourceDescription": "this Vehicle"
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "CantAttack",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature an opponent controls"
+                                    },
+                                    "duration": {
+                                        "type": "WhileYouControlSource",
+                                        "sourceDescription": "this Vehicle"
+                                    }
+                                },
+                                {
+                                    "type": "CantBlockTargetCreatures",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature an opponent controls"
+                                    },
+                                    "duration": {
+                                        "type": "WhileYouControlSource",
+                                        "sourceDescription": "this Vehicle"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                },
+                "descriptionOverride": "When this Vehicle enters, gain control of target creature an opponent controls for as long as you control this Vehicle. That creature can't attack or block for as long as you control this Vehicle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "rarity": "RARE",
+        "artist": "Leroy Steinmann",
+        "flavorText": "\"Here's a tip: If your ride needs souls for fuel, make sure to always keep one handy.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f206b0a1-50d8-4d53-850d-fb15fd328267.jpg?1783907906"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Pothole Mole
 {
     "name": "Pothole Mole",
@@ -7801,6 +9812,103 @@
         "artist": "Konstantin Porubov",
         "flavorText": "\"Don't you know it's dangerous to go faster than us?\"",
         "imageUri": "https://cards.scryfall.io/normal/front/a/f/affbc8db-4ff7-4a86-954a-910493e5a2ef.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Push the Limit
+{
+    "name": "Push the Limit",
+    "manaCost": "{5}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return all Mount and Vehicle cards from your graveyard to the battlefield. Sacrifice them at the beginning of the next end step.\nVehicles you control become artifact creatures until end of turn. Creatures you control gain haste until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Graveyard",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "HasAnyOfSubtypes",
+                                    "subtypes": [
+                                        "Mount",
+                                        "Vehicle"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "storeAs": "wrecks"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "wrecks",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "storeMovedAs": "returned",
+                    "underOwnersControl": true
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "returned"
+                    },
+                    "body": {
+                        "type": "CreateDelayedTrigger",
+                        "step": "END",
+                        "effect": {
+                            "type": "SacrificeTarget",
+                            "target": "Self"
+                        }
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "permanent Vehicle ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "AddCardType",
+                        "cardType": "Creature",
+                        "target": "Self",
+                        "duration": "EndOfTurn"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "HASTE",
+                        "target": "Self"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "rarity": "UNCOMMON",
+        "artist": "Alexander Mokhov",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/21de84a2-2654-4e1a-a569-bf385bb43685.jpg?1783907878"
     },
     "colorIdentityOverride": [
         "RED"
@@ -8108,6 +10216,116 @@
     ]
 }
 
+// Repurposing Bay
+{
+    "name": "Repurposing Bay",
+    "manaCost": "{2}{U}",
+    "typeLine": "Artifact",
+    "oracleText": "{2}, {T}, Sacrifice another artifact: Search your library for an artifact card with mana value equal to 1 plus the sacrificed artifact's mana value, put that card onto the battlefield, then shuffle. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "artifact"
+                            },
+                            "storeAs": "libraryArtifacts"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "libraryArtifacts",
+                            "filter": {
+                                "type": "ManaValueEquals",
+                                "value": {
+                                    "type": "Add",
+                                    "left": {
+                                        "type": "EntityProperty",
+                                        "entity": "Sacrificed",
+                                        "numericProperty": "ManaValue"
+                                    },
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            },
+                            "storeMatching": "candidates"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "candidates",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{2}, {T}, Sacrifice another artifact: Search your library for an artifact card with mana value equal to 1 plus the sacrificed artifact's mana value, put that card onto the battlefield, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "rarity": "RARE",
+        "artist": "William Tempest",
+        "flavorText": "By the end of the race, few of the Aether Rangers' vehicles resembled what they started as.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0cf1ace1-b7f5-4bd9-a494-ee7cb6c1f854.jpg?1783907906",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If there's an {X} in the sacrificed artifact's mana cost, X is 0 when determining its mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Ride's End
 {
     "name": "Ride's End",
@@ -8241,6 +10459,61 @@
     ]
 }
 
+// Riptide Gearhulk
+{
+    "name": "Riptide Gearhulk",
+    "manaCost": "{1}{W}{W}{U}{U}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Double strike\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nWhen this creature enters, for each opponent, put up to one target nonland permanent that player controls into its owner's library third from the top.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "keywords": [
+        "DOUBLE_STRIKE",
+        "PROWESS"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nonland permanent that player controls"
+                    },
+                    "destination": "Library",
+                    "positionFromTop": 2
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "nonland permanent ctrl:opponent"
+                    },
+                    "id": "target nonland permanent that player controls"
+                },
+                "descriptionOverride": "When this creature enters, for each opponent, put up to one target nonland permanent that player controls into its owner's library third from the top."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "MYTHIC",
+        "artist": "Artur Nakhodkin",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44bfb0f7-18ca-4f6e-ba64-92120010456e.jpg?1783907853"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Risen Necroregent
 {
     "name": "Risen Necroregent",
@@ -8339,6 +10612,171 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Riverchurn Monument
+{
+    "name": "Riverchurn Monument",
+    "manaCost": "{1}{U}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, {T}: Any number of target players each mill two cards.\nExhaust — {2}{U}{U}, {T}: Any number of target players each mill cards equal to the number of cards in their graveyard. (Activate each exhaust ability only once.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    },
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    },
+                                    "isMill": true
+                                },
+                                "storeAs": "milled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "milled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "unlimited": true,
+                        "id": "any number of target players"
+                    }
+                ],
+                "descriptionOverride": "{1}, {T}: Any number of target players each mill two cards."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{U}{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "AggregateZone",
+                                        "player": {
+                                            "type": "ContextPlayer",
+                                            "index": 0
+                                        },
+                                        "zone": "Graveyard"
+                                    },
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    },
+                                    "isMill": true
+                                },
+                                "storeAs": "milled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "milled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "unlimited": true,
+                        "id": "any number of target players"
+                    }
+                ],
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Exhaust — {2}{U}{U}, {T}: Any number of target players each mill cards equal to the number of cards in their graveyard.",
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "rarity": "RARE",
+        "artist": "Anthony Devine",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e66ff696-fd39-49ad-9ee5-c0868167df37.jpg?1783907906",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Exhaust abilities can be activated any time you could normally activate an ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an ability triggers whenever you activate an exhaust ability, that ability resolves before the exhaust ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -8441,6 +10879,169 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Roadside Blowout
+{
+    "name": "Roadside Blowout",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "This spell costs {2} less to cast if it targets a permanent with mana value 1.\nReturn target creature or Vehicle an opponent controls to its owner's hand.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or Vehicle an opponent controls"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|Vehicle ctrl:opponent"
+                },
+                "id": "target creature or Vehicle an opponent controls"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "FixedIfAnyTargetMatches",
+                        "amount": 2,
+                        "filter": "permanent mv=1"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "UNCOMMON",
+        "artist": "Michele Giorgi",
+        "flavorText": "\"In cases of extreme emergency, just wing it.\"\n—Rocketeer safety manual, full text",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6153a76-56f7-46ee-bba5-b62c0143388a.jpg?1783907905",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If there's an {X} in a permanent's mana cost, X is 0 when determining its mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Rocketeer Boostbuggy
+{
+    "name": "Rocketeer Boostbuggy",
+    "manaCost": "{R}{G}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Whenever this Vehicle attacks, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nExhaust — {3}: This Vehicle becomes an artifact creature. Put a +1/+1 counter on it. (Activate each exhaust ability only once.)\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "BecomeCreature",
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Exhaust — {3}: This Vehicle becomes an artifact creature. Put a +1/+1 counter on it.",
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Seaman",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4c80c91e-dd3d-4c7b-89e4-bfb253eeaee2.jpg?1783907853",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Exhaust abilities can be activated any time you could normally activate an ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
     ]
 }
 
@@ -8606,6 +11207,114 @@
     ]
 }
 
+// Sab-Sunen, Luxa Embodied
+{
+    "name": "Sab-Sunen, Luxa Embodied",
+    "manaCost": "{3}{G}{U}",
+    "typeLine": "Legendary Creature — God",
+    "oracleText": "Reach, trample, indestructible\nSab-Sunen can't attack or block unless it has an even number of counters on it. (Zero is even.)\nAt the beginning of your first main phase, put a +1/+1 counter on Sab-Sunen. Then if it has an odd number of counters on it, draw two cards.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "REACH",
+        "TRAMPLE",
+        "INDESTRUCTIBLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "PRECOMBAT_MAIN"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "NumberMatches",
+                                    "amount": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": {
+                                            "type": "CounterCount",
+                                            "counterType": "CounterAny"
+                                        }
+                                    },
+                                    "property": "Odd"
+                                }
+                            },
+                            "then": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your first main phase, put a +1/+1 counter on Sab-Sunen. Then if it has an odd number of counters on it, draw two cards."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantAttackUnless",
+                "condition": {
+                    "type": "NumberMatches",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": "CounterAny"
+                        }
+                    },
+                    "property": "Even"
+                }
+            },
+            {
+                "type": "CantBlockUnless",
+                "condition": {
+                    "type": "NumberMatches",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": "CounterAny"
+                        }
+                    },
+                    "property": "Even"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "221",
+        "rarity": "MYTHIC",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2ef555b1-666d-4386-8983-0e88f9b6cdec.jpg?1783907852"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Sabotage Strategist
 {
     "name": "Sabotage Strategist",
@@ -8758,6 +11467,72 @@
         "imageUri": "https://cards.scryfall.io/normal/front/3/4/34ed1bf2-0f3c-4528-b570-e5bdcd7ffda9.jpg"
     },
     "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Samut, the Driving Force
+{
+    "name": "Samut, the Driving Force",
+    "manaCost": "{3}{R}{G}{W}",
+    "typeLine": "Legendary Creature — Human Warrior Cleric",
+    "oracleText": "First strike, vigilance, haste\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nOther creatures you control get +X/+0, where X is your speed.\nNoncreature spells you cast cost {X} less to cast, where X is your speed.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "FIRST_STRIKE",
+        "VIGILANCE",
+        "HASTE",
+        "START_YOUR_ENGINES"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "creature ctrl:you",
+                    "excludeSelf": true
+                },
+                "powerBonus": "Speed",
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            },
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "noncreature"
+                },
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": "YourSpeed"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "222",
+        "rarity": "RARE",
+        "artist": "Chris Rallis",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8efd8222-5c37-46d8-a2ec-1d7aae25320b.jpg?1783907852",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If an effect needs to know what a player's speed is and that player doesn't have a speed, their speed is considered 0."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Start your engines! isn't a triggered ability. Increasing your speed to 1 is something that happens as a state-based action as soon as you control a permanent with the ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN",
         "WHITE"
     ]
 }
@@ -9025,6 +11800,94 @@
     ]
 }
 
+// Sita Varma, Masked Racer
+{
+    "name": "Sita Varma, Masked Racer",
+    "manaCost": "{G}{U}",
+    "typeLine": "Legendary Creature — Human Rogue",
+    "oracleText": "Exhaust — {X}{G}{G}{U}: Put X +1/+1 counters on Sita Varma. Then you may have the base power and toughness of each other creature you control become equal to Sita Varma's power until end of turn. (Activate each exhaust ability only once.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{X}{G}{G}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddDynamicCounters",
+                            "counterType": "+1/+1",
+                            "amount": "XValue",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": "Gate.MayDecide",
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you",
+                                        "excludeSelf": true
+                                    }
+                                },
+                                "body": {
+                                    "type": "SetBaseStats",
+                                    "target": "Self",
+                                    "power": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": "Power"
+                                    },
+                                    "toughness": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": "Power"
+                                    },
+                                    "duration": "EndOfTurn"
+                                }
+                            },
+                            "descriptionOverride": "You may have the base power and toughness of each other creature you control become equal to Sita Varma's power until end of turn."
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Exhaust — {X}{G}{G}{U}: Put X +1/+1 counters on Sita Varma. Then you may have the base power and toughness of each other creature you control become equal to Sita Varma's power until end of turn.",
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "223",
+        "rarity": "RARE",
+        "artist": "Kai Carpenter",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/b/eb523c06-6f3e-4e19-b777-19aefc4a4e02.jpg?1783907851",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Skybox Ferry
 {
     "name": "Skybox Ferry",
@@ -9248,6 +12111,93 @@
     ]
 }
 
+// Slick Imitator
+{
+    "name": "Slick Imitator",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Ooze",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — {1}, Sacrifice this creature: Copy target spell you control. You may choose new targets for the copy. (A copy of a permanent spell becomes a token.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "CopyTargetSpell",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target spell you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "ctrl:you",
+                            "zone": "Stack"
+                        },
+                        "id": "target spell you control"
+                    }
+                ],
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "Speed",
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Max speed — {1}, Sacrifice this creature: Copy target spell you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "UNCOMMON",
+        "artist": "Xabi Gaztelua",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/e/3e86ef50-4939-4e7c-853d-438f0f3e0411.jpg?1783907902",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "\"Max speed — [ability]\" means \"As long as you have max speed, this object has [ability].\" If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Spectacular Pileup
 {
     "name": "Spectacular Pileup",
@@ -9386,6 +12336,109 @@
     ]
 }
 
+// Spikeshell Harrier
+{
+    "name": "Spikeshell Harrier",
+    "manaCost": "{4}{U}",
+    "typeLine": "Artifact Creature — Robot Turtle",
+    "oracleText": "When this creature enters, return target creature or Vehicle an opponent controls to its owner's hand. If that opponent's speed is greater than each other player's speed, reduce that opponent's speed by 1. This effect can't reduce their speed below 1.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature or Vehicle an opponent controls"
+                            },
+                            "destination": "Hand"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "CountPlayersWith",
+                                        "scope": "Each",
+                                        "condition": {
+                                            "type": "Compare",
+                                            "left": "Speed",
+                                            "operator": "GTE",
+                                            "right": {
+                                                "type": "Speed",
+                                                "player": {
+                                                    "type": "ControllerOf",
+                                                    "targetDescription": "target creature or Vehicle an opponent controls"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "operator": "EQ",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "ChangeSpeed",
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": {
+                                        "type": "ControllerOf",
+                                        "targetDescription": "target creature or Vehicle an opponent controls"
+                                    }
+                                },
+                                "amount": {
+                                    "type": "Multiply",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "multiplier": -1
+                                },
+                                "minimum": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature|Vehicle ctrl:opponent"
+                    },
+                    "id": "target creature or Vehicle an opponent controls"
+                },
+                "descriptionOverride": "When this creature enters, return target creature or Vehicle an opponent controls to its owner's hand. If that opponent's speed is greater than each other player's speed, reduce that opponent's speed by 1. This effect can't reduce their speed below 1."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "rarity": "UNCOMMON",
+        "artist": "Alfonso Santano",
+        "flavorText": "\"Target acquired. Resolution: Imminent impact.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f1ece22-ca32-45bb-b5f4-480f9b366cb5.jpg?1783907901"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Spin Out
 {
     "name": "Spin Out",
@@ -9420,6 +12473,92 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Spire Mechcycle
+{
+    "name": "Spire Mechcycle",
+    "manaCost": "{4}{R}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Haste\nExhaust — Tap another untapped Mount or Vehicle you control: This Vehicle becomes an artifact creature. Put a +1/+1 counter on it for each Mount and/or Vehicle you control other than this Vehicle. (Activate each exhaust ability only once.)\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "HASTE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "filter": "Mount|Vehicle",
+                        "excludeSelf": true
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "BecomeCreature",
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 5
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 4
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "AddDynamicCounters",
+                            "counterType": "+1/+1",
+                            "amount": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "Mount|Vehicle",
+                                "excludeSelf": true
+                            },
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Exhaust — Tap another untapped Mount or Vehicle you control: This Vehicle becomes an artifact creature. Put a +1/+1 counter on it for each Mount and/or Vehicle you control other than this Vehicle.",
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "rarity": "UNCOMMON",
+        "artist": "Adam Volker",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f483debe-9c54-4323-aec5-226587ece2c9.jpg?1783907876",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -10119,6 +13258,129 @@
     ]
 }
 
+// The Speed Demon
+{
+    "name": "The Speed Demon",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Legendary Creature — Demon",
+    "oracleText": "Flying, trample\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nAt the beginning of your end step, you draw X cards and lose X life, where X is your speed.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE",
+        "START_YOUR_ENGINES"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": "Speed"
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": "Speed",
+                            "target": "Controller"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your end step, you draw X cards and lose X life, where X is your speed."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "rarity": "MYTHIC",
+        "artist": "Helge C. Balzer",
+        "flavorText": "Caution is for those who falter.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/62242a80-0444-4a0e-a868-97eabcc77648.jpg?1783907890",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If an effect needs to know what a player's speed is and that player doesn't have a speed, their speed is considered 0."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Start your engines! isn't a triggered ability. Increasing your speed to 1 is something that happens as a state-based action as soon as you control a permanent with the ability. Notably, this includes gaining control of a permanent with the ability that another player controls."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Thopter Fabricator
+{
+    "name": "Thopter Fabricator",
+    "manaCost": "{2}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Flying\nWhenever you draw your second card each turn, create a 1/1 colorless Thopter artifact creature token with flying.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Thopter"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/d/3/d38fc294-ad86-441e-96fe-4ca286a11218.jpg?1783907677",
+                    "artifactToken": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "rarity": "RARE",
+        "artist": "Racrufi",
+        "flavorText": "Take flight on the wings of true innovation.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/8924b785-b140-4212-a1eb-a10340e09fea.jpg?1783907901"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Thunderhead Gunner
 {
     "name": "Thunderhead Gunner",
@@ -10227,6 +13489,62 @@
     },
     "colorIdentityOverride": [
         "BLACK",
+        "GREEN"
+    ]
+}
+
+// Thunderous Velocipede
+{
+    "name": "Thunderous Velocipede",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Trample\nEach other Vehicle and creature you control enters with an additional +1/+1 counter on it if its mana value is 4 or less. Otherwise, it enters with three additional +1/+1 counters on it.\nCrew 3",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "TRAMPLE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 3
+        }
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 1,
+                "otherOnly": true,
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature|Vehicle mv<=4 ctrl:you",
+                    "to": "Battlefield"
+                }
+            },
+            {
+                "type": "EntersWithCounters",
+                "count": 3,
+                "otherOnly": true,
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature|Vehicle mv>=5 ctrl:you",
+                    "to": "Battlefield"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "rarity": "MYTHIC",
+        "artist": "Adrián Rodríguez Pérez",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/98a79557-8ed6-4d9a-b4e1-cece05664984.jpg?1783907865"
+    },
+    "colorIdentityOverride": [
         "GREEN"
     ]
 }
@@ -10854,6 +14172,68 @@
     ]
 }
 
+// Vnwxt, Verbose Host
+{
+    "name": "Vnwxt, Verbose Host",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Homunculus",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nYou have no maximum hand size.\nMax speed — If you would draw a card, draw two cards instead.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "staticAbilities": [
+            "NoMaximumHandSize"
+        ],
+        "replacementEffects": [
+            {
+                "type": "ModifyDrawAmount",
+                "multiplier": 2,
+                "restrictions": [
+                    {
+                        "type": "Compare",
+                        "left": "Speed",
+                        "operator": "EQ",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 4
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "rarity": "RARE",
+        "artist": "Izzy",
+        "flavorText": "\"Racers! Start! Your! Engiiiiiines!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/893254c7-64cc-4cb9-b79f-2c41a8935ea0.jpg?1783907900",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If a spell or ability causes you to draw multiple cards, this creature's last ability doubles each card draw. For example, if you cast Harmonize (\"Draw three cards\"), you'll draw six cards."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "The effects of multiple such effects are cumulative. For example, if you have max speed and control both Vnwxt and Thought Reflection (an enchantment with the same ability), you'll draw four times the original number of cards."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If two or more replacement effects would apply to a card-drawing event, the player who's drawing the card chooses what order to apply them."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Voyage Home
 {
     "name": "Voyage Home",
@@ -10904,6 +14284,93 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
+    ]
+}
+
+// Voyager Glidecar
+{
+    "name": "Voyager Glidecar",
+    "manaCost": "{W}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "When this Vehicle enters, scry 1.\nTap three other untapped creatures you control: Until end of turn, this Vehicle becomes an artifact creature and gains flying. Put a +1/+1 counter on it.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 1
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 3,
+                        "filter": "creature",
+                        "excludeSelf": true
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "BecomeCreature",
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "keywords": [
+                                "FLYING"
+                            ]
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Tap three other untapped creatures you control: Until end of turn, this Vehicle becomes an artifact creature and gains flying. Put a +1/+1 counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "rarity": "RARE",
+        "artist": "Eduardo Francisco",
+        "flavorText": "\"Exclamatory: Hang on to something.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13eb445a-dd41-4760-8299-9ba5d6de6aaf.jpg?1783907912"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -11105,6 +14572,57 @@
     ]
 }
 
+// Wickerfolk Indomitable
+{
+    "name": "Wickerfolk Indomitable",
+    "manaCost": "{3}{B}",
+    "typeLine": "Artifact Creature — Scarecrow",
+    "oracleText": "You may cast this card from your graveyard by paying 2 life and sacrificing an artifact or creature in addition to paying its other costs.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "MayCastSelfFromZones",
+                "zones": [
+                    "Graveyard"
+                ],
+                "additionalCost": {
+                    "type": "Composite",
+                    "steps": [
+                        {
+                            "type": "AdditionalAtom",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "AdditionalAtom",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact|creature"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "rarity": "UNCOMMON",
+        "artist": "Sergio Cosmai",
+        "flavorText": "Some horrors are created. Others are the recognition of a possibility that has always existed.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba78e076-8962-4b3f-b86f-04400b062951.jpg?1783907888"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Willowrush Verge
 {
     "name": "Willowrush Verge",
@@ -11167,6 +14685,119 @@
     "colorIdentityOverride": [
         "GREEN",
         "BLUE"
+    ]
+}
+
+// Winter, Cursed Rider
+{
+    "name": "Winter, Cursed Rider",
+    "manaCost": "{U}{B}",
+    "typeLine": "Legendary Creature — Human Warlock",
+    "oracleText": "Ward—Pay 2 life.\nArtifacts you control have \"Ward—Pay 2 life.\"\nExhaust — {2}{U}{B}, {T}, Exile X artifact cards from your graveyard: Each other nonartifact creature gets -X/-X until end of turn. (Activate each exhaust ability only once.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Life",
+                "amount": 2
+            }
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{U}{B}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostExileXFromGraveyard",
+                            "filter": "artifact"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature nonartifact",
+                            "excludeSelf": true
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Multiply",
+                            "amount": "XValue",
+                            "multiplier": -1
+                        },
+                        "toughnessModifier": {
+                            "type": "Multiply",
+                            "amount": "XValue",
+                            "multiplier": -1
+                        },
+                        "target": "Self"
+                    }
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Exhaust — {2}{U}{B}, {T}, Exile X artifact cards from your graveyard: Each other nonartifact creature gets -X/-X until end of turn.",
+                "isExhaust": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantWard",
+                "cost": {
+                    "type": "WardCost.Life",
+                    "amount": 2
+                },
+                "filter": {
+                    "baseFilter": "artifact ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "rarity": "RARE",
+        "artist": "Daren Bader",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/02d46d0e-3161-45b5-a49e-5cd592c67ddd.jpg?1783907852",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Multiple instances of ward each trigger separately."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an effect causes Winter to become an artifact, its second ability will cause it to gain a second instance of ward."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 
@@ -11350,6 +14981,90 @@
         "imageUri": "https://cards.scryfall.io/normal/front/4/9/4983177d-fbf4-47fa-997f-9d08294870f2.jpg"
     },
     "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Zahur, Glory's Past
+{
+    "name": "Zahur, Glory's Past",
+    "manaCost": "{W}{B}",
+    "typeLine": "Legendary Creature — Zombie Cat Warrior",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nSacrifice another creature: Surveil 1. Activate only once each turn.\nMax speed — Whenever a nontoken creature you control dies, create a tapped 2/2 black Zombie creature token.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature nontoken ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Zombie"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/b/8/b82be730-c63b-4c2b-99f4-476befdb95cb.jpg?1783907681",
+                    "tapped": true
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                "descriptionOverride": "Max speed — Whenever a nontoken creature you control dies, create a tapped 2/2 black Zombie creature token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "creature",
+                        "excludeSelf": true
+                    }
+                },
+                "effect": {
+                    "type": "Surveil",
+                    "count": 1
+                },
+                "restrictions": [
+                    "OncePerTurn"
+                ],
+                "descriptionOverride": "Surveil 1. Activate only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "RARE",
+        "artist": "Leroy Steinmann",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/31944ea5-045d-481d-9aff-3c7ed663813a.jpg?1783907851"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
         "BLACK"
     ]
 }

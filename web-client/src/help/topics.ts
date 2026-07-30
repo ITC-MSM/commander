@@ -198,7 +198,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     body: [
       { kind: 'p', text: 'The host picks the sets (mix several, or add a deferred “Random Set” that stays hidden until the game starts), how many boosters each player opens, and whether boosters are per-set or “chaos” — each pack mixing every selected set.' },
     ],
-    related: ['limited-deckbuilding', 'cards-draft'],
+    related: ['limited-deckbuilding', 'cards-draft', 'cards-cube'],
   },
   {
     id: 'cards-draft',
@@ -209,7 +209,46 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     body: [
       { kind: 'p', text: 'The host sets a pick timer and, for Booster and Commander drafts, whether each pick takes one card or two.' },
     ],
-    related: ['limited-deckbuilding', 'cards-sealed'],
+    related: ['limited-deckbuilding', 'cards-sealed', 'cards-cube'],
+  },
+  {
+    id: 'cards-cube',
+    section: 'modes',
+    title: 'Cards: Cube',
+    summary:
+      'A cube is your own hand-picked card pool used instead of real sets. Any limited format can run on it — Sealed, Booster, Winston or Grid draft — and packs are dealt from the cube instead of from boosters.',
+    body: [
+      { kind: 'p', text: 'A cube replaces the set picker: pick a cube in the lobby and the Sets, booster-mix and per-set pack controls disappear, because there are no sets involved any more. Everything else about the format is unchanged — the same pick timers, the same deck building, the same bracket.' },
+      { kind: 'p', text: 'Packs are dealt without replacement across the whole event. No card ever appears twice — not in two of your packs, and not in two different players’ pools. That is what makes a cube a curated pool rather than a set: every card in it is a deliberate choice, and each one shows up exactly as often as you put it in.' },
+      { kind: 'ul', items: [
+        'Pack size is part of the cube (15 by default, the community standard).',
+        'Capacity is the one new constraint: players × packs × pack size must fit inside the cube. A 360-card cube seats 8 players at 3 packs of 15 exactly, and the lobby shows the sum live.',
+        'Basic lands aren’t part of a cube — it names a set to take their art from, and the deckbuilder gives you unlimited basics as usual.',
+        'The host’s ban list still applies, and banned cards come off the cube before capacity is counted.',
+      ] },
+      { kind: 'p', text: 'Cube Pool Play is the exception to all the dealing: it skips packs entirely. See its own topic.' },
+    ],
+    related: ['cube-building', 'cube-pool-play', 'cards-sealed', 'cards-draft'],
+  },
+  {
+    id: 'cube-pool-play',
+    section: 'modes',
+    title: 'Cube Pool Play',
+    summary:
+      'Cube Sealed with no dealing: every player builds from the entire cube at the same time, using up to 4 copies of any card. Nobody competes for cards, so the cube can be any size.',
+    body: [
+      { kind: 'p', text: 'Ordinary Sealed hands you a pool and the deck you can build is limited by what you opened. Pool Play removes that constraint: the whole cube is your pool, and so is everyone else’s. Two players can both build the same deck.' },
+      { kind: 'p', text: 'It is closer to constructed than to limited — the cube becomes a shared, curated card list that everyone brews from at once. Good for testing a cube you are still tuning, for a group with wildly different experience levels, or for a small cube that could never seat the table under the usual capacity rule.' },
+      { kind: 'ul', items: [
+        'Up to 4 copies of any card, exactly like constructed. Basic lands stay unlimited.',
+        'Minimum deck size is still 40.',
+        'No capacity constraint — nothing is dealt, so a 100-card cube works fine for 8 players.',
+        'No sideboard. In limited your sideboard is everything you didn’t play, but here that would be the whole cube, so Pool Play decks have none — which also means cards that fetch from outside the game have nothing to find.',
+        'Pack size and pack count are ignored, and the controls for them are hidden.',
+      ] },
+      { kind: 'p', text: 'Set it on a cube Sealed lobby with the Card pool control: “Sealed packs” deals pools from the cube as usual, “Pool Play” gives everyone all of it.' },
+    ],
+    related: ['cards-cube', 'cube-building', 'cards-sealed', 'limited-deckbuilding'],
   },
   {
     id: 'table-1v1',
@@ -444,12 +483,13 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'playing',
     title: 'Card badges',
     summary:
-      'Small labels on a card mark a state the card text alone will not tell you: Plotted, Prepared, Warped, Band N, and counters.',
+      'Small labels on a card mark a state the card text alone will not tell you: Plotted, Prepared, Warped, Dashed, Band N, and counters.',
     body: [
       { kind: 'ul', items: [
         'Plotted (CR 718) — sitting face-up in exile; cast it for free on a later turn.',
         'Prepared (Secrets of Strixhaven) — a copy of its spell waits castable in exile; casting the copy unprepares the creature.',
         'Warped (CR 702.185) — exiled at the beginning of the next end step, then castable again from exile.',
+        'Dashed (CR 702.109) — has haste; returned to its owner\'s hand at the beginning of the next end step.',
         'Band N (CR 702.22) — which attacking band this creature belongs to.',
       ] },
     ],
@@ -537,7 +577,25 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     body: [
       { kind: 'p', text: 'Anything you leave out of the deck stays available as your sideboard between games in a match. You can save a drafted deck to My Decks from the standings screen — the printings you actually drafted are preserved.' },
     ],
-    related: ['cards-sealed', 'cards-draft'],
+    related: ['cards-sealed', 'cards-draft', 'cube-pool-play'],
+  },
+  {
+    id: 'cube-building',
+    section: 'decks',
+    title: 'Building a cube',
+    summary:
+      'Build a cube from the lobby’s Cube panel: paste a list or search for cards, set the pack size, and save it. Cubes live alongside your decks — in this browser as a guest, in your account when signed in.',
+    body: [
+      { kind: 'p', text: 'A cube is a list of card names with counts, so it isn’t tied to any set or printing. Two ways to fill one:' },
+      { kind: 'ul', items: [
+        'Paste a list — plain text, MTG Arena or Moxfield format, one “count name” per line. The same parser the deckbuilder’s import uses.',
+        'Search and add — the same query language as the deckbuilder search, so “c:red t:creature cmc<=3” works.',
+      ] },
+      { kind: 'p', text: 'Cubes are usually singleton (one of each), but counts are yours to set — the editor lets any card run as many copies as you want, and each copy is a separate physical card when packs are dealt.' },
+      { kind: 'p', text: 'A cube whose names are all implemented is playable; one with cards the engine doesn’t have yet is not, and the editor says so in red with a one-click “drop the unimplemented cards”. You can still save a cube in that state — sets keep landing, so a cube naming a card that arrives next month is worth keeping — but a lobby won’t accept it until it resolves cleanly.' },
+      { kind: 'p', text: 'The editor also shows the colour spread and mana curve as you go, which are what a cube is usually balanced on.' },
+    ],
+    related: ['cards-cube', 'cube-pool-play', 'where-decks-live', 'search-syntax', 'deck-import-export'],
   },
   {
     id: 'set-completion',

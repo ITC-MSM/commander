@@ -209,6 +209,8 @@ class CycleCardHandler(
                 asCyclingCost = true,
             )
         )
+        currentState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+            .trackDiscard(currentState, action.playerId, listOf(action.cardId))
 
         events.add(
             ZoneChangeEvent(

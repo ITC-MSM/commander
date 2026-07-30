@@ -69,39 +69,48 @@ static/triggered ability). `add-feature` territory.
 Blocked cards:
 - **The Soul Stone** [66] — `{1}{B}` Legendary Artifact — Infinity Stone; harness → `∞` upkeep reanimation
 
-## Mayhem (new keyword — self graveyard-cast gated on "you discarded this card this turn")
+## Mayhem (new keyword — self graveyard-cast gated on "you discarded this card this turn") — ✅ IMPLEMENTED
 
 > Mayhem {cost} *(You may cast this card from your graveyard for {cost} if you discarded it
 > this turn. Timing rules still apply.)*
 
-Not implemented. There is **no `Keyword.MAYHEM`**, no `KeywordAbility.Mayhem`, and — the
-load-bearing gap — the engine does not track **"cards you discarded this turn"**, so there is
-no condition to gate the graveyard-cast on (only `discardedAsCostCards`, i.e. cards discarded
-to pay a spell's own additional cost). The closest primitives (`Flashback`, `Harmonize`,
-`Warp`, `MayCastFromGraveyard`) all let you cast from the graveyard **any** time the card is
-there — dropping the "only the turn you discarded it" gate would make every Mayhem card
-materially stronger and wrong. `add-feature` scope: (1) turn-scoped discarded-this-turn
-tracking + a `YouDiscardedThisCardThisTurn` condition; (2) a `Keyword.MAYHEM` /
-`KeywordAbility.Mayhem(cost)` self graveyard-cast alternative-cost primitive (permanent just
-enters — no exile-on-resolve) wired into the cast-from-zone enumerator + `CastSpellHandler`.
+**Implemented** (CR 702.187) on branch `spm-mayhem`. Two-part `add-feature`:
+(1) turn-scoped discarded-this-turn tracking — `CardsDiscardedThisTurnComponent(cardIds)` written at every
+discard site via `ZoneTransitionService.trackDiscard`, reset per-turn in `TurnManager`, exposed as
+`TurnTracker.CARDS_DISCARDED` / `DynamicAmounts.cardsDiscardedThisTurn()` (count) and
+`Conditions.YouDiscardedThisCardThisTurn` (per-card membership gate).
+(2) `Keyword.MAYHEM` / `KeywordAbility.Mayhem(cost)` / `mayhem("{cost}")` DSL / `AlternativeCostType.MAYHEM`,
+resolved via `MayhemGrants.effectiveMayhem`, enumerated by `CastFromZoneEnumerator.enumerateMayhem` and gated in
+`CastSpellHandler` by `CastZoneResolver.hasMayhemPermission`. Grants no timing permission; **not** exiled on
+resolution (permanent just enters — the deliberate omission of any Mayhem branch in `StackResolver`'s exile
+clause). "Mayhem cost was paid" is a durable `ChoiceSlot.MAYHEM_CAST` / resolution-context flag read via
+`Conditions.MayhemCostWasPaid`.
 
-Blocked cards:
-- **Swarm, Being of Bees** [69] — `{2}{B}` Flash Flying, Mayhem `{B}`
-- **Spider-Islanders** [91] — `{3}{R}` (vanilla), Mayhem `{1}{R}`
-- **Raging Goblinoids** [85] — `{4}{R}` Haste, Mayhem `{2}{R}` (5/4)
-- **Electro's Bolt** [77] — `{2}{R}` deal 4 to a creature, Mayhem `{1}{R}`
-- **Prison Break** [61] — `{4}{B}` reanimate + counter, Mayhem `{3}{B}`
-- **Sandman's Quicksand** [63] — `{1}{B}{B}` mass -2/-2 (mayhem-cast → opponents only), Mayhem `{3}{B}`
-- **Scarlet Spider, Kaine** [143] — `{B}{R}` Menace + discard→counter, Mayhem `{B/R}`
-- **Carnage, Crimson Chaos** [125] — `{2}{B}{R}` Trample + ETB reanimate, Mayhem `{B}{R}`
-- **Chameleon, Master of Disguise** [27] — `{3}{U}` enter-as-copy, Mayhem `{2}{U}` (also needs clone-on-ETB — verify)
-- **Rocket-Powered Goblin Glider** [172] — `{3}` Equipment (attach if cast from gy), Mayhem `{2}`
-- **Ultimate Green Goblin** [157] — `{1}{B/R}{B/R}` upkeep discard+Treasure, Mayhem `{2}{B/R}`
-- **Oscorp Industries** [182] — land, Mayhem (play land from graveyard if discarded this turn)
-- **Norman Osborn // Green Goblin** [39] — transform DFC; back's "Goblin Formula" grants Mayhem to every nonland card in your graveyard (also blocked on transform + this grant)
+Implemented cards (9): **Swarm, Being of Bees** [69] · **Spider-Islanders** [91] · **Raging Goblinoids** [85] ·
+**Electro's Bolt** [77] · **Prison Break** [61] · **Sandman's Quicksand** [63] (MayhemCostWasPaid rider) ·
+**Scarlet Spider, Kaine** [143] · **Chameleon, Master of Disguise** [27] (enter-as-copy) ·
+**Rocket-Powered Goblin Glider** [172] (ETB attach gated on `WasCastFromGraveyard`).
 
-Also blocked by the **discarded-this-turn tracking** half of this gap (a `CardsDiscardedThisTurnComponent` accumulator + `DynamicAmount.CardsDiscardedThisTurn`), independent of the Mayhem keyword itself:
-- **Green Goblin, Revenant** [130] — `{3}{B}{R}` Flying/deathtouch; "Whenever Green Goblin attacks, discard a card. Then **draw a card for each card you've discarded this turn**." (Flying/deathtouch + the discard are fine; the draw-per-discarded-this-turn count is blocked.)
+Still blocked (not on Mayhem itself):
+- **Carnage, Crimson Chaos** [125] — `{2}{B}{R}` Trample + Mayhem `{B}{R}` work; the ETB "reanimate a creature card
+  with mv ≤ 3, **it gains 'attacks each combat if able' and 'when it deals combat damage to a player, sacrifice it'**"
+  needs a persistent **grant-abilities-to-a-reanimated-target** effect (no clean facade to durably grant a
+  must-attack static + a combat-damage sacrifice trigger to a chosen target). Deferred rather than approximated.
+- **Oscorp Industries** [182] — ✅ **IMPLEMENTED** on branch `spm-land-plays`. The no-cost 702.187c form is a
+  land-play from graveyard: `PlayLandEnumerator` now offers a discarded-this-turn Mayhem land as a `PlayLand`
+  action and `PlayLandHandler` allows it (both gated on `MayhemGrants.effectiveMayhem`, via `mayhem("")`). Its
+  "enters from a graveyard → lose 2 life" uses the `EnteredFromGraveyardComponent` the handler now stamps on
+  graveyard land-plays (lands bypass `ZoneTransitionService`).
+- **Ultimate Green Goblin** [157] — `{1}{B/R}{B/R}` Mayhem `{2}{B/R}`; the upkeep "discard a card, then create a
+  Treasure" is expressible, but was not authored in this batch — a straightforward follow-up now that Mayhem exists.
+- **Norman Osborn // Green Goblin** [39] — transform DFC; back's "Goblin Formula" grants Mayhem (cost = mana cost) to
+  every nonland card in your graveyard — blocked on transform + a **group `GraveyardCardsHaveMayhem` grant**
+  (`MayhemGrants` already reads per-entity grants, so the group-grant static is the remaining piece).
+
+Also enabled by the **discarded-this-turn tracking** half (now implemented) but not yet authored:
+- **Green Goblin, Revenant** [130] — `{3}{B}{R}` Flying/deathtouch; "Whenever Green Goblin attacks, discard a card.
+  Then **draw a card for each card you've discarded this turn**" — now expressible via
+  `DynamicAmounts.cardsDiscardedThisTurn()`; a follow-up card.
 
 ## Riot (keyword — enters with your choice of a +1/+1 counter or haste)
 
@@ -133,7 +142,17 @@ battlefield-exit (or the predicate evaluated against pre-leave state). `add-feat
 Blocked cards:
 - **Costume Closet** [5] — `{1}{W}` Artifact; enters with two +1/+1 counters + sorcery-speed "{T}: move a counter to target creature you control" (both of those work today) + "Whenever a **modified** creature you control leaves the battlefield, put a +1/+1 counter on this artifact" (the blocked part)
 
-## "Deals damage to a [filtered] creature" trigger (RecipientFilter.Matching on a deals-damage trigger)
+## "Deals damage to a [filtered] creature" trigger (RecipientFilter.Matching on a deals-damage trigger) — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-damage-triggers`. Added the missing `is RecipientFilter.Matching` case to
+`TriggerMatcher.matchesDealsDamageTrigger` (evaluate the filter against the recipient in projected state,
+mirroring `DamageCalculator`). The triggering entity is already the recipient (`TriggerContext.fromEvent`
+sets `triggeringEntityId = event.targetId`), so `Effects.Destroy(EffectTarget.TriggeringEntity)` destroys
+the damaged creature. Also repairs the two already-shipped cards with the identical shape (**East-Mark
+Cavalier** LTR, **Mauhur, Uruk-hai Captain**). Card: **Spider-Slayer, Hatred Honed** [175].
+
+<details><summary>Original analysis</summary>
+
 
 > Whenever <this> deals damage to a **Spider**, destroy that creature.
 
@@ -151,6 +170,7 @@ existing `CreatureYouControl` case) to `matchesDealsDamageTrigger`.
 
 Blocked cards:
 - **Spider-Slayer, Hatred Honed** [175] — `{2}` Legendary Artifact Creature; "Whenever Spider-Slayer deals damage to a Spider, destroy that creature" (blocked). Its other ability — `{6}`, exile-from-graveyard → two tapped 1/1 flying Robot tokens — works fine.
+</details>
 
 ## Chosen card name surviving into a later-firing delayed trigger
 
@@ -203,7 +223,16 @@ reference + `CardLinter`).
 Blocked cards:
 - **Behold the Sinister Six!** [51] — `{6}{B}` Sorcery; "Return up to six target creature cards with different names from your graveyard to the battlefield." Dropping the constraint would wrongly allow six copies of the same-named creature, so it is not approximated.
 
-## Color-filtered permanent "don't lose unspent [color] mana" static
+## Color-filtered permanent "don't lose unspent [color] mana" static — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-costs-mana`. Added `RetainUnspentColoredMana(color)` StaticAbility (scan-based,
+controller-scoped, single-colour, durable) merged into the `retain` colour set in
+`CleanupPhaseManager.emptyManaPools` (control-aware, via a `retainedColorsFromStatics` helper). `endCombat`
+needs no change — it only touches firebending `END_OF_COMBAT` mana, not ordinary red. Card: **Electro,
+Assaulting Battery** [76] (the cast-instant/sorcery→add-{R} and LTB `MayPayXForEffect` deal-X clauses use
+existing primitives).
+
+<details><summary>Original analysis</summary>
 
 > You don't lose unspent **red** mana as steps and phases end.
 
@@ -218,25 +247,39 @@ to a permanent's presence. Fix (add-feature): a color-parameterized `RetainUnspe
 
 Blocked cards:
 - **Electro, Assaulting Battery** [76] — `{1}{R}{R}` Flying; "You don't lose unspent red mana as steps and phases end." Its other clauses (Flying; cast-instant/sorcery → add {R}; LTB pay-{X} deal X to a player) are all expressible today.
+</details>
 
-## "Discard a card OR pay {2}" additional cost (DiscardOrPay)
+## "Discard a card OR pay {2}" additional cost (DiscardOrPay) — ✅ IMPLEMENTED
 
 > As an additional cost to cast this spell, **discard a card or pay {2}**.
 
-A choice between a non-mana cost (discard a card) and a **mana** payment as an additional cost.
-Not supported: `Costs.additional.Choice(...)` handles only non-mana options (`ChoiceCostResolver`
-drops any `CostAtom.Mana` branch → the pay-{2} path silently disappears), and the `*OrPay`
-family (`SacrificeOrPay`, `ExileFromGraveyardOrPay`, `BlightOrPay`, `BeholdOrPay`) has **no
-`DiscardOrPay`**. The `ModalEffect` per-mode-cost workaround (Bitter Triumph "discard or pay 3
-life") doesn't transfer because a mode's `CostAtom.Mana` additional cost is treated as a no-op
-by `CastSpellHandler` (the {2} would be free). Fix (add-feature): a `DiscardOrPay(count, filter,
-alternativeManaCost)` member of the `*OrPay` additional-cost family, wired into
-`CastSpellEnumerator` + `CastSpellHandler`.
+**Implemented** on branch `spm-goblins`. A choice between a non-mana cost (discard a card) and a **mana**
+payment as an additional cost. Added `AdditionalCost.DiscardOrPay(alternativeManaCost, filter, count)` +
+`Costs.additional.DiscardOrPay(...)`, mirroring the existing `*OrPay` family (`SacrificeOrPay` /
+`ExileFromGraveyardOrPay` / `BlightOrPay` / `BeholdOrPay`). Wired into `CastSpellEnumerator` (two cast
+paths — discard path with a `costType = "DiscardCard"` hand picker, and pay path folding in the alt mana),
+`CostHandler` (always payable — pay path), and `CastSpellHandler` (validation mana adjustment, payment
+validation, mana application, and the discard-payment application mirroring `CostAtom.Discard`, including
+`ZoneTransitionService.trackDiscard` so it feeds the turn's discard tracking / Mayhem). Path recovered at
+payment time from whether `AdditionalCostPayment.discardedCards` is non-empty.
 
-Blocked cards:
-- **Pumpkin Bombardment** [139] — `{B/R}` Sorcery; "As an additional cost to cast this spell, discard a card or pay {2}. Deals 3 damage to target creature." (the damage half is trivial; the discard-or-pay additional cost is the blocker)
+Implemented cards (1): **Pumpkin Bombardment** [139] — `{B/R}` Sorcery; "discard a card or pay {2}. Deals 3
+damage to target creature."
 
-## "Play a land from anywhere other than your hand" trigger
+## "Play a land from anywhere other than your hand" trigger — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-land-plays`. Added an additive `LandPlayedEvent` (engine) emitted by
+`PlayLandHandler` alongside the entry `ZoneChangeEvent` (carrying `fromZone`) — distinct from an effect
+*putting* a land onto the battlefield, so it doesn't over-trigger on fetch/reanimate/ramp. Wired through
+`TriggerIndex` (new `LAND_PLAYED` category, both directions) + `TriggerMatcher` + a
+`EventPattern.LandPlayedEvent(fromZoneOtherThan)` / `Triggers.youPlayLand(fromZoneOtherThan = Zone.HAND)`
+primitive. The **turn-scoped** form: a `PlayedLandFromNonHandThisTurnComponent` flag set by the handler
+(reset per-turn in `TurnManager`) backing `Conditions.YouPlayedLandFromNonHandThisTurn`, plus a
+`fromZoneOtherThan` qualifier added to `Conditions.YouCastSpellsThisTurn` (the cast half). Cards: **Shadow
+of the Goblin** [87] (two triggered abilities — land-play + cast-from-non-hand) and **Spider-Man 2099**
+[150] (`any(YouPlayedLandFromNonHandThisTurn, YouCastSpellsThisTurn(1, fromZoneOtherThan = HAND))`).
+
+<details><summary>Original analysis</summary>
 
 > Whenever you **play a land** or cast a spell from anywhere other than your hand, …
 
@@ -262,6 +305,7 @@ hand** this turn" condition (`YouCastSpellsThisTurn` is single-zone positive equ
 Fix (add-feature): a land-play zone-of-origin turn record + an "other-than" zone qualifier on both
 the land and spell turn-conditions.
 - **Spider-Man 2099** [150] — `{U}{R}` double strike/vigilance; the "From the Future" turn-number cast restriction (`ControllerTurnsTakenAtMost`) and "deal power to any target" are fine, but the end-step intervening-if "if you've played a land or cast a spell this turn from anywhere other than your hand" is the blocker.
+</details>
 
 ## Temporary "play from top of library, paying life = mana value instead of mana cost"
 
@@ -283,7 +327,15 @@ sites to consult granted statics (mirroring `MayCastFromGraveyard`).
 Blocked cards:
 - **Gwenom, Remorseless** [56] — `{3}{B}{B}` Deathtouch/lifelink; the attack-granted "play from top, pay life = mana value" is the blocker (deathtouch, lifelink, and the attack trigger itself are fine).
 
-## "Prevent damage to this creature, put that many +1/+1 counters on it" self-replacement
+## "Prevent damage to this creature, put that many +1/+1 counters on it" self-replacement — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-damage-triggers`. Added `is RecipientFilter.Self -> targetId == entityId`
+to `DamageUtils.applyReplaceDamageWithCounters`'s recipient matcher, and invoked it on the creature-damage
+paths — the non-player (`else`) branch of `DamageUtils.dealDamageToTarget` and
+`CombatDamageManager.applyDamageToCreature` (before redirection/final marking). Card: **Anti-Venom,
+Horrifying Healer** [1] (its "if he was cast" ETB reanimation uses the existing `Conditions.WasCast`).
+
+<details><summary>Original analysis</summary>
 
 > If damage would be dealt to Anti-Venom, prevent that damage and put that many +1/+1 counters
 > on him.
@@ -302,8 +354,19 @@ and invoke `applyReplaceDamageWithCounters` on the creature-damage paths
 
 Blocked cards:
 - **Anti-Venom, Horrifying Healer** [1] — `{W}{W}{W}{W}{W}` Symbiote Hero; ETB "if cast, reanimate a creature" is fine, but the damage-prevention-to-counters self-replacement is the blocker.
+</details>
 
-## Granted activated ability with `UntilYourNextTurn` duration never expires
+## Granted activated ability with `UntilYourNextTurn` duration never expires — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-costs-mana`. `CleanupPhaseManager.expireUntilYourNextTurnEffects` now also
+drops `grantedActivatedAbilities` whose duration is `UntilYourNextTurn`, keyed to the granted entity's
+current controller (correct for the self-grant case). The "becomes a non-creature land" half was *not* a
+missing primitive after all — `BecomeArtifactEffect` is a general "becomes [cardTypes]" effect;
+`BecomeArtifactEffect(cardTypes = setOf("LAND"), colors = null, loseAllAbilities = false, grantedAbility =
+"{T}: Add {U}", duration = UntilYourNextTurn)` expresses Hydro-Man's transform, and its granted mana
+ability expires via the fix above. Card: **Hydro-Man, Fluid Felon** [33].
+
+<details><summary>Original analysis</summary>
 
 > …until your next turn, he becomes a land and **gains "{T}: Add {U}."**
 
@@ -322,9 +385,18 @@ grant-holder's controller (the `GrantedActivatedAbility` record needs a controll
 field, like the player-component grants).
 
 Blocked cards:
-- **Hydro-Man, Fluid Felon** [33] — `{U}{U}`; blue-cast pump (fine) + end-step "untap; until your next turn becomes a non-creature land with '{T}: Add {U}'" — the type-change + untap work, but the granted mana ability never expires.
+- **Hydro-Man, Fluid Felon** [33] — `{U}{U}`; blue-cast pump (fine) + end-step "untap; until your next turn becomes a non-creature land with '{T}: Add {U}'". *(Resolved — see the section header above.* Both halves shipped: `expireUntilYourNextTurnEffects` now drops `grantedActivatedAbilities` with `UntilYourNextTurn` duration, and the "becomes a non-creature land" half needed **no** new primitive after all — the mid-review worry that only additive `AddCardTypeEffect` existed was wrong: `BecomeArtifactEffect` sets `SetCardTypes(setOf("LAND"))`, a full type-*replacement* that drops the creature type. *)*
+</details>
 
-## Static damage redirect to the enchanted/equipped creature (Pariah-style)
+## Static damage redirect to the enchanted/equipped creature (Pariah-style) — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-damage-triggers`. Extended `DamageUtils.resolveRedirectTarget` with
+`EffectTarget.EnchantedCreature` / `EquippedCreature` / `EnchantedPermanent` → the Aura/Equipment's
+`AttachedToComponent.targetId`. The "+2/+2 for each attached Aura/Equipment" buff uses the new
+`DynamicAmounts.attachmentsOnEnchantedCreature()` (`EntityProperty(EnchantedCreature, AttachmentCount())`)
+over `GroupFilter.attachedCreature()`. Card: **With Great Power . . .** [24].
+
+<details><summary>Original analysis</summary>
 
 > All damage that would be dealt to you is dealt to **enchanted creature** instead.
 
@@ -341,6 +413,7 @@ expressible (`GrantDynamicStatsEffect` over `attachedCreature()` with
 
 Blocked cards:
 - **With Great Power . . .** [24] — `{3}{W}` Aura; "+2/+2 per attached Aura/Equipment" (fine) + "all damage that would be dealt to you is dealt to enchanted creature instead" (the redirect is the blocker).
+</details>
 
 ## "The legend rule doesn't apply to [filter]" exemption
 

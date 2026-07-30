@@ -287,6 +287,14 @@ class CardBuilder(private val name: String) {
     var warp: String? = null
 
     /**
+     * Dash cost as a mana cost string (e.g., "{1}{R}").
+     * When set, the card gains the Dash keyword ability.
+     * Dash allows casting for an alternative cost; the permanent gains haste and is returned
+     * to its owner's hand at the beginning of the next end step.
+     */
+    var dash: String? = null
+
+    /**
      * If set, the caster must choose a creature type during casting.
      * The source determines where to look for available creature types.
      */
@@ -867,6 +875,7 @@ class CardBuilder(private val name: String) {
                 morphCost != null -> add(KeywordAbility.Morph(morphCost!!, morphFaceUpEffect))
             }
             if (warp != null) add(KeywordAbility.Warp(ManaCost.parse(warp!!)))
+            if (dash != null) add(KeywordAbility.Dash(ManaCost.parse(dash!!)))
             if (evoke != null) add(KeywordAbility.Evoke(ManaCost.parse(evoke!!)))
         }
 
@@ -899,7 +908,11 @@ class CardBuilder(private val name: String) {
             colorIdentityOverride = parsedColorIdentity,
             colorIndicator = parsedColorIndicator,
             layout = layout,
-            cardFaces = cardFaceList.toList()
+            cardFaces = cardFaceList.toList(),
+            // Lands are never *cast* at all (CR 305 — they're played), so a blank mana cost
+            // there carries none of CR 202.1b/118.6's "can't be cast normally" implication;
+            // scoping the flag to non-lands keeps every land's golden snapshot untouched.
+            hasNoManaCost = manaCost.isBlank() && !parsedTypeLine.isLand
         )
     }
 }
@@ -1706,6 +1719,7 @@ class MetadataBuilder {
     var artist: String? = null
     var flavorText: String? = null
     var imageUri: String? = null
+    var imageUriByCreatureSubtype: Map<String, String> = emptyMap()
     var inBooster: Boolean = true
 
     /**
@@ -1731,6 +1745,7 @@ class MetadataBuilder {
         artist = artist,
         flavorText = flavorText,
         imageUri = imageUri,
+        imageUriByCreatureSubtype = imageUriByCreatureSubtype,
         rulings = _rulings.toList(),
         inBooster = inBooster,
         imageRotation = imageRotation

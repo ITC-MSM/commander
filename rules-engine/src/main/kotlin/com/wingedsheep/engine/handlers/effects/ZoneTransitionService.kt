@@ -6,6 +6,8 @@ import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
+import com.wingedsheep.engine.mechanics.daynight.DayNightService
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -22,6 +24,7 @@ import com.wingedsheep.engine.state.components.identity.ManifestedComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
+import com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsLeftGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsPutIntoExileThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CreatureSubtypesDiedThisTurnComponent
@@ -120,6 +123,7 @@ object ZoneTransitionService {
      * call to the handler and is unaffected by this wiring.
      */
     lateinit var staticAbilityHandler: StaticAbilityHandler
+    lateinit var cardRegistry: CardRegistry
 
     /**
      * Move one entity between zones with full cleanup + setup.
@@ -648,6 +652,11 @@ object ZoneTransitionService {
             newState = newState.updateEntity(entityId) { c ->
                 c.without<PutIntoGraveyardThisTurnComponent>()
             }
+            // Likewise drop the Mayhem "you discarded this card this turn" gate mark: once the card
+            // leaves the graveyard it becomes a new object on any later return (CR 400.7), so it is
+            // no longer the card you discarded. (Casting via Mayhem bypasses moveToZone and prunes
+            // in CastSpellHandler instead; this covers reanimation / exile / bounce out of the yard.)
+            newState = untrackDiscardedCard(newState, entityId)
             newState = newState.updateEntity(ownerId) { playerContainer ->
                 val existing = playerContainer.get<CardsLeftGraveyardThisTurnComponent>()
                     ?: CardsLeftGraveyardThisTurnComponent()
@@ -807,8 +816,48 @@ object ZoneTransitionService {
             newState = result.state
             moveEvents.addAll(result.events)
         }
+        newState = trackDiscard(newState, playerId, cardIds)
         val discardEvent = CardsDiscardedEvent(playerId, cardIds, cardNames)
         return ZoneTransitionResult(newState, listOf(discardEvent) + moveEvents)
+    }
+
+    /**
+     * Central per-turn discard bookkeeping, mirroring [trackPermanentSacrifice]. Call this at every
+     * discard site (alongside emitting [CardsDiscardedEvent]). Records the discarded cards' entity
+     * ids on the discarding player's [CardsDiscardedThisTurnComponent], regardless of the card's
+     * final zone (a discard diverted by a replacement still counts). Entity ids are stable across
+     * the hand→graveyard move, so the recorded id matches the object now in the graveyard, which is
+     * what the Mayhem gate ([com.wingedsheep.engine.mechanics.Mayhem]) reads.
+     *
+     * `cardIds.size` backs `TurnTracker.CARDS_DISCARDED`; membership backs `YouDiscardedThisCardThisTurn`.
+     * Cleared per-player at the start of each turn by `TurnManager`.
+     */
+    fun trackDiscard(state: GameState, playerId: EntityId, cardIds: List<EntityId>): GameState {
+        if (cardIds.isEmpty()) return state
+        return state.updateEntity(playerId) { container ->
+            val prior = container.get<CardsDiscardedThisTurnComponent>() ?: CardsDiscardedThisTurnComponent()
+            container.with(
+                prior.copy(cardIds = prior.cardIds + cardIds, count = prior.count + cardIds.size)
+            )
+        }
+    }
+
+    /**
+     * Remove [cardId] from the discarded-this-turn *gate* list (not the monotonic count) on any
+     * player who still has it recorded. Called when the card leaves a graveyard (CR 400.7 — a later
+     * graveyard return is a new object that was not discarded), so a Mayhem spell can't be recast
+     * each time it resolves back. A no-op if no player has the id recorded.
+     */
+    fun untrackDiscardedCard(state: GameState, cardId: EntityId): GameState {
+        var newState = state
+        for (playerId in state.turnOrder) {
+            val comp = newState.getEntity(playerId)?.get<CardsDiscardedThisTurnComponent>() ?: continue
+            if (cardId !in comp.cardIds) continue
+            newState = newState.updateEntity(playerId) { container ->
+                container.with(comp.copy(cardIds = comp.cardIds - cardId))
+            }
+        }
+        return newState
     }
 
     /**
@@ -938,18 +987,28 @@ object ZoneTransitionService {
         // permanent onto the battlefield tapped (ramp/fetch). Checked after the entity is fully
         // placed so its controller/type are visible to the filter. (tappedAndAttacking — combat
         // tokens — is intentionally not overridden; its filter never matches a land anyway.)
-        val entersUntapped = EnterUntappedReplacements.entersUntapped(withEntity, entityId, controllerId)
+        val withDayboundEntry = if (!options.faceDown && ::cardRegistry.isInitialized) {
+            DayNightService.applyDayboundEntry(withEntity, cardRegistry, entityId)
+        } else {
+            withEntity
+        }
+
+        val entersUntapped = EnterUntappedReplacements.entersUntapped(
+            withDayboundEntry,
+            entityId,
+            controllerId
+        )
         val withTapResolved = when {
             // A tapped entry (ramp/fetch) overridden by "enters untapped" (The Wandering Minstrel).
             options.tapped && !options.tappedAndAttacking && entersUntapped ->
-                withEntity.updateEntity(entityId) { it.without<TappedComponent>() }
+                withDayboundEntry.updateEntity(entityId) { it.without<TappedComponent>() }
             // An untapped entry forced tapped by a global "[filter] enter tapped" (Zhao, the Moon
             // Slayer's "Nonbasic lands enter tapped"). Gated on !entersUntapped so an "enters
             // untapped" replacement still wins (CR 614).
             !options.tapped && !entersUntapped &&
-                EnterTappedReplacements.entersTapped(withEntity, entityId, controllerId) ->
-                withEntity.updateEntity(entityId) { it.with(TappedComponent) }
-            else -> withEntity
+                EnterTappedReplacements.entersTapped(withDayboundEntry, entityId, controllerId) ->
+                withDayboundEntry.updateEntity(entityId) { it.with(TappedComponent) }
+            else -> withDayboundEntry
         }
 
         // Track "a permanent entered the battlefield face down under your control this turn"

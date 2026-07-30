@@ -4,6 +4,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.battlefield.DashedComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -109,7 +110,11 @@ class StateProjector(
             (container.get<ProtectionComponent>()?.supertypes?.map { "PROTECTION_FROM_SUPERTYPE_${it.uppercase()}" } ?: emptyList()) +
                         (container.get<HexproofFromComponent>()?.colors?.map { "HEXPROOF_FROM_${it.name}" } ?: emptyList()) +
                         (container.get<HexproofFromComponent>()?.cardTypes?.map { "HEXPROOF_FROM_CARDTYPE_$it" } ?: emptyList()) +
-                        (container.get<ToxicComponent>()?.let { listOf("TOXIC_${it.amount}") } ?: emptyList())).toMutableSet(),
+                        (container.get<ToxicComponent>()?.let { listOf("TOXIC_${it.amount}") } ?: emptyList()) +
+                        // CR 702.109a: "as long as this permanent's dash cost was paid, it has
+                        // haste" — derived live from the marker every projection, not stored as a
+                        // floating effect (see DashedComponent's doc for why).
+                        (if (container.has<DashedComponent>()) listOf(Keyword.HASTE.name) else emptyList())).toMutableSet(),
                     colors = cardComponent.colors.map { it.name }.toMutableSet(),
                     types = extractTypes(cardComponent),
                     subtypes = cardComponent.typeLine.subtypes.map { it.value }.toMutableSet(),
@@ -643,6 +648,13 @@ class StateProjector(
                         timestamp = floating.timestamp,
                         modification = floating.effect.modification.toModification(),
                         affectedEntities = validAffectedEntities,
+                        // A conditional clause inside a durational grant ("becomes a creature with
+                        // 'During your turn, this creature has first strike'"). Re-asked on every
+                        // projection by EffectApplicator against the *source's* projected controller,
+                        // so it goes dark on an opponent's turn or if the source is stolen — and
+                        // comes back if that reverses. Distinct from the latching Duration.While…
+                        // gates above.
+                        sourceCondition = floating.effect.sourceCondition,
                         // "for as long as you control it" (e.g. suspend haste — CR 702.62g):
                         // the gate is applied after Layer 2, against the projected controller,
                         // so the effect drops the instant another player gains control.

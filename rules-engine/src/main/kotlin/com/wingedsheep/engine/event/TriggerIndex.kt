@@ -49,6 +49,7 @@ enum class TriggerCategory {
     DAMAGE_RECEIVED,
     SPELL_CAST,
     SPELL_OR_ABILITY,
+    LAND_PLAYED,
     CARD_CYCLED,
     TAPPED,
     UNTAPPED,
@@ -103,6 +104,12 @@ class TriggerIndex(
     private val byCategory: Map<TriggerCategory, List<IndexedEntity>>,
     val aurasByTarget: Map<EntityId, List<IndexedEntity>>,
     val grantProviders: List<GrantProviderEntry>,
+    /**
+     * The battlefield-wide statics every `getTriggeredAbilities` call in this pass reads. Carried
+     * here so the detectors thread one instance through instead of each call rebuilding it — a
+     * rebuild per call showed up at 5% of the engine profile.
+     */
+    val statics: BattlefieldStaticsIndex,
     val damageToYouObservers: List<IndexedEntity>,
     val subtypeDamageObservers: List<IndexedEntity>,
     val damageObservers: List<IndexedEntity>,
@@ -175,6 +182,7 @@ class TriggerIndex(
             byCategory = emptyMap(),
             aurasByTarget = emptyMap(),
             grantProviders = emptyList(),
+            statics = BattlefieldStaticsIndex.EMPTY,
             damageToYouObservers = emptyList(),
             subtypeDamageObservers = emptyList(),
             damageObservers = emptyList(),
@@ -216,6 +224,7 @@ class TriggerIndex(
                     if (trigger.source == SourceFilter.Any) listOf(TriggerCategory.DAMAGE_RECEIVED) else emptyList()
                 is SdkGameEvent.SpellCastEvent -> listOf(TriggerCategory.SPELL_CAST)
                 is SdkGameEvent.NthSpellCastEvent -> listOf(TriggerCategory.SPELL_CAST)
+                is SdkGameEvent.LandPlayedEvent -> listOf(TriggerCategory.LAND_PLAYED)
                 // "When you cast this spell" fires only via TriggerDetector's self-cast path while
                 // the spell is on the stack — never index it against battlefield permanents, or a
                 // resolved Sage of the Skies would re-fire on every later spell.
@@ -283,6 +292,7 @@ class TriggerIndex(
             is BlockersDeclaredEvent -> BLOCKERS_DECLARED_LIST
             is DamageDealtEvent -> DAMAGE_RECEIVED_LIST
             is SpellCastEvent -> SPELL_CAST_AND_ABILITY_LIST
+            is com.wingedsheep.engine.core.LandPlayedEvent -> LAND_PLAYED_LIST
             is AbilityActivatedEvent -> SPELL_OR_ABILITY_LIST
             is AbilityTriggeredEvent -> SPELL_OR_ABILITY_LIST
             is CardCycledEvent -> CARD_CYCLED_LIST
@@ -326,6 +336,7 @@ class TriggerIndex(
         private val BLOCKERS_DECLARED_LIST = listOf(TriggerCategory.BLOCKERS_DECLARED)
         private val DAMAGE_RECEIVED_LIST = listOf(TriggerCategory.DAMAGE_RECEIVED)
         private val SPELL_CAST_AND_ABILITY_LIST = listOf(TriggerCategory.SPELL_CAST, TriggerCategory.SPELL_OR_ABILITY)
+        private val LAND_PLAYED_LIST = listOf(TriggerCategory.LAND_PLAYED)
         private val SPELL_OR_ABILITY_LIST = listOf(TriggerCategory.SPELL_OR_ABILITY)
         private val CARD_CYCLED_LIST = listOf(TriggerCategory.CARD_CYCLED)
         private val TAPPED_LIST = listOf(TriggerCategory.TAPPED)

@@ -52,7 +52,9 @@ class ContinuationHandler(
         registerModule(TokenContinuationResumer(services))
         registerModule(RingTemptContinuationResumer(services))
         registerModule(AmassContinuationResumer(services))
-        registerModule(LeylineContinuationResumer(services))
+        val leylineResumer = LeylineContinuationResumer(services)
+        registerModule(leylineResumer)
+        registerAutoResumerModule(leylineResumer)
         registerModule(ActivateAbilityXCostContinuationResumer(services))
         registerModule(ActivateAbilityOpponentTargetResumer(services))
 

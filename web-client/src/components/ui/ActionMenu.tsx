@@ -25,7 +25,7 @@ interface ActionOption {
   /** The legal action info if available */
   action: LegalActionInfo | null
   /** Action type for coloring */
-  actionType: 'cast' | 'castFaceDown' | 'castWithKicker' | 'cycle' | 'plot' | 'playLand' | 'activate' | 'turnFaceUp'
+  actionType: 'cast' | 'castFaceDown' | 'castWithKicker' | 'cycle' | 'plot' | 'suspend' | 'playLand' | 'activate' | 'turnFaceUp'
   /**
    * Signed loyalty change for planeswalker loyalty abilities (+1, -2, -8, 0).
    * When present, the button renders a mana-font loyalty icon instead of a text prefix.
@@ -70,6 +70,7 @@ function buildActionOptions(
   const cycleAction = legalActions.find((a) => a.action.type === 'CycleCard')
   const typecycleAction = legalActions.find((a) => a.action.type === 'TypecycleCard')
   const plotAction = legalActions.find((a) => a.action.type === 'PlotCard')
+  const suspendAction = legalActions.find((a) => a.action.type === 'SuspendCardFromHand')
   const playLandAction = legalActions.find((a) => a.action.type === 'PlayLand')
 
   // Debug: log found actions
@@ -196,7 +197,7 @@ function buildActionOptions(
       action: castAction,
       actionType: 'cast',
     })
-  } else if ((cycleAction || typecycleAction || plotAction) && !cardInfo.cardTypes.includes('LAND')) {
+  } else if ((cycleAction || typecycleAction || plotAction || suspendAction) && !cardInfo.cardTypes.includes('LAND')) {
     // Non-land card with cycling/plot but no CastSpell action — show grayed-out cast option
     // so the action menu always presents both choices
     options.push({
@@ -292,6 +293,18 @@ function buildActionOptions(
       isAvailable: plotAction.isAffordable !== false,
       action: plotAction,
       actionType: 'plot',
+    })
+  }
+
+  // 4d. Suspend (CR 702.62) — special action; sits alongside the (often unavailable) cast option.
+  if (suspendAction) {
+    options.push({
+      key: 'suspend',
+      label: 'Suspend',
+      manaCost: suspendAction.manaCostString || null,
+      isAvailable: suspendAction.isAffordable !== false,
+      action: suspendAction,
+      actionType: 'suspend',
     })
   }
 
@@ -579,6 +592,8 @@ function getActionStyleClass(actionType: ActionOption['actionType'], isAvailable
       return styles.actionCycle ?? ''
     case 'plot':
       return styles.actionCycle ?? ''
+    case 'suspend':
+      return styles.actionCycle ?? ''
     case 'playLand':
       return styles.actionPlayLand ?? ''
     case 'activate':
@@ -715,6 +730,8 @@ function ActionButton({
       case 'CycleCard':
         return styles.fallbackCycle
       case 'PlotCard':
+        return styles.fallbackCycle
+      case 'SuspendCardFromHand':
         return styles.fallbackCycle
       case 'ActivateAbility':
         return styles.fallbackActivate

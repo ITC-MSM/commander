@@ -38,6 +38,7 @@ class LegalActionEnumerator(
         CyclingEnumerator(),
         PlotEnumerator(),
         ForetellEnumerator(),
+        SuspendEnumerator(),
         CastFromZoneEnumerator(),
         ManaAbilityEnumerator(),
         TurnFaceUpEnumerator(),

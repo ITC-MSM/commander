@@ -133,6 +133,12 @@ class DynamicAmountEvaluator(
                 }
             }
 
+            // Total damage dealt to the source this turn, summed across every source-controller.
+            // The per-player tally is captured onto the ZoneChangeEvent when the permanent leaves
+            // the battlefield, so a dies trigger still reads it after the entity is gone.
+            is DynamicAmount.LastKnownDamageDealtToSource ->
+                context.triggerLastKnownDamageDealtByPlayers?.values?.sum() ?: 0
+
             // The {X} this object was cast with, read off the current object regardless of zone.
             // Reads, in order: the durable CastChoicesComponent on the battlefield permanent (and
             // for a later activated ability); the SpellOnStackComponent while the object is still
@@ -209,6 +215,15 @@ class DynamicAmountEvaluator(
                 val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
                 val playerId = playerIds.firstOrNull() ?: return 0
                 state.getEntity(playerId)?.get<ManaPoolComponent>()?.total ?: 0
+            }
+
+            // How many counters of a given kind a player has (poison, energy — CR 122.1, 107.14).
+            // Reads the same CountersComponent as any battlefield permanent, just keyed to the
+            // player entity, so this shares counterCountOf with EntityNumericProperty.CounterCount.
+            is DynamicAmount.PlayerCounterCount -> {
+                val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
+                val playerId = playerIds.firstOrNull() ?: return 0
+                counterCountOf(state, playerId, CounterTypeFilter.Named(amount.counterType))
             }
 
             // Unlocked doors among Rooms the player controls (CR 709.5). Reads per-face door
@@ -536,6 +551,11 @@ class DynamicAmountEvaluator(
                     TurnTracker.CARDS_DRAWN -> playerIds.sumOf { playerId ->
                         state.getEntity(playerId)
                             ?.get<com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent>()
+                            ?.count ?: 0
+                    }
+                    TurnTracker.CARDS_DISCARDED -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
                             ?.count ?: 0
                     }
                     TurnTracker.CARDS_PUT_INTO_EXILE -> playerIds.sumOf { playerId ->

@@ -286,6 +286,19 @@ sealed interface ClientMessage {
          * full list is sent each time (not a delta); null leaves the current ban list unchanged.
          */
         val bannedCardNames: List<String>? = null,
+        /**
+         * Replace the cube card list. Each name is one physical cube card, so duplicates represent
+         * intentional duplicate entries. An empty list returns to normal set-based play.
+         */
+        val cubeCards: List<String>? = null,
+        val cubeName: String? = null,
+        val packSize: Int? = null,
+        val cubeBasicLandSetCode: String? = null,
+        /**
+         * Cube Pool Play: skip the draft entirely and let every player deckbuild from the whole cube
+         * with copies unlimited. Only honoured on a cube Sealed lobby. Null = unchanged.
+         */
+        val cubePoolPlay: Boolean? = null,
         /** Master switch for in-app AI assistance (Suggest Pick / Auto-build). Null = unchanged. */
         val aiAssistEnabled: Boolean? = null,
         /** Lobby mode axis: "TOURNAMENT" or "FREE_FOR_ALL". Null = unchanged. */

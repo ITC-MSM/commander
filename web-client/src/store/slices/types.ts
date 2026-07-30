@@ -514,6 +514,11 @@ export interface DeckBuildingState {
    * [cardPool] (the deckbuilder UI gates the picker to eligible pool cards).
    */
   commander: string | null
+  /**
+   * Cube Pool Play: [cardPool] is the entire cube and copies are unlimited (bounded only by the
+   * usual 4-of cap), so adding a card must not remove it from the pool view.
+   */
+  poolPlay: boolean
 }
 
 /**
@@ -901,7 +906,7 @@ export type GameStore = {
   addAiToLobby: () => void
   removeAiFromLobby: (playerId: string) => void
   stopLobby: () => void
-  updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; deckSizeMin?: number; allowDuplicates?: boolean; commanderPreset?: CommanderPreset; chaosBoosters?: boolean; bannedCardNames?: string[]; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode; attackMode?: AttackMode; randomTeams?: boolean; teamAssignments?: Record<string, number>; ranked?: boolean }) => void
+  updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; deckSizeMin?: number; allowDuplicates?: boolean; commanderPreset?: CommanderPreset; chaosBoosters?: boolean; bannedCardNames?: string[]; cubeCards?: string[]; cubeName?: string; packSize?: number; cubeBasicLandSetCode?: string; cubePoolPlay?: boolean; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode; attackMode?: AttackMode; randomTeams?: boolean; teamAssignments?: Record<string, number>; ranked?: boolean }) => void
   /** Disconnected tournament players: playerId -> info */
   disconnectedPlayers: Record<string, { playerName: string; secondsRemaining: number; disconnectedAt: number }>
   readyForNextRound: () => void

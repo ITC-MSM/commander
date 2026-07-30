@@ -1,4 +1,4 @@
-import { AbilityFlag, Color, CounterType, Keyword, Phase, Step, ZoneType } from './enums'
+import { AbilityFlag, Color, CounterType, DayNight, Keyword, Phase, Step, ZoneType } from './enums'
 import { EntityId, ZoneId } from './entities'
 import { ClientEvent } from './events'
 
@@ -50,6 +50,13 @@ export interface ClientGameState {
    * with Void abilities (Edge of Eternities).
    */
   readonly voidActive?: boolean
+
+  /**
+   * The game's day/night designation (Innistrad, CR 731), or absent/null while it's neither — the
+   * state the game starts in and never returns to once a designation is gained. Public information,
+   * so never masked. Drives the day/night indicator. See {@link DayNight}.
+   */
+  readonly dayNight?: DayNight | null
 
   /**
    * If non-null, the affected player whose turn the viewing player is currently driving
@@ -202,6 +209,8 @@ export interface ClientCard {
 
   /** State flags */
   readonly isTapped: boolean
+  /** Exerted (CR 701.43a) — won't untap during its controller's next untap step. */
+  readonly isExerted?: boolean
   readonly hasSummoningSickness: boolean
   readonly isTransformed: boolean
   /** Phased out (Rule 702.26) — treated as though it doesn't exist; rendered translucent. */
@@ -278,6 +287,11 @@ export interface ClientCard {
    * pile so both players can read it. Exile only. */
   readonly isParadigm?: boolean
 
+  /** Whether this card is actively suspended in exile (CR 702.62 — has at least one time counter left).
+   * Surfaced in a dedicated public pile so both players can read it. False once the last time counter
+   * is removed, even if the card lingers in exile after the owner declines the free cast. Exile only. */
+  readonly isSuspended?: boolean
+
   /** Whether this permanent is prepared (Secrets of Strixhaven — Prepared keyword): a copy of its
    * prepare spell sits castable in its controller's exile. Battlefield only. */
   readonly isPrepared?: boolean
@@ -290,6 +304,11 @@ export interface ClientCard {
   /** Whether this permanent was cast for its warp cost (CR 702.185, Edge of Eternities): it will be
    * exiled at the next end step, then can be recast from exile. Drives the cosmic warp cue. Battlefield only. */
   readonly isWarped?: boolean
+
+  /** Whether this permanent was cast for its dash cost (CR 702.109, Khans of Tarkir): it has haste
+   * and will be returned to its owner's hand at the next end step (not exiled — unlike warp).
+   * Battlefield only. */
+  readonly isDashed?: boolean
 
   /** Morph cost for face-down creatures (only visible to controller) */
   readonly morphCost?: string | null
@@ -540,6 +559,11 @@ export interface ClientPlayer {
    * rendered; `4` is max speed, which switches on every "Max speed —" ability they control.
    */
   readonly speed?: number
+  /**
+   * This player's current energy counter total (Kaladesh block onward, CR 107.14). `0` means no
+   * badge is rendered.
+   */
+  readonly energyCounters?: number
 }
 
 /**

@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 170 / 272
+**Implemented:** 199 / 272
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -14,11 +14,11 @@
 - [x] Angelic Quartermaster
 - [x] Anje, Maid of Dishonor
 - [x] Apprentice Sharpshooter
-- [ ] Archghoul of Thraben
+- [x] Archghoul of Thraben
 - [x] Arm the Cathars
 - [x] Ascendant Packleader
-- [ ] Avabruck Caretaker
-- [ ] Ballista Watcher
+- [x] Avabruck Caretaker
+- [x] Ballista Watcher
 - [x] Belligerent Guest
 - [ ] Binding Geist
 - [ ] Biolume Egg
@@ -28,9 +28,9 @@
 - [x] Blood Petal Celebrant
 - [x] Blood Servitor
 - [x] Bloodcrazed Socialite
-- [ ] Bloodsworn Squire
+- [x] Bloodsworn Squire
 - [x] Bloodtithe Harvester
-- [ ] Bloodvial Purveyor
+- [x] Bloodvial Purveyor
 - [x] Bloody Betrayal
 - [x] Boarded Window
 - [x] Bramble Armor
@@ -48,12 +48,12 @@
 - [ ] Ceremonial Knife
 - [ ] Chandra, Dressed to Kill
 - [ ] Change of Fortune
-- [ ] Child of the Pack
+- [x] Child of the Pack
 - [ ] Chill of the Grave
 - [ ] Circle of Confinement
 - [x] Cloaked Cadet
 - [x] Cobbled Lancer
-- [ ] Concealing Curtains
+- [x] Concealing Curtains
 - [ ] Consuming Tide
 - [x] Courier Bat
 - [x] Cradle of Safety
@@ -68,7 +68,7 @@
 - [x] Daybreak Combatants
 - [x] Deathcap Glade
 - [x] Demonic Bargain
-- [ ] Desperate Farmer
+- [x] Desperate Farmer
 - [x] Dig Up
 - [x] Diregraf Scavenger
 - [ ] Distracting Geist
@@ -86,7 +86,7 @@
 - [ ] Drogskol Infantry
 - [ ] Dying to Serve
 - [ ] Edgar's Awakening
-- [ ] Edgar, Charmed Groom
+- [x] Edgar, Charmed Groom
 - [x] End the Festivities
 - [ ] Eruth, Tormented Prophet
 - [x] Estwald Shieldbasher
@@ -95,7 +95,7 @@
 - [x] Falkenrath Celebrants
 - [x] Falkenrath Forebear
 - [x] Fear of Death
-- [ ] Fearful Villager
+- [x] Fearful Villager
 - [x] Fell Stinger
 - [x] Fierce Retribution
 - [x] Flame-Blessed Bolt
@@ -117,27 +117,27 @@
 - [x] Gryffwing Cavalry
 - [ ] Gutter Skulker
 - [x] Halana and Alena, Partners
-- [ ] Hallowed Haunting
+- [x] Hallowed Haunting
 - [ ] Hamlet Vanguard
 - [x] Headless Rider
-- [ ] Henrika Domnathi
+- [x] Henrika Domnathi
 - [x] Hero's Downfall
 - [ ] Heron of Hope
 - [x] Heron-Blessed Geist
 - [x] Hiveheart Shaman
 - [x] Honeymoon Hearse
 - [x] Honored Heirloom
-- [ ] Hookhand Mariner
+- [x] Hookhand Mariner
 - [x] Hopeful Initiate
-- [ ] Howling Moon
-- [ ] Howlpack Piper
+- [x] Howling Moon
+- [x] Howlpack Piper
 - [x] Hullbreaker Horror
 - [x] Hungry Ridgewolf
-- [ ] Ill-Tempered Loner
-- [ ] Infestation Expert
+- [x] Ill-Tempered Loner
+- [x] Infestation Expert
 - [ ] Innocent Traveler
 - [x] Inspired Idea
-- [ ] Into the Night
+- [x] Into the Night
 - [ ] Investigator's Journal
 - [x] Island
 - [ ] Jacob Hauken, Inspector
@@ -148,7 +148,7 @@
 - [ ] Kindly Ancestor
 - [x] Lacerate Flesh
 - [x] Laid to Rest
-- [ ] Lambholt Raconteur
+- [x] Lambholt Raconteur
 - [ ] Lantern Bearer
 - [x] Lantern Flare
 - [x] Lantern of the Lost
@@ -171,7 +171,7 @@
 - [x] Nebelgast Beguiler
 - [x] Necroduality
 - [x] Nurturing Presence
-- [ ] Oakshade Stalker
+- [x] Oakshade Stalker
 - [ ] Odric, Blood-Cursed
 - [x] Old Rutstein
 - [ ] Olivia's Attendants
@@ -180,6 +180,7 @@
 - [x] Overcharged Amalgam
 - [x] Packsong Pup
 - [ ] Panicked Bystander
+- [x] Panicked Bystander
 - [x] Parasitic Grasp
 - [x] Parish-Blade Trainee
 - [ ] Patchwork Crawler
@@ -196,7 +197,7 @@
 - [x] Rending Flame
 - [x] Repository Skaab
 - [x] Resistance Squad
-- [ ] Restless Bloodseeker
+- [x] Restless Bloodseeker
 - [x] Retrieve
 - [x] Rot-Tide Gargantua
 - [x] Runebound Wolf
@@ -243,7 +244,7 @@
 - [ ] Toxrill, the Corrosive
 - [x] Traveling Minister
 - [ ] Twinblade Geist
-- [ ] Ulvenwald Oddity
+- [x] Ulvenwald Oddity
 - [x] Undead Butler
 - [x] Undying Malice
 - [x] Unhallowed Phalanx
@@ -254,7 +255,7 @@
 - [x] Vampires' Vengeance
 - [x] Vilespawn Spider
 - [x] Voice of the Blessed
-- [ ] Volatile Arsonist
+- [x] Volatile Arsonist
 - [ ] Voldaren Bloodcaster
 - [x] Voldaren Epicure
 - [x] Voldaren Estate
@@ -262,9 +263,9 @@
 - [x] Wandering Mind
 - [x] Wanderlight Spirit
 - [x] Wash Away
-- [ ] Weary Prisoner
-- [ ] Weaver of Blossoms
-- [ ] Wedding Announcement
+- [x] Weary Prisoner
+- [x] Weaver of Blossoms
+- [x] Wedding Announcement
 - [x] Wedding Invitation
 - [x] Wedding Security
 - [x] Welcoming Vampire
@@ -272,6 +273,6 @@
 - [x] Winged Portent
 - [x] Witch's Web
 - [ ] Witness the Future
-- [ ] Wolf Strike
-- [ ] Wolfkin Outcast
+- [x] Wolf Strike
+- [x] Wolfkin Outcast
 - [x] Wretched Throng

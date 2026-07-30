@@ -598,3 +598,26 @@ data class WarpExileEffect(
 ) : Effect {
     override val description: String = "Exile ${target.description} (warp)"
 }
+
+/**
+ * Move one specifically tracked battlefield object to a zone.
+ *
+ * The optional [enteredBattlefieldTimestamp] identifies the object represented by [target], not
+ * merely its entity ID. At resolution, the move is skipped unless the target is still on the
+ * battlefield with that same entry timestamp. This is the reusable delayed-movement primitive for
+ * effects such as dash's return-to-hand clause: a permanent that left and returned is a new object
+ * and must not be moved by the old delayed trigger (CR 603.7c / 400.7).
+ *
+ * When nested in [CreateDelayedTriggerEffect], the delayed-trigger executor resolves [target] and
+ * snapshots its entry timestamp when the trigger is created.
+ */
+@SerialName("MoveTrackedBattlefieldObject")
+@Serializable
+data class MoveTrackedBattlefieldObjectEffect(
+    val target: EffectTarget,
+    val destination: Zone,
+    val enteredBattlefieldTimestamp: Long? = null
+) : Effect {
+    override val description: String =
+        "Move ${target.description} to its owner's ${destination.displayName}"
+}

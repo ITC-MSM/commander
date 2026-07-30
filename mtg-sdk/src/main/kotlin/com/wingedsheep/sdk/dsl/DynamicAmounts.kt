@@ -342,6 +342,13 @@ object DynamicAmounts {
         filter: com.wingedsheep.sdk.scripting.events.CounterTypeFilter
     ): DynamicAmount = DynamicAmount.LastKnownSourceCounters(filter)
 
+    /**
+     * The total damage dealt to the source this turn, captured as last-known information when it
+     * left the battlefield — "where X is the amount of damage dealt to it this turn" (Tangled
+     * Colony). See [DynamicAmount.LastKnownDamageDealtToSource].
+     */
+    fun lastKnownDamageDealtToSource(): DynamicAmount = DynamicAmount.LastKnownDamageDealtToSource
+
     // =========================================================================
     // Spell-cast trigger values
     // =========================================================================
@@ -458,6 +465,15 @@ object DynamicAmounts {
         DynamicAmount.TurnTracking(player, TurnTracker.DESCENDED)
 
     /**
+     * "The number of cards [player] has discarded this turn" (CR 701.8). Reads the per-player
+     * `CardsDiscardedThisTurnComponent`; every discard site (cost, effect, cycling, hand-size
+     * cleanup) feeds it. Used by Green Goblin, Revenant ("draw a card for each card you've
+     * discarded this turn").
+     */
+    fun cardsDiscardedThisTurn(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.TurnTracking(player, TurnTracker.CARDS_DISCARDED)
+
+    /**
      * "The number of permanents [player] sacrificed this turn" (controller-scoped, any permanent
      * type). Reads the per-player `PermanentsSacrificedThisTurnComponent`, distinct from the
      * game-wide cost-reduction counter. Used by Sawblade Skinripper ("deals that much damage").
@@ -510,6 +526,20 @@ object DynamicAmounts {
      * speed reads as 0 (CR 702.179f), so this never needs a guard.
      */
     fun speed(player: Player = Player.You): DynamicAmount = DynamicAmount.Speed(player)
+
+    /**
+     * How many counters of [counterType] a player currently has (CR 122.1 — counters placed on a
+     * player rather than a permanent). Poison, energy, and rad counters all live here.
+     */
+    fun playerCounterCount(counterType: String, player: Player = Player.You): DynamicAmount =
+        DynamicAmount.PlayerCounterCount(counterType, player)
+
+    /**
+     * A player's current energy counter total (CR 107.14) — "where X is the number of energy
+     * counters you have" (Longtusk Cub, Electrostatic Pummeler).
+     */
+    fun energyCount(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.PlayerCounterCount(com.wingedsheep.sdk.core.Counters.ENERGY, player)
 
     // =========================================================================
     // Entity property shortcuts (composable entity + property)
@@ -567,6 +597,15 @@ object DynamicAmounts {
 
     fun attachmentsOnSelf(): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.AttachmentCount())
+
+    /**
+     * Number of Auras and Equipment attached to the enchanted creature — the creature the source
+     * Aura is attached to (With Great Power…: "enchanted creature gets +2/+2 for each Aura and
+     * Equipment attached to it"). Distinct from [attachmentsOnSelf], which counts attachments on
+     * the source itself.
+     */
+    fun attachmentsOnEnchantedCreature(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.EnchantedCreature, EntityNumericProperty.AttachmentCount())
 
     /** Number of Equipment attached to the source (Shagrat, Loot Bearer's amass amount). */
     fun equipmentAttachedToSelf(): DynamicAmount =

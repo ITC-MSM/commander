@@ -1189,6 +1189,11 @@ The server's responsibilities are strictly limited to:
 
 ### 3.2 State Masking (Fog of War)
 
+Hidden-zone visibility is centralized in `rules-engine/view/Visibility`. Both
+`ClientStateTransformer` and the engine AI's determinizer consume it, so a reveal effect cannot be
+visible to the client while remaining hidden from the AI (or vice versa). Consumers must not
+reimplement hand, library, teammate, turn-control, or individually-revealed-card rules.
+
 **Principle:** Each player sees a filtered view of the game state.
 
 In Magic, players cannot see each other's hands or libraries. The `ClientStateTransformer` produces a

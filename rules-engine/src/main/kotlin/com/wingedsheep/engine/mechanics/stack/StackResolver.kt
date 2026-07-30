@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.EffectHandler
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
+import com.wingedsheep.engine.mechanics.daynight.DayNightService
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -50,6 +51,7 @@ import com.wingedsheep.engine.event.DelayedTriggeredAbility
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.WarpExileEffect
+import com.wingedsheep.sdk.scripting.effects.MoveTrackedBattlefieldObjectEffect
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
@@ -119,6 +121,7 @@ class StackResolver(
         wasWaterbendPaid: Boolean = false,
         giftRecipient: EntityId? = null,
         wasWarped: Boolean = false,
+        wasDashed: Boolean = false,
         wasEvoked: Boolean = false,
         wasImpending: Boolean = false,
         wasCleaved: Boolean = false,
@@ -126,6 +129,7 @@ class StackResolver(
         sneakAttackDefenderId: EntityId? = null,
         wasWebSlung: Boolean = false,
         webSlungReturnedManaValue: Int = 0,
+        wasMayhem: Boolean = false,
         chosenModes: List<Int> = emptyList(),
         modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),
         modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),
@@ -197,6 +201,7 @@ class StackResolver(
                 additionalCostPayXLifeAmount = additionalCostPayXLifeAmount,
                 castFromZone = castFromZone,
                 wasWarped = wasWarped,
+                wasDashed = wasDashed,
                 wasEvoked = wasEvoked,
                 wasImpending = wasImpending,
                 wasCleaved = wasCleaved,
@@ -204,6 +209,7 @@ class StackResolver(
                 sneakAttackDefenderId = sneakAttackDefenderId,
                 wasWebSlung = wasWebSlung,
                 webSlungReturnedManaValue = webSlungReturnedManaValue,
+                wasMayhem = wasMayhem,
                 beheldCards = beheldCards,
                 discardedAsCostCards = discardedAsCostCards,
                 chosenEntitySnapshots = chosenEntitySnapshots,
@@ -1220,6 +1226,16 @@ class StackResolver(
                         )
                     )
                 }
+                // Mayhem (CR 702.187): durably mark a permanent cast from the graveyard for its
+                // mayhem cost so Conditions.MayhemCostWasPaid reads it for the permanent's whole
+                // life. (Note: mayhem does NOT exile the spell on resolution — a permanent just
+                // enters the battlefield here via the normal permanent-resolution path.)
+                if (spellComponent.wasMayhem) {
+                    bag = bag.withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.MAYHEM_CAST,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
+                    )
+                }
                 // Waterbend (Avatar): durably mark a permanent cast with its (optional) waterbend
                 // cost paid so Conditions.WaterbendWasPaid reads it for the permanent's whole life.
                 if (spellComponent.wasWaterbendPaid) {
@@ -1258,6 +1274,12 @@ class StackResolver(
             // Track if this permanent was cast for its warp cost
             if (spellComponent.wasWarped) {
                 updated = updated.with(WarpedComponent)
+            }
+
+            // Track if this permanent was cast for its dash cost (CR 702.109a — grants haste
+            // live off this marker; see DashedComponent's doc).
+            if (spellComponent.wasDashed) {
+                updated = updated.with(com.wingedsheep.engine.state.components.battlefield.DashedComponent)
             }
 
             // Track if this permanent was cast for its evoke cost
@@ -1483,6 +1505,8 @@ class StackResolver(
                     )
                 )
             }
+
+            newState = DayNightService.applyDayboundEntry(newState, cardRegistry, spellId)
         }
 
         // Handle Saga entering the battlefield (Rule 714.3a)
@@ -1587,6 +1611,27 @@ class StackResolver(
                 id = java.util.UUID.randomUUID().toString(),
                 effect = WarpExileEffect(
                     target = EffectTarget.SpecificEntity(spellId),
+                    enteredBattlefieldTimestamp = entryTimestamp
+                ),
+                fireAtStep = Step.END,
+                sourceId = spellId,
+                sourceName = cardComponent?.name ?: "Unknown",
+                controllerId = controllerId
+            )
+            newState = newState.addDelayedTrigger(delayedTrigger)
+        }
+
+        // Dash (CR 702.109a): create delayed trigger to return this permanent to its owner's
+        // hand at the beginning of the next end step. Same blink-safety shape as warp above.
+        if (spellComponent.wasDashed) {
+            val entryTimestamp = newState.getEntity(spellId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()
+                ?.timestamp
+            val delayedTrigger = DelayedTriggeredAbility(
+                id = java.util.UUID.randomUUID().toString(),
+                effect = MoveTrackedBattlefieldObjectEffect(
+                    target = EffectTarget.SpecificEntity(spellId),
+                    destination = Zone.HAND,
                     enteredBattlefieldTimestamp = entryTimestamp
                 ),
                 fireAtStep = Step.END,
@@ -1738,6 +1783,7 @@ class StackResolver(
                 wasWaterbendPaid = spellComponent.wasWaterbendPaid,
                 wasSneaked = spellComponent.wasSneaked,
                 wasWebSlung = spellComponent.wasWebSlung,
+                wasMayhem = spellComponent.wasMayhem,
                 sacrificedPermanents = spellComponent.sacrificedPermanents,
                 discardedAsCostCards = spellComponent.discardedAsCostCards,
                 chosenEntitySnapshots = spellComponent.chosenEntitySnapshots,
@@ -2293,6 +2339,7 @@ class StackResolver(
                 triggeringEntityId = abilityComponent.triggeringEntityId,
                 triggeringPlayerId = abilityComponent.triggeringPlayerId,
                 targetEntryStamps = targetsComponent.targetEntryStamps,
+                storedCollections = abilityComponent.carriedPipeline?.storedCollections ?: emptyMap(),
             )
             if (validTargets.isEmpty()) {
                 // Fizzle - remove ability entity
@@ -2348,14 +2395,22 @@ class StackResolver(
             modeTargetsOrdered = abilityComponent.modeTargetsOrdered,
             modeTargetRequirements = abilityComponent.modeTargetRequirements,
             pipeline = PipelineState(
-                namedTargets = EffectContext.buildNamedTargets(targetReqs, resolvedTargets2),
+                namedTargets = EffectContext.buildNamedTargets(targetReqs, resolvedTargets2) +
+                    (abilityComponent.carriedPipeline?.namedTargets ?: emptyMap()),
                 // Expose a batch trigger's captured permanents (the matching members of a
                 // PermanentsEnteredEvent batch) so a ForEachInCollectionEffect payoff can iterate
                 // them — "for each of them, create a tapped copy of it" (Kambal). The copy executor
                 // reads each entity at resolution, so any that left the battlefield meanwhile no-op.
-                storedCollections = if (abilityComponent.capturedEntityIds.isNotEmpty()) {
+                storedCollections = (if (abilityComponent.capturedEntityIds.isNotEmpty()) {
                     mapOf(PipelineState.TRIGGER_CAPTURED_COLLECTION to abilityComponent.capturedEntityIds)
-                } else emptyMap()
+                } else emptyMap()) + (abilityComponent.carriedPipeline?.storedCollections ?: emptyMap()),
+                // A `ReflexiveTriggerEffect`'s action half (e.g. `Amass`, a discard) may have stashed
+                // subtype groups or scalar values the reflexive effect reads (CR 603.12) — carried
+                // across the stack round-trip since this ability builds a fresh context on resolve.
+                storedSubtypeGroups = abilityComponent.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
+                chosenValues = abilityComponent.carriedPipeline?.chosenValues ?: emptyMap(),
+                storedNumbers = abilityComponent.carriedPipeline?.storedNumbers ?: emptyMap(),
+                storedStringLists = abilityComponent.carriedPipeline?.storedStringLists ?: emptyMap()
             )
         )
 
@@ -2893,7 +2948,15 @@ class StackResolver(
          * ([TargetsComponent.targetEntryStamps]) — a permanent that left the battlefield and came
          * back in the meantime is a different object and no longer a legal target (CR 400.7).
          */
-        targetEntryStamps: Map<EntityId, Long> = emptyMap()
+        targetEntryStamps: Map<EntityId, Long> = emptyMap(),
+        /**
+         * Pipeline collections available at resolution time (e.g. the amassed Army under
+         * `EntityReference.AmassedArmy`, from a `ReflexiveTriggerEffect`'s carried pipeline) — the
+         * CR 608.2b re-validation below re-checks the target filter, and a filter like Grishnákh's
+         * "power <= the amassed Army's power" needs this to resolve the referenced entity, or every
+         * target wrongly fails re-validation as unresolvable.
+         */
+        storedCollections: Map<String, List<EntityId>> = emptyMap()
     ): List<ChosenTarget> {
         // Always project state for shroud/hexproof checks (Rule 702.18, 702.11)
         val projected = state.projectedState
@@ -2903,6 +2966,7 @@ class StackResolver(
             xValue = xValue,
             triggeringEntityId = triggeringEntityId,
             triggeringPlayerId = triggeringPlayerId,
+            storedCollections = storedCollections,
         )
 
         return targets.filterIndexed { index, target ->

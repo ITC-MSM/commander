@@ -144,6 +144,7 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
                     riderLinkId = riderLinkId,
                     expiryControllerId = expiryControllerId,
                     supersededBySameSource = supersedesSameSource,
+                    nonLandOnly = effect.nonLandOnly,
                     timestamp = state.timestamp,
                 )
             )
@@ -196,44 +197,33 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
     }
 
     /**
-     * Resolve which turn's cleanup will mark "the controller's next [step]" given the
-     * current step and active player. The cleanup-driven removal is coarse — it runs once
-     * per turn at cleanup — so we map any step in the turn to that turn's cleanup.
+     * Resolve the earliest turn whose cleanup may mark "the controller's next [step]", given the
+     * current step and active player. The cleanup-driven removal is coarse — it runs once per turn
+     * at cleanup — so we map any step in the turn to that turn's cleanup.
      *
-     * The returned value is a *round* number, because [GameState.turnNumber] is round-based —
-     * it increments only when the starting player begins a new turn, so every player's turn
-     * within a round shares the same number. The cleanup expiry check disambiguates which
-     * player's turn it is by also requiring `activePlayerId == controllerId`; this function
-     * therefore only has to name the round in which the controller's next matching turn falls.
-     * Counting *player-turns* until the controller's turn (and adding them to a round-based
-     * number) over-counts whenever the grant happens on an opponent's turn — the bug that let
-     * "until your next end step" leak an extra full turn when a creature died on the opponent's
-     * turn (Shadow Urchin).
+     * This is a *floor*, not an exact turn: the expiry check in [CleanupPhaseManager] also requires
+     * `activePlayerId == controllerId`, so the permission dies at the cleanup of the first turn the
+     * controller actually takes at or after this number. That pairing is what keeps the answer right
+     * across skipped turns, extra turns and eliminated seats — none of which a turn count computed
+     * from seat positions would survive.
+     *
+     * So the whole question is only ever "does the current turn still count?": if it does, this
+     * turn's cleanup is the deadline; otherwise the deadline is the controller's next turn, which is
+     * some turn strictly after this one. Since [GameState.turnNumber] counts player turns, that is
+     * just `turnNumber + 1`.
      */
     private fun resolveStepTurn(
         state: GameState,
         controllerId: EntityId,
         expiry: MayPlayExpiry.UntilControllerStep
     ): Int {
-        val turnOrder = state.turnOrder
-        val playerIndex = turnOrder.indexOf(controllerId)
-        val activeIndex = turnOrder.indexOf(state.activePlayerId)
-
-        val onControllerTurn = playerIndex == activeIndex
-        val targetStep = expiry.step
-        val targetReachedThisTurn = state.step.ordinal >= targetStep.ordinal
+        val onControllerTurn = state.activePlayerId == controllerId
+        val targetReachedThisTurn = state.step.ordinal >= expiry.step.ordinal
         val thisTurnStillCounts = onControllerTurn && expiry.includeCurrentTurn && !targetReachedThisTurn
 
-        return when {
-            // This turn's matching step still counts — expire at this turn's cleanup.
-            thisTurnStillCounts -> state.turnNumber
-            // Controller's own turn, but this turn no longer counts — their next turn is next round.
-            onControllerTurn -> state.turnNumber + 1
-            // Opponent's turn: the controller still takes a turn *this* round if they come later in
-            // turn order; otherwise they already went and their next turn is in the next round.
-            playerIndex > activeIndex -> state.turnNumber
-            else -> state.turnNumber + 1
-        }
+        // This turn's matching step still counts — expire at this turn's cleanup. Otherwise the
+        // controller's next turn is the deadline, and every later turn number qualifies as a floor.
+        return if (thisTurnStillCounts) state.turnNumber else state.turnNumber + 1
     }
 }
 

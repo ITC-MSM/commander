@@ -569,6 +569,16 @@ function BottomSeatRailChip({ seat, isViewerSeat }: { seat: ClientPlayer; isView
           </span>
         )}
 
+        {/* Energy (CR 107.14) */}
+        {!tomb && (seat.energyCounters ?? 0) > 0 && (
+          <span
+            title={`${seat.energyCounters} energy counters`}
+            style={{ fontSize: compact ? 10 : 11, fontWeight: 800, color: '#fde68a' }}
+          >
+            ⚡{seat.energyCounters}
+          </span>
+        )}
+
         {/* Deciding spinner / priority dot (the turn ring is the border glow) */}
         {isDeciding ? (
           <span
@@ -1047,6 +1057,16 @@ function RailChip({
           </span>
         )}
 
+        {/* Energy (CR 107.14) */}
+        {!tomb && (opponent.energyCounters ?? 0) > 0 && (
+          <span
+            title={`${opponent.energyCounters} energy counters`}
+            style={{ fontSize: compact ? 10 : 11, fontWeight: 800, color: '#fde68a' }}
+          >
+            ⚡{opponent.energyCounters}
+          </span>
+        )}
+
         {/* Commander damage (worst pair; full rows in the tooltip) */}
         {!tomb && worstCommanderDamage && worstCommanderDamage.amount > 0 && (
           <span
@@ -1247,6 +1267,7 @@ function chipTitle(opponent: ClientPlayer): string {
     lines.push(`Max hand size ${opponent.maxHandSize ?? '∞ (no maximum)'}`)
   }
   if (opponent.poisonCounters > 0) lines.push(`Poison ${opponent.poisonCounters}/10`)
+  if ((opponent.energyCounters ?? 0) > 0) lines.push(`Energy ${opponent.energyCounters}`)
   for (const e of opponent.commanderDamage ?? []) {
     lines.push(`⚔ ${e.commanderName}: ${e.amount}/${e.threshold}`)
   }

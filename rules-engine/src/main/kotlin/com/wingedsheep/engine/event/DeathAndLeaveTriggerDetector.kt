@@ -72,6 +72,7 @@ class DeathAndLeaveTriggerDetector(
 
     fun detectDeathTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: ZoneChangeEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -86,7 +87,7 @@ class DeathAndLeaveTriggerDetector(
 
         // For "When this creature dies" - the creature might be in graveyard now
         // Look up abilities by card definition
-        val abilities = abilityResolver.getTriggeredAbilities(entityId, info.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(entityId, info.cardDefinitionId, state, statics)
         val controllerId = event.ownerId
 
         for (ability in abilities) {
@@ -141,6 +142,7 @@ class DeathAndLeaveTriggerDetector(
      */
     fun detectSimultaneousDeathTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         events: List<EngineGameEvent>,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -165,7 +167,7 @@ class DeathAndLeaveTriggerDetector(
 
             val info = resolveDyingEntity(state, deadEvent) ?: continue
 
-            val abilities = abilityResolver.getTriggeredAbilities(deadEntityId, info.cardDefinitionId, state)
+            val abilities = abilityResolver.getTriggeredAbilities(deadEntityId, info.cardDefinitionId, state, statics)
             val controllerId = deadEvent.ownerId
 
             for (ability in abilities) {
@@ -198,6 +200,7 @@ class DeathAndLeaveTriggerDetector(
      */
     fun detectDeadAuraAttachmentTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: ZoneChangeEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -212,7 +215,7 @@ class DeathAndLeaveTriggerDetector(
         val container = state.getEntity(auraEntityId) ?: return
         val cardComponent = container.get<CardComponent>() ?: return
 
-        val abilities = abilityResolver.getTriggeredAbilities(auraEntityId, cardComponent.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(auraEntityId, cardComponent.cardDefinitionId, state, statics)
         val controllerId = event.ownerId
 
         for (ability in abilities) {
@@ -463,6 +466,7 @@ class DeathAndLeaveTriggerDetector(
      */
     fun detectLeavesBattlefieldTriggers(
         state: GameState,
+        statics: BattlefieldStaticsIndex,
         event: ZoneChangeEvent,
         triggers: MutableList<PendingTrigger>
     ) {
@@ -473,7 +477,7 @@ class DeathAndLeaveTriggerDetector(
         val entityId = event.entityId
         val info = resolveDyingEntity(state, event) ?: return
 
-        val abilities = abilityResolver.getTriggeredAbilities(entityId, info.cardDefinitionId, state)
+        val abilities = abilityResolver.getTriggeredAbilities(entityId, info.cardDefinitionId, state, statics)
         val controllerId = event.ownerId
 
         for (ability in abilities) {

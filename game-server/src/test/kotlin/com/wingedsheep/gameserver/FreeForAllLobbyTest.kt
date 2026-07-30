@@ -215,6 +215,44 @@ class FreeForAllLobbyTest : FunSpec() {
                     .any { it.message.contains("Free-for-All") } shouldBe true
             }
         }
+
+        test("Two-Headed Giant refuses a Commander deck format before touching submitted decks") {
+            val host = createClient()
+            host.connectAs("Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "PREMADE_DECKS",
+                maxPlayers = 4,
+                gameMode = "TWO_HEADED_GIANT",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+            val lobbyId = host.messages.filterIsInstance<ServerMessage.LobbyCreated>().first().lobbyId
+
+            for (name in listOf("Teammate", "Opponent A", "Opponent B")) {
+                createClient().also { client ->
+                    client.connectAs(name)
+                    client.send(ClientMessage.JoinLobby(lobbyId))
+                }
+            }
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 4
+            }
+
+            host.send(ClientMessage.UpdateLobbySettings(deckFormat = "COMMANDER"))
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.settings?.deckFormat shouldBe "COMMANDER"
+            }
+            host.send(ClientMessage.StartTournamentLobby)
+
+            eventually(5.seconds) {
+                host.messages.filterIsInstance<ServerMessage.Error>().any {
+                    it.message.contains("Two-Headed Giant") && it.message.contains("Commander")
+                } shouldBe true
+            }
+            host.messages.none { it is ServerMessage.FreeForAllGameStarting } shouldBe true
+        }
     }
 
     // =========================================================================

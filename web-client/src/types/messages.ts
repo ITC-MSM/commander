@@ -240,6 +240,8 @@ export interface StateDelta {
   readonly turnNumber?: number | null
   readonly isGameOver?: boolean | null
   readonly winnerId?: EntityId | null
+  /** Day/night designation (CR 731). Null means unchanged — the game never returns to neither. */
+  readonly dayNight?: ClientGameState['dayNight'] | null
   /** Combat state changes */
   readonly combat?: ClientCombatState | null
   readonly combatCleared?: boolean | null
@@ -1208,6 +1210,11 @@ export interface SealedPoolGeneratedMessage {
   readonly setNames: readonly string[]
   readonly cardPool: readonly SealedCardInfo[]
   readonly basicLands: readonly SealedCardInfo[]
+  /**
+   * Cube Pool Play: `cardPool` is the entire cube and copies are unlimited (bounded only by the
+   * 4-of cap), so adding a card must not consume it from the pool.
+   */
+  readonly poolPlay?: boolean
 }
 
 /**
@@ -1288,6 +1295,15 @@ export interface LobbySettings {
   readonly chaosBoosters: boolean
   /** Host ban list — oracle card names excluded from generated boosters (sorted). */
   readonly bannedCardNames: readonly string[]
+  /** Per-lobby cube summary. Undefined means catalogued sets are the pack source. */
+  readonly cubeName?: string | null
+  readonly cubeCardCount?: number | null
+  /**
+   * Cube Pool Play: no draft — every player deckbuilds from the whole cube, copies limited only by
+   * the 4-of cap. Cube Sealed lobbies only.
+   */
+  readonly cubePoolPlay?: boolean
+  readonly packSize?: number | null
   /** Master switch for in-app AI assistance (Suggest Pick / Auto-build). */
   readonly aiAssistEnabled: boolean
   /** Lobby mode axis: bracket of 2-player matches vs one multiplayer Free-for-All game. */
@@ -2268,6 +2284,13 @@ export interface UpdateLobbySettingsMessage {
   readonly chaosBoosters?: boolean
   /** Replace the host ban list (full list, not a delta). Omit to leave unchanged. */
   readonly bannedCardNames?: readonly string[]
+  /** Full cube list; duplicate names represent duplicate physical cards. Empty clears cube mode. */
+  readonly cubeCards?: readonly string[]
+  readonly cubeName?: string
+  readonly packSize?: number
+  readonly cubeBasicLandSetCode?: string
+  /** Cube Sealed only: skip the draft and let everyone build from the whole cube. */
+  readonly cubePoolPlay?: boolean
   /** Master switch for in-app AI assistance (Suggest Pick / Auto-build). Omit to leave unchanged. */
   readonly aiAssistEnabled?: boolean
   /** Lobby mode axis ('TOURNAMENT' / 'FREE_FOR_ALL'). Omit to leave unchanged. */
@@ -2506,6 +2529,11 @@ export function createUpdateLobbySettingsMessage(
     deckFormat?: DeckFormat | '' | null
     chaosBoosters?: boolean
     bannedCardNames?: readonly string[]
+    cubeCards?: readonly string[]
+    cubeName?: string
+    packSize?: number
+    cubeBasicLandSetCode?: string
+    cubePoolPlay?: boolean
     aiAssistEnabled?: boolean
     gameMode?: LobbyGameMode
     attackMode?: AttackMode

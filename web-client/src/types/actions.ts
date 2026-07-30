@@ -14,6 +14,7 @@ export type GameAction =
   | CycleCardAction
   | TypecycleCardAction
   | PlotCardAction
+  | SuspendCardFromHandAction
   | CrewVehicleAction
   | SaddleMountAction
   | PlayLandAction
@@ -215,6 +216,18 @@ export interface PlotCardAction {
   readonly paymentStrategy?: PaymentStrategy
 }
 
+/**
+ * Suspend a card from hand (CR 702.62, Time Spiral).
+ * Special action — pays the printed suspend cost and exiles the card with time counters.
+ * It counts down at the owner's upkeep and is cast for free when the last is removed.
+ */
+export interface SuspendCardFromHandAction {
+  readonly type: 'SuspendCardFromHand'
+  readonly playerId: EntityId
+  readonly cardId: EntityId
+  readonly paymentStrategy?: PaymentStrategy
+}
+
 // =============================================================================
 // Crew Actions
 // =============================================================================
@@ -390,6 +403,8 @@ export function getActionSubject(action: GameAction): EntityId | null {
     case 'TypecycleCard':
       return action.cardId
     case 'PlotCard':
+      return action.cardId
+    case 'SuspendCardFromHand':
       return action.cardId
     case 'ActivateAbility':
       return action.sourceId

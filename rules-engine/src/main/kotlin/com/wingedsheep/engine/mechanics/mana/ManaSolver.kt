@@ -347,7 +347,7 @@ class ManaSolver(
             .filter { it.entityId !in excludeSources }
             // Auto-pay must not silently sacrifice permanents (e.g. Treasure tokens).
             // The bonus-mana accounting in canPay() still counts these via
-            // calculateSacrificeSelfBonusMana(), but the solver itself never picks them.
+            // sacrificeSelfManaBySource(), but the solver itself never picks them.
             .filter { !it.requiresSacrifice }
             // Same rule for composite Tap+TapPermanents sources (Springleaf Drum) — the
             // resumer must prompt the player to pick which creature gets tapped, so the
@@ -921,6 +921,16 @@ class ManaSolver(
         // Project state once to get all keywords and projected controllers
         val projected = state.projectedState
 
+        // Collect every mana-relevant battlefield static once, rather than re-walking the
+        // battlefield inside each of the five per-source helpers below (see ManaStaticsIndex).
+        //
+        // Lazily, and that matters: this function is called on every affordability check, and a
+        // player who is tapped out has no candidate source at all, so the helpers below never run.
+        // Building eagerly would charge a battlefield walk to exactly the calls that used to do no
+        // scanning whatsoever — measurably the wrong trade in a benchmark full of tapped-out
+        // windows. NONE is safe because a solve never leaves the calling thread.
+        val manaStatics by lazy(LazyThreadSafetyMode.NONE) { ManaStaticsIndex.build(state, cardRegistry) }
+
         // Use projected controller to find all permanents controlled by this player
         // (accounts for control-changing effects like Annex)
         val battlefieldCards = projected.getBattlefieldControlledBy(playerId)
@@ -942,7 +952,7 @@ class ManaSolver(
 
             // Include mana abilities granted by static effects from other permanents
             // (e.g., Clement, the Worrywort granting {T}: Add {G} or {U} to Frogs)
-            val staticGrantedManaAbilities = getStaticGrantedManaAbilities(entityId, state)
+            val staticGrantedManaAbilities = getStaticGrantedManaAbilities(entityId, state, manaStatics)
             val rawManaAbilities = allAbilities.filter { it.isManaAbility } + staticGrantedManaAbilities
 
             // When a spell/ability payment context is provided, drop mana abilities whose
@@ -997,9 +1007,9 @@ class ManaSolver(
                     // (e.g., Shimmerwilds Growth on a Mountain with Blue chosen → produces {U}).
                     // A filter-based replacement (Pulse of Llanowar) makes a matched land produce
                     // one mana of a color of its controller's choice — i.e. any of the five.
-                    val overrideColor = findEnchantedLandManaColorOverride(state, entityId)
+                    val overrideColor = manaStatics.landColorOverrideByTarget[entityId]
                     val effectiveColors = when {
-                        landMatchesManaColorReplacement(state, entityId) -> Color.entries.toSet()
+                        landMatchesManaColorReplacement(state, entityId, manaStatics) -> Color.entries.toSet()
                         overrideColor != null -> setOf(overrideColor)
                         else -> subtypeColors
                     }
@@ -1215,7 +1225,14 @@ class ManaSolver(
                 // so route them through the bonus-mana channel. Only unconditional AddMana/
                 // AddColorlessMana leaves are folded — anything gated/choice-based stays with the
                 // primary path to avoid over-counting.
-                if (ability.effect is CompositeEffect && manaEffect is AddManaEffect) {
+                // …but only from an ability auto-pay is actually allowed to activate. The bonus-mana
+                // channel carries no provenance, so a sacrifice-gated (Ancient Spring's "{T},
+                // Sacrifice this land: Add {W}{B}") or tap-another-permanent ability would donate
+                // free floating mana on top of the source's sacrifice-free tap — letting auto-pay
+                // spend {W}{B} it never paid for. The primary leaf's color is already fenced off by
+                // colorsRequiringSacrifice / tapPermanentsSubCost; the extra leaves are dropped here.
+                val abilityIsAutoPayable = !abilityRequiresSacrifice && abilityTapPermanentsSubCost == null
+                if (abilityIsAutoPayable && ability.effect is CompositeEffect && manaEffect is AddManaEffect) {
                     var seenPrimary = false
                     for (leaf in (ability.effect as CompositeEffect).effects) {
                         when (leaf) {
@@ -1453,8 +1470,8 @@ class ManaSolver(
                 painAmount = 0,
                 canAttack = false
             )
-        }.map { source -> augmentWithAuraBonusMana(state, source, playerId) }
-            .map { source -> augmentWithSourceTapBonusMana(state, source, playerId) }
+        }.map { source -> augmentWithAuraBonusMana(state, source, playerId, manaStatics) }
+            .map { source -> augmentWithSourceTapBonusMana(state, source, playerId, manaStatics) }
             .let { sources ->
                 if (hasDampLandManaProduction(state)) applyLandManaDampening(sources) else sources
             }
@@ -1619,50 +1636,29 @@ class ManaSolver(
     }
 
     /**
-     * Returns the color an attached aura's [OverrideEnchantedLandManaColor] ability
-     * forces the source land to produce, or `null` if no override applies.
-     * Mirrors [ActivateAbilityHandler]'s version — both must agree or mana solving
-     * desynchronises from mana ability resolution.
-     */
-    private fun findEnchantedLandManaColorOverride(
-        state: GameState,
-        sourceId: EntityId
-    ): Color? {
-        var override: Color? = null
-        for (entityId in state.getBattlefield()) {
-            val container = state.getEntity(entityId) ?: continue
-            val attachedTo = container.get<AttachedToComponent>()
-            if (attachedTo?.targetId != sourceId) continue
-            val card = container.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            for (staticAbility in cardDef.script.staticAbilities) {
-                val o = staticAbility as? com.wingedsheep.sdk.scripting.OverrideEnchantedLandManaColor ?: continue
-                override = o.color
-                    ?: container.chosenColor()
-                    ?: continue
-            }
-        }
-        return override
-    }
-
-    /**
      * True if [landId] is subject to a [com.wingedsheep.sdk.scripting.ReplaceLandManaColor] static
      * (Pulse of Llanowar) — its produced mana becomes one mana of a color of its controller's
      * choice, so for solving it is treated as a five-color source. Mirrors
      * `ActivateAbilityHandler.landMatchesManaColorReplacement`.
+     *
+     * The statics come from [manaStatics] rather than a battlefield walk, so a board with no
+     * Pulse of Llanowar answers in zero work instead of one scan per candidate source.
      */
-    private fun landMatchesManaColorReplacement(state: GameState, landId: EntityId): Boolean {
-        for (entityId in state.getBattlefield()) {
-            val container = state.getEntity(entityId) ?: continue
-            val card = container.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            for (staticAbility in cardDef.script.staticAbilities) {
-                val replacement = staticAbility as? com.wingedsheep.sdk.scripting.ReplaceLandManaColor ?: continue
-                val staticController = state.projectedState.getController(entityId) ?: continue
-                val filterContext = PredicateContext(controllerId = staticController, sourceId = entityId)
-                if (predicateEvaluator.matches(state, state.projectedState, landId, replacement.filter, filterContext)) {
-                    return true
-                }
+    private fun landMatchesManaColorReplacement(
+        state: GameState,
+        landId: EntityId,
+        manaStatics: ManaStaticsIndex
+    ): Boolean {
+        for (replacement in manaStatics.landColorReplacements) {
+            val filterContext = PredicateContext(
+                controllerId = replacement.sourceControllerId,
+                sourceId = replacement.sourceId
+            )
+            if (predicateEvaluator.matches(
+                    state, state.projectedState, landId, replacement.static.filter, filterContext
+                )
+            ) {
+                return true
             }
         }
         return false
@@ -1675,48 +1671,42 @@ class ManaSolver(
     private fun augmentWithAuraBonusMana(
         state: GameState,
         source: ManaSource,
-        playerId: EntityId
+        playerId: EntityId,
+        manaStatics: ManaStaticsIndex
     ): ManaSource {
+        val attachedBonuses = manaStatics.auraBonusManaByTarget[source.entityId] ?: return source
+
         var totalBonus = 0
         var bonusColor: Color? = null
         var anyColorBonus = false
 
-        for (entityId in state.getBattlefield()) {
-            val container = state.getEntity(entityId) ?: continue
-            val attachedTo = container.get<AttachedToComponent>()
-            if (attachedTo?.targetId != source.entityId) continue
+        for (bonus in attachedBonuses) {
+            val additionalMana = bonus.static
 
-            val card = container.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            val landController = state.getEntity(source.entityId)
+                ?.get<ControllerComponent>()?.playerId ?: playerId
 
-            for (staticAbility in cardDef.script.staticAbilities) {
-                val additionalMana = staticAbility as? AdditionalManaOnTap ?: continue
+            val context = EffectContext(
+                sourceId = bonus.auraId,
+                controllerId = landController,
+                targets = emptyList(),
+                xValue = null
+            )
 
-                val landController = state.getEntity(source.entityId)
-                    ?.get<ControllerComponent>()?.playerId ?: playerId
-
-                val context = EffectContext(
-                    sourceId = entityId,
-                    controllerId = landController,
-                    targets = emptyList(),
-                    xValue = null
-                )
-
-                val amount = dynamicAmountEvaluator.evaluate(state, additionalMana.amount, context)
-                if (amount > 0) {
-                    if (additionalMana.anyColor) {
-                        // Fertile Ground: one mana of any color — treat as flexible for the solve.
-                        totalBonus += amount
-                        anyColorBonus = true
-                    } else {
-                        // Resolve the color: null means "read the aura's chosen color".
-                        // If no color is chosen (shouldn't happen in practice), skip.
-                        val manaColor = additionalMana.color
-                            ?: container.chosenColor()
-                            ?: continue
-                        totalBonus += amount
-                        bonusColor = manaColor
-                    }
+            val amount = dynamicAmountEvaluator.evaluate(state, additionalMana.amount, context)
+            if (amount > 0) {
+                if (additionalMana.anyColor) {
+                    // Fertile Ground: one mana of any color — treat as flexible for the solve.
+                    totalBonus += amount
+                    anyColorBonus = true
+                } else {
+                    // Resolve the color: null means "read the aura's chosen color".
+                    // If no color is chosen (shouldn't happen in practice), skip.
+                    val manaColor = additionalMana.color
+                        ?: bonus.chosenColor
+                        ?: continue
+                    totalBonus += amount
+                    bonusColor = manaColor
                 }
             }
         }
@@ -1748,61 +1738,59 @@ class ManaSolver(
     private fun augmentWithSourceTapBonusMana(
         state: GameState,
         source: ManaSource,
-        tappingPlayerId: EntityId
+        tappingPlayerId: EntityId,
+        manaStatics: ManaStaticsIndex
     ): ManaSource {
+        if (manaStatics.sourceTapBonuses.isEmpty()) return source
+
         var totalBonus = 0
         var bonusColor: Color? = null
         var totalColorlessBonus = 0
 
-        for (entityId in state.getBattlefield()) {
-            val container = state.getEntity(entityId) ?: continue
-            val card = container.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+        for (entry in manaStatics.sourceTapBonuses) {
+            val onSourceTap = entry.static
 
-            for (staticAbility in cardDef.script.staticAbilities) {
-                val onSourceTap = staticAbility as? AdditionalManaOnSourceTap ?: continue
-
-                // Gate on the produced-mana type. At solve time the produced type is inferred from
-                // what the source can supply: COLORLESS applies only to a source that produces {C},
-                // COLORED only to one that produces a color.
-                when (onSourceTap.whenProducing) {
-                    TappedForManaType.ANY -> {}
-                    TappedForManaType.COLORLESS -> if (!source.producesColorless) continue
-                    TappedForManaType.COLORED -> if (source.producesColors.isEmpty()) continue
-                }
-
-                val staticController = state.projectedState.getController(entityId) ?: continue
-
-                // Filter from the static-ability controller's perspective — see
-                // AdditionalManaOnSourceTap kdoc.
-                val filterContext = PredicateContext(controllerId = staticController, sourceId = entityId)
-                if (!predicateEvaluator.matches(
-                        state, state.projectedState, source.entityId, onSourceTap.sourceFilter, filterContext
-                    )) continue
-
-                val effectContext = EffectContext(
-                    sourceId = entityId,
-                    controllerId = tappingPlayerId,
-                    targets = emptyList(),
-                    xValue = null
-                )
-                val amount = dynamicAmountEvaluator.evaluate(state, onSourceTap.amount, effectContext)
-                if (amount <= 0) continue
-
-                // A colorless bonus arises when the ability adds {C}: either it's explicitly gated to
-                // colorless taps, or it's a mirror (color = null) over a colorless-only source.
-                val isColorlessBonus = onSourceTap.color == null &&
-                    (onSourceTap.whenProducing == TappedForManaType.COLORLESS || source.producesColors.isEmpty())
-                if (isColorlessBonus) {
-                    totalColorlessBonus += amount
-                    continue
-                }
-
-                // Resolve the bonus color: explicit color wins; null means mirror the source's produced color.
-                val resolvedColor = onSourceTap.color ?: source.producesColors.firstOrNull() ?: continue
-                totalBonus += amount
-                bonusColor = bonusColor ?: resolvedColor
+            // Gate on the produced-mana type. At solve time the produced type is inferred from
+            // what the source can supply: COLORLESS applies only to a source that produces {C},
+            // COLORED only to one that produces a color.
+            when (onSourceTap.whenProducing) {
+                TappedForManaType.ANY -> {}
+                TappedForManaType.COLORLESS -> if (!source.producesColorless) continue
+                TappedForManaType.COLORED -> if (source.producesColors.isEmpty()) continue
             }
+
+            // Filter from the static-ability controller's perspective — see
+            // AdditionalManaOnSourceTap kdoc.
+            val filterContext = PredicateContext(
+                controllerId = entry.sourceControllerId,
+                sourceId = entry.sourceId
+            )
+            if (!predicateEvaluator.matches(
+                    state, state.projectedState, source.entityId, onSourceTap.sourceFilter, filterContext
+                )) continue
+
+            val effectContext = EffectContext(
+                sourceId = entry.sourceId,
+                controllerId = tappingPlayerId,
+                targets = emptyList(),
+                xValue = null
+            )
+            val amount = dynamicAmountEvaluator.evaluate(state, onSourceTap.amount, effectContext)
+            if (amount <= 0) continue
+
+            // A colorless bonus arises when the ability adds {C}: either it's explicitly gated to
+            // colorless taps, or it's a mirror (color = null) over a colorless-only source.
+            val isColorlessBonus = onSourceTap.color == null &&
+                (onSourceTap.whenProducing == TappedForManaType.COLORLESS || source.producesColors.isEmpty())
+            if (isColorlessBonus) {
+                totalColorlessBonus += amount
+                continue
+            }
+
+            // Resolve the bonus color: explicit color wins; null means mirror the source's produced color.
+            val resolvedColor = onSourceTap.color ?: source.producesColors.firstOrNull() ?: continue
+            totalBonus += amount
+            bonusColor = bonusColor ?: resolvedColor
         }
 
         return if (totalBonus > 0 || totalColorlessBonus > 0) {
@@ -1819,38 +1807,33 @@ class ManaSolver(
     /**
      * Get mana abilities granted to an entity by static abilities on battlefield permanents.
      * E.g., Clement, the Worrywort grants "{T}: Add {G} or {U}" to Frog creatures.
+     *
+     * The grants themselves are collected once per solve into [manaStatics] — including the
+     * unlocked-Room-face ones (CR 709.5), so Greenhouse's "Lands you control have '{T}: Add one
+     * mana of any color'" feeds the auto-payer only while its door is unlocked. All that is left
+     * here is matching [entityId] against each grant's filter, and on a board with no such grant
+     * (nearly every board) that is no work at all.
      */
     private fun getStaticGrantedManaAbilities(
         entityId: EntityId,
-        state: GameState
+        state: GameState,
+        manaStatics: ManaStaticsIndex
     ): List<ActivatedAbility> {
+        if (manaStatics.manaAbilityGrantors.isEmpty()) return emptyList()
+
         val result = mutableListOf<ActivatedAbility>()
-
-        for (permanentId in state.getBattlefield()) {
-            val container = state.getEntity(permanentId) ?: continue
-            val card = container.get<CardComponent>() ?: continue
-            if (container.has<FaceDownComponent>()) continue
-
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            // Include unlocked Room face statics (CR 709.5) so a Room granting a mana ability
-            // (e.g. Greenhouse's "Lands you control have '{T}: Add one mana of any color.'") feeds
-            // the auto-payer only while its door is unlocked.
-            for (ability in com.wingedsheep.engine.state.components.identity.RoomFaceStatics.activeStaticAbilities(container, cardDef)) {
-                if (ability is GrantActivatedAbility &&
-                    ability.filter.scope is com.wingedsheep.sdk.scripting.filters.unified.Scope.Battlefield) {
-                    if (ability.filter.excludeSelf && permanentId == entityId) continue
-                    val granterController = state.projectedState.getController(permanentId) ?: continue
-                    val matches = predicateEvaluator.matches(
-                        state,
-                        state.projectedState,
-                        entityId,
-                        ability.filter.baseFilter,
-                        PredicateContext(controllerId = granterController, sourceId = permanentId)
-                    )
-                    if (matches && ability.ability.isManaAbility) {
-                        result.add(ability.ability)
-                    }
-                }
+        for (grantor in manaStatics.manaAbilityGrantors) {
+            val grant = grantor.grant
+            if (grant.filter.excludeSelf && grantor.granterId == entityId) continue
+            val matches = predicateEvaluator.matches(
+                state,
+                state.projectedState,
+                entityId,
+                grant.filter.baseFilter,
+                PredicateContext(controllerId = grantor.granterControllerId, sourceId = grantor.granterId)
+            )
+            if (matches) {
+                result.add(grant.ability)
             }
         }
 
@@ -1859,6 +1842,12 @@ class ManaSolver(
 
     /**
      * Check if any permanent on the battlefield has DampLandManaProduction.
+     *
+     * Deliberately *not* folded into [ManaStaticsIndex]: this runs once per
+     * [findAvailableManaSources] call rather than once per candidate source, so it is O(battlefield)
+     * already and was never part of the quadratic problem. It also walks a different entity set
+     * (`turnOrder` × `getBattlefield(playerId)`, face-down included), and moving it would have meant
+     * reconciling that difference for no measurable gain.
      */
     private fun hasDampLandManaProduction(state: GameState): Boolean {
         for (playerId in state.turnOrder) {
@@ -1987,8 +1976,9 @@ class ManaSolver(
         //     ability directly. But the spell is still *affordable* — we just need to know it.
         //  3. Cost shapes findAvailableManaSources doesn't model at all (Ashnod's Altar's
         //     "Sacrifice a creature: Add {C}{C}" — no {T} anywhere in the cost).
+        val sacrificeManaBySource = sacrificeSelfManaBySource(state, playerId)
         val bonus = calculateTapPermanentsBonusMana(state, playerId)
-            .plus(calculateSacrificeSelfBonusMana(state, playerId))
+            .plus(sacrificeManaBySource.values.fold(TapPermanentsBonusMana()) { acc, p -> acc + p })
             .plus(calculateCompositeTapPermanentsBonusMana(state, playerId))
             .plus(calculateExplicitActivationBonusMana(state, playerId))
         if (bonus.totalMana == 0) return false
@@ -2012,7 +2002,20 @@ class ManaSolver(
         val augmentedXRemaining = totalXMana - augmentedXPaid
 
         if (augmentedRemaining.isEmpty() && augmentedXRemaining == 0) return true
-        return solve(state, playerId, augmentedRemaining, augmentedXRemaining, excludeSources, spellContext, precomputedSources) != null
+        // Spending a permanent's tap+sacrifice ability uses up its {T}, so it can't also be
+        // auto-tapped for the rest of the cost. Pure sacrifice sources (Treasures) are already
+        // dropped by solve(); this only bites *mixed* sources like Ancient Spring, where counting
+        // both abilities would claim {U} and {W}{B} from one land.
+        val sacrificeConsumedIds = sacrificeManaBySource.keys
+        return solve(
+            state,
+            playerId,
+            augmentedRemaining,
+            augmentedXRemaining,
+            excludeSources + sacrificeConsumedIds,
+            spellContext,
+            precomputedSources
+        ) != null
     }
 
     /**
@@ -2045,17 +2048,33 @@ class ManaSolver(
         // Sacrifice-self sources (treasures) and composite tap+TapPermanents sources
         // (Springleaf Drum) are counted below via their dedicated bonus helpers, so skip
         // them here to avoid double-counting.
-        val sourceMana = (precomputedSources ?: findAvailableManaSources(state, playerId))
+        val sacrificeManaBySource = sacrificeSelfManaBySource(state, playerId)
+        val autoTappableSources = (precomputedSources ?: findAvailableManaSources(state, playerId))
             .filter { !it.requiresSacrifice && it.tapPermanentsSubCost == null }
-            .sumOf { it.manaAmount + it.bonusManaPerTap }
+        val sourceMana = autoTappableSources
+            // A *mixed* source (Ancient Spring — "{T}: Add {U}" plus "{T}, Sacrifice this land:
+            // Add {W}{B}") is auto-tappable and so counted here, but its sacrifice ability is also
+            // counted by the extras helper below. Both abilities spend the same {T}, so the
+            // permanent yields the better of the two — never their sum.
+            .sumOf { source ->
+                maxOf(
+                    source.manaAmount + source.bonusManaPerTap,
+                    sacrificeManaBySource[source.entityId]?.totalMana ?: 0
+                )
+            }
 
         // Add extra mana from "extras" abilities the solver doesn't pick:
         //  - TapPermanents (e.g., Birchlore Rangers)
         //  - Tap+SacrificeSelf mana abilities (e.g., Treasure tokens)
         //  - Composite Tap+TapPermanents mana abilities (e.g., Springleaf Drum)
         //  - Costs with no {T} at all, which the solver doesn't model (e.g., Ashnod's Altar)
+        val autoTappableIds = autoTappableSources.map { it.entityId }.toSet()
+        val sacrificeExtras = sacrificeManaBySource
+            .filterKeys { it !in autoTappableIds }
+            .values
+            .sumOf { it.totalMana }
         val extrasMana = calculateTapPermanentsBonusMana(state, playerId).totalMana +
-            calculateSacrificeSelfBonusMana(state, playerId).totalMana +
+            sacrificeExtras +
             calculateCompositeTapPermanentsBonusMana(state, playerId).totalMana +
             calculateExplicitActivationBonusMana(state, playerId).totalMana
 
@@ -2193,6 +2212,7 @@ class ManaSolver(
         playerId: EntityId
     ): TapPermanentsBonusMana {
         val projected = state.projectedState
+        val manaStatics = ManaStaticsIndex.build(state, cardRegistry)
         var total = TapPermanentsBonusMana()
 
         for (entityId in projected.getBattlefieldControlledBy(playerId)) {
@@ -2203,7 +2223,7 @@ class ManaSolver(
 
             val ownAbilities = if (projected.hasLostAllAbilities(entityId)) emptyList()
                 else cardRegistry.getCard(card.cardDefinitionId)?.script?.activatedAbilities.orEmpty()
-            val abilities = ownAbilities + getStaticGrantedManaAbilities(entityId, state)
+            val abilities = ownAbilities + getStaticGrantedManaAbilities(entityId, state, manaStatics)
 
             for (ability in abilities) {
                 if (!ability.isManaAbility) continue
@@ -2229,7 +2249,7 @@ class ManaSolver(
      * `canPay` and `getAvailableManaCount`.
      *
      * Mirrors the accept conditions of `abilityCanBeUsed` inside [findAvailableManaSources] and the
-     * cost shapes matched by [calculateTapPermanentsBonusMana], [calculateSacrificeSelfBonusMana]
+     * cost shapes matched by [calculateTapPermanentsBonusMana], [sacrificeSelfManaBySource]
      * and [calculateCompositeTapPermanentsBonusMana]. `ManaSolverExtrasNoDoubleCountTest` pins the
      * two together: it asserts the available-mana count for a Treasure / Birchlore / Springleaf
      * board is unchanged by this helper.
@@ -2347,17 +2367,19 @@ class ManaSolver(
      * be silently paid by the auto-pay flow — the player has to activate the ability directly so
      * the sacrifice is explicit. But the spell is still *affordable* when the player has these
      * permanents available, so `canPay` and `getAvailableManaCount` must count their production.
+     *
+     * Reported per permanent because both callers also count a permanent's *sacrifice-free* mana
+     * ability, and the two share one {T}: a mixed source (Ancient Spring — "{T}: Add {U}" plus
+     * "{T}, Sacrifice this land: Add {W}{B}") produces one or the other, never the sum.
      */
-    internal fun calculateSacrificeSelfBonusMana(
+    internal fun sacrificeSelfManaBySource(
         state: GameState,
         playerId: EntityId
-    ): TapPermanentsBonusMana {
+    ): Map<EntityId, TapPermanentsBonusMana> {
         val projected = state.projectedState
         val battlefieldCards = projected.getBattlefieldControlledBy(playerId)
 
-        var anyColorTotal = 0
-        val specificColorTotal = mutableMapOf<Color, Int>()
-        var colorlessTotal = 0
+        val bySource = mutableMapOf<EntityId, TapPermanentsBonusMana>()
 
         for (entityId in battlefieldCards) {
             val container = state.getEntity(entityId) ?: continue
@@ -2400,21 +2422,17 @@ class ManaSolver(
                 // `Effects.Composite(AddMana(GREEN), AddMana(BLUE))`) are counted in full
                 // rather than dropping to the unhandled `else` branch and contributing zero.
                 val produced = manaProducedByEffect(ability.effect)
-                anyColorTotal += produced.anyColorMana
-                for ((color, amount) in produced.specificMana) {
-                    specificColorTotal[color] = (specificColorTotal[color] ?: 0) + amount
-                }
-                colorlessTotal += produced.colorlessMana
+                bySource[entityId] = (bySource[entityId] ?: TapPermanentsBonusMana()) + produced
             }
         }
 
-        return TapPermanentsBonusMana(anyColorTotal, specificColorTotal, colorlessTotal)
+        return bySource
     }
 
     /**
      * Mana produced by a single mana-ability effect, recursing into [CompositeEffect].
      *
-     * Used by the "bonus mana" affordability helpers (e.g. [calculateSacrificeSelfBonusMana])
+     * Used by the "bonus mana" affordability helpers (e.g. [sacrificeSelfManaBySource])
      * so an ability that adds several mana via `Effects.Composite(AddMana(...), AddMana(...))`
      * is counted in full. Without the recursion such an effect falls into the `else` branch and
      * contributes nothing, so a spell payable only by that ability is wrongly reported
@@ -2510,7 +2528,7 @@ class ManaSolver(
                     .firstNotNullOfOrNull { (it as? AbilityCost.Atom)?.atom as? CostAtom.TapPermanents }
                 if (!hasTap || tapPermanentsCost == null) continue
                 // Skip composites that also bundle SacrificeSelf or a mana sub-cost — those are
-                // handled by other helpers (calculateSacrificeSelfBonusMana) and would
+                // handled by other helpers (sacrificeSelfManaBySource) and would
                 // double-count or complicate color resolution here.
                 if (composite.costs.any { it is AbilityCost.SacrificeSelf || it.manaCostOrNull != null }) continue
 

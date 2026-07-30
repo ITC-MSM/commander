@@ -14,11 +14,13 @@
  * indented rows directly under **Cards**, never a peer row. That rule is what stopped "Format"
  * from meaning two different things again.
  */
+import { useEffect } from 'react'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import {
   COMMANDER_LIMITED_HAS_NO_AI,
   COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
-  LEGALITY_OPTIONS,
+  isCommanderDeckFormat,
+  legalityOptionsForTable,
   cardsKindTopicId,
   cardsLabel,
   cardsSeatCap,
@@ -73,6 +75,17 @@ export function LobbyAxes({
   onRecreate: (spec: RecreateSpec) => void
 }) {
   const cards = view.axes.cards
+  const legalityOptions = legalityOptionsForTable(view.axes.table)
+
+  useEffect(() => {
+    if (
+      cards.kind === 'BRING_A_DECK' &&
+      view.axes.table === 'TWO_HEADED_GIANT' &&
+      isCommanderDeckFormat(cards.legality)
+    ) {
+      commands.setLegality(null)
+    }
+  }, [cards, commands, view.axes.table])
 
   return (
     <>
@@ -100,7 +113,7 @@ export function LobbyAxes({
             title="Restrict submitted decks to a constructed format. No restriction = anything the engine implements."
           >
             <option value="">No restriction</option>
-            {LEGALITY_OPTIONS.map((f) => (
+            {legalityOptions.map((f) => (
               <option key={f.value} value={f.value}>{f.label}</option>
             ))}
           </select>

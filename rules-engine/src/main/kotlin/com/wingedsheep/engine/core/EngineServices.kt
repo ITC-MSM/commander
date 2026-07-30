@@ -26,6 +26,7 @@ import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.mechanics.targeting.TargetValidator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.registry.PrintingRegistry
+import com.wingedsheep.engine.registry.TokenArtRegistry
 
 /**
  * Composition root for the rules engine.
@@ -42,6 +43,12 @@ class EngineServices(
      * lookup is null-safe.
      */
     val printingRegistry: PrintingRegistry? = null,
+    /**
+     * Optional per-set token art. Threaded into the token executors so a created token shows the
+     * art printed by the set of the card that created it. Null is fine — tokens then fall back to
+     * the engine-wide generic art for their creature type.
+     */
+    val tokenArtRegistry: TokenArtRegistry? = null,
 ) {
     init {
         DamageUtils.cardRegistry = cardRegistry
@@ -50,8 +57,10 @@ class EngineServices(
         // (reanimation, exile returns, leyline starts) gets the same wiring the cast pipeline
         // does. The handler is stateless beyond the registry, so a singleton is sufficient.
         ZoneTransitionService.staticAbilityHandler = StaticAbilityHandler(cardRegistry)
+        ZoneTransitionService.cardRegistry = cardRegistry
     }
-    val effectExecutorRegistry = EffectExecutorRegistry(cardRegistry = cardRegistry)
+    val effectExecutorRegistry =
+        EffectExecutorRegistry(cardRegistry = cardRegistry, tokenArtRegistry = tokenArtRegistry)
     val manaAbilitySideEffectExecutor = ManaAbilitySideEffectExecutor(
         cardRegistry = cardRegistry,
         effectExecutor = effectExecutorRegistry::execute
@@ -60,7 +69,7 @@ class EngineServices(
     val triggerDetector = TriggerDetector(cardRegistry)
     val stateTriggerPoller = com.wingedsheep.engine.event.StateTriggerPoller(cardRegistry)
     val stackResolver = StackResolver(
-        effectHandler = EffectHandler(cardRegistry = cardRegistry),
+        effectHandler = EffectHandler(cardRegistry = cardRegistry, registry = effectExecutorRegistry),
         cardRegistry = cardRegistry
     )
     val triggerProcessor = TriggerProcessor(cardRegistry = cardRegistry, stackResolver = stackResolver)

@@ -358,7 +358,7 @@ internal class AffectsFilterResolver {
 
             // Check state predicates
             for (predicate in baseFilter.statePredicates) {
-                if (!matchesStatePredicateForProjection(state, entityId, predicate, container, isFaceDown, projectedValues)) {
+                if (!matchesStatePredicateForProjection(state, entityId, predicate, container, isFaceDown, projectedValues, controller)) {
                     return@filter false
                 }
             }
@@ -378,7 +378,14 @@ internal class AffectsFilterResolver {
         predicate: StatePredicate,
         container: ComponentContainer,
         isFaceDown: Boolean,
-        projectedValues: Map<EntityId, MutableProjectedValues>
+        projectedValues: Map<EntityId, MutableProjectedValues>,
+        /**
+         * Controller of the permanent whose static ability is being projected — the "you" for
+         * predicates that scope some *other* object's controller (currently
+         * [StatePredicate.IsEnchantedByAura]'s Aura). Null when the source has no controller, in
+         * which case those predicates fail closed rather than matching everything.
+         */
+        sourceController: EntityId?
     ): Boolean = when (predicate) {
         StatePredicate.IsTapped -> container.has<TappedComponent>()
         StatePredicate.IsUntapped -> !container.has<TappedComponent>()
@@ -489,6 +496,26 @@ internal class AffectsFilterResolver {
                 state.getEntity(attachId)?.get<CardComponent>()?.typeLine?.isAura == true
             }
         }
+        // "…enchanted by Auras you control…" (Archon of the Wild Rose) — same attachment scan as
+        // IsEnchanted, but the Aura's own projected controller has to match the static's controller.
+        // Control is a Layer 2 effect, so read it through the projection rather than off the base
+        // ControllerComponent: an Aura stolen this turn is no longer one you control.
+        is StatePredicate.IsEnchantedByAura -> {
+            val attachments = container.get<AttachmentsComponent>()
+            attachments != null && sourceController != null && attachments.attachedIds.any { attachId ->
+                if (state.getEntity(attachId)?.get<CardComponent>()?.typeLine?.isAura != true) return@any false
+                val auraController = projectedController(state, attachId, projectedValues) ?: return@any false
+                predicate.auraController.evaluateWith { leaf ->
+                    when (leaf) {
+                        ControllerPredicate.ControlledByYou -> auraController == sourceController
+                        ControllerPredicate.ControlledByOpponent -> auraController != sourceController
+                        ControllerPredicate.ControlledByAny -> true
+                        ControllerPredicate.ControlledByActivePlayer -> auraController == state.activePlayerId
+                        else -> null
+                    }
+                }
+            }
+        }
         StatePredicate.IsModified -> com.wingedsheep.engine.handlers.predicates.isModified(state, entityId)
         // A general "attached to <filter>" host constraint whose nested filter may carry a controller
         // predicate ("a creature you control"). Group-static projection has no ability controller to
@@ -525,13 +552,13 @@ internal class AffectsFilterResolver {
         StatePredicate.HasLockedDoor ->
             container.get<RoomComponent>()?.lockedFaces?.isNotEmpty() == true
         is StatePredicate.Or -> predicate.predicates.any {
-            matchesStatePredicateForProjection(state, entityId, it, container, isFaceDown, projectedValues)
+            matchesStatePredicateForProjection(state, entityId, it, container, isFaceDown, projectedValues, sourceController)
         }
         is StatePredicate.And -> predicate.predicates.all {
-            matchesStatePredicateForProjection(state, entityId, it, container, isFaceDown, projectedValues)
+            matchesStatePredicateForProjection(state, entityId, it, container, isFaceDown, projectedValues, sourceController)
         }
         is StatePredicate.Not -> !matchesStatePredicateForProjection(
-            state, entityId, predicate.predicate, container, isFaceDown, projectedValues
+            state, entityId, predicate.predicate, container, isFaceDown, projectedValues, sourceController
         )
     }
 
@@ -652,8 +679,10 @@ internal class AffectsFilterResolver {
         is CardPredicate.PowerAtMost -> (projected?.power ?: card.baseStats?.basePower ?: 0) <= predicate.max
         is CardPredicate.PowerAtLeast -> (projected?.power ?: card.baseStats?.basePower ?: 0) >= predicate.min
         is CardPredicate.PowerEquals -> (projected?.power ?: card.baseStats?.basePower) == predicate.value
-        // PowerEqualsX is resolution-time only; layer-projection has no chosen-number context.
+        // PowerEqualsX / PowerAtLeastX are resolution-time only; layer-projection has no
+        // chosen-number context.
         CardPredicate.PowerEqualsX -> false
+        CardPredicate.PowerAtLeastX -> false
         is CardPredicate.ToughnessAtMost -> (projected?.toughness ?: card.baseStats?.baseToughness ?: 0) <= predicate.max
         // ToughnessAtMostX is resolution-time only; layer-projection has no X context, so it never matches here.
         CardPredicate.ToughnessAtMostX -> false

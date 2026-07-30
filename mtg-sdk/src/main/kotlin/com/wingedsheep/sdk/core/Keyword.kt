@@ -127,6 +127,18 @@ enum class Keyword(val displayName: String) {
      * pipeline. See [com.wingedsheep.sdk.scripting.KeywordAbility.Harmonize].
      */
     HARMONIZE("Harmonize"),
+
+    /**
+     * Mayhem [cost] (CR 702.187, Marvel's Spider-Man). "As long as you discarded this card
+     * this turn, you may cast it from your graveyard by paying [cost] rather than paying its
+     * mana cost." Unlike [FLASHBACK]/[HARMONIZE] the spell is NOT exiled on resolution — a
+     * permanent simply enters the battlefield and an instant/sorcery goes to the graveyard as
+     * normal. Grants no timing permission (normal timing rules still apply). Gated on the
+     * turn-scoped "you discarded this card this turn" tracker
+     * (`Conditions.YouDiscardedThisCardThisTurn`). See
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.Mayhem].
+     */
+    MAYHEM("Mayhem"),
     EVOKE("Evoke"),
 
     /**
@@ -287,6 +299,34 @@ enum class Keyword(val displayName: String) {
      */
     CLEAVE("Cleave"),
 
+    /**
+     * Daybound (CR 702.145, Innistrad: Midnight Hunt / Crimson Vow). Found on the **front** faces of
+     * some transforming double-faced cards; represents three static abilities: "If it is night and
+     * this permanent is represented by a transforming double-faced card, it enters transformed"; "As
+     * it becomes night, if this permanent is front face up, transform it"; and "This permanent can't
+     * transform except due to its daybound ability." Controlling a daybound permanent while it is
+     * neither day nor night makes it day (CR 702.145d).
+     *
+     * Load-bearing, like [START_YOUR_ENGINES]: the engine reads this from projected state — the
+     * [com.wingedsheep.engine.mechanics.daynight.DayNightService] transform cascade and the
+     * `DayNightCheck` state-based sweep both scan for it — so a *granted* daybound works and no
+     * per-card wiring beyond the keyword tag is needed. Add it with the `daybound()` helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder]. See [com.wingedsheep.sdk.core.DayNight].
+     */
+    DAYBOUND("Daybound"),
+
+    /**
+     * Nightbound (CR 702.145). Found on the **back** faces of the same transforming double-faced
+     * cards; represents two static abilities: "As it becomes day, if this permanent is back face up,
+     * transform it" and "This permanent can't transform except due to its nightbound ability."
+     * Controlling a nightbound permanent while it is neither day nor night, with no daybound permanent
+     * on the battlefield, makes it night (CR 702.145g).
+     *
+     * Load-bearing and read from projected state, exactly like [DAYBOUND]. Add it with the
+     * `nightbound()` helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+     */
+    NIGHTBOUND("Nightbound"),
+
     // ── Creature mechanics ────────────────────────────────
     OFFSPRING("Offspring"),
     PERSIST("Persist"),
@@ -415,12 +455,14 @@ enum class Keyword(val displayName: String) {
      * and when the last is removed its owner plays it without paying its mana cost (with
      * haste, if it's a creature).
      *
-     * The keyword is display-only. The exile-side behavior is component-driven, not
-     * definition-driven: any exiled card carrying the engine's suspended marker (set by
-     * [com.wingedsheep.sdk.dsl.Effects.Suspend]) gets the synthesized countdown-and-cast
+     * The exile-side behavior is component-driven, not definition-driven: any exiled card
+     * carrying the engine's suspended marker (set by [com.wingedsheep.sdk.dsl.Effects.Suspend]
+     * or by the printed-suspend special action) gets the synthesized countdown-and-cast
      * triggered ability ([com.wingedsheep.sdk.scripting.Suspend.countdownAbility]). This
      * lets "exile it with N time counters; it gains suspend" effects (Taigam, Master
-     * Opportunist) suspend an arbitrary card — even a card with no printed suspend.
+     * Opportunist) suspend an arbitrary card — even a card with no printed suspend — while a
+     * printed "Suspend N—[cost]" (`KeywordAbility.Suspend`) drives the from-hand special
+     * action (CR 116.2f) through the engine's `SuspendCardFromHandHandler`.
      */
     SUSPEND("Suspend"),
     RENOWN("Renown"),
