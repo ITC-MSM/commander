@@ -1936,6 +1936,85 @@
     ]
 }
 
+// Electro, Assaulting Battery
+{
+    "name": "Electro, Assaulting Battery",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "Flying\nYou don't lose unspent red mana as steps and phases end.\nWhenever you cast an instant or sorcery spell, add {R}.\nWhen Electro leaves the battlefield, you may pay {X}. When you do, he deals X damage to target player.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayPayX",
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": "XValue",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target player"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "RetainUnspentColoredMana",
+                "color": "RED"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "RARE",
+        "artist": "Piotr Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d672cfad-e656-47f8-bf93-64f262aff33e.jpg?1783905338"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ezekiel Sims, Spider-Totem
 {
     "name": "Ezekiel Sims, Spider-Totem",
@@ -2930,6 +3009,101 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/e/6ee3b883-e9f5-426f-a2ea-96fe9ff3aba9.jpg?1757378016"
     },
     "colorIdentityOverride": []
+}
+
+// Hydro-Man, Fluid Felon
+{
+    "name": "Hydro-Man, Fluid Felon",
+    "manaCost": "{U}{U}",
+    "typeLine": "Legendary Creature — Elemental Villain",
+    "oracleText": "Whenever you cast a blue spell, if Hydro-Man is a creature, he gets +1/+1 until end of turn.\nAt the beginning of your end step, untap Hydro-Man. Until your next turn, he becomes a land and gains \"{T}: Add {U}.\" (He's not a creature during that time.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasColor",
+                                "color": "BLUE"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "creature"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        },
+                        {
+                            "type": "BecomeArtifact",
+                            "target": "Self",
+                            "cardTypes": [
+                                "LAND"
+                            ],
+                            "colors": null,
+                            "loseAllAbilities": false,
+                            "grantedAbility": {
+                                "id": "ability_3",
+                                "cost": "CostTap",
+                                "effect": {
+                                    "type": "AddMana",
+                                    "color": "BLUE"
+                                },
+                                "isManaAbility": true,
+                                "descriptionOverride": "{T}: Add {U}."
+                            },
+                            "duration": "UntilYourNextTurn"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "rarity": "RARE",
+        "artist": "Borja Pindado",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e53115a4-8959-40fa-b763-931504a1c5a2.jpg?1783905353"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Impostor Syndrome

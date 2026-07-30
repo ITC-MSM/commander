@@ -4722,6 +4722,12 @@ staticAbility {
   *controller's* would-be-lost mana becomes that many red mana instead of emptying (CR 500.5 / 703.4q
   emptying replaced per CR 614). Scoped to the controller of the bearing permanent, unlike Upwelling's
   all-players prevention. (Ozai, the Phoenix King)
+- `RetainUnspentColoredMana(color)` — "You don't lose unspent [color] mana as steps and phases end."
+  The durable, single-colour, controller-scoped mana-retention static (Electro, Assaulting Battery —
+  red). Where `PreventManaPoolEmptying` keeps *all* colours for *everyone* and `ConvertEmptyingManaToRed`
+  *replaces* other colours with red, this simply keeps that one colour and lets every other colour empty.
+  Merged into the `retain` set at `CleanupPhaseManager.emptyManaPools` (control-aware). The static twin of
+  the turn-scoped one-shot `RetainUnspentMana(vararg colors)` effect (The Last Agni Kai).
 - `NoMaximumHandSize` — controller has no hand-size limit *while this permanent is on the
   battlefield*. (Thought Vessel, Reliquary Tower) For a one-shot resolution effect that confers a
   *permanent, player-scoped* "no maximum hand size for the rest of the game" (survives the source

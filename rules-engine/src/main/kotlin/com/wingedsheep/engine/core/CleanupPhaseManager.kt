@@ -178,12 +178,24 @@ class CleanupPhaseManager(
             !(grant.duration is Duration.UntilYourNextTurn &&
                 grant.controllerId == activePlayer)
         }
+        // Granted *activated* abilities with UntilYourNextTurn duration (Hydro-Man's temporary
+        // "{T}: Add {U}"). The record carries no expiry-player, so key the expiry to the granted
+        // entity's current controller — correct for the self-grant case (a permanent granting
+        // itself an ability "until your next turn").
+        val remainingGrantedActivated = state.grantedActivatedAbilities.filter { grant ->
+            !(grant.duration is Duration.UntilYourNextTurn &&
+                state.getEntity(grant.entityId)
+                    ?.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()
+                    ?.playerId == activePlayer)
+        }
         val floatingChanged = remainingFloating.size != state.floatingEffects.size
         val globalChanged = remainingGlobal.size != state.globalGrantedTriggeredAbilities.size
-        var result = if (floatingChanged || globalChanged) {
+        val grantedActivatedChanged = remainingGrantedActivated.size != state.grantedActivatedAbilities.size
+        var result = if (floatingChanged || globalChanged || grantedActivatedChanged) {
             state.copy(
                 floatingEffects = if (floatingChanged) remainingFloating else state.floatingEffects,
-                globalGrantedTriggeredAbilities = if (globalChanged) remainingGlobal else state.globalGrantedTriggeredAbilities
+                globalGrantedTriggeredAbilities = if (globalChanged) remainingGlobal else state.globalGrantedTriggeredAbilities,
+                grantedActivatedAbilities = if (grantedActivatedChanged) remainingGrantedActivated else state.grantedActivatedAbilities
             )
         } else {
             state
@@ -400,7 +412,11 @@ class CleanupPhaseManager(
             newState = newState.updateEntity(playerId) { container ->
                 val manaPool = container.get<ManaPoolComponent>()
                 if (manaPool != null && !manaPool.isEmpty) {
-                    val retained = container.get<RetainUnspentManaComponent>()?.colors ?: emptySet()
+                    // Turn-scoped retention (The Last Agni Kai) unioned with the durable
+                    // per-colour static (Electro, Assaulting Battery: "you don't lose unspent red
+                    // mana as steps and phases end").
+                    val retained = (container.get<RetainUnspentManaComponent>()?.colors ?: emptySet()) +
+                        retainedColorsFromStatics(state, cardRegistry, playerId)
                     container.with(
                         manaPool.emptyAtBoundary(
                             convertToRed = playerId in convertToRedPlayers,

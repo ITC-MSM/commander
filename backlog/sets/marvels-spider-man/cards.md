@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 173 / 188
+**Implemented:** 175 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -33,7 +33,7 @@
 - [x] Eddie Brock // Venom, Lethal Protector
 - [x] Eerie Gravestone
 - [x] Electro's Bolt
-- [ ] Electro, Assaulting Battery
+- [x] Electro, Assaulting Battery
 - [x] Ezekiel Sims, Spider-Totem
 - [x] Flash Thompson, Spider-Fan
 - [x] Flying Octobot
@@ -48,7 +48,7 @@
 - [x] Hide on the Ceiling
 - [x] Hobgoblin, Mantled Marauder
 - [x] Hot Dog Cart
-- [ ] Hydro-Man, Fluid Felon
+- [x] Hydro-Man, Fluid Felon
 - [x] Impostor Syndrome
 - [x] Inner Demons Gangsters
 - [x] Interdimensional Web Watch
