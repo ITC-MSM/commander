@@ -280,6 +280,11 @@ export interface ClientCard {
    * pile so both players can read it. Exile only. */
   readonly isParadigm?: boolean
 
+  /** Whether this card is actively suspended in exile (CR 702.62 — has at least one time counter left).
+   * Surfaced in a dedicated public pile so both players can read it. False once the last time counter
+   * is removed, even if the card lingers in exile after the owner declines the free cast. Exile only. */
+  readonly isSuspended?: boolean
+
   /** Whether this permanent is prepared (Secrets of Strixhaven — Prepared keyword): a copy of its
    * prepare spell sits castable in its controller's exile. Battlefield only. */
   readonly isPrepared?: boolean

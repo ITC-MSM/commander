@@ -316,6 +316,13 @@ data class ClientCard(
      * phases. Surfaced so the client can show it in a dedicated, public pile. Exile only. */
     val isParadigm: Boolean = false,
 
+    /** Whether this card is actively suspended in exile (CR 702.62b — has the suspend marker and at
+     * least one time counter). Face-up and public; surfaced so the client can show it in a dedicated
+     * pile instead of it reading as a generic exiled card. False once the last time counter is
+     * removed (CR 702.62b's "suspended" requires >=1 counter), even if it lingers in exile after the
+     * owner declines the free cast. Exile only. */
+    val isSuspended: Boolean = false,
+
     /** Whether this permanent is prepared (Secrets of Strixhaven — Prepared keyword): a copy of its
      * prepare spell sits castable in its controller's exile until cast. Battlefield only. */
     val isPrepared: Boolean = false,
