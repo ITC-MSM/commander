@@ -2,11 +2,11 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useZoneCards, useStackCards, useZone, selectGameState } from '@/store/selectors.ts'
-import { graveyard, exile, library, CounterType } from '@/types'
+import { graveyard, exile, library } from '@/types'
 import type { ClientCard, ClientDeckCard, ClientPlayer } from '@/types'
 import { CARD_BACK_IMAGE_URL } from '@/utils/cardImages.ts'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
-import { useResponsiveContext, handleImageError, getStashCounters } from './shared'
+import { useResponsiveContext, handleImageError, getStashCounters, getTimeCounters } from './shared'
 import { DeckBrowser } from './DeckBrowser'
 import { counterManaClass } from '@/assets/icons/keywords'
 import { styles } from './styles'
@@ -1033,33 +1033,42 @@ function SuspendedBrowser({
           <button style={styles.suspendedCloseButton} onClick={onClose}>✕</button>
         </div>
         <div style={styles.exileCardGrid}>
-          {cards.map((card) => {
-            const timeCounters = card.counters[CounterType.TIME] ?? 0
-            return (
-              <div
-                key={card.id}
-                style={{
-                  width: cardWidth,
-                  height: cardHeight,
-                  borderRadius: 6,
-                  overflow: 'hidden',
-                  flexShrink: 0,
-                  position: 'relative',
-                  boxShadow: '0 0 0 2px #9a8cef, 0 0 14px rgba(154, 140, 239, 0.6)',
-                }}
-                onMouseEnter={(e) => hoverCard(card.id, { x: e.clientX, y: e.clientY })}
-                onMouseLeave={() => hoverCard(null)}
-              >
-                <img
-                  src={getCardImageUrl(card.name, card.imageUri, 'normal')}
-                  alt={card.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => handleImageError(e, card.name, 'normal')}
-                />
-                <div style={styles.suspendedGridBadge}>⏳ {timeCounters}</div>
-              </div>
-            )
-          })}
+          {cards.map((card) => (
+            <div
+              key={card.id}
+              style={{
+                width: cardWidth,
+                height: cardHeight,
+                borderRadius: 6,
+                overflow: 'hidden',
+                flexShrink: 0,
+                position: 'relative',
+                boxShadow: '0 0 0 2px #9a8cef, 0 0 14px rgba(154, 140, 239, 0.6)',
+              }}
+              onMouseEnter={(e) => hoverCard(card.id, { x: e.clientX, y: e.clientY })}
+              onMouseLeave={() => hoverCard(null)}
+            >
+              <img
+                src={getCardImageUrl(card.name, card.imageUri, 'normal')}
+                alt={card.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => handleImageError(e, card.name, 'normal')}
+              />
+              <div style={styles.suspendedGridBadge}>Suspended</div>
+              {/* Same time-counter badge Impending permanents show on the battlefield —
+                  icon + remaining count, so the countdown reads identically everywhere. */}
+              {getTimeCounters(card) > 0 && (
+                <div style={{
+                  ...styles.timeCounterBadge,
+                  fontSize: responsive.badges.counterTextFontSize,
+                  padding: responsive.badges.badgePadding,
+                }}>
+                  <i className={`ms ms-${counterManaClass.TIME}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
+                  <span style={{ fontWeight: 700 }}>{getTimeCounters(card)}</span>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
         <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
           <button
