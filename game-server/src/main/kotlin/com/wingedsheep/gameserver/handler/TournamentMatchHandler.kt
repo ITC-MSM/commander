@@ -474,10 +474,12 @@ class TournamentMatchHandler(
         )
         if (isCommanderShape) {
             // Limited commander formats read life total / commander damage / deck size from the
-            // lobby's host-configured preset (BRAWL = 60/25/16, COMMANDER = 60/30/21). Paper
+            // lobby's preset (BRAWL = 60/25/16, COMMANDER = 60/30/21). Every match here is 1v1, so
+            // TournamentLobby.effectiveCommanderPreset resolves to the host's choice — it is read
+            // rather than commanderPreset so the preset rule lives in exactly one place. Paper
             // PREMADE_DECKS commander lobbies keep the engine's classic defaults (100/40/21).
             gameSession.engineFormat = if (lobby.format.isCommanderFormat) {
-                lobby.commanderPreset.toFormat().copy(deckSize = lobby.deckSizeMin)
+                lobby.effectiveCommanderPreset.toFormat().copy(deckSize = lobby.deckSizeMin)
             } else {
                 com.wingedsheep.sdk.core.Format.Commander()
             }

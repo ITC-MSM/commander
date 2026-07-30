@@ -61,7 +61,10 @@ sealed interface Format {
     data object Standard : Format
 
     /**
-     * 1v1 Commander (Phase 1). Multiplayer (3-4 free-for-all) is its own project.
+     * Commander, at any table size. Nothing here is per-seat-count: [startingLife] is already the
+     * multiplayer 40, and commander damage is tallied per *(commander, defending player)* pair
+     * rather than per opponent pair, so a pod needs no extra configuration — the same instance runs
+     * a 1v1 game and a six-player Free-for-All.
      *
      * @property commanderDamageThreshold Cumulative single-source combat damage that loses the
      *   game (CR 903.10a). Standard Commander is 21.
@@ -174,10 +177,15 @@ sealed interface Format {
 }
 
 /**
- * Preset shapes for drafted/sealed 1v1 commander formats. Each preset selects a
- * [Format.Commander] configuration tuned for 60-card limited play (paper Brawl life vs. classic
- * Commander life). The lobby host picks one of these when creating a Commander Draft or Sealed
- * lobby; the match builder converts it to a [Format.Commander] instance at game start.
+ * Preset shapes for drafted/sealed commander formats. Each preset selects a [Format.Commander]
+ * configuration tuned for 60-card limited play; the match builder converts it to a
+ * [Format.Commander] instance at game start.
+ *
+ * [BRAWL] and [COMMANDER] are the two 1v1 life-total tunings the lobby host chooses between. [POD]
+ * is not a host choice at all — it is what a multiplayer table plays at, because paper Commander's
+ * 40 life *is* the multiplayer number (the lower two exist only to keep a 1v1 race from dragging).
+ * The server resolves which one applies from the lobby's table shape, so a Commander Draft pod
+ * can't accidentally start at 25 life.
  */
 @Serializable
 enum class CommanderPreset(
@@ -189,7 +197,14 @@ enum class CommanderPreset(
     BRAWL(deckSize = 60, startingLife = 25, commanderDamage = 16),
 
     /** Closer to Commander Legends' template — slower, more recursive games. */
-    COMMANDER(deckSize = 60, startingLife = 30, commanderDamage = 21);
+    COMMANDER(deckSize = 60, startingLife = 30, commanderDamage = 21),
+
+    /**
+     * Multiplayer pod (Free-for-All / Team vs. Team). Paper Commander's 40 life and 21 commander
+     * damage, over a 60-card limited deck: a pod spreads damage across several defenders, so the
+     * 1v1 tunings end games before the format's politics get a chance to happen.
+     */
+    POD(deckSize = 60, startingLife = 40, commanderDamage = 21);
 
     fun toFormat(): Format.Commander = Format.Commander(
         commanderDamageThreshold = commanderDamage,

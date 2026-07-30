@@ -21,7 +21,12 @@ section; do not let SDK additions land without a corresponding doc update.
 - `Format.Commander` — enables per-player commanders, command zones, commander damage, command-zone
   casting tax, and the command-zone replacement choice. Its configuration includes
   `commanderDamageThreshold`, `deckSize`, `startingLife`, `startingHandSize`, and
-  `alwaysDivertToCommand`.
+  `alwaysDivertToCommand`. Nothing in it is per-seat-count: commander damage is tallied per
+  *(commander, defending player)* pair, so the same instance runs a 1v1 match and an N-player pod.
+- `CommanderPreset` — the life / commander-damage / deck-size tunings a limited Commander lobby
+  converts to a `Format.Commander` at match start: `BRAWL` (60/25/16) and `COMMANDER` (60/30/21) pace
+  a 1v1 match, `POD` (60/40/21) is paper multiplayer Commander and is what any multiplayer table
+  plays at. `toFormat()` does the conversion.
 - `Format.TeamVsTeam` — team membership with individual turns and life totals. By default it is a
   normal 20-life format with no commanders. Supplying `commanderDamageThreshold` and `deckSize`
   opts it into the same Commander rules while retaining Team-vs-Team seating and win conditions.

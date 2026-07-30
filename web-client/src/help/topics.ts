@@ -194,7 +194,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'modes',
     title: 'Cards: Sealed',
     summary:
-      'Open boosters and build a 40-card deck from what you got. Standard sealed uses 6 boosters by default; Commander Sealed opens Commander-shaped packs and builds a 60-card deck around a commander from your pool — up to 8 players share the pool and play the bracket out as 1v1 matches.',
+      'Open boosters and build a 40-card deck from what you got. Standard sealed uses 6 boosters by default; Commander Sealed opens Commander-shaped packs and builds a 60-card deck around a commander from your pool — up to 8 players share the pool, then play a 1v1 bracket or sit down as one pod at 40 life.',
     body: [
       { kind: 'p', text: 'The host picks the sets (mix several, or add a deferred “Random Set” that stays hidden until the game starts), how many boosters each player opens, and whether boosters are per-set or “chaos” — each pack mixing every selected set.' },
     ],
@@ -330,7 +330,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         'Ranked is 1v1 only. Multiplayer tables are always casual.',
         'The AI can only be added to a 1v1 lobby. It cannot take a seat in a Free-for-All or a team game, or bring a deck to a “Bring a deck” lobby.',
         'The AI cannot play the Commander limited formats at all: its automatic deckbuilding never picks a commander, so it would sit down without one.',
-        'Commander Draft and Commander Sealed have no multiplayer table. Up to eight players can share the pool, but every game is 1v1 — so they run as a bracket. Commander in a Free-for-All or team game is a separate project.',
+        'Commander Draft and Commander Sealed cannot be played as Two-Headed Giant: a 2HG team shares one life total, and Commander gives every player their own 40. A 1v1 bracket, a Free-for-All pod and Team vs. Team all work.',
         'Momir Basic and a rolled random pool are 1v1 single games only. Neither exists at a multiplayer table or in a bracket.',
       ] },
     ],

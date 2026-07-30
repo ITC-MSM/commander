@@ -18,9 +18,10 @@ import type { LobbyState } from '@/store/slices/types'
 import type { QuickGameLobbyStateMessage } from '@/types'
 import type { DeckPickerTab } from '../ui/DeckPicker'
 import {
-  COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
+  COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL,
   axesFromLobbySettings,
   axesFromQuickGameLobby,
+  effectiveCommanderPreset,
   isCommanderLimited,
   type AxisTriple,
   type CardsKind,
@@ -296,7 +297,12 @@ function tournamentSubtitle(lobbyState: LobbyState): string {
         })
         .join(' + ')
     : null
-  const presetLabel = s.commanderPreset === 'COMMANDER' ? 'Commander 30 life' : 'Brawl 25 life'
+  // The subtitle names the life total the game will actually start at, which for a pod is the
+  // server's override rather than the host's 1v1 choice.
+  const preset = effectiveCommanderPreset(s.commanderPreset, s.gameMode)
+  const presetLabel = preset === 'POD' ? 'Pod 40 life'
+    : preset === 'COMMANDER' ? 'Commander 30 life'
+    : 'Brawl 25 life'
   const pick2 = s.picksPerRound === 2 ? ' · Pick 2' : ''
 
   const base = (() => {
@@ -369,12 +375,12 @@ function startBlockReason(lobbyState: LobbyState): string | null {
       break
     case 'COMMANDER_DRAFT':
     case 'COMMANDER_SEALED':
-      // Not a seat limit. The client used to require exactly two here, which conflated sharing a
-      // *pool* with sharing a *game*: eight people can draft Commander and play the bracket out as
-      // 1v1 matches, and the server never restricted it (`LobbyHandler.kt:605-616`). What is
-      // genuinely missing is Commander at a multiplayer table — blocked on the Table axis — and
-      // Commander with AI seats, whose auto-deckbuild never picks a commander.
-      if (s.gameMode !== 'TOURNAMENT') return COMMANDER_LIMITED_NEEDS_A_1V1_TABLE
+      // Not a seat limit. Sharing a *pool* and sharing a *game* are separate questions: eight people
+      // can draft Commander and play it as a 1v1 bracket or as one pod, and the server restricts
+      // neither. The one combination that can't work is Two-Headed Giant, whose shared team life
+      // total contradicts Commander's per-player 40 — the same rejection
+      // `LobbyHandler.handleStartTournamentLobby` sends, said before the host presses Start.
+      if (s.gameMode === 'TWO_HEADED_GIANT') return COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL
       break
     default:
       break

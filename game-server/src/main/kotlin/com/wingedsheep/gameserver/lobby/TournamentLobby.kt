@@ -281,8 +281,9 @@ class TournamentLobby(
      */
     var allowDuplicates: Boolean = true,
     /**
-     * Commander preset (Brawl vs. classic Commander) for Commander Draft / Sealed formats. Maps
-     * to a [com.wingedsheep.sdk.core.Format.Commander] instance at match start.
+     * The host's 1v1 Commander life tuning (Brawl 25 vs. classic Commander 30) for Commander Draft
+     * / Sealed formats. A multiplayer table ignores it — read [effectiveCommanderPreset], which is
+     * what actually becomes a [com.wingedsheep.sdk.core.Format.Commander] at match start.
      */
     var commanderPreset: com.wingedsheep.sdk.core.CommanderPreset =
         com.wingedsheep.sdk.core.CommanderPreset.BRAWL,
@@ -474,6 +475,25 @@ class TournamentLobby(
      * (the [randomTeams] / [teamAssignments] controls) applies. Free-for-All is not a team game.
      */
     val isTeamGame: Boolean get() = isTwoHeadedGiant || isTeamVsTeam
+
+    /**
+     * The Commander life/damage preset this lobby's games actually run at.
+     *
+     * Keyed on the *table*, not the seat count, so it is stable across a pod's play-again games even
+     * if someone leaves: a bracket plays 1v1 matches and honours the host's Brawl-vs-Commander
+     * choice, while every single-pod table plays [com.wingedsheep.sdk.core.CommanderPreset.POD] —
+     * paper Commander's 40 life. The 25/30 tunings exist to stop a 1v1 limited game dragging, and
+     * applying them to a pod was the bug: a Commander Draft pod would start at 25 life while the
+     * damage it has to survive is spread over three opponents instead of one.
+     *
+     * Read this rather than [commanderPreset] wherever a `Format.Commander` is being built.
+     */
+    val effectiveCommanderPreset: com.wingedsheep.sdk.core.CommanderPreset
+        get() = if (gameMode == LobbyGameMode.TOURNAMENT) {
+            commanderPreset
+        } else {
+            com.wingedsheep.sdk.core.CommanderPreset.POD
+        }
 
     // =========================================================================
     // Free-for-All mode state (unused in TOURNAMENT mode)

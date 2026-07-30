@@ -14,7 +14,7 @@
  * different one. A new mode should add a *value* here, not a new axis: if something ever needs a
  * fourth axis or a new top-level home button, the taxonomy was wrong.
  */
-import type { DeckFormat, LobbyGameMode, LobbySettings, TournamentFormat } from '@/types'
+import type { CommanderPreset, DeckFormat, LobbyGameMode, LobbySettings, TournamentFormat } from '@/types'
 import { DECK_FORMATS, labelForFormat } from '@/utils/deckLegality'
 
 /** Where the cards come from. */
@@ -112,8 +112,8 @@ export function cardsKindLabel(kind: CardsKind): string {
  * bracket of 1v1 Commander matches, which is exactly what has always been supported. The server
  * never had the restriction — `LobbyHandler.kt:605-616` caps Winston, Grid, 2HG, Teams and FFA and
  * puts everything else at 2–8, and its start guard only asks for two players. What genuinely is
- * missing is Commander at a multiplayer *table* and Commander with AI seats; both are stated where
- * they apply — see {@link COMMANDER_LIMITED_NEEDS_A_1V1_TABLE} and {@link COMMANDER_LIMITED_HAS_NO_AI}.
+ * missing is Commander at a Two-Headed Giant table and Commander with AI seats; both are stated where
+ * they apply — see {@link COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL} and {@link COMMANDER_LIMITED_HAS_NO_AI}.
  */
 export function cardsSeatCap(cards: CardsAxis): number {
   switch (cards.kind) {
@@ -138,15 +138,18 @@ export function isCommanderLimited(cards: CardsAxis): boolean {
 }
 
 /**
- * Commander at a Free-for-All / Two-Headed Giant / Team table.
+ * Commander at a Two-Headed Giant table — the one table shape it can't have.
  *
- * The plumbing accepts it — `FreeForAllHandler.kt:64,84` stamps the Commander engine format for a
- * pod — but the rules work it needs is its own project: range of influence, commander damage per
- * opponent, and the politics audit in `backlog/commander-format.md` § Phase 3. A bracket is fine,
- * because every game in it has two players.
+ * Commander pods themselves work: nothing in the engine's commander code is per-seat-count (damage
+ * is tallied per *(commander, defending player)* pair, the command zone is per player, and the CR
+ * 903.9a zone choice loops the turn order), so Free-for-All and Team vs. Team just play it. Two-Headed
+ * Giant can't, because CR 810.4 gives the *team* one shared life total while Commander gives each
+ * player their own 40 — `Format.TwoHeadedGiant` deliberately exposes no commander configuration, and
+ * `LobbyHandler.handleStartTournamentLobby` refuses the combination server-side. Blocking it here
+ * turns that rejection into a reason the host can read before pressing Start.
  */
-export const COMMANDER_LIMITED_NEEDS_A_1V1_TABLE =
-  'Commander isn’t implemented at a multiplayer table yet — only in 1v1 games. A bracket works: every match in it is 1v1.'
+export const COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL =
+  'Commander can’t be played as Two-Headed Giant — a 2HG team shares one life total, and Commander gives every player their own 40. Free-for-All and Team vs. Team pods work.'
 
 /**
  * AI seats in a Commander limited lobby.
@@ -158,6 +161,37 @@ export const COMMANDER_LIMITED_NEEDS_A_1V1_TABLE =
  */
 export const COMMANDER_LIMITED_HAS_NO_AI =
   'The AI can’t build a Commander deck — its automatic deckbuilding never picks a commander, so it would sit down without one. Play these with people.'
+
+/**
+ * The Commander life / commander-damage presets, mirroring `CommanderPreset` in
+ * `mtg-sdk/.../core/Format.kt`. The numbers live there; this is the display copy for them, in one
+ * place because the settings panel and the lobby subtitle both name them.
+ */
+export const COMMANDER_PRESETS: Record<CommanderPreset, { life: number; damage: number; label: string; hint: string }> = {
+  BRAWL: {
+    life: 25, damage: 16, label: 'Brawl (25/16)',
+    hint: 'Paper Brawl shape — 25 starting life, 16 commander damage',
+  },
+  COMMANDER: {
+    life: 30, damage: 21, label: 'Commander (30/21)',
+    hint: 'Closer to Commander Legends — 30 life, 21 commander damage',
+  },
+  POD: {
+    life: 40, damage: 21, label: 'Pod (40/21)',
+    hint: 'Paper multiplayer Commander — 40 life, 21 commander damage. Every pod plays at this.',
+  },
+}
+
+/**
+ * The preset the game will actually run at, mirroring `TournamentLobby.effectiveCommanderPreset`.
+ *
+ * The host's Brawl-vs-Commander choice is a 1v1 pacing knob; a pod always plays paper Commander's 40
+ * life, so the server overrides it there. Deriving it here rather than reading a second server field
+ * keeps the settings panel showing what the host picked while the summary shows what they'll get.
+ */
+export function effectiveCommanderPreset(preset: CommanderPreset, gameMode: LobbyGameMode): CommanderPreset {
+  return gameMode === 'TOURNAMENT' ? preset : 'POD'
+}
 
 export function tableLabel(table: TableAxis): string {
   switch (table) {

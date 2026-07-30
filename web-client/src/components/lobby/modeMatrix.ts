@@ -35,7 +35,7 @@
  */
 import type { LobbyGameMode, TournamentFormat } from '@/types'
 import {
-  COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
+  COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL,
   cardsKindLabel,
   cardsLabel,
   cardsSeatCap,
@@ -279,16 +279,17 @@ export function shapeChoices(roster: Roster, cards: CardsAxis): Choice<ShapeId>[
     // Every multiplayer table is one shared game, and both limited and premade lobbies can seat one
     // — Free-for-All with your own deck is the combination Part 2 called out as
     // supported-but-unreachable. The quick-only values never get here; step 2 disabled them.
-    // Commander is the exception, and only at the *table*: its bracket is 1v1 matches all the way
-    // down, so eight people can share a Commander pool even though they can't share one game.
-    const multiplayerReason = isQuickOnly(kind)
-      ? quickOnlyReason(kind)
-      : isCommanderLimited(cards)
-        ? COMMANDER_LIMITED_NEEDS_A_1V1_TABLE
-        : undefined
+    // Commander is the exception at exactly one table: a Free-for-All or Team vs. Team pod plays it,
+    // but Two-Headed Giant's shared team life total has nowhere to put Commander's per-player 40.
+    const quickOnly = isQuickOnly(kind) ? quickOnlyReason(kind) : undefined
+    const reasonFor = (shape: ShapeId): string | undefined =>
+      quickOnly ??
+      (shape === 'TWO_HEADED_GIANT' && isCommanderLimited(cards)
+        ? COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL
+        : undefined)
     return [
-      choice('BRACKET', isQuickOnly(kind) ? quickOnlyReason(kind) : undefined),
-      ...MULTIPLAYER_SHAPES.map((s) => choice(s, multiplayerReason)),
+      choice('BRACKET', quickOnly),
+      ...MULTIPLAYER_SHAPES.map((s) => choice(s, reasonFor(s))),
     ]
   }
 

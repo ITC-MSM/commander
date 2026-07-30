@@ -18,7 +18,7 @@ import { useEffect } from 'react'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import {
   COMMANDER_LIMITED_HAS_NO_AI,
-  COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
+  COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL,
   isCommanderDeckFormat,
   legalityOptionsForTable,
   cardsKindTopicId,
@@ -140,7 +140,7 @@ export function LobbyAxes({
             </div>
             <div className={styles.variantCaption}>
               {cards.shape === 'COMMANDER'
-                ? 'Open Commander-shaped packs and build a 60-card deck around a commander from your pool. Up to 8 players; every match is 1v1.'
+                ? 'Open Commander-shaped packs and build a 60-card deck around a commander from your pool. Up to 8 players, playing a 1v1 bracket or one pod at 40 life.'
                 : 'Open 6 boosters and build a 40-card deck.'}
             </div>
           </div>
@@ -184,7 +184,7 @@ export function LobbyAxes({
             </div>
             <div className={styles.variantCaption}>
               {cards.shape === 'COMMANDER'
-                ? 'Commander-shaped 20-card packs; pick a commander from your pool. Up to 8 drafters; every match is 1v1.'
+                ? 'Commander-shaped 20-card packs; pick a commander from your pool. Up to 8 drafters, playing a 1v1 bracket or one pod at 40 life.'
                 : cards.shape === 'WINSTON' ? 'Pick from 3 face-down piles. 2 players.'
                 : cards.shape === 'GRID' ? 'Pick a row or column from a 3×3 grid. 2-4 players.'
                 : 'Pass packs around the table. 3-8 players.'}
@@ -289,17 +289,17 @@ function AxisButtons<V extends CardsKind | TableAxis | EventAxis>({
  *
  * Two reasons, both facts shared with the landing wizard rather than numbers written at the call
  * site: the shape seats fewer players than this lobby is holding ({@link cardsSeatCap}), or it is a
- * Commander shape at a multiplayer table, which nothing implements. Note the second is about the
- * *table*, not the seat count — a Commander pool can be shared by eight, since the bracket plays it
- * out as 1v1 matches.
+ * Commander shape at a Two-Headed Giant table, whose shared life total contradicts Commander's
+ * per-player 40. Note the second is about the *table*, not the seat count — Free-for-All and Team
+ * vs. Team pods play Commander, and a bracket plays a shared pool out as 1v1 matches.
  */
 function shapeBlock(view: UnifiedLobbyView, cards: CardsAxis): string | null {
   const cap = cardsSeatCap(cards)
   if (view.players.length > cap) {
     return `${cardsLabel(cards)} seats at most ${cap} — this lobby has ${view.players.length}`
   }
-  if (isCommanderLimited(cards) && view.axes.table !== 'ONE_V_ONE') {
-    return COMMANDER_LIMITED_NEEDS_A_1V1_TABLE
+  if (isCommanderLimited(cards) && view.axes.table === 'TWO_HEADED_GIANT') {
+    return COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL
   }
   if (isCommanderLimited(cards) && view.players.some((p) => p.isAi)) {
     return COMMANDER_LIMITED_HAS_NO_AI

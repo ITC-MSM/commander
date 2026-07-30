@@ -216,6 +216,100 @@ class FreeForAllLobbyTest : FunSpec() {
             }
         }
 
+        test("4-player Commander FFA pod: every seat starts at 40 life with its own commander in its own command zone") {
+            // A mono-green commander behind 99 Forests: 100 cards including the commander, singleton
+            // apart from basics, one colour identity — the smallest deck that passes the Commander
+            // validator, so the test is about the pod rather than about deck construction.
+            val commanderName = "Dwynen, Gilt-Leaf Daen"
+            val commanderDeck = mapOf("Forest" to 99, commanderName to 1)
+
+            val host = createClient()
+            val hostConnected = host.connectAs("Pod Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "PREMADE_DECKS",
+                maxPlayers = 4,
+                gameMode = "FREE_FOR_ALL",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+            val lobbyId = host.messages.filterIsInstance<ServerMessage.LobbyCreated>().first().lobbyId
+
+            val guests = listOf("Pod Two", "Pod Three", "Pod Four").map { name ->
+                createClient().also { it.connectAs(name); it.send(ClientMessage.JoinLobby(lobbyId)) }
+            }
+            val pod = listOf(host) + guests
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 4
+            }
+
+            // Commander shape comes from the deck-construction format on a premade lobby.
+            host.send(ClientMessage.UpdateLobbySettings(deckFormat = "COMMANDER"))
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.settings?.deckFormat shouldBe "COMMANDER"
+            }
+
+            for (client in pod) {
+                client.send(ClientMessage.SubmitSealedDeck(
+                    deckList = commanderDeck,
+                    commander = commanderName,
+                ))
+            }
+            eventually(5.seconds) {
+                pod.all { c -> c.messages.any { it is ServerMessage.DeckSubmitted } } shouldBe true
+            }
+            // Nothing was rejected — a missing or off-identity commander surfaces as INVALID_DECK.
+            host.messages.none { it is ServerMessage.Error } shouldBe true
+
+            host.send(ClientMessage.StartTournamentLobby)
+
+            // One four-seat game, not a bracket of 1v1 matches.
+            eventually(15.seconds) {
+                pod.all { c -> c.messages.any { it is ServerMessage.FreeForAllGameStarting } } shouldBe true
+            }
+            val starting = host.messages.filterIsInstance<ServerMessage.FreeForAllGameStarting>().first()
+            starting.players shouldHaveSize 4
+
+            eventually(15.seconds) {
+                pod.all { c ->
+                    c.messages.filterIsInstance<ServerMessage.GameStarted>().any { it.players.size == 4 } &&
+                        c.messages.any { it is ServerMessage.MulliganDecision }
+                } shouldBe true
+            }
+            for (client in pod) client.send(ClientMessage.KeepHand)
+
+            // Routine updates are deltas; resync for a full state to assert the pod's shape on.
+            host.send(ClientMessage.RequestResync)
+            eventually(15.seconds) {
+                val state = host.latestState()
+                state.shouldNotBeNull()
+                state.players shouldHaveSize 4
+                // Commander life, not the 20 a Standard game would give — and per player, since
+                // Commander shares nothing.
+                state.players.all { it.life == 40 } shouldBe true
+                // Each of the four seats has its own one-card command zone.
+                for (player in state.players) {
+                    val commandZone = state.zones.firstOrNull {
+                        it.zoneId.ownerId == player.playerId &&
+                            it.zoneId.zoneType == com.wingedsheep.sdk.core.Zone.COMMAND
+                    }
+                    commandZone.shouldNotBeNull()
+                    commandZone.size shouldBe 1
+                }
+                // The host's own commander is visible and flagged as such.
+                val ownCommander = state.zones
+                    .first {
+                        it.zoneId.ownerId.value == hostConnected.playerId &&
+                            it.zoneId.zoneType == com.wingedsheep.sdk.core.Zone.COMMAND
+                    }
+                    .cardIds.single()
+                val card = state.cards.getValue(ownCommander)
+                card.name shouldBe commanderName
+                card.isCommander shouldBe true
+            }
+        }
+
         test("Two-Headed Giant refuses a Commander deck format before touching submitted decks") {
             val host = createClient()
             host.connectAs("Host")

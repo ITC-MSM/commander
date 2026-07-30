@@ -25,7 +25,7 @@
 import type { DeckFormat, LobbyGameMode, TournamentFormat } from '@/types'
 import {
   CARDS_KINDS,
-  COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
+  COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL,
   TABLE_VALUES,
   cardsFromTournamentFormat,
   cardsKindLabel,
@@ -173,10 +173,10 @@ function tableAvailability(view: UnifiedLobbyView, table: TableAxis): ChoiceAvai
   if (view.players.length > TABLE_SEAT_CAP[table]) {
     return blocked(tooManySeats(table, view.players.length))
   }
-  // A Commander pool can be shared by eight, but a Commander *game* is 1v1 — the bracket is fine,
-  // one shared table is not.
-  if (table !== 'ONE_V_ONE' && isCommanderLimited(view.axes.cards)) {
-    return blocked(COMMANDER_LIMITED_NEEDS_A_1V1_TABLE)
+  // Commander plays at any table except Two-Headed Giant, whose shared team life total (CR 810.4)
+  // has nowhere to put Commander's per-player 40.
+  if (table === 'TWO_HEADED_GIANT' && isCommanderLimited(view.axes.cards)) {
+    return blocked(COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL)
   }
 
   if (view.kind === 'TOURNAMENT') return DIRECT

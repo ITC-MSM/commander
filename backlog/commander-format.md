@@ -1,8 +1,8 @@
 # Commander Format
 
 Add Commander format support to the Argentum Engine. Commander is a 100-card singleton format with a designated
-legendary creature commander, 40 starting life, and a 21-commander-damage loss condition. Phase 1 targets **1v1
-Commander** only — multiplayer (3-4 player free-for-all) is its own project.
+legendary creature commander, 40 starting life, and a 21-commander-damage loss condition. Phase 1 targeted **1v1
+Commander**; multiplayer pods landed later on top of the N-player work — see § Phase 3.
 
 ## Status (2026-05-08)
 
@@ -273,16 +273,29 @@ for Muldrotha-shaped plays).
 - Hook for "can be your commander" / "partner" / "friends forever" oracle-text detection so non-legendary commanders
   (planeswalkers in commander variants) can be supported by data, not by special-casing.
 
-## Phase 3 — Multiplayer (3-4 player free-for-all)
+## Phase 3 — Multiplayer pods — **done** (issue #1456)
 
-This is its own project — large in scope and surface area.
+Most of this fell out of `backlog/multiplayer.md` rather than needing commander-specific work: the
+"choose an opponent" audit, the attacker-declares-defender step and the >2-player lobby paths all landed
+there. What was left was small, and it shipped:
 
-- Audit "the opponent" assumptions across the engine: every `players.first { it != active }` and every
-  auto-target-the-opponent shortcut must become "choose an opponent." Probably a few dozen call sites.
-- Range of influence (multiplayer rule).
-- Politics-aware UI/UX (target-an-opponent dialogs, attacker-declares-defender step).
+- ✅ Commander runs at any table size. `Format.Commander` has no player-count field, commander damage is
+  tallied per *(commander, defending player)* pair (`GameState.commanderDamage`), the command zone is
+  per player, and the CR 903.9a zone choice loops `turnOrder`. `CommanderPodTest` pins all of it at
+  four seats; `FreeForAllLobbyTest` plays a four-player premade Commander pod end to end.
+- ✅ Drafted / sealed Commander at a pod table. The client's 1v1-only gate is gone; the one remaining
+  block is Two-Headed Giant, whose shared team life total (CR 810.4) contradicts Commander's per-player
+  40 — `LobbyHandler.handleStartTournamentLobby` refuses it server-side and the lobby says why.
+- ✅ Pod-tuned config. `CommanderPreset.POD` (60 cards / 40 life / 21 damage) is what every multiplayer
+  table plays at, resolved from the table by `TournamentLobby.effectiveCommanderPreset`. The host's
+  Brawl-25 / Commander-30 choice stays a 1v1 pacing knob.
+
+Deliberately still open:
+
+- Commander with AI seats — auto-deckbuild never designates a commander (issue #1453).
 - AI politics (group dynamics, kingmaker avoidance) — separate research project.
-- Server lobby support for >2 players (likely already there for tournaments, but verify the play-flow paths).
+- **Out of scope permanently:** range of influence (CR 801) — `backlog/multiplayer.md` says so too — and
+  the politics mechanics (monarch / initiative / voting).
 
 ## Phase 4 — Partner / Background / Companion / commander variants
 

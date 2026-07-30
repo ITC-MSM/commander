@@ -88,10 +88,14 @@ class FreeForAllHandler(
             tokenArtRegistry = tokenArtRegistry,
             maxPlayers = playerStates.size,
         )
+        // A pod runs at CommanderPreset.POD's 40 life (TournamentLobby.effectiveCommanderPreset) —
+        // the host's Brawl/Commander tuning is a 1v1 knob, and applying its 25/30 to a table where
+        // damage arrives from three opponents ended pods before they started. Paper PREMADE_DECKS
+        // commander lobbies keep the engine's classic 100/40/21 defaults.
         val commanderFormat = when {
             !isCommanderShape -> null
             lobby.format.isCommanderFormat ->
-                lobby.commanderPreset.toFormat().copy(deckSize = lobby.deckSizeMin)
+                lobby.effectiveCommanderPreset.toFormat().copy(deckSize = lobby.deckSizeMin)
             else -> com.wingedsheep.sdk.core.Format.Commander()
         }
         // CR 802 / 803 — the lobby's chosen attack rule applies to this multiplayer game.

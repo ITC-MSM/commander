@@ -1289,7 +1289,10 @@ export interface LobbySettings {
   readonly deckSizeMin: number
   /** Commander Draft/Sealed only — when true, drafted/sealed decks may include duplicates. */
   readonly allowDuplicates: boolean
-  /** Commander Draft/Sealed only — preset shape ('BRAWL' = 25 life / 16 cmdr damage; 'COMMANDER' = 30/21). */
+  /**
+   * Commander Draft/Sealed only — the host's 1v1 preset ('BRAWL' = 25 life / 16 cmdr damage;
+   * 'COMMANDER' = 30/21). A multiplayer table overrides it with 'POD' (40/21) at game start.
+   */
   readonly commanderPreset: CommanderPreset
   /** When true, each booster mixes cards from the union of all selected sets. */
   readonly chaosBoosters: boolean
@@ -1337,7 +1340,12 @@ export type TournamentFormat =
   | 'COMMANDER_SEALED'
   | 'PREMADE_DECKS'
 
-export type CommanderPreset = 'BRAWL' | 'COMMANDER'
+/**
+ * Commander life / commander-damage tuning — mirrors `CommanderPreset` in `mtg-sdk/.../core/Format.kt`.
+ * `BRAWL` and `COMMANDER` are the 1v1 choices a host makes; `POD` is what every multiplayer table
+ * plays at regardless (see `effectiveCommanderPreset` in `components/lobby/axes.ts`).
+ */
+export type CommanderPreset = 'BRAWL' | 'COMMANDER' | 'POD'
 
 export interface LobbyCreatedMessage {
   readonly type: 'lobbyCreated'
