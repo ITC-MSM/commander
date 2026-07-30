@@ -850,19 +850,36 @@ object DamageUtils {
         // Recipient-group shields ("prevent all damage that would be dealt to creatures you control
         // this turn"): the filter is re-evaluated now against projected state, with the shield's
         // controller as the "you" reference, so permanents that came under control later this turn
-        // are protected too. Honours the combat-only variant.
+        // are protected too. Honours the combat-only variant, the "you and …" player recipient
+        // (a player never matches a permanent filter, so it is checked separately), and an optional
+        // source filter ("… by creatures") evaluated against the damage source the same way.
         val groupShieldEvaluator = PredicateEvaluator()
         if (updatedEffects.any { fe ->
                 val mod = fe.effect.modification
-                mod is SerializableModification.PreventAllDamageToGroup &&
-                    (!mod.combatOnly || isCombatDamage) &&
+                if (mod !is SerializableModification.PreventAllDamageToGroup) return@any false
+                if (mod.combatOnly && !isCombatDamage) return@any false
+                val predicateContext = PredicateContext(controllerId = fe.controllerId)
+                val recipientMatches = (mod.includesController && targetId == fe.controllerId) ||
                     groupShieldEvaluator.matches(
                         state,
                         state.projectedState,
                         targetId,
                         mod.filter,
-                        PredicateContext(controllerId = fe.controllerId)
+                        predicateContext
                     )
+                if (!recipientMatches) return@any false
+                // Fail closed on an unidentifiable source: a "by creatures" shield must not swallow
+                // damage it can't attribute to a creature.
+                val sourceMatches = mod.sourceFilter == null || (
+                    sourceId != null && groupShieldEvaluator.matches(
+                        state,
+                        state.projectedState,
+                        sourceId,
+                        mod.sourceFilter,
+                        predicateContext
+                    )
+                    )
+                sourceMatches
             }) {
             return state to 0
         }

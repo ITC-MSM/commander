@@ -461,11 +461,19 @@ sealed interface SerializableModification {
      * the filter is stored and re-evaluated at the moment damage would be dealt, with the floating
      * effect's controller as the "you" reference, so newly-controlled permanents are protected too.
      * When [combatOnly] is true only combat damage is prevented.
+     *
+     * [includesController] extends the recipient set to the shield's controller — the "you and" in
+     * "prevent all damage that would be dealt to you and creatures you control this turn"; a player
+     * is not a permanent so it can never match [filter]. [sourceFilter], when non-null, additionally
+     * restricts the shield to damage whose *source* matches it ("… by creatures"), evaluated against
+     * projected state at damage time just like [filter].
      */
     @Serializable
     data class PreventAllDamageToGroup(
         val filter: GameObjectFilter,
-        val combatOnly: Boolean = false
+        val combatOnly: Boolean = false,
+        val includesController: Boolean = false,
+        val sourceFilter: GameObjectFilter? = null
     ) : SerializableModification
 
     /**

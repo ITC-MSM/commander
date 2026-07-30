@@ -3845,6 +3845,36 @@ object Effects {
         )
 
     /**
+     * Prevent all damage that would be dealt to **you and** every permanent matching [group] for
+     * [duration], optionally only from sources matching [fromSources] — "prevent all damage that
+     * would be dealt to you and creatures you control this turn by creatures" (Eerie Interference).
+     *
+     * The player-inclusive sibling of [PreventAllDamageToGroup]: a player is not a permanent, so
+     * "you" can't come from the [GroupFilter] and rides along as
+     * [PreventDamageEffect.recipientGroupIncludesController] instead. Both the recipient group and
+     * [fromSources] are re-evaluated against projected state at the moment damage would be dealt,
+     * with the shield's controller as the "you" reference — so a creature that changes controller
+     * or stops being a creature mid-turn is judged as it is when the damage happens.
+     *
+     * @param fromSources Restrict the shield to damage from sources matching this filter
+     *   (`GroupFilter(GameObjectFilter.Creature)` for "by creatures"); null protects from every source.
+     */
+    fun PreventAllDamageToYouAndGroup(
+        group: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter,
+        fromSources: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter? = null,
+        scope: PreventionScope = PreventionScope.AllDamage,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect =
+        PreventDamageEffect(
+            recipientGroup = group,
+            recipientGroupIncludesController = true,
+            sourceFilter = fromSources?.let { PreventionSourceFilter.FromGroup(it) }
+                ?: PreventionSourceFilter.AnySource,
+            scope = scope,
+            duration = duration
+        )
+
+    /**
      * Prevent all damage that would be dealt to controller this turn by attacking creatures.
      */
     fun PreventDamageFromAttackingCreatures(): Effect =
