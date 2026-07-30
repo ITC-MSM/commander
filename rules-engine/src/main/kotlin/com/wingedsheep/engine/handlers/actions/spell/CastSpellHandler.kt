@@ -875,11 +875,16 @@ class CastSpellHandler(
                             if (action.altAllows(AlternativeCostType.SELF_ALTERNATIVE) && selfAltCost != null) {
                                 val altMana = selfAltCost.manaCost
                                 costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altMana, action.playerId)
-                            } else {
+                            } else if (action.altAllows(AlternativeCostType.GRANTED)) {
                                 // Fall back to battlefield-granted alternative cost (e.g., Jodah's {W}{U}{B}{R}{G})
                                 val altCosts = costCalculator.findAlternativeCastingCosts(state, action.playerId)
                                 if (altCosts.isEmpty()) return null
                                 costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altCosts.first())
+                            } else {
+                                // A specific alternative cost was requested (e.g. DASH) but its own
+                                // permission gate failed — never silently fall back to an unrelated
+                                // battlefield-granted alternative cost the player didn't ask for.
+                                return null
                             }
                         }
                     }
@@ -2110,13 +2115,20 @@ class CastSpellHandler(
                             if (action.altAllows(AlternativeCostType.SELF_ALTERNATIVE) && selfAltCost != null) {
                                 val altMana = selfAltCost.manaCost
                                 costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, altMana, action.playerId)
-                            } else {
+                            } else if (action.altAllows(AlternativeCostType.GRANTED)) {
                                 val altCosts = costCalculator.findAlternativeCastingCosts(currentState, action.playerId)
                                 if (altCosts.isNotEmpty()) {
                                     costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, altCosts.first())
                                 } else {
                                     cardComponent.manaCost
                                 }
+                            } else {
+                                // A specific alternative cost was requested (e.g. DASH) but its own
+                                // permission gate failed — never silently fall back to an unrelated
+                                // battlefield-granted alternative cost the player didn't ask for.
+                                // validate() already rejected this cast via computeTotalCastCost
+                                // returning null, so execute() should never actually reach here.
+                                cardComponent.manaCost
                             }
                         }
                     }

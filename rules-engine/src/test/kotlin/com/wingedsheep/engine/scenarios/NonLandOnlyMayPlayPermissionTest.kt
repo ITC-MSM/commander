@@ -3,7 +3,10 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.PlayLand
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
+import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.permissions.MayPlayPermission
+import com.wingedsheep.engine.state.permissions.addMayPlayPermission
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
@@ -152,6 +155,38 @@ class NonLandOnlyMayPlayPermissionTest : ScenarioTestBase() {
 
             withClue("Without nonLandOnly, the granted permission covers playing a land too") {
                 game.isOnBattlefield("Mountain") shouldBe true
+            }
+        }
+
+        test("a cast-only permission cannot impose land riders when another permission authorizes the play") {
+            val game = scenario()
+                .withPlayers("Player1", "Player2")
+                .withCardInHand(1, "Test MayPlay Granter")
+                .withLandsOnBattlefield(1, "Forest", 2)
+                .withCardInLibrary(1, "Mountain")
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            game.castSpell(1, "Test MayPlay Granter").error shouldBe null
+            game.resolveStack()
+
+            val exiledLandId = exiledCardNamed(game, 1, "Mountain")
+            game.state = game.state.addMayPlayPermission(
+                MayPlayPermission(
+                    id = EntityId.generate(),
+                    cardIds = setOf(exiledLandId),
+                    controllerId = game.player1Id,
+                    landEntersTapped = true,
+                    nonLandOnly = true,
+                    timestamp = game.state.timestamp
+                )
+            )
+
+            game.execute(PlayLand(playerId = game.player1Id, cardId = exiledLandId)).error shouldBe null
+
+            withClue("The land was played through the plain permission, so the cast-only rider is inapplicable") {
+                game.state.getEntity(exiledLandId)?.has<TappedComponent>() shouldBe false
             }
         }
     }

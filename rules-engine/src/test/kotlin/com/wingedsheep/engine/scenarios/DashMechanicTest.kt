@@ -8,6 +8,8 @@ import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DashedComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.state.permissions.MayPlayPermission
+import com.wingedsheep.engine.state.permissions.addMayPlayPermission
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
@@ -496,6 +498,45 @@ class DashMechanicTest : FunSpec({
         )
         result.isSuccess shouldBe false
         driver.getGraveyardCardNames(player).contains("Dash Test Creature") shouldBe true
+        driver.findPermanent(player, "Dash Test Creature") shouldBe null
+    }
+
+    test("a forged DASH action from exile cannot fall back to a battlefield-granted alternative cost") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
+        driver.gotoMainPhase()
+
+        val player = driver.activePlayer!!
+        driver.putPermanentOnBattlefield(player, "Jodah, Archmage Eternal")
+        val cardId = driver.putCardInExile(player, "Dash Test Creature")
+        driver.replaceState(
+            driver.state.addMayPlayPermission(
+                MayPlayPermission(
+                    id = com.wingedsheep.sdk.model.EntityId.generate(),
+                    cardIds = setOf(cardId),
+                    controllerId = player,
+                    timestamp = driver.state.timestamp
+                )
+            )
+        )
+        driver.giveMana(player, Color.WHITE)
+        driver.giveMana(player, Color.BLUE)
+        driver.giveMana(player, Color.BLACK)
+        driver.giveMana(player, Color.RED)
+        driver.giveMana(player, Color.GREEN)
+
+        val result = driver.submit(
+            CastSpell(
+                playerId = player,
+                cardId = cardId,
+                useAlternativeCost = true,
+                alternativeCostType = AlternativeCostType.DASH,
+                paymentStrategy = PaymentStrategy.FromPool
+            )
+        )
+
+        result.isSuccess shouldBe false
+        driver.state.getExile(player).contains(cardId) shouldBe true
         driver.findPermanent(player, "Dash Test Creature") shouldBe null
     }
 })

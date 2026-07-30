@@ -568,13 +568,18 @@ class PlayLandHandler(
      * also forces the played land tapped (Lightstall Inquisitor's "each land played this
      * way enters tapped" clause). Read from [state] *before* the card left exile, since
      * `removeMayPlayPermissionsForCard` runs as the card moves to the battlefield.
+     *
+     * A `nonLandOnly` permission never authorizes a land play in the first place (mirrors
+     * [isInExileWithPlayPermission]'s filter) — its `landEntersTapped` rider is therefore only
+     * relevant when it's actually the permission the land played through, never as a rider
+     * leaking onto a land authorized by a *different*, plain permission.
      */
     private fun permissionForcesLandTapped(
         state: GameState,
         playerId: EntityId,
         cardId: EntityId
     ): Boolean = state.activeMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)
-        .any { it.landEntersTapped }
+        .any { !it.nonLandOnly && it.landEntersTapped }
 
     private fun hasPlayFromTopOfLibrary(state: GameState, playerId: EntityId): Boolean {
         for (entityId in state.getBattlefield(playerId)) {
