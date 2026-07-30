@@ -55,23 +55,12 @@ export interface SuggestLandsInput {
   readonly availableBasics: readonly BasicLand[]
   /**
    * Target total deck size — 40 for sealed, 60 for constructed, 0 / undefined
-   * when the format is unknown. It is a floor on the finished deck, not on
-   * every intermediate one: basics fill the remaining slots exactly, but only
-   * once the picked cards can carry a deck that size (see
-   * `MAX_LAND_RATIO`). While the deck is still short, the target scales with
-   * what's picked instead, so a 10-card pile doesn't get 30 basics.
-   * It also serves as the statistical baseline for castability, so a
-   * work-in-progress is evaluated against the deck it will become.
+   * when the format is unknown. This is only the statistical baseline for
+   * castability; the number of suggested lands always scales with the cards
+   * picked so far.
    */
   readonly minDeckSize?: number
 }
-
-/**
- * The most lands any curve justifies (the control end of `curveBasedLandCount`).
- * Its complement is the share of `minDeckSize` that must already be picked
- * before basics are allowed to fill the deck out to that size.
- */
-const MAX_LAND_RATIO = 0.45
 
 /**
  * Returns target counts keyed by basic-land name. Every entry in
@@ -112,16 +101,7 @@ export function suggestBasicLands(input: SuggestLandsInput): Record<string, numb
   // Curve-based land target, sized off the cards picked so far.
   const manaRockReduction = Math.floor(nonLandManaSourceCount / 2)
   const ratioBasedBasics = curveBasedLandCount(spells) - nonBasicLandCount - manaRockReduction
-  const minBasedBasics = Math.max(minDeckSize - spellCount - nonBasicLandCount, 0)
-  // Filling a named deck size exactly is only right for a deck that's nearly
-  // there — it's what keeps a 23-spell sealed deck at 17 lands rather than 15,
-  // and a 36-spell constructed deck at 60 cards rather than 63. Applied to a
-  // half-built deck it degenerates into an all-basics pile (10 spells → 30
-  // Forests), so below that point the curve ratio drives the target instead.
-  const nonBasics = spellCount + nonBasicLandCount
-  const canFillToDeckSize = minDeckSize > 0 && nonBasics >= minDeckSize * (1 - MAX_LAND_RATIO)
-  const targetBasics =
-    canFillToDeckSize && minBasedBasics > 0 ? minBasedBasics : Math.max(ratioBasedBasics, 0)
+  const targetBasics = Math.max(ratioBasedBasics, 0)
   if (targetBasics === 0) return result
 
   const requirements = deckColorRequirements(spells)

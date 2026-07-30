@@ -54,7 +54,7 @@ describe('suggestBasicLands', () => {
     expect((result.Mountain ?? 0) + (result.Island ?? 0)).toBe(17)
   })
 
-  it('credits dual lands before allocating basics', () => {
+  it('credits dual lands before allocating basics while scaling to the picked cards', () => {
     const dual: DeckEntry = {
       name: 'Azorius dual',
       manaCost: '',
@@ -74,7 +74,7 @@ describe('suggestBasicLands', () => {
       minDeckSize: 40,
     })
 
-    expect((result.Plains ?? 0) + (result.Island ?? 0)).toBe(17)
+    expect((result.Plains ?? 0) + (result.Island ?? 0)).toBe(9)
     expect(result.Plains ?? 0).toBeGreaterThan(0)
     expect(result.Island ?? 0).toBeGreaterThan(0)
   })
@@ -87,7 +87,7 @@ describe('suggestBasicLands', () => {
     })
 
     expect(Math.abs((result.Plains ?? 0) - (result.Island ?? 0))).toBeLessThanOrEqual(1)
-    expect((result.Plains ?? 0) + (result.Island ?? 0)).toBe(17)
+    expect((result.Plains ?? 0) + (result.Island ?? 0)).toBe(15)
   })
 
   it('suggests no off-color basic for a hybrid pip the deck can already pay', () => {
@@ -103,7 +103,7 @@ describe('suggestBasicLands', () => {
     })
 
     expect(result.Plains).toBe(0)
-    expect((result.Forest ?? 0) + (result.Swamp ?? 0)).toBe(17)
+    expect((result.Forest ?? 0) + (result.Swamp ?? 0)).toBe(15)
   })
 
   it('charges a two-color hybrid to whichever of its colors the deck needs most', () => {
@@ -151,7 +151,7 @@ describe('suggestBasicLands', () => {
     expect((result.Mountain ?? 0) + (result.Swamp ?? 0)).toBe(17)
   })
 
-  it('fills a normal constructed deck to exactly 60 cards', () => {
+  it('scales a partial constructed deck instead of filling it to 60 cards', () => {
     const result = suggestBasicLands({
       entries: [
         spell('White two-drop', '{1}{W}', 2, 18),
@@ -161,7 +161,7 @@ describe('suggestBasicLands', () => {
       minDeckSize: 60,
     })
 
-    expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(24)
+    expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(27)
     expect(Math.abs((result.Plains ?? 0) - (result.Island ?? 0))).toBeLessThanOrEqual(1)
   })
 
@@ -185,7 +185,7 @@ describe('suggestBasicLands', () => {
       minDeckSize: 40,
     })
 
-    expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(16)
+    expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(15)
   })
 
   it('uses an available fallback basic when the matching basic is unavailable', () => {
@@ -195,7 +195,7 @@ describe('suggestBasicLands', () => {
       minDeckSize: 40,
     })
 
-    expect(result['Wastes-like fallback']).toBe(17)
+    expect(result['Wastes-like fallback']).toBe(15)
   })
 
   it('returns zeroes for an empty deck instead of inventing a mana base', () => {
@@ -230,7 +230,7 @@ describe('suggestBasicLands', () => {
     })
 
     expect(result.Plains).toBe(0)
-    expect(result.Mountain).toBe(17)
+    expect(result.Mountain).toBe(15)
   })
 
   it('does not merge the colored requirements of mutually exclusive card faces', () => {
@@ -244,7 +244,7 @@ describe('suggestBasicLands', () => {
     })
 
     expect(result.Island).toBe(0)
-    expect(result.Plains).toBe(17)
+    expect(result.Plains).toBe(15)
   })
 
   it('keeps every represented color alive in a five-color Limited deck', () => {
@@ -326,6 +326,20 @@ describe('suggestBasicLands', () => {
     expect(totals[3]).toBe(17)
   })
 
+  it('continues scaling after the old 22-card fill-to-40 threshold', () => {
+    const totals = [22, 24, 30].map((count) => {
+      const result = suggestBasicLands({
+        entries: [spell('Green three-drop', '{2}{G}', 3, count)],
+        availableBasics: basics,
+        minDeckSize: 40,
+      })
+      return Object.values(result).reduce((sum, n) => sum + n, 0)
+    })
+
+    expect(totals).toEqual([16, 18, 22])
+    expect(totals.map((lands, index) => lands + [22, 24, 30][index]!)).toEqual([38, 42, 52])
+  })
+
   it('shares a partial deck of too-few lands across all its colors', () => {
     const result = suggestBasicLands({
       entries: [
@@ -352,7 +366,7 @@ describe('suggestBasicLands', () => {
       minDeckSize: 40,
     })
 
-    expect(result['Plains A']).toBe(17)
+    expect(result['Plains A']).toBe(15)
     expect(result['Plains B']).toBe(0)
   })
 })
