@@ -8,6 +8,17 @@ internal fun BridgeBuilder.keywords() {
     keyword("Vigilance", "VIGILANCE")
     keyword("Reach", "REACH")
     keyword("Defender", "DEFENDER")
+    // Daybound / Nightbound (CR 702.145, Innistrad: Crimson Vow). Bare card keywords the SDK models as
+    // rules-inert `Keyword` enum members — all behaviour (enters-transformed, the designation-change
+    // cascade, the can't-transform-except-via-keyword rule) is derived off projected state by the
+    // rules engine, so a plain `daybound()`/`nightbound()` stamp is the whole card surface. Both would
+    // auto-resolve via PascalCase→enum (Daybound→DAYBOUND), but pin them so the capability reads
+    // explicitly and a future enum rename surfaces as a MISSING gap rather than silently dropping.
+    // NOTE: these ride on the DFC's front/back faces (daybound front, nightbound back); the emitter
+    // stamps them via `keywordLines`, but assembling the two-faced werewolf shape is a per-card read,
+    // so pinning the capability doesn't imply an AUTO render of the whole card.
+    keyword("Daybound", "DAYBOUND")
+    keyword("Nightbound", "NIGHTBOUND")
     // Intimidate (CR 702.13) — `Keyword.INTIMIDATE` exists in the SDK enum, so the PascalCase→enum
     // auto-resolve would accept it, but the rules engine has NO block-evasion handling for it
     // (BlockEvasionRules covers flying/fear/shadow/horsemanship/landwalk only). A bare or granted

@@ -158,6 +158,14 @@ internal fun BridgeBuilder.manaCountersAndState() {
     effect("SkipAllCombatPhasesTheirNextTurn", "SkipCombatPhases",
         "False Peace: target skips all combat phases of their next turn")
 
+    // "It becomes day/night" (CR 731.1) — both mtgish `_Action` verbs lower to the one SetDayNight
+    // effect (the DayNight arg picks the designation). The effect cascades the daybound/nightbound
+    // transforms the change entails (CR 702.145b/e). The emitter's `BecomeDay`/`BecomeNight` handlers
+    // render the matching `Effects.BecomeDay` / `Effects.BecomeNight` val. Backs Into the Night
+    // (BecomeNight) and Angel of Eternal Dawn (BecomeDay).
+    effects("BecomeDay", "BecomeNight", tag = "SetDayNight",
+        note = "it becomes day/night -> Effects.BecomeDay / Effects.BecomeNight (SetDayNight, CR 731.1)")
+
     // "As ~ enters the battlefield" replacement actions (nested under the AsPermanentEnters envelope).
     // The engine realises each via a dedicated ReplacementEffect — EntersTapped, and a +1/+1 counter via
     // EntersWithCounters. Those SerialNames live in scripting/ReplacementEffect.kt (outside the scanned

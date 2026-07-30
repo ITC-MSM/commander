@@ -400,6 +400,34 @@ data object VoidCondition : Condition {
 }
 
 // =============================================================================
+// Day and Night (CR 731)
+// =============================================================================
+
+/**
+ * Condition: "if it's day" (CR 731). Satisfied only while the game's day/night designation is day —
+ * *not* while it's neither day nor night (CR 731.1: the game starts with neither designation, and a
+ * "neither" game is not day). Read straight off `GameState.dayNight` by the engine's
+ * `ConditionEvaluator`. Backs "… if it's day" riders (e.g. Wolf Strike's mirror is the [IsNight]
+ * form). Use [com.wingedsheep.sdk.dsl.Conditions.IsDay].
+ */
+@SerialName("IsDay")
+@Serializable
+data object IsDay : Condition {
+    override val description: String = "if it's day"
+}
+
+/**
+ * Condition: "if it's night" (CR 731) — the mirror of [IsDay]. Satisfied only while the game's
+ * designation is night, never while it's neither. Backs Wolf Strike's "… if it's night". Use
+ * [com.wingedsheep.sdk.dsl.Conditions.IsNight].
+ */
+@SerialName("IsNight")
+@Serializable
+data object IsNight : Condition {
+    override val description: String = "if it's night"
+}
+
+// =============================================================================
 // Stack Conditions
 // =============================================================================
 

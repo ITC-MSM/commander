@@ -717,6 +717,260 @@
     ]
 }
 
+// Avabruck Caretaker
+{
+    "name": "Avabruck Caretaker",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "Hexproof\nAt the beginning of combat on your turn, put two +1/+1 counters on another target creature you control.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "HEXPROOF",
+        "DAYBOUND"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "another target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "another target creature you control"
+                },
+                "descriptionOverride": "Put two +1/+1 counters on another target creature you control."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Hollowhenge Huntmaster",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Hexproof\nOther permanents you control have hexproof.\nAt the beginning of combat on your turn, put two +1/+1 counters on each creature you control.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 6
+        },
+        "keywords": [
+            "HEXPROOF",
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "BEGIN_COMBAT"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 2,
+                            "target": "Self"
+                        }
+                    },
+                    "descriptionOverride": "Put two +1/+1 counters on each creature you control."
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "filter": {
+                        "baseFilter": "permanent ctrl:you",
+                        "excludeSelf": true
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "187",
+            "rarity": "MYTHIC",
+            "artist": "Heonhwa",
+            "imageUri": "https://cards.scryfall.io/normal/back/c/0/c0c358b4-5af2-438f-8bd5-beb0ee6b518b.jpg?1783924827"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "rarity": "MYTHIC",
+        "artist": "Heonhwa",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c0c358b4-5af2-438f-8bd5-beb0ee6b518b.jpg?1783924827"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Ballista Watcher
+{
+    "name": "Ballista Watcher",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Human Soldier Werewolf",
+    "oracleText": "{2}{R}, {T}: This creature deals 1 damage to any target.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    },
+                    "damageSource": "Self"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "This creature deals 1 damage to any target."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Ballista Wielder",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "{2}{R}: This creature deals 1 damage to any target. A creature dealt damage this way can't block this turn.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 5
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{2}{R}"
+                        }
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "any target"
+                                },
+                                "damageSource": "Self"
+                            },
+                            {
+                                "type": "CantBlockTargetCreatures",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "any target"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "AnyTarget",
+                            "id": "any target"
+                        }
+                    ],
+                    "descriptionOverride": "This creature deals 1 damage to any target. A creature dealt damage this way can't block this turn."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "143",
+            "rarity": "UNCOMMON",
+            "artist": "Tomas Duchek",
+            "imageUri": "https://cards.scryfall.io/normal/back/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "rarity": "UNCOMMON",
+        "artist": "Tomas Duchek",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Belligerent Guest
 {
     "name": "Belligerent Guest",
@@ -1768,6 +2022,101 @@
         "imageUri": "https://cards.scryfall.io/normal/front/b/9/b9a41cfc-f329-4e69-a785-835f69c7d2ba.jpg?1783924818"
     },
     "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Child of the Pack
+{
+    "name": "Child of the Pack",
+    "manaCost": "{2}{R}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "{2}{R}{G}: Create a 2/2 green Wolf creature token.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{R}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Wolf"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/d/5/d5f1e139-3054-4273-8a4d-faaaa9c383a8.jpg?1783924694",
+                    "controller": "Controller"
+                },
+                "descriptionOverride": "Create a 2/2 green Wolf creature token."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Savage Packmate",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Trample\nOther creatures you control get +1/+0.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 5
+        },
+        "keywords": [
+            "TRAMPLE",
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "234",
+            "rarity": "UNCOMMON",
+            "artist": "Mila Pesic",
+            "imageUri": "https://cards.scryfall.io/normal/back/c/b/cb168e3c-2c78-4e70-a39b-06aa6a47998c.jpg?1783924799"
+        },
+        "colorIdentityOverride": [
+            "RED",
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN",
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "UNCOMMON",
+        "artist": "Mila Pesic",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cb168e3c-2c78-4e70-a39b-06aa6a47998c.jpg?1783924799"
+    },
+    "colorIdentityOverride": [
+        "RED",
         "GREEN"
     ]
 }
@@ -3816,6 +4165,56 @@
     ]
 }
 
+// Fearful Villager
+{
+    "name": "Fearful Villager",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "Menace\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "MENACE",
+        "DAYBOUND"
+    ],
+    "backFace": {
+        "name": "Fearsome Werewolf",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Menace\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 3
+        },
+        "keywords": [
+            "MENACE",
+            "NIGHTBOUND"
+        ],
+        "metadata": {
+            "collectorNumber": "157",
+            "artist": "Andrew Mar",
+            "imageUri": "https://cards.scryfall.io/normal/back/5/e/5eb3a08e-1d31-4ab9-854f-a86b060696ec.jpg?1783924841"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "artist": "Andrew Mar",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5eb3a08e-1d31-4ab9-854f-a86b060696ec.jpg?1783924841"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Fell Stinger
 {
     "name": "Fell Stinger",
@@ -5697,6 +6096,70 @@
     "colorIdentityOverride": []
 }
 
+// Hookhand Mariner
+{
+    "name": "Hookhand Mariner",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "Daybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "backFace": {
+        "name": "Riphook Raider",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "This creature can't be blocked by creatures with power 2 or less.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 4
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "CantBeBlockedBy",
+                    "blockerFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "PowerAtMost",
+                                "max": 2
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "203",
+            "artist": "Caio Monteiro",
+            "imageUri": "https://cards.scryfall.io/normal/back/5/4/54a4b031-0919-44aa-a35e-68da7a27235a.jpg?1783924817"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "artist": "Caio Monteiro",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/4/54a4b031-0919-44aa-a35e-68da7a27235a.jpg?1783924817"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hopeful Initiate
 {
     "name": "Hopeful Initiate",
@@ -5868,6 +6331,256 @@
         "rarity": "RARE",
         "artist": "Alessandra Pisano",
         "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca50b6a5-2e58-4de3-b0e1-0b33536f69a6.jpg?1783924810"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Howlpack Piper
+{
+    "name": "Howlpack Piper",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "This spell can't be countered.\n{1}{G}, {T}: You may put a creature card from your hand onto the battlefield. If it's a Wolf or Werewolf, untap this creature. Activate only as a sorcery.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand",
+                                        "filter": "creature"
+                                    },
+                                    "storeAs": "put_candidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "put_candidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "putting"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "putting",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Battlefield"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "CollectionContainsMatch",
+                                    "collection": "putting",
+                                    "filter": "creature Wolf|Werewolf"
+                                }
+                            },
+                            "then": {
+                                "type": "TapUntap",
+                                "target": "Self",
+                                "tap": false
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "You may put a creature card from your hand onto the battlefield. If it's a Wolf or Werewolf, untap this creature."
+            }
+        ],
+        "cantBeCountered": true
+    },
+    "backFace": {
+        "name": "Wildsong Howler",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Whenever this creature enters or transforms into Wildsong Howler, look at the top six cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Battlefield"
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 6
+                                    }
+                                },
+                                "storeAs": "looked"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "looked",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "filter": "creature",
+                                "storeSelected": "kept",
+                                "storeRemainder": "rest",
+                                "prompt": "You may reveal a creature card to put into your hand",
+                                "showAllCards": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "kept",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "rest",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Bottom"
+                                },
+                                "order": "Random"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Look at the top six cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+                },
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "TransformEvent",
+                        "intoBackFace": true
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 6
+                                    }
+                                },
+                                "storeAs": "looked"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "looked",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "filter": "creature",
+                                "storeSelected": "kept",
+                                "storeRemainder": "rest",
+                                "prompt": "You may reveal a creature card to put into your hand",
+                                "showAllCards": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "kept",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "rest",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Bottom"
+                                },
+                                "order": "Random"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Look at the top six cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "205",
+            "rarity": "RARE",
+            "artist": "Cristi Balanescu",
+            "imageUri": "https://cards.scryfall.io/normal/back/c/7/c7ceaf83-09c0-4492-a75d-4c47bd421858.jpg?1783924816"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "rarity": "RARE",
+        "artist": "Cristi Balanescu",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c7ceaf83-09c0-4492-a75d-4c47bd421858.jpg?1783924816"
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -6063,6 +6776,304 @@
     ]
 }
 
+// Ill-Tempered Loner
+{
+    "name": "Ill-Tempered Loner",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "Whenever this creature is dealt damage, it deals that much damage to any target.\n{1}{R}: This creature gets +2/+0 until end of turn.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    },
+                    "damageSource": "Self"
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "descriptionOverride": "This creature deals that much damage to any target."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "This creature gets +2/+0 until end of turn."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Howlpack Avenger",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Whenever a permanent you control is dealt damage, this creature deals that much damage to any target.\n{1}{R}: This creature gets +2/+0 until end of turn.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "DealsDamageEvent",
+                        "recipient": "PermanentYouControl"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "ContextProperty",
+                            "key": "TRIGGER_DAMAGE_AMOUNT"
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "any target"
+                        },
+                        "damageSource": "Self"
+                    },
+                    "targetRequirement": {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    },
+                    "descriptionOverride": "This creature deals that much damage to any target."
+                }
+            ],
+            "activatedAbilities": [
+                {
+                    "id": "ability_4",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{1}{R}"
+                        }
+                    },
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "This creature gets +2/+0 until end of turn."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "162",
+            "rarity": "RARE",
+            "artist": "Grzegorz Rutkowski",
+            "imageUri": "https://cards.scryfall.io/normal/back/f/3/f3d1e90b-0c99-46da-b4f6-4b7be27dbd5c.jpg?1783924840"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "162",
+        "rarity": "RARE",
+        "artist": "Grzegorz Rutkowski",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3d1e90b-0c99-46da-b4f6-4b7be27dbd5c.jpg?1783924840"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Infestation Expert
+{
+    "name": "Infestation Expert",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "Whenever this creature enters or attacks, create a 1/1 green Insect creature token.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Insect"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3ac66f8-4bb2-42bd-9a18-7da9c3839c8b.jpg?1783924696",
+                    "controller": "Controller"
+                },
+                "descriptionOverride": "Create a 1/1 green Insect creature token."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Insect"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3ac66f8-4bb2-42bd-9a18-7da9c3839c8b.jpg?1783924696",
+                    "controller": "Controller"
+                },
+                "descriptionOverride": "Create a 1/1 green Insect creature token."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Infested Werewolf",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Whenever this creature enters or attacks, create two 1/1 green Insect creature tokens.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 5
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Battlefield"
+                    },
+                    "effect": {
+                        "type": "CreateToken",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Insect"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3ac66f8-4bb2-42bd-9a18-7da9c3839c8b.jpg?1783924696",
+                        "controller": "Controller"
+                    },
+                    "descriptionOverride": "Create two 1/1 green Insect creature tokens."
+                },
+                {
+                    "id": "ability_4",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "CreateToken",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Insect"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3ac66f8-4bb2-42bd-9a18-7da9c3839c8b.jpg?1783924696",
+                        "controller": "Controller"
+                    },
+                    "descriptionOverride": "Create two 1/1 green Insect creature tokens."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "206",
+            "rarity": "UNCOMMON",
+            "artist": "Vincent Proce",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/9/0936761c-7cdc-49ef-8a0d-ed79219f1056.jpg?1783924815"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "206",
+        "rarity": "UNCOMMON",
+        "artist": "Vincent Proce",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/0936761c-7cdc-49ef-8a0d-ed79219f1056.jpg?1783924815"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Inspired Idea
 {
     "name": "Inspired Idea",
@@ -6115,6 +7126,77 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Into the Night
+{
+    "name": "Into the Night",
+    "manaCost": "{3}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "It becomes night. Discard any number of cards, then draw that many cards plus one.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "SetDayNight",
+                    "designation": "NIGHT"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "discarded_candidates"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "discarded_candidates",
+                            "selection": "ChooseAnyNumber",
+                            "storeSelected": "discarded",
+                            "prompt": "Choose any number of cards to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Add",
+                        "left": {
+                            "type": "VariableReference",
+                            "variableName": "discarded_count"
+                        },
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "rarity": "UNCOMMON",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/5/b5a96286-0dda-4761-a1c5-241288c36275.jpg?1783924832"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -6348,6 +7430,114 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Lambholt Raconteur
+{
+    "name": "Lambholt Raconteur",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Human Warrior Werewolf",
+    "oracleText": "Whenever you cast a noncreature spell, this creature deals 1 damage to each opponent.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    },
+                    "damageSource": "Self"
+                },
+                "descriptionOverride": "This creature deals 1 damage to each opponent."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Lambholt Ravager",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Whenever you cast a noncreature spell, this creature deals 2 damage to each opponent.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "SpellCastEvent",
+                        "spellFilter": {
+                            "cardPredicates": [
+                                "IsNoncreature"
+                            ]
+                        }
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        },
+                        "damageSource": "Self"
+                    },
+                    "descriptionOverride": "This creature deals 2 damage to each opponent."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "167",
+            "rarity": "UNCOMMON",
+            "artist": "Andrey Kuzinskiy",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/c/0cbee24c-9147-46cb-a5f9-8d919c021aa4.jpg?1783924839"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "167",
+        "rarity": "UNCOMMON",
+        "artist": "Andrey Kuzinskiy",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0cbee24c-9147-46cb-a5f9-8d919c021aa4.jpg?1783924839"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -7443,6 +8633,64 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Oakshade Stalker
+{
+    "name": "Oakshade Stalker",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Ranger Werewolf",
+    "oracleText": "You may cast this spell as though it had flash if you pay {2} more to cast it.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "manaCost": "{2}",
+            "branchesEffect": false,
+            "grantsFlashTiming": true
+        }
+    ],
+    "backFace": {
+        "name": "Moonlit Ambusher",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Nightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 3
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "metadata": {
+            "collectorNumber": "212",
+            "rarity": "UNCOMMON",
+            "artist": "Alexander Mokhov",
+            "imageUri": "https://cards.scryfall.io/normal/back/8/b/8bcaa944-4e45-457c-be9c-07377b6ed08b.jpg?1783924813"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "212",
+        "rarity": "UNCOMMON",
+        "artist": "Alexander Mokhov",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8bcaa944-4e45-457c-be9c-07377b6ed08b.jpg?1783924813"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -11380,6 +12628,206 @@
     ]
 }
 
+// Volatile Arsonist
+{
+    "name": "Volatile Arsonist",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "Menace, haste\nWhenever this creature attacks, it deals 1 damage to each of up to one target creature, up to one target player, and/or up to one target planeswalker.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE",
+        "HASTE",
+        "DAYBOUND"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature"
+                            },
+                            "damageSource": "Self"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target player"
+                            },
+                            "damageSource": "Self"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target planeswalker"
+                            },
+                            "damageSource": "Self"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "optional": true,
+                        "id": "up to one target player"
+                    },
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "planeswalker"
+                        },
+                        "id": "up to one target planeswalker"
+                    }
+                ],
+                "descriptionOverride": "This creature deals 1 damage to each of up to one target creature, up to one target player, and/or up to one target planeswalker."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Dire-Strain Anarchist",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Menace, haste\nWhenever this creature attacks, it deals 2 damage to each of up to one target creature, up to one target player, and/or up to one target planeswalker.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 5
+        },
+        "keywords": [
+            "MENACE",
+            "HASTE",
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target creature"
+                                },
+                                "damageSource": "Self"
+                            },
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target player"
+                                },
+                                "damageSource": "Self"
+                            },
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target planeswalker"
+                                },
+                                "damageSource": "Self"
+                            }
+                        ]
+                    },
+                    "targetRequirement": {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "up to one target creature"
+                    },
+                    "additionalTargetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "optional": true,
+                            "id": "up to one target player"
+                        },
+                        {
+                            "type": "TargetObject",
+                            "optional": true,
+                            "filter": {
+                                "baseFilter": "planeswalker"
+                            },
+                            "id": "up to one target planeswalker"
+                        }
+                    ],
+                    "descriptionOverride": "This creature deals 2 damage to each of up to one target creature, up to one target player, and/or up to one target planeswalker."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "181",
+            "rarity": "MYTHIC",
+            "artist": "Gabor Szikszai",
+            "imageUri": "https://cards.scryfall.io/normal/back/8/7/87a02ac1-c43a-43cc-9c2b-628cfdeb4cbf.jpg?1783924830"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "181",
+        "rarity": "MYTHIC",
+        "artist": "Gabor Szikszai",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/87a02ac1-c43a-43cc-9c2b-628cfdeb4cbf.jpg?1783924830"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Voldaren Epicure
 {
     "name": "Voldaren Epicure",
@@ -11699,6 +13147,136 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Weary Prisoner
+{
+    "name": "Weary Prisoner",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "Defender\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 6
+    },
+    "keywords": [
+        "DEFENDER",
+        "DAYBOUND"
+    ],
+    "backFace": {
+        "name": "Wrathful Jailbreaker",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "This creature attacks each combat if able.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 6
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "staticAbilities": [
+                "MustAttack"
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "184",
+            "artist": "Jason Rainville",
+            "imageUri": "https://cards.scryfall.io/normal/back/e/6/e641467b-ac2e-4d29-aed7-5cc227c3b1ce.jpg?1783924828"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "184",
+        "artist": "Jason Rainville",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e641467b-ac2e-4d29-aed7-5cc227c3b1ce.jpg?1783924828"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Weaver of Blossoms
+{
+    "name": "Weaver of Blossoms",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "{T}: Add one mana of any color.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "isManaAbility": true,
+                "descriptionOverride": "Add one mana of any color."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Blossom-Clad Werewolf",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "{T}: Add two mana of any one color.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 4
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "AddManaOfChoice",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "isManaAbility": true,
+                    "descriptionOverride": "Add two mana of any one color."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "226",
+            "artist": "Andrey Kuzinskiy",
+            "imageUri": "https://cards.scryfall.io/normal/back/7/3/73bf2a0a-b97d-4b90-abd6-d1755734ea15.jpg?1783924806"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "artist": "Andrey Kuzinskiy",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73bf2a0a-b97d-4b90-abd6-d1755734ea15.jpg?1783924806"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -12181,6 +13759,171 @@
         "artist": "Yeong-Hao Han",
         "flavorText": "Ever since the ritual, Ryla didn't have an appetite at the dinner table, but her long walks in the forest always seemed to satiate her hunger.",
         "imageUri": "https://cards.scryfall.io/normal/front/0/d/0d021207-76be-4bc9-bb71-df991a04d8d8.jpg?1782703032"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Wolf Strike
+{
+    "name": "Wolf Strike",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature you control gets +2/+0 until end of turn if it's night. Then it deals damage equal to its power to target creature you don't control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": "IsNight"
+                    },
+                    "then": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "your creature"
+                        }
+                    }
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Target",
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "their creature"
+                    },
+                    "damageSource": {
+                        "type": "BoundVariable",
+                        "name": "your creature"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "your creature"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "their creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "artist": "Wisnu Tan",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/02e9cd00-7ffd-44e1-aa0f-c94489ff4a0f.jpg?1783924798"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Wolfkin Outcast
+{
+    "name": "Wolfkin Outcast",
+    "manaCost": "{5}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "This spell costs {2} less to cast if you control a Wolf or Werewolf.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "DAYBOUND"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "FixedIfControlFilter",
+                        "amount": 2,
+                        "filter": "Wolf|Werewolf"
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Wedding Crasher",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Whenever this creature or another Wolf or Werewolf you control dies, draw a card.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 5
+        },
+        "keywords": [
+            "NIGHTBOUND"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "ZoneChangeEvent",
+                        "filter": "creature Wolf|Werewolf ctrl:you",
+                        "from": "Battlefield",
+                        "to": "Graveyard"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "descriptionOverride": "Draw a card."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "229",
+            "rarity": "UNCOMMON",
+            "artist": "Alexander Mokhov",
+            "imageUri": "https://cards.scryfall.io/normal/back/7/a/7a743426-6333-4ca6-9207-163b325ba435.jpg?1783924803"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "UNCOMMON",
+        "artist": "Alexander Mokhov",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a743426-6333-4ca6-9207-163b325ba435.jpg?1783924803"
     },
     "colorIdentityOverride": [
         "GREEN"

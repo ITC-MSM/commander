@@ -113,6 +113,14 @@ class TurnManager(
             step = Step.UNTAP,
             priorityPlayerId = null, // No priority during untap
             priorityPassedBy = emptySet(),
+            // The untap-step day/night check reads the previous turn's active side. Snapshot every
+            // member's count before the per-turn counters are reset; shared-team-turn formats need
+            // each teammate's individual count, while ordinary formats produce a singleton map.
+            previousTurnActivePlayerId = state.activePlayerId,
+            previousTurnActiveTeamSpellCounts = state.activePlayerId
+                ?.let(state::sharedTurnTeam)
+                .orEmpty()
+                .associateWith { state.playerSpellsCastThisTurn[it] ?: 0 },
             spellsCastThisTurn = 0,
             playerSpellsCastThisTurn = emptyMap(),
             spellsCastThisTurnByPlayer = emptyMap(),

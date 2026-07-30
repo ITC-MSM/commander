@@ -299,6 +299,34 @@ enum class Keyword(val displayName: String) {
      */
     CLEAVE("Cleave"),
 
+    /**
+     * Daybound (CR 702.145, Innistrad: Midnight Hunt / Crimson Vow). Found on the **front** faces of
+     * some transforming double-faced cards; represents three static abilities: "If it is night and
+     * this permanent is represented by a transforming double-faced card, it enters transformed"; "As
+     * it becomes night, if this permanent is front face up, transform it"; and "This permanent can't
+     * transform except due to its daybound ability." Controlling a daybound permanent while it is
+     * neither day nor night makes it day (CR 702.145d).
+     *
+     * Load-bearing, like [START_YOUR_ENGINES]: the engine reads this from projected state — the
+     * [com.wingedsheep.engine.mechanics.daynight.DayNightService] transform cascade and the
+     * `DayNightCheck` state-based sweep both scan for it — so a *granted* daybound works and no
+     * per-card wiring beyond the keyword tag is needed. Add it with the `daybound()` helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder]. See [com.wingedsheep.sdk.core.DayNight].
+     */
+    DAYBOUND("Daybound"),
+
+    /**
+     * Nightbound (CR 702.145). Found on the **back** faces of the same transforming double-faced
+     * cards; represents two static abilities: "As it becomes day, if this permanent is back face up,
+     * transform it" and "This permanent can't transform except due to its nightbound ability."
+     * Controlling a nightbound permanent while it is neither day nor night, with no daybound permanent
+     * on the battlefield, makes it night (CR 702.145g).
+     *
+     * Load-bearing and read from projected state, exactly like [DAYBOUND]. Add it with the
+     * `nightbound()` helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+     */
+    NIGHTBOUND("Nightbound"),
+
     // ── Creature mechanics ────────────────────────────────
     OFFSPRING("Offspring"),
     PERSIST("Persist"),

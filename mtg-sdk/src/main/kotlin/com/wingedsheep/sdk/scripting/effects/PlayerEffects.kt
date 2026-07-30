@@ -232,6 +232,32 @@ data object EndTheTurnEffect : Effect {
 }
 
 /**
+ * "It becomes day" / "It becomes night" (CR 731.1) — set the game's day/night designation to
+ * [designation].
+ *
+ * Day and night are a *game*-level designation, not a player or permanent property, so this effect
+ * takes no target: it always sets the whole game's designation. It's the resolution-time counterpart
+ * to the untap-step turn-based action (CR 502.2) and the daybound/nightbound designation starts
+ * (CR 702.145d/g) — the text form other effects use, e.g. Into the Night's "It becomes night."
+ *
+ * Setting a designation the game already has is a no-op (CR 731.1 — once it's day or night the game
+ * always has exactly one), and the change cascades the daybound/nightbound transforms it entails
+ * (CR 702.145b/e): the engine's `DayNightService` — the single writer for `GameState.dayNight` — both
+ * flips the designation and emits the resulting `TransformedEvent`s in one batch. Use the
+ * [com.wingedsheep.sdk.dsl.Effects.BecomeDay] / [com.wingedsheep.sdk.dsl.Effects.BecomeNight] facades.
+ */
+@SerialName("SetDayNight")
+@Serializable
+data class SetDayNightEffect(
+    val designation: com.wingedsheep.sdk.core.DayNight
+) : Effect {
+    override val description: String = when (designation) {
+        com.wingedsheep.sdk.core.DayNight.DAY -> "It becomes day"
+        com.wingedsheep.sdk.core.DayNight.NIGHT -> "It becomes night"
+    }
+}
+
+/**
  * Prevent the target player from playing lands for the rest of this turn.
  * Sets the player's remaining land drops to 0.
  * Defaults to the controller (e.g. Rock Jockey); pass a [EffectTarget.PlayerRef]

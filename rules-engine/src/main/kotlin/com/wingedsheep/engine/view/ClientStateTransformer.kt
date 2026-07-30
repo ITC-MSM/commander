@@ -312,6 +312,7 @@ class ClientStateTransformer(
             winnerId = state.winnerId,
             combat = combat,
             voidActive = state.nonlandPermanentLeftBattlefieldThisTurn || state.spellWarpedThisTurn,
+            dayNight = state.dayNight,
             youAreHijacking = youAreHijacking,
             youAreHijackedBy = youAreHijackedBy,
             hotseat = hotseat,

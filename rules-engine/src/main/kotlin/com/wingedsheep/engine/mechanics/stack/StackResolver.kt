@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.EffectHandler
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
+import com.wingedsheep.engine.mechanics.daynight.DayNightService
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -1504,6 +1505,8 @@ class StackResolver(
                     )
                 )
             }
+
+            newState = DayNightService.applyDayboundEntry(newState, cardRegistry, spellId)
         }
 
         // Handle Saga entering the battlefield (Rule 714.3a)

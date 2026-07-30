@@ -75,6 +75,7 @@ class PlayerExecutors(
         PlayAdditionalLandsExecutor(),
         PreventLandPlaysThisTurnExecutor(),
         SecretBidExecutor(decisionHandler),
+        SetDayNightExecutor(cardRegistry),
         SkipCombatPhasesExecutor(),
         SkipNextDrawStepExecutor(),
         SkipNextTurnExecutor(),

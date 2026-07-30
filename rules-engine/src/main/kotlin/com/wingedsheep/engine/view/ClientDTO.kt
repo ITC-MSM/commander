@@ -70,6 +70,14 @@ data class ClientGameState(
     val voidActive: Boolean = false,
 
     /**
+     * The game's day/night designation (Innistrad, CR 731), or `null` while it's neither — the state
+     * the game starts in and never returns to once a designation is gained. Public information (like
+     * the turn number), so it's never masked. Drives the day/night indicator and any daybound/nightbound
+     * transform cues.
+     */
+    val dayNight: com.wingedsheep.sdk.core.DayNight? = null,
+
+    /**
      * If non-null, the affected player whose turn the viewing player is currently
      * driving (Mindslaver-style hijack). Drives UI cues such as the controller banner
      * and promoting the affected player's hand to face-up.

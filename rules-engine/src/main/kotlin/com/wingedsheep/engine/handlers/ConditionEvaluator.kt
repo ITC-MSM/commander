@@ -434,6 +434,14 @@ class ConditionEvaluator(
             is VoidCondition ->
                 state.nonlandPermanentLeftBattlefieldThisTurn || state.spellWarpedThisTurn
 
+            // Day/night designation (CR 731). Global game state read straight off GameState.dayNight;
+            // works identically in resolution and projection. Neither designation (null) satisfies
+            // neither condition — the game starts neither day nor night (CR 731.1).
+            is com.wingedsheep.sdk.scripting.conditions.IsDay ->
+                state.dayNight == com.wingedsheep.sdk.core.DayNight.DAY
+            is com.wingedsheep.sdk.scripting.conditions.IsNight ->
+                state.dayNight == com.wingedsheep.sdk.core.DayNight.NIGHT
+
             // Global, subtype-filtered death tracker — matched against each dying creature's
             // last-known subtypes recorded across every player. present=true: some dead creature
             // had the subtype; present=false: some dead creature lacked it ("a non-Zombie died").

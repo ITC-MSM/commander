@@ -123,6 +123,37 @@ data class GameState(
     /** Per-player spell records cast this turn, for conditional evasion and "first of type" triggers */
     val spellsCastThisTurnByPlayer: Map<EntityId, List<CastSpellRecord>> = emptyMap(),
 
+    /**
+     * The game's **day/night** designation (CR 731, "Day and Night"). `null` models the CR 731.1
+     * "neither day nor night" state the game starts in; once it has become day or night it is always
+     * exactly one of the two thereafter. All writes go through
+     * [com.wingedsheep.engine.mechanics.daynight.DayNightService] (the single writer, mirroring
+     * `SpeedService`), which also cascades the daybound/nightbound transforms (CR 702.145b/c/e/f) that
+     * "become day"/"become night" entails. Read directly by the `IsDay`/`IsNight` conditions and by
+     * the untap-step turn-based action (CR 502.2 / 731.2).
+     */
+    val dayNight: com.wingedsheep.sdk.core.DayNight? = null,
+
+    /**
+     * Entity id of the **previous turn's active player**, snapshotted by
+     * [com.wingedsheep.engine.core.TurnManager.startTurn] the instant a new turn begins — before the
+     * per-turn spell counters are zeroed. `null` on the game's first turn (there is no previous turn).
+     * Read together with [previousTurnActiveTeamSpellCounts] by the untap-step day/night check
+     * (CR 502.2 / 731.2), which must know how many spells the active player—or each player on the
+     * active team in a shared-team-turns game—cast during that turn even though the counters for the
+     * new turn have already reset.
+     */
+    val previousTurnActivePlayerId: EntityId? = null,
+
+    /**
+     * Per-player spell counts for the previous turn's active side, snapshotted in
+     * [com.wingedsheep.engine.core.TurnManager.startTurn] before the counters reset. This is a
+     * singleton map in ordinary games and contains every member of the previous active team when
+     * the format uses shared team turns. The untap-step day/night action becomes night if none of
+     * those players cast a spell, and becomes day if any one of them cast two or more.
+     */
+    val previousTurnActiveTeamSpellCounts: Map<EntityId, Int> = emptyMap(),
+
     /** Pending spell copies — copy the next instant/sorcery spell cast by a player (e.g., Howl of the Horde) */
     val pendingSpellCopies: List<PendingSpellCopy> = emptyList(),
 

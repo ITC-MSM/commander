@@ -1,4 +1,5 @@
 import { EntityId } from './entities'
+import { DayNight } from './enums'
 
 /**
  * Client-facing game events.
@@ -10,6 +11,7 @@ import { EntityId } from './entities'
 export type ClientEvent =
   | LifeChangedEvent
   | SpeedChangedEvent
+  | DayNightChangedEvent
   | DamageDealtEvent
   | StatsModifiedEvent
   | CardDrawnEvent
@@ -72,6 +74,18 @@ export interface SpeedChangedEvent {
   readonly newSpeed: number
   readonly isYours?: boolean
   readonly reachedMaxSpeed: boolean
+  readonly description: string
+}
+
+/**
+ * The game's day/night designation changed (Innistrad, CR 731). `oldDesignation` is null when the game
+ * leaves the neither state it starts in; a non-null → non-null change is a day↔night flip (CR 731.1a).
+ */
+export interface DayNightChangedEvent {
+  readonly type: 'dayNightChanged'
+  readonly oldDesignation: DayNight | null
+  readonly newDesignation: DayNight
+  readonly sourceName: string
   readonly description: string
 }
 

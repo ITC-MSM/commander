@@ -1,4 +1,4 @@
-import { AbilityFlag, Color, CounterType, Keyword, Phase, Step, ZoneType } from './enums'
+import { AbilityFlag, Color, CounterType, DayNight, Keyword, Phase, Step, ZoneType } from './enums'
 import { EntityId, ZoneId } from './entities'
 import { ClientEvent } from './events'
 
@@ -50,6 +50,13 @@ export interface ClientGameState {
    * with Void abilities (Edge of Eternities).
    */
   readonly voidActive?: boolean
+
+  /**
+   * The game's day/night designation (Innistrad, CR 731), or absent/null while it's neither — the
+   * state the game starts in and never returns to once a designation is gained. Public information,
+   * so never masked. Drives the day/night indicator. See {@link DayNight}.
+   */
+  readonly dayNight?: DayNight | null
 
   /**
    * If non-null, the affected player whose turn the viewing player is currently driving

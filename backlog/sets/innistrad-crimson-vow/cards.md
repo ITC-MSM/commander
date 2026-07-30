@@ -2,12 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 153 / 272
-- [x] Abrade
-- [x] Adamant Will
-- [ ] Aim for the Head
-- [ ] Alchemist's Gambit
-**Implemented:** 183 / 272
+**Implemented:** 199 / 272
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -22,8 +17,8 @@
 - [x] Archghoul of Thraben
 - [x] Arm the Cathars
 - [x] Ascendant Packleader
-- [ ] Avabruck Caretaker
-- [ ] Ballista Watcher
+- [x] Avabruck Caretaker
+- [x] Ballista Watcher
 - [x] Belligerent Guest
 - [ ] Binding Geist
 - [ ] Biolume Egg
@@ -53,7 +48,7 @@
 - [ ] Ceremonial Knife
 - [ ] Chandra, Dressed to Kill
 - [ ] Change of Fortune
-- [ ] Child of the Pack
+- [x] Child of the Pack
 - [ ] Chill of the Grave
 - [ ] Circle of Confinement
 - [x] Cloaked Cadet
@@ -100,7 +95,7 @@
 - [x] Falkenrath Celebrants
 - [x] Falkenrath Forebear
 - [x] Fear of Death
-- [ ] Fearful Villager
+- [x] Fearful Villager
 - [x] Fell Stinger
 - [x] Fierce Retribution
 - [x] Flame-Blessed Bolt
@@ -132,17 +127,17 @@
 - [x] Hiveheart Shaman
 - [x] Honeymoon Hearse
 - [x] Honored Heirloom
-- [ ] Hookhand Mariner
+- [x] Hookhand Mariner
 - [x] Hopeful Initiate
 - [x] Howling Moon
-- [ ] Howlpack Piper
+- [x] Howlpack Piper
 - [x] Hullbreaker Horror
 - [x] Hungry Ridgewolf
-- [ ] Ill-Tempered Loner
-- [ ] Infestation Expert
+- [x] Ill-Tempered Loner
+- [x] Infestation Expert
 - [ ] Innocent Traveler
 - [x] Inspired Idea
-- [ ] Into the Night
+- [x] Into the Night
 - [ ] Investigator's Journal
 - [x] Island
 - [ ] Jacob Hauken, Inspector
@@ -153,7 +148,7 @@
 - [ ] Kindly Ancestor
 - [x] Lacerate Flesh
 - [x] Laid to Rest
-- [ ] Lambholt Raconteur
+- [x] Lambholt Raconteur
 - [ ] Lantern Bearer
 - [x] Lantern Flare
 - [x] Lantern of the Lost
@@ -176,7 +171,7 @@
 - [x] Nebelgast Beguiler
 - [x] Necroduality
 - [x] Nurturing Presence
-- [ ] Oakshade Stalker
+- [x] Oakshade Stalker
 - [ ] Odric, Blood-Cursed
 - [x] Old Rutstein
 - [ ] Olivia's Attendants
@@ -260,7 +255,7 @@
 - [x] Vampires' Vengeance
 - [x] Vilespawn Spider
 - [x] Voice of the Blessed
-- [ ] Volatile Arsonist
+- [x] Volatile Arsonist
 - [ ] Voldaren Bloodcaster
 - [x] Voldaren Epicure
 - [x] Voldaren Estate
@@ -268,8 +263,8 @@
 - [x] Wandering Mind
 - [x] Wanderlight Spirit
 - [x] Wash Away
-- [ ] Weary Prisoner
-- [ ] Weaver of Blossoms
+- [x] Weary Prisoner
+- [x] Weaver of Blossoms
 - [x] Wedding Announcement
 - [x] Wedding Invitation
 - [x] Wedding Security
@@ -278,6 +273,6 @@
 - [x] Winged Portent
 - [x] Witch's Web
 - [ ] Witness the Future
-- [ ] Wolf Strike
-- [ ] Wolfkin Outcast
+- [x] Wolf Strike
+- [x] Wolfkin Outcast
 - [x] Wretched Throng
