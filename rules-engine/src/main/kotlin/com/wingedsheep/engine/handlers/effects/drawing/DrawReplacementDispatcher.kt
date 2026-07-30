@@ -365,8 +365,17 @@ class DrawReplacementDispatcher(
      *
      * Iterates every battlefield permanent's replacement effects, gates each by the
      * [DrawEvent]'s `player` filter relative to [playerId] and the source's controller,
-     * and (if all `restrictions` hold) sums the modifier into [originalCount]. The
-     * final result is clamped to `≥ 0`.
+     * and (if all `restrictions` hold) folds `(count * multiplier) + modifier` into
+     * [originalCount]. The final result is clamped to `≥ 0`.
+     *
+     * Effects compose in battlefield-iteration order. Multipliers commute with multipliers
+     * and modifiers with modifiers, so that order is unobservable while every applicable
+     * effect is of one kind — the whole corpus today. It *is* observable when a multiplier
+     * and a modifier apply to the same draw (Vnwxt's ×2 alongside Quantum Riddler's +1:
+     * `(1*2)+1 = 3` vs `(1+1)*2 = 4`), where CR 616.1 gives the drawing player the choice of
+     * order and we pick one for them. Known simplification: adding a decision point here
+     * would pause every draw in a two-replacement board state, so it waits for a card that
+     * makes the difference matter.
      */
     fun applyDrawAmountModifier(
         state: GameState,
@@ -403,7 +412,7 @@ class DrawReplacementDispatcher(
                 }
                 if (!restrictionsHold) continue
 
-                adjusted += effect.modifier
+                adjusted = adjusted * effect.multiplier + effect.modifier
             }
         }
         return adjusted.coerceAtLeast(0)

@@ -76,11 +76,19 @@ fun CardBuilder.startYourEngines() {
  * }
  * ```
  *
- * **Not covered:** a max-speed-gated *replacement* effect (Vnwxt, Verbose Host's "If you would draw
- * a card, draw two cards instead"; Far Fortune, End Boss's damage rider). Replacement effects are
- * read straight off `ReplacementEffectSourceComponent` at ~20 independent interception sites, none of
- * which evaluates a condition, so gating one needs a shared conditional-replacement seam that
- * doesn't exist yet — deliberately left out rather than approximated per site.
+ * **Not covered:** a max-speed-gated *replacement* effect (Far Fortune, End Boss's damage rider).
+ * Replacement effects are read straight off `ReplacementEffectSourceComponent` at ~20 independent
+ * interception sites, none of which evaluates a condition, so gating one *in general* needs a shared
+ * conditional-replacement seam that doesn't exist yet — deliberately left out rather than
+ * approximated per site.
+ *
+ * The exception, and why it isn't in this block: a replacement type that already carries its own
+ * condition slot can fold the gate in itself, the same trick this builder uses for
+ * [ModifySpellCost] and [MayCastSelfFromZones]. Vnwxt, Verbose Host's "Max speed — If you would draw
+ * a card, draw two cards instead" is a `ModifyDrawAmount` with
+ * `restrictions = listOf(Conditions.YouHaveMaxSpeed)`, declared through the ordinary
+ * `replacementEffect(…)` on [CardBuilder] plus a hand-written [Keyword.MAX_SPEED] badge. Route a
+ * second such card through here only once there are two of them to share the path.
  */
 fun CardBuilder.maxSpeed(init: MaxSpeedBuilder.() -> Unit) {
     val builder = MaxSpeedBuilder()

@@ -7713,8 +7713,9 @@ replacementEffect {
   cast as a spell (resolved off the stack) **and** when it enters the battlefield directly — a land
   played (Echoing Deeps) pauses via `PermanentEntryReplacements.pauseForEntersAsCopy`, its resumer
   `CloneEntersOnBattlefieldContinuation` copying onto the already-placed permanent in place.
-- `ModifyDrawAmount(modifier, restrictions, appliesTo)` — modify the number of cards a draw
-  instruction announces by a fixed amount, optionally gated by extra `restrictions: List<Condition>`
+- `ModifyDrawAmount(modifier, multiplier, restrictions, appliesTo)` — modify the number of cards a draw
+  instruction announces to `(count * multiplier) + modifier`, clamped to ≥ 0, optionally gated by extra
+  `restrictions: List<Condition>`
   evaluated against the drawing player as controller. Applied **once** per draw instruction at the
   announcement site — `DrawCardsExecutor.execute` for spell/ability draws and
   `DrawPhaseManager.performDrawStep` for the draw step (CR 121.2a: "An instruction to draw multiple
@@ -7723,9 +7724,14 @@ replacementEffect {
   resumed per-card loop doesn't double-modify. Note that "you" in restriction text reads as the
   drawing player, not the source's controller; for `DrawEvent(player = Player.You)` they coincide,
   but `DrawEvent(player = Player.EachOpponent)` cards needing "you" = source controller would have to
-  use a source-relative condition instead. Use for "if you would draw one or more cards, you draw
-  that many cards plus N instead" (Quantum Riddler:
-  `ModifyDrawAmount(modifier = 1, restrictions = listOf(Conditions.CardsInHandAtMost(1)), appliesTo = DrawEvent(player = Player.You))`).
+  use a source-relative condition instead. Use `modifier` for the additive wording — "if you would
+  draw one or more cards, you draw that many cards plus N instead" (Quantum Riddler:
+  `ModifyDrawAmount(modifier = 1, restrictions = listOf(Conditions.CardsInHandAtMost(1)), appliesTo = DrawEvent(player = Player.You))`)
+  — and `multiplier` for the doubling wording, which per the Vnwxt rulings multiplies the *announced*
+  count so a "draw three cards" spell draws six (Vnwxt, Verbose Host:
+  `ModifyDrawAmount(multiplier = 2, restrictions = listOf(Conditions.YouHaveMaxSpeed), appliesTo = DrawEvent(player = Player.You))`).
+  Several applicable effects are cumulative — two doublers quadruple the draw. `restrictions` is also
+  the seam for a "Max speed —" gate, which `maxSpeed { }` cannot apply to a replacement effect.
 - `ModifyMillAmount(modifier, restrictions, appliesTo)` — modify the number of cards a *mill* announces
   by a fixed amount (the mill twin of `ModifyDrawAmount`): a player who would mill N instead mills
   `N + modifier`, clamped to ≥ 0. `appliesTo` is an `EventPattern.MillEvent` whose `player` filter

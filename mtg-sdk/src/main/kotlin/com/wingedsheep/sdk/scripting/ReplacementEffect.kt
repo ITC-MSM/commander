@@ -781,21 +781,29 @@ data class SetMinimumDamage(
 // =============================================================================
 
 /**
- * Modify the number of cards a draw event draws by a fixed amount, optionally gated by
- * additional [restrictions]. Applied at the call site where the original draw count is
- * announced (spell/ability resolution and the draw step), so the modifier fires once per
- * draw instruction (CR 121.2a: "An instruction to draw multiple cards can be modified by
- * replacement effects that refer to the number of cards drawn. This modification occurs
- * before considering any of the individual card draws.") and is not re-applied when a
- * paused per-card draw loop resumes.
+ * Modify the number of cards a draw event draws — `(count * multiplier) + modifier`, clamped
+ * to ≥ 0 — optionally gated by additional [restrictions]. Applied at the call site where the
+ * original draw count is announced (spell/ability resolution and the draw step), so the
+ * modification fires once per draw instruction (CR 121.2a: "An instruction to draw multiple
+ * cards can be modified by replacement effects that refer to the number of cards drawn. This
+ * modification occurs before considering any of the individual card draws.") and is not
+ * re-applied when a paused per-card draw loop resumes.
+ *
+ * Two independent knobs so one type covers the whole family: [multiplier] for the doubling
+ * wording ("if you would draw a card, draw two cards instead" — which per the Vnwxt rulings
+ * multiplies the *announced* count, so a "draw three cards" spell draws six) and [modifier]
+ * for the additive wording ("you draw that many cards plus one instead"). Multiple such
+ * effects are cumulative: two doublers quadruple the draw, matching the Vnwxt ruling about
+ * controlling both Vnwxt and Thought Reflection.
  *
  * Each entry in [restrictions] is a [Condition] evaluated against the drawing player as
  * the controller context; the modification only applies when ALL restrictions hold. This
  * mirrors [ModifyLifeLoss]'s shape — use it for cards whose extra-draw clause is gated by
- * arbitrary additional conditions. Note that "you" in restriction text reads as the drawing
- * player, not the source's controller — for `DrawEvent(player = Player.You)` they're the
- * same, but a future `DrawEvent(player = Player.EachOpponent)` card whose restriction means
- * "you" = source controller would need a source-relative condition instead.
+ * arbitrary additional conditions, including a "Max speed —" gate. Note that "you" in
+ * restriction text reads as the drawing player, not the source's controller — for
+ * `DrawEvent(player = Player.You)` they're the same, but a future
+ * `DrawEvent(player = Player.EachOpponent)` card whose restriction means "you" = source
+ * controller would need a source-relative condition instead.
  *
  * Examples:
  * - Quantum Riddler ("As long as you have one or fewer cards in hand, if you would draw
@@ -803,16 +811,23 @@ data class SetMinimumDamage(
  *     `ModifyDrawAmount(modifier = 1,
  *                       restrictions = listOf(Conditions.CardsInHandAtMost(1)),
  *                       appliesTo = DrawEvent(player = Player.You))`
+ * - Vnwxt, Verbose Host ("Max speed — If you would draw a card, draw two cards instead"):
+ *     `ModifyDrawAmount(multiplier = 2,
+ *                       restrictions = listOf(Conditions.YouHaveMaxSpeed),
+ *                       appliesTo = DrawEvent(player = Player.You))`
  *
- * @param modifier Flat amount added to the draw count when the event fires for a matching
- *        player. Negative values reduce the draw (clamped to ≥ 0 by the caller).
- * @param restrictions Additional [Condition]s gating when the modifier applies. Evaluated
+ * @param multiplier Factor the announced draw count is multiplied by. `2` is the "draw twice
+ *        that many instead" wording; the default `1` leaves the count alone.
+ * @param modifier Flat amount added after multiplying. Negative values reduce the draw
+ *        (clamped to ≥ 0 by the caller).
+ * @param restrictions Additional [Condition]s gating when the modification applies. Evaluated
  *        against the drawing player as controller; ALL must hold.
  */
 @SerialName("ModifyDrawAmount")
 @Serializable
 data class ModifyDrawAmount(
-    val modifier: Int,
+    val modifier: Int = 0,
+    val multiplier: Int = 1,
     val restrictions: List<Condition> = emptyList(),
     override val appliesTo: EventPattern = EventPattern.DrawEvent()
 ) : ReplacementEffect {
@@ -825,7 +840,16 @@ data class ModifyDrawAmount(
             append("If ")
         }
         append(appliesTo.description)
-        append(", they draw that many cards plus $modifier instead")
+        // Pick the natural English for each shape rather than spelling out the formula.
+        append(
+            when {
+                multiplier != 1 && modifier != 0 ->
+                    ", they draw that many cards times $multiplier plus $modifier instead"
+                multiplier == 2 -> ", they draw twice that many cards instead"
+                multiplier != 1 -> ", they draw that many cards times $multiplier instead"
+                else -> ", they draw that many cards plus $modifier instead"
+            }
+        )
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
