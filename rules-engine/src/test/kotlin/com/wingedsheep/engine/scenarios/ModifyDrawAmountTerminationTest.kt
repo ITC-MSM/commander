@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.drawing.DrawReplacementDispatcher
+import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -71,7 +72,8 @@ class ModifyDrawAmountTerminationTest : FunSpec({
     }
 
     fun dispatcher() = DrawReplacementDispatcher(
-        effectExecutor = { s, _, _ -> EffectResult.success(s, emptyList()) }
+        effectExecutor = { s, _, _ -> EffectResult.success(s, emptyList()) },
+        processor = ReplacementEffectProcessor()
     )
 
     fun boardWith(effect: ReplacementEffect, name: String): Pair<GameState, EntityId> {

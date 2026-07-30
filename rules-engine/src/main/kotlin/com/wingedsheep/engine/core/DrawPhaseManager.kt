@@ -4,6 +4,7 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.drawing.DrawCardsExecutor
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.handlers.effects.drawing.DrawCardPrimitive
 import com.wingedsheep.engine.handlers.effects.drawing.DrawReplacementDispatcher
 import com.wingedsheep.engine.handlers.effects.drawing.DrawLoop
@@ -28,10 +29,15 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 class DrawPhaseManager(
     private val cardRegistry: CardRegistry,
     @Suppress("unused") private val decisionHandler: DecisionHandler,
-    effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)?
+    effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)?,
+    replacementProcessor: ReplacementEffectProcessor = ReplacementEffectProcessor()
 ) {
 
-    private val drawExecutor = DrawCardsExecutor(cardRegistry = cardRegistry, effectExecutor = effectExecutor)
+    private val drawExecutor = DrawCardsExecutor(
+        cardRegistry = cardRegistry,
+        effectExecutor = effectExecutor,
+        replacementProcessor = replacementProcessor
+    )
 
     /**
      * Perform the draw step (active player draws a card).

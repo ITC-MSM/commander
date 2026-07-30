@@ -41,11 +41,18 @@ class EffectExecutorRegistry(
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(),
     private val decisionHandler: DecisionHandler = DecisionHandler(),
     private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
-    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry? = null
+    private val tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry? = null,
+    replacementProcessor: com.wingedsheep.engine.replacement.ReplacementEffectProcessor =
+        com.wingedsheep.engine.replacement.ReplacementEffectProcessor()
 ) {
     private val executors = mutableMapOf<KClass<out Effect>, EffectExecutor<*>>()
     private val compositeExecutors = CompositeExecutors(cardRegistry, TargetFinder(), decisionHandler)
-    private val drawingExecutors = DrawingExecutors(amountEvaluator, decisionHandler, cardRegistry = cardRegistry)
+    private val drawingExecutors = DrawingExecutors(
+        amountEvaluator,
+        decisionHandler,
+        cardRegistry = cardRegistry,
+        replacementProcessor = replacementProcessor
+    )
     private val playerExecutors = PlayerExecutors(decisionHandler, cardRegistry)
     private val chainExecutors = ChainExecutors()
     // Held as a field so its recursion (for ModifyExplore's Composite delegation) can be wired

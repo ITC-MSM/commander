@@ -9,6 +9,7 @@ import com.wingedsheep.engine.handlers.actions.ability.CycleCardHandler
 import com.wingedsheep.engine.handlers.continuations.CoreAutoResumerModule
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
@@ -27,13 +28,14 @@ import kotlin.reflect.KClass
 class DrawCardsExecutor(
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(),
     cardRegistry: CardRegistry,
-    effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)? = null
+    effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)? = null,
+    replacementProcessor: ReplacementEffectProcessor = ReplacementEffectProcessor()
 ) : EffectExecutor<DrawCardsEffect> {
 
     override val effectType: KClass<DrawCardsEffect> = DrawCardsEffect::class
 
     private val primitive = DrawCardPrimitive(cardRegistry)
-    private val dispatcher = DrawReplacementDispatcher(effectExecutor)
+    private val dispatcher = DrawReplacementDispatcher(effectExecutor, replacementProcessor)
 
     override fun execute(
         state: GameState,

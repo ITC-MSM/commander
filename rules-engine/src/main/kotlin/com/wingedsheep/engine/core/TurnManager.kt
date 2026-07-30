@@ -45,6 +45,7 @@ import com.wingedsheep.sdk.scripting.effects.HijackScope
 import com.wingedsheep.engine.mechanics.combat.CombatDefenders
 import com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.sdk.scripting.Duration
 
 /**
@@ -70,11 +71,12 @@ class TurnManager(
     ),
     private val sbaChecker: StateBasedActionChecker = StateBasedActionChecker(cardRegistry = cardRegistry),
     private val decisionHandler: DecisionHandler = DecisionHandler(),
-    private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)? = null
+    private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)? = null,
+    replacementProcessor: ReplacementEffectProcessor = ReplacementEffectProcessor()
 ) {
 
     val cleanupPhaseManager = CleanupPhaseManager(cardRegistry, decisionHandler)
-    val drawPhaseManager = DrawPhaseManager(cardRegistry, decisionHandler, effectExecutor)
+    val drawPhaseManager = DrawPhaseManager(cardRegistry, decisionHandler, effectExecutor, replacementProcessor)
     val beginningPhaseManager = BeginningPhaseManager(cardRegistry, decisionHandler, cleanupPhaseManager)
 
     // ── Delegate methods for external callers ──

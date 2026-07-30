@@ -28,7 +28,14 @@ import com.wingedsheep.sdk.scripting.effects.Effect
  */
 class DrawReplacementDispatcher(
     private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)?,
-    private val processor: ReplacementEffectProcessor = ReplacementEffectProcessor()
+    /**
+     * The game's [ReplacementEffectProcessor]. Deliberately has no default: the processor is
+     * meant to be a single central instance per game (see
+     * [com.wingedsheep.engine.core.EngineServices.replacementEffectProcessor]), and a default
+     * here is how a second one quietly appears. It is stateless today; requiring the caller to
+     * name its source is what keeps it safe for it to stop being so.
+     */
+    private val processor: ReplacementEffectProcessor
 ) {
     /**
      * The outcome of [checkBeforeDraw].

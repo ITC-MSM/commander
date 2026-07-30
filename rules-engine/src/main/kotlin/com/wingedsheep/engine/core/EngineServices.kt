@@ -59,8 +59,19 @@ class EngineServices(
         ZoneTransitionService.staticAbilityHandler = StaticAbilityHandler(cardRegistry)
         ZoneTransitionService.cardRegistry = cardRegistry
     }
-    val effectExecutorRegistry =
-        EffectExecutorRegistry(cardRegistry = cardRegistry, tokenArtRegistry = tokenArtRegistry)
+    /**
+     * The one replacement-effect processor for this game. Declared before anything that
+     * consumes it so the whole graph — the draw path via [EffectExecutorRegistry] and
+     * [turnManager], and the continuation resumers — shares a single instance rather than
+     * each constructing its own. The processor is stateless today; keeping it single is what
+     * makes it safe for it to stop being so.
+     */
+    val replacementEffectProcessor = ReplacementEffectProcessor()
+    val effectExecutorRegistry = EffectExecutorRegistry(
+        cardRegistry = cardRegistry,
+        tokenArtRegistry = tokenArtRegistry,
+        replacementProcessor = replacementEffectProcessor
+    )
     val manaAbilitySideEffectExecutor = ManaAbilitySideEffectExecutor(
         cardRegistry = cardRegistry,
         effectExecutor = effectExecutorRegistry::execute
@@ -84,13 +95,13 @@ class EngineServices(
     val targetFinder = TargetFinder()
     val predicateEvaluator = PredicateEvaluator()
     val castPermissionUtils = CastPermissionUtils(cardRegistry, predicateEvaluator, conditionEvaluator)
-    val replacementEffectProcessor = ReplacementEffectProcessor()
     val sbaChecker = StateBasedActionChecker(cardRegistry = cardRegistry)
     val turnManager = TurnManager(
         cardRegistry = cardRegistry,
         combatManager = combatManager,
         sbaChecker = sbaChecker,
-        effectExecutor = effectExecutorRegistry::execute
+        effectExecutor = effectExecutorRegistry::execute,
+        replacementProcessor = replacementEffectProcessor
     )
     val continuationHandler = ContinuationHandler(this)
 

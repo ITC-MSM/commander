@@ -22,6 +22,7 @@ import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -45,7 +46,8 @@ class CycleCardHandler(
     private val triggerDetector: TriggerDetector,
     private val triggerProcessor: TriggerProcessor,
     private val manaAbilitySideEffectExecutor: ManaAbilitySideEffectExecutor,
-    private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)?
+    private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)?,
+    private val replacementProcessor: ReplacementEffectProcessor = ReplacementEffectProcessor()
 ) : ActionHandler<CycleCard> {
     override val actionType: KClass<CycleCard> = CycleCard::class
 
@@ -256,7 +258,11 @@ class CycleCardHandler(
         // Draw a card using DrawCardsExecutor (checks replacement shields).
         // Cycling is "Discard this card: Draw a card" (CR 702.29a). The announcement-site
         // modifier (CR 121.2a) fires via executeDraws → checkDrawAmount before the per-card loop.
-        val drawExecutor = DrawCardsExecutor(cardRegistry = cardRegistry, effectExecutor = effectExecutor)
+        val drawExecutor = DrawCardsExecutor(
+            cardRegistry = cardRegistry,
+            effectExecutor = effectExecutor,
+            replacementProcessor = replacementProcessor
+        )
         val drawResult = drawExecutor.executeDraws(currentState, action.playerId, 1)
         if (drawResult.isPaused) {
             return ExecutionResult.paused(
@@ -291,7 +297,8 @@ class CycleCardHandler(
                 services.triggerDetector,
                 services.triggerProcessor,
                 services.manaAbilitySideEffectExecutor,
-                services.effectExecutorRegistry::execute
+                services.effectExecutorRegistry::execute,
+                services.replacementEffectProcessor
             )
         }
     }
