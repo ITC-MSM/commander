@@ -9,7 +9,6 @@ import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.core.SuspendCardFromHand
 import com.wingedsheep.engine.core.TurnManager
 import com.wingedsheep.engine.core.ZoneChangeEvent
-import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.mechanics.layers.Layer
@@ -62,6 +61,7 @@ class SuspendCardFromHandHandler(
     private val manaSolver: ManaSolver,
     private val manaAbilitySideEffectExecutor: ManaAbilitySideEffectExecutor,
     private val turnManager: TurnManager,
+    private val castPermissionUtils: com.wingedsheep.engine.legalactions.utils.CastPermissionUtils,
 ) : ActionHandler<SuspendCardFromHand> {
     override val actionType: KClass<SuspendCardFromHand> = SuspendCardFromHand::class
 
@@ -89,19 +89,54 @@ class SuspendCardFromHandHandler(
         // off the CardDefinition, not projected state: projection is only ever built for
         // battlefield entities (StateProjector.project iterates state.getBattlefield()), so
         // hasKeyword() on a hand-zone card silently returns false regardless of what's printed.
+        // A battlefield-granted flash (GrantFlashToSpellType, e.g. Quick Sliver) counts too — the
+        // permission side of "could begin to cast" is exactly as real as printed flash.
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-        val hasFlash = cardDef?.keywords?.contains(Keyword.FLASH) == true
+        val hasFlash = cardDef?.keywords?.contains(Keyword.FLASH) == true ||
+            castPermissionUtils.hasGrantedFlash(state, action.cardId)
         val isInstantSpeed = cardComponent.typeLine.isInstant || hasFlash
         if (!isInstantSpeed && !turnManager.canPlaySorcerySpeed(state, action.playerId)) {
             return "This card can only be suspended at a time you could cast it"
         }
 
+        // CR 702.62c: "take into consideration any effects that would prohibit that card from
+        // being cast" — a Silence-style CantCastSpellsComponent, a per-turn spell cast limit, Mana
+        // Maze's color-sharing lock, etc. all block suspend exactly as they'd block a real cast,
+        // even though suspend never actually puts the card on the stack.
+        castPermissionUtils.reasonCannotCast(state, action.playerId, action.cardId)?.let { return it }
+
         if (action.paymentStrategy is PaymentStrategy.Explicit) {
-            for (sourceId in action.paymentStrategy.manaAbilitiesToActivate) {
+            val chosenSources = action.paymentStrategy.manaAbilitiesToActivate
+            for (sourceId in chosenSources) {
                 val sourceContainer = state.getEntity(sourceId)
                     ?: return "Mana source not found: $sourceId"
                 if (sourceContainer.has<TappedComponent>()) {
                     return "Mana source is already tapped: $sourceId"
+                }
+            }
+            // Mirror CastSpellHandler's Explicit-payment validation: pay from the floating pool
+            // first, then confirm the *chosen* sources (and only those) can cover what's left —
+            // otherwise naming an off-color source (e.g. a Forest for a {R} cost) would silently
+            // validate without ever actually paying the cost.
+            val poolComponent = state.getEntity(action.playerId)?.get<ManaPoolComponent>()
+                ?: ManaPoolComponent()
+            val pool = ManaPool(
+                white = poolComponent.white,
+                blue = poolComponent.blue,
+                black = poolComponent.black,
+                red = poolComponent.red,
+                green = poolComponent.green,
+                colorless = poolComponent.colorless
+            )
+            val remainingCost = pool.payPartial(suspend.cost).remainingCost
+            if (!remainingCost.isEmpty()) {
+                val chosenSet = chosenSources.toSet()
+                val excluded = manaSolver.findAvailableManaSources(state, action.playerId)
+                    .map { it.entityId }
+                    .filter { it !in chosenSet }
+                    .toSet()
+                if (manaSolver.solve(state, action.playerId, remainingCost, excludeSources = excluded) == null) {
+                    return "Selected mana sources cannot pay this card's suspend cost"
                 }
             }
         } else if (!manaSolver.canPay(state, action.playerId, suspend.cost)) {
@@ -159,29 +194,34 @@ class SuspendCardFromHandHandler(
         }
 
         if (!remainingCost.isEmpty()) {
-            if (action.paymentStrategy is PaymentStrategy.Explicit) {
-                for (sourceId in action.paymentStrategy.manaAbilitiesToActivate) {
-                    val (tappedState, tapEvent) = tap(currentState, sourceId)
-                    currentState = tappedState
-                    tapEvent?.let(events::add)
-                }
-            } else {
-                val solution = manaSolver.solve(currentState, action.playerId, remainingCost, 0)
-                    ?: return ExecutionResult.error(state, "Not enough mana to suspend")
-                val (stateAfterTaps, tapEvents) = manaAbilitySideEffectExecutor
-                    .tapSourcesWithSideEffects(currentState, solution, action.playerId)
-                currentState = stateAfterTaps
-                events.addAll(tapEvents)
+            // Explicit payment restricts the solver to only the named sources — mirrors
+            // CastPaymentProcessor.explicitPay — so a chosen source that can't actually produce
+            // what's needed fails here rather than being blindly tapped for nothing (validate()
+            // already proved a solution exists, but the solve must run again here to know which
+            // colors were actually produced, for the ManaSpentEvent below).
+            val excludeSources = if (action.paymentStrategy is PaymentStrategy.Explicit) {
+                val chosenSet = action.paymentStrategy.manaAbilitiesToActivate.toSet()
+                manaSolver.findAvailableManaSources(currentState, action.playerId)
+                    .map { it.entityId }
+                    .filter { it !in chosenSet }
+                    .toSet()
+            } else emptySet()
 
-                for ((_, production) in solution.manaProduced) {
-                    when (production.color) {
-                        Color.WHITE -> whiteSpent++
-                        Color.BLUE -> blueSpent++
-                        Color.BLACK -> blackSpent++
-                        Color.RED -> redSpent++
-                        Color.GREEN -> greenSpent++
-                        null -> colorlessSpent += production.colorless
-                    }
+            val solution = manaSolver.solve(currentState, action.playerId, remainingCost, 0, excludeSources = excludeSources)
+                ?: return ExecutionResult.error(state, "Not enough mana to suspend")
+            val (stateAfterTaps, tapEvents) = manaAbilitySideEffectExecutor
+                .tapSourcesWithSideEffects(currentState, solution, action.playerId)
+            currentState = stateAfterTaps
+            events.addAll(tapEvents)
+
+            for ((_, production) in solution.manaProduced) {
+                when (production.color) {
+                    Color.WHITE -> whiteSpent++
+                    Color.BLUE -> blueSpent++
+                    Color.BLACK -> blackSpent++
+                    Color.RED -> redSpent++
+                    Color.GREEN -> greenSpent++
+                    null -> colorlessSpent += production.colorless
                 }
             }
         }
@@ -256,6 +296,9 @@ class SuspendCardFromHandHandler(
                 services.manaSolver,
                 services.manaAbilitySideEffectExecutor,
                 services.turnManager,
+                com.wingedsheep.engine.legalactions.utils.CastPermissionUtils(
+                    services.cardRegistry, services.predicateEvaluator, services.conditionEvaluator
+                ),
             )
         }
     }
