@@ -385,7 +385,7 @@ grant-holder's controller (the `GrantedActivatedAbility` record needs a controll
 field, like the player-component grants).
 
 Blocked cards:
-- **Hydro-Man, Fluid Felon** [33] — `{U}{U}`; blue-cast pump (fine) + end-step "untap; until your next turn becomes a non-creature land with '{T}: Add {U}'". The **granted-activated `UntilYourNextTurn` expiry** half is now **fixed** on branch `spm-costs-mana` (`CleanupPhaseManager.expireUntilYourNextTurnEffects` drops `grantedActivatedAbilities` with that duration, keyed to the granted entity's controller). BUT the card is still blocked on a **second, unplanned primitive**: "becomes a **non-creature land**" is a type-*replacement* (lose creature card type + become a Land), and only `AddCardTypeEffect` (additive "in addition to its types") exists — there is no "becomes only a land" effect. Deferred until that type-replacement primitive is built.
+- **Hydro-Man, Fluid Felon** [33] — `{U}{U}`; blue-cast pump (fine) + end-step "untap; until your next turn becomes a non-creature land with '{T}: Add {U}'". *(Resolved — see the section header above.* Both halves shipped: `expireUntilYourNextTurnEffects` now drops `grantedActivatedAbilities` with `UntilYourNextTurn` duration, and the "becomes a non-creature land" half needed **no** new primitive after all — the mid-review worry that only additive `AddCardTypeEffect` existed was wrong: `BecomeArtifactEffect` sets `SetCardTypes(setOf("LAND"))`, a full type-*replacement* that drops the creature type. *)*
 </details>
 
 ## Static damage redirect to the enchanted/equipped creature (Pariah-style) — ✅ IMPLEMENTED

@@ -804,8 +804,9 @@ data object ConvertEmptyingManaToRed : StaticAbility {
  * (The Last Agni Kai). Unlike [PreventManaPoolEmptying] (all colours, all players) and
  * [ConvertEmptyingManaToRed] (converts other colours to red), this simply keeps that one colour for
  * the controller and lets every other colour empty normally. The engine merges the colour into the
- * `retain` set at every step/phase-end mana emptying (`CleanupPhaseManager.emptyManaPools`) and the
- * end-of-combat firebending emptying (`CombatManager.endCombat`).
+ * `retain` set at every step/phase-end mana emptying (`CleanupPhaseManager.emptyManaPools`), which is
+ * the single path for ordinary mana loss — the combat phase ends through it too, so end-of-combat
+ * needs no separate handling (`CombatManager.endCombat` only discards firebending mana).
  */
 @SerialName("RetainUnspentColoredMana")
 @Serializable

@@ -416,7 +416,7 @@ class CleanupPhaseManager(
                     // per-colour static (Electro, Assaulting Battery: "you don't lose unspent red
                     // mana as steps and phases end").
                     val retained = (container.get<RetainUnspentManaComponent>()?.colors ?: emptySet()) +
-                        retainedColorsFromStatics(state, playerId)
+                        retainedColorsFromStatics(state, cardRegistry, playerId)
                     container.with(
                         manaPool.emptyAtBoundary(
                             convertToRed = playerId in convertToRedPlayers,
@@ -445,28 +445,6 @@ class CleanupPhaseManager(
             }
         }
         return false
-    }
-
-    /**
-     * Colours [playerId] keeps at step/phase-end because they control a permanent with a
-     * [com.wingedsheep.sdk.scripting.RetainUnspentColoredMana] static (Electro, Assaulting Battery).
-     * Control-aware (projected), so a stolen Electro retains for its new controller.
-     */
-    private fun retainedColorsFromStatics(
-        state: GameState,
-        playerId: com.wingedsheep.sdk.model.EntityId
-    ): Set<com.wingedsheep.sdk.core.Color> {
-        val projected = state.projectedState
-        val colors = mutableSetOf<com.wingedsheep.sdk.core.Color>()
-        for (entityId in state.getBattlefield()) {
-            if (projected.getController(entityId) != playerId) continue
-            val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            for (ability in cardDef.script.staticAbilities) {
-                if (ability is com.wingedsheep.sdk.scripting.RetainUnspentColoredMana) colors.add(ability.color)
-            }
-        }
-        return colors
     }
 
     /**

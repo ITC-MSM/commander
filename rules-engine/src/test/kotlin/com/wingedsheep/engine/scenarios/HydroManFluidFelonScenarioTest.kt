@@ -37,6 +37,12 @@ class HydroManFluidFelonScenarioTest : FunSpec({
         while (guard++ < 30 && driver.state.stack.isNotEmpty() && !driver.isPaused) driver.bothPass()
     }
 
+    /** Advance to the active player's *next* precombat main (stepping out via END first). */
+    fun advanceToNextTurnMain(driver: GameTestDriver) {
+        driver.passPriorityUntil(Step.END, maxPasses = 300)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN, maxPasses = 300)
+    }
+
     test("casting a blue spell pumps Hydro-Man +1/+1 while he is a creature") {
         val (driver, you) = newGame()
         val hydro = driver.putCreatureOnBattlefield(you, "Hydro-Man, Fluid Felon") // 2/2
@@ -62,5 +68,30 @@ class HydroManFluidFelonScenarioTest : FunSpec({
 
         driver.state.projectedState.isCreature(hydro) shouldBe false
         driver.state.projectedState.hasType(hydro, "LAND") shouldBe true
+    }
+
+    test("the temporary land + granted '{T}: Add {U}' expire on your next turn") {
+        val (driver, you) = newGame()
+        val hydro = driver.putCreatureOnBattlefield(you, "Hydro-Man, Fluid Felon")
+        driver.removeSummoningSickness(hydro)
+
+        // End step: he becomes a non-creature land and gains the granted "{T}: Add {U}".
+        driver.passPriorityUntil(Step.END)
+        resolveStack(driver)
+        driver.state.projectedState.isCreature(hydro) shouldBe false
+        driver.state.grantedActivatedAbilities.any { it.entityId == hydro } shouldBe true
+
+        // Out to the opponent's turn — still a land while it isn't yet your next turn.
+        advanceToNextTurnMain(driver)
+        driver.state.projectedState.isCreature(hydro) shouldBe false
+        driver.state.grantedActivatedAbilities.any { it.entityId == hydro } shouldBe true
+
+        // Your next turn: after the untap step the UntilYourNextTurn effects expire — he is a
+        // creature again and the granted mana ability is gone.
+        advanceToNextTurnMain(driver)
+        driver.state.activePlayerId shouldBe you
+        driver.state.projectedState.isCreature(hydro) shouldBe true
+        driver.state.projectedState.hasType(hydro, "LAND") shouldBe false
+        driver.state.grantedActivatedAbilities.any { it.entityId == hydro } shouldBe false
     }
 })
