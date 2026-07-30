@@ -107,11 +107,16 @@ class SuspendCardFromHandHandler(
 
         if (action.paymentStrategy is PaymentStrategy.Explicit) {
             val chosenSources = action.paymentStrategy.manaAbilitiesToActivate
+            val availableSourceIds = manaSolver.findAvailableManaSources(state, action.playerId)
+                .mapTo(mutableSetOf()) { it.entityId }
             for (sourceId in chosenSources) {
                 val sourceContainer = state.getEntity(sourceId)
                     ?: return "Mana source not found: $sourceId"
                 if (sourceContainer.has<TappedComponent>()) {
                     return "Mana source is already tapped: $sourceId"
+                }
+                if (sourceId !in availableSourceIds) {
+                    return "Invalid mana source: $sourceId"
                 }
             }
             // Mirror CastSpellHandler's Explicit-payment validation: pay from the floating pool
@@ -131,8 +136,7 @@ class SuspendCardFromHandHandler(
             val remainingCost = pool.payPartial(suspend.cost).remainingCost
             if (!remainingCost.isEmpty()) {
                 val chosenSet = chosenSources.toSet()
-                val excluded = manaSolver.findAvailableManaSources(state, action.playerId)
-                    .map { it.entityId }
+                val excluded = availableSourceIds
                     .filter { it !in chosenSet }
                     .toSet()
                 if (manaSolver.solve(state, action.playerId, remainingCost, excludeSources = excluded) == null) {

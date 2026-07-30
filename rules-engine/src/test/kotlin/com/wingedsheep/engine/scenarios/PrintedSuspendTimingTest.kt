@@ -257,6 +257,48 @@ class PrintedSuspendTimingTest : FunSpec({
         driver.getHand(me).contains(card) shouldBe true
     }
 
+    test("explicit payment rejects an opponent's mana source even when floating mana covers the cost") {
+        val driver = createDriver()
+        val me = driver.activePlayer!!
+        val opponent = driver.getOpponent(me)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val card = driver.putCardInHand(me, "Test Suspend Bolt")
+        val opponentsMountain = driver.putLandOnBattlefield(opponent, "Mountain")
+        driver.giveMana(me, Color.RED, 1)
+
+        driver.submit(
+            SuspendCardFromHand(
+                playerId = me,
+                cardId = card,
+                paymentStrategy = PaymentStrategy.Explicit(listOf(opponentsMountain)),
+            )
+        ).isSuccess shouldBe false
+        driver.getHand(me).contains(card) shouldBe true
+        driver.state.getEntity(opponentsMountain)?.has<TappedComponent>() shouldBe false
+    }
+
+    test("explicit payment rejects a non-mana permanent alongside a valid source") {
+        val driver = createDriver()
+        val me = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val card = driver.putCardInHand(me, "Test Suspend Bolt")
+        val creature = driver.putPermanentOnBattlefield(me, "Grizzly Bears")
+        val mountain = driver.putLandOnBattlefield(me, "Mountain")
+
+        driver.submit(
+            SuspendCardFromHand(
+                playerId = me,
+                cardId = card,
+                paymentStrategy = PaymentStrategy.Explicit(listOf(creature, mountain)),
+            )
+        ).isSuccess shouldBe false
+        driver.getHand(me).contains(card) shouldBe true
+        driver.state.getEntity(creature)?.has<TappedComponent>() shouldBe false
+        driver.state.getEntity(mountain)?.has<TappedComponent>() shouldBe false
+    }
+
     test("explicit payment succeeds when the named source matches the suspend cost's color") {
         val driver = createDriver()
         val me = driver.activePlayer!!
