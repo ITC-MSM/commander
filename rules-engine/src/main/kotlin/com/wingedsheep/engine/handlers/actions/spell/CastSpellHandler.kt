@@ -882,6 +882,15 @@ class CastSpellHandler(
                 }
             }
         } else if (cardDef != null) {
+            // CR 202.3b: a card printed with genuinely no mana cost (Ancestral Vision) can't be
+            // cast this way — every branch above already covers the alternative costs and
+            // free-cast permissions that CAN play it (Suspend routes through a completely
+            // separate free-cast pipeline and never reaches this function at all). Defense in
+            // depth: CastSpellEnumerator never offers this as a legal action in the first place.
+            // `hasNoManaCost` (not `manaCost` itself) is the DSL-authored signal — a printed {0}
+            // stays normally castable, and test fixtures often build `ManaCost.ZERO` directly to
+            // mean "free" without it implying CR 202.3b's "no mana cost at all."
+            if (cardDef.hasNoManaCost) return null
             costCalculator.calculateEffectiveCost(
                 state,
                 cardDef,

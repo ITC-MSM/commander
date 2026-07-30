@@ -452,7 +452,8 @@ function GameCardImpl({
            (action.type === 'CastSpell' && action.cardId === card.id) ||
            (action.type === 'CycleCard' && action.cardId === card.id) ||
            (action.type === 'TypecycleCard' && action.cardId === card.id) ||
-           (action.type === 'PlotCard' && action.cardId === card.id)
+           (action.type === 'PlotCard' && action.cardId === card.id) ||
+           (action.type === 'SuspendCardFromHand' && action.cardId === card.id)
   }), [legalActions, card.id])
   const playableAction = playableActions[0]
   // Open the action menu when the card has more than one way to be played — including cards

@@ -899,7 +899,11 @@ class CardBuilder(private val name: String) {
             colorIdentityOverride = parsedColorIdentity,
             colorIndicator = parsedColorIndicator,
             layout = layout,
-            cardFaces = cardFaceList.toList()
+            cardFaces = cardFaceList.toList(),
+            // Lands are never *cast* at all (CR 305 — they're played), so a blank mana cost
+            // there carries none of CR 202.3b's "can't be cast normally" implication; scoping the
+            // flag to non-lands keeps every land's golden snapshot untouched by this field.
+            hasNoManaCost = manaCost.isBlank() && !parsedTypeLine.isLand
         )
     }
 }

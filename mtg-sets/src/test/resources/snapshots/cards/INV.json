@@ -1029,7 +1029,8 @@
                 }
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Atalya, Samite Master
@@ -8739,7 +8740,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Phyrexian Altar
@@ -13204,7 +13206,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Spreading Plague
@@ -13432,7 +13435,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Stand or Fall
@@ -17550,7 +17554,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Wayfaring Giant

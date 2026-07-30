@@ -427,12 +427,14 @@ enum class Keyword(val displayName: String) {
      * and when the last is removed its owner plays it without paying its mana cost (with
      * haste, if it's a creature).
      *
-     * The keyword is display-only. The exile-side behavior is component-driven, not
-     * definition-driven: any exiled card carrying the engine's suspended marker (set by
-     * [com.wingedsheep.sdk.dsl.Effects.Suspend]) gets the synthesized countdown-and-cast
+     * The exile-side behavior is component-driven, not definition-driven: any exiled card
+     * carrying the engine's suspended marker (set by [com.wingedsheep.sdk.dsl.Effects.Suspend]
+     * or by the printed-suspend special action) gets the synthesized countdown-and-cast
      * triggered ability ([com.wingedsheep.sdk.scripting.Suspend.countdownAbility]). This
      * lets "exile it with N time counters; it gains suspend" effects (Taigam, Master
-     * Opportunist) suspend an arbitrary card — even a card with no printed suspend.
+     * Opportunist) suspend an arbitrary card — even a card with no printed suspend — while a
+     * printed "Suspend N—[cost]" (`KeywordAbility.Suspend`) drives the from-hand special
+     * action (CR 116.2f) through the engine's `SuspendCardFromHandHandler`.
      */
     SUSPEND("Suspend"),
     RENOWN("Renown"),

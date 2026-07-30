@@ -45,6 +45,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CycleCard::class)
         subclass(PlotCard::class)
         subclass(ForetellCard::class)
+        subclass(SuspendCardFromHand::class)
         subclass(TurnFaceUp::class)
         subclass(TypecycleCard::class)
         subclass(UnlockRoomDoor::class)

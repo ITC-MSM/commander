@@ -2109,7 +2109,8 @@
         },
         "colorIdentityOverride": [
             "BLUE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "47",
@@ -3713,7 +3714,8 @@
         },
         "colorIdentityOverride": [
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "6",
@@ -5670,7 +5672,8 @@
         },
         "colorIdentityOverride": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "145",
@@ -8574,7 +8577,8 @@
             "WHITE",
             "RED",
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "189",
@@ -8891,7 +8895,8 @@
         },
         "colorIdentityOverride": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "155",
@@ -9365,7 +9370,8 @@
         },
         "colorIdentityOverride": [
             "BLUE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "60",
@@ -9636,7 +9642,8 @@
         },
         "colorIdentityOverride": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "195",
@@ -9880,7 +9887,8 @@
         },
         "colorIdentityOverride": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "197",
@@ -10453,7 +10461,8 @@
         },
         "colorIdentityOverride": [
             "BLUE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "62",
@@ -11300,7 +11309,8 @@
         "colorIdentityOverride": [
             "WHITE",
             "BLUE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "233",
@@ -12992,7 +13002,8 @@
         },
         "colorIdentityOverride": [
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "29",
@@ -15607,7 +15618,8 @@
         },
         "colorIdentityOverride": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "164",
@@ -16957,7 +16969,8 @@
         },
         "colorIdentityOverride": [
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "36",
@@ -17639,7 +17652,8 @@
             "artist": "Aldo Domínguez",
             "imageUri": "https://cards.scryfall.io/normal/back/e/0/e0b6d40a-fded-4625-b03c-765c88d75766.jpg?1782694401"
         },
-        "colorIdentityOverride": []
+        "colorIdentityOverride": [],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "262",
@@ -18744,7 +18758,8 @@
         },
         "colorIdentityOverride": [
             "BLUE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "55",
@@ -19804,7 +19819,8 @@
         ],
         "colorIndicator": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "266",
@@ -20056,7 +20072,8 @@
         },
         "colorIdentityOverride": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "128",
@@ -20630,7 +20647,8 @@
         },
         "colorIdentityOverride": [
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "41",
@@ -20901,7 +20919,8 @@
         },
         "colorIdentityOverride": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "129",
@@ -21752,7 +21771,8 @@
         },
         "colorIdentityOverride": [
             "BLUE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "83",

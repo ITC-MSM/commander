@@ -320,6 +320,7 @@ export function hasMultipleCastingOptions(cardLegalActions: LegalActionInfo[]): 
   const hasWarpCast = cardLegalActions.some((a) => a.actionType === 'CastWithWarp')
   const hasCycling = cardLegalActions.some((a) => a.action.type === 'CycleCard')
   const hasPlot = cardLegalActions.some((a) => a.action.type === 'PlotCard')
+  const hasSuspend = cardLegalActions.some((a) => a.action.type === 'SuspendCardFromHand')
   const hasPlayLand = cardLegalActions.some((a) => a.action.type === 'PlayLand')
 
   let options = 0
@@ -330,6 +331,7 @@ export function hasMultipleCastingOptions(cardLegalActions: LegalActionInfo[]): 
   if (hasWarpCast) options++
   if (hasCycling) options++
   if (hasPlot) options++
+  if (hasSuspend) options++
   if (hasPlayLand) options++
 
   return options > 1
@@ -363,7 +365,8 @@ export function shouldShowCastModal(cardLegalActions: LegalActionInfo[]): boolea
     (a) =>
       a.action.type === 'CycleCard' ||
       a.action.type === 'TypecycleCard' ||
-      a.action.type === 'PlotCard'
+      a.action.type === 'PlotCard' ||
+      a.action.type === 'SuspendCardFromHand'
   )
 }
 
