@@ -153,6 +153,35 @@ class AncestralVisionScenarioTest : FunSpec({
         driver.state.getEntity(card)?.has<SuspendedComponent>() shouldBe false
     }
 
+    test("the free cast can target the opponent instead of the caster") {
+        val driver = createDriver()
+        val me = driver.activePlayer!!
+        val opponent = driver.getOpponent(me)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val card = driver.putCardInHand(me, "Ancestral Vision")
+        driver.giveMana(me, Color.BLUE, 1)
+        driver.submitSuccess(SuspendCardFromHand(me, card))
+
+        repeat(4) {
+            resolveNextOwnerUpkeep(driver, me)
+        }
+
+        val myHandSizeBefore = driver.getHand(me).size
+        val opponentHandSizeBefore = driver.getHand(opponent).size
+
+        driver.submitYesNo(me, true)
+        // "Target player draws three cards" is a real choice — the caster (who controls this
+        // free cast, per CR 601.2c/2d — target selection is the caster's, not the target's) may
+        // point it at either player. Choosing the opponent here proves the target isn't
+        // hardcoded to self.
+        driver.submitTargetSelection(me, listOf(opponent))
+        driver.bothPass()
+
+        driver.getHand(me).size shouldBe myHandSizeBefore
+        driver.getHand(opponent).size shouldBe opponentHandSizeBefore + 3
+    }
+
     test("declining the free cast at zero counters leaves it exiled and no longer suspended") {
         val driver = createDriver()
         val me = driver.activePlayer!!
