@@ -7,8 +7,10 @@
  * available basic land.
  *
  * Algorithm (Karsten-flavoured):
- *   1. Curve-based total land target — aggro decks want fewer lands than
- *      control. We pick a land ratio off the average non-land CMC.
+ *   1. Curve-based land target, scaled to the number of cards actually picked —
+ *      aggro decks want fewer lands than control. We pick a land ratio off the
+ *      average non-land CMC and apply it to the current spell count, so a
+ *      half-built deck gets a half-sized mana base rather than a full one.
  *   2. Discount the target by non-basic lands (full credit) and by
  *      mana-producing non-lands like rocks/dorks (half credit).
  *   3. Turn every colored cost into an on-curve castability requirement.
@@ -52,11 +54,24 @@ export interface SuggestLandsInput {
   readonly entries: readonly DeckEntry[]
   readonly availableBasics: readonly BasicLand[]
   /**
-   * Floor on total deck size — basics will be padded so spells + lands ≥ this.
-   * Use 40 for sealed, 60 for constructed, 0 / undefined for no floor.
+   * Target total deck size — 40 for sealed, 60 for constructed, 0 / undefined
+   * when the format is unknown. It is a floor on the finished deck, not on
+   * every intermediate one: basics fill the remaining slots exactly, but only
+   * once the picked cards can carry a deck that size (see
+   * `MAX_LAND_RATIO`). While the deck is still short, the target scales with
+   * what's picked instead, so a 10-card pile doesn't get 30 basics.
+   * It also serves as the statistical baseline for castability, so a
+   * work-in-progress is evaluated against the deck it will become.
    */
   readonly minDeckSize?: number
 }
+
+/**
+ * The most lands any curve justifies (the control end of `curveBasedLandCount`).
+ * Its complement is the share of `minDeckSize` that must already be picked
+ * before basics are allowed to fill the deck out to that size.
+ */
+const MAX_LAND_RATIO = 0.45
 
 /**
  * Returns target counts keyed by basic-land name. Every entry in
@@ -94,16 +109,19 @@ export function suggestBasicLands(input: SuggestLandsInput): Record<string, numb
   }
   if (spellCount === 0 && nonBasicLandCount === 0) return result
 
-  // Curve-based total land target.
+  // Curve-based land target, sized off the cards picked so far.
   const manaRockReduction = Math.floor(nonLandManaSourceCount / 2)
-  const curveTotal = curveBasedLandCount(spells)
-  const ratioBasedBasics = curveTotal - nonBasicLandCount - manaRockReduction
+  const ratioBasedBasics = curveBasedLandCount(spells) - nonBasicLandCount - manaRockReduction
   const minBasedBasics = Math.max(minDeckSize - spellCount - nonBasicLandCount, 0)
-  // When the caller names a deck size and the deck is still short, fill
-  // exactly that many slots. The curve estimate is useful when no target is
-  // known, but must not turn a 36-spell constructed deck into 63 cards.
+  // Filling a named deck size exactly is only right for a deck that's nearly
+  // there — it's what keeps a 23-spell sealed deck at 17 lands rather than 15,
+  // and a 36-spell constructed deck at 60 cards rather than 63. Applied to a
+  // half-built deck it degenerates into an all-basics pile (10 spells → 30
+  // Forests), so below that point the curve ratio drives the target instead.
+  const nonBasics = spellCount + nonBasicLandCount
+  const canFillToDeckSize = minDeckSize > 0 && nonBasics >= minDeckSize * (1 - MAX_LAND_RATIO)
   const targetBasics =
-    minDeckSize > 0 && minBasedBasics > 0 ? minBasedBasics : Math.max(ratioBasedBasics, 0)
+    canFillToDeckSize && minBasedBasics > 0 ? minBasedBasics : Math.max(ratioBasedBasics, 0)
   if (targetBasics === 0) return result
 
   const requirements = deckColorRequirements(spells)
@@ -123,12 +141,18 @@ export function suggestBasicLands(input: SuggestLandsInput): Record<string, numb
 
   // A color represented in the spell suite should not be stranded at zero.
   // Seed up to three total sources, then let probability gains decide every
-  // remaining slot. Existing duals/fixing count toward this floor.
+  // remaining slot. Existing duals/fixing count toward this floor. Seeding goes
+  // source-by-source rather than color-by-color: when the target is too small to
+  // seed everyone — a work-in-progress deck with more colors than lands — the
+  // shortfall is shared instead of handed to whichever color sorts first.
   let remaining = targetBasics
-  for (const color of allocatable) {
-    const seed = Math.min(remaining, Math.max(0, Math.ceil(3 - existingSources[color])))
-    basicsByColor[color] += seed
-    remaining -= seed
+  for (let floor = 1; floor <= 3 && remaining > 0; floor++) {
+    for (const color of allocatable) {
+      if (remaining === 0) break
+      if (existingSources[color] + basicsByColor[color] >= floor) continue
+      basicsByColor[color]++
+      remaining--
+    }
   }
 
   while (remaining > 0 && allocatable.length > 0) {
@@ -357,14 +381,19 @@ function combination(n: number, k: number): number {
   return value
 }
 
-/** Total land target driven by avg non-land CMC. Aggro 16, midrange 17, control 18. */
+/**
+ * Land target driven by avg non-land CMC, scaled to the spells picked so far:
+ * at a 40-card deck that's aggro 16, midrange 17, control 18, and at half that
+ * many spells it's half as many lands. No 40-card floor — the caller decides
+ * whether a deck size is known (`minDeckSize`), and a partial deck should get a
+ * partial mana base.
+ */
 function curveBasedLandCount(spells: readonly DeckEntry[]): number {
   if (spells.length === 0) return 0
   const totalCmc = spells.reduce((s, c) => s + c.cmc, 0)
   const avg = totalCmc / spells.length
   const ratio = avg < 2.3 ? 0.4 : avg < 3.2 ? 0.425 : 0.45
-  const total = Math.max(Math.round(spells.length / (1 - ratio)), 40)
-  return Math.round(total * ratio)
+  return Math.round((spells.length * ratio) / (1 - ratio))
 }
 
 function mapColorsToLands(basics: readonly BasicLand[]): Partial<Record<LandColor, string>> {
