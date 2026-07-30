@@ -6,6 +6,8 @@ import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
+import com.wingedsheep.engine.mechanics.daynight.DayNightService
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -121,6 +123,7 @@ object ZoneTransitionService {
      * call to the handler and is unaffected by this wiring.
      */
     lateinit var staticAbilityHandler: StaticAbilityHandler
+    lateinit var cardRegistry: CardRegistry
 
     /**
      * Move one entity between zones with full cleanup + setup.
@@ -984,18 +987,28 @@ object ZoneTransitionService {
         // permanent onto the battlefield tapped (ramp/fetch). Checked after the entity is fully
         // placed so its controller/type are visible to the filter. (tappedAndAttacking — combat
         // tokens — is intentionally not overridden; its filter never matches a land anyway.)
-        val entersUntapped = EnterUntappedReplacements.entersUntapped(withEntity, entityId, controllerId)
+        val withDayboundEntry = if (!options.faceDown && ::cardRegistry.isInitialized) {
+            DayNightService.applyDayboundEntry(withEntity, cardRegistry, entityId)
+        } else {
+            withEntity
+        }
+
+        val entersUntapped = EnterUntappedReplacements.entersUntapped(
+            withDayboundEntry,
+            entityId,
+            controllerId
+        )
         val withTapResolved = when {
             // A tapped entry (ramp/fetch) overridden by "enters untapped" (The Wandering Minstrel).
             options.tapped && !options.tappedAndAttacking && entersUntapped ->
-                withEntity.updateEntity(entityId) { it.without<TappedComponent>() }
+                withDayboundEntry.updateEntity(entityId) { it.without<TappedComponent>() }
             // An untapped entry forced tapped by a global "[filter] enter tapped" (Zhao, the Moon
             // Slayer's "Nonbasic lands enter tapped"). Gated on !entersUntapped so an "enters
             // untapped" replacement still wins (CR 614).
             !options.tapped && !entersUntapped &&
-                EnterTappedReplacements.entersTapped(withEntity, entityId, controllerId) ->
-                withEntity.updateEntity(entityId) { it.with(TappedComponent) }
-            else -> withEntity
+                EnterTappedReplacements.entersTapped(withDayboundEntry, entityId, controllerId) ->
+                withDayboundEntry.updateEntity(entityId) { it.with(TappedComponent) }
+            else -> withDayboundEntry
         }
 
         // Track "a permanent entered the battlefield face down under your control this turn"

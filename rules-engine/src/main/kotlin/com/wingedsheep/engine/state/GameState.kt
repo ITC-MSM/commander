@@ -138,19 +138,21 @@ data class GameState(
      * Entity id of the **previous turn's active player**, snapshotted by
      * [com.wingedsheep.engine.core.TurnManager.startTurn] the instant a new turn begins — before the
      * per-turn spell counters are zeroed. `null` on the game's first turn (there is no previous turn).
-     * Read together with [previousTurnActivePlayerSpellCount] by the untap-step day/night check
-     * (CR 502.2 / 731.2), which must know how many spells that player cast *during their turn* even
-     * though the counters for the new turn have already reset.
+     * Read together with [previousTurnActiveTeamSpellCounts] by the untap-step day/night check
+     * (CR 502.2 / 731.2), which must know how many spells the active player—or each player on the
+     * active team in a shared-team-turns game—cast during that turn even though the counters for the
+     * new turn have already reset.
      */
     val previousTurnActivePlayerId: EntityId? = null,
 
     /**
-     * Number of spells the [previousTurnActivePlayerId] cast during the previous turn, snapshotted in
-     * [com.wingedsheep.engine.core.TurnManager.startTurn] before the counters reset. The untap-step
-     * day/night turn-based action (CR 731.2a/b) becomes night if it's day and this is 0, and becomes
-     * day if it's night and this is 2 or more.
+     * Per-player spell counts for the previous turn's active side, snapshotted in
+     * [com.wingedsheep.engine.core.TurnManager.startTurn] before the counters reset. This is a
+     * singleton map in ordinary games and contains every member of the previous active team when
+     * the format uses shared team turns. The untap-step day/night action becomes night if none of
+     * those players cast a spell, and becomes day if any one of them cast two or more.
      */
-    val previousTurnActivePlayerSpellCount: Int = 0,
+    val previousTurnActiveTeamSpellCounts: Map<EntityId, Int> = emptyMap(),
 
     /** Pending spell copies — copy the next instant/sorcery spell cast by a player (e.g., Howl of the Horde) */
     val pendingSpellCopies: List<PendingSpellCopy> = emptyList(),

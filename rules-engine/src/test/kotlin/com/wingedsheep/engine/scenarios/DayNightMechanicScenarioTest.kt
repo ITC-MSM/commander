@@ -1,18 +1,26 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.mechanics.daynight.DayNightService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.DayNight
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.daybound
 import com.wingedsheep.sdk.dsl.nightbound
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetObject
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
@@ -62,6 +70,10 @@ class DayNightMechanicScenarioTest : ScenarioTestBase() {
             power = 3
             toughness = 3
             nightbound()
+            triggeredAbility {
+                trigger = Triggers.TransformsToBack
+                effect = Effects.GainLife(1, EffectTarget.Controller)
+            }
         },
     )
 
@@ -73,8 +85,20 @@ class DayNightMechanicScenarioTest : ScenarioTestBase() {
         toughness = 1
     }
 
+    private val reanimate = card("Test Daybound Reanimate") {
+        manaCost = "{0}"
+        typeLine = "Sorcery"
+        spell {
+            val target = target(
+                "target creature card in your graveyard",
+                TargetObject(filter = TargetFilter.CreatureInYourGraveyard),
+            )
+            effect = Effects.Move(target, Zone.BATTLEFIELD, fromZone = Zone.GRAVEYARD)
+        }
+    }
+
     init {
-        listOf(werewolf, plainCreature).forEach { cardRegistry.register(it) }
+        listOf(werewolf, plainCreature, reanimate).forEach { cardRegistry.register(it) }
 
         context("The game's starting designation (CR 731.1)") {
 
@@ -93,7 +117,7 @@ class DayNightMechanicScenarioTest : ScenarioTestBase() {
                 val wolf = game.findPermanent("Test Daybound Werewolf")!!
                 game.state = game.state.copy(
                     dayNight = DayNight.DAY,
-                    previousTurnActivePlayerSpellCount = 0,
+                    previousTurnActiveTeamSpellCounts = mapOf(game.player1Id to 0),
                 )
 
                 val (after, events) = DayNightService.checkUntapStepDesignation(game.state, cardRegistry)
@@ -114,7 +138,7 @@ class DayNightMechanicScenarioTest : ScenarioTestBase() {
                 val game = board { withCardOnBattlefield(1, "Test Daybound Werewolf") }
                 game.state = game.state.copy(
                     dayNight = DayNight.DAY,
-                    previousTurnActivePlayerSpellCount = 1,
+                    previousTurnActiveTeamSpellCounts = mapOf(game.player1Id to 1),
                 )
 
                 val (after, events) = DayNightService.checkUntapStepDesignation(game.state, cardRegistry)
@@ -130,7 +154,7 @@ class DayNightMechanicScenarioTest : ScenarioTestBase() {
                 val wolf = game.findPermanent("Test Nightbound Werewolf")!!
                 game.state = game.state.copy(
                     dayNight = DayNight.NIGHT,
-                    previousTurnActivePlayerSpellCount = 2,
+                    previousTurnActiveTeamSpellCounts = mapOf(game.player1Id to 2),
                 )
 
                 val (after, events) = DayNightService.checkUntapStepDesignation(game.state, cardRegistry)
@@ -148,7 +172,7 @@ class DayNightMechanicScenarioTest : ScenarioTestBase() {
                 val game = board { withCardOnBattlefield(1, "Test Nightbound Werewolf") }
                 game.state = game.state.copy(
                     dayNight = DayNight.NIGHT,
-                    previousTurnActivePlayerSpellCount = 1,
+                    previousTurnActiveTeamSpellCounts = mapOf(game.player1Id to 1),
                 )
 
                 val (after, events) = DayNightService.checkUntapStepDesignation(game.state, cardRegistry)
@@ -163,7 +187,7 @@ class DayNightMechanicScenarioTest : ScenarioTestBase() {
                 val game = board { withCardOnBattlefield(1, "Test Plain Creature") }
                 game.state = game.state.copy(
                     dayNight = null,
-                    previousTurnActivePlayerSpellCount = 0,
+                    previousTurnActiveTeamSpellCounts = mapOf(game.player1Id to 0),
                 )
 
                 val (after, events) = DayNightService.checkUntapStepDesignation(game.state, cardRegistry)
@@ -254,6 +278,40 @@ class DayNightMechanicScenarioTest : ScenarioTestBase() {
         }
 
         context("Transform reconciliation once a designation holds (CR 702.145c / 702.145f)") {
+
+            test("a daybound card returned from a graveyard at night enters transformed without transforming") {
+                val game = board(
+                    dayNight = DayNight.NIGHT,
+                    phase = Phase.PRECOMBAT_MAIN,
+                    step = Step.PRECOMBAT_MAIN,
+                ) {
+                    withCardInGraveyard(1, "Test Daybound Werewolf")
+                    withCardInHand(1, "Test Daybound Reanimate")
+                }
+                val lifeBefore = game.getLifeTotal(1)
+                val werewolfId = game.findCardsInGraveyard(1, "Test Daybound Werewolf").single()
+                val reanimateId = game.findCardsInHand(1, "Test Daybound Reanimate").single()
+
+                game.execute(
+                    CastSpell(
+                        playerId = game.player1Id,
+                        cardId = reanimateId,
+                        targets = listOf(ChosenTarget.Card(werewolfId, game.player1Id, Zone.GRAVEYARD)),
+                    )
+                ).error shouldBe null
+                game.resolveStack()
+
+                withClue("daybound modifies how the permanent enters; it must already be back-face up") {
+                    val enteredWerewolf =
+                        game.findPermanent("Test Nightbound Werewolf")
+                            ?: game.findPermanent("Test Daybound Werewolf")!!
+                    game.nameOf(enteredWerewolf) shouldBe "Test Nightbound Werewolf"
+                    game.faceOf(enteredWerewolf) shouldBe DoubleFacedComponent.Face.BACK
+                }
+                withClue("entering transformed is not transforming, so the transform trigger must not fire") {
+                    game.getLifeTotal(1) shouldBe lifeBefore
+                }
+            }
 
             test("night reconciles a daybound permanent to its back (702.145c)") {
                 val game = board { withCardOnBattlefield(1, "Test Daybound Werewolf") }

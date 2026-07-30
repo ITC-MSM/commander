@@ -8,6 +8,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.sdk.core.DayNight
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.model.EntityId
 
 /**
  * The one place the game's **day/night** designation changes (CR 731), and the one place the
@@ -38,11 +39,11 @@ object DayNightService {
 
     /**
      * The untap step's day/night turn-based action (CR 502.2 / 731.2). Reads the previous turn's active
-     * player's spell count — snapshotted onto [GameState.previousTurnActivePlayerSpellCount] by
-     * `TurnManager.startTurn` before the per-turn counters reset — and changes the designation if the
-     * check warrants it:
-     *  - **731.2a** it's day and that player cast no spells → it becomes night;
-     *  - **731.2b** it's night and that player cast two or more spells → it becomes day;
+     * active side's per-player spell counts — snapshotted onto
+     * [GameState.previousTurnActiveTeamSpellCounts] by `TurnManager.startTurn` before the per-turn
+     * counters reset — and changes the designation if the check warrants it:
+     *  - **731.2a** it's day and nobody on that side cast a spell → it becomes night;
+     *  - **731.2b** it's night and any player on that side cast two or more spells → it becomes day;
      *  - **731.2c** it's neither → no check happens and it stays neither.
      *
      * Returns the state and events unchanged in the 731.2c case and whenever the check's condition isn't
@@ -56,20 +57,60 @@ object DayNightService {
     ): Pair<GameState, List<GameEvent>> = when (state.dayNight) {
         // 731.2c — neither day nor night: the check doesn't happen.
         null -> state to emptyList()
-        // 731.2a — day + previous active player cast no spells → night.
+        // 731.2a / 502.2a — day + nobody on the previous active side cast a spell → night.
         DayNight.DAY ->
-            if (state.previousTurnActivePlayerSpellCount == 0) {
+            if (state.previousTurnActiveTeamSpellCounts.values.all { it == 0 }) {
                 becomeNight(state, cardRegistry, UNTAP_STEP_SOURCE)
             } else {
                 state to emptyList()
             }
-        // 731.2b — night + previous active player cast two or more spells → day.
+        // 731.2b / 502.2a — night + any player on the previous active side cast 2+ → day.
         DayNight.NIGHT ->
-            if (state.previousTurnActivePlayerSpellCount >= 2) {
+            if (state.previousTurnActiveTeamSpellCounts.values.any { it >= 2 }) {
                 becomeDay(state, cardRegistry, UNTAP_STEP_SOURCE)
             } else {
                 state to emptyList()
             }
+    }
+
+    /**
+     * Apply daybound's "enters transformed" entry modification to [entityId].
+     *
+     * The permanent must already have its card identity and battlefield controller. Non-spell entry
+     * paths do not otherwise create a [DoubleFacedComponent], so this helper creates the front-face
+     * identity before applying the night-side entry. The returned transform event is deliberately
+     * discarded: entering transformed is not transforming, so transform triggers must not fire.
+     */
+    fun applyDayboundEntry(
+        state: GameState,
+        cardRegistry: CardRegistry,
+        entityId: EntityId
+    ): GameState {
+        val entity = state.getEntity(entityId) ?: return state
+        val cardDefinitionId =
+            entity.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+                ?.cardDefinitionId
+                ?: return state
+        val cardDefinition = cardRegistry.getCard(cardDefinitionId) ?: return state
+        if (Keyword.DAYBOUND !in cardDefinition.keywords || !cardDefinition.isDoubleFaced) return state
+
+        val withDfc = if (entity.get<DoubleFacedComponent>() == null) {
+            state.updateEntity(entityId) { container ->
+                container.with(
+                    DoubleFacedComponent(
+                        frontCardDefinitionId = cardDefinition.name,
+                        backCardDefinitionId = cardDefinition.backFace!!.name,
+                        currentFace = DoubleFacedComponent.Face.FRONT,
+                    )
+                )
+            }
+        } else {
+            state
+        }
+        if (withDfc.dayNight != DayNight.NIGHT) return withDfc
+        val dfc = withDfc.getEntity(entityId)?.get<DoubleFacedComponent>() ?: return withDfc
+        if (dfc.currentFace != DoubleFacedComponent.Face.FRONT) return withDfc
+        return flipDfcInPlace(withDfc, cardRegistry, entityId)?.first ?: withDfc
     }
 
     /** "It becomes day" (CR 731.1 / 702.145). */

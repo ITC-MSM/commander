@@ -56,6 +56,7 @@ class EngineServices(
         // (reanimation, exile returns, leyline starts) gets the same wiring the cast pipeline
         // does. The handler is stateless beyond the registry, so a singleton is sufficient.
         ZoneTransitionService.staticAbilityHandler = StaticAbilityHandler(cardRegistry)
+        ZoneTransitionService.cardRegistry = cardRegistry
     }
     val effectExecutorRegistry =
         EffectExecutorRegistry(cardRegistry = cardRegistry, tokenArtRegistry = tokenArtRegistry)

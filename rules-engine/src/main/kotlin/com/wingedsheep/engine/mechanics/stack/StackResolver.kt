@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.EffectHandler
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
+import com.wingedsheep.engine.mechanics.daynight.DayNightService
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -1496,22 +1497,7 @@ class StackResolver(
                 )
             }
 
-            // CR 702.145b (first ability) — "If it is night and this permanent is represented by a
-            // transforming double-faced card, it enters the battlefield transformed." Only daybound (on
-            // the front face) carries this clause, and a DFC is only ever cast/put onto the battlefield as
-            // its front face, so this is the sole "enters transformed" case. It's a modification of *how*
-            // the permanent enters, not a transform, so we flip in place and DISCARD the TransformedEvent
-            // — "whenever this transforms" abilities must not fire from entering transformed. flipDfcInPlace
-            // swaps to the back face, stashes the front-face card (712.8a), and re-registers the back
-            // face's static/replacement effects (over the front face's, added above), giving exactly the
-            // back-face-up entry the rule requires.
-            if (cardDef.keywords.contains(com.wingedsheep.sdk.core.Keyword.DAYBOUND) &&
-                newState.dayNight == com.wingedsheep.sdk.core.DayNight.NIGHT
-            ) {
-                com.wingedsheep.engine.handlers.effects.permanent.types
-                    .flipDfcInPlace(newState, cardRegistry, spellId)
-                    ?.let { (flipped, _) -> newState = flipped }
-            }
+            newState = DayNightService.applyDayboundEntry(newState, cardRegistry, spellId)
         }
 
         // Handle Saga entering the battlefield (Rule 714.3a)

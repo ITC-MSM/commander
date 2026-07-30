@@ -823,7 +823,8 @@
         ],
         "colorIndicator": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "187",
@@ -956,7 +957,8 @@
         ],
         "colorIndicator": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "143",
@@ -2104,7 +2106,8 @@
         "colorIndicator": [
             "GREEN",
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "234",
@@ -4199,7 +4202,8 @@
         ],
         "colorIndicator": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "157",
@@ -6143,7 +6147,8 @@
         ],
         "colorIndicator": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "203",
@@ -6568,7 +6573,8 @@
         ],
         "colorIndicator": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "205",
@@ -6910,7 +6916,8 @@
         ],
         "colorIndicator": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "162",
@@ -7053,7 +7060,8 @@
         ],
         "colorIndicator": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "206",
@@ -7519,7 +7527,8 @@
         ],
         "colorIndicator": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "167",
@@ -8671,7 +8680,8 @@
         ],
         "colorIndicator": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "212",
@@ -12804,7 +12814,8 @@
         ],
         "colorIndicator": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "181",
@@ -13180,7 +13191,8 @@
         ],
         "colorIndicator": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "184",
@@ -13255,7 +13267,8 @@
         ],
         "colorIndicator": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "226",
@@ -13903,7 +13916,8 @@
         ],
         "colorIndicator": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "229",
