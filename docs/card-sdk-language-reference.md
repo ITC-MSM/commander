@@ -7552,9 +7552,9 @@ replacementEffect {
 
 All `ReplacementEffect` subtypes inherit the following virtual properties from the sealed interface:
 
-- `restrictions: List<Condition>` (default empty) — when non-empty, the replacement only applies if every condition passes when evaluated against the replacement's controller; a uniform gating mechanism used by `PreventDamage`, `DoubleDamage`, `ModifyLifeLoss`, `LifeLossFloor`, and others.
+- `restrictions: List<Condition>` (default empty) — when non-empty, the replacement only applies if every condition passes; a uniform gating mechanism used by `PreventDamage`, `DoubleDamage`, `ModifyLifeLoss`, `LifeLossFloor`, and others. In the `ReplacementEffectProcessor` (the draw domain today) each condition is evaluated with the **player the event affects** as `EffectContext.controllerId` — so `Player.You` inside a restriction reads as the drawing player, not the source's controller. The two coincide for a `Player.You` `appliesTo`; for `Player.EachOpponent` they don't, and such a card needs a source-relative condition instead.
 - `optional: Boolean` (default `false`) — when `true`, the player affected by the event may decline the replacement (e.g. "you may draw a card instead").
-- `priorityGroup: ReplacementPriorityGroup` (default `ReplacementPriorityGroup.ANY`) — the CR 616.1a–f priority tier, declared per subtype so the engine processor never pattern-matches on SDK types.
+- `priorityGroup: ReplacementPriorityGroup` (default `ReplacementPriorityGroup.ANY`) — the CR 616.1a–f priority tier. Declared as an *override on the subtype*, never as a card-facing constructor parameter, so the engine processor never pattern-matches on SDK types and a card can't accidentally promote itself out of the affected player's 616.1e choice. Today only `EntersAsCopy` overrides it (`COPY`).
 
 The priority groups are (CR 616.1a–f):
 
@@ -7847,11 +7847,17 @@ The priority groups are (CR 616.1a–f):
   `modifier` for the additive wording — "if you would draw one or more cards, you draw that many
   cards plus N instead" (Quantum Riddler:
   `ModifyDrawAmount(modifier = 1, restrictions = listOf(Conditions.CardsInHandAtMost(1)), appliesTo = DrawCardsEvent(player = Player.You))`)
-  — and `multiplier` for the doubling wording, which per the Vnwxt rulings multiplies the *announced*
-  count so a "draw three cards" spell draws six (Vnwxt, Verbose Host:
-  `ModifyDrawAmount(multiplier = 2, restrictions = listOf(Conditions.YouHaveMaxSpeed), appliesTo = DrawCardsEvent(player = Player.You))`).
-  Several applicable effects are cumulative — two doublers quadruple the draw. `restrictions` is also
-  the seam for a "Max speed —" gate, which `maxSpeed { }` cannot apply to a replacement effect.
+  — and `multiplier` for a doubling that genuinely refers to the announced quantity. **Pick by the
+  oracle wording, not by the outcome.** "If you would draw *one or more cards*, …" refers to the
+  number drawn and belongs here; "If you would draw *a card*, draw two cards instead" (Vnwxt,
+  Verbose Host) does not, and belongs in a per-card `ReplaceDrawWithEffect(DrawCardsEffect(2))` on
+  `EventPattern.DrawEvent`. Both make Harmonize draw six on their own, so the difference only shows
+  when the two levels meet: CR 616.1g orders the containing event before the contained one, so
+  Quantum Riddler plus Vnwxt is `(3 + 1)` announced and then each of the four draws doubled = 8.
+  Modelling Vnwxt here instead would drop both into one CR 616.1e pool and let the player choose an
+  order giving 7. Several applicable announcement effects are cumulative — two doublers quadruple
+  the draw. `restrictions` is also the seam for a "Max speed —" gate, which `maxSpeed { }` cannot
+  apply to a replacement effect.
 - `ModifyMillAmount(modifier, restrictions, appliesTo)` — modify the number of cards a *mill* announces
   by a fixed amount (the mill twin of `ModifyDrawAmount`): a player who would mill N instead mills
   `N + modifier`, clamped to ≥ 0. `appliesTo` is an `EventPattern.MillEvent` whose `player` filter

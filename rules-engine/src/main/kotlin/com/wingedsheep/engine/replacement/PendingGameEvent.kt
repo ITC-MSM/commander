@@ -184,7 +184,9 @@ sealed interface PendingGameEvent {
             val pileCount = linkedExile?.exiledIds?.size
 
             val prompt = buildString {
-                append("Use $cardName? ${gathered.description}")
+                // The effect's own text, not gathered.description — the latter is already
+                // prefixed with the card name, which this line supplies.
+                append("Use $cardName? ${replaceEffect.description}")
                 if (pileCount != null) {
                     append(" ($pileCount cards remaining)")
                 }

@@ -105,7 +105,14 @@ sealed interface ReplacementEffect : TextReplaceable<ReplacementEffect> {
 
     /**
      * Additional [Condition]s gating when this replacement applies.
-     * Evaluated against the source permanent's controller; ALL must hold.
+     *
+     * Evaluated with the **player the event affects** as `EffectContext.controllerId`, not the
+     * source permanent's controller; ALL must hold. So a `Player.You` condition inside a
+     * restriction reads as "the drawing/gaining/losing player". The two coincide for a
+     * `Player.You` [appliesTo], which is the common case; for a `Player.EachOpponent` one they
+     * do not, and a card that needs "you" to mean the source's controller has to say so with a
+     * source-relative condition instead.
+     *
      * Default empty list — most replacement effects have no extra gates.
      *
      * Types that carry a `restrictions` field (e.g. [ModifyDrawAmount],
@@ -314,8 +321,7 @@ data class RedirectZoneChange(
     val selfOnly: Boolean = false,
     val shuffleIntoLibrary: Boolean = false,
     val reveal: Boolean = false,
-    val requiredCause: ZoneChangeCause = ZoneChangeCause.Any,
-    override val priorityGroup: ReplacementPriorityGroup = ReplacementPriorityGroup.ANY
+    val requiredCause: ZoneChangeCause = ZoneChangeCause.Any
 ) : ReplacementEffect {
     override val description: String = buildString {
         when (requiredCause) {
@@ -1160,7 +1166,7 @@ data class ModifyLifeGain(
  * @param multiplier Multiplicative factor applied first (default 1 = unchanged).
  * @param modifier Flat amount added after multiplication (default 0 = unchanged).
  * @param restrictions Additional [Condition]s gating when this replacement applies.
- *        Evaluated against the source permanent's controller; ALL must hold.
+ *        Evaluated against the player the event affects; ALL must hold.
  */
 @SerialName("ModifyLifeLoss")
 @Serializable
@@ -1239,7 +1245,7 @@ data class ModifyLifeLoss(
  *
  * @param floor Minimum resulting life total (default 1).
  * @param restrictions Additional [Condition]s gating when this floor applies.
- *        Evaluated against the source permanent's controller; ALL must hold.
+ *        Evaluated against the player the event affects; ALL must hold.
  * @param appliesTo Life-loss event filter (which player is protected).
  */
 @SerialName("LifeLossFloor")

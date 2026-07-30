@@ -6,8 +6,9 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.startYourEngines
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.EventPattern
-import com.wingedsheep.sdk.scripting.ModifyDrawAmount
 import com.wingedsheep.sdk.scripting.NoMaximumHandSize
+import com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect
+import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.references.Player
 
 /**
@@ -23,13 +24,21 @@ import com.wingedsheep.sdk.scripting.references.Player
  * The max-speed clause is a *replacement* effect, so it can't go through the `maxSpeed { }`
  * block — that gates static/activated/triggered abilities, and replacement effects are read
  * straight off `ReplacementEffectSourceComponent` at interception sites that don't evaluate a
- * gate. [ModifyDrawAmount] carries its own `restrictions` slot, evaluated in the drawing
- * player's context at the one announcement site (CR 121.2a), so the gate folds into the
- * effect itself exactly the way `maxSpeed { }` folds it into `ModifySpellCost.gating`. The
- * display-only [Keyword.MAX_SPEED] badge is added by hand for the same reason.
+ * gate. [ReplaceDrawWithEffect] carries its own `restrictions` slot, evaluated in the drawing
+ * player's context, so the gate folds into the effect itself exactly the way `maxSpeed { }`
+ * folds it into `ModifySpellCost.gating`. The display-only [Keyword.MAX_SPEED] badge is added
+ * by hand for the same reason.
  *
- * `multiplier = 2` rather than `modifier = 1`: the rulings are explicit that this multiplies
- * the announced count, so Harmonize draws six, and two such effects quadruple it.
+ * Modelled per card draw rather than as a [ModifyDrawAmount] on the announcement, because the
+ * oracle text says "if you would draw a card" — it does not refer to the number of cards drawn,
+ * which is what CR 121.2a scopes the announcement-level modification to. The distinction is
+ * observable: CR 616.1g requires an effect applying to a *contained* event (one card draw) to be
+ * chosen only after one applying to the *containing* event (the announced quantity) has been.
+ * Modelling both here and on Quantum Riddler at the announcement would put them in one CR 616.1e
+ * pool and let the player pick an order that yields 3 where the rules give 4.
+ *
+ * The rulings still hold: CR 614.5 stops the replacement applying to its own two draws, so
+ * Harmonize's three draws each become two — six cards.
  */
 val VnwxtVerboseHost = card("Vnwxt, Verbose Host") {
     manaCost = "{1}{U}"
@@ -50,10 +59,10 @@ val VnwxtVerboseHost = card("Vnwxt, Verbose Host") {
     }
 
     replacementEffect(
-        ModifyDrawAmount(
-            multiplier = 2,
+        ReplaceDrawWithEffect(
+            replacementEffect = DrawCardsEffect(2),
             restrictions = listOf(Conditions.YouHaveMaxSpeed),
-            appliesTo = EventPattern.DrawCardsEvent(player = Player.You),
+            appliesTo = EventPattern.DrawEvent(player = Player.You),
         )
     )
 

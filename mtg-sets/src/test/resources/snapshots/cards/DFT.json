@@ -14192,8 +14192,14 @@
         ],
         "replacementEffects": [
             {
-                "type": "ModifyDrawAmount",
-                "multiplier": 2,
+                "type": "ReplaceDrawWith",
+                "replacementEffect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
                 "restrictions": [
                     {
                         "type": "Compare",

@@ -104,10 +104,10 @@ class ModifyDrawAmountTerminationTest : FunSpec({
             "CR 614.5 — a replacement gets one opportunity to affect an event or any modified " +
                 "event replacing it. Re-announcing the same instruction must not add another +1."
         ) {
-            val second = disp.checkDrawAmount(
+            // checkDrawAmount returns null when nothing modified the count.
+            disp.checkDrawAmount(
                 announced.state, me, totalCount = 2, isDrawStep = false, context = ctx
-            )
-            (second as? DrawReplacementDispatcher.DispatchResult.Modified)?.delta shouldBe null
+            ) shouldBe null
         }
     }
 

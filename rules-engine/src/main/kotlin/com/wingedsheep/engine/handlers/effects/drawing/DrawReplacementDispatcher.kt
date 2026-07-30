@@ -112,7 +112,7 @@ class DrawReplacementDispatcher(
                         // A replacement effect should execute instead of drawing.
                         val ctx = processorResult.executionContext
                         if (ctx != null) {
-                            return executeFromShield(
+                            return executeReplacement(
                                 processorResult.state, playerId,
                                 outcome.newEffect, ctx,
                                 remainingDraws, isDrawStep,
@@ -195,7 +195,7 @@ class DrawReplacementDispatcher(
                     is ReplacementOutcome.Replaced -> {
                         val ctx = processorResult.executionContext
                         if (ctx != null) {
-                            return executeFromShield(
+                            return executeReplacement(
                                 processorResult.state, playerId,
                                 outcome.newEffect, ctx,
                                 totalCount - 1, isDrawStep,
@@ -233,13 +233,14 @@ class DrawReplacementDispatcher(
     }
 
     /**
-     * Execute the replacement effect that came from a NextUse floating shield,
-     * using the execution context built by the [ReplacementEffectProcessor].
-     * Pushes a [DrawReplacementRemainingDrawsContinuation] if more draws remain.
+     * Execute the effect a [ReplacementOutcome.Replaced] put in the draw's place, using the
+     * execution context built by the [ReplacementEffectProcessor] — from floating-shield data
+     * for a Words-cycle shield, from the affected player otherwise. Pushes a
+     * [DrawReplacementRemainingDrawsContinuation] if more draws remain.
      *
      * Returns the appropriate [DispatchResult].
      */
-    private fun executeFromShield(
+    private fun executeReplacement(
         processorState: GameState,
         playerId: EntityId,
         replacementEffect: Effect,

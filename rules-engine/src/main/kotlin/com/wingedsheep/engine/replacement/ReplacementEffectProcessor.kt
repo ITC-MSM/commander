@@ -133,6 +133,12 @@ class ReplacementEffectProcessor {
         if (optional.isNotEmpty()) {
             // Present the optional prompt via the event's domain-specific handler.
             // If the event doesn't support optional prompts, treat as mandatory.
+            //
+            // Known simplification: CR 616.1 puts optional and mandatory effects in one pool and
+            // orders the whole pool by priority group, so a mandatory 616.1a self-replacement
+            // should be applied before an optional 616.1e one. Prompting optionals first is only
+            // observable when both are applicable to the same event, which needs a card that
+            // classifies above ANY — nothing does yet.
             return presentOptionalReplacement(state, event, optional.first(), alreadyApplied, context)
         }
 
@@ -149,24 +155,13 @@ class ReplacementEffectProcessor {
             if (groupEffects.isEmpty()) continue
 
             if (groupEffects.size > 1) {
-                // CR 616.1a–e: when multiple effects share the same priority group,
-                // the affected player chooses which to apply. However, if all effects
-                // are structurally identical AND come from the same source entity
-                // (e.g. two copies of the same Words cycle ability on one card),
-                // auto-apply the first — there's no meaningful choice to present
-                // since they're fungible.
+                // CR 616.1a–e: when multiple effects share the same priority group, the affected
+                // player chooses which to apply. Skip the prompt when the choice is unobservable.
                 val first = groupEffects.first()
-                val firstSourceId = first.sourceEntityId(state)
-                val isFungible = firstSourceId != null &&
-                    groupEffects.all {
-                        it.effect == first.effect &&
-                        it.description == first.description &&
-                        it.sourceEntityId(state) == firstSourceId
-                    }
-                if (isFungible) {
+                if (isChoiceUnobservable(groupEffects, first, event, state)) {
                     return applySingle(state, first, event, alreadyApplied)
                 }
-                // Different effects or different sources — player must choose (CR 616.1)
+                // The order is observable — the player must choose (CR 616.1).
                 return presentChoice(state, event, groupEffects, alreadyApplied, context)
             }
 
@@ -176,6 +171,42 @@ class ReplacementEffectProcessor {
 
         // Unreachable: mandatory was non-empty, so at least one group matched.
         error("unreachable: mandatory effects exist but no priority group matched")
+    }
+
+    /**
+     * Whether presenting a CR 616.1 choice between [groupEffects] would be busywork — the
+     * player cannot tell the orderings apart, so any of them is the right answer.
+     *
+     * Two cases qualify:
+     *
+     * 1. **Same source, same effect.** Two copies of one ability on a single permanent
+     *    (e.g. a Words-cycle card whose ability was granted twice). Nothing downstream can
+     *    distinguish them, not even the execution context.
+     * 2. **Equal [ReplacementOutcome.Modified] outcomes.** Two Quantum Riddlers each turn the
+     *    announced draw into the same number, and CR 616.1f applies the loser on the next pass
+     *    anyway, so the totals converge whichever is picked first. Deliberately restricted to
+     *    `Modified`: a `Replaced` outcome executes an effect against its own source
+     *    (`EffectContext.sourceId`) and a `Consumed` one may burn a specific `NextUse` shield,
+     *    so for those the source is observable even when the outcomes compare equal.
+     */
+    private fun isChoiceUnobservable(
+        groupEffects: List<GatheredReplacement>,
+        first: GatheredReplacement,
+        event: PendingGameEvent,
+        state: GameState
+    ): Boolean {
+        val firstSourceId = first.sourceEntityId(state)
+        val sameSourceSameEffect = firstSourceId != null &&
+            groupEffects.all {
+                it.effect == first.effect &&
+                    it.description == first.description &&
+                    it.sourceEntityId(state) == firstSourceId
+            }
+        if (sameSourceSameEffect) return true
+
+        val firstOutcome = event.applyReplacement(first.effect, state)
+        if (firstOutcome !is ReplacementOutcome.Modified) return false
+        return groupEffects.all { event.applyReplacement(it.effect, state) == firstOutcome }
     }
 
     /**
@@ -293,7 +324,7 @@ class ReplacementEffectProcessor {
                 sourceName = "Replacement effect choice",
                 phase = DecisionPhase.RESOLUTION
             ),
-            options = options.map { it.description },
+            options = disambiguate(options.map { it.description }),
             canCancel = false
         )
 
@@ -377,7 +408,12 @@ class ReplacementEffectProcessor {
         for (entityId in battlefieldSet) {
             val container = state.getEntity(entityId) ?: continue
             val replacementSource = container.get<ReplacementEffectSourceComponent>() ?: continue
-            val controllerId = container.get<ControllerComponent>()?.playerId ?: continue
+            // Projected, not base: control change is a layer-2 effect (see EffectApplicator's
+            // ChangeController branch), so a stolen permanent's ControllerComponent still names
+            // its original controller. A `Player.You` replacement has to follow the permanent.
+            val controllerId = state.projectedState.getController(entityId)
+                ?: container.get<ControllerComponent>()?.playerId
+                ?: continue
 
             for ((index, effect) in replacementSource.replacementEffects.withIndex()) {
                 val evalContext = context ?: EffectContext(
@@ -394,7 +430,7 @@ class ReplacementEffectProcessor {
                         ),
                         effect = effect,
                         sourceControllerId = controllerId,
-                        description = effect.description
+                        description = describe(state, entityId, effect.description)
                     )
                 )
             }
@@ -402,7 +438,7 @@ class ReplacementEffectProcessor {
 
         // 2. Floating effects that carry replacement-effect modifications
         // (Words cycle shields stored here, not on battlefield permanents).
-        for ( fe in state.floatingEffects) {
+        for (fe in state.floatingEffects) {
             if (event.affectedPlayerId !in fe.effect.affectedEntities) continue
 
             val sdkEffect = fe.effect.modification.toReplacementEffect(fe.controllerId) ?: continue
@@ -412,15 +448,13 @@ class ReplacementEffectProcessor {
             val cardName = fe.sourceName
                 ?: fe.sourceId
                 ?.let { state.getEntity(it)?.get<CardComponent>()?.name }
-                ?: "Unknown"
-            val desc = "$cardName - ${sdkEffect.description}"
 
             results.add(
                 GatheredReplacement(
                     identity = ReplacementEffectIdentity.FloatingIdentity(floatingId = fe.id),
                     effect = sdkEffect,
                     sourceControllerId = fe.controllerId,
-                    description = desc
+                    description = prefixSource(cardName, sdkEffect.description)
                 )
             )
         }
@@ -435,7 +469,7 @@ class ReplacementEffectProcessor {
                     identity = ReplacementEffectIdentity.GrantedIdentity(grantedIndex = index),
                     effect = grant.replacement,
                     sourceControllerId = controllerId,
-                    description = grant.replacement.description
+                    description = describe(state, grant.entityId, grant.replacement.description)
                 )
             )
         }
@@ -464,13 +498,43 @@ class ReplacementEffectProcessor {
                         ),
                         effect = effect,
                         sourceControllerId = controllerId,
-                        description = effect.description
+                        description = describe(state, entityId, effect.description)
                     )
                 )
             }
         }
 
         return results
+    }
+
+    /**
+     * Name the card an option came from. [GatheredReplacement.description] is player-facing —
+     * it is what a `ChooseOptionDecision` lists and what the optional-replacement prompt reads
+     * back — so two copies of the same card competing must not render as the same string.
+     */
+    private fun describe(state: GameState, sourceId: EntityId?, effectDescription: String): String =
+        prefixSource(
+            sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name },
+            effectDescription
+        )
+
+    private fun prefixSource(cardName: String?, effectDescription: String): String =
+        if (cardName == null) effectDescription else "$cardName - $effectDescription"
+
+    /**
+     * Number any options that still read identically after [describe] has named their source —
+     * two copies of one card share a name, so the name alone doesn't separate them. Reaching
+     * this means [isChoiceUnobservable] judged the order observable, so the player has a real
+     * decision to make and needs labels they can actually tell apart.
+     */
+    private fun disambiguate(descriptions: List<String>): List<String> {
+        val counts = descriptions.groupingBy { it }.eachCount()
+        val seen = mutableMapOf<String, Int>()
+        return descriptions.map { desc ->
+            if (counts.getValue(desc) == 1) return@map desc
+            val n = seen.merge(desc, 1, Int::plus)!!
+            "$desc (#$n)"
+        }
     }
 
     /**

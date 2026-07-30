@@ -53,8 +53,18 @@ object DrawLoop {
         val drawnCards = mutableListOf<EntityId>()
         val perCardEvents = mutableListOf<GameEvent>()
 
+        // CR 614.5 is scoped to one event and the events that replace it, and each iteration
+        // below is a separate draw event — so every iteration starts from the chain this
+        // instruction inherited, not from whatever a previous iteration's replacement left
+        // behind. It matters in both directions: an announcement-level effect (or the effect
+        // that spawned this nested instruction) must stay excluded for every card, while an
+        // effect consumed replacing card 1 must be eligible again for card 2.
+        val inheritedChain = state.activeReplacementChain
+
         var remaining = count
         while (remaining > 0) {
+            newState = newState.copy(activeReplacementChain = inheritedChain)
+
             // 1. Check replacements. This runs *before* the primitive draw and before any
             //    empty-library check, and CR 614.11 requires exactly that ordering: effects
             //    that replace a card draw "are applied even if no cards could be drawn because

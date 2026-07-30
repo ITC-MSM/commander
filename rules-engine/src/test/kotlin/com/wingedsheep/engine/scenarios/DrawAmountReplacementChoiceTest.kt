@@ -5,6 +5,9 @@ import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.ModifyDrawAmount
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 
@@ -30,10 +33,28 @@ import io.kotest.matchers.shouldBe
  * the `Paused` structure and then *simulates* the rest by hand-stamping
  * `GameState.activeReplacementChain` — it never submits the decision, which is the code that
  * actually runs in a game.
+ *
+ * The competing effect is a test-only card because a multiplier and a modifier are what make
+ * the ordering observable, and Quantum Riddler is the only shipped announcement-level
+ * `ModifyDrawAmount`. Two Riddlers no longer reach this path at all — they produce the same
+ * total either way, so the processor skips the prompt (see `ReplacementChoiceTest`).
  */
 class DrawAmountReplacementChoiceTest : ScenarioTestBase() {
 
+    /** "If you would draw one or more cards, you draw twice that many instead." */
+    private val doubler = card("Test Draw Doubler") {
+        manaCost = "{2}{U}"
+        typeLine = "Enchantment"
+        replacementEffect(
+            ModifyDrawAmount(
+                multiplier = 2,
+                appliesTo = EventPattern.DrawCardsEvent(),
+            )
+        )
+    }
+
     init {
+        cardRegistry.register(doubler)
 
         test("a single Quantum Riddler modifies the announced draw without prompting") {
             // The control. One announcement-level ModifyDrawAmount has nothing to compete with,
@@ -69,14 +90,14 @@ class DrawAmountReplacementChoiceTest : ScenarioTestBase() {
             }
         }
 
-        test("two Quantum Riddlers: the draw still happens after the player resolves the choice") {
-            // Two structurally identical effects from different sources are not fungible, so the
-            // processor prompts (CR 616.1). Whichever the player picks, both must apply exactly
-            // once (CR 614.5 + 616.1f) and the instruction must still draw.
+        test("a +1 and a doubler: the draw still happens after the player resolves the choice") {
+            // (2+1)*2 = 6 vs (2*2)+1 = 5, so CR 616.1 genuinely hands the order to the player.
+            // Whichever they pick, both apply exactly once (CR 614.5 + 616.1f) and — the point
+            // of this test — the instruction must still draw.
             val game = scenario()
                 .withPlayers("Player1", "Player2")
                 .withCardOnBattlefield(1, "Quantum Riddler")
-                .withCardOnBattlefield(1, "Quantum Riddler")
+                .withCardOnBattlefield(1, "Test Draw Doubler")
                 .withCardInHand(1, "Divination")
                 .withLandsOnBattlefield(1, "Island", 5)
                 .withCardInLibrary(1, "Grizzly Bears")
@@ -85,10 +106,14 @@ class DrawAmountReplacementChoiceTest : ScenarioTestBase() {
                 .withCardInLibrary(1, "Grizzly Bears")
                 .withCardInLibrary(1, "Hill Giant")
                 .withCardInLibrary(1, "Mountain")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Hill Giant")
                 .withActivePlayer(1)
                 .withPriorityPlayer(1)
                 .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                 .build()
+
+            val libraryBefore = game.librarySize(1)
 
             val cast = game.castSpell(1, "Divination")
             withClue("Cast should succeed: ${cast.error}") { cast.error shouldBe null }
@@ -96,15 +121,21 @@ class DrawAmountReplacementChoiceTest : ScenarioTestBase() {
 
             val decision = game.state.pendingDecision
             withClue(
-                "Two same-effect-different-source replacements compete, so the affected player " +
-                    "chooses which applies first (CR 616.1). Got: $decision"
+                "A modifier and a multiplier give different totals depending on order, so the " +
+                    "affected player chooses which applies first (CR 616.1). Got: $decision"
             ) {
                 (decision is ChooseOptionDecision) shouldBe true
             }
             decision as ChooseOptionDecision
-            withClue("Both Riddlers should be offered") {
+            withClue("Both replacements should be offered") {
                 decision.options.size shouldBe 2
             }
+            withClue("Options a player cannot tell apart are options they cannot answer") {
+                decision.options.toSet().size shouldBe 2
+            }
+
+            val chosenIsRiddler = decision.options[0].startsWith("Quantum Riddler")
+            val expectedHand = if (chosenIsRiddler) 6 else 5
 
             val answer = game.submitDecision(OptionChosenResponse(decision.id, 0))
             withClue("Answering the replacement choice should not error: ${answer.error}") {
@@ -116,13 +147,13 @@ class DrawAmountReplacementChoiceTest : ScenarioTestBase() {
                 game.state.pendingDecision shouldBe null
             }
             withClue(
-                "Divination announces 2; each Riddler adds +1 exactly once, so the hand holds 4. " +
-                    "Holding 0 means the modified draw instruction was dropped entirely."
+                "Divination announces 2; applying \"${decision.options[0]}\" first gives " +
+                    "$expectedHand. Holding 0 means the modified draw instruction was dropped."
             ) {
-                game.handSize(1) shouldBe 4
+                game.handSize(1) shouldBe expectedHand
             }
-            withClue("Four cards left the library") {
-                game.librarySize(1) shouldBe 2
+            withClue("Every card in hand came off the library") {
+                game.librarySize(1) shouldBe libraryBefore - expectedHand
             }
         }
     }

@@ -12,7 +12,7 @@ import io.kotest.matchers.shouldBe
 /**
  * A draw whose call site was built without an effect executor must not silently swallow the
  * draw. `CycleCardHandler` constructs `DrawCardsExecutor(cardRegistry = cardRegistry)` with no
- * `effectExecutor`, so `DrawReplacementDispatcher.executeFromShield` short-circuits on
+ * `effectExecutor`, so `DrawReplacementDispatcher.executeReplacement` short-circuits on
  * `effectExecutor ?: return DispatchResult.Replaced(...)` — reporting the draw as replaced
  * without running the replacement or consuming the shield.
  *
@@ -27,7 +27,7 @@ class CyclingDrawReplacementTest : ScenarioTestBase() {
         // A draw whose call site has no effect executor must not swallow the draw.
         //
         // CycleCardHandler builds `DrawCardsExecutor(cardRegistry = cardRegistry)` with no
-        // effectExecutor, so DrawReplacementDispatcher.executeFromShield short-circuits on
+        // effectExecutor, so DrawReplacementDispatcher.executeReplacement short-circuits on
         // `effectExecutor ?: return DispatchResult.Replaced(...)` — reporting the draw as
         // replaced without running the replacement or consuming the shield.
         // =====================================================================
