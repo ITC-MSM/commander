@@ -85,8 +85,12 @@ class SuspendCardFromHandHandler(
 
         // CR 702.62c/116.2f: only when the player could begin to cast this card by putting it
         // on the stack right now — the same timing window as a normal cast, independent of
-        // whether the card's own mana cost could ever actually be paid.
-        val hasFlash = state.projectedState.hasKeyword(action.cardId, Keyword.FLASH)
+        // whether the card's own mana cost could ever actually be paid. Printed flash is read
+        // off the CardDefinition, not projected state: projection is only ever built for
+        // battlefield entities (StateProjector.project iterates state.getBattlefield()), so
+        // hasKeyword() on a hand-zone card silently returns false regardless of what's printed.
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        val hasFlash = cardDef?.keywords?.contains(Keyword.FLASH) == true
         val isInstantSpeed = cardComponent.typeLine.isInstant || hasFlash
         if (!isInstantSpeed && !turnManager.canPlaySorcerySpeed(state, action.playerId)) {
             return "This card can only be suspended at a time you could cast it"

@@ -32,7 +32,10 @@ class SuspendEnumerator : ActionEnumerator {
             val suspend = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Suspend>().firstOrNull()
                 ?: continue
 
-            val hasFlash = state.projectedState.hasKeyword(cardId, Keyword.FLASH)
+            // Printed flash is read off the CardDefinition, not projected state: projection is
+            // only ever built for battlefield entities, so hasKeyword() on a hand-zone card
+            // silently returns false regardless of what's actually printed.
+            val hasFlash = cardDef.keywords.contains(Keyword.FLASH)
             val isInstantSpeed = cardComponent.typeLine.isInstant || hasFlash
             if (!isInstantSpeed && !context.canPlaySorcerySpeed) continue
 
