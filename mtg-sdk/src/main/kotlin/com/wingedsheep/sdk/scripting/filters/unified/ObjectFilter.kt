@@ -430,6 +430,11 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.PowerAtLeast(min)
     )
 
+    /** Power at least the X chosen for the source spell/ability (Expel the Interlopers). */
+    fun powerAtLeastX() = copy(
+        cardPredicates = cardPredicates + CardPredicate.PowerAtLeastX
+    )
+
     /** Power strictly greater than the projected power of a referenced entity (source, triggering, etc.) */
     fun powerGreaterThanEntity(reference: EntityReference) = copy(
         cardPredicates = cardPredicates + CardPredicate.PowerGreaterThanEntity(reference)

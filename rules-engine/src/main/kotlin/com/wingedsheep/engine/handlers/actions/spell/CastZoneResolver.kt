@@ -773,6 +773,7 @@ class CastZoneResolver(
                 is CardPredicate.ManaValueAtMostColorsSpent,
                 is CardPredicate.ManaValueAtMostDynamic,
                 is CardPredicate.PowerEqualsX,
+                is CardPredicate.PowerAtLeastX,
                 is CardPredicate.ToughnessAtMostX,
                 is CardPredicate.PowerAtMostEntity,
                 is CardPredicate.PowerGreaterThanEntity,

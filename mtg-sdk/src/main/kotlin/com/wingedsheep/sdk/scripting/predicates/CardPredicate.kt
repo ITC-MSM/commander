@@ -521,6 +521,21 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         override val description: String = "with power $min or greater"
     }
 
+    /**
+     * Power at least the X chosen for the source spell/ability — the "greater than or equal to"
+     * mirror of [ToughnessAtMostX], and the power analogue of [ManaValueAtMostX].
+     * Resolves against [PredicateContext.xValue] at evaluation time, so it works at a spell's
+     * resolution-time filter pass: Expel the Interlopers ("Choose a number between 0 and 10.
+     * Destroy all creatures with power greater than or equal to the chosen number") binds the
+     * chosen number as X and then wipes with this predicate.
+     */
+    @SerialName("PowerAtLeastX")
+    @Serializable
+    data object PowerAtLeastX : CardPredicate {
+        override val description: String = "with power X or greater"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+    }
+
     @SerialName("ToughnessEquals")
     @Serializable
     data class ToughnessEquals(val value: Int) : CardPredicate {
