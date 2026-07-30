@@ -430,6 +430,18 @@ class PredicateEvaluator {
                 val power = projectedValues?.power ?: card.baseStats?.basePower ?: 0
                 power >= predicate.min
             }
+            is CardPredicate.PowerAtLeastX -> {
+                // Only meaningful at resolution, where X is bound (e.g. Expel the Interlopers'
+                // non-targeted DestroyAll after the chosen number is stamped as X). A null xValue
+                // is unexpected here; match nothing rather than everything so an unbound X can't
+                // silently wipe the board — mirrors ToughnessAtMostX.
+                val xValue = context?.xValue
+                if (xValue == null) false
+                else {
+                    val power = projectedValues?.power ?: card.baseStats?.basePower ?: 0
+                    power >= xValue
+                }
+            }
             is CardPredicate.ToughnessEquals -> {
                 val toughness = projectedValues?.toughness ?: card.baseStats?.baseToughness
                 toughness == predicate.value
@@ -1431,7 +1443,7 @@ class PredicateEvaluator {
 
             // Power/toughness — not meaningful for cast records
             is CardPredicate.PowerEquals, is CardPredicate.PowerAtMost, is CardPredicate.PowerAtLeast,
-            CardPredicate.PowerEqualsX,
+            CardPredicate.PowerEqualsX, CardPredicate.PowerAtLeastX,
             is CardPredicate.ToughnessEquals, is CardPredicate.ToughnessAtMost, is CardPredicate.ToughnessAtLeast,
             CardPredicate.ToughnessAtMostX,
             is CardPredicate.PowerOrToughnessAtLeast,

@@ -643,6 +643,13 @@ class StateProjector(
                         timestamp = floating.timestamp,
                         modification = floating.effect.modification.toModification(),
                         affectedEntities = validAffectedEntities,
+                        // A conditional clause inside a durational grant ("becomes a creature with
+                        // 'During your turn, this creature has first strike'"). Re-asked on every
+                        // projection by EffectApplicator against the *source's* projected controller,
+                        // so it goes dark on an opponent's turn or if the source is stolen — and
+                        // comes back if that reverses. Distinct from the latching Duration.While…
+                        // gates above.
+                        sourceCondition = floating.effect.sourceCondition,
                         // "for as long as you control it" (e.g. suspend haste — CR 702.62g):
                         // the gate is applied after Layer 2, against the projected controller,
                         // so the effect drops the instant another player gains control.

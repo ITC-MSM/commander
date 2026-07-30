@@ -95,7 +95,14 @@ sealed interface PreventionSourceFilter {
  *   [PreventionSourceFilter.FromGroup] (which filters the *source* of damage): one new field, so the
  *   next "prevent all damage to artifacts / to each opponent's creatures" card needs only a
  *   [GroupFilter], not a new effect. Only meaningful with [PreventionDirection.ToTarget]; honours
- *   [scope] (all damage vs combat-only) and [duration].
+ *   [scope] (all damage vs combat-only), [duration], and a [PreventionSourceFilter.FromGroup]
+ *   [sourceFilter] ("… by creatures").
+ * @property recipientGroupIncludesController Extends a [recipientGroup] shield to also protect the
+ *   shield's controller — the "you and" in "prevent all damage that would be dealt to **you and**
+ *   creatures you control this turn by creatures" (Eerie Interference, Riot Control). A player is
+ *   not a permanent, so it can never be expressed by the [GroupFilter] itself; this keeps the whole
+ *   recipient set on one shield instead of splitting it across two effects with divergent scopes.
+ *   Ignored when [recipientGroup] is null.
  * @property amount Amount of damage to prevent; null means prevent all
  * @property scope Whether to prevent all damage or only combat damage
  * @property direction Whether to prevent damage TO the target, FROM the target, or BOTH
@@ -116,6 +123,7 @@ sealed interface PreventionSourceFilter {
 data class PreventDamageEffect(
     val target: EffectTarget = EffectTarget.Controller,
     val recipientGroup: GroupFilter? = null,
+    val recipientGroupIncludesController: Boolean = false,
     val amount: DynamicAmount? = null,
     val scope: PreventionScope = PreventionScope.AllDamage,
     val direction: PreventionDirection = PreventionDirection.ToTarget,
@@ -153,8 +161,11 @@ data class PreventDamageEffect(
             PreventionScope.AllDamage -> append("damage ")
         }
         when {
-            recipientGroup != null ->
-                append("that would be dealt to ${recipientGroup.description.replaceFirstChar { it.lowercase() }}")
+            recipientGroup != null -> {
+                append("that would be dealt to ")
+                if (recipientGroupIncludesController) append("you and ")
+                append(recipientGroup.description.replaceFirstChar { it.lowercase() })
+            }
             direction == PreventionDirection.ToTarget -> append("that would be dealt to ${target.description}")
             direction == PreventionDirection.FromTarget -> append("${target.description} would deal")
             else -> append("that would be dealt to and dealt by ${target.description}")

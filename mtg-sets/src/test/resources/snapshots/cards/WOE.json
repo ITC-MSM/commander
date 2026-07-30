@@ -3603,6 +3603,39 @@
     ]
 }
 
+// Eerie Interference
+{
+    "name": "Eerie Interference",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Prevent all damage that would be dealt to you and creatures you control this turn by creatures.",
+    "script": {
+        "spellEffect": {
+            "type": "PreventDamageShield",
+            "recipientGroup": {
+                "baseFilter": "creature ctrl:you"
+            },
+            "recipientGroupIncludesController": true,
+            "sourceFilter": {
+                "type": "FromGroup",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "UNCOMMON",
+        "artist": "Néstor Ossandón Leal",
+        "flavorText": "Ranks of sleeping Ardenvale knights filled Eriette's throne room, ready to defend their witch-queen with unthinking devotion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42a74545-75c8-4a6b-bee1-ac5665d9bcf0.jpg?1783915133"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Ego Drain
 {
     "name": "Ego Drain",
@@ -4054,6 +4087,64 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Expel the Interlopers
+{
+    "name": "Expel the Interlopers",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose a number between 0 and 10. Destroy all creatures with power greater than or equal to the chosen number.",
+    "script": {
+        "spellEffect": {
+            "type": "ChooseNumberThen",
+            "then": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "GatherCards",
+                        "source": {
+                            "type": "BattlefieldMatching",
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    "PowerAtLeastX"
+                                ]
+                            }
+                        },
+                        "storeAs": "destroyAll_gathered"
+                    },
+                    {
+                        "type": "MoveCollection",
+                        "from": "destroyAll_gathered",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Graveyard"
+                        },
+                        "moveType": "Destroy"
+                    }
+                ]
+            },
+            "maxValue": 10,
+            "prompt": "Choose a number between 0 and 10"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "RARE",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "When a redcap raid threatened the Grand Ball at Delverhaugh, Goddric had no choice but to reveal his true identity and douse the invaders in dragonfire.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/1094eef0-6c57-4bfa-a584-f708b87354fb.jpg?1783915132",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The numbers you may choose include 0 and 10."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -5774,6 +5865,79 @@
     },
     "colorIdentityOverride": [
         "BLACK",
+        "GREEN"
+    ]
+}
+
+// Gruff Triplets
+{
+    "name": "Gruff Triplets",
+    "manaCost": "{3}{G}{G}{G}",
+    "typeLine": "Creature — Satyr Warrior",
+    "oracleText": "Trample\nWhen this creature enters, if it isn't a token, create two tokens that are copies of it.\nWhen this creature dies, put a number of +1/+1 counters equal to its power on each creature you control named Gruff Triplets.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateTokenCopyOfSource",
+                    "count": 2
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "nontoken"
+                },
+                "descriptionOverride": "When this creature enters, if it isn't a token, create two tokens that are copies of it."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature name:Gruff Triplets ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": "Power"
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "When this creature dies, put a number of +1/+1 counters equal to its power on each creature you control named Gruff Triplets."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "RARE",
+        "artist": "Fajareka Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8760ab9-ac76-4e2e-b82f-0ee2a6dc5634.jpg?1783915082"
+    },
+    "colorIdentityOverride": [
         "GREEN"
     ]
 }
@@ -10680,6 +10844,112 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Restless Spire
+{
+    "name": "Restless Spire",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {U} or {R}.\n{U}{R}: Until end of turn, this land becomes a 2/1 blue and red Elemental creature with \"During your turn, this creature has first strike.\" It's still a land.\nWhenever this land attacks, scry 1.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Scry",
+                    "count": 1
+                },
+                "descriptionOverride": "Whenever this land attacks, scry 1."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{U}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "BecomeCreature",
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "creatureTypes": [
+                                "Elemental"
+                            ],
+                            "colors": [
+                                "BLUE",
+                                "RED"
+                            ]
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FIRST_STRIKE",
+                            "target": "Self",
+                            "condition": "IsYourTurn"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Until end of turn, this land becomes a 2/1 blue and red Elemental creature with \"During your turn, this creature has first strike.\" It's still a land."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "260",
+        "rarity": "RARE",
+        "artist": "Sergey Glushakov",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/66386fe8-9d3c-47f7-9cd3-4cd30051535f.jpg?1783915056",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If this becomes a creature because of an effect other than its own ability, its last ability will still trigger whenever it attacks."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If this becomes a creature but you haven't controlled it continuously since your most recent turn began, you won't be able to activate its mana ability or attack with it that turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
     ]
 }
 

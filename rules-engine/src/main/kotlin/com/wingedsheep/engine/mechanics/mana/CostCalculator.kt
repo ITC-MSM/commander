@@ -1015,6 +1015,8 @@ class CostCalculator(
             CardPredicate.PowerEqualsX -> false
             is CardPredicate.PowerAtMost -> (cardDef.creatureStats?.basePower ?: 0) <= predicate.max
             is CardPredicate.PowerAtLeast -> (cardDef.creatureStats?.basePower ?: 0) >= predicate.min
+            // CostCalculator has no X context; predicate has no static answer here.
+            CardPredicate.PowerAtLeastX -> false
             is CardPredicate.ToughnessEquals -> cardDef.creatureStats?.baseToughness == predicate.value
             is CardPredicate.ToughnessAtMost -> (cardDef.creatureStats?.baseToughness ?: 0) <= predicate.max
             // CostCalculator has no X context; predicate has no static answer here.
