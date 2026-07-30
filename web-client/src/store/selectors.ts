@@ -400,6 +400,8 @@ function cardIdForAction(info: LegalActionInfo): EntityId | undefined {
     case 'CastSpell':
     case 'CycleCard':
     case 'TypecycleCard':
+    case 'PlotCard':
+    case 'SuspendCardFromHand':
       return a.cardId
     case 'ActivateAbility':
     case 'TurnFaceUp':
