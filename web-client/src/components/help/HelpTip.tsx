@@ -89,7 +89,7 @@ export function HelpTip({
         className={`${styles.tipButton} ${size === 'sm' ? styles.tipButtonSm : ''} ${open ? styles.tipButtonOpen : ''}`}
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((v) => !v) }}
       >
-        ?
+        <span className={styles.tipGlyph} aria-hidden="true">?</span>
       </button>
       {open && pos && createPortal(
         <div

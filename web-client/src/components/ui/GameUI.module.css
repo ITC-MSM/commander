@@ -1118,6 +1118,15 @@
   font-size: var(--font-sm);
 }
 
+/* The label plus its inline `?`. Without this the tip is a bare inline-flex button in a text run:
+   no gap, and baseline-aligned rather than centred on the label's cap height, so it reads as a
+   glyph that collided with the word. */
+.settingsLabelWithHelp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* The AI seat's deck picker, a sibling of the settings panel rather than a row inside it — the
    panel scrolls and so does the picker, and one control should not sit under two scroll contexts.
    Two visually identical pickers end up on screen (the AI's and your own), so the header is what
