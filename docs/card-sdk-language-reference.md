@@ -2543,6 +2543,16 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   "target" instance and stay **legal by default** (the same object may be chosen once per instance); when
   a later requirement must differ from an earlier one ("… and up to one **other** target …"), wrap it in
   `TargetOther` — `.other()`/`excludeSelf` on a filter only excludes the *source*, not another chosen target.
+  `TargetOther` is a pure wrapper: it delegates every count-shaping field (`count`, `minCount`,
+  `optional`, `unlimited`, `chooser`) to its base requirement, so `TargetOther(TargetCreature(unlimited = true, …))`
+  stays "any number of **other** target …".
+- **An unbounded (`unlimited`) requirement must be the *last* one.** Targets are matched to requirements
+  positionally (`TargetValidator`, `EffectContext.buildNamedTargets`), and an unbounded slot has no fixed
+  width, so every requirement declared after it loses its slice. When the printed order puts "any number
+  of target …" first, declare the fixed-count requirements first instead and reference them by bound name
+  / `ContextTarget(n)` — those indices then stay stable no matter how many targets the unbounded slot took
+  (Graceful Takedown declares its victim first and the "any number of target enchanted creatures you
+  control" slot last).
 - `sameController = false` — on `TargetObject` / `TargetCreature(...)`; when `true` and the requirement
   picks more than one target, every chosen target must share a controller ("**two target creatures
   controlled by the same player**"). Enforced cross-target by `TargetValidator` at cast time using
@@ -3100,6 +3110,8 @@ work for abilities-on-stack (which carry no `CardComponent`).
   Skitter's Blessing's `Conditions.YouControlAtLeast(1, …)` draw-step gate). Role tokens are Auras
   (CR 113.2c), which makes this the Wilds of Eldraine Roles payoff predicate. Resolves in both
   `PredicateEvaluator` (targets/conditions) and `AffectsFilterResolver` (layer-7c group projection).
+  Also available as a `TargetFilter` chainer — `TargetFilter.CreatureYouControl.enchanted()` for
+  "target enchanted creature you control" (Graceful Takedown).
 - `IsEnchantedByAura(auraController)` (filter builder `enchantedByAura(controller = ControlledByYou)`)
   — the aura-control-scoped `IsEnchanted`: has at least one attached Aura whose **controller** matches
   the given `ControllerPredicate`. "Enchanted by Auras you control" (Archon of the Wild Rose) is a
@@ -3436,6 +3448,7 @@ Named sugar for the common cases; reach for the factories for any other combinat
 - `takesDamage(source?, binding?)` — incoming-damage trigger. Pick `SourceFilter.{Any,Creature,Spell,Combat,NonCombat,HasColor(c),…}` and `TriggerBinding.{SELF,ATTACHED}`. Covers "damaged by a creature/spell" and "enchanted creature is dealt damage" (`binding = ATTACHED`, Aurification / Frozen Solid shape).
 - `becomesTapped(binding?, filter?)` — "becomes tapped" trigger. `BecomesTapped` is the SELF constant; pass `binding = TriggerBinding.ANY` with an optional `filter: GameObjectFilter` for "whenever a [filter] becomes tapped" (e.g. `GameObjectFilter.CreatureOrLand` — Temporal Distortion). The filter is matched against the tapped permanent via projected state. Fires once **per** tapped permanent.
 - `OneOrMoreBecomeTapped(filter)` — the **batch** sibling of `becomesTapped` (`TapEvent(batch = true)`, ANY binding). Fires at most **once** per simultaneous tap batch (CR 603.2c) regardless of how many matching permanents were tapped together — "Whenever one or more [filter] become tapped" (Deeproot Pilgrimage: `OneOrMoreBecomeTapped(GameObjectFilter.Creature.withSubtype("Merfolk").youControl().nontoken())`). Tapping several matching permanents at once (attacking, convoke, crew) makes a single payoff, not one per permanent. Handled by `TriggerDetector.detectTapBatchTriggers`; the per-event path skips batch taps. The first matching tapped permanent is bound as the triggering entity.
+- `YouTap(filter, batch = false)` — "Whenever **you tap** an untapped [filter]" (`TapEvent(tapper = Player.You)`, ANY binding) — the Wilds of Eldraine cluster: Hylda of the Icy Crown, Icewrought Sentry, Solitary Sanctuary with `GameObjectFilter.Creature.opponentControls()`, and Sharae of Numbing Depths with `batch = true` for the "one or more" wording. Two things separate it from `becomesTapped`: (1) **attribution** — the tap must have been *caused by* the trigger's controller. `TappedEvent.tappedById` carries the causing player: the `tap()` atom defaults it to the tapped permanent's own controller (right for every cost payment, mana ability, crew/saddle, and the turn-based attack tap), and the tap *effect* executors override it with the effect's `controllerId`. Because a per-player loop rebinds `controllerId`, a spell you control that instructs an **opponent** to tap their own creature is *their* tap and does not fire a `You` pattern (Tangle Wire; per the printed rulings). (2) **"untapped" is intrinsic** — tapping is a transition (CR 603.2f), so an already-tapped permanent emits no tap event and needs no condition. `batch = true` routes to `TriggerDetector.detectTapBatchTriggers`, which narrows the batch to the taps this controller caused before applying the filter; pair it with `oncePerTurn` for "This ability triggers only once each turn".
 - `OneOrMoreBecomeUntapped(filter)` — the **untap** analogue of `OneOrMoreBecomeTapped` (`UntapEvent(batch = true)`, ANY binding). Fires at most **once** per untap step (CR 603.2c) — "Whenever you untap one or more [filter] **during your untap step** …" — even though the untap step untaps all your permanents at once (The Millennium Calendar: `OneOrMoreBecomeUntapped(GameObjectFilter.Permanent.youControl())`). Handled by `TriggerDetector.detectUntapBatchTriggers`; the per-event `UntapEvent` path (`BecomesUntapped`) skips batch untaps. **Unlike the tap batch, it exposes the untapped permanents as the trigger's captured collection** (`IterationSpace.TRIGGER_CAPTURED_COLLECTION`), so a "put **that many** counters" payoff reads the count with `Effects.AddDynamicCounters(type, DynamicAmount.DistinctEntitiesInCollections(listOf(TRIGGER_CAPTURED_COLLECTION)), EffectTarget.Self)`. The **"during your untap step" scoping is intrinsic** — the detector fires it only for the active player's untap-step untaps (not instant-speed untaps, nor an opponent-turn Seedborn Muse untap of your permanents), so no `triggerCondition` is needed. (An untap-step untap advances straight to upkeep before any player gets priority, so an `IsInStep(UNTAP)` intervening-if would read false at detection time — hence the restriction lives in the detector.)
 
 ### Phase & turn

@@ -22,6 +22,7 @@ import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
+import com.wingedsheep.tooling.coverage.hasTag
 import com.wingedsheep.tooling.coverage.firstArgStringTagged
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.nodesTagged
@@ -2988,6 +2989,28 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         return "Triggers.YouAttackWithFilter($filter)"
     }
 
+    // "Whenever you tap an untapped [filter]" — WhenAPlayerTapsAPermanent(playerScope, permanentFilter),
+    // the tap-*attribution* trigger (Wilds of Eldraine's Hylda of the Icy Crown, Icewrought Sentry,
+    // Solitary Sanctuary, Sharae of Numbing Depths). Distinct from WhenAPermanentBecomesTapped in
+    // TRIGGER_SPEC above, which is the passive SELF "becomes tapped" observer. Maps to
+    // Triggers.YouTap(<filter>); only the You scope has a calibrated form, so any other scope declines
+    // -> SCAFFOLD.
+    //
+    // The IR's `IsUntapped` clause must be *dropped*, not round-tripped: the filter is evaluated when
+    // the trigger is detected, i.e. after the permanent has already become tapped, so a recovered
+    // `.untapped()` predicate would read false and the trigger would never fire. The engine gets the
+    // "untapped" half for free — tapping is a transition (CR 603.2f), so an already-tapped permanent
+    // emits no tap event at all. [withoutIsUntapped] strips exactly that clause and nothing else; if
+    // any `IsUntapped` survives (a shape it doesn't understand), decline rather than misrender.
+    if (jsonContains(trig, "_Trigger", "WhenAPlayerTapsAPermanent")) {
+        val argv = trig["args"].asArr ?: return null
+        if (castScope(argv.getOrNull(0) as? JsonObject) != CastScope.YOU) return null
+        val permanents = withoutIsUntapped(argv.getOrNull(1))
+        if (permanents.hasTag("IsUntapped")) return null
+        val filter = gameObjectFilterDsl(permanents) ?: return null
+        return "Triggers.YouTap($filter)"
+    }
+
     // "Whenever you attack" — WhenAPlayerAttacks scoped to a SinglePlayer(You). The batched trigger
     // fires once per combat when you declare one or more attackers. Maps to Triggers.YouAttack
     // (Living History). Only the You scope renders; any other player scope has no calibrated
@@ -3193,6 +3216,23 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
  *  search — a `_Player: You` buried in the spell filter (e.g. WasCastFromAPlayersGraveyard(You))
  *  must not be mistaken for the caster. */
 private enum class CastScope { YOU, ANY, OPPONENT }
+
+/**
+ * Drop the `IsUntapped` clause from an `And(...)` permanent filter, leaving every other clause alone.
+ *
+ * Only used by the "whenever you tap an untapped …" trigger, where the IR spells out a state the
+ * engine already guarantees structurally and recovering it would invert the filter's meaning (see the
+ * `WhenAPlayerTapsAPermanent` branch). Returns the node unchanged when there is nothing to strip, and
+ * collapses a one-clause remainder out of its `And` wrapper.
+ */
+private fun withoutIsUntapped(node: JsonElement?): JsonElement? {
+    val obj = node as? JsonObject ?: return node
+    if (obj.strField("_Permanents") != "And") return node
+    val args = obj["args"].asArr ?: return node
+    val kept = args.filterNot { (it as? JsonObject)?.strField("_Permanents") == "IsUntapped" }
+    if (kept.size == args.size) return node
+    return kept.singleOrNull() ?: JsonObject(obj.toMutableMap().apply { put("args", JsonArray(kept)) })
+}
 
 private fun castScope(players: JsonObject?): CastScope? = when (players?.strField("_Players")) {
     "AnyPlayer" -> CastScope.ANY

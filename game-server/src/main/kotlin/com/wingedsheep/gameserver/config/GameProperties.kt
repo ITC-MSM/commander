@@ -8,7 +8,17 @@ data class GameProperties(
     val sets: SetsProperties = SetsProperties(),
     val admin: AdminProperties = AdminProperties(),
     val ai: AiProperties = AiProperties(),
+    val easterEggs: EasterEggProperties = EasterEggProperties(),
     val debugMode: Boolean = false
+)
+
+/**
+ * Joke cards that [com.wingedsheep.gameserver.deck.EasterEggDeckInjector] sneaks into a deck based on
+ * the player's name. **Off by default** so production stays clean unless someone opts in — the deploy
+ * passes no `GAME_EASTER_EGGS_ENABLED`, so a redeploy can't silently switch them back on.
+ */
+data class EasterEggProperties(
+    val enabled: Boolean = false
 )
 
 data class HandSmootherProperties(

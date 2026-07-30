@@ -435,10 +435,10 @@ class TournamentMatchHandler(
             lobby.basicLands
         )
         val deck1WithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(
-            player1State.identity.playerName, baseDeck1
+            player1State.identity.playerName, baseDeck1, gameProperties.easterEggs.enabled
         )
         val deck2WithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(
-            player2State.identity.playerName, baseDeck2
+            player2State.identity.playerName, baseDeck2, gameProperties.easterEggs.enabled
         )
 
         // Commander-shape lobbies route through the engine's 1v1 Commander rules. Two sources:

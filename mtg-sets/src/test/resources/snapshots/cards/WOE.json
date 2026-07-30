@@ -5713,6 +5713,114 @@
     ]
 }
 
+// Graceful Takedown
+{
+    "name": "Graceful Takedown",
+    "manaCost": "{1}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Any number of target enchanted creatures you control and up to one other target creature you control each deal damage equal to their power to target creature you don't control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "gathered0",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "creature ctrl:you"
+                    },
+                    "storeMatching": "matching1"
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "matching1"
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "IterationEntity",
+                            "numericProperty": "Power"
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature you don't control"
+                        },
+                        "damageSource": "Self"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "target creature you don't control"
+            },
+            {
+                "type": "TargetOther",
+                "baseRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "id": "up to one other target creature you control"
+            },
+            {
+                "type": "TargetOther",
+                "baseRequirement": {
+                    "type": "TargetObject",
+                    "unlimited": true,
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                "IsEnchanted"
+                            ],
+                            "controllerPredicate": "ControlledByYou"
+                        }
+                    }
+                },
+                "id": "any number of target enchanted creatures you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "rarity": "UNCOMMON",
+        "artist": "Sidharth Chaturvedi",
+        "flavorText": "The fauns of the Tanglespan are adept at using the precarious environment against larger opponents.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/3/83edf626-ed34-417f-818d-597ecf439167.jpg?1783915083",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If one of the target creatures you control is an illegal target as Graceful Takedown resolves (perhaps because it's no longer enchanted or is no longer on the battlefield), the remaining legal target creatures you control will still deal damage equal to their power."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the last target creature is an illegal target as Graceful Takedown resolves, or if all of the target creatures you control are illegal targets, no creature deals or is dealt damage."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Grand Ball Guest
 {
     "name": "Grand Ball Guest",
@@ -6877,6 +6985,112 @@
     ]
 }
 
+// Hylda of the Icy Crown
+{
+    "name": "Hylda of the Icy Crown",
+    "manaCost": "{2}{W}{U}",
+    "typeLine": "Legendary Creature — Human Warlock",
+    "oracleText": "Whenever you tap an untapped creature an opponent controls, you may pay {1}. When you do, choose one —\n• Create a 4/4 white and blue Elemental creature token.\n• Put a +1/+1 counter on each creature you control.\n• Scry 2, then draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "TapEvent",
+                    "filter": "creature ctrl:opponent",
+                    "tapper": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "PayManaCost",
+                        "cost": "{1}"
+                    },
+                    "reflexiveEffect": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "CreateToken",
+                                    "power": 4,
+                                    "toughness": 4,
+                                    "colors": [
+                                        "WHITE",
+                                        "BLUE"
+                                    ],
+                                    "creatureTypes": [
+                                        "Elemental"
+                                    ]
+                                }
+                            },
+                            {
+                                "effect": {
+                                    "type": "ForEach",
+                                    "space": {
+                                        "type": "IterationSpace.Group",
+                                        "filter": {
+                                            "baseFilter": "creature ctrl:you"
+                                        }
+                                    },
+                                    "body": {
+                                        "type": "AddCounters",
+                                        "counterType": "+1/+1",
+                                        "count": 1,
+                                        "target": "Self"
+                                    }
+                                },
+                                "description": "Put a +1/+1 counter on each creature you control"
+                            },
+                            {
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "Scry",
+                                            "count": 2
+                                        },
+                                        {
+                                            "type": "DrawCards",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        }
+                                    ]
+                                },
+                                "description": "Scry 2, then draw a card"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "you may pay {1}. When you do, choose one — create a 4/4 white and blue Elemental creature token; put a +1/+1 counter on each creature you control; or scry 2, then draw a card"
+                },
+                "descriptionOverride": "Whenever you tap an untapped creature an opponent controls, you may pay {1}. When you do, choose one — create a 4/4 white and blue Elemental creature token; put a +1/+1 counter on each creature you control; or scry 2, then draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "206",
+        "rarity": "MYTHIC",
+        "artist": "Ekaterina Burmak",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae9231fd-053d-4b84-a7a8-86063465bc49.jpg?1783915071",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Hylda of the Icy Crown's ability will trigger only when an effect instructs you to tap an opponent's creature. It won't trigger if a spell or ability you control instructs an opponent to tap a creature they control. For example, if you control Tangle Wire and an opponent taps an untapped creature they control as part of the resolution of Tangle Wire's triggered ability, Hylda's ability won't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Hylda's Crown of Winter
 {
     "name": "Hylda's Crown of Winter",
@@ -7036,6 +7250,89 @@
             {
                 "date": "2023-09-01",
                 "text": "If you copy a bargained spell, the copy is also bargained."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Icewrought Sentry
+{
+    "name": "Icewrought Sentry",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Elemental Soldier",
+    "oracleText": "Vigilance\nWhenever this creature attacks, you may pay {1}{U}. When you do, tap target creature an opponent controls.\nWhenever you tap an untapped creature an opponent controls, this creature gets +2/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "PayManaCost",
+                        "cost": "{1}{U}"
+                    },
+                    "reflexiveEffect": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks, you may pay {1}{U}. When you do, tap target creature an opponent controls."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "TapEvent",
+                    "filter": "creature ctrl:opponent",
+                    "tapper": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you tap an untapped creature an opponent controls, this creature gets +2/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "rarity": "UNCOMMON",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/859419d3-cd15-4362-98b3-a7ff98e29692.jpg?1783915119",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Icewrought Sentry's last ability will trigger only when an effect instructs you to tap an opponent's creature. It won't trigger if a spell or ability you control instructs an opponent to tap a creature they control. For example, if you control Tangle Wire and an opponent taps an untapped creature they control as part of the resolution of Tangle Wire's triggered ability, Icewrought Sentry's ability won't trigger."
             }
         ]
     },
@@ -12098,6 +12395,97 @@
     ]
 }
 
+// Sharae of Numbing Depths
+{
+    "name": "Sharae of Numbing Depths",
+    "manaCost": "{2}{W}{U}",
+    "typeLine": "Legendary Creature — Merfolk Wizard",
+    "oracleText": "When Sharae enters, tap target creature an opponent controls and put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)\nWhenever you tap one or more untapped creatures your opponents control, draw a card. This ability triggers only once each turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "stun",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                },
+                "descriptionOverride": "When Sharae enters, tap target creature an opponent controls and put a stun counter on it."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "TapEvent",
+                    "filter": "creature ctrl:opponent",
+                    "batch": true,
+                    "tapper": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you tap one or more untapped creatures your opponents control, draw a card. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "213",
+        "rarity": "UNCOMMON",
+        "artist": "Evyn Fong",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/600bc36a-3ef0-459c-9a93-94ec45b8c3d9.jpg?1783915068",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You may target a creature that is already tapped with Sharae's first ability. If the target creature is already tapped as it resolves, you will still put a stun counter on it."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Sharae of Numbing Depths's last ability will trigger only when an effect instructs you to tap one or more creatures your opponents control. It won't trigger if a spell or ability you control instructs an opponent to tap a creature they control. For example, if you control Tangle Wire and an opponent taps an untapped creature they control as part of the resolution of Tangle Wire's triggered ability, Sharae's ability won't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Shatter the Oath
 {
     "name": "Shatter the Oath",
@@ -12564,6 +12952,99 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Solitary Sanctuary
+{
+    "name": "Solitary Sanctuary",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, tap target creature an opponent controls and put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)\nWhenever you tap an untapped creature an opponent controls, put a +1/+1 counter on target creature you control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "stun",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                },
+                "descriptionOverride": "When this enchantment enters, tap target creature an opponent controls and put a stun counter on it."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "TapEvent",
+                    "filter": "creature ctrl:opponent",
+                    "tapper": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "descriptionOverride": "Whenever you tap an untapped creature an opponent controls, put a +1/+1 counter on target creature you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "rarity": "UNCOMMON",
+        "artist": "Kasia 'Kafis' Zielińska",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d155693c-def0-4290-b662-ab9932e07fe5.jpg?1783915126",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You may target a creature that is already tapped with Solitary Sanctuary's first ability. If the target creature is already tapped as it resolves, you will still put a stun counter on it."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Solitary Sanctuary's last ability will trigger only when an effect instructs you to tap an opponent's creature. It won't trigger if a spell or ability you control instructs an opponent to tap a creature they control. For example, if you control Tangle Wire and an opponent taps an untapped creature they control as part of the resolution of Tangle Wire's triggered ability, Solitary Sanctuary's ability won't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

@@ -471,8 +471,15 @@ data class TargetOther(
     override val id: String? = null
 ) : TargetRequirement {
     override val description: String = baseRequirement.description
+    // Every count-shaping field is delegated, not just `count`: this wrapper only adds a
+    // distinctness rule, so dropping any of them silently reshapes how many targets the wrapped
+    // requirement accepts — an "any number of other target …" requirement would collapse to a
+    // single mandatory target (`unlimited` lost ⇒ count 1, minCount 1).
     override val count: Int = baseRequirement.count
+    override val minCount: Int = baseRequirement.minCount
     override val optional: Boolean = baseRequirement.optional
+    override val unlimited: Boolean = baseRequirement.unlimited
+    override val chooser: TargetChooser = baseRequirement.chooser
 
     override fun applyTextReplacement(replacer: TextReplacer): TargetRequirement {
         val newBase = baseRequirement.applyTextReplacement(replacer)

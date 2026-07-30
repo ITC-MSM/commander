@@ -944,12 +944,21 @@ data class PriorityChangedEvent(
 
 /**
  * A permanent was tapped.
+ *
+ * @property tappedById the player who tapped it — the controller of the spell, ability, or cost
+ *   payment that caused the permanent to become tapped. A permanent tapped as a turn-based action
+ *   (declaring it as an attacker) or to pay its own controller's cost is tapped by its controller,
+ *   which is why [com.wingedsheep.engine.core.tap] defaults this to the permanent's controller
+ *   rather than leaving it unattributed. Drives the "whenever **you tap** a creature an opponent
+ *   controls" trigger family ([com.wingedsheep.sdk.scripting.EventPattern.TapEvent.tapper]); null
+ *   only for a permanent with no controller at all.
  */
 @Serializable
 @SerialName("TappedEvent")
 data class TappedEvent(
     val entityId: EntityId,
-    val entityName: String
+    val entityName: String,
+    val tappedById: EntityId? = null
 ) : GameEvent
 
 /**

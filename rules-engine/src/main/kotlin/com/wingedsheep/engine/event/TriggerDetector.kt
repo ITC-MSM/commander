@@ -2148,8 +2148,8 @@ class TriggerDetector(
         triggers: MutableList<PendingTrigger>,
         index: TriggerIndex
     ) {
-        val tappedIds = events.filterIsInstance<TappedEvent>().map { it.entityId }
-        if (tappedIds.isEmpty()) return
+        val tapEvents = events.filterIsInstance<TappedEvent>()
+        if (tapEvents.isEmpty()) return
 
         for (entry in index.getEntitiesForCategory(TriggerCategory.TAPPED)) {
             for (ability in entry.abilities) {
@@ -2157,6 +2157,20 @@ class TriggerDetector(
                 if (trigger !is EventPattern.TapEvent || !trigger.batch) continue
                 // Batch tap triggers are "one or more … become tapped" observers (ANY binding).
                 if (ability.binding != TriggerBinding.ANY) continue
+
+                // "Whenever you tap one or more …" (Sharae of Numbing Depths) — only the taps this
+                // trigger's controller caused count toward the batch. A batch mixing tappers is
+                // therefore narrowed, not discarded, before the filter runs.
+                val tapper = trigger.tapper
+                val tappedIds = if (tapper == null) {
+                    tapEvents.map { it.entityId }
+                } else {
+                    tapEvents.filter { event ->
+                        event.tappedById != null &&
+                            matcher.matchesPlayer(tapper, event.tappedById, entry.controllerId)
+                    }.map { it.entityId }
+                }
+                if (tappedIds.isEmpty()) continue
 
                 val filter = trigger.filter
                 val matched = if (filter == null) {
