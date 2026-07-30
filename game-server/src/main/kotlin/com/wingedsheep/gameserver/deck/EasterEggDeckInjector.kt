@@ -14,8 +14,12 @@ object EasterEggDeckInjector {
     /**
      * If the player is named "Rick" (case-insensitive) and their deck contains
      * both Forest and Plains, inject Sekshaas, Early Sleeper into the deck.
+     *
+     * A no-op unless [enabled] (`game.easter-eggs.enabled`, off by default) — production runs without
+     * the eggs; local dev opts in via `GAME_EASTER_EGGS_ENABLED=true`.
      */
-    fun maybeInjectEasterEggs(playerName: String, deck: Map<String, Int>): Map<String, Int> {
+    fun maybeInjectEasterEggs(playerName: String, deck: Map<String, Int>, enabled: Boolean): Map<String, Int> {
+        if (!enabled) return deck
         if (!playerName.equals("Rick", ignoreCase = true)) return deck
         if (!deck.containsCard("Forest") || !deck.containsCard("Plains")) return deck
 

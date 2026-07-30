@@ -574,6 +574,7 @@ class QuickGameLobbyHandler(
                 EasterEggDeckInjector.maybeInjectEasterEggs(
                     lobbyPlayer.playerName,
                     resolveDeck(lobbyPlayer, randomFallbackSet, lobby.format),
+                    gameProperties.easterEggs.enabled,
                 )
             }
             val playerSession = sessionRegistry

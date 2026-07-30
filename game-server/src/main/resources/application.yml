@@ -103,6 +103,11 @@ game:
     # flattens an empty collection to an empty-string property that fails to
     # bind to the Map/Set target. Override them in a profile (see
     # application-local.yml) when you actually need entries.
+  easter-eggs:
+    # Name-based joke cards slipped into a player's deck (EasterEggDeckInjector). Off by default so
+    # production stays clean — the deploy passes no GAME_EASTER_EGGS_ENABLED, so a redeploy can't
+    # switch them back on. Local dev opts in via .env.
+    enabled: ${GAME_EASTER_EGGS_ENABLED:false}
   admin:
     # Password for admin replay feature. Feature is disabled if not set.
     password: ${GAME_ADMIN_PASSWORD:}
