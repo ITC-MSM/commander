@@ -1403,6 +1403,30 @@ object Triggers {
         TriggerSpec(event = TapEvent(filter = filter, batch = true), binding = TriggerBinding.ANY)
 
     /**
+     * Whenever **you tap** an untapped permanent matching [filter] — the active wording of the
+     * Wilds of Eldraine "tap an opponent's creature" cluster (Hylda of the Icy Crown, Icewrought
+     * Sentry, Solitary Sanctuary), typically with
+     * `GameObjectFilter.Creature.opponentControls()`.
+     *
+     * Different from [becomesTapped] on two axes:
+     * - **Attribution.** Only a tap *you* caused fires it (CR has no "you tap" rule; the printed
+     *   rulings define it as "an effect instructs you to tap"). An opponent tapping their own
+     *   creature — including as the resolution of a spell *you* control that instructs *them* to
+     *   tap, e.g. Tangle Wire — is their tap, not yours, and does not fire.
+     * - **"Untapped".** Intrinsic, not a condition: tapping is a transition (CR 603.2f), so a
+     *   permanent that is already tapped never emits a tap event.
+     *
+     * Per-permanent (ANY binding): tapping two of an opponent's creatures at once fires it twice.
+     * For the "whenever you tap **one or more** …" batch wording (Sharae of Numbing Depths) pass
+     * `batch = true`, which fires it once per simultaneous tap batch instead.
+     */
+    fun YouTap(filter: GameObjectFilter, batch: Boolean = false): TriggerSpec =
+        TriggerSpec(
+            event = TapEvent(filter = filter, batch = batch, tapper = Player.You),
+            binding = TriggerBinding.ANY
+        )
+
+    /**
      * Whenever you untap one or more permanents matching [filter] **during your untap step** — a
      * **batching** trigger (CR 603.2c) that fires at most once per untap step, not once per untapped
      * permanent. Use for "Whenever you untap one or more permanents during your untap step …"
