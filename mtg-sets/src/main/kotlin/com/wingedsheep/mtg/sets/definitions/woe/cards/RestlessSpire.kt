@@ -12,7 +12,6 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.TimingRule
-import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -35,13 +34,14 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *
  * Unlike the rest of the cycle, the animated body arrives with a *quoted* ability rather than a
  * plain keyword, so the animate ability is a composite: [Effects.BecomeCreature] for the 2/1
- * Izzet Elemental body, plus a conditional first-strike grant for the quoted line. Within the
- * animation's own `Duration.EndOfTurn` window, "during your turn" cannot change answer — the
- * turn it's evaluated on is the turn the grant expires on — so the continuous conditional
- * collapses to a one-shot [Conditions.IsYourTurn] test at resolution: animate on your turn and
- * the body has first strike for that turn; animate on an opponent's turn (to ambush a blocker)
- * and it never does. The only divergence from the printed card is if an opponent gains control
- * of the land after it's been animated on your turn, which would flip "your turn" to false.
+ * Izzet Elemental body, plus a first-strike grant carrying [Conditions.IsYourTurn] as its
+ * `condition`. That condition is not a gate on whether the grant happens — the grant always
+ * happens and lasts until end of turn — it rides along on the resulting continuous effect and is
+ * re-asked on every projection, exactly like the condition of a printed conditional static
+ * ability. So the clause behaves as printed in all three directions: dark on an opponent's turn
+ * (animating at instant speed to ambush a blocker gets no first strike), dark if another player
+ * gains control of the land after you animated it on your turn (that player's "your turn" is
+ * false), and live again if control comes back.
  */
 val RestlessSpire = card("Restless Spire") {
     typeLine = "Land"
@@ -83,13 +83,11 @@ val RestlessSpire = card("Restless Spire") {
                 colors = setOf(Color.BLUE.name, Color.RED.name),
                 duration = Duration.EndOfTurn,
             ),
-            ConditionalEffect(
+            Effects.GrantKeyword(
+                keyword = Keyword.FIRST_STRIKE,
+                target = EffectTarget.Self,
+                duration = Duration.EndOfTurn,
                 condition = Conditions.IsYourTurn,
-                effect = Effects.GrantKeyword(
-                    keyword = Keyword.FIRST_STRIKE,
-                    target = EffectTarget.Self,
-                    duration = Duration.EndOfTurn,
-                ),
             ),
         )
     }

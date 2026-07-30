@@ -10917,16 +10917,10 @@
                             ]
                         },
                         {
-                            "type": "Gated",
-                            "gate": {
-                                "type": "Gate.WhenCondition",
-                                "condition": "IsYourTurn"
-                            },
-                            "then": {
-                                "type": "GrantKeyword",
-                                "keyword": "FIRST_STRIKE",
-                                "target": "Self"
-                            }
+                            "type": "GrantKeyword",
+                            "keyword": "FIRST_STRIKE",
+                            "target": "Self",
+                            "condition": "IsYourTurn"
                         }
                     ]
                 },

@@ -1483,9 +1483,10 @@ object Effects {
     fun GrantKeyword(
         keyword: Keyword,
         target: EffectTarget = EffectTarget.ContextTarget(0),
-        duration: Duration = Duration.EndOfTurn
+        duration: Duration = Duration.EndOfTurn,
+        condition: com.wingedsheep.sdk.scripting.conditions.Condition? = null
     ): Effect =
-        GrantKeywordEffect(keyword.name, target, duration)
+        GrantKeywordEffect(keyword.name, target, duration, condition)
 
     /**
      * Grant an ability flag to a target.
