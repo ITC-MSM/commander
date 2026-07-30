@@ -5717,11 +5717,12 @@ composite abilities).
     whether the card's own mana cost could ever actually be paid, per CR 702.62c). **Ancestral Vision** (Time
     Spiral) is the canonical user — a Sorcery with **no printed mana cost**, playable only through Suspend.
   - **`CardDefinition.hasNoManaCost`** (set by the `card { }` DSL exactly when its `manaCost` string is blank, for
-    non-land cards) is CR 202.3b's "no mana cost — can't be cast normally, only through an alternative cost or a
-    free-cast effect" gate, read by `CastSpellEnumerator` (never offers a normal `CastSpell` legal action) and
-    `CastSpellHandler` (rejects one anyway, defense in depth). It is **not** derived from `manaCost == ManaCost.ZERO`
-    — a printed `{0}` parses to a non-empty one-symbol cost and stays normally castable, and plenty of engine test
-    fixtures construct `ManaCost.ZERO` directly as shorthand for "free," which must not trip this gate.
+    non-land cards) is CR 202.1b/118.6's "no mana cost is an unpayable cost — can't be cast normally, only through
+    an alternative cost or a free-cast effect" gate, read by `CastSpellEnumerator` (never offers a normal `CastSpell`
+    legal action) and `CastSpellHandler` (rejects one anyway, defense in depth). It is **not** derived from
+    `manaCost == ManaCost.ZERO` — a printed `{0}` parses to a non-empty one-symbol cost and stays normally castable,
+    and plenty of engine test fixtures construct `ManaCost.ZERO` directly as shorthand for "free," which must not
+    trip this gate.
 - `Paradigm` (Secrets of Strixhaven) — `spell { effect = …; paradigm() }` on a Lesson spell. An **exile-zone
   recurrence** mechanic, modelled exactly like Suspend (a marker the engine reads off an exiled card), differing
   only in that it casts a **copy** rather than the card itself, so the original recurs forever. Oracle: "[effect]

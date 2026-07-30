@@ -23,7 +23,7 @@ import io.kotest.matchers.shouldBe
  * (CR 702.62a / CR 116.2f) — `SuspendCardFromHandHandler` / `SuspendEnumerator`. The exile-side
  * countdown and eventual free cast are the pre-existing, separately-tested
  * `Suspend.countdownAbility` machinery ([SuspendMechanicTest]); this file only needs to prove
- * the special action correctly hands off into that machinery, plus the CR 202.3b fix that a
+ * the special action correctly hands off into that machinery, plus the CR 202.1b/118.6 fix that a
  * card with no mana cost can never be hard-cast.
  */
 class AncestralVisionScenarioTest : FunSpec({
@@ -101,7 +101,7 @@ class AncestralVisionScenarioTest : FunSpec({
         driver.getHand(me).contains(card) shouldBe true
     }
 
-    test("Ancestral Vision has no mana cost and can never be cast normally (CR 202.3b)") {
+    test("Ancestral Vision has no mana cost and can never be cast normally (CR 202.1b/118.6)") {
         val driver = createDriver()
         val me = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
@@ -138,7 +138,7 @@ class AncestralVisionScenarioTest : FunSpec({
         val handSizeBefore = driver.getHand(me).size
 
         // Fourth owner upkeep: the last time counter is removed and the "may cast it for free"
-        // trigger fires (CR 702.62f).
+        // trigger fires (CR 702.62a).
         resolveNextOwnerUpkeep(driver, me)
         driver.submitYesNo(me, true)
         // "Target player draws three cards" — the free cast still needs its target chosen.
@@ -167,7 +167,7 @@ class AncestralVisionScenarioTest : FunSpec({
         }
         timeCounters(driver, card) shouldBe 0
 
-        // CR 702.62f: "you may play it" — declining is legal, and it remains exiled forever.
+        // CR 702.62a: "you may play it" — declining is legal, and it remains exiled forever.
         driver.submitYesNo(me, false)
         driver.bothPass()
 

@@ -41,13 +41,13 @@ import kotlin.reflect.KClass
  *
  * Suspend is a special action: it does not use the stack and cannot be responded to once
  * announced. Unlike Flashback/Warp/Mayhem/Plot/Foretell (all alternative costs or setup fees
- * for a *cast*), the card is never put on the stack at all — CR 702.62a's reminder text is
- * explicit: "Rather than cast this card from your hand, you may pay [cost] and exile it with
- * N time counters on it. This action doesn't use the stack." The legality gate is still
- * cast-shaped though (CR 702.62c): the player must be able to *begin* to cast the card by
- * putting it on the stack right now — same timing window as a normal cast (instant speed for
- * an instant or a card with flash, sorcery speed otherwise) — even for a card like Ancestral
- * Vision that has no mana cost and so can never actually be cast.
+ * for a *cast*), the card is never put on the stack at all — CR 702.62a is explicit: "Suspend
+ * N—[cost]" means "If you could begin to cast this card by putting it onto the stack from your
+ * hand, you may pay [cost] and exile it with N time counters on it. This action doesn't use the
+ * stack." The legality gate is still cast-shaped though (CR 702.62c): the player must be able to
+ * *begin* to cast the card by putting it on the stack right now — same timing window as a normal
+ * cast (instant speed for an instant or a card with flash, sorcery speed otherwise) — even for a
+ * card like Ancestral Vision that has no mana cost and so can never actually be cast.
  *
  * The handler pays the card's printed suspend cost, moves it from hand to the owner's exile,
  * puts N time counters on it, and stamps [SuspendedComponent] + a dormant haste floating

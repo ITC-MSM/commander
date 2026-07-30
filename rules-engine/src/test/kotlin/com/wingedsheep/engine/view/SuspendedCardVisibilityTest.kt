@@ -83,7 +83,7 @@ class SuspendedCardVisibilityTest : FunSpec({
         d.submitSuccess(SuspendCardFromHand(player, card))
 
         repeat(4) { resolveNextOwnerUpkeep(d, player) }
-        d.submitYesNo(player, false) // decline the CR 702.62f free cast
+        d.submitYesNo(player, false) // decline the CR 702.62a free cast
         d.bothPass()
 
         d.getExile(player).contains(card) shouldBe true

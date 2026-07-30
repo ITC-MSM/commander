@@ -15,10 +15,10 @@ import com.wingedsheep.sdk.scripting.targets.TargetPlayer
  * is removed, you may cast it without paying its mana cost.)
  * Target player draws three cards.
  *
- * Printed with no mana cost — CR 202.3b: it can't be cast normally, only suspended (or cast by
- * some other alternative-cost/free-cast effect). Blue is a printed color indicator (CR 204),
- * not derived from a mana cost that doesn't exist, so `colorIndicator` carries it explicitly
- * alongside `colorIdentity` (Scryfall ruling, 2013-06-07).
+ * Printed with no mana cost — CR 202.1b/118.6: it represents an unpayable cost and can't be cast
+ * normally, only suspended (or cast by some other alternative-cost/free-cast effect). Blue is a
+ * printed color indicator (CR 204), not derived from a mana cost that doesn't exist, so
+ * `colorIndicator` carries it explicitly alongside `colorIdentity` (Scryfall ruling, 2013-06-07).
  *
  * Suspend itself is the new mechanic here (CR 702.62 / CR 116.2f special action): see
  * [KeywordAbility.Suspend] plus the engine's `SuspendCardFromHandHandler` / `SuspendEnumerator`,

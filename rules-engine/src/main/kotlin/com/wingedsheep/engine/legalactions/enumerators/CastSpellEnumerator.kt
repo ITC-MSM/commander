@@ -168,14 +168,15 @@ class CastSpellEnumerator : ActionEnumerator {
                 continue
             }
 
-            // CR 202.3b: a card printed with genuinely no mana cost (Ancestral Vision, suspend-
-            // only cards) can't be cast normally — only through an alternative cost or a "play
-            // without paying its mana cost" effect (Suspend, a may-play grant, etc.), all of
-            // which are enumerated elsewhere (CastFromZoneEnumerator, SuspendEnumerator). Gated
-            // on the DSL-authored `hasNoManaCost` flag, not on `manaCost` itself: a printed {0}
-            // parses to a non-empty one-symbol cost and stays normally castable, but plenty of
-            // test-fixture cards construct `ManaCost.ZERO` directly as shorthand for "free" —
-            // `hasNoManaCost` only reflects a genuinely blank cost string in the real card DSL.
+            // CR 202.1b/118.6: a card printed with genuinely no mana cost (Ancestral Vision,
+            // suspend-only cards) represents an unpayable cost and can't be cast normally — only
+            // through an alternative cost or a "play without paying its mana cost" effect
+            // (Suspend, a may-play grant, etc.), all of which are enumerated elsewhere
+            // (CastFromZoneEnumerator, SuspendEnumerator). Gated on the DSL-authored
+            // `hasNoManaCost` flag, not on `manaCost` itself: a printed {0} parses to a non-empty
+            // one-symbol cost and stays normally castable, but plenty of test-fixture cards
+            // construct `ManaCost.ZERO` directly as shorthand for "free" — `hasNoManaCost` only
+            // reflects a genuinely blank cost string in the real card DSL.
             if (cardDef.hasNoManaCost) continue
 
             // Check timing - sorcery-speed spells need main phase, empty stack, your turn
