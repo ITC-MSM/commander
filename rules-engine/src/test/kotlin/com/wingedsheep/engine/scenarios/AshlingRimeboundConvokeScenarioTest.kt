@@ -61,7 +61,7 @@ class AshlingRimeboundConvokeScenarioTest : FunSpec({
         val pool = driver.state.getEntity(player)!!.get<ManaPoolComponent>()!!
         pool.restrictedMana.size shouldBe 2
         pool.restrictedMana.all { it.color == Color.RED } shouldBe true
-        pool.restrictedMana.all { it.restriction == ManaRestriction.SpellsMV4OrGreater } shouldBe true
+        pool.restrictedMana.all { it.restriction == ManaRestriction.SpellsWithManaValueAtLeast(4) } shouldBe true
     }
 
     test("Collective Inferno is castable with convoke + Ashling's restricted mana + a Druid") {

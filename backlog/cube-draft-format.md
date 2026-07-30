@@ -322,7 +322,7 @@ oracle errata, set registration, and the scenario test). Set codes are the *cano
 printing, per the reprint rule (`just check-card-printing "<Card>"`).
 
 **WOE — Wilds of Eldraine (12)**
-- [ ] Restless Bivouac · Restless Cottage · Restless Fortress · Restless Spire · Restless Vinestalk
+- [x] Restless Bivouac · Restless Cottage · Restless Fortress · Restless Spire · Restless Vinestalk
       *(land cycle — five of the same shape, do them as one batch)*
 - [ ] Torch the Tower *(common instant)* · Royal Treatment *(uncommon instant)*
 - [ ] Syr Ginger, the Meal Ender *(legendary artifact creature)*

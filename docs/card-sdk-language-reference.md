@@ -7019,8 +7019,15 @@ restriction matches the spell context.
   set survives in the pool without limiting where the mana can be spent (Path of Ancestry).
 - `ManaRestriction.InstantOrSorceryOnly` — only instants and sorceries.
 - `ManaRestriction.KickedSpellsOnly` — only kicked spells.
-- `ManaRestriction.CreatureSpellsOnly` / `CreatureMV4OrXCost` / `SpellsMV4OrGreater` —
-  creature- or mana-value-gated.
+- `ManaRestriction.CreatureSpellsOnly` — only creature spells.
+- `ManaRestriction.SpellsWithManaValueAtLeast(minManaValue, orXInCost?, creatureOnly?)` — the
+  mana-value gate, parameterized over threshold and the two printed qualifiers.
+  `orXInCost = true` adds "or spells with {X} in their mana costs" (such a spell qualifies whatever
+  its mana value, and the mana may pay any part of its cost); `creatureOnly = true` narrows both
+  clauses to creature spells. Ability activations never satisfy it.
+  `SpellsWithManaValueAtLeast(4)` — Ashling, Rimebound;
+  `SpellsWithManaValueAtLeast(4, orXInCost = true, creatureOnly = true)` — Helga, Skittish Seer;
+  `SpellsWithManaValueAtLeast(5, orXInCost = true)` — Troyan, Gutsy Explorer.
 - `ManaRestriction.LegendarySpellsOnly` — only legendary spells (matches `SpellPaymentContext.isLegendary`,
   populated from the cast card's `typeLine.isLegendary`). Great Hall of the Citadel
   (`AddManaInAnyCombination(2, restriction = LegendarySpellsOnly)`); Delighted Halfling pairs it with

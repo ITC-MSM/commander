@@ -677,7 +677,10 @@
                                     "type": "Fixed",
                                     "amount": 2
                                 },
-                                "restriction": "SpellsMV4OrGreater"
+                                "restriction": {
+                                    "type": "SpellsWithManaValueAtLeast",
+                                    "minManaValue": 4
+                                }
                             }
                         ]
                     }
@@ -703,7 +706,10 @@
                                     "type": "Fixed",
                                     "amount": 2
                                 },
-                                "restriction": "SpellsMV4OrGreater"
+                                "restriction": {
+                                    "type": "SpellsWithManaValueAtLeast",
+                                    "minManaValue": 4
+                                }
                             }
                         ]
                     }

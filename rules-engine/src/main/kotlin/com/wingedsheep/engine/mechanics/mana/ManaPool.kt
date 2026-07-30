@@ -68,9 +68,10 @@ fun ManaRestriction.isSatisfiedBy(context: SpellPaymentContext): Boolean = when 
     is ManaRestriction.AnySpend -> true
     is ManaRestriction.InstantOrSorceryOnly -> !context.isAbilityActivation && context.isInstantOrSorcery
     is ManaRestriction.KickedSpellsOnly -> !context.isAbilityActivation && context.isKicked
-    is ManaRestriction.CreatureMV4OrXCost ->
-        !context.isAbilityActivation && context.isCreature && (context.manaValue >= 4 || context.hasXInCost)
-    is ManaRestriction.SpellsMV4OrGreater -> !context.isAbilityActivation && context.manaValue >= 4
+    is ManaRestriction.SpellsWithManaValueAtLeast ->
+        !context.isAbilityActivation &&
+            (!creatureOnly || context.isCreature) &&
+            (context.manaValue >= minManaValue || (orXInCost && context.hasXInCost))
     is ManaRestriction.CreatureSpellsOnly -> !context.isAbilityActivation && context.isCreature
     is ManaRestriction.LegendarySpellsOnly -> !context.isAbilityActivation && context.isLegendary
     is ManaRestriction.SubtypeSpellsOrAbilitiesOnly ->
