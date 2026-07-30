@@ -8278,7 +8278,12 @@
                         "entity": "Source",
                         "numericProperty": "Power"
                     },
-                    "restriction": "CreatureMV4OrXCost"
+                    "restriction": {
+                        "type": "SpellsWithManaValueAtLeast",
+                        "minManaValue": 4,
+                        "orXInCost": true,
+                        "creatureOnly": true
+                    }
                 },
                 "timing": "ManaAbility",
                 "isManaAbility": true

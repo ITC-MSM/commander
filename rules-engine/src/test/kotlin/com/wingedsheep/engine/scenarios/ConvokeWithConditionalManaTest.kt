@@ -96,7 +96,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
         val player = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         val (c1, c2) = twoRedCreatures(driver, player)
-        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val spellId = driver.putCardInHand(player, "Convoke Behemoth")
         val result = driver.submit(
@@ -122,7 +122,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
         val player = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         val (c1, c2) = twoRedCreatures(driver, player)
-        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val spellId = driver.putCardInHand(player, "Convoke Behemoth")
         val result = driver.submit(
@@ -149,7 +149,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
         val player = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         val creatures = (1..4).map { driver.putCreatureOnBattlefield(player, "Red Soldier") }
-        driver.giveRestrictedMana(player, Color.RED, 1, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 1, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val spellId = driver.putCardInHand(player, "Convoke Behemoth")
         val result = driver.submit(
@@ -179,7 +179,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
         val player = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         twoRedCreatures(driver, player)
-        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val spellId = driver.putCardInHand(player, "Convoke Behemoth")
         castActionFor(driver, player, spellId) shouldBe true
@@ -191,7 +191,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         // One creature for a single {R} pip; the rest of {1}{R} would need the restricted mana.
         driver.putCreatureOnBattlefield(player, "Red Soldier")
-        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val spellId = driver.putCardInHand(player, "Convoke Sprite")
         castActionFor(driver, player, spellId) shouldBe false
@@ -202,7 +202,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
         val player = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         val (c1, c2) = twoRedCreatures(driver, player)
-        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val spellId = driver.putCardInHand(player, "Convoke Sprite")
         val result = driver.submit(
@@ -235,7 +235,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
         val (c1, c2) = twoRedCreatures(driver, player)
         val bird = driver.putCreatureOnBattlefield(player, "Birds of Paradise")
         driver.removeSummoningSickness(bird)
-        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val spellId = driver.putCardInHand(player, "Convoke Colossus")
         castActionFor(driver, player, spellId) shouldBe true
@@ -263,7 +263,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
         val player = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         val whiteCreatures = (1..3).map { driver.putCreatureOnBattlefield(player, "Savannah Lions") }
-        driver.giveRestrictedMana(player, Color.RED, 2, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 2, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val spellId = driver.putCardInHand(player, "Convoke Behemoth")
         castActionFor(driver, player, spellId) shouldBe true
@@ -324,7 +324,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         val bird = driver.putCreatureOnBattlefield(player, "Birds of Paradise")
         driver.removeSummoningSickness(bird)
-        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val spellId = driver.putCardInHand(player, "Convoke Behemoth")
         castActionFor(driver, player, spellId) shouldBe false

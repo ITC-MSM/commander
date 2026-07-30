@@ -17,12 +17,12 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 /**
- * Tests for the [ManaRestriction.SpellsMV4OrGreater] mana spending restriction.
+ * Tests for the [ManaRestriction.SpellsWithManaValueAtLeast] mana spending restriction.
  *
  * Used by Ashling, Rimebound: "Add two mana of any one color. Spend this mana only to cast
  * spells with mana value 4 or greater."
  */
-class SpellsMV4OrGreaterRestrictionTest : FunSpec({
+class SpellsWithManaValueAtLeastRestrictionTest : FunSpec({
 
     val cheapInstant = card("Cheap Instant") {
         manaCost = "{2}{R}"
@@ -47,7 +47,7 @@ class SpellsMV4OrGreaterRestrictionTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         // Pool: 3 unrestricted red mana, all from restricted source.
-        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 3, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val cardId = driver.putCardInHand(player, "Cheap Instant")
         val result = driver.submit(
@@ -73,7 +73,7 @@ class SpellsMV4OrGreaterRestrictionTest : FunSpec({
 
         val mountain = driver.putPermanentOnBattlefield(player, "Mountain")
 
-        driver.giveRestrictedMana(player, Color.RED, 2, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 2, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val before = driver.state.getEntity(player)?.get<ManaPoolComponent>()!!
         before.red shouldBe 0
@@ -96,7 +96,7 @@ class SpellsMV4OrGreaterRestrictionTest : FunSpec({
         val player = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
-        driver.giveRestrictedMana(player, Color.RED, 4, ManaRestriction.SpellsMV4OrGreater)
+        driver.giveRestrictedMana(player, Color.RED, 4, ManaRestriction.SpellsWithManaValueAtLeast(4))
 
         val cardId = driver.putCardInHand(player, "Expensive Sorcery")
         val result = driver.submit(
