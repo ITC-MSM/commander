@@ -1500,9 +1500,10 @@ object Effects {
     fun GrantKeyword(
         keyword: Keyword,
         target: EffectTarget = EffectTarget.ContextTarget(0),
-        duration: Duration = Duration.EndOfTurn
+        duration: Duration = Duration.EndOfTurn,
+        condition: com.wingedsheep.sdk.scripting.conditions.Condition? = null
     ): Effect =
-        GrantKeywordEffect(keyword.name, target, duration)
+        GrantKeywordEffect(keyword.name, target, duration, condition)
 
     /**
      * Grant an ability flag to a target.
@@ -1615,8 +1616,8 @@ object Effects {
 
     /**
      * Put a player-chosen number (0 up to [max]) of a single kind of counter on a target.
-     * "Put up to N [counterType] counters on target" — the additive mirror of
-     * [Effects.RemoveCountersUpTo] / [RemoveAnyNumberOfCountersEffect].
+     * "Put up to N [counterType] counters on target" — the single-kind mirror of
+     * [Effects.RemoveAnyNumberOfCounters] / [RemoveAnyNumberOfCountersEffect].
      */
     fun AddCountersUpTo(counterType: String, max: Int, target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
         AddCountersUpToEffect(counterType, DynamicAmount.Fixed(max), target)
@@ -1710,6 +1711,40 @@ object Effects {
      */
     fun RemoveCountersUpTo(maxCount: Int, target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
         com.wingedsheep.sdk.scripting.effects.RemoveAnyNumberOfCountersEffect(target, maxTotal = maxCount)
+
+    /**
+     * "[player] gets N [counterType] counters" (CR 122.1 — counters placed on a player rather
+     * than a permanent). Sugar for [AddCounters] targeting the player directly; no new plumbing —
+     * `AddCountersExecutor` already resolves player-shaped targets the same way it does for
+     * "that player gets two poison counters" (Virulent Silencer).
+     *
+     * "You get {E}{E}{E}" (three energy counters) is `GetEnergy(3)`.
+     */
+    fun GetEnergy(amount: Int, target: EffectTarget = EffectTarget.Controller): Effect =
+        AddCountersEffect(Counters.ENERGY, amount, target)
+
+    /**
+     * [player] pays any amount of [counterType] counters they currently have (CR 107.14's "pay
+     * {E}" generalized to a player-chosen amount and to any player-scoped counter kind), storing
+     * the paid amount in the pipeline under [storeAmountAs] for a later composed effect to read
+     * via `DynamicAmount.VariableReference(storeAmountAs)`.
+     *
+     * "you may pay any amount of {E}. [~] deals that much damage to that permanent." (Galvanic
+     * Discharge) composes as
+     * `Composite(PayCounters(Counters.ENERGY, storeAmountAs = "paid"), DealDamage(VariableReference("paid"), target))`.
+     */
+    fun PayCounters(counterType: String, player: Player = Player.You, storeAmountAs: String): Effect =
+        com.wingedsheep.sdk.scripting.effects.PayCountersEffect(counterType, player, storeAmountAs)
+
+    /**
+     * [player] pays an exact [amount] of [counterType] counters — the all-or-nothing counterpart
+     * to [PayCounters]'s "pay any amount". Use as the `action` half of a [ReflexiveTrigger] for
+     * "you may pay {E}{E}{E}. When you do, [...]" (Guide of Souls): the reflexive's own "may" gate
+     * is the payment decision, and per the 2024-06-07 ruling on {E} you can't pay a partial amount
+     * for a partial effect, so this fails outright rather than clamping when unaffordable.
+     */
+    fun PayFixedCounters(counterType: String, amount: Int, player: Player = Player.You): Effect =
+        com.wingedsheep.sdk.scripting.effects.PayFixedCountersEffect(counterType, amount, player)
 
     /**
      * Move one counter of each kind on [source] that [destination] does not already have,
@@ -2394,6 +2429,14 @@ object Effects {
         CreatePredefinedTokenEffect("Food", count, controller)
 
     /**
+     * Create a dynamic number of Food tokens — the count is evaluated at resolution time.
+     * Twin of [CreateBlood]'s dynamic overload, for cards whose Food count depends on game state
+     * or on a cast-time choice (The Goose Mother: "create half X Food tokens, rounded up").
+     */
+    fun CreateFood(count: DynamicAmount, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Food", controller = controller, dynamicCount = count)
+
+    /**
      * Create Blood artifact tokens.
      * "{1}, {T}, Discard a card, Sacrifice this artifact: Draw a card."
      *
@@ -2478,7 +2521,7 @@ object Effects {
         CreateRoleTokenEffect(roleName, target)
 
     /**
-     * Incubate N (CR 701.53). Create an Incubator token with N +1/+1 counters on it
+     * Incubate N (CR 701.51). Create an Incubator token with N +1/+1 counters on it
      * and "{2}: Transform this token." It transforms into a 0/0 Phyrexian artifact creature.
      *
      * Implemented purely as composition: the predefined token executor publishes the
@@ -2488,7 +2531,7 @@ object Effects {
     fun Incubate(n: Int): Effect = MechanicPatterns.incubate(n)
 
     /**
-     * Incubate X (CR 701.53), where the +1/+1 counter count is a [DynamicAmount]
+     * Incubate X (CR 701.51), where the +1/+1 counter count is a [DynamicAmount]
      * resolved at resolution time (e.g., the triggering spell's mana value).
      */
     fun Incubate(amount: com.wingedsheep.sdk.scripting.values.DynamicAmount): Effect =
@@ -3815,6 +3858,36 @@ object Effects {
     ): Effect =
         PreventDamageEffect(
             recipientGroup = group,
+            scope = scope,
+            duration = duration
+        )
+
+    /**
+     * Prevent all damage that would be dealt to **you and** every permanent matching [group] for
+     * [duration], optionally only from sources matching [fromSources] — "prevent all damage that
+     * would be dealt to you and creatures you control this turn by creatures" (Eerie Interference).
+     *
+     * The player-inclusive sibling of [PreventAllDamageToGroup]: a player is not a permanent, so
+     * "you" can't come from the [GroupFilter] and rides along as
+     * [PreventDamageEffect.recipientGroupIncludesController] instead. Both the recipient group and
+     * [fromSources] are re-evaluated against projected state at the moment damage would be dealt,
+     * with the shield's controller as the "you" reference — so a creature that changes controller
+     * or stops being a creature mid-turn is judged as it is when the damage happens.
+     *
+     * @param fromSources Restrict the shield to damage from sources matching this filter
+     *   (`GroupFilter(GameObjectFilter.Creature)` for "by creatures"); null protects from every source.
+     */
+    fun PreventAllDamageToYouAndGroup(
+        group: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter,
+        fromSources: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter? = null,
+        scope: PreventionScope = PreventionScope.AllDamage,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect =
+        PreventDamageEffect(
+            recipientGroup = group,
+            recipientGroupIncludesController = true,
+            sourceFilter = fromSources?.let { PreventionSourceFilter.FromGroup(it) }
+                ?: PreventionSourceFilter.AnySource,
             scope = scope,
             duration = duration
         )

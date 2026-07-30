@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.RedirectScope
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -81,7 +82,29 @@ data class FloatingEffectData(
      * rule-modifying effects like "creatures can't block this turn" (Rule 611.2c)
      * which apply to all matching objects, including those entering later.
      */
-    val dynamicGroupFilter: GroupFilter? = null
+    val dynamicGroupFilter: GroupFilter? = null,
+
+    /**
+     * Optional condition gating whether this effect is *live* on a given projection — the floating
+     * sibling of [ContinuousEffectData.sourceCondition], and it flows into the same
+     * `ContinuousEffect.sourceCondition` so `EffectApplicator` evaluates both through one code path.
+     *
+     * This is not a gate on whether the effect was created: the effect exists and expires with its
+     * [ActiveFloatingEffect.duration] as usual, but each projection re-asks the condition and skips
+     * the modification while it is false. That is what a *quoted conditional ability handed out by
+     * a durational effect* needs — Restless Spire's animate ability grants "During your turn, this
+     * creature has first strike", which must go dark on an opponent's turn and if another player
+     * gains control of the land, then come back if the situation reverses.
+     *
+     * Deliberately not part of the `Duration.While…` family: those latch off permanently once their
+     * gate fails (CR 611.2b, enforced by `EndedDurationExpiryCheck`), which is right for "for as
+     * long as" durations and wrong for a conditional clause inside a granted ability.
+     *
+     * "You" resolves to the *source's* projected controller (`ConditionEvaluationContext.Projection`
+     * reads `sourceValues.controllerId`), and Layer 2 has already run by the time any later layer's
+     * modification is applied, so a control change is visible to the condition.
+     */
+    val sourceCondition: Condition? = null
 )
 
 /**
@@ -461,11 +484,19 @@ sealed interface SerializableModification {
      * the filter is stored and re-evaluated at the moment damage would be dealt, with the floating
      * effect's controller as the "you" reference, so newly-controlled permanents are protected too.
      * When [combatOnly] is true only combat damage is prevented.
+     *
+     * [includesController] extends the recipient set to the shield's controller — the "you and" in
+     * "prevent all damage that would be dealt to you and creatures you control this turn"; a player
+     * is not a permanent so it can never match [filter]. [sourceFilter], when non-null, additionally
+     * restricts the shield to damage whose *source* matches it ("… by creatures"), evaluated against
+     * projected state at damage time just like [filter].
      */
     @Serializable
     data class PreventAllDamageToGroup(
         val filter: GameObjectFilter,
-        val combatOnly: Boolean = false
+        val combatOnly: Boolean = false,
+        val includesController: Boolean = false,
+        val sourceFilter: GameObjectFilter? = null
     ) : SerializableModification
 
     /**

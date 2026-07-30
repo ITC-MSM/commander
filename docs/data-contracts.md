@@ -289,7 +289,8 @@ runtime, so `scripts/card-progress-graph` bakes the series (alongside the root
 
 The denominator (canonical booster + extra front-face card names) isn't knowable at runtime — it
 lives only in the local Scryfall cache. `scripts/gen-set-totals` bakes those canonical cards, split
-into `draft` (Scryfall `booster: true`) and `extra`, each `{ name, img }` (direct CDN art URL), into
+into `draft` (some printing of the card in that set is Scryfall `booster: true`) and `extra`, each
+`{ name, img }` (direct CDN art URL), into
 the committed `game-server/.../resources/coverage/set-totals.json` resource (same partitioning as
 `scripts/card-status`, so the numbers match the mtgish coverage TUI). Baking the art URL lets the
 detail view render set-specific images for *missing* cards too, without hammering the rate-limited
@@ -346,7 +347,38 @@ deckbuilder's `setDeck`. `lockedDeck` empty = build fresh; non-empty = keep thos
 the rest (**heuristic** engine). The **draftsim** engine ignores `lockedDeck`/`targetSize` and always
 returns a fresh 40-card limited build (23 nonland + 17 lands), matching the original Auto-Build.
 
-## 3c. Free-for-All Lobby Mode (WebSocket)
+## 3c. Cube Pack Source (WebSocket)
+
+`UpdateLobbySettings` may replace the lobby's normal set source with a cube by sending the full
+`cubeCards` name list plus `cubeName`, `packSize`, and `cubeBasicLandSetCode`. Duplicate names are
+duplicate physical cards. The server resolves the entire list atomically; an unresolved card rejects
+the update, and `cubeCards: []` clears cube mode. While a cube is active, `setCodes` changes,
+`boosterDistribution`, and `chaosBoosters` are inert.
+
+`LobbySettings` broadcasts only the public summary: `cubeName`, `cubeCardCount`, `packSize`, and
+`cubePoolPlay`. The synthetic `CUBE` set is deliberately absent from `availableSets`. The server
+rejects starting when the selected format would need more cards than the cube contains.
+
+Saved cubes are account data, not lobby data: `/api/account/cubes` (see
+[`accounts-and-persistence.md`](accounts-and-persistence.md)) stores them, and the lobby only ever
+sees the expanded `cubeCards` list — which is what lets a guest, or a cube that was never saved
+anywhere, play exactly the same way.
+
+### Pool Play
+
+`UpdateLobbySettings.cubePoolPlay` turns a **cube `SEALED`** lobby into Pool Play: nothing is dealt,
+every player's `cardPool` is the entire cube, and copies are unlimited up to the 4-of cap. It is
+rejected on a lobby with no cube or a non-`SEALED` format (rather than accepted and ignored), and
+cleared automatically when the cube is cleared or the format changes away from `SEALED`.
+
+`SealedPoolGenerated.poolPlay` tells the deckbuilder which pool semantics apply: with `poolPlay: true`
+`cardPool` is the whole cube and adding a card must not consume it, so the client shows copies-in-deck
+rather than copies-remaining. Consequences on the server side: the capacity check does not apply, the
+"copies available in pool" validation is skipped (membership + the 4-of cap still hold), and the
+sideboard is **not** derived from the pool — a Pool Play deck submits an empty sideboard, because
+deriving `pool − maindeck` would seed the entire cube into the SIDEBOARD zone.
+
+## 3d. Free-for-All Lobby Mode (WebSocket)
 
 A lobby carries two orthogonal axes: the **format** (`SEALED` / `DRAFT` / `PREMADE_DECKS` / …,
 how the card pool is built) and a new **mode** (`gameMode`: `TOURNAMENT` or `FREE_FOR_ALL`, what

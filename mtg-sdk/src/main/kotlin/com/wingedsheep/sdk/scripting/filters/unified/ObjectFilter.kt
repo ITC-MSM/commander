@@ -430,6 +430,11 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.PowerAtLeast(min)
     )
 
+    /** Power at least the X chosen for the source spell/ability (Expel the Interlopers). */
+    fun powerAtLeastX() = copy(
+        cardPredicates = cardPredicates + CardPredicate.PowerAtLeastX
+    )
+
     /** Power strictly greater than the projected power of a referenced entity (source, triggering, etc.) */
     fun powerGreaterThanEntity(reference: EntityReference) = copy(
         cardPredicates = cardPredicates + CardPredicate.PowerGreaterThanEntity(reference)
@@ -939,6 +944,16 @@ data class GameObjectFilter(
      */
     fun enchanted() = copy(
         statePredicates = statePredicates + StatePredicate.IsEnchanted
+    )
+
+    /**
+     * Must have at least one attached Aura controlled by [auraController] — the aura-control-scoped
+     * form of [enchanted] ("enchanted by Auras you control", Archon of the Wild Rose). Compose with
+     * [youControl] to constrain the enchanted permanent's controller too; the two bind to different
+     * objects. See [StatePredicate.IsEnchantedByAura].
+     */
+    fun enchantedByAura(auraController: ControllerPredicate = ControllerPredicate.ControlledByYou) = copy(
+        statePredicates = statePredicates + StatePredicate.IsEnchantedByAura(auraController)
     )
 
     /**

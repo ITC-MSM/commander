@@ -179,6 +179,7 @@
 - [x] Ollenbock Escort
 - [x] Overcharged Amalgam
 - [x] Packsong Pup
+- [ ] Panicked Bystander
 - [x] Panicked Bystander
 - [x] Parasitic Grasp
 - [x] Parish-Blade Trainee

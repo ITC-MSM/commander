@@ -739,6 +739,8 @@ class MoveCollectionExecutor(
         if (moveType == MoveType.Discard && cards.isNotEmpty()) {
             val discardNames = cards.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
             events.add(CardsDiscardedEvent(destPlayerId, cards, discardNames))
+            newState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                .trackDiscard(newState, destPlayerId, cards)
         }
 
         // Emit sacrifice event if configured. Track the per-turn sacrifice count + Food

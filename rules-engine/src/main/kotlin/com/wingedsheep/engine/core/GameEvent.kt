@@ -198,6 +198,26 @@ data class CardPlayedFromPermissionEvent(
 ) : GameEvent
 
 /**
+ * A land was **played** (the special land-play action, CR 305.1) — distinct from a land an effect
+ * puts onto the battlefield (which emits only a [ZoneChangeEvent]). Emitted by
+ * `PlayLandHandler` alongside the entry [ZoneChangeEvent], carrying the zone it was played from so
+ * "whenever you play a land … from anywhere other than your hand" triggers (Shadow of the Goblin)
+ * can gate on [fromZone].
+ *
+ * @property cardId The land that was played
+ * @property controllerId The player who played it
+ * @property fromZone The zone it was played from (HAND for a normal land drop; GRAVEYARD / EXILE /
+ *   LIBRARY for a land played via a play permission)
+ */
+@Serializable
+@SerialName("LandPlayedEvent")
+data class LandPlayedEvent(
+    val cardId: EntityId,
+    val controllerId: EntityId,
+    val fromZone: com.wingedsheep.sdk.core.Zone
+) : GameEvent
+
+/**
  * Stats were modified (e.g., +3/+3 until end of turn).
  */
 @Serializable
@@ -223,7 +243,7 @@ data class KeywordGrantedEvent(
 ) : GameEvent
 
 /**
- * A player gained the city's blessing (CR 702.131 / 700.5).
+ * A player gained the city's blessing (CR 702.131).
  *
  * Fired by Ascend triggers when their controller controls 10+ permanents on
  * resolution. The blessing is permanent for the rest of the game — this event
@@ -672,6 +692,41 @@ data class SagaChapterResolvedEvent(
 ) : GameEvent
 
 /**
+ * The "action" half of a `ReflexiveTriggerEffect` ("You may [action]. When you do, [reflexiveEffect]")
+ * completed successfully. Per CR 603.12, "when you do" is a genuinely separate reflexive triggered
+ * ability — this event is what [com.wingedsheep.engine.event.TriggerDetector]'s
+ * `detectReflexiveTriggers` pass turns into a real [com.wingedsheep.engine.event.PendingTrigger], so
+ * the reflexive half goes on the stack, gets its target chosen as it's placed there, and gets a real
+ * priority round before it resolves — instead of resolving inline/atomically with no response window.
+ *
+ * @property carriedPipeline Pipeline state the action produced (e.g. `Amass`'s army reference, a
+ * discard's resolved count) that the reflexive effect may read via `EntityReference`/
+ * `VariableReference` — carried across the stack round-trip since the reflexive ability builds a
+ * fresh [com.wingedsheep.engine.handlers.EffectContext] when it resolves.
+ */
+@Serializable
+@SerialName("ReflexiveAbilityTriggeredEvent")
+data class ReflexiveAbilityTriggeredEvent(
+    val sourceId: EntityId,
+    val sourceName: String,
+    val controllerId: EntityId,
+    val granterId: EntityId? = null,
+    val reflexiveEffect: com.wingedsheep.sdk.scripting.effects.Effect,
+    val reflexiveTargetRequirements: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement> = emptyList(),
+    val descriptionOverride: String? = null,
+    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState = com.wingedsheep.engine.handlers.PipelineState.EMPTY,
+    /**
+     * The ORIGINAL ability's own trigger context (X value, triggering entity/player, damage/counter
+     * amounts, etc.) — a reflexive effect (or its target filter) may reference any of these (e.g.
+     * Fire Lord Sozin's "target creature card in the graveyard of the player dealt combat damage" or
+     * Wildborn Preserver's "put X +1/+1 counters" reading the X the original ability's context held),
+     * and the reflexive ability builds a brand-new `EffectContext` on resolve, so this must be
+     * threaded across the stack round-trip rather than assumed to still be in scope.
+     */
+    val carriedTriggerContext: com.wingedsheep.engine.event.TriggerContext = com.wingedsheep.engine.event.TriggerContext()
+) : GameEvent
+
+/**
  * An ability fizzled (all targets became invalid).
  */
 @Serializable
@@ -893,6 +948,18 @@ data class PriorityChangedEvent(
 @Serializable
 @SerialName("TappedEvent")
 data class TappedEvent(
+    val entityId: EntityId,
+    val entityName: String
+) : GameEvent
+
+/**
+ * A permanent was exerted (CR 701.43a) — it won't untap during its controller's next untap step.
+ * Lets animations and "whenever you exert a permanent" reactions (none printed yet) fire instead
+ * of the state changing silently.
+ */
+@Serializable
+@SerialName("ExertedEvent")
+data class ExertedEvent(
     val entityId: EntityId,
     val entityName: String
 ) : GameEvent

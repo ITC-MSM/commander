@@ -209,6 +209,8 @@ export interface ClientCard {
 
   /** State flags */
   readonly isTapped: boolean
+  /** Exerted (CR 701.43a) — won't untap during its controller's next untap step. */
+  readonly isExerted?: boolean
   readonly hasSummoningSickness: boolean
   readonly isTransformed: boolean
   /** Phased out (Rule 702.26) — treated as though it doesn't exist; rendered translucent. */
@@ -284,6 +286,11 @@ export interface ClientCard {
    * exiled and casts a free copy of itself each precombat main phase. Surfaced in a dedicated public
    * pile so both players can read it. Exile only. */
   readonly isParadigm?: boolean
+
+  /** Whether this card is actively suspended in exile (CR 702.62 — has at least one time counter left).
+   * Surfaced in a dedicated public pile so both players can read it. False once the last time counter
+   * is removed, even if the card lingers in exile after the owner declines the free cast. Exile only. */
+  readonly isSuspended?: boolean
 
   /** Whether this permanent is prepared (Secrets of Strixhaven — Prepared keyword): a copy of its
    * prepare spell sits castable in its controller's exile. Battlefield only. */
@@ -547,6 +554,11 @@ export interface ClientPlayer {
    * rendered; `4` is max speed, which switches on every "Max speed —" ability they control.
    */
   readonly speed?: number
+  /**
+   * This player's current energy counter total (Kaladesh block onward, CR 107.14). `0` means no
+   * badge is rendered.
+   */
+  readonly energyCounters?: number
 }
 
 /**

@@ -72,6 +72,8 @@ data class SpellOnStackComponent(
      * like Scarlet Spider, Ben Reilly can enter with that many +1/+1 counters. 0 when not web-slung.
      */
     val webSlungReturnedManaValue: Int = 0,
+    /** For mayhem (CR 702.187) — the mayhem cost was paid; readable via MayhemCostWasPaid. */
+    val wasMayhem: Boolean = false,
     val beheldCards: List<EntityId> = emptyList(),  // Cards chosen via Behold (stored in pipeline as named collection)
     /**
      * Entity ids of cards discarded to pay this spell's additional discard cost
@@ -221,7 +223,14 @@ data class TriggeredAbilityOnStackComponent(
     val capturedEntityIds: List<EntityId> = emptyList(),
     /** Set when this triggered ability is a Saga chapter ability; on resolution the engine emits a
      *  SagaChapterResolvedEvent so "final chapter of a Saga resolves" triggers (Tom Bombadil) can fire. */
-    val sagaChapterInfo: com.wingedsheep.engine.event.SagaChapterInfo? = null
+    val sagaChapterInfo: com.wingedsheep.engine.event.SagaChapterInfo? = null,
+    /**
+     * Pipeline state carried from a `ReflexiveTriggerEffect`'s action half (e.g. `Amass`'s army
+     * reference, a discard's resolved count) into this synthetic reflexive ability's resolution —
+     * merged into the built `EffectContext.pipeline` since the reflexive ability builds a fresh
+     * context across the stack round-trip (CR 603.12). Null for ordinary triggered abilities.
+     */
+    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null
 ) : Component {
     val hasTargets: Boolean = false  // Will be updated based on effect
 }

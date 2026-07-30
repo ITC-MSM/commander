@@ -63,7 +63,8 @@ class GameSession(
         debugMode: Boolean = false,
         printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry? = null,
         maxPlayers: Int = 2,
-    ) : this(sessionId, EngineServices(cardRegistry, printingRegistry), if (debugMode) ClientStateTransformer(cardRegistry, debugMode = true) else stateTransformer, useHandSmoother, maxPlayers)
+        tokenArtRegistry: com.wingedsheep.engine.registry.TokenArtRegistry? = null,
+    ) : this(sessionId, EngineServices(cardRegistry, printingRegistry, tokenArtRegistry), if (debugMode) ClientStateTransformer(cardRegistry, debugMode = true) else stateTransformer, useHandSmoother, maxPlayers)
 
     private val cardRegistry: CardRegistry get() = services.cardRegistry
     // Lock for synchronizing state modifications to prevent lost updates
@@ -896,10 +897,10 @@ class GameSession(
         val priorityHolder = state.priorityPlayerId
         val isActorForPriority = priorityHolder != null && state.actorFor(priorityHolder) == playerId
         val nextStopPoint = if (isActorForPriority && playerMode != PriorityMode.FULL_CONTROL) {
-            val hasMeaningfulActions = legalActions.any { action ->
-                action.actionType != "PassPriority" &&
-                (!action.isManaAbility || action.additionalCostInfo?.costType == "SacrificePermanent")
-            }
+            // The same notion of "meaningful" the stop decision itself uses — otherwise the
+            // button can promise a stop (say, at the opponent's end step for a spell we can't
+            // actually pay for) that never arrives.
+            val hasMeaningfulActions = autoPassManager.getMeaningfulActions(legalActions).isNotEmpty()
             autoPassManager.getNextStopPoint(state, playerId, hasMeaningfulActions, myTurnStops = playerOverrides.myTurnStops, opponentTurnStops = playerOverrides.opponentTurnStops, stopsMode = playerMode == PriorityMode.STOPS)
         } else {
             null
@@ -1523,6 +1524,18 @@ class GameSession(
      * **WARNING:** This method is for testing only.
      */
     fun getStateForTesting(): GameState? = gameState
+
+    /**
+     * Whether this session resolves set-scoped token art, for testing assertions.
+     *
+     * [tokenArtRegistry] is an optional constructor argument, so a code path that builds a session
+     * and forgets it degrades silently: every token still gets *an* image, just the engine-wide
+     * generic one for its creature type. Nothing fails, the art is merely wrong — which is exactly
+     * how the scenario path shipped without it. Each site that creates a session should assert this.
+     *
+     * **WARNING:** This method is for testing only.
+     */
+    fun hasTokenArtForTesting(): Boolean = services.tokenArtRegistry != null
 
     /**
      * Read-only snapshot of the current game state. Used by the engine AI controller

@@ -88,6 +88,15 @@ enum class ChoiceSlot {
      */
     WEB_SLUNG_RETURNED_MV,
 
+    /**
+     * Whether the spell's Mayhem cost was paid when cast (CR 702.187, Marvel's Spider-Man — e.g.
+     * Sandman's Quicksand). A present value means "cast from the graveyard for its Mayhem cost".
+     * Read back through [com.wingedsheep.sdk.scripting.conditions.MayhemCostWasPaid]. Distinct from
+     * the other graveyard-cast keywords: CR 702.187 links a card's "if this spell's mayhem cost was
+     * paid" abilities to its own Mayhem ability.
+     */
+    MAYHEM_CAST,
+
     /** The X declared for a `blight X` additional cost when cast (e.g. Soul Immolation). */
     BLIGHT_AMOUNT,
 

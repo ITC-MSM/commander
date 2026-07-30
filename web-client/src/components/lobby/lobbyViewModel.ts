@@ -275,6 +275,7 @@ function tournamentTeams(lobbyState: LobbyState): LobbyTeams {
 
 function tournamentTitle(lobbyState: LobbyState): string {
   const s = lobbyState.settings
+  if (s.cubeName) return s.cubeName
   if (s.format !== 'PREMADE_DECKS') return s.setNames.join(' + ') || 'Lobby'
   switch (s.gameMode) {
     case 'TWO_HEADED_GIANT': return 'Premade Decks Two-Headed Giant'
@@ -316,10 +317,17 @@ function tournamentSubtitle(lobbyState: LobbyState): string {
         return distText ?? `${s.boosterCount} boosters per player`
     }
   })()
+  const poolPlay = Boolean(s.cubeName && s.cubePoolPlay && s.format === 'SEALED')
+  const source = s.cubeName
+    ? poolPlay
+      // Pool Play deals nothing, so pack size and booster count are meaningless here.
+      ? `Cube Pool Play · ${s.cubeCardCount ?? 0} cards · everyone builds from the whole cube`
+      : `Cube · ${s.cubeCardCount ?? 0} cards · ${s.packSize ?? 15}-card packs · ${base}`
+    : base
 
   const isMultiplayer = s.gameMode !== 'TOURNAMENT'
   const games = s.gamesPerMatch ?? 1
-  return !isMultiplayer && games > 1 ? `${base} · ${games} games per matchup` : base
+  return !isMultiplayer && games > 1 ? `${source} · ${games} games per matchup` : source
 }
 
 function startLabel(lobbyState: LobbyState): string {
@@ -376,6 +384,22 @@ function startBlockReason(lobbyState: LobbyState): string | null {
   if (s.format === 'PREMADE_DECKS') {
     const allSubmitted = lobbyState.players.filter((p) => p.isConnected).every((p) => p.deckSubmitted)
     return allSubmitted ? null : 'All connected players must submit a deck first'
+  }
+  if (s.cubeName) {
+    // Pool Play hands every player the whole cube instead of dealing from it, so it has no capacity
+    // constraint at all — mirrors TournamentLobby.cubeCapacityError.
+    if (s.cubePoolPlay && s.format === 'SEALED') return null
+    const packSize = s.packSize ?? 15
+    const sharedPool = s.format === 'WINSTON_DRAFT' || s.format === 'GRID_DRAFT'
+    const packsNeeded = sharedPool ? s.boosterCount : n * s.boosterCount
+    const cardsNeeded = packsNeeded * packSize
+    const cubeCards = s.cubeCardCount ?? 0
+    if (cardsNeeded > cubeCards) {
+      return sharedPool
+        ? `${s.boosterCount} packs × ${packSize} = ${cardsNeeded} cards needed, cube has ${cubeCards}`
+        : `${n} players × ${s.boosterCount} packs × ${packSize} = ${cardsNeeded} cards needed, cube has ${cubeCards}`
+    }
+    return null
   }
   if (s.setCodes.length === 0) return 'Select at least one set'
   // Extension sets (bonus sheets) can't carry a pool alone. Unknown codes count as regular; the

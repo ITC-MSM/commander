@@ -42,6 +42,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
+import com.wingedsheep.sdk.scripting.predicates.evaluateWith
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.predicates.StatePredicate
 import com.wingedsheep.sdk.scripting.references.Player
@@ -428,6 +429,18 @@ class PredicateEvaluator {
             is CardPredicate.PowerAtLeast -> {
                 val power = projectedValues?.power ?: card.baseStats?.basePower ?: 0
                 power >= predicate.min
+            }
+            is CardPredicate.PowerAtLeastX -> {
+                // Only meaningful at resolution, where X is bound (e.g. Expel the Interlopers'
+                // non-targeted DestroyAll after the chosen number is stamped as X). A null xValue
+                // is unexpected here; match nothing rather than everything so an unbound X can't
+                // silently wipe the board — mirrors ToughnessAtMostX.
+                val xValue = context?.xValue
+                if (xValue == null) false
+                else {
+                    val power = projectedValues?.power ?: card.baseStats?.basePower ?: 0
+                    power >= xValue
+                }
             }
             is CardPredicate.ToughnessEquals -> {
                 val toughness = projectedValues?.toughness ?: card.baseStats?.baseToughness
@@ -1175,6 +1188,31 @@ class PredicateEvaluator {
                 }
             }
 
+            // Aura state scoped by who controls the Aura — "enchanted by Auras you control"
+            // (Archon of the Wild Rose). "You" is this evaluation's controller.
+            is StatePredicate.IsEnchantedByAura -> {
+                val attachments = container.get<AttachmentsComponent>()
+                if (attachments == null || attachments.attachedIds.isEmpty()) return false
+                // Fail closed with no context: "Auras you control" has no meaning without a "you",
+                // and matching every Aura would silently widen the filter.
+                val you = context?.controllerId ?: return false
+                attachments.attachedIds.any { attachId ->
+                    val aura = state.getEntity(attachId) ?: return@any false
+                    if (aura.get<CardComponent>()?.typeLine?.isAura != true) return@any false
+                    val auraController = aura.get<ControllerComponent>()?.playerId ?: return@any false
+                    predicate.auraController.evaluateWith { leaf ->
+                        when (leaf) {
+                            ControllerPredicate.ControlledByYou -> auraController == you
+                            ControllerPredicate.ControlledByOpponent -> auraController != you
+                            ControllerPredicate.ControlledByAny -> true
+                            ControllerPredicate.ControlledByActivePlayer ->
+                                auraController == state.activePlayerId
+                            else -> null
+                        }
+                    }
+                }
+            }
+
             StatePredicate.IsModified -> com.wingedsheep.engine.handlers.predicates.isModified(state, entityId)
 
             // Attached-to-type — entity has an AttachedToComponent and the referenced
@@ -1405,7 +1443,7 @@ class PredicateEvaluator {
 
             // Power/toughness — not meaningful for cast records
             is CardPredicate.PowerEquals, is CardPredicate.PowerAtMost, is CardPredicate.PowerAtLeast,
-            CardPredicate.PowerEqualsX,
+            CardPredicate.PowerEqualsX, CardPredicate.PowerAtLeastX,
             is CardPredicate.ToughnessEquals, is CardPredicate.ToughnessAtMost, is CardPredicate.ToughnessAtLeast,
             CardPredicate.ToughnessAtMostX,
             is CardPredicate.PowerOrToughnessAtLeast,

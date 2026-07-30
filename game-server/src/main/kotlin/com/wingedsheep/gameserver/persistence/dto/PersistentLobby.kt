@@ -18,6 +18,15 @@ data class PersistentTournamentLobby(
     val state: String,  // LobbyState enum name
     val hostPlayerId: String?,
     val players: Map<String, PersistentLobbyPlayer>,  // playerId.value -> player state
+    /** Cube definition plus the ordered undealt tail, so a restart cannot redeal drafted cards. */
+    val cubeName: String? = null,
+    val cubeCardNames: List<String> = emptyList(),
+    val cubeBasicLandSetCode: String? = null,
+    val cubePackSize: Int? = null,
+    val cubeDealerRemainingCardNames: List<String> = emptyList(),
+    /** Cube Pool Play (no draft, whole cube as everyone's pool). Meaningless without a cube. */
+    val cubePoolPlay: Boolean = false,
+    val bannedCardNames: Set<String> = emptySet(),
     // Draft-specific state
     val currentPackNumber: Int = 0,
     val currentPickNumber: Int = 0,

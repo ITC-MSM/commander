@@ -26,6 +26,12 @@ interface DeckRepository : CrudRepository<DeckRow, Long> {
     fun deleteByIdAndUserId(id: Long, userId: UUID): Int
 }
 
+interface CubeRepository : CrudRepository<CubeRow, Long> {
+    fun findByUserIdOrderByUpdatedAtDesc(userId: UUID): List<CubeRow>
+    fun findByIdAndUserId(id: Long, userId: UUID): CubeRow?
+    fun deleteByIdAndUserId(id: Long, userId: UUID): Int
+}
+
 interface MatchResultRepository : CrudRepository<MatchResultRow, Long> {
     @Query("SELECT count(*) FROM match_participants WHERE user_id = :userId")
     fun countGamesForUser(@Param("userId") userId: UUID): Long

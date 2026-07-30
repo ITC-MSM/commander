@@ -206,6 +206,28 @@ data class AddCountersUpToContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after a player picks how many [counterType] counters to pay (0..their current total),
+ * for `PayCountersEffect` (CR 107.14's "pay {E}" generalized to a chosen amount — "you may pay
+ * any amount of {E}", Galvanic Discharge). The chosen amount is removed from [playerId] through
+ * the standard `RemoveCountersEffect` path and stored in the next frame's pipeline under
+ * [storeAmountAs] so a composed follow-up effect (e.g. `DealDamage(VariableReference(...))`) can
+ * read it. Choosing 0 removes nothing but still stores 0.
+ *
+ * @property playerId The player paying (and whose counters are removed)
+ * @property counterType The counter kind being paid
+ * @property storeAmountAs Pipeline variable name the paid amount is stored under
+ * @property sourceId Source emitting the effect (for the decision prompt context)
+ */
+@Serializable
+data class PayCountersContinuation(
+    override val decisionId: String,
+    val playerId: EntityId,
+    val counterType: String,
+    val storeAmountAs: String,
+    val sourceId: EntityId?
+) : ContinuationFrame
+
+/**
  * Resume after the controller picks how many counters of one kind to move from a
  * [sourceId] permanent onto a [destinationId] permanent. The executor for
  * `MoveChosenCountersToTargetEffect` issues one decision per counter kind on the source;
@@ -587,6 +609,30 @@ data class ActivateAbilityExileFromGraveyardContinuation(
     val action: ActivateAbility,
     val exileCandidates: List<EntityId>,
     val exileCount: Int
+) : ContinuationFrame
+
+/**
+ * Resume after a player picks the graveyard cards for an
+ * [com.wingedsheep.sdk.scripting.AbilityCost.ExileXFromGraveyard] cost.
+ *
+ * X *is* the size of that selection, so this is a single decision rather than a number picker
+ * followed by a selection: the resumer re-enters the handler with the chosen cards in
+ * `costPayment.exiledCards` **and** `xValue` set to how many were chosen.
+ *
+ * @property action The original [ActivateAbility] (`costPayment.exiledCards` still empty).
+ * @property exileCandidates The graveyard cards matching the cost's filter, offered as options;
+ *   used to validate the response is a subset of the originally legal candidates.
+ * @property fixedCount Non-null when a `{X}` mana symbol already fixed X (Necropolis Fiend:
+ *   "{X}, {T}, Exile X cards from your graveyard"), in which case the selection must be exactly
+ *   this many. Null when the cost has no mana X (Winter, Cursed Rider), in which case any number
+ *   of candidates may be chosen and the count becomes X.
+ */
+@Serializable
+data class ActivateAbilityExileXFromGraveyardContinuation(
+    override val decisionId: String,
+    val action: ActivateAbility,
+    val exileCandidates: List<EntityId>,
+    val fixedCount: Int? = null
 ) : ContinuationFrame
 
 /**

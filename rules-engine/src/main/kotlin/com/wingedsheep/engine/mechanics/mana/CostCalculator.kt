@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
+import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.sdk.core.CardType
@@ -398,6 +399,9 @@ class CostCalculator(
     ): Int {
         return when (source) {
             is CostReductionSource.Fixed -> source.amount
+            // CR 702.179f — "no speed" is 0, which GameState.speed already returns, so no has-speed
+            // branch is needed. playerId is the casting player, and speed is never team-pooled.
+            is CostReductionSource.YourSpeed -> state.speed(playerId)
             is CostReductionSource.CreaturesYouControl -> countCreatures(state, playerId)
             is CostReductionSource.TotalPowerYouControl -> sumPower(state, playerId)
             is CostReductionSource.ArtifactsYouControl -> countArtifacts(state, playerId)
@@ -441,8 +445,29 @@ class CostCalculator(
                 countBattlefieldPermanentsMatching(state, playerId, source.filter)
             is CostReductionSource.PermanentsSacrificedThisTurn ->
                 state.permanentsSacrificedThisTurn * source.amountPerPermanent
+            is CostReductionSource.CreaturesThatAttackedThisTurn ->
+                countCreaturesThatAttackedThisTurn(state) * source.amountPerCreature
         }
     }
+
+    /**
+     * The number of creatures declared as attackers this turn by any player, across every combat
+     * phase. Reads the per-player `PlayerAttackersThisTurnComponent` sets that
+     * `AttackPhaseManager` unions at each declare-attackers step, so an attacker that has since
+     * died, been exiled, or been bounced still counts — the count is turn history, not a
+     * battlefield scan. Cleared with the components at end-of-turn cleanup.
+     *
+     * A creature can only be declared as an attacker once per combat and the sets are per
+     * controller, so no de-duplication across players is needed.
+     */
+    private fun countCreaturesThatAttackedThisTurn(state: GameState): Int =
+        state.turnOrder.sumOf { playerId ->
+            state.getEntity(playerId)
+                ?.get<PlayerAttackersThisTurnComponent>()
+                ?.attackerIds
+                ?.size
+                ?: 0
+        }
 
     /**
      * Count permanents the player controls matching the filter. Iterates the projected-control
@@ -990,6 +1015,8 @@ class CostCalculator(
             CardPredicate.PowerEqualsX -> false
             is CardPredicate.PowerAtMost -> (cardDef.creatureStats?.basePower ?: 0) <= predicate.max
             is CardPredicate.PowerAtLeast -> (cardDef.creatureStats?.basePower ?: 0) >= predicate.min
+            // CostCalculator has no X context; predicate has no static answer here.
+            CardPredicate.PowerAtLeastX -> false
             is CardPredicate.ToughnessEquals -> cardDef.creatureStats?.baseToughness == predicate.value
             is CardPredicate.ToughnessAtMost -> (cardDef.creatureStats?.baseToughness ?: 0) <= predicate.max
             // CostCalculator has no X context; predicate has no static answer here.

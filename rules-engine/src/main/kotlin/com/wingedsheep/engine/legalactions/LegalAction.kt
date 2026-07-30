@@ -13,13 +13,13 @@ import com.wingedsheep.sdk.model.EntityId
  */
 data class LegalAction(
     val action: GameAction,
-    val actionType: String,
+    override val actionType: String,
     val description: String,
     val affordable: Boolean = true,
 
     // Targeting
-    val validTargets: List<EntityId>? = null,
-    val requiresTargets: Boolean = false,
+    override val validTargets: List<EntityId>? = null,
+    override val requiresTargets: Boolean = false,
     /**
      * Maximum number of targets the player may pick for the *first* requirement. Always the
      * resolved cap — i.e. [TargetInfo.maxTargets] of that requirement — never the
@@ -68,10 +68,10 @@ data class LegalAction(
     val xConstrainsTargetCount: Boolean = false,
 
     // Combat
-    val validAttackers: List<EntityId>? = null,
+    override val validAttackers: List<EntityId>? = null,
     val mandatoryAttackers: List<EntityId>? = null,
     val validAttackTargets: List<EntityId>? = null,
-    val validBlockers: List<EntityId>? = null,
+    override val validBlockers: List<EntityId>? = null,
     val blockerMaxBlockCounts: Map<EntityId, Int>? = null,
     val mandatoryBlockerAssignments: Map<EntityId, List<EntityId>>? = null,
 
@@ -107,7 +107,7 @@ data class LegalAction(
     val harmonizeCreatures: List<HarmonizeCreatureData>? = null,
 
     // Mana abilities
-    val isManaAbility: Boolean = false,
+    override val isManaAbility: Boolean = false,
     val requiresManaColorChoice: Boolean = false,
     /**
      * Constrained set of colors the ability can produce, when known.
@@ -151,8 +151,16 @@ data class LegalAction(
     val modalEnumeration: ModalLegalEnumeration? = null,
 
     // When true, prevents auto-pass whenever this action is available
-    val holdPriority: Boolean = false
-)
+    override val holdPriority: Boolean = false
+) : PriorityAction {
+    /** [PriorityAction]'s name for [affordable]. The DTO calls the same thing `isAffordable`. */
+    override val isAffordableAction: Boolean get() = affordable
+
+    override val additionalCostType: String? get() = additionalCostInfo?.costType
+
+    override val hasUnfillableTargetRequirement: Boolean
+        get() = targetRequirements?.any { it.minTargets > 0 && it.validTargets.isEmpty() } ?: false
+}
 
 /**
  * Per-mode enumeration data for a choose-N modal spell.

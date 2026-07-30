@@ -40,7 +40,18 @@ data class GameState(
     /** Zone contents - maps zone keys to lists of entity IDs */
     val zones: Map<ZoneKey, List<EntityId>> = emptyMap(),
 
-    /** Current turn number (starts at 0, becomes 1 when first player's turn starts) */
+    /**
+     * Current turn number, counting **player turns** — every turn the game begins gets its own
+     * number, including extra turns (CR 500.7) and every seat's turn in a multiplayer pod. Starts
+     * at 0 and becomes 1 when the first player's turn starts, so in a four-player pod the opening
+     * round is turns 1, 2, 3, 4 and the second round is 5, 6, 7, 8.
+     *
+     * This is deliberately *not* a round counter. `turnNumber + 1` is read across the engine as
+     * "the next turn" (delayed triggers, rebound, may-play expiries) and `stamp == turnNumber` as
+     * "this turn" (graveyard/exile entry stamps) — both of which are only true of a per-turn count.
+     * A round counter also stops advancing entirely once the first seat is eliminated, because the
+     * seat that used to mark the round boundary never takes another turn.
+     */
     val turnNumber: Int = 0,
 
     /** ID of the player whose turn it is */
@@ -265,7 +276,7 @@ data class GameState(
      * Cumulative combat damage dealt by each commander to each player, keyed by
      * `(commanderEntityId, defendingPlayerId)`. Populated by `CombatDamageManager` at the
      * `DamageDealtEvent` emission sites for combat damage to a player. Read by the
-     * `CommanderDamageLossCheck` SBA against [Format.Commander.commanderDamageThreshold].
+     * `CommanderDamageLossCheck` SBA against [Format.commanderDamageThreshold].
      */
     val commanderDamage: List<CommanderDamageEntry> = emptyList(),
 

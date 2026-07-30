@@ -142,6 +142,8 @@ class PermanentExecutors(
         GrantCounterPlacementModifierExecutor(),
         RemoveCountersExecutor(),
         RemoveAnyNumberOfCountersExecutor(),
+        com.wingedsheep.engine.handlers.effects.permanent.counters.PayCountersExecutor(),
+        com.wingedsheep.engine.handlers.effects.permanent.counters.PayFixedCountersExecutor(),
         com.wingedsheep.engine.handlers.effects.permanent.counters.ConvertCountersToTokensExecutor(),
         MoveCountersEachKindMissingExecutor(),
         MoveCountersExecutor(),

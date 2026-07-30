@@ -260,6 +260,21 @@ data object WebSlungCostWasPaid : Condition {
 }
 
 /**
+ * Condition: "If this spell's Mayhem cost was paid" (CR 702.187, Marvel's Spider-Man).
+ *
+ * True when the source spell/permanent was cast from the graveyard for its
+ * [Mayhem][com.wingedsheep.sdk.scripting.KeywordAbility.Mayhem] cost. Pairs with the durable
+ * [com.wingedsheep.sdk.scripting.ChoiceSlot.MAYHEM_CAST] flag the engine stamps on a resolved
+ * permanent and the `wasMayhem` flag carried in the resolution context for a non-permanent spell.
+ * Used by riders such as Sandman's Quicksand that change behavior when the Mayhem cost was paid.
+ */
+@SerialName("MayhemCostWasPaid")
+@Serializable
+data object MayhemCostWasPaid : Condition {
+    override val description: String = "this spell's mayhem cost was paid"
+}
+
+/**
  * Condition: "If this spell's blight additional cost was paid"
  * Used for Lorwyn Eclipsed cards (e.g., Cinder Strike) where the effect changes
  * based on whether the optional Blight additional cost was actually paid.
@@ -392,6 +407,7 @@ data class CastChoiceMade(val slot: com.wingedsheep.sdk.scripting.ChoiceSlot) : 
         com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED -> "if it was bargained"
         com.wingedsheep.sdk.scripting.ChoiceSlot.SNEAK -> "if its sneak cost was paid"
         com.wingedsheep.sdk.scripting.ChoiceSlot.WEB_SLUNG -> "if it was cast using web-slinging"
+        com.wingedsheep.sdk.scripting.ChoiceSlot.MAYHEM_CAST -> "if this spell's mayhem cost was paid"
         com.wingedsheep.sdk.scripting.ChoiceSlot.WATERBEND_PAID -> "if its waterbend cost was paid"
         com.wingedsheep.sdk.scripting.ChoiceSlot.GIFT_PROMISED -> "if the gift was promised"
         else -> "if a ${slot.name.lowercase().replace('_', ' ')} was chosen"

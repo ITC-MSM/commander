@@ -126,6 +126,7 @@ class StackResolver(
         sneakAttackDefenderId: EntityId? = null,
         wasWebSlung: Boolean = false,
         webSlungReturnedManaValue: Int = 0,
+        wasMayhem: Boolean = false,
         chosenModes: List<Int> = emptyList(),
         modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),
         modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),
@@ -204,6 +205,7 @@ class StackResolver(
                 sneakAttackDefenderId = sneakAttackDefenderId,
                 wasWebSlung = wasWebSlung,
                 webSlungReturnedManaValue = webSlungReturnedManaValue,
+                wasMayhem = wasMayhem,
                 beheldCards = beheldCards,
                 discardedAsCostCards = discardedAsCostCards,
                 chosenEntitySnapshots = chosenEntitySnapshots,
@@ -1220,6 +1222,16 @@ class StackResolver(
                         )
                     )
                 }
+                // Mayhem (CR 702.187): durably mark a permanent cast from the graveyard for its
+                // mayhem cost so Conditions.MayhemCostWasPaid reads it for the permanent's whole
+                // life. (Note: mayhem does NOT exile the spell on resolution — a permanent just
+                // enters the battlefield here via the normal permanent-resolution path.)
+                if (spellComponent.wasMayhem) {
+                    bag = bag.withChoice(
+                        com.wingedsheep.sdk.scripting.ChoiceSlot.MAYHEM_CAST,
+                        com.wingedsheep.engine.state.components.battlefield.ChoiceValue.Flag
+                    )
+                }
                 // Waterbend (Avatar): durably mark a permanent cast with its (optional) waterbend
                 // cost paid so Conditions.WaterbendWasPaid reads it for the permanent's whole life.
                 if (spellComponent.wasWaterbendPaid) {
@@ -1755,6 +1767,7 @@ class StackResolver(
                 wasWaterbendPaid = spellComponent.wasWaterbendPaid,
                 wasSneaked = spellComponent.wasSneaked,
                 wasWebSlung = spellComponent.wasWebSlung,
+                wasMayhem = spellComponent.wasMayhem,
                 sacrificedPermanents = spellComponent.sacrificedPermanents,
                 discardedAsCostCards = spellComponent.discardedAsCostCards,
                 chosenEntitySnapshots = spellComponent.chosenEntitySnapshots,
@@ -2310,6 +2323,7 @@ class StackResolver(
                 triggeringEntityId = abilityComponent.triggeringEntityId,
                 triggeringPlayerId = abilityComponent.triggeringPlayerId,
                 targetEntryStamps = targetsComponent.targetEntryStamps,
+                storedCollections = abilityComponent.carriedPipeline?.storedCollections ?: emptyMap(),
             )
             if (validTargets.isEmpty()) {
                 // Fizzle - remove ability entity
@@ -2365,14 +2379,22 @@ class StackResolver(
             modeTargetsOrdered = abilityComponent.modeTargetsOrdered,
             modeTargetRequirements = abilityComponent.modeTargetRequirements,
             pipeline = PipelineState(
-                namedTargets = EffectContext.buildNamedTargets(targetReqs, resolvedTargets2),
+                namedTargets = EffectContext.buildNamedTargets(targetReqs, resolvedTargets2) +
+                    (abilityComponent.carriedPipeline?.namedTargets ?: emptyMap()),
                 // Expose a batch trigger's captured permanents (the matching members of a
                 // PermanentsEnteredEvent batch) so a ForEachInCollectionEffect payoff can iterate
                 // them — "for each of them, create a tapped copy of it" (Kambal). The copy executor
                 // reads each entity at resolution, so any that left the battlefield meanwhile no-op.
-                storedCollections = if (abilityComponent.capturedEntityIds.isNotEmpty()) {
+                storedCollections = (if (abilityComponent.capturedEntityIds.isNotEmpty()) {
                     mapOf(PipelineState.TRIGGER_CAPTURED_COLLECTION to abilityComponent.capturedEntityIds)
-                } else emptyMap()
+                } else emptyMap()) + (abilityComponent.carriedPipeline?.storedCollections ?: emptyMap()),
+                // A `ReflexiveTriggerEffect`'s action half (e.g. `Amass`, a discard) may have stashed
+                // subtype groups or scalar values the reflexive effect reads (CR 603.12) — carried
+                // across the stack round-trip since this ability builds a fresh context on resolve.
+                storedSubtypeGroups = abilityComponent.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
+                chosenValues = abilityComponent.carriedPipeline?.chosenValues ?: emptyMap(),
+                storedNumbers = abilityComponent.carriedPipeline?.storedNumbers ?: emptyMap(),
+                storedStringLists = abilityComponent.carriedPipeline?.storedStringLists ?: emptyMap()
             )
         )
 
@@ -2910,7 +2932,15 @@ class StackResolver(
          * ([TargetsComponent.targetEntryStamps]) — a permanent that left the battlefield and came
          * back in the meantime is a different object and no longer a legal target (CR 400.7).
          */
-        targetEntryStamps: Map<EntityId, Long> = emptyMap()
+        targetEntryStamps: Map<EntityId, Long> = emptyMap(),
+        /**
+         * Pipeline collections available at resolution time (e.g. the amassed Army under
+         * `EntityReference.AmassedArmy`, from a `ReflexiveTriggerEffect`'s carried pipeline) — the
+         * CR 608.2b re-validation below re-checks the target filter, and a filter like Grishnákh's
+         * "power <= the amassed Army's power" needs this to resolve the referenced entity, or every
+         * target wrongly fails re-validation as unresolvable.
+         */
+        storedCollections: Map<String, List<EntityId>> = emptyMap()
     ): List<ChosenTarget> {
         // Always project state for shroud/hexproof checks (Rule 702.18, 702.11)
         val projected = state.projectedState
@@ -2920,6 +2950,7 @@ class StackResolver(
             xValue = xValue,
             triggeringEntityId = triggeringEntityId,
             triggeringPlayerId = triggeringPlayerId,
+            storedCollections = storedCollections,
         )
 
         return targets.filterIndexed { index, target ->

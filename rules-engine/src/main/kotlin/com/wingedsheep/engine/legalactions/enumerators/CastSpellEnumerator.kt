@@ -168,6 +168,17 @@ class CastSpellEnumerator : ActionEnumerator {
                 continue
             }
 
+            // CR 202.1b/118.6: a card printed with genuinely no mana cost (Ancestral Vision,
+            // suspend-only cards) represents an unpayable cost and can't be cast normally — only
+            // through an alternative cost or a "play without paying its mana cost" effect
+            // (Suspend, a may-play grant, etc.), all of which are enumerated elsewhere
+            // (CastFromZoneEnumerator, SuspendEnumerator). Gated on the DSL-authored
+            // `hasNoManaCost` flag, not on `manaCost` itself: a printed {0} parses to a non-empty
+            // one-symbol cost and stays normally castable, but plenty of test-fixture cards
+            // construct `ManaCost.ZERO` directly as shorthand for "free" — `hasNoManaCost` only
+            // reflects a genuinely blank cost string in the real card DSL.
+            if (cardDef.hasNoManaCost) continue
+
             // Check timing - sorcery-speed spells need main phase, empty stack, your turn
             val isInstant = cardComponent.typeLine.isInstant
             val hasFlash = cardDef.keywords.contains(Keyword.FLASH)
@@ -202,6 +213,8 @@ class CastSpellEnumerator : ActionEnumerator {
             var exileOrPayTargets = emptyList<EntityId>()
             var sacOrPayCost: AdditionalCost.SacrificeOrPay? = null
             var sacOrPayTargets = emptyList<EntityId>()
+            var discardOrPayCost: AdditionalCost.DiscardOrPay? = null
+            var discardOrPayTargets = emptyList<EntityId>()
             var canPayAdditionalCosts = true
             val flattenedCosts = additionalCosts.flatMap {
                 if (it is AdditionalCost.Composite) it.steps else listOf(it)
@@ -370,6 +383,22 @@ class CastSpellEnumerator : ActionEnumerator {
                             state, playerId, CostAtom.Sacrifice(cost.filter, cost.count)
                         )
                     }
+                    is AdditionalCost.DiscardOrPay -> {
+                        // Always payable: player can always choose the "pay mana" path.
+                        // Surface the hand cards eligible for the discard path (excluding the
+                        // spell being cast).
+                        discardOrPayCost = cost
+                        val handZone = ZoneKey(playerId, Zone.HAND)
+                        val handCards = state.getZone(handZone).filter { it != cardId }
+                        val predicateContext = PredicateContext(controllerId = playerId)
+                        discardOrPayTargets = if (cost.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) {
+                            handCards
+                        } else {
+                            handCards.filter {
+                                context.predicateEvaluator.matches(state, state.projectedState, it, cost.filter, predicateContext)
+                            }
+                        }
+                    }
                     is AdditionalCost.ChooseEntity -> {
                         // Search each (zone, filter) pair in `cost.zoneFilters`. Battlefield
                         // uses projected state (continuous effects matter); hidden / card
@@ -445,6 +474,12 @@ class CastSpellEnumerator : ActionEnumerator {
             val sacOrPayBaseCost = effectiveCost
             if (sacOrPayCost != null) {
                 effectiveCost = effectiveCost + ManaCost.parse(sacOrPayCost.alternativeManaCost)
+            }
+
+            // Save base cost for discard path, then add extra mana for the "pay" path
+            val discardOrPayBaseCost = effectiveCost
+            if (discardOrPayCost != null) {
+                effectiveCost = effectiveCost + ManaCost.parse(discardOrPayCost.alternativeManaCost)
             }
 
             // Spell-level waterbend additional cost (Avatar: The Last Airbender). A *mandatory*
@@ -602,11 +637,17 @@ class CastSpellEnumerator : ActionEnumerator {
                 context.manaSolver.canPay(state, playerId, sacOrPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
             } else false
 
+            // Check discard path affordability (base cost without the extra mana, but needs
+            // enough matching cards in hand to discard).
+            val canAffordDiscardOrPayPath = if (discardOrPayCost != null && discardOrPayTargets.size >= discardOrPayCost.count) {
+                context.manaSolver.canPay(state, playerId, discardOrPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
+            } else false
+
             // A `MayCastWithoutPayingManaCost` battlefield permission (e.g. Weftwalking) makes the
             // spell affordable for {0} when its gates are open. Emitted by its own branch below;
             // don't continue out before reaching it.
             val canAffordFreeCast = context.freeCastPermissionFor(cardId)
-            if (!canAfford && !canAffordAlternative && !canAffordSelfAlternative && !canAffordEvoke && !canAffordImpending && !canAffordCleave && !canAffordBlightPath && !canAffordBeholdPath && !canAffordExileOrPayPath && !canAffordSacOrPayPath && !canAffordFreeCast) {
+            if (!canAfford && !canAffordAlternative && !canAffordSelfAlternative && !canAffordEvoke && !canAffordImpending && !canAffordCleave && !canAffordBlightPath && !canAffordBeholdPath && !canAffordExileOrPayPath && !canAffordSacOrPayPath && !canAffordDiscardOrPayPath && !canAffordFreeCast) {
                 // The primary face can't be paid for by any path. Normally we skip it entirely.
                 // But if this is an Adventure/Omen/modal-DFC card whose *secondary* face is
                 // affordable, surface a grayed-out placeholder for the primary face so the
@@ -706,6 +747,24 @@ class CastSpellEnumerator : ActionEnumerator {
                     sacrificeCount = sacOrPayCost.count,
                 )
                 Triple(sacManaCostString, sacAutoTapPreview, sacCostInfo)
+            } else null
+
+            // Compute discard path info (separate legal action with lower mana cost + hand card
+            // selection). Reuses the "DiscardCard" cost type so the client drives the same hand
+            // discard selection used by Force of Will's plain discard cost.
+            val discardOrPayPathInfo = if (canAffordDiscardOrPayPath && discardOrPayCost != null) {
+                val discardManaCostString = discardOrPayBaseCost.toString()
+                val discardAutoTapPreview = if (context.skipAutoTapPreview) null else {
+                    context.manaSolver.solve(state, playerId, discardOrPayBaseCost, precomputedSources = cachedSources)
+                        ?.sources?.map { it.entityId }
+                }
+                val discardCostInfo = AdditionalCostData(
+                    description = discardOrPayCost.description,
+                    costType = "DiscardCard",
+                    validDiscardTargets = discardOrPayTargets,
+                    discardCount = discardOrPayCost.count,
+                )
+                Triple(discardManaCostString, discardAutoTapPreview, discardCostInfo)
             } else null
 
             // Calculate X cost info if the spell has X in its cost (printed, or the waterbend {X}
@@ -1222,6 +1281,19 @@ class CastSpellEnumerator : ActionEnumerator {
                                 autoTapPreview = sacOrPayPathInfo.second
                             ))
                         }
+                        if (discardOrPayPathInfo != null) {
+                            result.add(LegalAction(
+                                actionType = "CastSpell",
+                                description = "Cast ${cardComponent.name} (Discard)",
+                                action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget)),
+                                additionalCostInfo = discardOrPayPathInfo.third,
+                                manaCostString = discardOrPayPathInfo.first,
+                                requiresDamageDistribution = requiresDamageDistribution,
+                                totalDamageToDistribute = totalDamageToDistribute,
+                                minDamagePerTarget = minDamagePerTarget,
+                                autoTapPreview = discardOrPayPathInfo.second
+                            ))
+                        }
                     } else {
                         if (canAfford) {
                             result.add(LegalAction(
@@ -1447,6 +1519,27 @@ class CastSpellEnumerator : ActionEnumerator {
                                 autoTapPreview = sacOrPayPathInfo.second
                             ))
                         }
+                        if (discardOrPayPathInfo != null) {
+                            result.add(LegalAction(
+                                actionType = "CastSpell",
+                                description = "Cast ${cardComponent.name} (Discard)",
+                                action = CastSpell(playerId, cardId),
+                                validTargets = firstReqInfo.validTargets,
+                                requiresTargets = true,
+                                targetCount = firstReqInfo.maxTargets,
+                                minTargets = firstReq.effectiveMinCount,
+                                targetDescription = firstReq.description,
+                                targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
+                                xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
+                                xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
+                                additionalCostInfo = discardOrPayPathInfo.third,
+                                manaCostString = discardOrPayPathInfo.first,
+                                requiresDamageDistribution = requiresDamageDistribution,
+                                totalDamageToDistribute = totalDamageToDistribute,
+                                minDamagePerTarget = minDamagePerTarget,
+                                autoTapPreview = discardOrPayPathInfo.second
+                            ))
+                        }
                     }
                 }
             } else {
@@ -1561,6 +1654,16 @@ class CastSpellEnumerator : ActionEnumerator {
                         additionalCostInfo = sacOrPayPathInfo.third,
                         manaCostString = sacOrPayPathInfo.first,
                         autoTapPreview = sacOrPayPathInfo.second
+                    ))
+                }
+                if (discardOrPayPathInfo != null) {
+                    result.add(LegalAction(
+                        actionType = "CastSpell",
+                        description = "Cast ${cardComponent.name} (Discard)",
+                        action = CastSpell(playerId, cardId),
+                        additionalCostInfo = discardOrPayPathInfo.third,
+                        manaCostString = discardOrPayPathInfo.first,
+                        autoTapPreview = discardOrPayPathInfo.second
                     ))
                 }
             }

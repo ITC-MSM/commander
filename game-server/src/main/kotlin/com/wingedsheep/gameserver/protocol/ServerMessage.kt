@@ -373,7 +373,12 @@ sealed interface ServerMessage {
         /** 90 cards from 6 boosters */
         val cardPool: List<SealedCardInfo>,
         /** 5 basic land types available for deck building */
-        val basicLands: List<SealedCardInfo>
+        val basicLands: List<SealedCardInfo>,
+        /**
+         * Cube Pool Play: [cardPool] is the entire cube and copies are unlimited (bounded only by
+         * the deckbuilder's usual 4-of cap), so adding a card must not consume it from the pool.
+         */
+        val poolPlay: Boolean = false,
     ) : ServerMessage
 
     /**
@@ -470,6 +475,15 @@ sealed interface ServerMessage {
          * UI order. Empty = no exclusions. Ignored by [TournamentFormat.PREMADE_DECKS].
          */
         val bannedCardNames: List<String> = emptyList(),
+        /** Per-lobby cube summary. Null fields mean catalogued sets are the pack source. */
+        val cubeName: String? = null,
+        val cubeCardCount: Int? = null,
+        val packSize: Int? = null,
+        /**
+         * Cube Pool Play: no draft, every player deckbuilds from the whole cube with copies limited
+         * only by the 4-of cap. Cube Sealed lobbies only; ignored (and hidden) elsewhere.
+         */
+        val cubePoolPlay: Boolean = false,
         /**
          * Master switch for in-app AI assistance (draft "Suggest Pick" + deckbuild "Auto-build").
          * When false the client hides the controls and the server rejects assist requests.

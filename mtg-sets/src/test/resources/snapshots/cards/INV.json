@@ -940,8 +940,7 @@
                     ],
                     "creatureTypes": [
                         "Saproling"
-                    ],
-                    "imageUri": "/images/tokens/inv-saproling.jpeg"
+                    ]
                 }
             ]
         },
@@ -1030,7 +1029,8 @@
                 }
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Atalya, Samite Master
@@ -1141,8 +1141,7 @@
                     ],
                     "creatureTypes": [
                         "Saproling"
-                    ],
-                    "imageUri": "/images/tokens/inv-saproling.jpeg"
+                    ]
                 }
             ]
         },
@@ -8741,7 +8740,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Phyrexian Altar
@@ -9958,7 +9958,6 @@
                             "creatureTypes": [
                                 "Reflection"
                             ],
-                            "imageUri": "/images/tokens/inv-reflection.jpeg",
                             "controller": {
                                 "type": "PlayerRef",
                                 "player": "TriggeringPlayer"
@@ -11120,8 +11119,7 @@
                             ],
                             "creatureTypes": [
                                 "Saproling"
-                            ],
-                            "imageUri": "/images/tokens/inv-saproling.jpeg"
+                            ]
                         }
                     }
                 }
@@ -11640,8 +11638,7 @@
                     ],
                     "creatureTypes": [
                         "Saproling"
-                    ],
-                    "imageUri": "/images/tokens/inv-saproling.jpeg"
+                    ]
                 }
             }
         ]
@@ -11688,8 +11685,7 @@
             ],
             "creatureTypes": [
                 "Saproling"
-            ],
-            "imageUri": "/images/tokens/inv-saproling.jpeg"
+            ]
         }
     },
     "metadata": {
@@ -13210,7 +13206,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Spreading Plague
@@ -13438,7 +13435,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Stand or Fall
@@ -16651,8 +16649,7 @@
                     ],
                     "creatureTypes": [
                         "Saproling"
-                    ],
-                    "imageUri": "/images/tokens/inv-saproling.jpeg"
+                    ]
                 },
                 "triggerCondition": "WasKicked"
             }
@@ -17557,7 +17554,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Wayfaring Giant

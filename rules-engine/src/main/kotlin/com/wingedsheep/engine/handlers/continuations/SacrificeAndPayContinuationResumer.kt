@@ -271,6 +271,7 @@ class SacrificeAndPayContinuationResumer(
 
         val discardNames = selectedCards.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
         events.add(0, CardsDiscardedEvent(playerId, selectedCards, discardNames))
+        newState = ZoneTransitionService.trackDiscard(newState, playerId, selectedCards)
         return checkForMore(newState, events)
     }
 

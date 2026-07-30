@@ -712,6 +712,28 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     /**
+     * Whenever you play a land (CR 305.1 — the special land-play action). [fromZoneOtherThan], when
+     * set, restricts to lands *played* from a zone other than that one: "whenever you play a land …
+     * from anywhere other than your hand" (Shadow of the Goblin) is `fromZoneOtherThan = Zone.HAND`.
+     *
+     * Matches the engine's `LandPlayedEvent`, which is emitted only for the land-play action, never
+     * for a land an effect *puts* onto the battlefield — so this does not over-trigger on fetches,
+     * reanimation, or ramp (the gap that a plain `ZoneChangeEvent(→ BATTLEFIELD)` pattern can't close).
+     */
+    @SerialName("LandPlayedEvent")
+    @Serializable
+    data class LandPlayedEvent(
+        val fromZoneOtherThan: Zone? = null
+    ) : EventPattern {
+        override val description: String = buildString {
+            append("you play a land")
+            if (fromZoneOtherThan != null) {
+                append(" from anywhere other than your ${fromZoneOtherThan.name.lowercase()}")
+            }
+        }
+    }
+
+    /**
      * When one or more creatures attack a player who is an opponent of the trigger's controller.
      * The "your opponents are attacked" counterpart of [CreaturesAttackYouEvent]: fires once per
      * [com.wingedsheep.engine.core.AttackersDeclaredEvent] when at least [minAttackers] declared

@@ -366,6 +366,89 @@
     ]
 }
 
+// Archon of the Wild Rose
+{
+    "name": "Archon of the Wild Rose",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Archon",
+    "oracleText": "Flying\nOther creatures you control that are enchanted by Auras you control have base power and toughness 4/4 and have flying.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CompositeStaticAbility",
+                "abilities": [
+                    {
+                        "type": "SetBasePowerToughnessStatic",
+                        "power": 4,
+                        "toughness": 4,
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "IsEnchantedByAura",
+                                        "auraController": "ControlledByYou"
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            },
+                            "excludeSelf": true
+                        }
+                    },
+                    {
+                        "type": "GrantKeyword",
+                        "keyword": "FLYING",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "IsEnchantedByAura",
+                                        "auraController": "ControlledByYou"
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            },
+                            "excludeSelf": true
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "rarity": "RARE",
+        "artist": "Chris Rahn",
+        "flavorText": "The curse of Redtooth Keep could only be broken by a mystical rose that blooms in moonlight.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/00174be7-0dc8-43b9-81b6-f25a8c3fb4eb.jpg?1783915137",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Archon of the Wild Rose's ability overwrites all previous effects that set the affected creatures' power and/or toughness to specific values. Other effects that set these characteristics to specific values that start to apply after Archon of the Wild Rose enters the battlefield will overwrite this effect."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Effects that modify a creature's power and/or toughness without setting it will apply to the affected creatures no matter when they started to take effect. The same is true for counters that change a creature's power and/or toughness."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Archon's Glory
 {
     "name": "Archon's Glory",
@@ -636,6 +719,61 @@
     ]
 }
 
+// Asinine Antics
+{
+    "name": "Asinine Antics",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "You may cast this spell as though it had flash if you pay {2} more to cast it.\nFor each creature your opponents control, create a Cursed Role token attached to that creature. (If you control another Role on it, put that one into the graveyard. Enchanted creature is 1/1.)",
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "manaCost": "{2}",
+            "branchesEffect": false,
+            "grantsFlashTiming": true
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                }
+            },
+            "body": {
+                "type": "CreateRoleToken",
+                "roleName": "Cursed Role",
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "rarity": "MYTHIC",
+        "artist": "Brent Hollowell",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/50b96a97-0d7d-4e05-9e2f-0b99a039b655.jpg?1783915124",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Roles are colorless enchantment tokens. Each one has the Aura and Role subtypes and the enchant creature ability."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a permanent has more than one Role attached to it controlled by the same player, each of those Roles except the one with the most recent timestamp is put into its owner's graveyard. This is a state-based action."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Hexproof and shroud won't prevent a Role from becoming attached to a permanent if the ability creating that Role attached to that permanent doesn't target it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Barrow Naughty
 {
     "name": "Barrow Naughty",
@@ -885,6 +1023,115 @@
                         }
                     }
                 ]
+            }
+        }
+    ]
+}
+
+// Beluna Grandsquall
+{
+    "name": "Beluna Grandsquall",
+    "manaCost": "{G}{U}{R}",
+    "typeLine": "Legendary Creature — Giant Noble",
+    "oracleText": "Trample\nPermanent spells you cast that have an Adventure cost {1} less to cast.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsPermanent",
+                            "HasAdventure"
+                        ]
+                    }
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "rarity": "MYTHIC",
+        "artist": "Victor Adame Minguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3f5acc0d-33a6-476f-95ca-a1ad788334dd.jpg?1783915067",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "An effect may refer to a card, spell, or permanent that \"has an Adventure.\" This refers to a card, spell, or permanent that has an adventurer card's set of alternative characteristics, even if they're not being used and even if that card was never cast as an Adventure."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "When casting a spell as an Adventure, use the alternative characteristics and ignore all of the card's normal characteristics. The spell's color, mana cost, mana value, and so on are determined by only those alternative characteristics."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "An adventurer card is a permanent card in every zone except the stack, as well as while on the stack if not cast as an Adventure. Ignore its alternative characteristics in those cases."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE",
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Seek Thrills",
+            "manaCost": "{2}{G}{U}{R}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Mill seven cards. Then put all cards that have an Adventure from among the milled cards into your hand. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 7
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "filter": {
+                                "cardPredicates": [
+                                    "HasAdventure"
+                                ]
+                            }
+                        }
+                    ]
+                }
             }
         }
     ]
@@ -1311,6 +1558,287 @@
     ]
 }
 
+// Bramble Familiar
+{
+    "name": "Bramble Familiar",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elemental Raccoon",
+    "oracleText": "{T}: Add {G}.\n{1}{G}, {T}, Discard a card: Return this creature to its owner's hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{G}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "RARE",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/475d7e9a-759d-4523-a5cd-2a6e0d1b14ea.jpg?1783915084"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Fetch Quest",
+            "manaCost": "{5}{G}{G}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Mill seven cards. Then put a creature, enchantment, or land card from among the milled cards onto the battlefield. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 7
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "fetch_milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fetch_milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "fetch_milled",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "creature|enchantment|land",
+                            "storeSelected": "fetch_selected",
+                            "prompt": "Put a creature, enchantment, or land card onto the battlefield",
+                            "selectedLabel": "Put onto the battlefield",
+                            "remainderLabel": "Leave in graveyard",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fetch_selected",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
+// Brave the Wilds
+{
+    "name": "Brave the Wilds",
+    "manaCost": "{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nIf this spell was bargained, target land you control becomes a 3/3 Elemental creature with haste that's still a land.\nSearch your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "basicland"
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "found"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        },
+        "kickerTargetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                },
+                "id": "target land you control"
+            }
+        ],
+        "kickerSpellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land you control"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "keywords": [
+                        "HASTE"
+                    ],
+                    "creatureTypes": [
+                        "Elemental"
+                    ],
+                    "duration": "Permanent"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "artist": "Lucas Graciano",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/821b9e86-d108-42e5-b642-c5e07ab16c37.jpg?1783915084",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If you bargained Brave the Wilds and the target land is an illegal target by the time it tries to resolve, the spell won't resolve. You won't search for a basic land card, and you won't shuffle."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Some instant and sorcery spells require additional targets if they're bargained. You ignore those targeting requirements if those spells aren't bargained, and you can't bargain those spells unless you can choose the appropriate targets."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Break the Spell
 {
     "name": "Break the Spell",
@@ -1408,6 +1936,103 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Callous Sell-Sword
+{
+    "name": "Callous Sell-Sword",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "This creature enters with a +1/+1 counter on it for each creature that died under your control this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": {
+                    "type": "TurnTracking",
+                    "player": "You",
+                    "tracker": "CREATURES_DIED"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "221",
+        "rarity": "UNCOMMON",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/770ee3da-d33e-466f-9a2e-ad2d08ef5012.jpg?1783915066",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If the first target of Burn Together is an illegal target as the spell resolves but the last target is still legal, Burn Together will resolve, but no damage will be dealt and nothing will be sacrificed."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the last target of Burn Together is an illegal target as the spell resolves but the first target is still legal, Burn Together will still resolve and you'll still sacrifice the first target."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Burn Together",
+            "manaCost": "{R}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Target creature you control deals damage equal to its power to any other target. Then sacrifice it. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Target",
+                                "numericProperty": "Power"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any other target"
+                            },
+                            "damageSource": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "SacrificeTarget",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    },
+                    {
+                        "type": "TargetOther",
+                        "baseRequirement": "AnyTarget",
+                        "id": "any other target"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -1568,6 +2193,59 @@
         "imageUri": "https://cards.scryfall.io/normal/front/1/a/1a860925-d912-49e5-9ddc-41ab26916bb3.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Chancellor of Tales
+{
+    "name": "Chancellor of Tales",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Faerie Advisor",
+    "oracleText": "Flying\nWhenever you cast an Adventure spell, you may copy it. You may choose new targets for the copy.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        "SpellCastAsAdventure"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CopyTargetSpell",
+                        "target": "TriggeringEntity"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "rarity": "UNCOMMON",
+        "artist": "Joshua Raphael",
+        "flavorText": "\"...so the knight stabbed the troll, the troll threw the knight off the bridge, and they both forgot about the sword.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f67bd5ef-305b-4bf7-990b-3014778b14a0.jpg?1783915122",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If an effect copies an Adventure spell, that copy is exiled as it resolves. It ceases to exist as a state-based action; it's not possible to cast the copy as a permanent."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Charging Hooligan
@@ -2084,6 +2762,100 @@
     ]
 }
 
+// Cruel Somnophage
+{
+    "name": "Cruel Somnophage",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Nightmare",
+    "oracleText": "Cruel Somnophage's power and toughness are each equal to the number of creature cards in all graveyards.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateZone",
+                "player": "Each",
+                "zone": "Graveyard",
+                "filter": "creature"
+            }
+        },
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateZone",
+                "player": "Each",
+                "zone": "Graveyard",
+                "filter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "222",
+        "rarity": "RARE",
+        "artist": "Jason A. Engle",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/39b11ff0-9946-4337-86fb-42e967f3d2e4.jpg?1783915066",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The ability that defines Cruel Somnophage's power and toughness functions in all zones, not just the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Can't Wake Up",
+            "manaCost": "{1}{U}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Target player mills four cards. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Curse of the Werefox
 {
     "name": "Curse of the Werefox",
@@ -2269,6 +3041,189 @@
     ]
 }
 
+// Decadent Dragon
+{
+    "name": "Decadent Dragon",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying, trample\nWhenever this creature attacks, create a Treasure token.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "descriptionOverride": "Whenever this creature attacks, create a Treasure token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "223",
+        "rarity": "RARE",
+        "artist": "Wylie Beckert",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/315cbbf7-a2ad-4565-9877-1e903d7fd797.jpg?1783915066",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Only you get to look at the cards exiled with Expensive Taste. Their owner doesn't get to know what they are while they're in exile until you play them."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may play the cards exiled with Expensive Taste even if they are land cards."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You must still follow all normal timing rules to play cards exiled with Expensive Taste."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Expensive Taste",
+            "manaCost": "{2}{B}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Exile the top two cards of target opponent's library face down. You may look at and play those cards for as long as they remain exiled. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "stolen"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "stolen",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "stolen",
+                            "expiry": "Permanent"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetOpponent",
+                        "id": "target opponent"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+// Devouring Sugarmaw
+{
+    "name": "Devouring Sugarmaw",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Horror",
+    "oracleText": "Menace, trample\nAt the beginning of your upkeep, you may sacrifice an artifact, enchantment, or token. If you don't, tap this creature.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "MENACE",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Sacrifice",
+                    "filter": "artifact|enchantment|token"
+                },
+                "optional": true,
+                "elseEffect": {
+                    "type": "TapUntap",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "RARE",
+        "artist": "Nino Vecia",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/58c7f52e-a97d-4475-ae00-3149991e723e.jpg?1783915066"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Have for Dinner",
+            "manaCost": "{1}{W}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Create a 1/1 white Human creature token and a Food token. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [
+                                "WHITE"
+                            ],
+                            "creatureTypes": [
+                                "Human"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/5/0/50240867-3a3e-4a8d-9569-816ab4a3671a.jpg?1783914992"
+                        },
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Food"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Diminisher Witch
 {
     "name": "Diminisher Witch",
@@ -2349,6 +3304,113 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Discerning Financier
+{
+    "name": "Discerning Financier",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Noble",
+    "oracleText": "At the beginning of your upkeep, if an opponent controls more lands than you, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\n{2}{W}: Choose another player. That player gains control of target Treasure you control. You draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "EachOpponent",
+                        "filter": "land"
+                    },
+                    "operator": "GT",
+                    "right": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "land"
+                    }
+                },
+                "descriptionOverride": "At the beginning of your upkeep, if an opponent controls more lands than you, create a Treasure token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ChooseOpponentForSource",
+                            "prompt": "Choose another player to gain control of the Treasure"
+                        },
+                        {
+                            "type": "GiveControlToTargetPlayer",
+                            "permanent": {
+                                "type": "BoundVariable",
+                                "name": "target Treasure you control"
+                            },
+                            "newController": {
+                                "type": "PlayerRef",
+                                "player": "ChosenOpponent"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact Treasure ctrl:you"
+                        },
+                        "id": "target Treasure you control"
+                    }
+                ],
+                "descriptionOverride": "Choose another player. That player gains control of target Treasure you control. You draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/584774b5-640f-45e0-810b-f5faf119645b.jpg?1783915133",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If the target Treasure is an illegal target as Discerning Financier's last ability tries to resolve, it won't resolve. You won't draw a card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -2468,6 +3530,84 @@
     ]
 }
 
+// Edgewall Inn
+{
+    "name": "Edgewall Inn",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\nAs this land enters, choose a color.\n{T}: Add one mana of the chosen color.\n{3}, {T}, Sacrifice this land: Return target card that has an Adventure from your graveyard to your hand.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": "ManaColorSet.SourceChosenColor"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add one mana of the chosen color."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target card that has an Adventure in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "HasAdventure"
+                                ],
+                                "controllerPredicate": "OwnedByYou"
+                            },
+                            "zone": "Graveyard"
+                        },
+                        "id": "target card that has an Adventure in your graveyard"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}, Sacrifice this land: Return target card that has an Adventure from your graveyard to your hand."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped",
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "COLOR"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "255",
+        "rarity": "UNCOMMON",
+        "artist": "Alayna Danner",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec435e54-628a-43bd-8804-cbc37e375bce.jpg?1783915055"
+    },
+    "colorIdentityOverride": []
+}
+
 // Edgewall Pack
 {
     "name": "Edgewall Pack",
@@ -2515,6 +3655,39 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Eerie Interference
+{
+    "name": "Eerie Interference",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Prevent all damage that would be dealt to you and creatures you control this turn by creatures.",
+    "script": {
+        "spellEffect": {
+            "type": "PreventDamageShield",
+            "recipientGroup": {
+                "baseFilter": "creature ctrl:you"
+            },
+            "recipientGroupIncludesController": true,
+            "sourceFilter": {
+                "type": "FromGroup",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "UNCOMMON",
+        "artist": "Néstor Ossandón Leal",
+        "flavorText": "Ranks of sleeping Ardenvale knights filled Eriette's throne room, ready to defend their witch-queen with unthinking devotion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42a74545-75c8-4a6b-bee1-ac5665d9bcf0.jpg?1783915133"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -2972,6 +4145,64 @@
     ]
 }
 
+// Expel the Interlopers
+{
+    "name": "Expel the Interlopers",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose a number between 0 and 10. Destroy all creatures with power greater than or equal to the chosen number.",
+    "script": {
+        "spellEffect": {
+            "type": "ChooseNumberThen",
+            "then": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "GatherCards",
+                        "source": {
+                            "type": "BattlefieldMatching",
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    "PowerAtLeastX"
+                                ]
+                            }
+                        },
+                        "storeAs": "destroyAll_gathered"
+                    },
+                    {
+                        "type": "MoveCollection",
+                        "from": "destroyAll_gathered",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Graveyard"
+                        },
+                        "moveType": "Destroy"
+                    }
+                ]
+            },
+            "maxValue": 10,
+            "prompt": "Choose a number between 0 and 10"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "RARE",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "When a redcap raid threatened the Grand Ball at Delverhaugh, Goddric had no choice but to reveal his true identity and douse the invaders in dragonfire.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/1094eef0-6c57-4bfa-a584-f708b87354fb.jpg?1783915132",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The numbers you may choose include 0 and 10."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Experimental Confectioner
 {
     "name": "Experimental Confectioner",
@@ -3222,6 +4453,212 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Faerie Slumber Party
+{
+    "name": "Faerie Slumber Party",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return all creatures to their owners' hands. For each opponent who controlled a creature returned this way, you create two 1/1 blue Faerie creature tokens with flying and \"This token can block only creatures with flying.\"",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "creature"
+                    },
+                    "storeAs": "faerieSlumberPartyCreatures"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "faerieSlumberPartyCreatures",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "creature ctrl:opponent"
+                    },
+                    "storeMatching": "faerieSlumberPartyOpponentCreatures",
+                    "storeNonMatching": "faerieSlumberPartyOwnCreatures"
+                },
+                {
+                    "type": "CaptureControllers",
+                    "from": "faerieSlumberPartyOpponentCreatures",
+                    "storeAs": "faerieSlumberPartyControllers"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "faerieSlumberPartyCreatures",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "DistinctEntitiesInCollections",
+                            "collections": [
+                                "faerieSlumberPartyControllers"
+                            ]
+                        },
+                        "multiplier": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Faerie"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f9a993f-1f2b-4b17-b415-e975b7873e18.jpg?1783914992",
+                    "staticAbilities": [
+                        {
+                            "type": "CanOnlyBlockCreaturesWith",
+                            "blockerFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "HasKeyword",
+                                        "keyword": "FLYING"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ],
+            "descriptionOverride": "Return all creatures to their owners' hands. For each opponent who controlled a creature returned this way, you create two 1/1 blue Faerie creature tokens with flying and \"This token can block only creatures with flying.\""
+        }
+    },
+    "metadata": {
+        "collectorNumber": "311",
+        "rarity": "RARE",
+        "artist": "Lie Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8e5de58-cc4c-40b2-94c8-4e4d7cebfaf8.jpg?1783915040"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Farsight Ritual
+{
+    "name": "Farsight Ritual",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nLook at the top four cards of your library. If this spell was bargained, look at the top eight cards of your library instead. Put two of them into your hand and the rest on the bottom of your library in a random order.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Conditional",
+                            "condition": {
+                                "type": "CastChoiceMade",
+                                "slot": "BARGAINED"
+                            },
+                            "ifTrue": {
+                                "type": "Fixed",
+                                "amount": 8
+                            },
+                            "ifFalse": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "looked",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "storeSelected": "kept",
+                    "storeRemainder": "rest",
+                    "selectedLabel": "Put into hand",
+                    "remainderLabel": "Put on bottom"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "kept",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "rest",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    },
+                    "order": "Random"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "rarity": "RARE",
+        "artist": "Randy Gallegos",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c958257e-fa70-4fa3-90a1-0497967abef3.jpg?1783915120",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You still put only two of the cards into your hand if you bargain this spell."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you copy a bargained spell, the copy is also bargained."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -3935,6 +5372,132 @@
     ]
 }
 
+// Galvanic Giant
+{
+    "name": "Galvanic Giant",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Giant Wizard",
+    "oracleText": "Whenever you cast a spell with mana value 5 or greater, tap target creature an opponent controls and put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "ManaValueAtLeast",
+                                "min": 5
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "stun",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "rarity": "UNCOMMON",
+        "artist": "Borja Pindado",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/60976109-30ad-4f12-99eb-c5ef560fcf1b.jpg?1783915121"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Storm Reading",
+            "manaCost": "{5}{U}{U}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Draw four cards, then discard two cards. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 2 cards to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Gingerbread Hunter
 {
     "name": "Gingerbread Hunter",
@@ -4361,6 +5924,162 @@
     ]
 }
 
+// Gruff Triplets
+{
+    "name": "Gruff Triplets",
+    "manaCost": "{3}{G}{G}{G}",
+    "typeLine": "Creature — Satyr Warrior",
+    "oracleText": "Trample\nWhen this creature enters, if it isn't a token, create two tokens that are copies of it.\nWhen this creature dies, put a number of +1/+1 counters equal to its power on each creature you control named Gruff Triplets.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateTokenCopyOfSource",
+                    "count": 2
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "nontoken"
+                },
+                "descriptionOverride": "When this creature enters, if it isn't a token, create two tokens that are copies of it."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature name:Gruff Triplets ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": "Power"
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "When this creature dies, put a number of +1/+1 counters equal to its power on each creature you control named Gruff Triplets."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "RARE",
+        "artist": "Fajareka Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8760ab9-ac76-4e2e-b82f-0ee2a6dc5634.jpg?1783915082"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Gumdrop Poisoner
+{
+    "name": "Gumdrop Poisoner",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Warlock",
+    "oracleText": "Lifelink\nWhen this creature enters, up to one target creature gets -X/-X until end of turn, where X is the amount of life you gained this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "TurnTracking",
+                            "player": "You",
+                            "tracker": "LIFE_GAINED"
+                        },
+                        "multiplier": -1
+                    },
+                    "toughnessModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "TurnTracking",
+                            "player": "You",
+                            "tracker": "LIFE_GAINED"
+                        },
+                        "multiplier": -1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "93",
+        "rarity": "RARE",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5cb01d4d-91c2-41c6-981e-b4135a1e1e36.jpg?1783915106"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Tempt with Treats",
+            "manaCost": "{B}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Create a Food token. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                }
+            }
+        }
+    ]
+}
+
 // Hamlet Glutton
 {
     "name": "Hamlet Glutton",
@@ -4498,6 +6217,182 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Heartflame Duelist
+{
+    "name": "Heartflame Duelist",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Instant and sorcery spells you control have lifelink.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeywordToOwnSpells",
+                "keyword": "LIFELINK",
+                "spellFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "Or",
+                            "predicates": [
+                                "IsInstant",
+                                "IsSorcery"
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "rarity": "RARE",
+        "artist": "Justyna Dura",
+        "flavorText": "\"The fire of Embereth will never be doused!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/811b283f-22f3-47b1-a802-11dc8c25d0ee.jpg?1783915065"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Heartflame Slash",
+            "manaCost": "{2}{R}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Heartflame Slash deals 3 damage to any target. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "target"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+// Hearth Elemental
+{
+    "name": "Hearth Elemental",
+    "manaCost": "{5}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "This spell costs {X} less to cast, where X is the number of cards in your graveyard that are instant cards, sorcery cards, and/or have an Adventure.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "CardsInGraveyardMatchingFilter",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        "IsInstant",
+                                        "IsSorcery",
+                                        "HasAdventure"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "UNCOMMON",
+        "artist": "Nicholas Gregory",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8f5f102-cc75-4cee-a117-4bdaaf86c2e9.jpg?1783915092",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "When casting a spell as an Adventure, use the alternative characteristics and ignore all of the card's normal characteristics. The spell's color, mana cost, mana value, and so on are determined by only those alternative characteristics."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "An effect may refer to a card, spell, or permanent that \"has an Adventure.\" This refers to a card, spell, or permanent that has an adventurer card's set of alternative characteristics, even if they're not being used and even if that card was never cast as an Adventure."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a spell is cast as an Adventure, its controller exiles it instead of putting it into its owner's graveyard as it resolves. For as long as it remains exiled, that player may cast it as a permanent spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Stoke Genius",
+            "manaCost": "{1}{R}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Discard your hand, then draw two cards. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "discardedHand"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discardedHand",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                }
+            }
+        }
     ]
 }
 
@@ -4851,6 +6746,81 @@
     ]
 }
 
+// Horned Loch-Whale
+{
+    "name": "Horned Loch-Whale",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Whale",
+    "oracleText": "Flash\nWard {2} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)\nThis creature enters tapped unless it's your turn.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLASH",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        }
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "rarity": "RARE",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96a05063-0556-42e4-8d4c-8e92be160ef5.jpg?1783915120",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The creature's owner chooses whether to put it on the top or bottom of their library. If multiple cards are put into the library this way (such as when the spell targets a melded permanent), that creature's owner puts all the cards on top or all the cards on the bottom. They put them in whatever order they wish, and do not need to reveal the order."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Lagoon Breach",
+            "manaCost": "{1}{U}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "The owner of target attacking creature you don't control puts it on their choice of the top or bottom of their library. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "PutOnLibraryPositionOfChoice",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target attacking creature you don't control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature attacking ctrl:opponent"
+                        },
+                        "id": "target attacking creature you don't control"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Howling Galefang
 {
     "name": "Howling Galefang",
@@ -4904,6 +6874,173 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Hylda's Crown of Winter
+{
+    "name": "Hylda's Crown of Winter",
+    "manaCost": "{3}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "{1}, {T}: Tap target creature. This ability costs {1} less to activate during your turn.\n{3}, Sacrifice Hylda's Crown of Winter: Draw a card for each tapped creature your opponents control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{1}, {T}: Tap target creature. This ability costs {1} less to activate during your turn.",
+                "genericCostReduction": {
+                    "type": "Conditional",
+                    "condition": "IsYourTurn",
+                    "ifTrue": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "ifFalse": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "AggregateBattlefield",
+                        "player": "EachOpponent",
+                        "filter": "creature tapped"
+                    }
+                },
+                "descriptionOverride": "{3}, Sacrifice Hylda's Crown of Winter: Draw a card for each tapped creature your opponents control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "rarity": "RARE",
+        "artist": "Volkan Baǵa",
+        "flavorText": "With each day she wore the crown, her icy kingdom spread, and her heart grew ever colder.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b0d4a6c0-f00e-45a7-9c88-899460007020.jpg?1783915057"
+    }
+}
+
+// Ice Out
+{
+    "name": "Ice Out",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nThis spell costs {1} less to cast if it's bargained.\nCounter target spell.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": "Counter",
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "CastChoiceMade",
+                        "slot": "BARGAINED"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "Olivier Bernard",
+        "flavorText": "Hylda built an ice statuary from all those who couldn't understand \"go away.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/88ffafda-c852-497a-8156-4f759cdf3693.jpg?1783915120",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Bargain represents an optional additional cost. A spell cast with that additional cost paid is \"bargained.\""
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you copy a bargained spell, the copy is also bargained."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -5068,6 +7205,79 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Intrepid Trufflesnout
+{
+    "name": "Intrepid Trufflesnout",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Boar",
+    "oracleText": "Whenever this creature attacks alone, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "requires": [
+                        "AttacksAlone"
+                    ]
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "320",
+        "rarity": "UNCOMMON",
+        "artist": "Kisung Koh",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/4224747e-1dbc-4a29-b5da-5916d8ca2768.jpg?1783915038"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Go Hog Wild",
+            "manaCost": "{1}{G}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Target creature gets +2/+2 until end of turn. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -5506,6 +7716,82 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Lich-Knights' Conquest
+{
+    "name": "Lich-Knights' Conquest",
+    "manaCost": "{4}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Sacrifice any number of artifacts, enchantments, and/or tokens. Return that many creature cards from your graveyard to the battlefield.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Sacrifice",
+                    "filter": "artifact|enchantment|token",
+                    "any": true
+                },
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Graveyard",
+                        "filter": "creature"
+                    },
+                    "storeAs": "graveyardCreatures"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "graveyardCreatures",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": "PermanentsSacrificedThisWay"
+                    },
+                    "storeSelected": "returning",
+                    "prompt": "Return that many creature cards from your graveyard to the battlefield"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "returning",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "underOwnersControl": true
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "96",
+        "rarity": "RARE",
+        "artist": "Denis Zhbankov",
+        "flavorText": "In their rotting minds, they still quest for virtue and glory.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/9/59cd67d3-3327-42ad-9db1-50e2f591818c.jpg?1783915106",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You sacrifice the artifacts, enchantments, and/or tokens as part of the resolution of Lich-Knights' Conquest. It isn't an additional cost. If Lich-Knights' Conquest is countered, you won't sacrifice anything."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You can choose to sacrifice zero permanents."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If any abilities trigger as you sacrifice permanents, those abilities won't be put onto the stack until after you've returned creature cards from your graveyard to the battlefield."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "An artifact creature or enchantment creature sacrificed to Lich-Knights' Conquest may be one of the cards chosen to be returned."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -7217,6 +9503,91 @@
     ]
 }
 
+// Picnic Ruiner
+{
+    "name": "Picnic Ruiner",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "Whenever this creature attacks while you control a creature with power 4 or greater, this creature gains double strike until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOUBLE_STRIKE",
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature pow>=4"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "rarity": "UNCOMMON",
+        "artist": "Edgar Sánchez Hidalgo",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/66485c3e-3b21-4db4-ac12-af04e35b49b1.jpg?1783915064",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If you controlled a creature with power 4 or greater when you declared Picnic Ruiner as an attacker, it doesn't matter whether you still control one as its ability resolves. Picnic Ruiner will still gain double strike until end of turn."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You choose how the counters will be distributed as you cast Stolen Goodies. Each target must receive at least one +1/+1 counter."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If some of the creatures are illegal targets as Stolen Goodies tries to resolve, the original distribution of counters still applies and the counters that would have been put on illegal targets are lost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You can cast Stolen Goodies with no targets. If you do, you won't distribute any counters, but you'll still exile it as it resolves, and you'll still be able to cast Picnic Ruiner later."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Stolen Goodies",
+            "manaCost": "{3}{G}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Distribute three +1/+1 counters among any number of target creatures you control. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "DistributeCountersAmongTargets",
+                    "totalCounters": 3
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 3,
+                        "minCount": 0,
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "any number of target creatures you control"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Plunge into Winter
 {
     "name": "Plunge into Winter",
@@ -7520,6 +9891,123 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Questing Druid
+{
+    "name": "Questing Druid",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Druid",
+    "oracleText": "Whenever you cast a spell that's white, blue, black, or red, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasColor",
+                                        "color": "WHITE"
+                                    },
+                                    {
+                                        "type": "HasColor",
+                                        "color": "BLUE"
+                                    },
+                                    {
+                                        "type": "HasColor",
+                                        "color": "BLACK"
+                                    },
+                                    {
+                                        "type": "HasColor",
+                                        "color": "RED"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "RARE",
+        "artist": "Jason A. Engle",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72c130e2-1e17-4996-a5ae-231155d68261.jpg?1783915063",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If you cast a spell that's more than one of the listed colors, Questing Druid's ability still triggers only once."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You pay all costs and follow all normal timing rules for cards played from exile with Seek the Beast. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Seek the Beast",
+            "manaCost": "{1}{R}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Exile the top two cards of your library. Until your next end step, you may play those cards. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "seek_the_beast_exiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "seek_the_beast_exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "seek_the_beast_exiled",
+                            "expiry": {
+                                "type": "UntilControllerStep",
+                                "step": "END"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
     ]
 }
 
@@ -8305,6 +10793,126 @@
     ]
 }
 
+// Restless Cottage
+{
+    "name": "Restless Cottage",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {B} or {G}.\n{2}{B}{G}: This land becomes a 4/4 black and green Horror creature until end of turn. It's still a land.\nWhenever this land attacks, create a Food token and exile up to one target card from a graveyard.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Food"
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target card in a graveyard"
+                            },
+                            "destination": "Exile"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Graveyard"
+                    },
+                    "id": "target card in a graveyard"
+                },
+                "descriptionOverride": "Whenever this land attacks, create a Food token and exile up to one target card from a graveyard."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{B}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "creatureTypes": [
+                        "Horror"
+                    ],
+                    "colors": [
+                        "BLACK",
+                        "GREEN"
+                    ]
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "258",
+        "rarity": "RARE",
+        "artist": "Jesper Ejsing",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/787eadf3-5005-4ae5-820f-4012a4d4e1a5.jpg?1783915056",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If this becomes a creature because of an effect other than its own ability, its last ability will still trigger whenever it attacks."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If this becomes a creature but you haven't controlled it continuously since your most recent turn began, you won't be able to activate its mana ability or attack with it that turn."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "Food is an artifact type. Even though it appears on some creatures, it's never a creature type."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Restless Fortress
 {
     "name": "Restless Fortress",
@@ -8411,6 +11019,230 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Restless Spire
+{
+    "name": "Restless Spire",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {U} or {R}.\n{U}{R}: Until end of turn, this land becomes a 2/1 blue and red Elemental creature with \"During your turn, this creature has first strike.\" It's still a land.\nWhenever this land attacks, scry 1.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Scry",
+                    "count": 1
+                },
+                "descriptionOverride": "Whenever this land attacks, scry 1."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{U}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "BecomeCreature",
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "creatureTypes": [
+                                "Elemental"
+                            ],
+                            "colors": [
+                                "BLUE",
+                                "RED"
+                            ]
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FIRST_STRIKE",
+                            "target": "Self",
+                            "condition": "IsYourTurn"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Until end of turn, this land becomes a 2/1 blue and red Elemental creature with \"During your turn, this creature has first strike.\" It's still a land."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "260",
+        "rarity": "RARE",
+        "artist": "Sergey Glushakov",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/66386fe8-9d3c-47f7-9cd3-4cd30051535f.jpg?1783915056",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If this becomes a creature because of an effect other than its own ability, its last ability will still trigger whenever it attacks."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If this becomes a creature but you haven't controlled it continuously since your most recent turn began, you won't be able to activate its mana ability or attack with it that turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
+// Restless Vinestalk
+{
+    "name": "Restless Vinestalk",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {G} or {U}.\n{3}{G}{U}: Until end of turn, this land becomes a 5/5 green and blue Plant creature with trample. It's still a land.\nWhenever this land attacks, up to one other target creature has base power and toughness 3/3 until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "SetBaseStats",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one other target creature"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "duration": "EndOfTurn"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "up to one other target creature"
+                },
+                "descriptionOverride": "Whenever this land attacks, up to one other target creature has base power and toughness 3/3 until end of turn."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{G}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "keywords": [
+                        "TRAMPLE"
+                    ],
+                    "creatureTypes": [
+                        "Plant"
+                    ],
+                    "colors": [
+                        "GREEN",
+                        "BLUE"
+                    ]
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "261",
+        "rarity": "RARE",
+        "artist": "Sam Burley",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e5f3161d-3f69-4b06-ab73-c31fc0c1520c.jpg?1783915055",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If this becomes a creature because of an effect other than its own ability, its last ability will still trigger whenever it attacks."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If this becomes a creature but you haven't controlled it continuously since your most recent turn began, you won't be able to activate its mana ability or attack with it that turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
     ]
 }
 
@@ -8662,6 +11494,275 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Rotisserie Elemental
+{
+    "name": "Rotisserie Elemental",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "Menace\nWhenever this creature deals combat damage to a player, put a skewer counter on this creature. Then you may sacrifice it. If you do, exile the top X cards of your library, where X is the number of skewer counters on this creature. You may play those cards this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "skewer",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.MayDecide",
+                                "sourceRequiredZone": "Battlefield"
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "TopOfLibrary",
+                                            "count": {
+                                                "type": "EntityProperty",
+                                                "entity": "Source",
+                                                "numericProperty": {
+                                                    "type": "CounterCount",
+                                                    "counterType": {
+                                                        "type": "Named",
+                                                        "name": "skewer"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "storeAs": "skeweredCards"
+                                    },
+                                    "SacrificeSelf",
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "skeweredCards",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Exile"
+                                        }
+                                    },
+                                    {
+                                        "type": "GrantMayPlayFromExile",
+                                        "from": "skeweredCards"
+                                    }
+                                ]
+                            },
+                            "descriptionOverride": "You may sacrifice Rotisserie Elemental to exile that many cards from the top of your library and play them this turn."
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, put a skewer counter on this creature. Then you may sacrifice it. If you do, exile the top X cards of your library, where X is the number of skewer counters on this creature. You may play those cards this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "RARE",
+        "artist": "Leonardo Santanna",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d787045-3918-4ed6-85ea-843d1f2356f2.jpg?1783915089",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You choose whether to sacrifice Rotisserie Elemental as its triggered ability resolves. No player may respond between the time you sacrifice it and the time you exile cards from the top of your library."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You pay all costs and follow all normal timing rules for cards played from exile this way. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Rowan's Grim Search
+{
+    "name": "Rowan's Grim Search",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nIf this spell was bargained, look at the top four cards of your library, then put up to two of them back on top of your library in any order and the rest into your graveyard.\nYou draw two cards and you lose 2 life.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "BARGAINED"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 4
+                                    }
+                                },
+                                "storeAs": "gathered0"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "gathered0",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeSelected": "selected1",
+                                "storeRemainder": "remainder1",
+                                "prompt": "Put up to two cards back on top of your library",
+                                "selectedLabel": "Put on top",
+                                "remainderLabel": "Put in graveyard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "selected1",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Top"
+                                },
+                                "order": "ControllerChooses"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "remainder1",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Controller"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "104",
+        "artist": "Aurore Folny",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1be6786e-0569-42dd-b03c-82da7b32a14f.jpg?1783915104",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Bargain represents an optional additional cost. A spell cast with that additional cost paid is \"bargained.\""
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you copy a bargained spell, the copy is also bargained. If a card or token enters the battlefield as a copy of a permanent that's already on the battlefield, the new permanent isn't bargained, even if the original was."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Rowdy Research
+{
+    "name": "Rowdy Research",
+    "manaCost": "{6}{U}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {1} less to cast for each creature that attacked this turn.\nDraw three cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 3
+            }
+        },
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": "CreaturesThatAttackedThisTurn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "312",
+        "rarity": "UNCOMMON",
+        "artist": "Bram Sels",
+        "flavorText": "\"Stolen treasures can be reclaimed, but stolen knowledge is yours forever.\"\n—Alela",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/89b7e901-5ba4-4374-9eeb-96354279a123.jpg?1783915040"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -10345,6 +13446,52 @@
     ]
 }
 
+// Storyteller Pixie
+{
+    "name": "Storyteller Pixie",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\nWhenever you cast an Adventure spell, draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        "SpellCastAsAdventure"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "313",
+        "rarity": "UNCOMMON",
+        "artist": "Peter Polach",
+        "flavorText": "After the royal nanny had finished his dull, droning recital of the prince and princess's bedtime story, their secret friend emerged and the real story began.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b9f4cf85-2120-4897-aecd-4ee4b02d6f9b.jpg?1783915040"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Stroke of Midnight
 {
     "name": "Stroke of Midnight",
@@ -10679,6 +13826,142 @@
     ]
 }
 
+// Syr Ginger, the Meal Ender
+{
+    "name": "Syr Ginger, the Meal Ender",
+    "manaCost": "{2}",
+    "typeLine": "Legendary Artifact Creature — Food Knight",
+    "oracleText": "Syr Ginger has trample, hexproof, and haste as long as an opponent controls a planeswalker.\nWhenever another artifact you control is put into a graveyard from the battlefield, put a +1/+1 counter on Syr Ginger and scry 1.\n{2}, {T}, Sacrifice Syr Ginger: You gain life equal to its power.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Scry",
+                            "count": 1
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever another artifact you control is put into a graveyard from the battlefield, put a +1/+1 counter on Syr Ginger and scry 1."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    }
+                },
+                "descriptionOverride": "{2}, {T}, Sacrifice Syr Ginger: You gain life equal to its power."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "EachOpponent",
+                    "zone": "Battlefield",
+                    "filter": "planeswalker"
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "EachOpponent",
+                    "zone": "Battlefield",
+                    "filter": "planeswalker"
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "EachOpponent",
+                    "zone": "Battlefield",
+                    "filter": "planeswalker"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "252",
+        "rarity": "RARE",
+        "artist": "Michal Ivan",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7fbdba12-1369-41ae-b0e9-c405c0f0a2e5.jpg?1783915057",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "For Syr Ginger's last ability, use its power from when it was last on the battlefield to determine how much life is gained. If that power was 0 or less, you gain no life."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Taken by Nightmares
 {
     "name": "Taken by Nightmares",
@@ -10731,6 +14014,172 @@
         "artist": "Artur Treffner",
         "flavorText": "Dying in your sleep is never peaceful when Ashiok is involved.",
         "imageUri": "https://cards.scryfall.io/normal/front/f/8/f858d83d-a13e-4ffa-a91d-d695e5e5d71a.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Talion's Messenger
+{
+    "name": "Talion's Messenger",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Faerie Noble",
+    "oracleText": "Flying\nWhenever you attack with one or more Faeries, draw a card, then discard a card. When you discard a card this way, put a +1/+1 counter on target Faerie you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "YouAttackEvent",
+                    "attackerFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Faerie"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "ReflexiveTrigger",
+                            "action": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            },
+                            "optional": false,
+                            "reflexiveEffect": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            "reflexiveTargetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "permanent Faerie ctrl:you"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you attack with one or more Faeries, draw a card, then discard a card. When you discard a card this way, put a +1/+1 counter on target Faerie you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "rarity": "RARE",
+        "artist": "Marta Nael",
+        "flavorText": "\"The Kindly Lord does not issue invitations to their court lightly. I suggest you accept.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35fb0640-5b04-4687-b863-46a8b8d36809.jpg?1783915114"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Tangled Colony
+{
+    "name": "Tangled Colony",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Rat",
+    "oracleText": "This creature can't block.\nWhen this creature dies, create X 1/1 black Rat creature tokens with \"This token can't block,\" where X is the amount of damage dealt to it this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": "LastKnownDamageDealtToSource",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Rat"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e0205f2-25c1-403b-b408-56e3f2d63b4d.jpg?1783915000",
+                    "staticAbilities": [
+                        "CantBlock"
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            "CantBlock"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "113",
+        "rarity": "RARE",
+        "artist": "Filip Burburan",
+        "flavorText": "Clawing for scraps and driven mad by hunger, the individual rats became a writhing mass.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/77111ce8-6469-4bf7-882a-4ded1e5d7cad.jpg?1783915099"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -11084,6 +14533,107 @@
     ]
 }
 
+// The Goose Mother
+{
+    "name": "The Goose Mother",
+    "manaCost": "{X}{G}{U}",
+    "typeLine": "Legendary Creature — Bird Hydra",
+    "oracleText": "Flying\nThe Goose Mother enters with X +1/+1 counters on it.\nWhen The Goose Mother enters, create half X Food tokens, rounded up. (They're artifacts with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nWhenever The Goose Mother attacks, you may sacrifice a Food. If you do, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food",
+                    "dynamicCount": {
+                        "type": "Divide",
+                        "numerator": "CastX",
+                        "denominator": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                },
+                "descriptionOverride": "When The Goose Mother enters, create half X Food tokens, rounded up."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "feasibility": {
+                            "type": "ControlsPermanentMatching",
+                            "filter": "artifact Food"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ForceSacrifice",
+                                "filter": "artifact Food",
+                                "target": "Controller"
+                            },
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "You may sacrifice a Food. If you do, draw a card."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": "CastX"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "204",
+        "rarity": "RARE",
+        "artist": "Jesper Ejsing",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/a/1a55c370-d396-4c73-8ee2-83dc4c124005.jpg?1783915072",
+        "rulings": [
+            {
+                "date": "2024-11-08",
+                "text": "If an effect refers to a Food, it means any Food artifact, not just a Food artifact token. For example, you can sacrifice Tough Cookie (an Artifact Creature — Food Golem) to activate an ability with \"Sacrifice a Food\" in its cost."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "Food is an artifact type. Even though it appears on some creatures, it's never a creature type."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "You can't sacrifice a Food to pay multiple costs. For example, you can't sacrifice a Food token to activate its own ability and also to activate this ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // The Huntsman's Redemption
 {
     "name": "The Huntsman's Redemption",
@@ -11258,6 +14808,113 @@
     ]
 }
 
+// The Princess Takes Flight
+{
+    "name": "The Princess Takes Flight",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Exile up to one target creature.\nII — Target creature you control gets +2/+2 and gains flying until end of turn.\nIII — Return the exiled card to the battlefield under its owner's control.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature"
+                    },
+                    "destination": "Exile",
+                    "linkToSource": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "princessExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "princessExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Metzger",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/dad7bd06-22e4-40f8-bda9-bcdbb2d8f632.jpg?1783915128",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If The Princess Takes Flight's first chapter ability exiled more than one creature (usually because the ability was copied), its third chapter ability will return all of the exiled cards to the battlefield under their owners' control."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // The Witch's Vanity
 {
     "name": "The Witch's Vanity",
@@ -11396,6 +15053,133 @@
     ]
 }
 
+// Three Blind Mice
+{
+    "name": "Three Blind Mice",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after IV.)\nI — Create a 1/1 white Mouse creature token.\nII, III — Create a token that's a copy of target token you control.\nIV — Creatures you control get +1/+1 and gain vigilance until end of turn.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Mouse"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/d/8/d80435c8-9a41-47cb-be84-784a278adcae.jpg?1783914992"
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "CreateTokenCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target token you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent token ctrl:you"
+                    },
+                    "id": "target token you control"
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "CreateTokenCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target token you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent token ctrl:you"
+                    },
+                    "id": "target token you control"
+                }
+            },
+            {
+                "chapter": 4,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "GrantKeyword",
+                                "keyword": "VIGILANCE",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "RARE",
+        "artist": "Andrew Mar",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0d2ba371-854c-4529-b72b-e4a1887e33ab.jpg?1783915125",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The token copies the original characteristics of the target token as stated by the effect that created the token."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the copied token is copying something else, then the token enters the battlefield as whatever that token copied."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Only creatures you control at the time the fourth chapter ability resolves will get +1/+1 and gain vigilance. Creatures you begin to control later in the turn won't be affected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Three Bowls of Porridge
 {
     "name": "Three Bowls of Porridge",
@@ -11495,6 +15279,120 @@
     "colorIdentityOverride": []
 }
 
+// Thunderous Debut
+{
+    "name": "Thunderous Debut",
+    "manaCost": "{6}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nLook at the top twenty cards of your library. You may reveal up to two creature cards from among them. If this spell was bargained, put the revealed cards onto the battlefield. Otherwise, put the revealed cards into your hand. Then shuffle.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 20
+                        }
+                    },
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "gathered0",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "filter": "creature",
+                    "storeSelected": "selected1",
+                    "prompt": "Reveal up to two creature cards",
+                    "showAllCards": true
+                },
+                {
+                    "type": "RevealCollection",
+                    "from": "selected1",
+                    "revealToSelf": false
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "BARGAINED"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveCollection",
+                        "from": "selected1",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Battlefield"
+                        }
+                    },
+                    "otherwise": {
+                        "type": "MoveCollection",
+                        "from": "selected1",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Hand"
+                        }
+                    }
+                },
+                "ShuffleLibrary"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "190",
+        "rarity": "RARE",
+        "artist": "Aldo Domínguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d98f51ec-8eae-434a-ab62-85bdb6586fa2.jpg?1783915075",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Bargain represents an optional additional cost. A spell cast with that additional cost paid is \"bargained.\""
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you copy a bargained spell, the copy is also bargained. If a card or token enters the battlefield as a copy of a permanent that's already on the battlefield, the new permanent isn't bargained, even if the original was."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Toadstool Admirer
 {
     "name": "Toadstool Admirer",
@@ -11545,6 +15443,115 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Torch the Tower
+{
+    "name": "Torch the Tower",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nTorch the Tower deals 2 damage to target creature or planeswalker. If this spell was bargained, instead it deals 3 damage to that permanent and you scry 1.\nIf a permanent dealt damage by Torch the Tower would die this turn, exile it instead.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "BARGAINED"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature or planeswalker"
+                                }
+                            },
+                            {
+                                "type": "Scry",
+                                "count": 1
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature or planeswalker"
+                        }
+                    }
+                },
+                {
+                    "type": "MarkExileOnDeath",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or planeswalker"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target creature or planeswalker"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "artist": "Uriah Voth",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b3d6027c-813f-46df-95b4-e2e305a67620.jpg?1783915088",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Torch the Tower's last replacement effect will exile the target permanent if it would die this turn for any reason, not just due to lethal damage or having 0 loyalty."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you copy a bargained spell, the copy is also bargained."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -11826,6 +15833,136 @@
     ]
 }
 
+// Troyan, Gutsy Explorer
+{
+    "name": "Troyan, Gutsy Explorer",
+    "manaCost": "{1}{G}{U}",
+    "typeLine": "Legendary Creature — Vedalken Scout",
+    "oracleText": "{T}: Add {G}{U}. Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs.\n{U}, {T}: Draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddMana",
+                            "color": "GREEN",
+                            "restriction": {
+                                "type": "SpellsWithManaValueAtLeast",
+                                "minManaValue": 5,
+                                "orXInCost": true
+                            }
+                        },
+                        {
+                            "type": "AddMana",
+                            "color": "BLUE",
+                            "restriction": {
+                                "type": "SpellsWithManaValueAtLeast",
+                                "minManaValue": 5,
+                                "orXInCost": true
+                            }
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "Draw a card, then discard a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "217",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Ejsing",
+        "flavorText": "\"The streets of Ravnica were stifling. Eldraine is an endless adventure paved in gold.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/a/eadd2a1a-93a0-4257-897d-1aaee279449f.jpg?1783915068",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You don't have to spend the two mana on the same spell."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You can spend mana generated by Troyan on any part of the cost of a spell that contains {X} in its mana cost. You're not limited to spending it only on the {X} part."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Tuinvale Guide
 {
     "name": "Tuinvale Guide",
@@ -11895,6 +16032,88 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Twining Twins
+{
+    "name": "Twining Twins",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying, vigilance, ward {1} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {1}.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{1}"
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "RARE",
+        "artist": "Fajareka Setiawan",
+        "flavorText": "\"We spin and spin to keep us busy, but somehow you're the one who's dizzy.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/043718ea-59f6-4d1a-94c5-271704c1a38a.jpg?1783915061"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Swift Spiral",
+            "manaCost": "{1}{W}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Exile target nontoken creature. Return it to the battlefield under its owner's control at the beginning of the next end step. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target nontoken creature"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target nontoken creature"
+                                },
+                                "destination": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature nontoken"
+                        },
+                        "id": "target nontoken creature"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -12411,6 +16630,110 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Virtue of Persistence
+{
+    "name": "Virtue of Persistence",
+    "manaCost": "{5}{B}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your upkeep, put target creature card from a graveyard onto the battlefield under your control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card in a graveyard"
+                    },
+                    "destination": "Battlefield",
+                    "controllerOverride": "Controller"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card in a graveyard"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, put target creature card from a graveyard onto the battlefield under your control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "115",
+        "rarity": "MYTHIC",
+        "artist": "Piotr Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f1e5cafb-b0e6-4ee5-8c58-6f8e5ef2b9da.jpg?1783915099",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If a spell is cast as an Adventure, its controller exiles it instead of putting it into its owner's graveyard as it resolves. For as long as it remains exiled, that player may cast it as a permanent spell."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You must still follow any timing restrictions and permissions for the permanent spell you cast from exile. Normally, you'll be able to cast it only during your main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Locthwain Scorn",
+            "manaCost": "{1}{B}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Target creature gets -3/-3 until end of turn. You gain 2 life. (Then exile this card. You may cast the enchantment later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": -3
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": -3
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -13021,6 +17344,66 @@
             {
                 "date": "2023-09-01",
                 "text": "If a permanent has more than one Role attached to it controlled by the same player, each of those Roles except the one with the most recent timestamp is put into its owner's graveyard. This is a state-based action."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Witchstalker Frenzy
+{
+    "name": "Witchstalker Frenzy",
+    "manaCost": "{3}{R}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {1} less to cast for each creature that attacked this turn.\nWitchstalker Frenzy deals 5 damage to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 5
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": "CreaturesThatAttackedThisTurn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "159",
+        "rarity": "UNCOMMON",
+        "artist": "Pascal Quidault",
+        "flavorText": "The witchstalkers circled the armored figure, drawn to the corrupting stink of dark magic. Kellan and Ruby fled to the sound of savage howls and snapping jaws.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/649025a7-79d1-4d7c-b1db-d46bcf5a1ae2.jpg?1783915086",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Witchstalker Frenzy's first ability doesn't change its mana cost or mana value, only the total cost you pay. Specifically, the mana value of Witchstalker Frenzy is always 4."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Witchstalker Frenzy's first ability can't reduce its cost to less than {R}."
             }
         ]
     },

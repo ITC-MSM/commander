@@ -654,6 +654,11 @@ class GameTestDriver {
             spellEffect = cardDef.spellEffect,
             hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
             hasActivatedAbility = cardDef.hasActivatedAbility,
+            // Keep driver-minted cards in step with CardEntityFactory: precomputed printed
+            // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
+            // CardPredicate.HasAdventure / OriginallyPrintedInSet).
+            hasAdventure = cardDef.isAdventure,
+            originalSetCode = cardDef.setCode,
         )
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
@@ -698,6 +703,11 @@ class GameTestDriver {
             spellEffect = cardDef.spellEffect,
             hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
             hasActivatedAbility = cardDef.hasActivatedAbility,
+            // Keep driver-minted cards in step with CardEntityFactory: precomputed printed
+            // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
+            // CardPredicate.HasAdventure / OriginallyPrintedInSet).
+            hasAdventure = cardDef.isAdventure,
+            originalSetCode = cardDef.setCode,
         )
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
@@ -740,6 +750,11 @@ class GameTestDriver {
             spellEffect = cardDef.spellEffect,
             hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
             hasActivatedAbility = cardDef.hasActivatedAbility,
+            // Keep driver-minted cards in step with CardEntityFactory: precomputed printed
+            // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
+            // CardPredicate.HasAdventure / OriginallyPrintedInSet).
+            hasAdventure = cardDef.isAdventure,
+            originalSetCode = cardDef.setCode,
         )
 
         val container = com.wingedsheep.engine.state.ComponentContainer.of(
@@ -776,6 +791,11 @@ class GameTestDriver {
             spellEffect = cardDef.spellEffect,
             hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
             hasActivatedAbility = cardDef.hasActivatedAbility,
+            // Keep driver-minted cards in step with CardEntityFactory: precomputed printed
+            // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
+            // CardPredicate.HasAdventure / OriginallyPrintedInSet).
+            hasAdventure = cardDef.isAdventure,
+            originalSetCode = cardDef.setCode,
         )
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
@@ -819,6 +839,11 @@ class GameTestDriver {
             spellEffect = cardDef.spellEffect,
             hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
             hasActivatedAbility = cardDef.hasActivatedAbility,
+            // Keep driver-minted cards in step with CardEntityFactory: precomputed printed
+            // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
+            // CardPredicate.HasAdventure / OriginallyPrintedInSet).
+            hasAdventure = cardDef.isAdventure,
+            originalSetCode = cardDef.setCode,
         )
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
@@ -878,6 +903,11 @@ class GameTestDriver {
             spellEffect = cardDef.spellEffect,
             hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
             hasActivatedAbility = cardDef.hasActivatedAbility,
+            // Keep driver-minted cards in step with CardEntityFactory: precomputed printed
+            // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
+            // CardPredicate.HasAdventure / OriginallyPrintedInSet).
+            hasAdventure = cardDef.isAdventure,
+            originalSetCode = cardDef.setCode,
         )
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
@@ -989,6 +1019,11 @@ class GameTestDriver {
             spellEffect = cardDef.spellEffect,
             hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
             hasActivatedAbility = cardDef.hasActivatedAbility,
+            // Keep driver-minted cards in step with CardEntityFactory: precomputed printed
+            // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
+            // CardPredicate.HasAdventure / OriginallyPrintedInSet).
+            hasAdventure = cardDef.isAdventure,
+            originalSetCode = cardDef.setCode,
         )
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(

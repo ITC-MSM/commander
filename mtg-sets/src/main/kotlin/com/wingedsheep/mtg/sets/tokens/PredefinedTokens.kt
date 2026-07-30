@@ -473,6 +473,11 @@ object PredefinedTokens {
     /**
      * Phyrexian — back face of the Incubator token.
      * Colorless 0/0 Phyrexian artifact creature.
+     *
+     * Art is declared here rather than on `MarchOfTheMachineSet.tokenArt`, because the set-scoped
+     * registry is consulted at *creation* time and this face never gets created — a transforming
+     * token keeps the image the face it turns to declares. Self-hosted so flipping an Incubator
+     * doesn't swap a local image for a Scryfall CDN one.
      */
     val Phyrexian = card("Phyrexian") {
         typeLine = "Artifact Creature — Phyrexian"
@@ -480,7 +485,7 @@ object PredefinedTokens {
         toughness = 0
 
         metadata {
-            imageUri = "https://cards.scryfall.io/normal/back/c/c/cca1decc-90fd-4df8-997e-52f8789032f8.jpg?1682207112"
+            imageUri = "/images/tokens/mom-phyrexian.jpeg"
             artist = "Johann Bodin"
         }
     }
@@ -489,7 +494,7 @@ object PredefinedTokens {
      * Incubator — front face of the Incubator token created by [Effects.Incubate].
      * Colorless artifact with "{2}: Transform this token." Transforms into [Phyrexian].
      *
-     * Per CR 701.53b the token is a transforming double-faced permanent. The
+     * Per CR 701.51b the token is a transforming double-faced permanent. The
      * `+1/+1` counters from "Incubate N" are placed by the [Effects.Incubate] composite,
      * not declared here.
      */

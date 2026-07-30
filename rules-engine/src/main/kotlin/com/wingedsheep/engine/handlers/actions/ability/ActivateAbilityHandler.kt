@@ -732,6 +732,84 @@ class ActivateAbilityHandler(
         }
 
         // -------------------------------------------------------------------
+        // ExileXFromGraveyard pause (legal-actions submission path).
+        //
+        // "Exile X cards from your graveyard" needs exactly one decision, because X *is* the size
+        // of the graveyard selection: pick the cards, and X is how many you picked. So there is no
+        // number picker — the engine pauses for the cards and derives X from the count.
+        //
+        // Winter, Cursed Rider ("{2}{U}{B}, {T}, Exile X artifact cards from your graveyard: Each
+        // other nonartifact creature gets -X/-X") has no `{X}` mana at all, so without this block
+        // the handler falls through to `action.xValue ?: 0` — paying nothing and resolving a no-op.
+        // Necropolis Fiend ("{X}, {T}, Exile X cards from your graveyard") pays X in mana too, so
+        // the mana-X pause above has already bound `xValue`; here the selection is then pinned to
+        // exactly that many rather than being free.
+        //
+        // Skipped when `exiledCards` is pre-filled (engine-direct path / resumed replay) or when
+        // there is no real choice — X == candidates, which CostHandler pays without a prompt.
+        // -------------------------------------------------------------------
+        // Settled already when cards are pre-filled (engine-direct path, or the resume after this
+        // very pause) or when X is a bound zero — a zero selection is a legal answer, and
+        // re-pausing on it would spin forever.
+        val exileXCost = extractExileXFromGraveyardCost(effectiveCost)
+        val exileXSettled = (action.costPayment?.exiledCards?.isNotEmpty() == true) || action.xValue == 0
+        if (exileXCost != null && !exileXSettled && tapXCost == null) {
+            val exileXCandidates = costHandler.findMatchingCardsUnified(
+                state,
+                state.getZone(com.wingedsheep.engine.state.ZoneKey(action.playerId, Zone.GRAVEYARD)),
+                exileXCost.filter,
+                action.playerId
+            )
+            // A mana `{X}` already fixed the count; otherwise the player is free to exile any
+            // number of matching cards (including none) and that count becomes X.
+            val fixedCount = action.xValue
+            val minSelections = fixedCount ?: 0
+            val maxSelections = fixedCount ?: exileXCandidates.size
+            val isRealChoice = exileXCandidates.size > minSelections
+            if (isRealChoice) {
+                val decisionId = java.util.UUID.randomUUID().toString()
+                val prompt = if (fixedCount != null) {
+                    "Select $fixedCount card${if (fixedCount > 1) "s" else ""} to exile from " +
+                        "graveyard for ${cardComponent.name}"
+                } else {
+                    "Select any number of cards to exile from graveyard for ${cardComponent.name} " +
+                        "(X is the number you choose)"
+                }
+                val decision = com.wingedsheep.engine.core.SelectCardsDecision(
+                    id = decisionId,
+                    playerId = action.playerId,
+                    prompt = prompt,
+                    context = com.wingedsheep.engine.core.DecisionContext(
+                        sourceId = action.sourceId,
+                        sourceName = cardComponent.name,
+                        phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
+                    ),
+                    options = exileXCandidates,
+                    minSelections = minSelections,
+                    maxSelections = maxSelections
+                )
+                val continuation = com.wingedsheep.engine.core.ActivateAbilityExileXFromGraveyardContinuation(
+                    decisionId = decisionId,
+                    action = action,
+                    exileCandidates = exileXCandidates,
+                    fixedCount = fixedCount
+                )
+                val pausedState = state
+                    .withPendingDecision(decision)
+                    .pushContinuation(continuation)
+                val event = com.wingedsheep.engine.core.DecisionRequestedEvent(
+                    decisionId = decisionId,
+                    playerId = action.playerId,
+                    decisionType = "SELECT_CARDS",
+                    prompt = prompt
+                )
+                return ExecutionResult.paused(pausedState, decision, listOf(event))
+            }
+            // Not a real choice, so no prompt: either the graveyard has nothing matching (X = 0,
+            // legal) or a mana-fixed X consumes every candidate, which CostHandler pays as-is.
+        }
+
+        // -------------------------------------------------------------------
         // ExileFromGraveyard cost-choice pause (legal-actions submission path).
         //
         // When the cost is `ExileFromGraveyard(count, filter)` (Rust Harvester:
@@ -1590,10 +1668,15 @@ class ActivateAbilityHandler(
                 } else emptyList()
 
             // Detect and queue any triggered abilities from the activation — the cost-side events
-            // (a sacrificed source's dies trigger, the {T} TappedEvent for an artifact-tap trigger)
-            // plus the non-{T} mana-ability activation event above. Such triggered abilities still
-            // use the stack even though the mana ability itself resolves off it.
-            val activationTriggerEvents = activationCostEvents + manaAbilityActivatedEvents
+            // (a sacrificed source's dies trigger, the {T} TappedEvent for an artifact-tap trigger),
+            // the non-{T} mana-ability activation event above, and the mana ability's OWN effect
+            // resolution events (e.g. a `ReflexiveTriggerEffect`'s `ReflexiveAbilityTriggeredEvent` —
+            // Rubble Rouser's "Add {R}. When you do, deal 1 damage to each opponent": the reflexive
+            // half is NOT itself a mana ability (CR 605.1a requires it produce mana), so it must go
+            // on the stack normally even though the ability that caused it resolved off it). Such
+            // triggered abilities still use the stack even though the mana ability itself resolves
+            // off it.
+            val activationTriggerEvents = activationCostEvents + manaAbilityActivatedEvents + effectResult.events
             val resultEvents = bonusResult.events + manaAbilityActivatedEvents
             val costTriggers = triggerDetector.detectTriggers(bonusResult.newState, activationTriggerEvents)
             if (costTriggers.isNotEmpty()) {
@@ -2878,6 +2961,18 @@ class ActivateAbilityHandler(
         }
         else -> null
     }
+
+    /**
+     * Pull the [AbilityCost.ExileXFromGraveyard] sub-cost out of an ability cost, or null if none.
+     * Used by the legal-actions submission path to bind X (Winter, Cursed Rider — X with no `{X}`
+     * mana symbol) and to pause for *which* graveyard cards the player exiles.
+     */
+    private fun extractExileXFromGraveyardCost(cost: AbilityCost): AbilityCost.ExileXFromGraveyard? =
+        when (cost) {
+            is AbilityCost.ExileXFromGraveyard -> cost
+            is AbilityCost.Composite -> cost.costs.filterIsInstance<AbilityCost.ExileXFromGraveyard>().firstOrNull()
+            else -> null
+        }
 
     /**
      * Pull the [CostAtom.Sacrifice] sub-cost out of an ability cost (top-level [AbilityCost.Atom] or

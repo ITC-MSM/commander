@@ -256,6 +256,9 @@ data class ClientCard(
     val hasSummoningSickness: Boolean,
     val isTransformed: Boolean,
 
+    /** Exerted (CR 701.43a) — won't untap during its controller's next untap step. */
+    val isExerted: Boolean = false,
+
     /** Phased out (Rule 702.26) — treated as though it doesn't exist; rendered translucent */
     val isPhasedOut: Boolean = false,
 
@@ -320,6 +323,13 @@ data class ClientCard(
      * stays exiled and casts a free copy of itself at the start of each of its owner's precombat main
      * phases. Surfaced so the client can show it in a dedicated, public pile. Exile only. */
     val isParadigm: Boolean = false,
+
+    /** Whether this card is actively suspended in exile (CR 702.62b — has the suspend marker and at
+     * least one time counter). Face-up and public; surfaced so the client can show it in a dedicated
+     * pile instead of it reading as a generic exiled card. False once the last time counter is
+     * removed (CR 702.62b's "suspended" requires >=1 counter), even if it lingers in exile after the
+     * owner declines the free cast. Exile only. */
+    val isSuspended: Boolean = false,
 
     /** Whether this permanent is prepared (Secrets of Strixhaven — Prepared keyword): a copy of its
      * prepare spell sits castable in its controller's exile until cast. Battlefield only. */
@@ -654,7 +664,7 @@ data class ClientPlayer(
 
     /**
      * Per-commander cumulative combat damage dealt to this player (CR 903.10a). One entry per
-     * commander that has dealt at least 1 damage. Empty outside `Format.Commander`. The client
+     * commander that has dealt at least 1 damage. Empty when the format has no commanders. The client
      * renders these as progress badges (e.g., `⚔ Atraxa 14/21`) under the life orb.
      */
     val commanderDamage: List<ClientCommanderDamage> = emptyList(),
@@ -666,14 +676,21 @@ data class ClientPlayer(
      * Public information — speed is a visible player designation like poison counters, so it is not
      * masked. Defaulted so every non-Aetherdrift game serializes it away and the field costs nothing.
      */
-    val speed: Int = 0
+    val speed: Int = 0,
+
+    /**
+     * This player's current energy counter total (Kaladesh block onward, CR 107.14). Public
+     * information like poison counters, so it is not masked. Defaulted so every non-energy game
+     * serializes it away and the field costs nothing.
+     */
+    val energyCounters: Int = 0
 )
 
 /**
  * Per-commander commander-damage tally against a single defending player. Carried inside
  * [ClientPlayer.commanderDamage].
  *
- * @property threshold Single-source loss threshold from `Format.Commander.commanderDamageThreshold`
+ * @property threshold Single-source loss threshold from `Format.commanderDamageThreshold`
  *   (21 in classic Commander, 16 in the BRAWL preset). Included per-entry so the client doesn't
  *   need to know format internals to render `amount/threshold`.
  */

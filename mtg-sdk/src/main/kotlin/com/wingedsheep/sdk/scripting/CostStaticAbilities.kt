@@ -424,6 +424,20 @@ sealed interface CostReductionSource {
     }
 
     /**
+     * Reduces cost by your speed, 0–4 (CR 702.179) — "Noncreature spells you cast cost {X} less to
+     * cast, where X is your speed" (Samut, the Driving Force).
+     *
+     * "No speed" reads as 0 (CR 702.179f), so there is no has-speed distinction to make here: a
+     * player who never started their engines simply gets no reduction. Speed is per-player and never
+     * pooled in team games, so this always reads the *casting* player's speed.
+     */
+    @SerialName("YourSpeed")
+    @Serializable
+    data object YourSpeed : CostReductionSource {
+        override val description: String = "your speed"
+    }
+
+    /**
      * Reduces cost by number of creatures you control.
      */
     @SerialName("CreaturesYouControl")
@@ -653,6 +667,31 @@ sealed interface CostReductionSource {
         val amountPerPermanent: Int = 1
     ) : CostReductionSource {
         override val description: String = "the number of permanents sacrificed this turn"
+    }
+
+    /**
+     * Reduces cost by [amountPerCreature] for each creature that was declared as an attacker this
+     * turn — by ANY player, not just the caster ("for each creature that attacked this turn" is
+     * not controller-scoped), and counting every combat phase this turn.
+     *
+     * The turn-history sibling of [PermanentsSacrificedThisTurn], and deliberately *not*
+     * `PermanentsOnBattlefieldMatching(Creature.attackedThisTurn())`: that reads the live
+     * battlefield, so an attacker that died in combat would stop counting. The count here is
+     * the union of every player's `PlayerAttackersThisTurnComponent.attackerIds` — the same set
+     * the engine already maintains for raid — which survives the attacker leaving the
+     * battlefield, so a trick cast after combat damage still sees the creatures that traded.
+     *
+     * Used for Witchstalker Frenzy ("This spell costs {1} less to cast for each creature that
+     * attacked this turn"). Per its ruling the reduction never touches the colored part of the
+     * cost, so it can't reduce below `{R}` — that clamping is the generic-reduction rail's, not
+     * this source's.
+     */
+    @SerialName("CreaturesThatAttackedThisTurn")
+    @Serializable
+    data class CreaturesThatAttackedThisTurn(
+        val amountPerCreature: Int = 1
+    ) : CostReductionSource {
+        override val description: String = "the number of creatures that attacked this turn"
     }
 }
 

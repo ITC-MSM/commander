@@ -103,7 +103,10 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
             resolved
         }
 
-        // The earliest turn this delayed trigger may fire, derived from effect.timing:
+        // The earliest turn this delayed trigger may fire, derived from effect.timing. Because
+        // GameState.turnNumber counts player turns, `+ 1` means "not this turn" — the very next
+        // turn any player takes qualifies. Narrowing that to a particular player's turn is
+        // fireOnPlayer's job, not this floor's.
         //  - NEXT_END_STEP ("at the beginning of your next end step"): fires at the next
         //    upcoming end step on the controller's turn. If we're still before the end step
         //    on the controller's current turn, that end step qualifies — don't skip to the

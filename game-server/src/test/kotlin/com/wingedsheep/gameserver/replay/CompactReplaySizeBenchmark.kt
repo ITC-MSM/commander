@@ -68,7 +68,7 @@ class CompactReplaySizeBenchmark : ScenarioTestBase() {
                 session.keepHand(p1)
                 session.keepHand(p2)
 
-                val outcome = playRandomGame(session, enumerator, rng, maxTurns = 40)
+                val outcome = playRandomGame(session, enumerator, rng, maxTurns = 80)
 
                 val setup = session.getReplaySetup()
                 if (setup == null) {

@@ -1004,6 +1004,8 @@ class PayOrSufferExecutor(
 
             val discardNames = cardsToDiscard.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
             events.add(0, CardsDiscardedEvent(playerId, cardsToDiscard, discardNames))
+            newState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                .trackDiscard(newState, playerId, cardsToDiscard)
 
             return EffectResult.success(newState, events)
         }

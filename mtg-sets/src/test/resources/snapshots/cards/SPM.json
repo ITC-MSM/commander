@@ -255,6 +255,66 @@
     ]
 }
 
+// Anti-Venom, Horrifying Healer
+{
+    "name": "Anti-Venom, Horrifying Healer",
+    "manaCost": "{W}{W}{W}{W}{W}",
+    "typeLine": "Legendary Creature — Symbiote Hero",
+    "oracleText": "When Anti-Venom enters, if he was cast, return target creature card from your graveyard to the battlefield.\nIf damage would be dealt to Anti-Venom, prevent that damage and put that many +1/+1 counters on him.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card"
+                    },
+                    "destination": "Battlefield"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card"
+                },
+                "triggerCondition": "WasCast"
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "ReplaceDamageWithCounters",
+                "counterType": "+1/+1",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "RecipientSelf"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "rarity": "MYTHIC",
+        "artist": "Néstor Ossandón Leal",
+        "flavorText": "\"You are a sickness on this city. I am the cure!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/560384fe-7be0-4b93-a515-2fe687ab2492.jpg?1783905365"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Araña, Heart of the Spider
 {
     "name": "Araña, Heart of the Spider",
@@ -699,6 +759,51 @@
     },
     "colorIdentityOverride": [
         "WHITE",
+        "BLUE"
+    ]
+}
+
+// Chameleon, Master of Disguise
+{
+    "name": "Chameleon, Master of Disguise",
+    "manaCost": "{3}{U}",
+    "typeLine": "Legendary Creature — Human Shapeshifter Villain",
+    "oracleText": "You may have Chameleon enter as a copy of a creature you control, except his name is Chameleon, Master of Disguise.\nMayhem {2}{U} (You may cast this card from your graveyard for {2}{U} if you discarded it this turn. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{2}{U}"
+        }
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersAsCopy",
+                "copyFilter": {
+                    "cardPredicates": [
+                        "IsCreature"
+                    ],
+                    "controllerPredicate": "ControlledByYou"
+                },
+                "nameOverride": "Chameleon, Master of Disguise"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "27",
+        "rarity": "UNCOMMON",
+        "artist": "Javier Charro",
+        "flavorText": "\"You have a lovely face. Mind if I borrow it?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/43892ce7-f63a-4294-922b-8f879f684033.jpg?1783905356"
+    },
+    "colorIdentityOverride": [
         "BLUE"
     ]
 }
@@ -1664,7 +1769,8 @@
             "BLACK",
             "RED",
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "55",
@@ -1781,6 +1887,133 @@
         "imageUri": "https://cards.scryfall.io/normal/front/7/6/7675e91f-dba7-4e64-a7ff-1dd56665a4cc.jpg?1783905305"
     },
     "colorIdentityOverride": []
+}
+
+// Electro's Bolt
+{
+    "name": "Electro's Bolt",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Electro's Bolt deals 4 damage to target creature.\nMayhem {1}{R} (You may cast this card from your graveyard for {1}{R} if you discarded it this turn. Timing rules still apply.)",
+    "keywords": [
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{1}{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "artist": "JB Casacop",
+        "flavorText": "\"Hey Max, while you're at it, do you mind charging my phone?\" —Spider-Man",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/5/25fe063f-35e4-4fca-9889-06834a8ef9b9.jpg?1783905337"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Electro, Assaulting Battery
+{
+    "name": "Electro, Assaulting Battery",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "Flying\nYou don't lose unspent red mana as steps and phases end.\nWhenever you cast an instant or sorcery spell, add {R}.\nWhen Electro leaves the battlefield, you may pay {X}. When you do, he deals X damage to target player.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayPayX",
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": "XValue",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target player"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "RetainUnspentColoredMana",
+                "color": "RED"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "RARE",
+        "artist": "Piotr Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d672cfad-e656-47f8-bf93-64f262aff33e.jpg?1783905338"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // Ezekiel Sims, Spider-Totem
@@ -2107,6 +2340,89 @@
     ]
 }
 
+// Green Goblin, Revenant
+{
+    "name": "Green Goblin, Revenant",
+    "manaCost": "{3}{B}{R}",
+    "typeLine": "Legendary Creature — Goblin Human Villain",
+    "oracleText": "Flying, deathtouch\nWhenever Green Goblin attacks, discard a card. Then draw a card for each card you've discarded this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "TurnTracking",
+                                "player": "You",
+                                "tracker": "CARDS_DISCARDED"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Rahn",
+        "flavorText": "\"The Green Goblin lives again!\"\n—Green Goblin, Harry Osborn",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/218ef931-46f5-4a4d-9f26-898a1ff8f70f.jpg?1783905318"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Grow Extra Arms
 {
     "name": "Grow Extra Arms",
@@ -2414,7 +2730,8 @@
             "RED",
             "BLUE",
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "78",
@@ -2694,6 +3011,101 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/e/6ee3b883-e9f5-426f-a2ea-96fe9ff3aba9.jpg?1757378016"
     },
     "colorIdentityOverride": []
+}
+
+// Hydro-Man, Fluid Felon
+{
+    "name": "Hydro-Man, Fluid Felon",
+    "manaCost": "{U}{U}",
+    "typeLine": "Legendary Creature — Elemental Villain",
+    "oracleText": "Whenever you cast a blue spell, if Hydro-Man is a creature, he gets +1/+1 until end of turn.\nAt the beginning of your end step, untap Hydro-Man. Until your next turn, he becomes a land and gains \"{T}: Add {U}.\" (He's not a creature during that time.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasColor",
+                                "color": "BLUE"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "creature"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        },
+                        {
+                            "type": "BecomeArtifact",
+                            "target": "Self",
+                            "cardTypes": [
+                                "LAND"
+                            ],
+                            "colors": null,
+                            "loseAllAbilities": false,
+                            "grantedAbility": {
+                                "id": "ability_3",
+                                "cost": "CostTap",
+                                "effect": {
+                                    "type": "AddMana",
+                                    "color": "BLUE"
+                                },
+                                "isManaAbility": true,
+                                "descriptionOverride": "{T}: Add {U}."
+                            },
+                            "duration": "UntilYourNextTurn"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "rarity": "RARE",
+        "artist": "Borja Pindado",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e53115a4-8959-40fa-b763-931504a1c5a2.jpg?1783905353"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Impostor Syndrome
@@ -4356,7 +4768,8 @@
             "GREEN",
             "RED",
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "108",
@@ -5139,6 +5552,98 @@
     ]
 }
 
+// Oscorp Industries
+{
+    "name": "Oscorp Industries",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\nWhen this land enters from a graveyard, you lose 2 life.\n{T}: Add {U}, {B}, or {R}.\nMayhem (You may play this card from your graveyard if you discarded it this turn. Timing rules still apply.)",
+    "keywords": [
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": ""
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": "TriggeringEntityEnteredOrWasCastFromGraveyard"
+                    },
+                    "then": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "You"
+                        }
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "182",
+        "rarity": "RARE",
+        "artist": "Bastien Grivet",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e609d6e-9e37-45d2-87de-8c76675f7cec.jpg?1783905299"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Oscorp Research Team
 {
     "name": "Oscorp Research Team",
@@ -5550,6 +6055,68 @@
     ]
 }
 
+// Prison Break
+{
+    "name": "Prison Break",
+    "manaCost": "{4}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return target creature card from your graveyard to the battlefield with an additional +1/+1 counter on it.\nMayhem {3}{B} (You may cast this card from your graveyard for {3}{B} if you discarded it this turn. Timing rules still apply.)",
+    "keywords": [
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{3}{B}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card from your graveyard"
+                    },
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card from your graveyard"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target creature card from your graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "61",
+        "rarity": "UNCOMMON",
+        "artist": "John Tyler Christopher",
+        "flavorText": "\"Anyone who's tired of the slammer, follow us!\" —Electro, Max Dillon",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/c/6c45a5df-048e-4b73-89c6-5cdaa330319e.jpg?1783905344"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Professional Wrestler
 {
     "name": "Professional Wrestler",
@@ -5613,6 +6180,51 @@
     "colorIdentityOverride": [
         "BLUE",
         "BLACK"
+    ]
+}
+
+// Pumpkin Bombardment
+{
+    "name": "Pumpkin Bombardment",
+    "manaCost": "{B/R}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, discard a card or pay {2}.\nPumpkin Bombardment deals 3 damage to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "DiscardOrPay",
+                "alternativeManaCost": "{2}"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "artist": "Leon Tukker",
+        "flavorText": "\"Happy Halloween, Spider-Man!\"\n—Green Goblin, Norman Osborn",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a268ad73-9a1f-47d9-9a85-a4669a769c3d.jpg?1783905315"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -5697,6 +6309,38 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Raging Goblinoids
+{
+    "name": "Raging Goblinoids",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Goblin Berserker Villain",
+    "oracleText": "Haste\nMayhem {2}{R} (You may cast this card from your graveyard for {2}{R} if you discarded it this turn. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "HASTE",
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{2}{R}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "85",
+        "rarity": "UNCOMMON",
+        "artist": "Filipe Pagliuso",
+        "flavorText": "\"As if one goblin wasn't bad enough.\" —Spider-Man",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/8519598f-ab7f-49b0-90cc-c0b6422ebdf8.jpg?1783905334"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -6076,6 +6720,105 @@
     ]
 }
 
+// Rocket-Powered Goblin Glider
+{
+    "name": "Rocket-Powered Goblin Glider",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "When this Equipment enters, if it was cast from your graveyard, attach it to target creature you control.\nEquipped creature gets +2/+0 and has flying and haste.\nEquip {2}\nMayhem {2} (You may cast this card from your graveyard for {2} if you discarded it this turn. Timing rules still apply.)",
+    "keywords": [
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "triggerCondition": {
+                    "type": "WasCastFromZone",
+                    "zone": "Graveyard"
+                },
+                "descriptionOverride": "When this Equipment enters, if it was cast from your graveyard, attach it to target creature you control."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 0
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE"
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "RARE",
+        "artist": "Pavel Kolomeyets",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c6c39232-72cc-4363-83d0-b5873f14f231.jpg?1783905302"
+    }
+}
+
 // Romantic Rendezvous
 {
     "name": "Romantic Rendezvous",
@@ -6210,6 +6953,83 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
+    ]
+}
+
+// Sandman's Quicksand
+{
+    "name": "Sandman's Quicksand",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Mayhem {3}{B} (You may cast this card from your graveyard for {3}{B} if you discarded it this turn. Timing rules still apply.)\nAll creatures get -2/-2 until end of turn. If this spell's mayhem cost was paid, creatures your opponents control get -2/-2 until end of turn instead.",
+    "keywords": [
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{3}{B}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.WhenCondition",
+                "condition": "MayhemCostWasPaid"
+            },
+            "then": {
+                "type": "ForEach",
+                "space": {
+                    "type": "IterationSpace.Group",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    }
+                },
+                "body": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "target": "Self"
+                }
+            },
+            "otherwise": {
+                "type": "ForEach",
+                "space": {
+                    "type": "IterationSpace.Group",
+                    "filter": {
+                        "baseFilter": "creature"
+                    }
+                },
+                "body": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "target": "Self"
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "UNCOMMON",
+        "artist": "Michele Giorgi",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/7/b7795e17-6717-464c-9ae3-20da52ba005a.jpg?1783905343"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -6414,6 +7234,102 @@
     "colorIdentityOverride": [
         "RED",
         "GREEN"
+    ]
+}
+
+// Scarlet Spider, Kaine
+{
+    "name": "Scarlet Spider, Kaine",
+    "manaCost": "{B}{R}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "Menace\nWhen Scarlet Spider enters, you may discard a card. If you do, put a +1/+1 counter on him.\nMayhem {B/R} (You may cast this card from your graveyard for {B/R} if you discarded it this turn. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "MENACE",
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{B/R}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.DoAction",
+                            "action": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        },
+                        "then": {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    }
+                },
+                "descriptionOverride": "When Scarlet Spider enters, you may discard a card. If you do, put a +1/+1 counter on him."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "rarity": "UNCOMMON",
+        "artist": "Forrest Imel",
+        "flavorText": "Those who cross Kaine are forever marked.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2cb00060-8cc5-42dc-bcbf-affd9e59f8fd.jpg?1783905312"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -6902,6 +7818,126 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Shadow of the Goblin
+{
+    "name": "Shadow of the Goblin",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Unreliable Visions — At the beginning of your first main phase, discard a card. If you do, draw a card.\nUndying Vengeance — Whenever you play a land or cast a spell from anywhere other than your hand, this enchantment deals 1 damage to each opponent.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "PRECOMBAT_MAIN"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "LandPlayedEvent",
+                    "fromZoneOtherThan": "Hand"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                }
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellCastFromZoneOtherThan",
+                            "zone": "Hand"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "rarity": "RARE",
+        "artist": "Pavel Kolomeyets",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/854b6898-c480-435b-8952-a077c7977cec.jpg?1783905334"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -7943,6 +8979,116 @@
     ]
 }
 
+// Spider-Islanders
+{
+    "name": "Spider-Islanders",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Spider Horror Citizen",
+    "oracleText": "Mayhem {1}{R} (You may cast this card from your graveyard for {1}{R} if you discarded it this turn. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{1}{R}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "91",
+        "artist": "Helge C. Balzer",
+        "flavorText": "\"We've done it, Professor Warren. The glorious metamorphosis of Manhattan has begun!\" —Spider-Queen, Adriana Soria",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c9132e45-4ddb-4565-ac45-86f1ecc6230d.jpg?1783905332"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Spider-Man 2099
+{
+    "name": "Spider-Man 2099",
+    "manaCost": "{U}{R}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "From the Future — You can't cast Spider-Man 2099 during your first, second, or third turns of the game.\nDouble strike, vigilance\nAt the beginning of your end step, if you've played a land or cast a spell this turn from anywhere other than your hand, Spider-Man 2099 deals damage equal to his power to any target.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "DOUBLE_STRIKE",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "triggerCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "PlayerPlayedLandThisTurn",
+                            "fromZoneOtherThan": "Hand"
+                        },
+                        {
+                            "type": "PlayerCastSpellsThisTurn",
+                            "atLeast": 1,
+                            "fromZoneOtherThan": "Hand"
+                        }
+                    ]
+                }
+            }
+        ],
+        "castRestrictions": [
+            {
+                "type": "CastOnlyIfCondition",
+                "condition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "ControllerTurnsTakenAtMost",
+                        "threshold": 3
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "rarity": "RARE",
+        "artist": "Toni Infante",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a72c7e7-34f5-4cb0-9959-35516e398e49.jpg?1783905310"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Spider-Man India
 {
     "name": "Spider-Man India",
@@ -8439,6 +9585,83 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Spider-Slayer, Hatred Honed
+{
+    "name": "Spider-Slayer, Hatred Honed",
+    "manaCost": "{2}",
+    "typeLine": "Legendary Artifact Creature — Human Villain",
+    "oracleText": "Whenever Spider-Slayer deals damage to a Spider, destroy that creature.\n{6}, Exile this card from your graveyard: Create two tapped 1/1 colorless Robot artifact creature tokens with flying.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": {
+                        "type": "RecipientMatching",
+                        "filter": "creature Spider"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "TriggeringEntity",
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{6}"
+                            }
+                        },
+                        "CostExileSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Robot"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "tapped": true,
+                    "artifactToken": true
+                },
+                "activateFromZone": "Graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "rarity": "UNCOMMON",
+        "artist": "David Álvarez",
+        "flavorText": "\"With each attempt on Spider-Man's life, my father came closer to ending the menace. It is my pleasure to finish the job.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac37ca6f-a6ee-4dfb-949f-2562f98d09d0.jpg?1783905300"
+    },
+    "colorIdentityOverride": []
 }
 
 // Spider-Suit
@@ -9522,6 +10745,38 @@
     ]
 }
 
+// Swarm, Being of Bees
+{
+    "name": "Swarm, Being of Bees",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Insect Villain",
+    "oracleText": "Flash\nFlying\nMayhem {B} (You may cast this card from your graveyard for {B} if you discarded it this turn. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING",
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{B}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "69",
+        "artist": "Alex Horley-Orlandelli",
+        "flavorText": "\"Evil never dies. It just becomes bees.\" —Swarm, Fritz von Meyer",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cb83d54e-6641-4929-99ad-c0ba5b610902.jpg?1783905340"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Symbiote Spider-Man
 {
     "name": "Symbiote Spider-Man",
@@ -10340,6 +11595,94 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Ultimate Green Goblin
+{
+    "name": "Ultimate Green Goblin",
+    "manaCost": "{1}{B/R}{B/R}",
+    "typeLine": "Legendary Creature — Goblin Villain",
+    "oracleText": "At the beginning of your upkeep, discard a card, then create a Treasure token.\nMayhem {2}{B/R} (You may cast this card from your graveyard for {2}{B/R} if you discarded it this turn. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{2}{B/R}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Treasure"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "rarity": "RARE",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Osborn's lust for power was nothing short of monstrous.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/8/e82d3f71-8404-40e7-b7fa-35713d1b384e.jpg?1783905308"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -11538,6 +12881,69 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// With Great Power . . .
+{
+    "name": "With Great Power . . .",
+    "manaCost": "{3}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature you control\nEnchanted creature gets +2/+2 for each Aura and Equipment attached to it.\nAll damage that would be dealt to you is dealt to enchanted creature instead.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                },
+                "powerBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "EnchantedCreature",
+                        "numericProperty": "AttachmentCount"
+                    },
+                    "multiplier": 2
+                },
+                "toughnessBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "EnchantedCreature",
+                        "numericProperty": "AttachmentCount"
+                    },
+                    "multiplier": 2
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "RedirectDamage",
+                "redirectTo": "EnchantedCreature",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "You"
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature ctrl:you"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "RARE",
+        "artist": "E. M. Gist",
+        "flavorText": ". . . there must also come great responsibility!",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f717c096-e161-426e-a8d7-c93b117e16b9.jpg?1783905357"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

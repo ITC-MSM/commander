@@ -92,6 +92,34 @@ class CommanderSetupTest : FunSpec({
         }
     }
 
+    test("Team vs Team can enable Commander rules for every player") {
+        val initializer = GameInitializer(registry())
+        val deck = Deck.of("Forest" to 99)
+        val format = Format.TeamVsTeam(
+            startingLife = 40,
+            commanderDamageThreshold = 21,
+            deckSize = 100,
+        )
+        val result = initializer.initializeGame(
+            GameConfig(
+                format = format,
+                players = (1..4).map { seat ->
+                    PlayerConfig("P$seat", deck, commanderCardName = "Ragavan, Nimble Pilferer")
+                },
+                teams = listOf(listOf(0, 1), listOf(2, 3)),
+                skipMulligans = true,
+            )
+        )
+
+        result.state.format shouldBe format
+        for (pid in result.playerIds) {
+            result.state.getEntity(pid)!!.get<LifeTotalComponent>()!!.life shouldBe 40
+            val commanderId = result.state.getZone(ZoneKey(pid, Zone.COMMAND)).single()
+            result.state.getEntity(commanderId)!!.get<CommanderComponent>()!!.ownerId shouldBe pid
+            (commanderId in result.state.getZone(ZoneKey(pid, Zone.LIBRARY))) shouldBe false
+        }
+    }
+
     test("Commander format rejects players without a designated commander") {
         val initializer = GameInitializer(registry())
         // Deck.cards does NOT include the commander (CR 903.6a / DeckValidator convention) —

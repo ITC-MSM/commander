@@ -281,8 +281,8 @@ sealed interface StatePredicate {
      * `ZoneTransitionService` on every arrival in a graveyard, and stripped when the card
      * leaves the graveyard so a later arrival by a different route does not carry the
      * earlier "from battlefield" claim. It carries no turn number — `BeginningPhaseManager`
-     * wipes it from every entity during the untap step of each turn, giving both predicates
-     * MTG-correct per-turn semantics independent of the engine's per-round `state.turnNumber`.
+     * wipes it from every entity during the untap step of each turn, which is what gives both
+     * predicates their per-turn semantics.
      *
      * Pair with `CardPredicate.IsPermanent` (or any other card-predicate constraint)
      * to express the full Samwise / Lobelia filter.
@@ -419,6 +419,29 @@ sealed interface StatePredicate {
     @Serializable
     data object IsEnchanted : Entity {
         override val description: String = "enchanted"
+    }
+
+    /**
+     * Has at least one attached Aura whose *controller* satisfies [auraController] — the narrower
+     * "enchanted by Auras you control" (Archon of the Wild Rose) as opposed to plain [IsEnchanted],
+     * which is agnostic about who controls the Aura (CR 303.4).
+     *
+     * The two are genuinely different adjectives and both appear in print: A Tale for the Ages
+     * buffs your creatures whoever's Aura is on them, while Archon of the Wild Rose only cares
+     * about Auras *you* control. Control is read off the Aura at evaluation time, so an Aura
+     * changing hands turns the predicate on or off continuously.
+     *
+     * "You" is the controller of the ability doing the filtering — the source's controller during
+     * layer projection, the evaluation context's controller for targets and conditions.
+     */
+    @SerialName("IsEnchantedByAura")
+    @Serializable
+    data class IsEnchantedByAura(val auraController: ControllerPredicate) : Entity {
+        override val description: String = when (auraController) {
+            ControllerPredicate.ControlledByYou -> "enchanted by Auras you control"
+            ControllerPredicate.ControlledByOpponent -> "enchanted by Auras an opponent controls"
+            else -> "enchanted"
+        }
     }
 
     /** Has an Equipment attached, an Aura attached, or any counter (MTG "modified" definition) */

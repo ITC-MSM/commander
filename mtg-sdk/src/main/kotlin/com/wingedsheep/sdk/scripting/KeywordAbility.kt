@@ -438,6 +438,33 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Mayhem
+    // =========================================================================
+
+    /**
+     * Mayhem [cost] (CR 702.187, Marvel's Spider-Man). "As long as you discarded this card this
+     * turn, you may cast it from your graveyard by paying [cost] rather than paying its mana cost."
+     *
+     * Unlike [Flashback]/[Harmonize], a Mayhem spell is NOT exiled on resolution: a permanent
+     * simply enters the battlefield, and an instant/sorcery goes to the graveyard as normal. It
+     * grants no timing permission — normal timing rules still apply (a non-Flash creature/sorcery
+     * can only be Mayhem-cast at sorcery speed). The "you discarded this card this turn" gate is
+     * `Conditions.YouDiscardedThisCardThisTurn`, checked by the engine's Mayhem enumerator and
+     * cast-permission logic.
+     *
+     * [cost] is empty for the CR 702.187c "Mayhem" (no cost) form used by lands (Oscorp
+     * Industries) — those are *played* from the graveyard for no mana rather than cast.
+     */
+    @SerialName("Mayhem")
+    @Serializable
+    data class Mayhem(
+        val cost: ManaCost
+    ) : KeywordAbility {
+        override val keyword: Keyword = Keyword.MAYHEM
+        override val description: String = "Mayhem $cost"
+    }
+
+    // =========================================================================
     // Warp
     // =========================================================================
 
@@ -515,6 +542,32 @@ sealed interface KeywordAbility {
     data class Foretell(val cost: ManaCost) : KeywordAbility {
         override val keyword: Keyword = Keyword.FORETELL
         override val description: String = "Foretell $cost"
+    }
+
+    // =========================================================================
+    // Suspend
+    // =========================================================================
+
+    /**
+     * Printed Suspend (CR 702.62, Time Spiral). "Suspend N—[cost]" — a static ability that
+     * functions while the card is in hand: "If you could begin to cast this card by putting
+     * it onto the stack from your hand, you may pay [cost] and exile it with N time counters
+     * on it. This action doesn't use the stack." (CR 702.62a / 116.2f special action.)
+     *
+     * This class only carries the printed *setup* half — [cost] and [timeCounters]. The
+     * countdown-and-cast half is component-driven, not definition-driven: the engine's
+     * synthesized [com.wingedsheep.sdk.scripting.Suspend.countdownAbility] is granted to
+     * *any* exiled card carrying the runtime `SuspendedComponent` marker, so the same
+     * machinery serves both a printed suspend (stamped by the engine's
+     * `SuspendCardFromHandHandler` special action) and a suspend granted at runtime to an
+     * otherwise-ordinary card (e.g. Taigam, Master Opportunist, via
+     * [com.wingedsheep.sdk.dsl.Effects.Suspend]).
+     */
+    @SerialName("Suspend")
+    @Serializable
+    data class Suspend(val cost: ManaCost, val timeCounters: Int) : KeywordAbility {
+        override val keyword: Keyword = Keyword.SUSPEND
+        override val description: String = "Suspend $timeCounters—$cost"
     }
 
     // =========================================================================
@@ -974,6 +1027,12 @@ sealed interface KeywordAbility {
         fun foretell(cost: String): KeywordAbility = Foretell(ManaCost.parse(cost))
 
         /**
+         * Create printed Suspend with a mana cost from a string and its time-counter count
+         * (CR 702.62). E.g. `suspend("{U}", 4)` for "Suspend 4—{U}".
+         */
+        fun suspend(cost: String, timeCounters: Int): KeywordAbility = Suspend(ManaCost.parse(cost), timeCounters)
+
+        /**
          * Create Morph with mana cost from string.
          */
         fun morph(cost: String): KeywordAbility = Morph(ManaCost.parse(cost))
@@ -998,6 +1057,12 @@ sealed interface KeywordAbility {
          * Create Harmonize with mana cost from string (e.g., "Harmonize {5}{R}{R}").
          */
         fun harmonize(cost: String): KeywordAbility = Harmonize(ManaCost.parse(cost))
+
+        /**
+         * Create Mayhem with mana cost from string (e.g., "Mayhem {B}"). Pass "" for the CR
+         * 702.187c "Mayhem" (no cost) land form (Oscorp Industries).
+         */
+        fun mayhem(cost: String): KeywordAbility = Mayhem(ManaCost.parse(cost))
 
         /**
          * Create Kicker with a mana cost.

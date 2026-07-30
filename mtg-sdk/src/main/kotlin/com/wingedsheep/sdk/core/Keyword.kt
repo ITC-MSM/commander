@@ -127,6 +127,18 @@ enum class Keyword(val displayName: String) {
      * pipeline. See [com.wingedsheep.sdk.scripting.KeywordAbility.Harmonize].
      */
     HARMONIZE("Harmonize"),
+
+    /**
+     * Mayhem [cost] (CR 702.187, Marvel's Spider-Man). "As long as you discarded this card
+     * this turn, you may cast it from your graveyard by paying [cost] rather than paying its
+     * mana cost." Unlike [FLASHBACK]/[HARMONIZE] the spell is NOT exiled on resolution — a
+     * permanent simply enters the battlefield and an instant/sorcery goes to the graveyard as
+     * normal. Grants no timing permission (normal timing rules still apply). Gated on the
+     * turn-scoped "you discarded this card this turn" tracker
+     * (`Conditions.YouDiscardedThisCardThisTurn`). See
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.Mayhem].
+     */
+    MAYHEM("Mayhem"),
     EVOKE("Evoke"),
 
     /**
@@ -443,12 +455,14 @@ enum class Keyword(val displayName: String) {
      * and when the last is removed its owner plays it without paying its mana cost (with
      * haste, if it's a creature).
      *
-     * The keyword is display-only. The exile-side behavior is component-driven, not
-     * definition-driven: any exiled card carrying the engine's suspended marker (set by
-     * [com.wingedsheep.sdk.dsl.Effects.Suspend]) gets the synthesized countdown-and-cast
+     * The exile-side behavior is component-driven, not definition-driven: any exiled card
+     * carrying the engine's suspended marker (set by [com.wingedsheep.sdk.dsl.Effects.Suspend]
+     * or by the printed-suspend special action) gets the synthesized countdown-and-cast
      * triggered ability ([com.wingedsheep.sdk.scripting.Suspend.countdownAbility]). This
      * lets "exile it with N time counters; it gains suspend" effects (Taigam, Master
-     * Opportunist) suspend an arbitrary card — even a card with no printed suspend.
+     * Opportunist) suspend an arbitrary card — even a card with no printed suspend — while a
+     * printed "Suspend N—[cost]" (`KeywordAbility.Suspend`) drives the from-hand special
+     * action (CR 116.2f) through the engine's `SuspendCardFromHandHandler`.
      */
     SUSPEND("Suspend"),
     RENOWN("Renown"),

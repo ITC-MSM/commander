@@ -458,6 +458,8 @@ class ChainSpellContinuationResumer(
 
                 val cardNames = selectedCards.map { newState.getEntity(it)?.get<CardComponent>()?.name ?: state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
                 events.add(CardsDiscardedEvent(controllerId, selectedCards, cardNames))
+                newState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                    .trackDiscard(newState, controllerId, selectedCards)
             }
             else -> { /* Unsupported cost type — no-op */ }
         }

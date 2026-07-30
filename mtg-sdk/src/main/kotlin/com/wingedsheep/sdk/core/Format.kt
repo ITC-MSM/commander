@@ -15,6 +15,18 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 sealed interface Format {
+    /**
+     * Commander rules enabled by this game format. A non-null threshold means each player must
+     * designate a commander, receives a command zone, and can lose to commander damage.
+     *
+     * Team vs. Team may opt into these rules while retaining its team membership and individual
+     * life/turn model. Two-Headed Giant deliberately cannot: its shared-life rules conflict with
+     * Commander's per-player starting life.
+     */
+    val commanderDamageThreshold: Int? get() = null
+    val deckSize: Int? get() = null
+    val alwaysDivertToCommand: Boolean get() = false
+    val usesCommanders: Boolean get() = commanderDamageThreshold != null
 
     /**
      * CR 810.4 / 810.9 — the players on a team share **one life total** (and one pooled poison
@@ -65,11 +77,11 @@ sealed interface Format {
      */
     @Serializable
     data class Commander(
-        val commanderDamageThreshold: Int = 21,
-        val deckSize: Int = 100,
+        override val commanderDamageThreshold: Int = 21,
+        override val deckSize: Int = 100,
         val startingLife: Int = 40,
         val startingHandSize: Int = 7,
-        val alwaysDivertToCommand: Boolean = false,
+        override val alwaysDivertToCommand: Boolean = false,
     ) : Format
 
     /**
@@ -147,11 +159,17 @@ sealed interface Format {
      *
      * @property startingLife Each player's own starting life total (standard 20).
      * @property startingHandSize Cards drawn for each player's opening hand.
+     * @property commanderDamageThreshold Non-null when this game also uses Commander rules.
+     * @property deckSize Total deck size including the commander for Commander-shaped games.
+     * @property alwaysDivertToCommand See [Commander.alwaysDivertToCommand].
      */
     @Serializable
     data class TeamVsTeam(
         val startingLife: Int = 20,
         val startingHandSize: Int = 7,
+        override val commanderDamageThreshold: Int? = null,
+        override val deckSize: Int? = null,
+        override val alwaysDivertToCommand: Boolean = false,
     ) : Format
 }
 

@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid as BlightWasPaidCo
 import com.wingedsheep.sdk.scripting.conditions.WaterbendWasPaid as WaterbendWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid as SneakCostWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.WebSlungCostWasPaid as WebSlungCostWasPaidCondition
+import com.wingedsheep.sdk.scripting.conditions.MayhemCostWasPaid as MayhemCostWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceMade as CastChoiceMadeCondition
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceIs as CastChoiceIsCondition
 import com.wingedsheep.sdk.scripting.conditions.CastTimeFlagSet as CastTimeFlagSetCondition
@@ -255,6 +256,20 @@ object Conditions {
         excludeSelf: Boolean = false
     ): ConditionInterface =
         Exists(Player.You, Zone.BATTLEFIELD, filter, negate = negate, excludeSelf = excludeSelf)
+
+    /**
+     * If **an** opponent controls at least one permanent matching [filter] — the opponent-side
+     * mirror of [YouControl], generalizing [OpponentControlsCreature] to any filter.
+     *
+     * `Player.EachOpponent` is an existential across opponents, not a universal: the condition
+     * holds when *any single* opponent controls a match, which is what "as long as an opponent
+     * controls a planeswalker" (Syr Ginger, the Meal Ender) means in multiplayer.
+     */
+    fun OpponentControls(
+        filter: GameObjectFilter,
+        negate: Boolean = false
+    ): ConditionInterface =
+        Exists(Player.EachOpponent, Zone.BATTLEFIELD, filter, negate = negate)
 
     /**
      * If you control an enchantment.
@@ -822,6 +837,15 @@ object Conditions {
         WebSlungCostWasPaidCondition
 
     /**
+     * If this spell's Mayhem cost was paid (CR 702.187 —
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.Mayhem]). Used for riders like Sandman's
+     * Quicksand whose resolution behavior changes when the spell was cast from the graveyard for
+     * its Mayhem cost.
+     */
+    val MayhemCostWasPaid: ConditionInterface =
+        MayhemCostWasPaidCondition
+
+    /**
      * If this spell's blight additional cost was paid (`AdditionalCost.BlightOrPay`).
      * Used for cards like Cinder Strike whose effect changes when the optional
      * Blight path was chosen during casting.
@@ -1186,9 +1210,10 @@ object Conditions {
     fun YouCastSpellsThisTurn(
         atLeast: Int,
         filter: com.wingedsheep.sdk.scripting.GameObjectFilter = com.wingedsheep.sdk.scripting.GameObjectFilter.Any,
-        fromZone: com.wingedsheep.sdk.core.Zone? = null
+        fromZone: com.wingedsheep.sdk.core.Zone? = null,
+        fromZoneOtherThan: com.wingedsheep.sdk.core.Zone? = null
     ): ConditionInterface =
-        PlayerCastSpellsThisTurn(Player.You, filter, atLeast, fromZone)
+        PlayerCastSpellsThisTurn(Player.You, filter, atLeast, fromZone, fromZoneOtherThan)
 
     /**
      * As long as you've drawn [atLeast] or more cards this turn (backed by the per-player
@@ -1207,6 +1232,29 @@ object Conditions {
      */
     val YouCommittedCrimeThisTurn: ConditionInterface =
         PlayerCommittedCrimeThisTurn(Player.You)
+
+    /**
+     * If you've **played a land this turn** (CR 305.1 special land-play action). Optionally qualify by
+     * the zone it was played from — `fromZone` requires that specific zone, `fromZoneOtherThan`
+     * excludes it (mutually exclusive). Backed by the per-player `LandsPlayedThisTurnComponent`.
+     */
+    fun YouPlayedLandThisTurn(
+        fromZone: com.wingedsheep.sdk.core.Zone? = null,
+        fromZoneOtherThan: com.wingedsheep.sdk.core.Zone? = null
+    ): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PlayerPlayedLandThisTurn(Player.You, fromZone, fromZoneOtherThan)
+
+    /**
+     * If you've **played a land this turn from a zone other than your hand** (CR 305.1 land-play
+     * from graveyard / exile / library) — convenience for
+     * [YouPlayedLandThisTurn]`(fromZoneOtherThan = Zone.HAND)`. The land half of Spider-Man 2099's
+     * end-step intervening-if; compose with [YouCastSpellsThisTurn]`(1, fromZoneOtherThan = Zone.HAND)`
+     * via [any] for the full "played a land or cast a spell this turn from anywhere other than your hand".
+     */
+    val YouPlayedLandFromNonHandThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PlayerPlayedLandThisTurn(
+            Player.You, fromZoneOtherThan = com.wingedsheep.sdk.core.Zone.HAND
+        )
 
     /**
      * If this is the first spell you've cast this turn that mana from a Treasure was
@@ -1532,6 +1580,14 @@ object Conditions {
      */
     val SourcePlottedOnPriorTurn: ConditionInterface =
         com.wingedsheep.sdk.scripting.conditions.SourcePlottedOnPriorTurn
+
+    /**
+     * Internal: the Mayhem gate (CR 702.187b). True when the source card in a graveyard was
+     * discarded by its owner this turn. Cards never reference this directly — the engine's Mayhem
+     * enumerator and cast-permission check wire it up.
+     */
+    val YouDiscardedThisCardThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.YouDiscardedThisCardThisTurn
 
     /**
      * If it's the first end step of the turn (not an extra end step inserted by

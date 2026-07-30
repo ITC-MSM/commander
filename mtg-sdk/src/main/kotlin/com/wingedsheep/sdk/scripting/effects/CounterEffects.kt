@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.events.RecipientFilter
+import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -162,6 +163,72 @@ data class RemoveAnyNumberOfCountersEffect(
             "Remove up to $maxTotal counter${if (maxTotal != 1) "s" else ""} from ${target.description}"
         else
             "Remove any number of counters from ${target.description}"
+}
+
+/**
+ * A player pays any amount of [counterType] counters they currently have (0..their current
+ * total) — CR 107.14's "pay {E}" generalized to a player-chosen amount rather than a fixed one,
+ * and to any player-scoped counter kind (energy today; poison/rad share the same on-player
+ * `CountersComponent` shape). The paid amount is removed from [player] and stored in the pipeline
+ * under [storeAmountAs], readable downstream via `DynamicAmount.VariableReference(storeAmountAs)`
+ * — the same "store a resolution-time number, read it in a later composed effect" convention
+ * `DrawUpToEffect.storeAs` uses.
+ *
+ * "You get {E}{E}{E} (three energy counters), then you may pay any amount of {E}. [~] deals that
+ * much damage to that permanent." (Galvanic Discharge) composes as:
+ * `Effects.Composite(Effects.GetEnergy(3), PayCountersEffect(Counters.ENERGY, storeAmountAs = "paid"), Effects.DealDamage(VariableReference("paid"), target))`.
+ *
+ * Paying 0 is always legal (a `ChooseNumberDecision` with `minValue = 0`) — "may pay" is
+ * honored by the player being free to choose 0, not by a separate opt-out step. No prompt at all
+ * when the player currently has zero of [counterType] (nothing to choose).
+ *
+ * @property counterType Which player-scoped counter kind to pay (e.g. [Counters.ENERGY]).
+ * @property player Whose counters are paid. Defaults to the effect's controller.
+ * @property storeAmountAs Pipeline variable name the chosen/paid amount is stored under.
+ */
+@SerialName("PayCounters")
+@Serializable
+data class PayCountersEffect(
+    val counterType: String,
+    val player: Player = Player.You,
+    val storeAmountAs: String
+) : Effect {
+    override val description: String =
+        "${player.possessive} may pay any amount of $counterType counters"
+}
+
+/**
+ * Pay an exact, fixed number of player-scoped counters — the all-or-nothing counterpart to
+ * [PayCountersEffect]'s "pay any amount". CR 107.14 energy example: "Whenever you attack, you
+ * may pay {E}{E}{E}. When you do, [...]" (Guide of Souls) — there's no amount to choose, only
+ * whether to pay the named total, and per the 2024-06-07 ruling you can't pay a partial amount
+ * to get a partial effect.
+ *
+ * Designed as the `action` half of a [ReflexiveTriggerEffect] ("When you do" — CR 603.12 — a
+ * fresh triggered ability with its own targets, distinct from a same-ability "If you do"
+ * continuation): the outer yes/no is the payment decision itself, so this effect performs no
+ * decision of its own — it deducts [amount] atomically and fails outright (no partial removal)
+ * if the paying player has fewer than [amount]. `ReflexiveTriggerEffectExecutor.isActionFeasible`
+ * checks affordability *before* offering the "may pay" prompt, so in practice this effect only
+ * ever runs when the payment is guaranteed to succeed; the failure path is defense in depth.
+ *
+ * Composes as:
+ * `ReflexiveTriggerEffect(action = Effects.PayFixedCounters(Counters.ENERGY, 3), reflexiveEffect
+ * = ..., reflexiveTargetRequirements = [...])`.
+ *
+ * @property counterType Which player-scoped counter kind to pay (e.g. [Counters.ENERGY]).
+ * @property amount The exact number of counters paid — not a cap, not a choice.
+ * @property player Whose counters are paid. Defaults to the effect's controller.
+ */
+@SerialName("PayFixedCounters")
+@Serializable
+data class PayFixedCountersEffect(
+    val counterType: String,
+    val amount: Int,
+    val player: Player = Player.You
+) : Effect {
+    override val description: String =
+        "${player.possessive} pay $amount $counterType counter${if (amount != 1) "s" else ""}"
 }
 
 /**

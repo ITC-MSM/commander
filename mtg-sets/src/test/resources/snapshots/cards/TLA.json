@@ -396,7 +396,8 @@
         "colorIdentityOverride": [
             "WHITE",
             "BLUE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "204",
@@ -616,7 +617,8 @@
             "artist": "Evan Shipard",
             "imageUri": "https://cards.scryfall.io/normal/back/f/e/fea89ca0-8070-4f28-9851-994314f9d248.jpg?1764522003"
         },
-        "colorIdentityOverride": []
+        "colorIdentityOverride": [],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "203",
@@ -2150,7 +2152,8 @@
             "BLACK",
             "RED",
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "207",
@@ -19104,7 +19107,8 @@
         },
         "colorIdentityOverride": [
             "BLUE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "61",
@@ -19295,7 +19299,8 @@
             "flavorText": "\"Only justice will bring peace.\"",
             "imageUri": "https://cards.scryfall.io/normal/back/4/8/4887ce64-7c98-4bd7-95db-0c43ab71cc6e.jpg?1764846544"
         },
-        "colorIdentityOverride": []
+        "colorIdentityOverride": [],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "186",
@@ -19469,7 +19474,8 @@
         },
         "colorIdentityOverride": [
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "145",
@@ -19680,7 +19686,8 @@
         },
         "colorIdentityOverride": [
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "27",
@@ -20082,7 +20089,8 @@
         },
         "colorIdentityOverride": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "117",

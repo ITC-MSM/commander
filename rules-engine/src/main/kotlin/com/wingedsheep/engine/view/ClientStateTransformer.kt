@@ -3,6 +3,7 @@ package com.wingedsheep.engine.view
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.engine.mechanics.citysblessing.CitysBlessingService
 import com.wingedsheep.engine.mechanics.combat.rules.DefenderBypass
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
@@ -74,6 +75,7 @@ class ClientStateTransformer(
 ) {
 
     private val conditionEvaluator = com.wingedsheep.engine.handlers.ConditionEvaluator()
+    private val visibility = Visibility(cardRegistry, debugMode)
     // Reused (with conditionEvaluator + cardRegistry) to surface each player's effective maximum
     // hand size via the shared com.wingedsheep.engine.core.MaximumHandSize source of truth.
     private val dynamicAmountEvaluator = DynamicAmountEvaluator(conditionEvaluator)
@@ -101,7 +103,7 @@ class ClientStateTransformer(
         val zones = mutableListOf<ClientZone>()
 
         for ((zoneKey, entityIds) in state.zones) {
-            val isZoneVisible = isZoneVisibleTo(state, zoneKey, viewingPlayerId, isSpectator)
+            val isZoneVisible = visibility.isZoneVisibleTo(state, zoneKey, viewingPlayerId, isSpectator)
 
             // For libraries we always send the full ordered list of entity IDs so the client can
             // render a correctly sized stack. Individual card *details* are only populated for cards
@@ -112,7 +114,7 @@ class ClientStateTransformer(
                 entityIds
             } else {
                 entityIds.filter { entityId ->
-                    isCardRevealedTo(state, entityId, viewingPlayerId)
+                    visibility.isCardRevealedTo(state, entityId, viewingPlayerId)
                 }
             }
             val zoneCardIds = if (isLibrary) entityIds else cardsWithDetails
@@ -403,8 +405,8 @@ class ClientStateTransformer(
         if (!isInFaceDownZone || !container.has<FaceDownComponent>()) return true
         val controllerId = container.get<ControllerComponent>()?.playerId
         return controllerId == viewingPlayerId ||
-            isCardRevealedTo(state, entityId, viewingPlayerId) ||
-            (zoneType == Zone.BATTLEFIELD && hasLookAtFaceDownCreatures(state, viewingPlayerId))
+            visibility.isCardRevealedTo(state, entityId, viewingPlayerId) ||
+            (zoneType == Zone.BATTLEFIELD && visibility.hasLookAtFaceDownCreatures(state, viewingPlayerId))
     }
 
     /**
@@ -477,43 +479,6 @@ class ClientStateTransformer(
         return false
     }
 
-    private fun isZoneVisibleTo(
-        state: GameState,
-        zoneKey: ZoneKey,
-        viewingPlayerId: EntityId,
-        isSpectator: Boolean
-    ): Boolean {
-        return when (zoneKey.zoneType) {
-            Zone.LIBRARY -> false
-            // During a Mindslaver-style hijack the controller (actor) sees what the
-            // affected player sees of their own hand. Spectators never gain visibility.
-            // A non-spectator viewer also sees an opponent's hand while they control a
-            // permanent that makes their opponents play with hands revealed (Seer's Vision).
-            // In Two-Headed Giant (CR 810.2b) teammates share strategy openly, so a player
-            // always sees their teammate's hand; [teammatesOf] is empty in non-team games, so
-            // this clause is inert for 2-player / Free-for-All. (Library stays hidden — teams
-            // share life and turns, not card knowledge of each other's library order.)
-            Zone.HAND -> debugMode || zoneKey.ownerId == viewingPlayerId ||
-                (!isSpectator && state.actorFor(zoneKey.ownerId) == viewingPlayerId) ||
-                (!isSpectator && state.teammatesOf(viewingPlayerId).contains(zoneKey.ownerId)) ||
-                (!isSpectator && zoneKey.ownerId != viewingPlayerId &&
-                    revealsOpponentHandsTo(state, viewingPlayerId))
-            // The sideboard is private "outside the game" knowledge (CR 100.4 / 400.11a): only its
-            // owner ever sees it, never opponents or spectators. (The wish *choice* itself is driven
-            // by the SelectFromCollection decision, which sends the deciding player the gathered
-            // cards directly — it doesn't depend on this passive zone visibility.) The actorFor
-            // clause keeps a Mindslaver-style controller able to see the sideboard of the player
-            // whose turn they're piloting.
-            Zone.SIDEBOARD -> debugMode || zoneKey.ownerId == viewingPlayerId ||
-                (!isSpectator && state.actorFor(zoneKey.ownerId) == viewingPlayerId)
-            Zone.BATTLEFIELD,
-            Zone.GRAVEYARD,
-            Zone.STACK,
-            Zone.EXILE,
-            Zone.COMMAND -> true
-        }
-    }
-
     /**
      * Resolve a static ability that may be gated by a [ConditionalStaticAbility] (e.g. The
      * Belligerent's play-from-top window, a [LookAtTopOfLibrary] gated on "attacked this turn").
@@ -522,81 +487,31 @@ class ClientStateTransformer(
      * otherwise. Mirrors `CastPermissionUtils.activeStaticAbility` so that what a player can SEE
      * stays in sync with what the legal-actions layer lets them DO.
      */
-    private fun activeStaticAbility(
-        state: GameState,
-        ability: com.wingedsheep.sdk.scripting.StaticAbility,
-        sourceId: EntityId,
-        controllerId: EntityId
-    ): com.wingedsheep.sdk.scripting.StaticAbility? = when (ability) {
-        is ConditionalStaticAbility -> {
-            val context = EffectContext(sourceId = sourceId, controllerId = controllerId)
-            if (conditionEvaluator.evaluate(state, ability.condition, context)) ability.ability else null
-        }
-        else -> ability
-    }
-
-    /**
-     * Check whether any static ability active on [playerId]'s battlefield satisfies [predicate],
-     * honoring [ConditionalStaticAbility] gates via [activeStaticAbility].
-     */
-    private fun hasActiveStaticAbility(
-        state: GameState,
-        playerId: EntityId,
-        predicate: (com.wingedsheep.sdk.scripting.StaticAbility) -> Boolean
-    ): Boolean {
-        for (entityId in state.getBattlefield(playerId)) {
-            val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            if (cardDef.script.staticAbilities.any { ability ->
-                    activeStaticAbility(state, ability, entityId, playerId)?.let(predicate) == true
-                }
-            ) {
-                return true
-            }
-        }
-        return false
-    }
-
     /**
      * Check if a player controls a permanent that reveals the top card of their library to all
      * players — either [PlayFromTopOfLibrary] (Future Sight) or [RevealTopOfLibrary] (Goblin Spy).
      * The two abilities share the public-reveal visibility; they diverge only in play permission,
      * which is handled by the cast/play-from-top paths (keyed on [PlayFromTopOfLibrary] alone).
      */
-    private fun revealsTopOfLibraryPublicly(state: GameState, playerId: EntityId): Boolean =
-        hasActiveStaticAbility(state, playerId) { it is PlayFromTopOfLibrary || it is RevealTopOfLibrary }
-
-    /**
-     * Check if [playerId] controls a permanent with [OpponentsPlayWithHandsRevealed]
-     * (e.g., Seer's Vision). While they do, their opponents' hands are visible to them.
-     */
-    private fun revealsOpponentHandsTo(state: GameState, playerId: EntityId): Boolean =
-        hasActiveStaticAbility(state, playerId) { it is OpponentsPlayWithHandsRevealed }
-
     /**
      * Check if a player controls a permanent with an active LookAtTopOfLibrary (e.g., Lens of
      * Clarity; The Belligerent's is gated behind "attacked this turn").
      * This reveals the top card of the controller's library privately (only to them).
      */
-    private fun hasLookAtTopOfLibrary(state: GameState, playerId: EntityId): Boolean =
-        hasActiveStaticAbility(state, playerId) { it is LookAtTopOfLibrary }
-
     /**
      * Check if a player controls a permanent with LookAtFaceDownCreatures (e.g., Lens of Clarity).
      * This reveals the identity of opponent's face-down battlefield creatures to the controller.
      */
-    private fun hasLookAtFaceDownCreatures(state: GameState, playerId: EntityId): Boolean =
-        hasActiveStaticAbility(state, playerId) { it is LookAtFaceDownCreatures }
-
     /**
      * Check if an individual card has been revealed to a specific player.
      * This is used for "look at hand" or "reveal hand" effects where the viewing player
      * can see specific cards in an otherwise hidden zone.
      */
-    private fun isCardRevealedTo(state: GameState, entityId: EntityId, viewingPlayerId: EntityId): Boolean {
-        val revealedComponent = state.getEntity(entityId)?.get<RevealedToComponent>()
-        return revealedComponent?.isRevealedTo(viewingPlayerId) == true
-    }
+    private fun revealsTopOfLibraryPublicly(state: GameState, playerId: EntityId): Boolean =
+        visibility.revealsTopOfLibraryPublicly(state, playerId)
+
+    private fun hasLookAtTopOfLibrary(state: GameState, playerId: EntityId): Boolean =
+        visibility.hasLookAtTopOfLibrary(state, playerId)
 
     /**
      * Transform an activated or triggered ability on the stack into a ClientCard DTO.
@@ -872,6 +787,7 @@ class ClientStateTransformer(
 
         // Get state components
         val isTapped = container.has<TappedComponent>()
+        val isExerted = container.has<com.wingedsheep.engine.state.components.battlefield.ExertedComponent>()
         val isPhasedOut = container.has<PhasedOutComponent>()
         // Summoning sickness doesn't affect creatures with haste. The engine attaches the
         // marker to every entering permanent (so Vehicles / animated lands inherit it when
@@ -893,8 +809,8 @@ class ClientStateTransformer(
             // Also check LookAtFaceDownCreatures (e.g., Lens of Clarity) — only for battlefield creatures,
             // not face-down spells on the stack (per ruling).
             val isRevealedToViewer = !isSpectator && (
-                isCardRevealedTo(state, entityId, viewingPlayerId) ||
-                (zoneKey.zoneType == Zone.BATTLEFIELD && hasLookAtFaceDownCreatures(state, viewingPlayerId))
+                visibility.isCardRevealedTo(state, entityId, viewingPlayerId) ||
+                (zoneKey.zoneType == Zone.BATTLEFIELD && visibility.hasLookAtFaceDownCreatures(state, viewingPlayerId))
             )
 
             // Face-down exiled cards show minimal info (not creatures, no P/T)
@@ -980,6 +896,7 @@ class ClientStateTransformer(
                 hexproofFromColors = faceDownHexproofFromColors,
                 counters = container.get<CountersComponent>()?.counters ?: emptyMap(),
                 isTapped = isTapped,
+                isExerted = isExerted,
                 hasSummoningSickness = hasSummoningSickness,
                 isTransformed = false,
                 isPhasedOut = isPhasedOut,
@@ -1238,6 +1155,17 @@ class ClientStateTransformer(
         val isParadigm = zoneKey.zoneType == Zone.EXILE &&
             container.has<com.wingedsheep.engine.state.components.battlefield.ParadigmComponent>()
 
+        // Suspended cards (CR 702.62) sit face-up in exile with a SuspendedComponent, counting down at
+        // the owner's upkeep; surface a flag so the client can show them in a dedicated public pile
+        // (otherwise indistinguishable from any other exiled card). CR 702.62b: "suspended" also
+        // requires at least one time counter — the marker alone lingers after the owner declines the
+        // free cast at zero counters (see SuspendCardFromHandHandler), and that leftover shouldn't
+        // read as an active countdown.
+        val isSuspended = zoneKey.zoneType == Zone.EXILE &&
+            container.has<com.wingedsheep.engine.state.components.battlefield.SuspendedComponent>() &&
+            (container.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
+                ?.getCount(CounterType.TIME) ?: 0) > 0
+
         // Prepared permanents (Secrets of Strixhaven) carry a PreparedComponent while a copy of their
         // prepare spell waits castable in exile; surface a flag so the client can badge the creature.
         val isPrepared = zoneKey.zoneType == Zone.BATTLEFIELD &&
@@ -1317,6 +1245,7 @@ class ClientStateTransformer(
             hexproofFromMonocolored = hexproofFromMonocolored,
             counters = counters,
             isTapped = isTapped,
+            isExerted = isExerted,
             hasSummoningSickness = hasSummoningSickness,
             isTransformed = false, // TODO: Add transformed support
             isPhasedOut = isPhasedOut,
@@ -1338,12 +1267,19 @@ class ClientStateTransformer(
             isSuspected = projectedValues?.isSuspected == true,
             isPlotted = isPlotted,
             isParadigm = isParadigm,
+            isSuspended = isSuspended,
             isPrepared = isPrepared,
             isPreparedSpell = isPreparedSpell,
             isWarped = isWarped,
             morphCost = if (isFaceDown && morphData != null) morphData.morphCost.description else null,
             targets = targets,
-            imageUri = state.imageOverrideFor(entityId) ?: cardComponent.imageUri ?: cardDef?.metadata?.imageUri,
+            imageUri = state.imageOverrideFor(entityId)
+                ?: cardDef?.metadata?.imageUriByCreatureSubtype
+                    ?.entries
+                    ?.firstOrNull { (subtype) -> subtype in displaySubtypes }
+                    ?.value
+                ?: cardComponent.imageUri
+                ?: cardDef?.metadata?.imageUri,
             imageRotation = cardDef?.metadata?.imageRotation ?: 0,
             activeEffects = activeEffects,
             rulings = cardDef?.metadata?.rulings?.map {
@@ -1892,20 +1828,21 @@ class ClientStateTransformer(
             activeEffects = activeEffects,
             commanderDamage = buildCommanderDamage(state, playerId),
             // CR 702.179 — public information, and 0 for the overwhelming majority of games.
-            speed = state.speed(playerId)
+            speed = state.speed(playerId),
+            // CR 107.14 — public information like poison counters, and 0 outside energy decks.
+            energyCounters = container?.get<CountersComponent>()?.getCount(CounterType.ENERGY) ?: 0
         )
     }
 
     /**
-     * Build per-commander damage tallies against [playerId]. Empty outside `Format.Commander`
+     * Build per-commander damage tallies against [playerId]. Empty when the format has no commanders
      * and for defenders no commander has connected with yet.
      */
     private fun buildCommanderDamage(
         state: GameState,
         playerId: EntityId
     ): List<ClientCommanderDamage> {
-        val format = state.format as? com.wingedsheep.sdk.core.Format.Commander
-            ?: return emptyList()
+        val threshold = state.format.commanderDamageThreshold ?: return emptyList()
         if (state.commanderDamage.isEmpty()) return emptyList()
 
         return state.commanderDamage
@@ -1922,7 +1859,7 @@ class ClientStateTransformer(
                     commanderName = card.name,
                     controllerId = controllerId,
                     amount = entry.amount,
-                    threshold = format.commanderDamageThreshold,
+                    threshold = threshold,
                     imageUri = card.imageUri,
                 )
             }
@@ -2144,10 +2081,13 @@ class ClientStateTransformer(
             )
         }
 
-        // Check for PlayerCitysBlessingComponent (Ascend / city's blessing, CR 702.131).
-        // Surface the actual Scryfall "City's Blessing" marker card (tblc #40) as the badge
-        // image so it matches the physical-game marker players know.
-        if (container.has<PlayerCitysBlessingComponent>()) {
+        // Ascend / city's blessing (CR 702.131). Read through CitysBlessingService rather than the
+        // component so the badge tracks the rule: ascend on a permanent is continuous, and a player
+        // who has just crossed ten permanents already has the blessing even though the state-based
+        // action that writes the marker hasn't been polled yet. Surface the actual Scryfall "City's
+        // Blessing" marker card (tblc #40) as the badge image so it matches the physical-game
+        // marker players know.
+        if (CitysBlessingService.has(state, playerId)) {
             effects.add(
                 ClientPlayerEffect(
                     effectId = "citys_blessing",
@@ -2873,7 +2813,7 @@ class ClientStateTransformer(
         val restrictionController = state.projectedState.getController(entityId)
         if (cardDefForRestrictions != null && restrictionController != null) {
             for (ability in cardDefForRestrictions.script.staticAbilities) {
-                val active = activeStaticAbility(state, ability, entityId, restrictionController)
+                val active = visibility.activeStaticAbility(state, ability, entityId, restrictionController)
                 if (active is com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan &&
                     active.filter.scope is com.wingedsheep.sdk.scripting.filters.unified.Scope.Self
                 ) {

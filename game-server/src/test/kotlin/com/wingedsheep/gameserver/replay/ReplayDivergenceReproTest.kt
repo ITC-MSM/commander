@@ -69,7 +69,7 @@ class ReplayDivergenceReproTest : ScenarioTestBase() {
                 session.keepHand(p1)
                 session.keepHand(p2)
 
-                playRandomGame(session, enumerator, rng, maxTurns = 25)
+                playRandomGame(session, enumerator, rng, maxTurns = 50)
 
                 val setup = session.getReplaySetup() ?: continue
                 val liveFinal = session.getStateForTesting()

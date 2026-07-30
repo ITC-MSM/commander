@@ -13,9 +13,10 @@ import org.springframework.stereotype.Service
  * The denominator — how many cards a set canonically *has* — is not knowable at
  * runtime: it lives only in the local Scryfall cache that `scripts/card-status`
  * populates. `scripts/gen-set-totals` bakes those canonical card names into the
- * committed `coverage/set-totals.json` resource, split into **draft** (booster-relevant,
- * Scryfall `booster: true`) and **extra** (completionist exclusives), same partitioning
- * as `card-status` so the numbers match the mtgish coverage TUI.
+ * committed `coverage/set-totals.json` resource, split into **draft** (booster-relevant —
+ * some printing of the card in that set is Scryfall `booster: true`) and **extra**
+ * (completionist exclusives), same partitioning as `card-status` so the numbers match the
+ * mtgish coverage TUI.
  *
  * At request time this service joins that static denominator with the *live*
  * [MtgSetCatalog] numerator: a set's implemented count is the number of its canonical

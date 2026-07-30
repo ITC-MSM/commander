@@ -409,6 +409,54 @@ sealed interface AdditionalCost : TextReplaceable<AdditionalCost> {
     }
 
     /**
+     * Discard [count] card(s) matching [filter] from your hand, or pay additional mana: the caster
+     * must either discard that many matching cards, or pay extra mana on top of the spell's base
+     * mana cost. The sibling of [BlightOrPay] / [BeholdOrPay] / [ExileFromGraveyardOrPay] /
+     * [SacrificeOrPay] for the "discard a card or pay" shape (e.g. Pumpkin Bombardment —
+     * "discard a card or pay {2}").
+     *
+     * The enumerator produces up to two legal actions: one for the discard path (base cost + card
+     * selection from hand, surfaced with `costType = "DiscardCard"` like Force of Will's plain
+     * discard cost) and one for the pay path (base cost + [alternativeManaCost]). The discard path
+     * is only offered when the caster holds at least [count] cards matching [filter] (excluding the
+     * spell being cast). The chosen path is recovered at payment time from whether
+     * [AdditionalCostPayment.discardedCards] is non-empty. The discard-as-cost still counts toward
+     * the turn's discard tracking (CR 701.8), like every other discard site.
+     *
+     * @property alternativeManaCost Extra mana to pay instead of discarding (e.g. "{2}")
+     * @property filter Which hand cards qualify (default any card)
+     * @property count How many matching cards to discard on the discard path
+     */
+    @SerialName("DiscardOrPay")
+    @Serializable
+    data class DiscardOrPay(
+        val alternativeManaCost: String,
+        val filter: GameObjectFilter = GameObjectFilter.Any,
+        val count: Int = 1,
+    ) : AdditionalCost {
+        override val description: String = buildString {
+            append("Discard ")
+            if (count == 1) {
+                val filterDesc = filter.description
+                val article = if (filterDesc.firstOrNull()?.lowercase() in listOf("a", "e", "i", "o", "u")) "an" else "a"
+                append("$article ")
+                append(filterDesc)
+            } else {
+                append("$count ")
+                append(filter.description)
+                append("s")
+            }
+            append(" or pay ")
+            append(alternativeManaCost)
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): AdditionalCost {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
+
+    /**
      * Exile cards from a named pipeline collection and optionally link them to the
      * source spell/permanent via LinkedExileComponent.
      *

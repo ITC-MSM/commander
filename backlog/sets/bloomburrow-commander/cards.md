@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 111 / 312
+**Implemented:** 113 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -118,7 +118,7 @@
 - [ ] Gilded Goose
 - [x] Gilded Lotus
 - [ ] Glacial Fortress
-- [ ] Golgari Rot Farm
+- [x] Golgari Rot Farm
 - [ ] Golgari Signet
 - [x] Goreclaw, Terror of Qal Sisma
 - [ ] Gourmand's Talent
@@ -232,7 +232,7 @@
 - [x] Rootbound Crag
 - [ ] Rootcast Apprenticeship
 - [ ] Rose Room Treasurer
-- [ ] Rowdy Research
+- [x] Rowdy Research
 - [ ] Rugged Prairie
 - [x] Sakura-Tribe Elder
 - [ ] Saw in Half

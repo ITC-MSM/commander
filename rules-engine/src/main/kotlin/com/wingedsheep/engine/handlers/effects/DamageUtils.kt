@@ -224,6 +224,12 @@ object DamageUtils {
             // Damage-to-an-opponent → prevent + each opponent mills that many (The Mindskinner).
             val millResult = applyReplaceDamageWithMill(newState, targetId, effectiveAmount, sourceId)
             if (millResult != null) return millResult
+        } else {
+            // Damage-to-a-creature self-replacement (Anti-Venom): "if damage would be dealt to
+            // <this creature>, prevent it and put that many +1/+1 counters on him." Matches only a
+            // Self-recipient replacement whose host is the damaged creature.
+            val counterResult = applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId)
+            if (counterResult != null) return counterResult
         }
 
         // Events from a reflect shield (Eye for an Eye) that fired but let the damage proceed.
@@ -844,19 +850,36 @@ object DamageUtils {
         // Recipient-group shields ("prevent all damage that would be dealt to creatures you control
         // this turn"): the filter is re-evaluated now against projected state, with the shield's
         // controller as the "you" reference, so permanents that came under control later this turn
-        // are protected too. Honours the combat-only variant.
+        // are protected too. Honours the combat-only variant, the "you and …" player recipient
+        // (a player never matches a permanent filter, so it is checked separately), and an optional
+        // source filter ("… by creatures") evaluated against the damage source the same way.
         val groupShieldEvaluator = PredicateEvaluator()
         if (updatedEffects.any { fe ->
                 val mod = fe.effect.modification
-                mod is SerializableModification.PreventAllDamageToGroup &&
-                    (!mod.combatOnly || isCombatDamage) &&
+                if (mod !is SerializableModification.PreventAllDamageToGroup) return@any false
+                if (mod.combatOnly && !isCombatDamage) return@any false
+                val predicateContext = PredicateContext(controllerId = fe.controllerId)
+                val recipientMatches = (mod.includesController && targetId == fe.controllerId) ||
                     groupShieldEvaluator.matches(
                         state,
                         state.projectedState,
                         targetId,
                         mod.filter,
-                        PredicateContext(controllerId = fe.controllerId)
+                        predicateContext
                     )
+                if (!recipientMatches) return@any false
+                // Fail closed on an unidentifiable source: a "by creatures" shield must not swallow
+                // damage it can't attribute to a creature.
+                val sourceMatches = mod.sourceFilter == null || (
+                    sourceId != null && groupShieldEvaluator.matches(
+                        state,
+                        state.projectedState,
+                        sourceId,
+                        mod.sourceFilter,
+                        predicateContext
+                    )
+                    )
+                sourceMatches
             }) {
             return state to 0
         }
@@ -1116,6 +1139,13 @@ object DamageUtils {
                     ?.get<com.wingedsheep.engine.state.components.battlefield.LastKnownPermanentComponent>()
                     ?.snapshot?.controllerId
         is EffectTarget.Self -> replacementOwnerId
+        // Pariah-style redirect (With Great Power…): "all damage dealt to you is dealt to
+        // enchanted creature instead." The replacement lives on the Aura/Equipment; the
+        // recipient is whatever it's attached to.
+        is EffectTarget.EnchantedCreature,
+        is EffectTarget.EquippedCreature,
+        is EffectTarget.EnchantedPermanent ->
+            state.getEntity(replacementOwnerId)?.get<AttachedToComponent>()?.targetId
         else -> null
     }
 
@@ -1862,6 +1892,9 @@ object DamageUtils {
                 // Check recipient filter
                 val recipientMatches = when (val recipient = damageEvent.recipient) {
                     is RecipientFilter.You -> targetId == sourceControllerId
+                    // "If damage would be dealt to <this creature>…" (Anti-Venom) — the damaged
+                    // permanent is the replacement's own host; counters go on it (entityId).
+                    is RecipientFilter.Self -> targetId == entityId
                     is RecipientFilter.Any -> true
                     else -> false
                 }

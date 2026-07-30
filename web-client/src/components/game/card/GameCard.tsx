@@ -452,7 +452,8 @@ function GameCardImpl({
            (action.type === 'CastSpell' && action.cardId === card.id) ||
            (action.type === 'CycleCard' && action.cardId === card.id) ||
            (action.type === 'TypecycleCard' && action.cardId === card.id) ||
-           (action.type === 'PlotCard' && action.cardId === card.id)
+           (action.type === 'PlotCard' && action.cardId === card.id) ||
+           (action.type === 'SuspendCardFromHand' && action.cardId === card.id)
   }), [legalActions, card.id])
   const playableAction = playableActions[0]
   // Open the action menu when the card has more than one way to be played — including cards
@@ -1321,6 +1322,25 @@ function GameCardImpl({
       {battlefield && card.hasSummoningSickness && card.cardTypes.includes('CREATURE') && (
         <div style={styles.summoningSicknessOverlay}>
           <div style={{ ...styles.summoningSicknessIcon, fontSize: responsive.badges.sicknessIconSize }}>💤</div>
+        </div>
+      )}
+
+      {/* Exerted indicator (CR 701.43a) — won't untap during its controller's next untap step. */}
+      {battlefield && card.isExerted && (
+        <div
+          aria-label="Exerted — won't untap next turn"
+          title="Exerted — won't untap next turn"
+          style={{
+            position: 'absolute',
+            top: 3,
+            right: 3,
+            fontSize: responsive.badges.sicknessIconSize,
+            opacity: 0.85,
+            zIndex: 7,
+            pointerEvents: 'none',
+          }}
+        >
+          🔒
         </div>
       )}
 

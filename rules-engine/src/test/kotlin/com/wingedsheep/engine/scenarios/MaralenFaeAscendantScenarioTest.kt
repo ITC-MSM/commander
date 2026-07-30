@@ -346,9 +346,8 @@ class MaralenFaeAscendantScenarioTest : ScenarioTestBase() {
                 game.getClientState(1).cards[turn1Cheap]
                     ?.playableFromExile shouldBe true
 
-                // End P1's turn → P2's turn. Even though the engine reuses turnNumber
-                // across both players within a round, "exiled this turn" must not leak
-                // into the opponent's turn — the entry's eligibility expires at cleanup.
+                // End P1's turn → P2's turn. "Exiled this turn" must not leak into the
+                // opponent's turn — the entry's eligibility expires at cleanup.
                 game.passUntilPhase(Phase.ENDING, Step.END)
                 game.passUntilPhase(Phase.BEGINNING, Step.UPKEEP)
 

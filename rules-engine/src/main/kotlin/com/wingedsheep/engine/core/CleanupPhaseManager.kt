@@ -178,12 +178,24 @@ class CleanupPhaseManager(
             !(grant.duration is Duration.UntilYourNextTurn &&
                 grant.controllerId == activePlayer)
         }
+        // Granted *activated* abilities with UntilYourNextTurn duration (Hydro-Man's temporary
+        // "{T}: Add {U}"). The record carries no expiry-player, so key the expiry to the granted
+        // entity's current controller — correct for the self-grant case (a permanent granting
+        // itself an ability "until your next turn").
+        val remainingGrantedActivated = state.grantedActivatedAbilities.filter { grant ->
+            !(grant.duration is Duration.UntilYourNextTurn &&
+                state.getEntity(grant.entityId)
+                    ?.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()
+                    ?.playerId == activePlayer)
+        }
         val floatingChanged = remainingFloating.size != state.floatingEffects.size
         val globalChanged = remainingGlobal.size != state.globalGrantedTriggeredAbilities.size
-        var result = if (floatingChanged || globalChanged) {
+        val grantedActivatedChanged = remainingGrantedActivated.size != state.grantedActivatedAbilities.size
+        var result = if (floatingChanged || globalChanged || grantedActivatedChanged) {
             state.copy(
                 floatingEffects = if (floatingChanged) remainingFloating else state.floatingEffects,
-                globalGrantedTriggeredAbilities = if (globalChanged) remainingGlobal else state.globalGrantedTriggeredAbilities
+                globalGrantedTriggeredAbilities = if (globalChanged) remainingGlobal else state.globalGrantedTriggeredAbilities,
+                grantedActivatedAbilities = if (grantedActivatedChanged) remainingGrantedActivated else state.grantedActivatedAbilities
             )
         } else {
             state
@@ -400,7 +412,11 @@ class CleanupPhaseManager(
             newState = newState.updateEntity(playerId) { container ->
                 val manaPool = container.get<ManaPoolComponent>()
                 if (manaPool != null && !manaPool.isEmpty) {
-                    val retained = container.get<RetainUnspentManaComponent>()?.colors ?: emptySet()
+                    // Turn-scoped retention (The Last Agni Kai) unioned with the durable
+                    // per-colour static (Electro, Assaulting Battery: "you don't lose unspent red
+                    // mana as steps and phases end").
+                    val retained = (container.get<RetainUnspentManaComponent>()?.colors ?: emptySet()) +
+                        retainedColorsFromStatics(state, cardRegistry, playerId)
                     container.with(
                         manaPool.emptyAtBoundary(
                             convertToRed = playerId in convertToRedPlayers,
@@ -855,9 +871,8 @@ class CleanupPhaseManager(
         // Skip permanent ones (used by "for as long as it remains exiled" effects)
         // For expiresAfterTurn: keep alive until that turn number's end step
         // Also clear ExileEntryTurnComponent so "exiled with [granter] this turn" effects
-        // (e.g. Maralen, Fae Ascendant) reset between turns. The engine's turnNumber only
-        // increments per round, not per active player, so simply comparing turn numbers
-        // would let an exile entry leak across the opponent's turn.
+        // (e.g. Maralen, Fae Ascendant) reset between turns — "this turn" is over once this
+        // cleanup runs, so the stamp has served its purpose either way.
         for ((entityId, container) in newState.entities) {
             val playFree = container.get<PlayWithoutPayingCostComponent>()
             val removePlayFree = playFree != null && !playFree.permanent
@@ -877,12 +892,13 @@ class CleanupPhaseManager(
         }
 
         // Expire non-permanent may-play permissions whose duration has elapsed.
-        // `turnNumber` is round-based (it increments only when the starting player begins a
-        // new turn), so it can't distinguish the controller's turn from the opponent's within
-        // the same round. A permission that should last "until the end of your next turn" must
-        // therefore only expire at the cleanup of the *controller's own* turn — otherwise the
-        // non-starting player would lose it at the end of the starting player's turn in the
-        // target round, one turn early (Burning Curiosity, Sizzling Changeling).
+        // `expiresAfterTurn` is a *floor*, not the exact turn: a permission that lasts "until the
+        // end of your next turn" expires at the cleanup of the first turn the *controller* takes at
+        // or after it. Hence the `activePlayerId == controller` half of the check — dropping it
+        // would expire the grant at the end of whichever opponent's turn happened to come first,
+        // one or more turns early (Burning Curiosity, Sizzling Changeling). Pairing a floor with
+        // the controller guard is also what makes this survive skipped turns, extra turns and
+        // eliminated seats; see ExileTopCardMayPlayFreeExecutor.resolveStepTurn.
         if (newState.mayPlayPermissions.isNotEmpty()) {
             newState = newState.copy(
                 mayPlayPermissions = newState.mayPlayPermissions.filterNot { permission ->

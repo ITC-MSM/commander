@@ -211,13 +211,25 @@ data class PlayerCastSpellsThisTurn(
     val player: Player = Player.You,
     val filter: GameObjectFilter = GameObjectFilter.Any,
     val atLeast: Int,
-    val fromZone: Zone? = null
+    val fromZone: Zone? = null,
+    /**
+     * When set, counts only spells cast from a zone **other than** this one — "cast a spell this
+     * turn from anywhere other than your hand" (Spider-Man 2099) is `fromZoneOtherThan = Zone.HAND`.
+     * Mutually exclusive with [fromZone] (which requires that specific zone).
+     */
+    val fromZoneOtherThan: Zone? = null
 ) : Condition {
+    init {
+        require(fromZone == null || fromZoneOtherThan == null) {
+            "PlayerCastSpellsThisTurn: fromZone and fromZoneOtherThan are mutually exclusive"
+        }
+    }
     override val description: String = buildString {
         append("if ${player.description} cast $atLeast or more ")
         if (filter != GameObjectFilter.Any) append("${DynamicAmount.pluralize(filter.description)} ")
         append("spells")
         if (fromZone != null) append(" from ${fromZone.name.lowercase()}")
+        if (fromZoneOtherThan != null) append(" from anywhere other than ${fromZoneOtherThan.name.lowercase()}")
         append(" this turn")
     }
     override fun applyTextReplacement(replacer: TextReplacer): Condition {
@@ -266,6 +278,37 @@ data class PlayerCommittedCrimeThisTurn(
     val player: Player = Player.You
 ) : Condition {
     override val description: String = "if ${player.description} committed a crime this turn"
+}
+
+/**
+ * Condition: "if [player] has played a land this turn" (CR 305.1 special land-play action), reading
+ * the per-player `LandsPlayedThisTurnComponent` provenance recorded by `PlayLandHandler`. Mirrors
+ * [PlayerCastSpellsThisTurn]'s zone qualifiers:
+ * - no qualifier — any land played this turn;
+ * - [fromZone] — a land played from that specific zone;
+ * - [fromZoneOtherThan] — a land played from a zone other than that one (`Zone.HAND` is the land half
+ *   of Spider-Man 2099's end-step intervening-if, "played a land … from anywhere other than your hand").
+ *
+ * [fromZone] and [fromZoneOtherThan] are mutually exclusive.
+ */
+@SerialName("PlayerPlayedLandThisTurn")
+@Serializable
+data class PlayerPlayedLandThisTurn(
+    val player: Player = Player.You,
+    val fromZone: Zone? = null,
+    val fromZoneOtherThan: Zone? = null
+) : Condition {
+    init {
+        require(fromZone == null || fromZoneOtherThan == null) {
+            "PlayerPlayedLandThisTurn: fromZone and fromZoneOtherThan are mutually exclusive"
+        }
+    }
+    override val description: String = buildString {
+        append("if ${player.description} played a land")
+        if (fromZone != null) append(" from ${fromZone.name.lowercase()}")
+        if (fromZoneOtherThan != null) append(" from anywhere other than ${fromZoneOtherThan.name.lowercase()}")
+        append(" this turn")
+    }
 }
 
 /**
@@ -523,6 +566,21 @@ data object SourcePlottedOnPriorTurn : Condition {
 @Serializable
 data object SourceForetoldOnPriorTurn : Condition {
     override val description: String = "if this card was foretold on a prior turn"
+}
+
+/**
+ * Gate condition for the Mayhem keyword's cast-from-graveyard permission (CR 702.187b).
+ *
+ * True when the source card's entity id is recorded in its controller's
+ * `CardsDiscardedThisTurnComponent` — i.e. "you discarded this card this turn". Entity ids are
+ * stable across the hand→graveyard move, so the id recorded at discard equals the id of the object
+ * now sitting in the graveyard. Used as the Mayhem gate in both the legal-action enumerator and the
+ * cast-permission check.
+ */
+@SerialName("YouDiscardedThisCardThisTurn")
+@Serializable
+data object YouDiscardedThisCardThisTurn : Condition {
+    override val description: String = "if you discarded this card this turn"
 }
 
 // =============================================================================

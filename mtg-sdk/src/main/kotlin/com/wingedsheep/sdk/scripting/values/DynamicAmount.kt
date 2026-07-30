@@ -112,6 +112,15 @@ enum class TurnTracker {
      */
     CARDS_DRAWN,
     /**
+     * Number of cards the player has discarded this turn (CR 701.8). Backed by
+     * `CardsDiscardedThisTurnComponent`, reset to an empty list for every player at the start of
+     * each turn. Every discard site (cost, effect, cycling, CR 514.1 hand-size cleanup) records
+     * into it. Powers "draw a card for each card you've discarded this turn" (Green Goblin,
+     * Revenant) and, in threshold form, the Mayhem gate (CR 702.187 — via
+     * `Conditions.YouDiscardedThisCardThisTurn`, a per-card membership check on the same component).
+     */
+    CARDS_DISCARDED,
+    /**
      * Number of cards put into exile this turn, keyed on each card's owner. Summed across every
      * player (via `Player.Each`) it gives the game-wide count of cards put into exile this turn.
      * Backed by `CardsPutIntoExileThisTurnComponent`, reset to 0 for every player at the start of
@@ -166,6 +175,7 @@ enum class TurnTracker {
         CARDS_LEFT_GRAVEYARD -> "the number of cards that left ${player.possessive} graveyard this turn"
         DESCENDED -> "the number of times ${player.description} descended this turn"
         CARDS_DRAWN -> "the number of cards ${player.description} have drawn this turn"
+        CARDS_DISCARDED -> "the number of cards ${player.description} have discarded this turn"
         CARDS_PUT_INTO_EXILE -> "the number of cards put into exile this turn"
         PERMANENTS_SACRIFICED -> "the number of permanents ${player.description} sacrificed this turn"
         RED_NONCOMBAT_DAMAGE_DEALT -> "the noncombat damage red sources ${player.description} controlled dealt this turn"
@@ -380,6 +390,25 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * How many counters of [counterType] a player currently has — the player-scoped sibling of
+     * [EntityProperty]'s [com.wingedsheep.sdk.scripting.values.EntityNumericProperty.CounterCount]
+     * (which reads a permanent/object; `EntityReference` has no case for "a player" since players
+     * aren't targeted the way permanents are). Counters placed directly on a player rather than a
+     * permanent (CR 122.1) — poison ([com.wingedsheep.sdk.core.Counters.POISON]), energy
+     * ([com.wingedsheep.sdk.core.Counters.ENERGY], CR 107.14), and rad counters all live here.
+     *
+     * Examples:
+     * ```kotlin
+     * PlayerCounterCount(Counters.ENERGY, Player.You)  // "your energy counters" — Longtusk Cub
+     * ```
+     */
+    @SerialName("PlayerCounterCount")
+    @Serializable
+    data class PlayerCounterCount(val counterType: String, val player: Player = Player.You) : DynamicAmount {
+        override val description: String = "${player.possessive} $counterType counters"
+    }
+
+    /**
      * The starting life total of a player (e.g., 20 in standard, 40 in commander).
      * Used for conditions like "life total ≤ half your starting life total".
      */
@@ -473,6 +502,27 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     ) : DynamicAmount {
         override val description: String =
             "the number of ${counterType.description} counters on it".replace("  ", " ")
+    }
+
+    /**
+     * The total damage dealt to the ability's source this turn, read as last-known information —
+     * "where X is the amount of damage dealt to it this turn" (Tangled Colony).
+     *
+     * Backed by the same per-turn tally the engine already keeps on every permanent that is dealt
+     * damage (summed per source-controller and captured onto the `ZoneChangeEvent` when the
+     * permanent leaves the battlefield), so it reads correctly from a dies/leaves trigger where
+     * the entity itself is already gone. Summing that map gives the total from *all* sources; the
+     * per-player split is what
+     * [com.wingedsheep.sdk.scripting.effects.EachPlayerDrawsForDamageDealtToSourceEffect]
+     * (Grothama, All-Devouring) uses instead.
+     *
+     * Evaluates to `0` when no snapshot is present — including for a source still on the
+     * battlefield, since the tally is only captured on the way out.
+     */
+    @SerialName("LastKnownDamageDealtToSource")
+    @Serializable
+    data object LastKnownDamageDealtToSource : DynamicAmount {
+        override val description: String = "the amount of damage dealt to it this turn"
     }
 
     /**

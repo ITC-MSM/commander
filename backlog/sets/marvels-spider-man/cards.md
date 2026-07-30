@@ -2,12 +2,12 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 150 / 190
+**Implemented:** 175 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
 - [x] Amazing Acrobatics
-- [ ] Anti-Venom, Horrifying Healer
+- [x] Anti-Venom, Horrifying Healer
 - [ ] Arachne, Psionic Weaver
 - [x] Araña, Heart of the Spider
 - [x] Aunt May
@@ -17,7 +17,7 @@
 - [x] Biorganic Carapace
 - [ ] Black Cat, Cunning Thief
 - [ ] Carnage, Crimson Chaos
-- [ ] Chameleon, Master of Disguise
+- [x] Chameleon, Master of Disguise
 - [x] Cheering Crowd
 - [x] City Pigeon
 - [x] Common Crook
@@ -32,14 +32,14 @@
 - [x] Doctor Octopus, Master Planner
 - [x] Eddie Brock // Venom, Lethal Protector
 - [x] Eerie Gravestone
-- [ ] Electro's Bolt
-- [ ] Electro, Assaulting Battery
+- [x] Electro's Bolt
+- [x] Electro, Assaulting Battery
 - [x] Ezekiel Sims, Spider-Totem
 - [x] Flash Thompson, Spider-Fan
 - [x] Flying Octobot
 - [x] Friendly Neighborhood
 - [x] Gallant Citizen
-- [ ] Green Goblin, Revenant
+- [x] Green Goblin, Revenant
 - [x] Grow Extra Arms
 - [x] Guy in the Chair
 - [x] Gwen Stacy // Ghost-Spider
@@ -48,7 +48,7 @@
 - [x] Hide on the Ceiling
 - [x] Hobgoblin, Mantled Marauder
 - [x] Hot Dog Cart
-- [ ] Hydro-Man, Fluid Felon
+- [x] Hydro-Man, Fluid Felon
 - [x] Impostor Syndrome
 - [x] Inner Demons Gangsters
 - [x] Interdimensional Web Watch
@@ -83,45 +83,43 @@
 - [ ] Norman Osborn // Green Goblin
 - [x] Ominous Asylum
 - [x] Origin of Spider-Man
-- [ ] Oscorp Industries
+- [x] Oscorp Industries
 - [x] Oscorp Research Team
 - [x] Parker Luck
 - [x] Passenger Ferry
 - [ ] Peter Parker // Amazing Spider-Man
 - [x] Peter Parker's Camera
 - [x] Pictures of Spider-Man
-- [ ] Prison Break
+- [x] Prison Break
 - [x] Professional Wrestler
 - [x] Prowler, Clawed Thief
-- [ ] Pumpkin Bombardment
+- [x] Pumpkin Bombardment
 - [x] Radioactive Spider
-- [ ] Raging Goblinoids
+- [x] Raging Goblinoids
 - [x] Rent Is Due
 - [x] Rhino's Rampage
 - [x] Rhino, Barreling Brute
 - [x] Risky Research
 - [x] Robotics Mastery
-- [x] Risky Research
-- [x] Robotics Mastery
-- [ ] Rocket-Powered Goblin Glider
+- [x] Rocket-Powered Goblin Glider
 - [x] Romantic Rendezvous
 - [x] SP//dr, Piloted by Peni
-- [ ] Sandman's Quicksand
+- [x] Sandman's Quicksand
 - [x] Sandman, Shifting Scoundrel
 - [x] Savage Mansion
-- [ ] Scarlet Spider, Ben Reilly
-- [ ] Scarlet Spider, Kaine
+- [x] Scarlet Spider, Ben Reilly
+- [x] Scarlet Spider, Kaine
 - [x] School Daze
 - [x] Scorpion's Sting
 - [x] Scorpion, Seething Striker
 - [x] Scout the City
 - [x] Secret Identity
 - [x] Selfless Police Captain
-- [ ] Shadow of the Goblin
+- [x] Shadow of the Goblin
 - [x] Shock
 - [x] Shocker, Unshakable
 - [x] Shriek, Treblemaker
-- [ ] Silk, Web Weaver
+- [x] Silk, Web Weaver
 - [x] Silver Sable, Mercenary Leader
 - [x] Sinister Hideout
 - [x] Skyward Spider
@@ -133,23 +131,23 @@
 - [x] Spider-Girl, Legacy Hero
 - [x] Spider-Gwen, Free Spirit
 - [x] Spider-Ham, Peter Porker
-- [ ] Spider-Islanders
-- [ ] Spider-Man 2099
-- [ ] Spider-Man India
+- [x] Spider-Islanders
+- [x] Spider-Man 2099
+- [x] Spider-Man India
 - [x] Spider-Man No More
 - [x] Spider-Man Noir
-- [ ] Spider-Man, Brooklyn Visionary
-- [ ] Spider-Man, Web-Slinger
+- [x] Spider-Man, Brooklyn Visionary
+- [x] Spider-Man, Web-Slinger
 - [x] Spider-Mobile
 - [ ] Spider-Punk
 - [x] Spider-Rex, Daring Dino
-- [ ] Spider-Sense
-- [ ] Spider-Slayer, Hatred Honed
+- [x] Spider-Sense
+- [x] Spider-Slayer, Hatred Honed
 - [x] Spider-Suit
-- [ ] Spider-UK
+- [x] Spider-UK
 - [ ] Spider-Verse
 - [x] Spider-Woman, Stunning Savior
-- [ ] Spiders-Man, Heroic Horde
+- [x] Spiders-Man, Heroic Horde
 - [x] Spinneret and Spiderling
 - [x] Starling, Aerial Ally
 - [x] Steel Wrecking Ball
@@ -162,7 +160,7 @@
 - [x] Superior Foes of Spider-Man
 - [x] Superior Spider-Man
 - [x] Supportive Parents
-- [ ] Swarm, Being of Bees
+- [x] Swarm, Being of Bees
 - [x] Symbiote Spider-Man
 - [x] Taxi Driver
 - [x] Terrific Team-Up
@@ -173,7 +171,7 @@
 - [x] The Spot, Living Portal
 - [x] Thwip!
 - [x] Tombstone, Career Criminal
-- [ ] Ultimate Green Goblin
+- [x] Ultimate Green Goblin
 - [x] University Campus
 - [x] Unstable Experiment
 - [x] Urban Retreat
@@ -191,5 +189,5 @@
 - [x] Whoosh!
 - [x] Wild Pack Squad
 - [x] Wisecrack
-- [ ] With Great Power . . .
+- [x] With Great Power . . .
 - [x] Wraith, Vicious Vigilante

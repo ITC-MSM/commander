@@ -2,102 +2,166 @@ package com.wingedsheep.ai.engine
 
 import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
 import com.wingedsheep.ai.engine.advisor.CastContext
+import com.wingedsheep.ai.engine.budget.BudgetPolicy
+import com.wingedsheep.ai.engine.budget.DecisionBudget
+import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.BoardPresence
+import com.wingedsheep.ai.engine.knowledge.HoldPolicy
+import com.wingedsheep.ai.engine.knowledge.IntentCatalog
+import com.wingedsheep.ai.engine.knowledge.TimingVerdict
+import com.wingedsheep.ai.engine.rollout.CandidateEvaluator
+import com.wingedsheep.ai.engine.rollout.PlayoutPolicy
+import com.wingedsheep.ai.engine.rollout.RolloutCandidateEvaluator
+import com.wingedsheep.ai.engine.rollout.StaticCandidateEvaluator
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.LegalAction
-import com.wingedsheep.engine.legalactions.TargetInfo
+import com.wingedsheep.engine.legalactions.MeaningfulActionFilter
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.Step
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 
 /**
  * Chooses which [LegalAction] to take when the AI has priority.
  *
- * Two-phase evaluation:
- * 1. **Quick pass**: Score all candidates with 1-ply lookahead.
- * 2. **Deep pass**: If the top candidates are close, re-score them with
- *    multi-ply [Searcher] to break the tie considering opponent responses.
+ * **One simulation per candidate, then a leaf score.** Candidates come from the enumerator, each is
+ * simulated once to the quiet state it produces, and the best-scoring one wins if it beats passing.
+ *
+ * What "leaf score" means is [candidateEvaluator]'s business, and that is the whole Phase 7 seam:
+ * [StaticCandidateEvaluator] is one `BoardEvaluator.evaluate` call — the greedy 1-ply AI, what
+ * `AiProfile.LEGACY_V0` runs — and [RolloutCandidateEvaluator] replaces it with the mean of several
+ * short playouts. Everything else in this file is identical either way, including the target
+ * refinement, the hold policy and the [CardAdvisorRegistry] override path, which is the point: a
+ * per-card advisor keeps working, over a much better base.
+ *
+ * There used to be a second, multi-ply alpha-beta pass here (`Searcher`). It was
+ * unreachable — its `recommendDepth` gated on "can the opponent respond?", which opened
+ * with `state.priorityPlayerId != playerId` and so was always false on our own priority —
+ * and it carried a `Double.MIN_VALUE / 2` "−∞" sentinel that is actually `0.0`. It was
+ * deleted rather than repaired, and Phase 7 replaced the mechanism outright rather than reviving
+ * it. Its one good idea, extending the search on a close call, survives as
+ * `RolloutSettings.criticalHorizonBonus`.
  *
  * Combat decisions are delegated to [CombatAdvisor].
- * Card-specific overrides are handled by [CardAdvisorRegistry].
  */
 class Strategist(
     private val simulator: GameSimulator,
     private val evaluator: BoardEvaluator,
-    private val searcher: Searcher = Searcher(simulator, evaluator),
     private val combatAdvisor: CombatAdvisor = CombatAdvisor(simulator, evaluator),
-    private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry()
+    private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry(),
+    /**
+     * Phase 4a: only propose actions the AI can actually take.
+     *
+     * Two halves. Candidates come from [MeaningfulActionFilter] instead of the ad-hoc
+     * `affordable && !isManaAbility` filter, so a spell whose mandatory target slot is empty stops
+     * being a candidate; and [TargetSelection.fillableRequirements] fills the slots it *can*
+     * rather than abandoning the whole spell. Together they close the "889 of 945 rejected actions were
+     * `CastSpell: No valid targets available`" finding Phase 1 quantified and left open.
+     */
+    private val useMeaningfulFilter: Boolean = false,
+    /** Phase 4b. How much search each decision may spend. */
+    private val budgetPolicy: BudgetPolicy = LegacyBudgetPolicy,
+    /**
+     * Phase 6: structural card knowledge. [IntentCatalog.NONE] is the off position and leaves
+     * both consumers here — [TargetSelection.rank] and the hold policy — at their pre-Phase-6
+     * behaviour.
+     */
+    private val intents: IntentCatalog = IntentCatalog.NONE,
+    /**
+     * Phase 7: how a candidate's post-action state is scored. Defaults to the pre-Phase-7 leaf, so
+     * a caller that doesn't opt in gets the greedy 1-ply AI unchanged.
+     */
+    private val candidateEvaluator: CandidateEvaluator = StaticCandidateEvaluator(evaluator),
+    /** Phase 8: a fair complete world, sampled once before any candidate simulation. */
+    private val stateSampler: ((GameState, EntityId) -> GameState)? = null,
 ) {
+    private val holdPolicy = HoldPolicy(intents)
+
     fun chooseAction(
         state: GameState,
         legalActions: List<LegalAction>,
         playerId: EntityId
     ): LegalAction {
+        val evaluationState = stateSampler?.invoke(state, playerId) ?: state
         // Combat declaration steps need the CombatAdvisor to fill in attacker/blocker maps
         // even when there's only one legal action (which is the common case — the enumerator
         // returns a single DeclareAttackers/DeclareBlockers with an empty default map).
         val combatAction = legalActions.find { it.actionType == "DeclareAttackers" || it.actionType == "DeclareBlockers" }
         if (combatAction != null) {
-            return handleCombatDeclaration(state, combatAction, playerId)
+            val budget = budgetPolicy.budgetFor(state, playerId, listOf(combatAction))
+            return handleCombatDeclaration(evaluationState, combatAction, playerId, budget)
         }
 
         if (legalActions.size == 1) return legalActions.first()
 
         val pass = legalActions.find { it.actionType == "PassPriority" }
-        val affordable = expandXCostAbilities(
-            state,
-            preferKickerVariants(
-                legalActions.filter { it.affordable && !it.isManaAbility && it.actionType != "PassPriority" }
-            ),
-            playerId
-        )
+        val affordable = expandXCostAbilities(state, preferKickerVariants(candidatesFrom(legalActions)), playerId)
 
         if (affordable.isEmpty()) return pass ?: legalActions.first()
 
-        // ── Phase 1: Quick 1-ply scoring of all candidates ──
+        val budget = budgetPolicy.budgetFor(state, playerId, affordable)
+
+        // ── Pass 1: one simulation per candidate, to the quiet state it leads to ──
+        // The anytime contract: candidates are simulated in order and the budget only cuts the
+        // tail short. `maxByOrNull` over a partial list is still a valid (if worse) answer.
+        //
+        // The pass is simulated first and scored alongside the rest, so an evaluator that
+        // allocates effort across candidates (Phase 7's sequential halving) treats "do nothing" as
+        // the real option it is rather than as a separately-computed threshold.
+        val leaves = mutableListOf<LegalAction>()
+        val leafStates = mutableListOf<GameState>()
+        if (pass != null) {
+            leaves += pass
+            leafStates += simulator.simulate(evaluationState, pass.action).state
+        }
+        for (action in affordable) {
+            leaves += action
+            leafStates += simulator.simulate(
+                evaluationState, chooseCommittedTargets(evaluationState, action, playerId, budget)
+            ).state
+            if (budget.expired()) break
+        }
+
+        // ── Pass 2: score every leaf at once ──
+        val leafScores = candidateEvaluator.scoreAll(evaluationState, leafStates, playerId, budget)
         val passScore = if (pass != null) {
-            evaluate1Ply(state, pass, playerId)
+            leafScores.first()
         } else {
-            evaluator.evaluate(state, state.projectedState, playerId)
+            // No pass on offer: the "do nothing" reference is the current position itself.
+            candidateEvaluator.score(evaluationState, evaluationState, playerId, budget)
         }
 
-        val scored = affordable.map { action ->
-            action to evaluate1Ply(state, action, playerId, passScore)
+        // ── Pass 3: per-card timing and advisor adjustments, in raw evaluator units ──
+        val firstCandidate = if (pass != null) 1 else 0
+        val scored = (firstCandidate until leaves.size).map { i ->
+            leaves[i] to adjustScore(evaluationState, leaves[i], playerId, leafScores[i], passScore)
         }
 
-        // ── Phase 2: Adaptive deep search on close contenders ──
-        val depth = searcher.recommendDepth(state, scored, playerId)
+        // On the opponent's end step, unspent mana is about to be wasted. Reduce the pass threshold
+        // so the AI is more willing to use instants rather than letting mana evaporate.
+        //
+        // Phase 6 retires this blanket discount for agents with card knowledge: [HoldPolicy] makes
+        // the same point per card, and better — a removal spell gets a *larger* end-step bonus,
+        // while a pump that is about to wear off in cleanup gets a penalty instead of an
+        // encouragement. Keeping both would double-count the first and cancel the second.
+        val adjustedPassScore =
+            if (!holdPolicy.isEnabled && state.activePlayerId != playerId && state.step == Step.END) {
+                passScore - 1.5
+            } else {
+                passScore
+            }
 
-        val finalScored = if (depth > 1) {
-            deepSearch(state, scored, playerId, depth, passScore)
-        } else {
-            scored
-        }
-
-        // On the opponent's end step, unspent mana is about to be wasted.
-        // Reduce the pass threshold so the AI is more willing to use instants
-        // rather than letting mana evaporate.
-        val adjustedPassScore = if (state.activePlayerId != playerId && state.step == Step.END) {
-            passScore - 1.5
-        } else {
-            passScore
-        }
-
-        val best = finalScored.maxByOrNull { it.second }
+        val best = scored.maxByOrNull { it.second }
         return if (best != null && best.second > adjustedPassScore) {
             // Fill in targets on the returned action so the processor can execute it.
             // The committed target is chosen by simulation (not just the heuristic) so the
             // AI sees the real resolved board, including effects already on the stack.
             val chosen = best.first
             if (chosen.requiresTargets) {
-                chosen.copy(action = chooseCommittedTargets(state, chosen, playerId))
+                chosen.copy(action = chooseCommittedTargets(evaluationState, chosen, playerId, budget))
             } else {
                 chosen
             }
@@ -107,275 +171,139 @@ class Strategist(
     }
 
     /**
-     * Re-score top candidates with multi-ply search.
-     * Only the top N contenders get deep search — the rest keep their 1-ply scores.
+     * The candidate actions worth scoring.
+     *
+     * Mana abilities are excluded either way: activating one on its own is never the AI's move —
+     * mana is produced as part of paying for something, by the engine's own auto-tap.
      */
-    private fun deepSearch(
-        state: GameState,
-        scored: List<Pair<LegalAction, Double>>,
-        playerId: EntityId,
-        depth: Int,
-        passScore: Double
-    ): List<Pair<LegalAction, Double>> {
-        val sorted = scored.sortedByDescending { it.second }
-        val bestScore = sorted.first().second
-
-        // Only deep-search actions within striking distance of the best
-        val threshold = (bestScore - passScore).coerceAtLeast(1.0) * 0.5
-        val contenders = sorted.takeWhile { it.second >= bestScore - threshold }
-            .take(6) // hard cap
-        val contenderSet = contenders.map { it.first }.toSet()
-
-        return scored.map { (action, quickScore) ->
-            if (action in contenderSet) {
-                action to searcher.searchAction(state, action, playerId, depth)
-            } else {
-                action to quickScore
-            }
+    private fun candidatesFrom(legalActions: List<LegalAction>): List<LegalAction> =
+        if (useMeaningfulFilter) {
+            MeaningfulActionFilter.filterMeaningful(legalActions).filter { it.affordable && !it.isManaAbility }
+        } else {
+            legalActions.filter { it.affordable && !it.isManaAbility && it.actionType != "PassPriority" }
         }
-    }
 
     private fun handleCombatDeclaration(
         state: GameState,
         legalAction: LegalAction,
-        playerId: EntityId
+        playerId: EntityId,
+        budget: DecisionBudget,
     ): LegalAction {
         val action = when (legalAction.actionType) {
-            "DeclareAttackers" -> combatAdvisor.chooseAttackers(state, legalAction, playerId)
-            "DeclareBlockers" -> combatAdvisor.chooseBlockers(state, legalAction, playerId, useSimulation = true)
+            "DeclareAttackers" -> combatAdvisor.chooseAttackers(state, legalAction, playerId, budget)
+            "DeclareBlockers" ->
+                combatAdvisor.chooseBlockers(state, legalAction, playerId, useSimulation = true, budget = budget)
             else -> legalAction.action
         }
         return legalAction.copy(action = action)
     }
 
-    private fun evaluate1Ply(state: GameState, action: LegalAction, playerId: EntityId, passScore: Double? = null): Double {
-        // For targeted spells, fill in the best target by simulation before scoring. Without a
-        // target the CastSpellHandler rejects the action ("No valid targets") and the spell always
-        // scores the same as passing; with only a *heuristic* target, an ability whose ideal target
-        // is already taken by something on the stack (e.g. a second "can't block" when the first is
-        // still resolving) would be scored at that redundant target and look worthless — so the AI
-        // would never play it. Scoring at the best target makes the action's real upside visible.
-        val simulationAction = chooseCommittedTargets(state, action, playerId)
-        val result = simulator.simulate(state, simulationAction)
-        val defaultScore = evaluator.evaluate(result.state, result.state.projectedState, playerId)
+    /**
+     * Apply the two per-card adjustments to a leaf score, in raw evaluator units.
+     *
+     * Both are deltas on top of whatever the leaf said, which is what lets the rollout evaluator
+     * slot in underneath without any of this changing: a hold-policy penalty and a `CardAdvisor`
+     * override compose with a rollout mean exactly as they composed with a static evaluation.
+     */
+    private fun adjustScore(
+        state: GameState,
+        action: LegalAction,
+        playerId: EntityId,
+        leafScore: Double,
+        passScore: Double,
+    ): Double {
+        val cardName = resolveCardName(state, action) ?: return leafScore
 
-        // Check for card-specific advisor override
-        val cardName = resolveCardName(state, action) ?: return defaultScore
-        val advisor = advisorRegistry.getAdvisor(cardName) ?: return defaultScore
+        // Phase 6: what the board looks like after this resolves is only half the question; the
+        // other half is whether this was the window.
+        val timing = holdPolicy.verdictFor(state, playerId, cardName)
+        if (timing is TimingVerdict.NoWindow) {
+            // The card does nothing here, so nothing the simulation reports should make it beat
+            // passing. See [TimingVerdict.NoWindow] for why this is a floor and not a penalty.
+            return passScore - 1.0
+        }
+        val timingDelta = (timing as? TimingVerdict.Adjust)?.delta ?: 0.0
+
+        // Check for card-specific advisor override. Timing is applied outside it, so a per-card
+        // advisor still sees the pure board score as its `defaultScore` and a card with both
+        // keeps both.
+        val advisor = advisorRegistry.getAdvisor(cardName) ?: return leafScore + timingDelta
         val context = CastContext(
             state = state,
             projected = state.projectedState,
             playerId = playerId,
             action = action,
-            passScore = passScore ?: evaluator.evaluate(state, state.projectedState, playerId),
-            defaultScore = defaultScore,
+            passScore = passScore,
+            defaultScore = leafScore,
             evaluator = evaluator,
             simulator = simulator
         )
-        return advisor.evaluateCast(context) ?: defaultScore
-    }
-
-    /**
-     * For spells/abilities that require target selection, fill in heuristic
-     * targets so the simulation can actually resolve the spell.
-     *
-     * Multi-target spells: for each requirement, pick the highest-value
-     * opponent creature (or lowest-value own creature, depending on context).
-     * Single-target spells: pick the best target by creature value.
-     *
-     * This is the cheap path used while *scoring* candidate actions (one heuristic target
-     * per requirement, no extra simulation). The action the AI actually commits routes through
-     * [chooseCommittedTargets], which refines the target by simulation.
-     */
-    private fun resolveTargetsForSimulation(
-        state: GameState,
-        action: LegalAction,
-        playerId: EntityId
-    ): com.wingedsheep.engine.core.GameAction {
-        if (!action.requiresTargets) return action.action
-        // Only CastSpell and ActivateAbility carry a `targets` list the AI fills in. A targeted
-        // activated ability (e.g. "{4}{R}, Sacrifice: deal 3 damage to target") that isn't handled
-        // here is submitted with no target, rejected by the engine ("requires a target"), and the
-        // AI re-picks it forever — an infinite loop.
-        val baseAction = action.action
-        if (targetsAlreadyFilled(baseAction) != false) return action.action
-        val targetInfos = targetInfosFor(action) ?: return action.action
-        if (targetInfos.any { it.validTargets.isEmpty() }) return action.action
-
-        val chosenTargets = targetInfos.map { info ->
-            val best = info.validTargets.maxByOrNull { heuristicTargetRank(state, it, playerId) }
-                ?: info.validTargets.first()
-            toChosenTarget(state, info, best, playerId)
-        }
-        return applyTargets(baseAction, chosenTargets)
+        return (advisor.evaluateCast(context) ?: leafScore) + timingDelta
     }
 
     /**
      * Pick the targets the AI actually commits to for a chosen targeted action, by simulation
-     * rather than the static [heuristicTargetRank]. Simulating each candidate resolves the stack —
+     * rather than [TargetSelection]'s static rank. Simulating each candidate resolves the stack —
      * including spells/abilities already on it — so the evaluator scores the *real* board.
      *
      * This is what stops the classic blunder of aiming two "target creature can't block" effects
      * at the same creature: while the first is still on the stack the heuristic sees that creature
      * at full value and re-picks it, but a simulation that resolves both effects shows re-hitting it
      * gains nothing over neutralizing a second, still-able blocker (which [BoardPresence] now prices
-     * lower). Requirements are resolved greedily — others held at their heuristic best — and only the
-     * top [MAX_TARGET_CANDIDATES] candidates per requirement are simulated to bound cost. Falls back
-     * to [resolveTargetsForSimulation] when the action carries no usable target metadata.
+     * lower). Requirements are resolved greedily — others held at their heuristic best — and only
+     * the top `budget.allowances.targetCandidates` per requirement are simulated to bound cost. A
+     * budget below [com.wingedsheep.ai.engine.budget.BudgetTier.NORMAL] skips the refinement
+     * entirely and keeps the heuristic pick: this loop is the most expensive thing a routine
+     * priority window can pay for.
+     *
+     * Deliberately **not** used inside a rollout playout — see [PlayoutPolicy]. Simulating to pick
+     * targets inside a simulation is what would make a playout quadratic.
      */
     private fun chooseCommittedTargets(
         state: GameState,
         action: LegalAction,
-        playerId: EntityId
+        playerId: EntityId,
+        budget: DecisionBudget = DecisionBudget.legacy(),
     ): com.wingedsheep.engine.core.GameAction {
         val baseAction = action.action
-        if (targetsAlreadyFilled(baseAction) != false) return baseAction
-        val targetInfos = targetInfosFor(action)
-            ?: return resolveTargetsForSimulation(state, action, playerId)
-        if (targetInfos.any { it.validTargets.isEmpty() }) {
-            return resolveTargetsForSimulation(state, action, playerId)
+        if (TargetSelection.targetsAlreadyFilled(baseAction) != false) return baseAction
+        if (!budget.allowances.refineTargetsBySimulation) {
+            return heuristicTargets(state, action, playerId)
         }
+        val targetInfos = TargetSelection.fillableRequirements(action, useMeaningfulFilter)
+            ?: return heuristicTargets(state, action, playerId)
 
         // Heuristic baseline for every requirement, then refine each one by simulation.
-        val chosenTargets = targetInfos.map { info ->
-            val best = info.validTargets.maxByOrNull { heuristicTargetRank(state, it, playerId) }
-                ?: info.validTargets.first()
-            toChosenTarget(state, info, best, playerId)
-        }.toMutableList()
+        val chosenTargets = targetInfos
+            .map { TargetSelection.bestTarget(state, it, playerId, intents) }
+            .toMutableList()
 
         for (i in targetInfos.indices) {
+            if (budget.expired()) break
             val info = targetInfos[i]
             val candidates = info.validTargets
-                .sortedByDescending { heuristicTargetRank(state, it, playerId) }
-                .take(MAX_TARGET_CANDIDATES)
+                .sortedByDescending { TargetSelection.rank(state, it, playerId, intents) }
+                .take(budget.allowances.targetCandidates)
             if (candidates.size <= 1) continue
             val best = candidates.maxByOrNull { candidate ->
                 val trial = chosenTargets.toMutableList()
-                trial[i] = toChosenTarget(state, info, candidate, playerId)
-                val result = simulator.simulate(state, applyTargets(baseAction, trial))
+                trial[i] = TargetSelection.toChosenTarget(state, info, candidate, playerId)
+                val result = simulator.simulate(state, TargetSelection.applyTargets(baseAction, trial))
                 evaluator.evaluate(result.state, result.state.projectedState, playerId)
             } ?: continue
-            chosenTargets[i] = toChosenTarget(state, info, best, playerId)
+            chosenTargets[i] = TargetSelection.toChosenTarget(state, info, best, playerId)
         }
-        return applyTargets(baseAction, chosenTargets)
+        return TargetSelection.applyTargets(baseAction, chosenTargets)
     }
 
-    /**
-     * Whether [baseAction]'s targets are already filled. `null` = the action type carries no
-     * AI-filled target list (only CastSpell / ActivateAbility do), `true`/`false` otherwise.
-     */
-    private fun targetsAlreadyFilled(baseAction: com.wingedsheep.engine.core.GameAction): Boolean? =
-        when (baseAction) {
-            is CastSpell -> baseAction.targets.isNotEmpty()
-            is ActivateAbility -> baseAction.targets.isNotEmpty()
-            else -> null
-        }
-
-    /** Normalize an action's target metadata into requirements (multi-target or single-target). */
-    private fun targetInfosFor(action: LegalAction): List<TargetInfo>? =
-        action.targetRequirements
-            ?: action.validTargets?.let { targets ->
-                listOf(TargetInfo(
-                    index = 0,
-                    description = action.targetDescription ?: "",
-                    minTargets = action.minTargets,
-                    maxTargets = action.targetCount,
-                    validTargets = targets,
-                    targetZone = null
-                ))
-            }
-
-    /** Heuristic desirability of a target: higher = better. Opponent removal targets rank highest. */
-    private fun heuristicTargetRank(state: GameState, entityId: EntityId, playerId: EntityId): Double {
-        val projected = state.projectedState
-        val controller = projected.getController(entityId)
-        val isOpponent = controller != null && controller != playerId
-        val isPlayer = state.getEntity(entityId)
-            ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
-
-        return if (isPlayer) {
-            // Player target — prefer opponent
-            if (isOpponent) 5.0 else -5.0
-        } else if (projected.isCreature(entityId)) {
-            val card = state.getEntity(entityId)?.get<CardComponent>()
-            val value = if (card != null) {
-                BoardPresence.permanentValue(state, projected, entityId, card)
-            } else 0.0
-            // Opponent creatures: higher value = better target for removal
-            // Own creatures: higher value = better target for pump/bite source
-            if (isOpponent) value + 10.0 else -value
-        } else {
-            0.0
-        }
-    }
-
-    /** Build the right [ChosenTarget] variant for [entityId] given the requirement's zone. */
-    private fun toChosenTarget(
+    /** The cheap target pick — one heuristic choice per requirement, no simulation. */
+    private fun heuristicTargets(
         state: GameState,
-        info: TargetInfo,
-        entityId: EntityId,
-        playerId: EntityId
-    ): ChosenTarget = when (info.targetZone) {
-        "GRAVEYARD" -> {
-            val ownerId = state.getEntity(entityId)
-                ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()?.playerId
-                ?: playerId
-            ChosenTarget.Card(entityId, ownerId, Zone.GRAVEYARD)
-        }
-        "STACK" -> ChosenTarget.Spell(entityId)
-        else -> {
-            // `targetZone` is only populated for multi-requirement spells; a single-target
-            // spell/ability (Reprieve, or Sandman's "target land card from your graveyard")
-            // surfaces `validTargets` with `targetZone = null`. So fall back to authoritative
-            // game state and build the variant the target's actual zone demands:
-            //  - a spell on the stack must become a `ChosenTarget.Spell`, not a `Permanent`
-            //    (else the engine rejects the cast, "Target must be a spell on the stack");
-            //  - a card in a non-battlefield zone (graveyard/exile/hand/library/command) must
-            //    become a `ChosenTarget.Card` carrying that zone, not a `Permanent` (else the
-            //    engine rejects it — e.g. Sandman's graveyard land — and the AI re-picks the
-            //    same failing activation forever).
-            // Mirrors the web client's target-payload builder (pipelinePhases.ts).
-            val isSpell = state.isSpellOnStack(entityId)
-            val isPlayer = state.getEntity(entityId)
-                ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
-            val cardZone = zoneOfCardTarget(state, entityId)
-            when {
-                isSpell -> ChosenTarget.Spell(entityId)
-                isPlayer -> ChosenTarget.Player(entityId)
-                cardZone != null -> {
-                    val ownerId = state.getEntity(entityId)
-                        ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()?.playerId
-                        ?: cardZone.ownerId
-                    ChosenTarget.Card(entityId, ownerId, cardZone.zoneType)
-                }
-                else -> ChosenTarget.Permanent(entityId)
-            }
-        }
-    }
-
-    /**
-     * The [ZoneKey] of [entityId] when it is a card in a non-battlefield "card target" zone
-     * (graveyard, exile, hand, library, command) — the zones a `ChosenTarget.Card` addresses.
-     * Returns `null` for battlefield permanents and the stack, which are handled by the
-     * `Permanent`/`Spell` variants. Mirrors the client's `CARD_TARGET_ZONES` set.
-     */
-    private fun zoneOfCardTarget(state: GameState, entityId: EntityId): ZoneKey? {
-        val key = state.zones.entries.firstOrNull { entityId in it.value }?.key ?: return null
-        return when (key.zoneType) {
-            Zone.GRAVEYARD, Zone.EXILE, Zone.HAND, Zone.LIBRARY, Zone.COMMAND -> key
-            else -> null
-        }
-    }
-
-    /** Return [baseAction] with its target list replaced. */
-    private fun applyTargets(
-        baseAction: com.wingedsheep.engine.core.GameAction,
-        targets: List<ChosenTarget>
-    ): com.wingedsheep.engine.core.GameAction = when (baseAction) {
-        is CastSpell -> baseAction.copy(targets = targets)
-        is ActivateAbility -> baseAction.copy(targets = targets)
-        else -> baseAction
-    }
+        action: LegalAction,
+        playerId: EntityId,
+    ): com.wingedsheep.engine.core.GameAction = TargetSelection.fillHeuristically(
+        state, action, playerId, fillPartialRequirements = useMeaningfulFilter, intents = intents
+    )
 
     /**
      * When both a normal cast and a kicker/offspring variant of the same card are
@@ -501,9 +429,6 @@ class Strategist(
     }
 
     private companion object {
-        /** Cap on candidate targets simulated per requirement when committing a targeted action. */
-        const val MAX_TARGET_CANDIDATES = 8
-
         /** Cap on the number of X values an X-cost ability is expanded into (keeps the highest). */
         const val MAX_X_CANDIDATES = 5
 

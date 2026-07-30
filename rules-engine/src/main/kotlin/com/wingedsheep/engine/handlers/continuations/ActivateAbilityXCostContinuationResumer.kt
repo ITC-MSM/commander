@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.ActivateAbilityChooseXContinuation
 import com.wingedsheep.engine.core.ActivateAbilityControllerTargetContinuation
 import com.wingedsheep.engine.core.ActivateAbilityExileFromGraveyardContinuation
 import com.wingedsheep.engine.core.ActivateAbilityExilePermanentsContinuation
+import com.wingedsheep.engine.core.ActivateAbilityExileXFromGraveyardContinuation
 import com.wingedsheep.engine.core.ActivateAbilitySacrificeContinuation
 import com.wingedsheep.engine.core.ActivateAbilityTapXTargetsContinuation
 import com.wingedsheep.engine.core.CancelDecisionResponse
@@ -52,6 +53,7 @@ class ActivateAbilityXCostContinuationResumer(
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
         resumer(ActivateAbilityChooseXContinuation::class, ::resumeChooseX),
         resumer(ActivateAbilityChooseManaXContinuation::class, ::resumeChooseManaX),
+        resumer(ActivateAbilityExileXFromGraveyardContinuation::class, ::resumeExileXFromGraveyard),
         resumer(ActivateAbilityTapXTargetsContinuation::class, ::resumeTapXTargets),
         resumer(ActivateAbilityExileFromGraveyardContinuation::class, ::resumeExileFromGraveyard),
         resumer(ActivateAbilitySacrificeContinuation::class, ::resumeSacrifice),
@@ -168,6 +170,47 @@ class ActivateAbilityXCostContinuationResumer(
         val replay = action.copy(
             costPayment = (action.costPayment ?: AdditionalCostPayment())
                 .copy(exiledCards = response.selectedCards)
+        )
+        return reenter(handler.execute(state, replay), checkForMore)
+    }
+
+    /**
+     * Resume after the player picks the graveyard cards for an `ExileXFromGraveyard` cost. X *is*
+     * the size of that selection, so a single decision settles both: re-enter the handler with the
+     * chosen cards in `costPayment.exiledCards` and `xValue` bound to how many were chosen.
+     *
+     * When a `{X}` mana symbol already fixed X (Necropolis Fiend), [fixedCount] pins the selection
+     * size and `xValue` on the action is left as it was — the two agree by construction.
+     */
+    private fun resumeExileXFromGraveyard(
+        state: GameState,
+        continuation: ActivateAbilityExileXFromGraveyardContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(
+                state,
+                "Expected card-selection response for ActivateAbility ExileXFromGraveyard"
+            )
+        }
+        val selected = response.selectedCards
+        if (selected.any { it !in continuation.exileCandidates }) {
+            return ExecutionResult.error(state, "Selected card is not in the list of valid exile candidates")
+        }
+        val fixedCount = continuation.fixedCount
+        if (fixedCount != null && selected.size != fixedCount) {
+            return ExecutionResult.error(
+                state,
+                "Expected $fixedCount cards to exile, got ${selected.size}"
+            )
+        }
+
+        val action = continuation.action
+        val replay = action.copy(
+            xValue = fixedCount ?: selected.size,
+            costPayment = (action.costPayment ?: AdditionalCostPayment())
+                .copy(exiledCards = selected)
         )
         return reenter(handler.execute(state, replay), checkForMore)
     }
