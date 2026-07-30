@@ -144,6 +144,7 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
                     riderLinkId = riderLinkId,
                     expiryControllerId = expiryControllerId,
                     supersededBySameSource = supersedesSameSource,
+                    nonLandOnly = effect.nonLandOnly,
                     timestamp = state.timestamp,
                 )
             )

@@ -1181,6 +1181,11 @@ class ClientStateTransformer(
         val isWarped = zoneKey.zoneType == Zone.BATTLEFIELD &&
             container.has<com.wingedsheep.engine.state.components.battlefield.WarpedComponent>()
 
+        // Dashed permanents (CR 702.109, Khans of Tarkir) carry a DashedComponent until they're
+        // returned to hand at the next end step; surface a flag so the client can show a dash cue.
+        val isDashed = zoneKey.zoneType == Zone.BATTLEFIELD &&
+            container.has<com.wingedsheep.engine.state.components.battlefield.DashedComponent>()
+
         // Threshold-style progress badge: detect static abilities gated on
         // "controller's graveyard has at least N cards".
         val thresholdInfo = cardDef?.let { def ->
@@ -1270,6 +1275,7 @@ class ClientStateTransformer(
             isPrepared = isPrepared,
             isPreparedSpell = isPreparedSpell,
             isWarped = isWarped,
+            isDashed = isDashed,
             morphCost = if (isFaceDown && morphData != null) morphData.morphCost.description else null,
             targets = targets,
             imageUri = state.imageOverrideFor(entityId)

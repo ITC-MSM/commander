@@ -90,6 +90,15 @@ data class MayPlayPermission(
      * grant carries `MayPlayExpiry.UntilSourceExilesAnother`.
      */
     val supersededBySameSource: Boolean = false,
+    /**
+     * When true, this permission authorizes casting spells only — a land among [cardIds] can
+     * never be played through it. Mirrors
+     * [com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect.nonLandOnly]: "cast"
+     * wording (Ragavan, Nimble Pilferer) never covers a land's play-as-a-special-action (CR
+     * 305.1), unlike "play" wording (Light Up the Stage). Read by the from-exile enumerator
+     * before it offers a `PlayLand` action for an exiled land.
+     */
+    val nonLandOnly: Boolean = false,
     val timestamp: Long
 ) {
     init {

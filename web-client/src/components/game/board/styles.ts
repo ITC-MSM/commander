@@ -1957,6 +1957,30 @@ export const styles: Record<string, React.CSSProperties> = {
     pointerEvents: 'none',
     zIndex: 6,
   } as React.CSSProperties,
+
+  // Dash (CR 702.109, Khans of Tarkir) — a permanent cast for its dash cost: hasty and returned to
+  // its owner's hand at the next end step. Unlike warp (multi-turn exile-then-recast, cosmic ring
+  // treatment), dash resolves within the same turn, so a plain amber "hasty" badge is enough — no
+  // separate ring overlay.
+  dashedBadge: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    borderRadius: 4,
+    padding: '1px 5px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+    fontWeight: 700,
+    fontSize: 10,
+    color: '#2a1400',
+    background: 'linear-gradient(90deg, #ffb347, #ff7b1c)',
+    border: '1px solid #ffd9a0',
+    boxShadow: '0 0 6px rgba(255, 140, 30, 0.85)',
+    textShadow: 'none',
+    pointerEvents: 'none',
+    zIndex: 6,
+  } as React.CSSProperties,
 }
 
 /**

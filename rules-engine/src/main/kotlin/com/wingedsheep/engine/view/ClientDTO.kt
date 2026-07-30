@@ -337,6 +337,12 @@ data class ClientCard(
      * cosmic "warped" cue on the battlefield. Battlefield only. */
     val isWarped: Boolean = false,
 
+    /** Whether this permanent was cast for its dash cost (CR 702.109, Khans of Tarkir): it has
+     * haste and will be returned to its owner's hand at the beginning of the next end step. Drives
+     * a "dashed" cue on the battlefield, distinct from Warp's (returns to hand, not exile — no
+     * later recast). Battlefield only. */
+    val isDashed: Boolean = false,
+
     /** Morph cost for face-down creatures (only visible to controller) */
     val morphCost: String? = null,
 

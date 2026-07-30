@@ -51,6 +51,7 @@ data class SpellOnStackComponent(
     val additionalCostPayXLifeAmount: Int? = null,  // For pay-X-life additional costs (e.g., Vicious Rivalry); non-null (incl. 0) marks the spell and is coalesced into xValue at resolution
     val castFromZone: Zone? = null,  // Zone the spell was cast from (e.g., HAND for normal casting)
     val wasWarped: Boolean = false,  // For warp - permanent is exiled at end step
+    val wasDashed: Boolean = false,  // For dash (CR 702.109) - permanent gains haste, returns to hand at next end step
     val wasEvoked: Boolean = false,  // For evoke - permanent is sacrificed on ETB
     val wasImpending: Boolean = false,  // For impending - permanent enters with time counters and isn't a creature until they're gone
     val wasCleaved: Boolean = false,  // For cleave (CR 702.148) - spell resolves with its brackets-removed effect/target variant

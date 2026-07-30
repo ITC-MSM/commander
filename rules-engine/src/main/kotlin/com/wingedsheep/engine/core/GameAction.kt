@@ -209,6 +209,13 @@ enum class AlternativeCostType {
     MAYHEM,
     /** Warp ([com.wingedsheep.sdk.scripting.KeywordAbility.Warp], printed or granted) — hand (graveyard if opted in). */
     WARP,
+    /**
+     * Dash ([com.wingedsheep.sdk.scripting.KeywordAbility.Dash], CR 702.109) — hand only. The
+     * resulting permanent gains haste and returns to its owner's hand at the beginning of the
+     * next end step, tracked by `DashedComponent` + a delayed trigger (mirrors Warp's shape,
+     * but returns to hand instead of exiling, and grants haste while the marker persists).
+     */
+    DASH,
     /** Evoke ([com.wingedsheep.sdk.scripting.KeywordAbility.Evoke]) — hand. */
     EVOKE,
     /**

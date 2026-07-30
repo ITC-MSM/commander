@@ -1225,7 +1225,8 @@ object Effects {
         condition: com.wingedsheep.sdk.scripting.conditions.Condition? = null,
         landEntersTapped: Boolean = false,
         onPlayRider: Effect? = null,
-        exileAfterResolve: Boolean = false
+        exileAfterResolve: Boolean = false,
+        nonLandOnly: Boolean = false
     ): Effect = GrantMayPlayFromExileEffect(
         from = from,
         expiry = expiry,
@@ -1233,7 +1234,8 @@ object Effects {
         condition = condition,
         landEntersTapped = landEntersTapped,
         onPlayRider = onPlayRider,
-        exileAfterResolve = exileAfterResolve
+        exileAfterResolve = exileAfterResolve,
+        nonLandOnly = nonLandOnly
     )
 
     /**

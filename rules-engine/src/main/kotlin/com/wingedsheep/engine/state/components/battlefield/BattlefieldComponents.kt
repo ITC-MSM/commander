@@ -93,6 +93,20 @@ data object EnteredFromGraveyardComponent : Component
 data object WarpedComponent : Component
 
 /**
+ * Marks a permanent as having been cast for its dash cost (CR 702.109a).
+ * Added when a dashed spell resolves from the stack. While present: the permanent has haste
+ * (StateProjector grants it live off this marker — see the "Dash" seeding there — rather than
+ * via a stored floating effect, since a floating effect keyed to this entity id would risk
+ * outliving the marker if the same id is later reused for a fresh cast) and a delayed trigger
+ * returns it to its owner's hand at the beginning of the next end step. Stripped by
+ * ZoneMovementUtils whenever the permanent leaves the battlefield — CR 702.109a's haste and
+ * return-to-hand are each scoped to "while this permanent is on the battlefield" / "the
+ * permanent this spell becomes", so a card recast normally later starts marker-free.
+ */
+@Serializable
+data object DashedComponent : Component
+
+/**
  * Marks a permanent as having been cast for its evoke cost.
  * Added when an evoked spell resolves from the stack.
  * TriggerDetector detects this on ETB and creates a "sacrifice self" delayed trigger.

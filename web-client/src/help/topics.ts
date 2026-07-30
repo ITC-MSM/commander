@@ -483,12 +483,13 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'playing',
     title: 'Card badges',
     summary:
-      'Small labels on a card mark a state the card text alone will not tell you: Plotted, Prepared, Warped, Band N, and counters.',
+      'Small labels on a card mark a state the card text alone will not tell you: Plotted, Prepared, Warped, Dashed, Band N, and counters.',
     body: [
       { kind: 'ul', items: [
         'Plotted (CR 718) — sitting face-up in exile; cast it for free on a later turn.',
         'Prepared (Secrets of Strixhaven) — a copy of its spell waits castable in exile; casting the copy unprepares the creature.',
         'Warped (CR 702.185) — exiled at the beginning of the next end step, then castable again from exile.',
+        'Dashed (CR 702.109) — has haste; returned to its owner\'s hand at the beginning of the next end step.',
         'Band N (CR 702.22) — which attacking band this creature belongs to.',
       ] },
     ],

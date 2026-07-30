@@ -119,6 +119,7 @@ class StackResolver(
         wasWaterbendPaid: Boolean = false,
         giftRecipient: EntityId? = null,
         wasWarped: Boolean = false,
+        wasDashed: Boolean = false,
         wasEvoked: Boolean = false,
         wasImpending: Boolean = false,
         wasCleaved: Boolean = false,
@@ -198,6 +199,7 @@ class StackResolver(
                 additionalCostPayXLifeAmount = additionalCostPayXLifeAmount,
                 castFromZone = castFromZone,
                 wasWarped = wasWarped,
+                wasDashed = wasDashed,
                 wasEvoked = wasEvoked,
                 wasImpending = wasImpending,
                 wasCleaved = wasCleaved,
@@ -1272,6 +1274,12 @@ class StackResolver(
                 updated = updated.with(WarpedComponent)
             }
 
+            // Track if this permanent was cast for its dash cost (CR 702.109a — grants haste
+            // live off this marker; see DashedComponent's doc).
+            if (spellComponent.wasDashed) {
+                updated = updated.with(com.wingedsheep.engine.state.components.battlefield.DashedComponent)
+            }
+
             // Track if this permanent was cast for its evoke cost
             if (spellComponent.wasEvoked) {
                 updated = updated.with(com.wingedsheep.engine.state.components.battlefield.EvokedComponent)
@@ -1598,6 +1606,26 @@ class StackResolver(
             val delayedTrigger = DelayedTriggeredAbility(
                 id = java.util.UUID.randomUUID().toString(),
                 effect = WarpExileEffect(
+                    target = EffectTarget.SpecificEntity(spellId),
+                    enteredBattlefieldTimestamp = entryTimestamp
+                ),
+                fireAtStep = Step.END,
+                sourceId = spellId,
+                sourceName = cardComponent?.name ?: "Unknown",
+                controllerId = controllerId
+            )
+            newState = newState.addDelayedTrigger(delayedTrigger)
+        }
+
+        // Dash (CR 702.109a): create delayed trigger to return this permanent to its owner's
+        // hand at the beginning of the next end step. Same blink-safety shape as warp above.
+        if (spellComponent.wasDashed) {
+            val entryTimestamp = newState.getEntity(spellId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()
+                ?.timestamp
+            val delayedTrigger = DelayedTriggeredAbility(
+                id = java.util.UUID.randomUUID().toString(),
+                effect = com.wingedsheep.sdk.scripting.effects.DashReturnToHandEffect(
                     target = EffectTarget.SpecificEntity(spellId),
                     enteredBattlefieldTimestamp = entryTimestamp
                 ),

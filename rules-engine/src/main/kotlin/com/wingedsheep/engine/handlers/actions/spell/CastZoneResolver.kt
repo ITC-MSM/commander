@@ -397,6 +397,22 @@ class CastZoneResolver(
     }
 
     /**
+     * Check if a card has an active Dash keyword ability that can be used from its current
+     * zone. Hand-only (CR 702.109a) — printed only for now, no granted-dash resolver exists yet
+     * (mirrors [hasWarpPermission]'s shape, minus the graveyard/grant branches Warp alone has).
+     */
+    fun hasDashPermission(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): Boolean {
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return false
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: return false
+        if (cardDef.keywordAbilities.none { it is KeywordAbility.Dash }) return false
+        return cardId in state.getZone(ZoneKey(playerId, Zone.HAND))
+    }
+
+    /**
      * Check if a creature card in the graveyard can be cast via the forage permission
      * granted by `MayCastCreaturesFromGraveyardWithForageComponent` (e.g. Osteomancer Adept).
      */

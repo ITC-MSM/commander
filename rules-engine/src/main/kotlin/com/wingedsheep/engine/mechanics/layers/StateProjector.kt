@@ -4,6 +4,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.battlefield.DashedComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -109,7 +110,11 @@ class StateProjector(
             (container.get<ProtectionComponent>()?.supertypes?.map { "PROTECTION_FROM_SUPERTYPE_${it.uppercase()}" } ?: emptyList()) +
                         (container.get<HexproofFromComponent>()?.colors?.map { "HEXPROOF_FROM_${it.name}" } ?: emptyList()) +
                         (container.get<HexproofFromComponent>()?.cardTypes?.map { "HEXPROOF_FROM_CARDTYPE_$it" } ?: emptyList()) +
-                        (container.get<ToxicComponent>()?.let { listOf("TOXIC_${it.amount}") } ?: emptyList())).toMutableSet(),
+                        (container.get<ToxicComponent>()?.let { listOf("TOXIC_${it.amount}") } ?: emptyList()) +
+                        // CR 702.109a: "as long as this permanent's dash cost was paid, it has
+                        // haste" — derived live from the marker every projection, not stored as a
+                        // floating effect (see DashedComponent's doc for why).
+                        (if (container.has<DashedComponent>()) listOf(Keyword.HASTE.name) else emptyList())).toMutableSet(),
                     colors = cardComponent.colors.map { it.name }.toMutableSet(),
                     types = extractTypes(cardComponent),
                     subtypes = cardComponent.typeLine.subtypes.map { it.value }.toMutableSet(),

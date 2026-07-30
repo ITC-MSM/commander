@@ -557,7 +557,10 @@ class PlayLandHandler(
             cardId in state.getZone(ZoneKey(pid, Zone.EXILE))
         }
         if (!inAnyExile) return false
-        return state.hasMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)
+        // A nonLandOnly permission ("you may cast that card" wording, e.g. Ragavan, Nimble
+        // Pilferer) never authorizes playing a land — mirrors CastFromZoneEnumerator's gate.
+        return state.activeMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)
+            .any { !it.nonLandOnly }
     }
 
     /**
@@ -565,13 +568,18 @@ class PlayLandHandler(
      * also forces the played land tapped (Lightstall Inquisitor's "each land played this
      * way enters tapped" clause). Read from [state] *before* the card left exile, since
      * `removeMayPlayPermissionsForCard` runs as the card moves to the battlefield.
+     *
+     * A `nonLandOnly` permission never authorizes a land play in the first place (mirrors
+     * [isInExileWithPlayPermission]'s filter) — its `landEntersTapped` rider is therefore only
+     * relevant when it's actually the permission the land played through, never as a rider
+     * leaking onto a land authorized by a *different*, plain permission.
      */
     private fun permissionForcesLandTapped(
         state: GameState,
         playerId: EntityId,
         cardId: EntityId
     ): Boolean = state.activeMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)
-        .any { it.landEntersTapped }
+        .any { !it.nonLandOnly && it.landEntersTapped }
 
     private fun hasPlayFromTopOfLibrary(state: GameState, playerId: EntityId): Boolean {
         for (entityId in state.getBattlefield(playerId)) {
@@ -609,7 +617,10 @@ class PlayLandHandler(
         // exile path in [isInExileWithPlayPermission] and CastFromZoneEnumerator, which already
         // offers the PlayLand action for such a card; without this the handler would reject the
         // very action the enumerator advertised.
-        if (state.hasMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)) return true
+        // A nonLandOnly permission ("you may cast that card" wording) never authorizes playing
+        // a land — mirrors isInExileWithPlayPermission.
+        if (state.activeMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)
+                .any { !it.nonLandOnly }) return true
         if (hasLandGraveyardPlayPermission(state, playerId)) return true
         if (findGraveyardPlayPermissionSource(state, playerId, CardType.LAND.name) != null) return true
         // Mayhem (CR 702.187c): a Mayhem land discarded this turn may be played from the graveyard.
