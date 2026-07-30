@@ -293,6 +293,11 @@ export interface ClientCard {
    * exiled at the next end step, then can be recast from exile. Drives the cosmic warp cue. Battlefield only. */
   readonly isWarped?: boolean
 
+  /** Whether this permanent was cast for its dash cost (CR 702.109, Khans of Tarkir): it has haste
+   * and will be returned to its owner's hand at the next end step (not exiled — unlike warp).
+   * Battlefield only. */
+  readonly isDashed?: boolean
+
   /** Morph cost for face-down creatures (only visible to controller) */
   readonly morphCost?: string | null
 

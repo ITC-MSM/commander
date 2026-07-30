@@ -312,12 +312,13 @@ export function useSlotSizedResponsive(
 export function hasMultipleCastingOptions(cardLegalActions: LegalActionInfo[]): boolean {
   // Count distinct casting method types
   const hasNormalCast = cardLegalActions.some(
-    (a) => a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastWithFlashback' && a.actionType !== 'CastWithWarp'
+    (a) => a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastWithFlashback' && a.actionType !== 'CastWithWarp' && a.actionType !== 'CastWithDash'
   )
   const hasMorphCast = cardLegalActions.some((a) => a.actionType === 'CastFaceDown')
   const hasKickerCast = cardLegalActions.some((a) => a.actionType === 'CastWithKicker')
   const hasFlashbackCast = cardLegalActions.some((a) => a.actionType === 'CastWithFlashback')
   const hasWarpCast = cardLegalActions.some((a) => a.actionType === 'CastWithWarp')
+  const hasDashCast = cardLegalActions.some((a) => a.actionType === 'CastWithDash')
   const hasCycling = cardLegalActions.some((a) => a.action.type === 'CycleCard')
   const hasPlot = cardLegalActions.some((a) => a.action.type === 'PlotCard')
   const hasPlayLand = cardLegalActions.some((a) => a.action.type === 'PlayLand')
@@ -328,6 +329,7 @@ export function hasMultipleCastingOptions(cardLegalActions: LegalActionInfo[]): 
   if (hasKickerCast) options++
   if (hasFlashbackCast) options++
   if (hasWarpCast) options++
+  if (hasDashCast) options++
   if (hasCycling) options++
   if (hasPlot) options++
   if (hasPlayLand) options++

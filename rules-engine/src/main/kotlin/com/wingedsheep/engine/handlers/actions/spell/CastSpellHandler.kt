@@ -839,12 +839,16 @@ class CastSpellHandler(
                     val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
+                    // Check dash cost (CR 702.109 — hand only, printed only for now).
+                    val dashAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Dash>().firstOrNull()
                     if (action.altAllows(AlternativeCostType.SNEAK) && sneakCost != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, sneakCost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.WEB_SLINGING) && webSlingingAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, webSlingingAbility.cost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.EVOKE) && evokeAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, evokeAbility.cost, action.playerId)
+                    } else if (action.altAllows(AlternativeCostType.DASH) && dashAbility != null && zoneResolver.hasDashPermission(state, action.playerId, action.cardId)) {
+                        costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, dashAbility.cost, action.playerId)
                     } else {
                         // Check impending cost
                         val impendingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Impending>().firstOrNull()
@@ -2074,12 +2078,16 @@ class CastSpellHandler(
                     val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
+                    // Check dash cost (CR 702.109 — hand only, printed only for now).
+                    val dashAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Dash>().firstOrNull()
                     if (action.altAllows(AlternativeCostType.SNEAK) && sneakCost != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, sneakCost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.WEB_SLINGING) && webSlingingAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, webSlingingAbility.cost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.EVOKE) && evokeAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, evokeAbility.cost, action.playerId)
+                    } else if (action.altAllows(AlternativeCostType.DASH) && dashAbility != null && zoneResolver.hasDashPermission(currentState, action.playerId, action.cardId)) {
+                        costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, dashAbility.cost, action.playerId)
                     } else {
                         // Check impending cost
                         val impendingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Impending>().firstOrNull()
@@ -3065,6 +3073,14 @@ class CastSpellHandler(
                 currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator
             ) != null
 
+        // Determine if this spell is being cast using dash (CR 702.109). Printed-only for now —
+        // no granted-dash resolver exists yet, mirroring evoke/impending/cleave's shape below
+        // rather than warp's Grants-lookup (which exists because Warp can also be granted to
+        // cards in hand by a battlefield static ability).
+        val wasDashed = action.useAlternativeCost && cardDef != null &&
+            action.altAllows(AlternativeCostType.DASH) &&
+            cardDef.keywordAbilities.any { it is KeywordAbility.Dash }
+
         // Determine if this spell is being cast using evoke
         val wasEvoked = action.useAlternativeCost && cardDef != null &&
             action.altAllows(AlternativeCostType.EVOKE) &&
@@ -3208,6 +3224,7 @@ class CastSpellHandler(
             // for a card that actually has gift — validate() rejects the flag otherwise.
             giftRecipient = action.giftRecipient?.takeIf { cardDef?.giftKeyword() != null },
             wasWarped = wasWarped,
+            wasDashed = wasDashed,
             wasEvoked = wasEvoked,
             wasImpending = wasImpending,
             wasCleaved = wasCleaved,

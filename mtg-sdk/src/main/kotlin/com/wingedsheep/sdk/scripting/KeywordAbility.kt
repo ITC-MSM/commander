@@ -499,6 +499,26 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Dash
+    // =========================================================================
+
+    /**
+     * Dash with a mana cost (CR 702.109, Khans of Tarkir).
+     * "Dash [cost]" — You may cast this card by paying [cost] rather than its mana cost. If you
+     * do, it gains haste, and it's returned from the battlefield to its owner's hand at the
+     * beginning of the next end step.
+     *
+     * Hand-only (CR 702.109a doesn't grant a graveyard/other-zone variant the way Warp's
+     * `fromGraveyard` flag does) — no sibling flag needed unless a future card's oracle text
+     * says otherwise.
+     */
+    @SerialName("Dash")
+    @Serializable
+    data class Dash(val cost: ManaCost) : KeywordAbility {
+        override val description: String = "Dash $cost"
+    }
+
+    // =========================================================================
     // Plot
     // =========================================================================
 
@@ -1095,6 +1115,12 @@ sealed interface KeywordAbility {
          * Create Warp with mana cost from string.
          */
         fun warp(cost: String): KeywordAbility = Warp(ManaCost.parse(cost))
+
+        /**
+         * Create Dash with a mana cost from a string (CR 702.109). E.g. `dash("{1}{R}")` for
+         * "Dash {1}{R}".
+         */
+        fun dash(cost: String): KeywordAbility = Dash(ManaCost.parse(cost))
 
         /**
          * Create Evoke with mana cost from string.

@@ -287,6 +287,14 @@ class CardBuilder(private val name: String) {
     var warp: String? = null
 
     /**
+     * Dash cost as a mana cost string (e.g., "{1}{R}").
+     * When set, the card gains the Dash keyword ability.
+     * Dash allows casting for an alternative cost; the permanent gains haste and is returned
+     * to its owner's hand at the beginning of the next end step.
+     */
+    var dash: String? = null
+
+    /**
      * If set, the caster must choose a creature type during casting.
      * The source determines where to look for available creature types.
      */
@@ -867,6 +875,7 @@ class CardBuilder(private val name: String) {
                 morphCost != null -> add(KeywordAbility.Morph(morphCost!!, morphFaceUpEffect))
             }
             if (warp != null) add(KeywordAbility.Warp(ManaCost.parse(warp!!)))
+            if (dash != null) add(KeywordAbility.Dash(ManaCost.parse(dash!!)))
             if (evoke != null) add(KeywordAbility.Evoke(ManaCost.parse(evoke!!)))
         }
 

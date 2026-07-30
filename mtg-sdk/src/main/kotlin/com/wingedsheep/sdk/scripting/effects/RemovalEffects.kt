@@ -598,3 +598,29 @@ data class WarpExileEffect(
 ) : Effect {
     override val description: String = "Exile ${target.description} (warp)"
 }
+
+/**
+ * Return a dashed permanent to its owner's hand (CR 702.109a's second clause). Used by the dash
+ * mechanic's delayed trigger: "At the beginning of the next end step, return this permanent to
+ * its owner's hand." Per the official ruling, the return only happens if the permanent is still
+ * on the battlefield when the delayed trigger resolves — dying or leaving some other way before
+ * then leaves it wherever it went instead.
+ *
+ * Structurally identical to [WarpExileEffect]'s blink-safety shape (same
+ * [enteredBattlefieldTimestamp] CR 603.7c / 400.7 guard — a dashed creature that's blinked
+ * before the trigger fires is a new object the trigger no longer tracks), differing only in the
+ * destination zone (hand, not exile) and that it grants no cast-from-zone permission afterward.
+ *
+ * @property target The permanent to return (resolved to SpecificEntity by delayed trigger creation)
+ * @property enteredBattlefieldTimestamp The tracked permanent's battlefield-entry timestamp,
+ *   snapshotted when the delayed trigger is created. Null skips the check (pre-existing
+ *   serialized states, or callers that resolve the target at fire time).
+ */
+@SerialName("DashReturnToHand")
+@Serializable
+data class DashReturnToHandEffect(
+    val target: EffectTarget,
+    val enteredBattlefieldTimestamp: Long? = null
+) : Effect {
+    override val description: String = "Return ${target.description} to its owner's hand (dash)"
+}

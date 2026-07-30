@@ -39,8 +39,8 @@ class SpiderManNoMoreScenarioTest : FunSpec({
         val player = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
-        // Ragavan, Nimble Pilferer: legendary 2/1 red Monkey Pirate with Haste + a mana ability.
-        val ragavan = driver.putCreatureOnBattlefield(player, "Ragavan, Nimble Pilferer")
+        // Test Hasty Prospector: legendary 2/1 red Monkey Pirate with Haste + a mana ability.
+        val ragavan = driver.putCreatureOnBattlefield(player, "Test Hasty Prospector")
         val aura = driver.putCardInHand(player, "Spider-Man No More")
         driver.giveMana(player, Color.BLUE, 2)
         driver.castSpell(player, aura, listOf(ragavan))
@@ -82,7 +82,7 @@ class SpiderManNoMoreScenarioTest : FunSpec({
         val player = driver.activePlayer!!
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
-        val ragavan = driver.putCreatureOnBattlefield(player, "Ragavan, Nimble Pilferer")
+        val ragavan = driver.putCreatureOnBattlefield(player, "Test Hasty Prospector")
         val aura = driver.putCardInHand(player, "Spider-Man No More")
         driver.giveMana(player, Color.BLUE, 2)
         driver.castSpell(player, aura, listOf(ragavan))
@@ -105,6 +105,6 @@ class SpiderManNoMoreScenarioTest : FunSpec({
         projected.hasKeyword(ragavan, Keyword.DEFENDER) shouldBe false
         projected.hasSubtype(ragavan, "Monkey") shouldBe true
         projected.hasSubtype(ragavan, "Citizen") shouldBe false
-        driver.getCardName(ragavan) shouldBe "Ragavan, Nimble Pilferer"
+        driver.getCardName(ragavan) shouldBe "Test Hasty Prospector"
     }
 })

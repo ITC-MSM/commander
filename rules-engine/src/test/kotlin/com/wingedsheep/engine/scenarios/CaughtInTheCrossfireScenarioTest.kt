@@ -35,8 +35,8 @@ class CaughtInTheCrossfireScenarioTest : FunSpec({
         val opponent = driver.getOpponent(player)
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
-        // Ragavan, Nimble Pilferer is a 2/1 Pirate (outlaw); Black Creature is a 2/2 non-outlaw.
-        val ragavan = driver.putCreatureOnBattlefield(opponent, "Ragavan, Nimble Pilferer")
+        // Test Hasty Prospector is a 2/1 Pirate (outlaw); Black Creature is a 2/2 non-outlaw.
+        val ragavan = driver.putCreatureOnBattlefield(opponent, "Test Hasty Prospector")
         driver.putCreatureOnBattlefield(opponent, "Black Creature")
 
         val spell = driver.putCardInHand(player, "Caught in the Crossfire")
@@ -52,7 +52,7 @@ class CaughtInTheCrossfireScenarioTest : FunSpec({
         driver.bothPass()
 
         // 2 damage to outlaws only: Ragavan (2/1) dies, Black Creature (2/2) survives.
-        driver.findPermanent(opponent, "Ragavan, Nimble Pilferer") shouldBe null
+        driver.findPermanent(opponent, "Test Hasty Prospector") shouldBe null
         driver.findPermanent(opponent, "Black Creature") shouldNotBe null
     }
 
@@ -63,7 +63,7 @@ class CaughtInTheCrossfireScenarioTest : FunSpec({
         val opponent = driver.getOpponent(player)
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
-        driver.putCreatureOnBattlefield(opponent, "Ragavan, Nimble Pilferer") // 2/1 Pirate
+        driver.putCreatureOnBattlefield(opponent, "Test Hasty Prospector") // 2/1 Pirate
         driver.putCreatureOnBattlefield(opponent, "Black Creature") // 2/2 non-outlaw
 
         val spell = driver.putCardInHand(player, "Caught in the Crossfire")
@@ -80,7 +80,7 @@ class CaughtInTheCrossfireScenarioTest : FunSpec({
 
         // 2 damage to non-outlaws only: Black Creature (2/2) dies, Ragavan survives.
         driver.findPermanent(opponent, "Black Creature") shouldBe null
-        driver.findPermanent(opponent, "Ragavan, Nimble Pilferer") shouldNotBe null
+        driver.findPermanent(opponent, "Test Hasty Prospector") shouldNotBe null
     }
 
     test("Caught in the Crossfire both modes: 2 damage to every creature") {
@@ -90,7 +90,7 @@ class CaughtInTheCrossfireScenarioTest : FunSpec({
         val opponent = driver.getOpponent(player)
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
-        driver.putCreatureOnBattlefield(opponent, "Ragavan, Nimble Pilferer") // outlaw
+        driver.putCreatureOnBattlefield(opponent, "Test Hasty Prospector") // outlaw
         driver.putCreatureOnBattlefield(opponent, "Black Creature") // non-outlaw
 
         val spell = driver.putCardInHand(player, "Caught in the Crossfire")
@@ -105,7 +105,7 @@ class CaughtInTheCrossfireScenarioTest : FunSpec({
         )
         driver.bothPass()
 
-        driver.findPermanent(opponent, "Ragavan, Nimble Pilferer") shouldBe null
+        driver.findPermanent(opponent, "Test Hasty Prospector") shouldBe null
         driver.findPermanent(opponent, "Black Creature") shouldBe null
     }
 })
