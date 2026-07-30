@@ -283,6 +283,65 @@ describe('suggestBasicLands', () => {
     expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(0)
   })
 
+  it('scales with the cards picked instead of filling a partial sealed deck with basics', () => {
+    const result = suggestBasicLands({
+      entries: [
+        spell('Green two-drop', '{1}{G}', 2, 6),
+        spell('Green three-drop', '{2}{G}', 3, 4),
+      ],
+      availableBasics: basics,
+      minDeckSize: 40,
+    })
+
+    // 10 spells at a ~0.425 ratio wants ~7 lands, not the 30 that filling out
+    // a 40-card deck would demand.
+    expect(result.Forest).toBe(7)
+    expect(Object.values(result).reduce((sum, count) => sum + count, 0)).toBe(7)
+  })
+
+  it('scales with the cards picked when no deck size is known', () => {
+    const result = suggestBasicLands({
+      entries: [
+        spell('White two-drop', '{1}{W}', 2, 6),
+        spell('White three-drop', '{2}{W}', 3, 6),
+      ],
+      availableBasics: basics,
+    })
+
+    expect(result.Plains).toBe(9)
+  })
+
+  it('grows the suggestion monotonically as more cards are picked', () => {
+    const totals = [6, 12, 18, 23].map((count) => {
+      const result = suggestBasicLands({
+        entries: [spell('Blue three-drop', '{2}{U}', 3, count)],
+        availableBasics: basics,
+        minDeckSize: 40,
+      })
+      return Object.values(result).reduce((sum, n) => sum + n, 0)
+    })
+
+    expect(totals).toEqual([...totals].sort((a, b) => a - b))
+    expect(totals[0]).toBeLessThan(10)
+    expect(totals[3]).toBe(17)
+  })
+
+  it('shares a partial deck of too-few lands across all its colors', () => {
+    const result = suggestBasicLands({
+      entries: [
+        spell('White one-drop', '{W}', 1, 2),
+        spell('Blue one-drop', '{U}', 1, 2),
+        spell('Black one-drop', '{B}', 1, 2),
+      ],
+      availableBasics: basics,
+      minDeckSize: 40,
+    })
+
+    for (const color of ['Plains', 'Island', 'Swamp']) {
+      expect(result[color] ?? 0).toBeGreaterThan(0)
+    }
+  })
+
   it('uses only the first available printing for a basic-land color', () => {
     const result = suggestBasicLands({
       entries: [spell('White spell', '{1}{W}', 2, 23)],

@@ -4619,9 +4619,10 @@ function effectiveCopyCap(card: CardSummary, isCommanderShape: boolean): number 
 /**
  * Adapter: build `DeckEntry[]` from the standalone deckbuilder's deck +
  * catalog and call the shared `suggestBasicLands`. The standalone builder
- * doesn't know its target format, so no minDeckSize floor is applied — basics
- * scale purely off the spell curve. The validation panel surfaces undersized
- * decks so the user can re-run Suggest after adding more spells.
+ * doesn't know its target format, so no minDeckSize is passed — basics scale
+ * purely off the spell curve and the current spell count. The validation panel
+ * surfaces undersized decks so the user can re-run Suggest after adding more
+ * spells.
  */
 function suggestLandsForDeck(
   deck: Record<string, number>,
