@@ -1414,7 +1414,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Break Down the Door
@@ -1913,7 +1914,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Chainsaw
@@ -2122,7 +2124,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Clammy Prowler
@@ -3369,7 +3372,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Defiant Survivor
@@ -3536,7 +3540,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Demonic Counsel
@@ -3744,7 +3749,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Dissection Tools
@@ -4160,7 +4166,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Don't Make a Sound
@@ -6744,7 +6751,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Get Out
@@ -7272,7 +7280,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Glimmer Seeker
@@ -7674,7 +7683,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Grasping Longneck
@@ -7824,7 +7834,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Gremlin Tamer
@@ -11116,7 +11127,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Meathook Massacre II
@@ -11491,7 +11503,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Moldering Gym // Weight Room
@@ -11644,7 +11657,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Monstrous Emergence
@@ -13844,7 +13858,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Paranormal Analyst
@@ -14867,7 +14882,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Resurrected Cultist
@@ -15232,7 +15248,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Rootwise Survivor
@@ -16543,7 +16560,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Spectral Snatcher
@@ -17233,7 +17251,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // The Jolly Balloon Man
@@ -18194,7 +18213,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Toby, Beastie Befriender
@@ -19181,7 +19201,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Unholy Annex // Ritual Chamber
@@ -19306,7 +19327,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Unidentified Hovership
@@ -21083,7 +21105,8 @@
                 ]
             }
         }
-    ]
+    ],
+    "hasNoManaCost": true
 }
 
 // Waltz of Rage

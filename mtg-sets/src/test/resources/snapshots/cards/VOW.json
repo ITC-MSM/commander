@@ -1232,7 +1232,8 @@
         ],
         "colorIndicator": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "97",
@@ -2039,7 +2040,8 @@
         ],
         "colorIndicator": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "101",
@@ -2678,7 +2680,8 @@
         ],
         "colorIndicator": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "104",
@@ -3507,7 +3510,8 @@
         "colorIndicator": [
             "WHITE",
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "236",
@@ -5375,7 +5379,8 @@
         ],
         "colorIndicator": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "119",
@@ -7976,7 +7981,8 @@
         ],
         "colorIndicator": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "28",
@@ -8791,7 +8797,8 @@
         ],
         "colorIndicator": [
             "BLACK"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "128",
@@ -10802,7 +10809,8 @@
         ],
         "colorIndicator": [
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "225",
@@ -11808,7 +11816,8 @@
         ],
         "colorIndicator": [
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "45",

@@ -394,6 +394,28 @@ data class ForetellCard(
 ) : GameAction
 
 /**
+ * Player suspends a card from their hand (CR 702.62, Time Spiral).
+ *
+ * Suspend is a special action (CR 116.2f) — unlike [ForetellCard]/[PlotCard], it isn't just
+ * "does not use the stack once announced"; the card is never cast at all. The player pays
+ * the card's printed suspend cost and exiles it from hand with a number of time counters
+ * equal to its suspend value. The exiled card counts down at its owner's upkeep — driven by
+ * the engine's synthesized [com.wingedsheep.sdk.scripting.Suspend.countdownAbility], granted
+ * to any exiled card carrying the suspended marker — and when the last counter is removed,
+ * its owner may play it for free (with haste, if it becomes a creature).
+ *
+ * @property playerId The player suspending the card
+ * @property cardId The card being suspended
+ */
+@Serializable
+@SerialName("SuspendCardFromHand")
+data class SuspendCardFromHand(
+    override val playerId: EntityId,
+    val cardId: EntityId,
+    val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay
+) : GameAction
+
+/**
  * Player typecycles a card from their hand.
  *
  * Typecycling (e.g., Swampcycling, Wizardcycling) is an activated ability from hand.

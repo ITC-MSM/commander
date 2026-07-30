@@ -1769,7 +1769,8 @@
             "BLACK",
             "RED",
             "GREEN"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "55",
@@ -2729,7 +2730,8 @@
             "RED",
             "BLUE",
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "78",
@@ -4766,7 +4768,8 @@
             "GREEN",
             "RED",
             "WHITE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "108",

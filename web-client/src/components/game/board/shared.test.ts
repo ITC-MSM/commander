@@ -44,6 +44,14 @@ function plot(): LegalActionInfo {
   }
 }
 
+function suspend(): LegalActionInfo {
+  return {
+    actionType: 'SuspendCardFromHand',
+    description: 'Suspend',
+    action: { type: 'SuspendCardFromHand', playerId: PLAYER, cardId: CARD },
+  }
+}
+
 function morph(): LegalActionInfo {
   return {
     actionType: 'CastFaceDown',
@@ -91,6 +99,13 @@ describe('shouldShowCastModal', () => {
 
   it('opens the menu for a card with only a plot action', () => {
     expect(shouldShowCastModal([plot()])).toBe(true)
+  })
+
+  // Ancestral Vision has no printed mana cost, so its only legal action is ever
+  // SuspendCardFromHand — the menu must still open (with a grayed-out "Cast") rather than
+  // silently suspending a card the player might have wanted to reconsider.
+  it('opens the menu for a card with only a suspend action', () => {
+    expect(shouldShowCastModal([suspend()])).toBe(true)
   })
 
   it('opens the menu for a cycling land that already played a land (cycle only)', () => {

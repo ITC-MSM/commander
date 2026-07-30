@@ -1154,6 +1154,17 @@ class ClientStateTransformer(
         val isParadigm = zoneKey.zoneType == Zone.EXILE &&
             container.has<com.wingedsheep.engine.state.components.battlefield.ParadigmComponent>()
 
+        // Suspended cards (CR 702.62) sit face-up in exile with a SuspendedComponent, counting down at
+        // the owner's upkeep; surface a flag so the client can show them in a dedicated public pile
+        // (otherwise indistinguishable from any other exiled card). CR 702.62b: "suspended" also
+        // requires at least one time counter — the marker alone lingers after the owner declines the
+        // free cast at zero counters (see SuspendCardFromHandHandler), and that leftover shouldn't
+        // read as an active countdown.
+        val isSuspended = zoneKey.zoneType == Zone.EXILE &&
+            container.has<com.wingedsheep.engine.state.components.battlefield.SuspendedComponent>() &&
+            (container.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
+                ?.getCount(CounterType.TIME) ?: 0) > 0
+
         // Prepared permanents (Secrets of Strixhaven) carry a PreparedComponent while a copy of their
         // prepare spell waits castable in exile; surface a flag so the client can badge the creature.
         val isPrepared = zoneKey.zoneType == Zone.BATTLEFIELD &&
@@ -1255,6 +1266,7 @@ class ClientStateTransformer(
             isSuspected = projectedValues?.isSuspected == true,
             isPlotted = isPlotted,
             isParadigm = isParadigm,
+            isSuspended = isSuspended,
             isPrepared = isPrepared,
             isPreparedSpell = isPreparedSpell,
             isWarped = isWarped,

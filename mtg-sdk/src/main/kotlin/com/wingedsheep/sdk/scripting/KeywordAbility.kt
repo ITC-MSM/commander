@@ -545,6 +545,32 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Suspend
+    // =========================================================================
+
+    /**
+     * Printed Suspend (CR 702.62, Time Spiral). "Suspend N—[cost]" — a static ability that
+     * functions while the card is in hand: "If you could begin to cast this card by putting
+     * it onto the stack from your hand, you may pay [cost] and exile it with N time counters
+     * on it. This action doesn't use the stack." (CR 702.62a / 116.2f special action.)
+     *
+     * This class only carries the printed *setup* half — [cost] and [timeCounters]. The
+     * countdown-and-cast half is component-driven, not definition-driven: the engine's
+     * synthesized [com.wingedsheep.sdk.scripting.Suspend.countdownAbility] is granted to
+     * *any* exiled card carrying the runtime `SuspendedComponent` marker, so the same
+     * machinery serves both a printed suspend (stamped by the engine's
+     * `SuspendCardFromHandHandler` special action) and a suspend granted at runtime to an
+     * otherwise-ordinary card (e.g. Taigam, Master Opportunist, via
+     * [com.wingedsheep.sdk.dsl.Effects.Suspend]).
+     */
+    @SerialName("Suspend")
+    @Serializable
+    data class Suspend(val cost: ManaCost, val timeCounters: Int) : KeywordAbility {
+        override val keyword: Keyword = Keyword.SUSPEND
+        override val description: String = "Suspend $timeCounters—$cost"
+    }
+
+    // =========================================================================
     // Conspire
     // =========================================================================
 
@@ -999,6 +1025,12 @@ sealed interface KeywordAbility {
          * The {2} setup cost is fixed by the rules; [cost] is the cost to cast it later.
          */
         fun foretell(cost: String): KeywordAbility = Foretell(ManaCost.parse(cost))
+
+        /**
+         * Create printed Suspend with a mana cost from a string and its time-counter count
+         * (CR 702.62). E.g. `suspend("{U}", 4)` for "Suspend 4—{U}".
+         */
+        fun suspend(cost: String, timeCounters: Int): KeywordAbility = Suspend(ManaCost.parse(cost), timeCounters)
 
         /**
          * Create Morph with mana cost from string.
