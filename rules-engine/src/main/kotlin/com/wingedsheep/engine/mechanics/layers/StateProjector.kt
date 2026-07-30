@@ -301,8 +301,15 @@ class StateProjector(
             // Suppress effects from sources that lost all abilities (e.g., a lord under Humility),
             // but NOT from sources that are themselves the source of a RemoveAllAbilities effect,
             // nor from a multi-layer group that already started applying before Layer 6.
+            //
+            // Only *static* abilities are suppressed (CR 611.3b — a static ability generates its
+            // effect only for as long as the object has that ability). A continuous effect created
+            // by a resolved spell or ability lasts as long as it says it does (CR 611.2a) and is
+            // independent of the source's abilities: a Timid Shieldbearer that pumped your team
+            // and then lost all its abilities to Curious Colossus keeps the +1/+1 it already gave,
+            // exactly as Humility never undoes a Giant Growth that already resolved.
             val sourceProjected = projectedValues[effect.sourceId]
-            if (sourceProjected != null && sourceProjected.lostAllAbilities &&
+            if (effect.fromStaticAbility && sourceProjected != null && sourceProjected.lostAllAbilities &&
                 effect.sourceId !in removeAllAbilitiesSources && !startedBeforeAbility) {
                 return@mapNotNull null
             }
@@ -676,7 +683,11 @@ class StateProjector(
                         // Captured controller — lets a dynamic P/T (or other controller-dependent)
                         // effect still resolve a controller after its source has left the
                         // battlefield (Titania's Song's until-EOT linger).
-                        controllerId = floating.controllerId
+                        controllerId = floating.controllerId,
+                        // CR 611.2a: this effect was created by a resolved spell or ability, so it
+                        // is independent of its source's abilities — stripping those abilities in
+                        // Layer 6 must not retract it.
+                        fromStaticAbility = false
                     )
                 )
             }
