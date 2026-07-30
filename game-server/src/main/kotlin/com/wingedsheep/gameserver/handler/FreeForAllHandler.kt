@@ -136,7 +136,9 @@ class FreeForAllHandler(
                 lobby.getSubmittedDeck(identity.playerId) ?: return false,
                 lobby.basicLands
             )
-            val deckWithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(identity.playerName, baseDeck)
+            val deckWithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(
+                identity.playerName, baseDeck, gameProperties.easterEggs.enabled
+            )
             val commander = if (usesCommanders) playerState.commander else null
             val deck = if (commander != null) stripCommanderFromCards(deckWithEgg, commander) else deckWithEgg
 

@@ -40,13 +40,26 @@ class CoreAutoResumerModule(
 
         autoResumer(DrawReplacementRemainingDrawsContinuation::class) { state, continuation, events, checkForMore ->
             if (continuation.remainingDraws > 0) {
+                // CR 121.2a is announced once per instruction; these draws are the tail
+                // of one that already went through it, so don't re-announce.
+                val announce = !continuation.announcementApplied
                 if (continuation.isDrawStep) {
-                    val turnManager = com.wingedsheep.engine.core.TurnManager(cardRegistry = services.cardRegistry, effectExecutor = services.effectExecutorRegistry::execute)
-                    val drawResult = turnManager.drawCards(state, continuation.drawingPlayerId, continuation.remainingDraws)
+                    val turnManager = com.wingedsheep.engine.core.TurnManager(
+                        cardRegistry = services.cardRegistry,
+                        effectExecutor = services.effectExecutorRegistry::execute,
+                        replacementProcessor = services.replacementEffectProcessor
+                    )
+                    val drawResult = turnManager.drawCards(state, continuation.drawingPlayerId, continuation.remainingDraws, announce)
                     mergeAndContinue(drawResult, events, checkForMore)
                 } else {
-                    val drawExecutor = com.wingedsheep.engine.handlers.effects.drawing.DrawCardsExecutor(cardRegistry = services.cardRegistry, effectExecutor = services.effectExecutorRegistry::execute)
-                    val drawResult = drawExecutor.executeDraws(state, continuation.drawingPlayerId, continuation.remainingDraws).toExecutionResult()
+                    val drawExecutor = com.wingedsheep.engine.handlers.effects.drawing.DrawCardsExecutor(
+                        cardRegistry = services.cardRegistry,
+                        effectExecutor = services.effectExecutorRegistry::execute,
+                        replacementProcessor = services.replacementEffectProcessor
+                    )
+                    val drawResult = drawExecutor.executeDraws(
+                        state, continuation.drawingPlayerId, continuation.remainingDraws, announce = announce
+                    ).toExecutionResult()
                     mergeAndContinue(drawResult, events, checkForMore)
                 }
             } else {
@@ -55,7 +68,11 @@ class CoreAutoResumerModule(
         },
 
         autoResumer(CycleDrawContinuation::class) { state, continuation, events, checkForMore ->
-            val drawExecutor = com.wingedsheep.engine.handlers.effects.drawing.DrawCardsExecutor(cardRegistry = services.cardRegistry, effectExecutor = services.effectExecutorRegistry::execute)
+            val drawExecutor = com.wingedsheep.engine.handlers.effects.drawing.DrawCardsExecutor(
+                cardRegistry = services.cardRegistry,
+                effectExecutor = services.effectExecutorRegistry::execute,
+                replacementProcessor = services.replacementEffectProcessor
+            )
             val drawResult = drawExecutor.executeDraws(state, continuation.playerId, 1).toExecutionResult()
             mergeAndContinue(drawResult, events, checkForMore)
         },

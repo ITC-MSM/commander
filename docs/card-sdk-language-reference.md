@@ -691,9 +691,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `EachPlayerDrawsForDamageDealtToSource()` — each player draws equal to damage source took this turn.
 - `ReadTheRunes()` — draw N, then discard N (or sacrifice permanents).
 - `ReplaceNextDraw(effect)` — replaces controller's next draw this turn with the given effect (a one-shot
-  floating shield, consumed before the replacement runs so an inner `DrawCards` doesn't re-trigger it). The
-  activation-time `{X}` is captured onto the shield, so the replacement effect can read `DynamicAmount.XValue`
-  when it fires at draw time (Aladdin's Lamp: "look at the top X cards … then draw a card").
+  floating shield with `Duration.NextUse`, consumed by the replacement effect processor when matched, so an
+  inner `DrawCards` doesn't re-trigger it). The activation-time `{X}` is captured onto the shield, so the
+  replacement effect can read `DynamicAmount.XValue` when it fires at draw time (Aladdin's Lamp: "look at
+  the top X cards … then draw a card").
 
 ### Destruction & exile
 
@@ -2554,6 +2555,16 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   "target" instance and stay **legal by default** (the same object may be chosen once per instance); when
   a later requirement must differ from an earlier one ("… and up to one **other** target …"), wrap it in
   `TargetOther` — `.other()`/`excludeSelf` on a filter only excludes the *source*, not another chosen target.
+  `TargetOther` is a pure wrapper: it delegates every count-shaping field (`count`, `minCount`,
+  `optional`, `unlimited`, `chooser`) to its base requirement, so `TargetOther(TargetCreature(unlimited = true, …))`
+  stays "any number of **other** target …".
+- **An unbounded (`unlimited`) requirement must be the *last* one.** Targets are matched to requirements
+  positionally (`TargetValidator`, `EffectContext.buildNamedTargets`), and an unbounded slot has no fixed
+  width, so every requirement declared after it loses its slice. When the printed order puts "any number
+  of target …" first, declare the fixed-count requirements first instead and reference them by bound name
+  / `ContextTarget(n)` — those indices then stay stable no matter how many targets the unbounded slot took
+  (Graceful Takedown declares its victim first and the "any number of target enchanted creatures you
+  control" slot last).
 - `sameController = false` — on `TargetObject` / `TargetCreature(...)`; when `true` and the requirement
   picks more than one target, every chosen target must share a controller ("**two target creatures
   controlled by the same player**"). Enforced cross-target by `TargetValidator` at cast time using
@@ -3111,6 +3122,8 @@ work for abilities-on-stack (which carry no `CardComponent`).
   Skitter's Blessing's `Conditions.YouControlAtLeast(1, …)` draw-step gate). Role tokens are Auras
   (CR 113.2c), which makes this the Wilds of Eldraine Roles payoff predicate. Resolves in both
   `PredicateEvaluator` (targets/conditions) and `AffectsFilterResolver` (layer-7c group projection).
+  Also available as a `TargetFilter` chainer — `TargetFilter.CreatureYouControl.enchanted()` for
+  "target enchanted creature you control" (Graceful Takedown).
 - `IsEnchantedByAura(auraController)` (filter builder `enchantedByAura(controller = ControlledByYou)`)
   — the aura-control-scoped `IsEnchanted`: has at least one attached Aura whose **controller** matches
   the given `ControllerPredicate`. "Enchanted by Auras you control" (Archon of the Wild Rose) is a
@@ -3447,6 +3460,7 @@ Named sugar for the common cases; reach for the factories for any other combinat
 - `takesDamage(source?, binding?)` — incoming-damage trigger. Pick `SourceFilter.{Any,Creature,Spell,Combat,NonCombat,HasColor(c),…}` and `TriggerBinding.{SELF,ATTACHED}`. Covers "damaged by a creature/spell" and "enchanted creature is dealt damage" (`binding = ATTACHED`, Aurification / Frozen Solid shape).
 - `becomesTapped(binding?, filter?)` — "becomes tapped" trigger. `BecomesTapped` is the SELF constant; pass `binding = TriggerBinding.ANY` with an optional `filter: GameObjectFilter` for "whenever a [filter] becomes tapped" (e.g. `GameObjectFilter.CreatureOrLand` — Temporal Distortion). The filter is matched against the tapped permanent via projected state. Fires once **per** tapped permanent.
 - `OneOrMoreBecomeTapped(filter)` — the **batch** sibling of `becomesTapped` (`TapEvent(batch = true)`, ANY binding). Fires at most **once** per simultaneous tap batch (CR 603.2c) regardless of how many matching permanents were tapped together — "Whenever one or more [filter] become tapped" (Deeproot Pilgrimage: `OneOrMoreBecomeTapped(GameObjectFilter.Creature.withSubtype("Merfolk").youControl().nontoken())`). Tapping several matching permanents at once (attacking, convoke, crew) makes a single payoff, not one per permanent. Handled by `TriggerDetector.detectTapBatchTriggers`; the per-event path skips batch taps. The first matching tapped permanent is bound as the triggering entity.
+- `YouTap(filter, batch = false)` — "Whenever **you tap** an untapped [filter]" (`TapEvent(tapper = Player.You)`, ANY binding) — the Wilds of Eldraine cluster: Hylda of the Icy Crown, Icewrought Sentry, Solitary Sanctuary with `GameObjectFilter.Creature.opponentControls()`, and Sharae of Numbing Depths with `batch = true` for the "one or more" wording. Two things separate it from `becomesTapped`: (1) **attribution** — the tap must have been *caused by* the trigger's controller. `TappedEvent.tappedById` carries the causing player: the `tap()` atom defaults it to the tapped permanent's own controller (right for every cost payment, mana ability, crew/saddle, and the turn-based attack tap), and the tap *effect* executors override it with the effect's `controllerId`. Because a per-player loop rebinds `controllerId`, a spell you control that instructs an **opponent** to tap their own creature is *their* tap and does not fire a `You` pattern (Tangle Wire; per the printed rulings). (2) **"untapped" is intrinsic** — tapping is a transition (CR 603.2f), so an already-tapped permanent emits no tap event and needs no condition. `batch = true` routes to `TriggerDetector.detectTapBatchTriggers`, which narrows the batch to the taps this controller caused before applying the filter; pair it with `oncePerTurn` for "This ability triggers only once each turn".
 - `OneOrMoreBecomeUntapped(filter)` — the **untap** analogue of `OneOrMoreBecomeTapped` (`UntapEvent(batch = true)`, ANY binding). Fires at most **once** per untap step (CR 603.2c) — "Whenever you untap one or more [filter] **during your untap step** …" — even though the untap step untaps all your permanents at once (The Millennium Calendar: `OneOrMoreBecomeUntapped(GameObjectFilter.Permanent.youControl())`). Handled by `TriggerDetector.detectUntapBatchTriggers`; the per-event `UntapEvent` path (`BecomesUntapped`) skips batch untaps. **Unlike the tap batch, it exposes the untapped permanents as the trigger's captured collection** (`IterationSpace.TRIGGER_CAPTURED_COLLECTION`), so a "put **that many** counters" payoff reads the count with `Effects.AddDynamicCounters(type, DynamicAmount.DistinctEntitiesInCollections(listOf(TRIGGER_CAPTURED_COLLECTION)), EffectTarget.Self)`. The **"during your untap step" scoping is intrinsic** — the detector fires it only for the active player's untap-step untaps (not instant-speed untaps, nor an opponent-turn Seedborn Muse untap of your permanents), so no `triggerCondition` is needed. (An untap-step untap advances straight to upkeep before any player gets priority, so an `IsInStep(UNTAP)` intervening-if would read false at detection time — hence the restriction lives in the detector.)
 
 ### Phase & turn
@@ -7548,6 +7562,23 @@ replacementEffect {
 }
 ```
 
+All `ReplacementEffect` subtypes inherit the following virtual properties from the sealed interface:
+
+- `restrictions: List<Condition>` (default empty) — when non-empty, the replacement only applies if every condition passes; a uniform gating mechanism used by `PreventDamage`, `DoubleDamage`, `ModifyLifeLoss`, `LifeLossFloor`, and others. In the `ReplacementEffectProcessor` (the draw domain today) each condition is evaluated with the **player the event affects** as `EffectContext.controllerId` — so `Player.You` inside a restriction reads as the drawing player, not the source's controller. The two coincide for a `Player.You` `appliesTo`; for `Player.EachOpponent` they don't, and such a card needs a source-relative condition instead.
+- `optional: Boolean` (default `false`) — when `true`, the player affected by the event may decline the replacement (e.g. "you may draw a card instead").
+- `priorityGroup: ReplacementPriorityGroup` (default `ReplacementPriorityGroup.ANY`) — the CR 616.1a–f priority tier. Declared as an *override on the subtype*, never as a card-facing constructor parameter, so the engine processor never pattern-matches on SDK types and a card can't accidentally promote itself out of the affected player's 616.1e choice. Today only `EntersAsCopy` overrides it (`COPY`).
+
+The priority groups are (CR 616.1a–f):
+
+| Group | CR | Description |
+|-------|-----|-------------|
+| `SELF_REPLACEMENT` | 616.1a (→ 614.15) | An effect of a resolving spell or ability that replaces that same spell or ability's own effect. **Not** "affects its own source" — an as-it-enters modifier on a permanent is an ordinary CR 614.12 replacement and belongs in `ANY` |
+| `CONTROL_CHANGE` | 616.1b | Control-changing effects |
+| `COPY` | 616.1c | Copy effects |
+| `TRANSFORM` | 616.1d | Replacements that cause entering with back face up |
+| `ANY` | 616.1e | All others — affected player chooses freely |
+| _(repeat)_ | 616.1f | After applying one effect, repeat until no more apply |
+
 - `ReplacementEffect.PreventDamage(amount?, restrictions?, appliesTo)` — prevent damage matching the
   `EventPattern.DamageEvent` shape. `amount = null` prevents all; a number prevents up to that much.
   `restrictions: List<Condition>` (default empty) gates the prevention on extra conditions evaluated
@@ -7815,17 +7846,30 @@ replacementEffect {
   `DrawPhaseManager.performDrawStep` for the draw step (CR 121.2a: "An instruction to draw multiple
   cards can be modified by replacement effects that refer to the number of cards drawn. This
   modification occurs before considering any of the individual card draws.") — so a paused-and-
-  resumed per-card loop doesn't double-modify. Note that "you" in restriction text reads as the
-  drawing player, not the source's controller; for `DrawEvent(player = Player.You)` they coincide,
-  but `DrawEvent(player = Player.EachOpponent)` cards needing "you" = source controller would have to
-  use a source-relative condition instead. Use `modifier` for the additive wording — "if you would
-  draw one or more cards, you draw that many cards plus N instead" (Quantum Riddler:
-  `ModifyDrawAmount(modifier = 1, restrictions = listOf(Conditions.CardsInHandAtMost(1)), appliesTo = DrawEvent(player = Player.You))`)
-  — and `multiplier` for the doubling wording, which per the Vnwxt rulings multiplies the *announced*
-  count so a "draw three cards" spell draws six (Vnwxt, Verbose Host:
-  `ModifyDrawAmount(multiplier = 2, restrictions = listOf(Conditions.YouHaveMaxSpeed), appliesTo = DrawEvent(player = Player.You))`).
-  Several applicable effects are cumulative — two doublers quadruple the draw. `restrictions` is also
-  the seam for a "Max speed —" gate, which `maxSpeed { }` cannot apply to a replacement effect.
+  resumed per-card loop doesn't double-modify. CR 616.1g is what makes the two-level split legal:
+  the announced draw *contains* the individual draws, and an effect applying to a contained event
+  can't be chosen until the containing one has been. `appliesTo` is typed as
+  `EventPattern.DrawCardsEvent`, not the general `EventPattern`, so pointing one at the per-card
+  `DrawEvent` is a **compile error** rather than a hang — a count modification that draws no card
+  leaves the game state unchanged, so the per-card loop would re-match and re-apply it forever.
+  Reach for `ReplaceDrawWithEffect` when you genuinely need a per-card replacement. Note that "you"
+  in restriction text reads as the drawing player, not the source's controller; for
+  `DrawCardsEvent(player = Player.You)` they coincide, but `DrawCardsEvent(player = Player.EachOpponent)`
+  cards needing "you" = source controller would have to use a source-relative condition instead. Use
+  `modifier` for the additive wording — "if you would draw one or more cards, you draw that many
+  cards plus N instead" (Quantum Riddler:
+  `ModifyDrawAmount(modifier = 1, restrictions = listOf(Conditions.CardsInHandAtMost(1)), appliesTo = DrawCardsEvent(player = Player.You))`)
+  — and `multiplier` for a doubling that genuinely refers to the announced quantity. **Pick by the
+  oracle wording, not by the outcome.** "If you would draw *one or more cards*, …" refers to the
+  number drawn and belongs here; "If you would draw *a card*, draw two cards instead" (Vnwxt,
+  Verbose Host) does not, and belongs in a per-card `ReplaceDrawWithEffect(DrawCardsEffect(2))` on
+  `EventPattern.DrawEvent`. Both make Harmonize draw six on their own, so the difference only shows
+  when the two levels meet: CR 616.1g orders the containing event before the contained one, so
+  Quantum Riddler plus Vnwxt is `(3 + 1)` announced and then each of the four draws doubled = 8.
+  Modelling Vnwxt here instead would drop both into one CR 616.1e pool and let the player choose an
+  order giving 7. Several applicable announcement effects are cumulative — two doublers quadruple
+  the draw. `restrictions` is also the seam for a "Max speed —" gate, which `maxSpeed { }` cannot
+  apply to a replacement effect.
 - `ModifyMillAmount(modifier, restrictions, appliesTo)` — modify the number of cards a *mill* announces
   by a fixed amount (the mill twin of `ModifyDrawAmount`): a player who would mill N instead mills
   `N + modifier`, clamped to ≥ 0. `appliesTo` is an `EventPattern.MillEvent` whose `player` filter

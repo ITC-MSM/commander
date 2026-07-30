@@ -122,7 +122,12 @@ class AttachmentTriggerDetector(private val matcher: TriggerMatcher) {
                     trigger.requires.all { matcher.matchesAttackPredicate(it, event, attachedEntityId, state) }
             }
             is EventPattern.TapEvent -> {
-                event is TappedEvent && event.entityId == attachedEntityId
+                if (event !is TappedEvent || event.entityId != attachedEntityId) return false
+                // "Whenever you tap …" attribution applies on the ATTACHED path too; relative to
+                // the aura/equipment's controller, as everywhere else here.
+                val tapper = trigger.tapper ?: return true
+                val tappedById = event.tappedById ?: return false
+                matcher.matchesPlayer(tapper, tappedById, auraControllerId)
             }
             // "Whenever equipped creature becomes untapped" (Fishing Pole). UntapEvent carries no
             // filter, so identity with the attached permanent is the whole match.

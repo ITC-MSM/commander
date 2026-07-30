@@ -83,13 +83,22 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.DamagePersistsThroughCleanup
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.PreventManaPoolEmptying
+import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.state.components.battlefield.ExileEntryTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.MayCastFromLinkedExileUsedThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.MayCastWithoutPayingCostUsedThisTurnComponent
+import com.wingedsheep.engine.state.components.combat.PlayerAttackedPlayersThisTurnComponent
+import com.wingedsheep.engine.state.components.identity.MiracleWindowComponent
+import com.wingedsheep.engine.state.components.player.CreatureLeftBattlefieldThisTurnComponent
+import com.wingedsheep.engine.state.components.player.CreatureSubtypesDiedThisTurnComponent
+import com.wingedsheep.sdk.scripting.effects.DelayedTriggerExpiry
 
 /**
  * Handles all end-of-turn cleanup: discard to hand size, damage removal,
  * expiration of temporary effects, and per-turn tracker resets.
  */
 class CleanupPhaseManager(
-    private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
+    private val cardRegistry: CardRegistry,
     private val decisionHandler: DecisionHandler
 ) {
 
@@ -462,6 +471,7 @@ class CleanupPhaseManager(
         val remainingEffects = newState.floatingEffects.filter { floatingEffect ->
             when (floatingEffect.duration) {
                 is Duration.EndOfTurn -> false  // Remove it
+                is Duration.NextUse -> false  // Consumed on use or expired at end of turn
                 is Duration.EndOfCombat -> false  // Should already be removed, but clean up
                 is Duration.UntilYourNextTurn -> true  // Keep until that player's next turn
                 is Duration.UntilYourNextUpkeep -> true  // Keep until upkeep
@@ -636,14 +646,14 @@ class CleanupPhaseManager(
                 if (result.has<CreaturesDiedThisTurnComponent>()) {
                     result = result.without<CreaturesDiedThisTurnComponent>()
                 }
-                if (result.has<com.wingedsheep.engine.state.components.player.CreatureSubtypesDiedThisTurnComponent>()) {
-                    result = result.without<com.wingedsheep.engine.state.components.player.CreatureSubtypesDiedThisTurnComponent>()
+                if (result.has<CreatureSubtypesDiedThisTurnComponent>()) {
+                    result = result.without<CreatureSubtypesDiedThisTurnComponent>()
                 }
                 if (result.has<PermanentLeftBattlefieldThisTurnComponent>()) {
                     result = result.without<PermanentLeftBattlefieldThisTurnComponent>()
                 }
-                if (result.has<com.wingedsheep.engine.state.components.player.CreatureLeftBattlefieldThisTurnComponent>()) {
-                    result = result.without<com.wingedsheep.engine.state.components.player.CreatureLeftBattlefieldThisTurnComponent>()
+                if (result.has<CreatureLeftBattlefieldThisTurnComponent>()) {
+                    result = result.without<CreatureLeftBattlefieldThisTurnComponent>()
                 }
                 if (result.has<OpponentCreaturesExiledThisTurnComponent>()) {
                     result = result.without<OpponentCreaturesExiledThisTurnComponent>()
@@ -721,7 +731,7 @@ class CleanupPhaseManager(
             if (container.has<PlayerAttackersThisTurnComponent>()) {
                 needsUpdate = true
             }
-            if (container.has<com.wingedsheep.engine.state.components.combat.PlayerAttackedPlayersThisTurnComponent>()) {
+            if (container.has<PlayerAttackedPlayersThisTurnComponent>()) {
                 needsUpdate = true
             }
             if (container.has<GraveyardPlayPermissionUsedComponent>()) {
@@ -770,7 +780,7 @@ class CleanupPhaseManager(
                         .without<ReceivedCountersThisTurnComponent>()
                         .without<PlayerAttackedThisTurnComponent>()
                         .without<PlayerAttackersThisTurnComponent>()
-                        .without<com.wingedsheep.engine.state.components.combat.PlayerAttackedPlayersThisTurnComponent>()
+                        .without<PlayerAttackedPlayersThisTurnComponent>()
                         .without<GraveyardPlayPermissionUsedComponent>()
                         .without<TriggeredAbilityFiredThisTurnComponent>()
                         .without<com.wingedsheep.engine.state.components.battlefield.ChosenModesThisTurnComponent>()
@@ -876,16 +886,16 @@ class CleanupPhaseManager(
         for ((entityId, container) in newState.entities) {
             val playFree = container.get<PlayWithoutPayingCostComponent>()
             val removePlayFree = playFree != null && !playFree.permanent
-            val removeLinkedExileUsed = container.get<com.wingedsheep.engine.state.components.battlefield.MayCastFromLinkedExileUsedThisTurnComponent>() != null
-            val removeFreeCastUsed = container.get<com.wingedsheep.engine.state.components.battlefield.MayCastWithoutPayingCostUsedThisTurnComponent>() != null
-            val removeExileEntryTurn = container.get<com.wingedsheep.engine.state.components.battlefield.ExileEntryTurnComponent>() != null
+            val removeLinkedExileUsed = container.get<MayCastFromLinkedExileUsedThisTurnComponent>() != null
+            val removeFreeCastUsed = container.get<MayCastWithoutPayingCostUsedThisTurnComponent>() != null
+            val removeExileEntryTurn = container.get<ExileEntryTurnComponent>() != null
             if (removePlayFree || removeLinkedExileUsed || removeFreeCastUsed || removeExileEntryTurn) {
                 newState = newState.updateEntity(entityId) { c ->
                     var updated = c
                     if (removePlayFree) updated = updated.without<PlayWithoutPayingCostComponent>()
-                    if (removeLinkedExileUsed) updated = updated.without<com.wingedsheep.engine.state.components.battlefield.MayCastFromLinkedExileUsedThisTurnComponent>()
-                    if (removeFreeCastUsed) updated = updated.without<com.wingedsheep.engine.state.components.battlefield.MayCastWithoutPayingCostUsedThisTurnComponent>()
-                    if (removeExileEntryTurn) updated = updated.without<com.wingedsheep.engine.state.components.battlefield.ExileEntryTurnComponent>()
+                    if (removeLinkedExileUsed) updated = updated.without<MayCastFromLinkedExileUsedThisTurnComponent>()
+                    if (removeFreeCastUsed) updated = updated.without<MayCastWithoutPayingCostUsedThisTurnComponent>()
+                    if (removeExileEntryTurn) updated = updated.without<ExileEntryTurnComponent>()
                     updated
                 }
             }
@@ -916,7 +926,7 @@ class CleanupPhaseManager(
         // (e.g., Long River Lurker's "whenever that creature deals combat damage this turn").
         if (newState.delayedTriggers.isNotEmpty()) {
             val remainingDelayed = newState.delayedTriggers.filter { delayed ->
-                delayed.expiry !is com.wingedsheep.sdk.scripting.effects.DelayedTriggerExpiry.EndOfTurn
+                delayed.expiry !is DelayedTriggerExpiry.EndOfTurn
             }
             if (remainingDelayed.size != newState.delayedTriggers.size) {
                 newState = newState.copy(delayedTriggers = remainingDelayed)
@@ -942,7 +952,7 @@ class CleanupPhaseManager(
          */
         fun applyCleanupTurnBasedActions(
             state: GameState,
-            cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
+            cardRegistry: CardRegistry,
         ): GameState {
             var newState = state
 
@@ -980,11 +990,11 @@ class CleanupPhaseManager(
             // Close any open miracle windows (CR 702.94 — the chance to cast for the miracle cost lasts
             // only the turn the card was drawn).
             val cardsWithMiracleWindow = newState.entities.filter { (_, container) ->
-                container.has<com.wingedsheep.engine.state.components.identity.MiracleWindowComponent>()
+                container.has<MiracleWindowComponent>()
             }.keys
             for (entityId in cardsWithMiracleWindow) {
                 newState = newState.updateEntity(entityId) {
-                    it.without<com.wingedsheep.engine.state.components.identity.MiracleWindowComponent>()
+                    it.without<MiracleWindowComponent>()
                 }
             }
 
@@ -998,7 +1008,7 @@ class CleanupPhaseManager(
          */
         private fun damagePersistsThroughCleanup(
             state: GameState,
-            cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
+            cardRegistry: CardRegistry,
             entityId: EntityId,
         ): Boolean {
             val container = state.getEntity(entityId) ?: return false

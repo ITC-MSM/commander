@@ -15,13 +15,17 @@ import io.kotest.matchers.shouldBe
  *  You have no maximum hand size.
  *  Max speed — If you would draw a card, draw two cards instead."
  *
- * Exercises the `multiplier` knob added to [com.wingedsheep.sdk.scripting.ModifyDrawAmount], and
- * the max-speed gate folded into that effect's own `restrictions` slot (replacement effects can't
- * go through `maxSpeed { }`). The two things worth proving:
+ * Exercises [com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect] as a *per-card* replacement,
+ * and the max-speed gate folded into that effect's own `restrictions` slot (replacement effects
+ * can't go through `maxSpeed { }`). Three things worth proving:
  *
- * - the doubling applies to the *announced* count, so Harmonize's "draw three cards" draws six —
- *   the literal example in the card's rulings, and the reason this is a multiplier and not a `+1`;
- * - below max speed the effect does nothing at all, at every announcement site.
+ * - each individual draw becomes two, so Harmonize's "draw three cards" draws six — the literal
+ *   example in the card's rulings. CR 614.5 is what makes that six rather than unbounded: the
+ *   effect gets one opportunity per event, so it can't apply to the two draws it just created;
+ * - below max speed the effect does nothing at all, at either draw site;
+ * - stacked with Quantum Riddler's announcement-level `+1` the two compose in the CR 616.1g
+ *   order — the containing event (the announced quantity) first, then each contained card draw —
+ *   without either being offered as a choice against the other, since they aren't in one pool.
  */
 class VnwxtVerboseHostScenarioTest : ScenarioTestBase() {
 
@@ -81,6 +85,36 @@ class VnwxtVerboseHostScenarioTest : ScenarioTestBase() {
                     game.handSize(1) - handBefore shouldBe 1
                 }
             }
+
+            test("stacked with Quantum Riddler, Harmonize draws eight and prompts for nothing") {
+                // CR 616.1g: Riddler modifies the announced quantity (the containing event) and
+                // Vnwxt replaces each individual draw (a contained event), so the contained one
+                // can only be applied after the containing one. 3 → 4 announced, then each of the
+                // 4 draws becomes 2 → 8. Modelling Vnwxt at the announcement instead would put
+                // both in one CR 616.1e pool and let the player pick an order giving (3*2)+1 = 7.
+                val game = vnwxtGame(maxSpeed = true, libraryCards = 20, withRiddler = true)
+                game.passUntilPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                val handBefore = game.handSize(1)
+                val libraryBefore = game.librarySize(1)
+
+                val cast = game.castSpell(1, "Harmonize")
+                withClue("Cast should succeed: ${cast.error}") { cast.error shouldBe null }
+                game.payManaIfAsked()
+                game.resolveStack()
+
+                withClue(
+                    "The two effects apply to different events, so there is no competing-" +
+                        "replacement choice to make. Got: ${game.state.pendingDecision}"
+                ) {
+                    game.state.pendingDecision shouldBe null
+                }
+                withClue("(3 + 1) announced, each draw doubled = 8") {
+                    game.handSize(1) - (handBefore - 1) shouldBe 8
+                }
+                withClue("Every card in hand came off the library — no phantom draws") {
+                    libraryBefore - game.librarySize(1) shouldBe 8
+                }
+            }
         }
     }
 
@@ -100,13 +134,19 @@ class VnwxtVerboseHostScenarioTest : ScenarioTestBase() {
     private fun vnwxtGame(
         maxSpeed: Boolean,
         libraryCards: Int,
-        turnNumber: Int = 1
+        turnNumber: Int = 1,
+        withRiddler: Boolean = false
     ): TestGame {
         val builder = scenario()
             .withPlayers("Player1", "Player2")
             .withCardOnBattlefield(1, "Vnwxt, Verbose Host", summoningSickness = false)
             .withCardInHand(1, "Harmonize")
             .withLandsOnBattlefield(1, "Forest", 5)
+        if (withRiddler) {
+            // Harmonize is the only card in hand, so casting it empties the hand and Quantum
+            // Riddler's CardsInHandAtMost(1) gate holds when the draw is announced.
+            builder.withCardOnBattlefield(1, "Quantum Riddler")
+        }
         repeat(libraryCards) {
             builder.withCardInLibrary(1, "Grizzly Bears")
             builder.withCardInLibrary(2, "Grizzly Bears")

@@ -1,14 +1,20 @@
 package com.wingedsheep.engine.mechanics.layers
 
+import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.RedirectScope
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
+import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
+import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.ReplacementEffect
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -115,6 +121,34 @@ data class FloatingEffectData(
  */
 @Serializable
 sealed interface SerializableModification {
+    /**
+     * Build an [EffectContext] from this modification's stored data (targets, X value,
+     * named targets, source id), or `null` if this modification type carries no such data.
+     *
+     * Used by [ReplacementEffectProcessor] to reconstruct
+     * an execution context from a floating-effect shield without knowing the concrete subclass.
+     */
+    fun toEffectContext(controllerId: EntityId): EffectContext? = null
+
+    /**
+     * The permanent/card entity that created this floating-effect shield, if any.
+     * Override in concrete subtypes that carry a source entity reference, so
+     * [GatheredReplacement.sourceEntityId] can resolve the source without
+     * per-subtype casts.
+     */
+    val sourceEntityId: EntityId? get() = null
+
+    /**
+     * Convert this floating-effect shield modification into an SDK [ReplacementEffect]
+     * for matching and outcome processing by the [ReplacementEffectProcessor].
+     *
+     * Returns `null` (default) for modifications that do not represent replacement-effect
+     * shields. Override in concrete subtypes that store a replacement behavior.
+     *
+     * @param controllerId The controller of the floating effect
+     */
+    fun toReplacementEffect(controllerId: EntityId): ReplacementEffect? = null
+
     @Serializable
     data class SetPowerToughness(val power: Int, val toughness: Int) : SerializableModification
 
@@ -134,8 +168,8 @@ sealed interface SerializableModification {
      */
     @Serializable
     data class SetPowerToughnessDynamic(
-        val power: com.wingedsheep.sdk.scripting.values.DynamicAmount,
-        val toughness: com.wingedsheep.sdk.scripting.values.DynamicAmount
+        val power: DynamicAmount,
+        val toughness: DynamicAmount
     ) : SerializableModification
 
     @Serializable
@@ -440,7 +474,23 @@ sealed interface SerializableModification {
          * by then (Aladdin's Lamp: "look at the top X cards"). Null when no X was involved.
          */
         val xValue: Int? = null
-    ) : SerializableModification
+    ) : SerializableModification {
+        override val sourceEntityId: EntityId? get() = sourceId
+
+        override fun toEffectContext(controllerId: EntityId): EffectContext = EffectContext(
+            controllerId = controllerId,
+            sourceId = sourceId,
+            targets = targets,
+            xValue = xValue,
+            pipeline = PipelineState(namedTargets = namedTargets)
+        )
+
+        override fun toReplacementEffect(controllerId: EntityId): ReplacementEffect =
+            com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect(
+                replacementEffect = replacementEffect,
+                appliesTo = EventPattern.DrawEvent()
+            )
+    }
 
     /**
      * Damage prevention shield: the next time a creature of the specified type would deal

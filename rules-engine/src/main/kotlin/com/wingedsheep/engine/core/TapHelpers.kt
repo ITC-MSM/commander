@@ -5,6 +5,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.model.EntityId
@@ -37,16 +38,44 @@ import com.wingedsheep.sdk.model.EntityId
  * not transitioning from untapped to tapped, so those sites set [TappedComponent]
  * directly and emit no event — they are the allowlist in `TapEventEnforcementTest`.
  *
+ * **Attribution.** [TappedEvent.tappedById] records *who tapped it*, which the "whenever you tap a
+ * creature an opponent controls" trigger family reads. It defaults to the permanent's own
+ * controller, which is already correct for every tap a permanent's controller performs on it — a
+ * cost payment (convoke, crew, saddle, a tap symbol in an activation cost), a mana ability, or the
+ * turn-based action of declaring it as an attacker. Only an *effect* that taps a permanent needs to
+ * pass [tappedById] explicitly: there the tapper is the controller of that effect, not of the
+ * permanent, and the two differ exactly when it matters. Pass the player the game instructs to tap,
+ * not the controller of the card that gave the instruction — a spell you control that makes an
+ * opponent tap their own creature is *their* tap (Tangle Wire; Hylda of the Icy Crown ruling).
+ *
+ * The default reads the controller from **projected** state, so a permanent whose control was changed
+ * (Threaten, Mind Control) attributes its cost/attack taps to the player actually wielding it rather
+ * than to its owner. That costs a projection on a state instance that may not have one cached yet —
+ * deliberate, and the same price [untapOrConsumeStun] already pays for its can't-untap check. It is
+ * bounded by how many permanents one action taps (a mana payment, a combat declaration), not by board
+ * size; if it ever shows up in a profile, the fix is to pass [tappedById] at the tapping call sites
+ * — every one of them knows the acting player — not to fall back to base [ControllerComponent],
+ * which would misattribute a stolen creature's taps to its owner.
+ *
+ * @param tappedById the player causing the tap; null (the default) attributes it to the permanent's
+ *   controller.
  * @return the updated state paired with the emitted [TappedEvent], or `state to null`
  *   when the permanent was already tapped or doesn't exist (no mutation performed).
  */
-fun tap(state: GameState, entityId: EntityId): Pair<GameState, TappedEvent?> {
+fun tap(
+    state: GameState,
+    entityId: EntityId,
+    tappedById: EntityId? = null,
+): Pair<GameState, TappedEvent?> {
     val container = state.getEntity(entityId) ?: return state to null
     // CR 603.2f: tapping an already-tapped permanent is not a transition — no event.
     if (container.has<TappedComponent>()) return state to null
     val cardName = container.get<CardComponent>()?.name ?: "Permanent"
+    val tapper = tappedById
+        ?: state.projectedState.getController(entityId)
+        ?: container.get<ControllerComponent>()?.playerId
     val newState = state.updateEntity(entityId) { it.with(TappedComponent) }
-    return newState to TappedEvent(entityId, cardName)
+    return newState to TappedEvent(entityId, cardName, tapper)
 }
 
 /**
