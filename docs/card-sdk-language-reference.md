@@ -4557,6 +4557,9 @@ staticAbility {
   *history*, from the union of each player's `PlayerAttackersThisTurnComponent.attackerIds`, not a
   battlefield scan: an attacker that has since died still counts, which
   `PermanentsOnBattlefieldMatching(Creature.attackedThisTurn())` would miss),
+  `YourSpeed` (the casting player's speed, 0–4, CR 702.179 — Samut, the Driving Force's "Noncreature
+  spells you cast cost {X} less to cast, where X is your speed"; "no speed" reads as 0 per CR
+  702.179f, so a player who never started their engines simply gets no reduction),
   `CardsInGraveyardMatchingFilter`, `FixedIfAnyTargetMatches`,
   `GreatestPropertyAmongPermanentsYouControl(property, filter)` — "{X} less, where X is the greatest
   `<property>` among `<filter>` you control", parameterized over `EntityNumericProperty`:

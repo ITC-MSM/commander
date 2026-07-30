@@ -399,6 +399,9 @@ class CostCalculator(
     ): Int {
         return when (source) {
             is CostReductionSource.Fixed -> source.amount
+            // CR 702.179f — "no speed" is 0, which GameState.speed already returns, so no has-speed
+            // branch is needed. playerId is the casting player, and speed is never team-pooled.
+            is CostReductionSource.YourSpeed -> state.speed(playerId)
             is CostReductionSource.CreaturesYouControl -> countCreatures(state, playerId)
             is CostReductionSource.TotalPowerYouControl -> sumPower(state, playerId)
             is CostReductionSource.ArtifactsYouControl -> countArtifacts(state, playerId)

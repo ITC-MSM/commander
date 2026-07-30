@@ -424,6 +424,20 @@ sealed interface CostReductionSource {
     }
 
     /**
+     * Reduces cost by your speed, 0–4 (CR 702.179) — "Noncreature spells you cast cost {X} less to
+     * cast, where X is your speed" (Samut, the Driving Force).
+     *
+     * "No speed" reads as 0 (CR 702.179f), so there is no has-speed distinction to make here: a
+     * player who never started their engines simply gets no reduction. Speed is per-player and never
+     * pooled in team games, so this always reads the *casting* player's speed.
+     */
+    @SerialName("YourSpeed")
+    @Serializable
+    data object YourSpeed : CostReductionSource {
+        override val description: String = "your speed"
+    }
+
+    /**
      * Reduces cost by number of creatures you control.
      */
     @SerialName("CreaturesYouControl")
