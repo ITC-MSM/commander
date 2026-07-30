@@ -191,6 +191,14 @@ Nothing in the UI hints at any of these:
 
 ## Part 2 — Mode taxonomy: three axes, not one toggle
 
+> **Update (2026-07-31): there are four.** Everything below about Cards / Table / Event holds, but
+> "this game runs Commander" turned out to be a value on none of them while being reachable through
+> three unrelated fields (the pool-building `TournamentFormat`, the deck-legality `DeckFormat`, and the
+> quick lobby's format). It is now its own axis — **Rules** (`GameRules`, `TournamentLobby.rules`),
+> rendered between Cards and Table, with `usesCommanderRules` as the single authority every consumer
+> reads. Reading order: what deck → under what rules → at what table → over how many games. See
+> `backlog/commander-format.md` § Phase 3.
+
 Everything implemented today is a point in this space:
 
 | Axis | Values implemented | Where it lives now |
@@ -531,7 +539,7 @@ gap, not a use of it.
 | 4 | **No per-player ready in tournament `WAITING_FOR_PLAYERS`** | host presses `startTournamentLobby`; there is no per-player ready toggle | The 2-player "both ready → go" flow is what makes a quick game *feel* quick. |
 | 5 | **Ranked gated to `gameMode == TOURNAMENT`, and the two kinds default it differently** | `TournamentLobby.rankedEligible` (`:335–358`) vs `QuickGameLobby.rankedEligible` + `Ranked.modeForQuickGame`; defaults at `ClientMessage.CreateTournamentLobby.ranked = true` vs `TournamentLobby.ranked = false` | Two different ranked paths need reconciling before ranked can appear on one axis panel. Both already silently downgrade to unranked at start, so the failure mode is safe but confusing. **See the note below** — the defaults disagreeing is now visible on the shared panel. |
 | 6 | **Quick-lobby 2HG is phantom capability** | `QuickGameLobby.twoHeadedGiant` + `TWO_HEADED_GIANT_PLAYERS = 4` are implemented (`QuickGameLobby.kt:51,70,85,93`); missing from `QuickGameLobbyStateMessage` (`types/messages.ts:2712–2727`) along with `maxPlayers` and `QuickGameLobbyPlayerView.teamIndex`, so no client can read it. The only `twoHeadedGiant` in `web-client/` is the comment at `lobbyViewModel.ts:171` recording exactly that | Either wire it up or delete it. Right now it's server capability no client can reach. |
-| 7 | **`PersistentTournamentLobby` missing fields** | `persistence/LobbyConverter.kt` — lacks `deckFormat`, `ranked`, `bannedCardNames`, `deckSizeMin`, `allowDuplicates`, `commanderPreset`, `ffaLastStandings` | Any new unified setting needs a converter pass or it won't survive a restart. Pre-existing bug, worth fixing while in here. |
+| 7 | **`PersistentTournamentLobby` missing fields** | `persistence/LobbyConverter.kt` — lacks `deckFormat`, `ranked`, `bannedCardNames`, `deckSizeMin`, `allowDuplicates`, `commanderPreset`, `ffaLastStandings` | Any new unified setting needs a converter pass or it won't survive a restart. Pre-existing bug, worth fixing while in here. **Partly closed:** the Rules axis (`rules`) is persisted, so a restored lobby at least still knows whether it runs Commander; the rest of the list stands. |
 
 **Gap #5, sharpened — the two ranked defaults disagree, and it now shows.** Found while verifying the
 wizard against the running stack. `ClientMessage.CreateTournamentLobby.ranked` defaults to **`true`**

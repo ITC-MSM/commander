@@ -1,5 +1,5 @@
 /**
- * The three axes, as the lobby's primary controls.
+ * The four axes, as the lobby's primary controls.
  *
  * Every lobby shows all three rows and every value of each, whichever server implementation is
  * backing it. What differs is what a value *costs* — `axisChoices.ts` decides that, and this file
@@ -13,23 +13,27 @@
  * Sub-options hang off their own axis only: deck legality, sealed shape and draft shape are
  * indented rows directly under **Cards**, never a peer row. That rule is what stopped "Format"
  * from meaning two different things again.
+ *
+ * Reading order is the order of the rows: what deck → under what rules → at what table → over how
+ * many games.
  */
 import { useEffect } from 'react'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import {
   COMMANDER_LIMITED_HAS_NO_AI,
-  COMMANDER_LIMITED_NEEDS_A_1V1_TABLE,
-  isCommanderDeckFormat,
-  legalityOptionsForTable,
   cardsKindTopicId,
   cardsLabel,
   cardsSeatCap,
   isCommanderLimited,
   eventTopicId,
+  legalityOptionsForTable,
+  rulesTableBlock,
+  rulesTopicId,
   tableTopicId,
   type CardsAxis,
   type CardsKind,
   type EventAxis,
+  type RulesAxis,
   type TableAxis,
 } from './axes'
 import {
@@ -37,6 +41,7 @@ import {
   cardsChoices,
   eventChoices,
   recreateTargetLabel,
+  rulesChoices,
   tableChoices,
   type AxisChoice,
   type RecreateSpec,
@@ -53,6 +58,12 @@ const CARDS_CAPTIONS: Record<CardsKind, string> = {
     'No deckbuilding — everyone runs 60 basics. Discard a card and pay {X} to flip a random creature with mana value X.',
   SEALED: 'Open boosters and build a deck from what you get.',
   DRAFT: 'Pass packs around and pick one card at a time, then build from your picks.',
+}
+
+const RULES_CAPTIONS: Record<RulesAxis, string> = {
+  STANDARD: 'The ordinary rules for the table you picked — 20 life at 1v1, no command zone.',
+  COMMANDER:
+    'Everyone designates a commander, which starts in the command zone and can be recast from it (CR 903). 40 life at a pod, and 21 damage from a single commander knocks you out. Independent of where the cards come from — a brought deck, a sealed pool or any draft can be played this way.',
 }
 
 const TABLE_CAPTIONS: Record<TableAxis, string> = {
@@ -75,17 +86,25 @@ export function LobbyAxes({
   onRecreate: (spec: RecreateSpec) => void
 }) {
   const cards = view.axes.cards
+  const rulesConflict = rulesTableBlock(view.axes.rules, view.axes.table)
+  // Deck legality is filtered by table, but *derived* from the Rules × Table rule rather than
+  // restating it: commander legality implies Commander rules (CR 903.4 anchors colour identity to
+  // the commander), so a table that can't have those can't offer it either.
   const legalityOptions = legalityOptionsForTable(view.axes.table)
 
+  // Clear a legality the current table can't offer. Reachable when the host sets Commander legality,
+  // switches Rules back to Standard — which the server allows, the axes being independent — and then
+  // moves to a 2HG table, leaving a restriction whose defining rule the validator would silently
+  // skip. Keyed off the same filtered list so it can never disagree with the dropdown.
   useEffect(() => {
     if (
       cards.kind === 'BRING_A_DECK' &&
-      view.axes.table === 'TWO_HEADED_GIANT' &&
-      isCommanderDeckFormat(cards.legality)
+      cards.legality !== null &&
+      !legalityOptions.some((option) => option.value === cards.legality)
     ) {
       commands.setLegality(null)
     }
-  }, [cards, commands, view.axes.table])
+  }, [cards, commands, legalityOptions])
 
   return (
     <>
@@ -140,7 +159,7 @@ export function LobbyAxes({
             </div>
             <div className={styles.variantCaption}>
               {cards.shape === 'COMMANDER'
-                ? 'Open Commander-shaped packs and build a 60-card deck around a commander from your pool. Up to 8 players; every match is 1v1.'
+                ? 'Open Commander-shaped packs and build a 60-card deck around a commander from your pool. Up to 8 players, playing a 1v1 bracket or one pod at 40 life.'
                 : 'Open 6 boosters and build a 40-card deck.'}
             </div>
           </div>
@@ -184,7 +203,7 @@ export function LobbyAxes({
             </div>
             <div className={styles.variantCaption}>
               {cards.shape === 'COMMANDER'
-                ? 'Commander-shaped 20-card packs; pick a commander from your pool. Up to 8 drafters; every match is 1v1.'
+                ? 'Commander-shaped 20-card packs; pick a commander from your pool. Up to 8 drafters, playing a 1v1 bracket or one pod at 40 life.'
                 : cards.shape === 'WINSTON' ? 'Pick from 3 face-down piles. 2 players.'
                 : cards.shape === 'GRID' ? 'Pick a row or column from a 3×3 grid. 2-4 players.'
                 : 'Pass packs around the table. 3-8 players.'}
@@ -192,6 +211,24 @@ export function LobbyAxes({
           </div>
         </div>
       )}
+
+      {/* ── Rules: which rules the game runs under. ── */}
+      <div className={styles.settingsRow}>
+        <SettingsLabel topicId={rulesTopicId(view.axes.rules)}>Rules</SettingsLabel>
+        <div className={styles.variantGroup}>
+          <AxisButtons
+            choices={rulesChoices(view)}
+            onPick={commands.setRules}
+            onRecreate={onRecreate}
+          />
+          {/* A lobby can be sitting on a Rules × Table contradiction (the server defaults Rules to
+              Commander when the host picks commander deck legality, whatever the table). Say so here
+              rather than only on a disabled Start button. */}
+          <div className={styles.variantCaption}>
+            {rulesConflict ?? RULES_CAPTIONS[view.axes.rules]}
+          </div>
+        </div>
+      </div>
 
       {/* ── Table: who is at it. ── */}
       <div className={styles.settingsRow}>
@@ -238,7 +275,7 @@ function eventCaption(view: UnifiedLobbyView): string {
   }
 }
 
-function AxisButtons<V extends CardsKind | TableAxis | EventAxis>({
+function AxisButtons<V extends CardsKind | RulesAxis | TableAxis | EventAxis>({
   choices,
   onPick,
   onRecreate,
@@ -287,20 +324,22 @@ function AxisButtons<V extends CardsKind | TableAxis | EventAxis>({
 /**
  * Why a Cards sub-shape can't be picked here, or null.
  *
- * Two reasons, both facts shared with the landing wizard rather than numbers written at the call
- * site: the shape seats fewer players than this lobby is holding ({@link cardsSeatCap}), or it is a
- * Commander shape at a multiplayer table, which nothing implements. Note the second is about the
- * *table*, not the seat count — a Commander pool can be shared by eight, since the bracket plays it
- * out as 1v1 matches.
+ * Three reasons, all facts shared with the landing wizard rather than numbers written at the call
+ * site: the shape seats fewer players than this lobby is holding ({@link cardsSeatCap}); it would
+ * default the Rules axis to Commander at a table that can't have it ({@link rulesTableBlock} — the
+ * one statement of that rule, so this row can never offer what the Rules row refuses); or it is a
+ * Commander *pool*, which the AI cannot deckbuild from ({@link COMMANDER_LIMITED_HAS_NO_AI}).
  */
 function shapeBlock(view: UnifiedLobbyView, cards: CardsAxis): string | null {
   const cap = cardsSeatCap(cards)
   if (view.players.length > cap) {
     return `${cardsLabel(cards)} seats at most ${cap} — this lobby has ${view.players.length}`
   }
-  if (isCommanderLimited(cards) && view.axes.table !== 'ONE_V_ONE') {
-    return COMMANDER_LIMITED_NEEDS_A_1V1_TABLE
-  }
+  // Picking a Commander pack shape defaults Rules to Commander, so it inherits the Rules × Table
+  // conflict; a non-commander shape asks the question of the rules the lobby already has.
+  const wouldRun: RulesAxis = isCommanderLimited(cards) ? 'COMMANDER' : view.axes.rules
+  const conflict = rulesTableBlock(wouldRun, view.axes.table)
+  if (conflict !== null) return conflict
   if (isCommanderLimited(cards) && view.players.some((p) => p.isAi)) {
     return COMMANDER_LIMITED_HAS_NO_AI
   }

@@ -49,8 +49,36 @@ class QuickGameLobby(
      * Fixed at creation. Human-only (the built-in AI is not team-aware yet — Phase 8).
      */
     val twoHeadedGiant: Boolean = false,
+    /**
+     * Which rules this lobby's game runs under — the same Rules axis as
+     * [TournamentLobby.rules]. A quick lobby has no separate control for it, so it is *derived*
+     * from [format] via [com.wingedsheep.sdk.core.GameRules.inferred] whenever the host changes the
+     * format; reporting it on the wire is what lets the client answer "is this Commander?" from one
+     * field on either lobby kind instead of re-deriving it per kind.
+     */
+    @Volatile var rules: com.wingedsheep.sdk.core.GameRules =
+        com.wingedsheep.sdk.core.GameRules.inferred(commanderPackShape = false, deckFormat = format),
 ) {
     val players: MutableList<QuickGameLobbyPlayer> = mutableListOf()
+
+    /** **The** answer to "does this game run Commander rules?" — see [TournamentLobby.usesCommanderRules]. */
+    val usesCommanderRules: Boolean get() = rules.usesCommanders
+
+    /** Why this lobby's Rules and table contradict each other, or null. One statement, shared. */
+    val rulesTableConflict: String? get() = commanderRulesTableConflict(rules, twoHeadedGiant)
+
+    /**
+     * Set the deck-legality restriction and re-derive [rules] from it in the same step, so the two
+     * cannot drift. This lobby kind offers the host no Rules control, so a commander-shaped
+     * [DeckFormat] is the only way it can ask for Commander.
+     */
+    fun applyFormat(newFormat: DeckFormat?) {
+        format = newFormat
+        rules = com.wingedsheep.sdk.core.GameRules.inferred(
+            commanderPackShape = false,
+            deckFormat = newFormat,
+        )
+    }
 
     /**
      * What the AI seat plays, when [vsAi]. Host-controlled from the lobby's AI panel and resolved

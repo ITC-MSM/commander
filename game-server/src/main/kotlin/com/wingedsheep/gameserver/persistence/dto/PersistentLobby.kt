@@ -11,6 +11,18 @@ data class PersistentTournamentLobby(
     val setCodes: List<String> = emptyList(),
     val setNames: List<String> = emptyList(),
     val format: String = "SEALED",  // TournamentFormat enum name
+    /**
+     * Rules axis: [com.wingedsheep.sdk.core.GameRules] name, or **null for a row written before the
+     * axis existed** — which is why this is nullable rather than defaulting to "STANDARD". With a
+     * non-null default a legacy row would be indistinguishable from a host who explicitly chose
+     * Standard, so restore would have to OR the two and a deliberate "Commander Draft, Standard
+     * rules" lobby would silently flip back to Commander after a restart. Null means *infer*.
+     *
+     * Note this row still carries neither `deckFormat` nor `commanderPreset` — a pre-existing gap
+     * (`backlog/menu-lobby-restructure-and-help.md:534`). Persisting `rules` closes the part of it
+     * that decides whether a restored lobby plays Commander at all.
+     */
+    val rules: String? = null,
     val boosterCount: Int,
     val maxPlayers: Int,
     val pickTimeSeconds: Int = 45,

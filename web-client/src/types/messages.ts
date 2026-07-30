@@ -1285,11 +1285,19 @@ export interface LobbySettings {
   readonly isPublic: boolean
   /** Optional deck-construction format restriction (Standard/Modern/Commander/...). */
   readonly deckFormat?: DeckFormat | null
+  /**
+   * Rules axis — the one field that answers "does this game run Commander rules?". Optional only for
+   * a server older than the axis; `rulesFromLobbySettings` falls back to inferring it.
+   */
+  readonly rules?: GameRules
   /** Commander Draft/Sealed only — minimum deck size enforced by the validator (default 60). */
   readonly deckSizeMin: number
   /** Commander Draft/Sealed only — when true, drafted/sealed decks may include duplicates. */
   readonly allowDuplicates: boolean
-  /** Commander Draft/Sealed only — preset shape ('BRAWL' = 25 life / 16 cmdr damage; 'COMMANDER' = 30/21). */
+  /**
+   * Commander Draft/Sealed only — the host's 1v1 preset ('BRAWL' = 25 life / 16 cmdr damage;
+   * 'COMMANDER' = 30/21). A multiplayer table overrides it with 'POD' (40/21) at game start.
+   */
   readonly commanderPreset: CommanderPreset
   /** When true, each booster mixes cards from the union of all selected sets. */
   readonly chaosBoosters: boolean
@@ -1337,7 +1345,21 @@ export type TournamentFormat =
   | 'COMMANDER_SEALED'
   | 'PREMADE_DECKS'
 
-export type CommanderPreset = 'BRAWL' | 'COMMANDER'
+/**
+ * Commander life / commander-damage tuning — mirrors `CommanderPreset` in `mtg-sdk/.../core/Format.kt`.
+ * `BRAWL` and `COMMANDER` are the 1v1 choices a host makes; `POD` is what every multiplayer table
+ * plays at regardless (see `effectiveCommanderPreset` in `components/lobby/axes.ts`).
+ */
+export type CommanderPreset = 'BRAWL' | 'COMMANDER' | 'POD'
+
+/**
+ * Which rules a lobby's games run under — mirrors `GameRules` in `mtg-sdk/.../core/Format.kt`.
+ *
+ * Its own axis, independent of `DeckFormat` (what may go in a deck), of where the cards came from
+ * (`TournamentFormat`), and of the table. This is the one field to read when asking "does this game
+ * run Commander rules?"; see `rulesFromLobbySettings` in `components/lobby/axes.ts`.
+ */
+export type GameRules = 'STANDARD' | 'COMMANDER'
 
 export interface LobbyCreatedMessage {
   readonly type: 'lobbyCreated'
@@ -2211,6 +2233,8 @@ export interface CreateTournamentLobbyMessage {
   readonly isPublic: boolean
   /** Lobby mode axis. Omit for the default bracket tournament. */
   readonly gameMode?: LobbyGameMode
+  /** Rules axis. Omit and the server derives it from `format` (a Commander pack shape ⇒ Commander). */
+  readonly rules?: GameRules
 }
 
 export interface JoinLobbyMessage {
@@ -2274,6 +2298,11 @@ export interface UpdateLobbySettingsMessage {
   readonly isPublic?: boolean
   /** Deck-construction format. Empty string (or 'NONE') clears the restriction. */
   readonly deckFormat?: DeckFormat | '' | null
+  /**
+   * Rules axis. Omit to leave it alone — except that a message switching `format` to a Commander
+   * pack shape, or setting commander-shaped `deckFormat`, defaults it to 'COMMANDER' server-side.
+   */
+  readonly rules?: GameRules
   /** Commander Draft/Sealed only — minimum deck size (default 60). */
   readonly deckSizeMin?: number
   /** Commander Draft/Sealed only — singleton toggle (default true = duplicates allowed). */
@@ -2452,9 +2481,10 @@ export function createCreateTournamentLobbyMessage(
   maxPlayers: number = 8,
   pickTimeSeconds: number = 45,
   isPublic: boolean = false,
-  gameMode: LobbyGameMode = 'TOURNAMENT'
+  gameMode: LobbyGameMode = 'TOURNAMENT',
+  rules: GameRules = 'STANDARD'
 ): CreateTournamentLobbyMessage {
-  return { type: 'createTournamentLobby', setCodes, format, boosterCount, maxPlayers, pickTimeSeconds, isPublic, gameMode }
+  return { type: 'createTournamentLobby', setCodes, format, boosterCount, maxPlayers, pickTimeSeconds, isPublic, gameMode, rules }
 }
 
 // Backwards compatibility alias
@@ -2527,6 +2557,7 @@ export function createUpdateLobbySettingsMessage(
     picksPerRound?: number
     isPublic?: boolean
     deckFormat?: DeckFormat | '' | null
+    rules?: GameRules
     chaosBoosters?: boolean
     bannedCardNames?: readonly string[]
     cubeCards?: readonly string[]
@@ -2755,6 +2786,8 @@ export interface QuickGameLobbyStateMessage {
   readonly canStart: boolean
   readonly isPublic: boolean
   readonly format?: DeckFormat | null
+  /** Rules axis, derived from `format` on this lobby kind. Absent on a server older than the axis. */
+  readonly rules?: GameRules
   /** True for a Momir Basic lobby: no deckbuilding, set scopes the creature pool. */
   readonly momirBasic?: boolean
   /** Ranked toggle (host-controlled); only meaningful when [rankedEligible]. */

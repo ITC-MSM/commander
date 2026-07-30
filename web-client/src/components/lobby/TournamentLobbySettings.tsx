@@ -19,7 +19,7 @@ import { CubePanel } from './CubePanel'
 import { SetIcon } from '../ui/SetIcon'
 import { SetPickerModal } from '../ui/SetPickerModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
-import { cardsSeatCap } from './axes'
+import { COMMANDER_PRESETS, cardsSeatCap, effectiveCommanderPreset } from './axes'
 import type { UnifiedLobbyView } from './lobbyViewModel'
 import styles from '../ui/GameUI.module.css'
 
@@ -63,14 +63,21 @@ export function TournamentLobbySettings({
   const s = lobbyState.settings
   const format = s.format
   const isSealed = format === 'SEALED'
-  const isCommanderSealed = format === 'COMMANDER_SEALED'
   const isDraft = format === 'DRAFT'
   const isWinston = format === 'WINSTON_DRAFT'
   const isGridDraft = format === 'GRID_DRAFT'
   const isCommanderDraft = format === 'COMMANDER_DRAFT'
   const isPremade = format === 'PREMADE_DECKS'
   const isAnyDraft = isDraft || isWinston || isGridDraft || isCommanderDraft
-  const isAnyCommander = isCommanderDraft || isCommanderSealed
+  // The Commander deckbuild knobs (life preset, minimum deck size, singleton) tune a *pool-built*
+  // 60-card Commander deck, which is what the server validates against — so they follow the Rules
+  // axis rather than the pack format (a Commander game over ordinary draft packs wants them too),
+  // minus the brought-deck case, where paper Commander's own construction rules apply instead.
+  const isPoolBuiltCommander = view.axes.rules === 'COMMANDER' && !isPremade
+  // A pod overrides the host's 1v1 life tuning with paper Commander's 40 (see
+  // TournamentLobby.effectiveCommanderPreset), so the picker reports rather than offers.
+  const effectivePreset = effectiveCommanderPreset(s.commanderPreset, s.gameMode)
+  const podPreset = effectivePreset === 'POD'
   const isFfa = s.gameMode === 'FREE_FOR_ALL'
   const isCube = Boolean(s.cubeName)
   // Pool Play hands out the whole cube instead of dealing packs, so the pack-count controls are
@@ -397,26 +404,41 @@ export function TournamentLobbySettings({
         </div>
       )}
 
-      {/* Commander preset + Brawl knobs — Commander Draft / Sealed only. */}
-      {isAnyCommander && (
+      {/* Commander preset + deck-shape knobs — a Commander game built from a generated pool. */}
+      {isPoolBuiltCommander && (
         <>
           <div className={styles.settingsRow}>
             <span className={styles.settingsLabel}>Preset</span>
-            <div className={styles.settingsButtons}>
-              <button
-                onClick={() => updateLobbySettings({ commanderPreset: 'BRAWL' })}
-                className={`${styles.settingsButton} ${s.commanderPreset === 'BRAWL' ? styles.settingsButtonActive : ''}`}
-                title="Paper Brawl shape — 25 starting life, 16 commander damage"
-              >
-                Brawl (25/16)
-              </button>
-              <button
-                onClick={() => updateLobbySettings({ commanderPreset: 'COMMANDER' })}
-                className={`${styles.settingsButton} ${s.commanderPreset === 'COMMANDER' ? styles.settingsButtonActive : ''}`}
-                title="Closer to Commander Legends — 30 life, 21 commander damage"
-              >
-                Commander (30/21)
-              </button>
+            <div className={styles.variantGroup}>
+              <div className={styles.settingsButtons}>
+                {(['BRAWL', 'COMMANDER'] as const).map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => updateLobbySettings({ commanderPreset: preset })}
+                    disabled={podPreset}
+                    className={`${styles.settingsButton} ${effectivePreset === preset ? styles.settingsButtonActive : ''}`}
+                    title={COMMANDER_PRESETS[preset].hint}
+                  >
+                    {COMMANDER_PRESETS[preset].label}
+                  </button>
+                ))}
+                {/* The pod preset is the table's, not the host's — shown as the live selection, not a choice. */}
+                {podPreset && (
+                  <button
+                    disabled
+                    className={`${styles.settingsButton} ${styles.settingsButtonActive}`}
+                    title={COMMANDER_PRESETS.POD.hint}
+                  >
+                    {COMMANDER_PRESETS.POD.label}
+                  </button>
+                )}
+              </div>
+              {podPreset && (
+                <div className={styles.variantCaption}>
+                  A pod plays paper multiplayer Commander: 40 life each. The 25/30 presets only pace a
+                  1v1 bracket, so this table ignores them.
+                </div>
+              )}
             </div>
           </div>
           <div className={styles.settingsRow}>

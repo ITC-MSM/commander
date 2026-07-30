@@ -462,6 +462,12 @@ sealed interface ServerMessage {
         val isPublic: Boolean = false,
         /** Optional deck-construction format (Standard/Modern/Commander/...). Null = no restriction. */
         val deckFormat: String? = null,
+        /**
+         * Rules axis: [com.wingedsheep.sdk.core.GameRules] name — "STANDARD" or "COMMANDER". The one
+         * field a client should read to answer "does this game run Commander rules?"; independent of
+         * [format] (where the cards come from) and [deckFormat] (what may go in a deck).
+         */
+        val rules: String = "STANDARD",
         /** Commander Draft/Sealed only — minimum deck size enforced by the validator. */
         val deckSizeMin: Int = 60,
         /** Commander Draft/Sealed only — when true, drafted/sealed decks may include duplicates. */
@@ -1112,6 +1118,12 @@ sealed interface ServerMessage {
         val canStart: Boolean,
         val isPublic: Boolean = false,
         val format: com.wingedsheep.sdk.core.DeckFormat? = null,
+        /**
+         * Rules axis: [com.wingedsheep.sdk.core.GameRules] name — "STANDARD" or "COMMANDER". Derived
+         * from [format] on this lobby kind (it has no separate Rules control), but sent so the client
+         * reads commander-ness from one field on either lobby kind.
+         */
+        val rules: String = "STANDARD",
         /** True for a Momir Basic lobby: fixed 60-basic decks, no deckbuilding, [setCode] scopes the creature pool. */
         val momirBasic: Boolean = false,
         /** True for a Two-Headed Giant lobby (CR 810): four seats, two teams (see [QuickGameLobbyPlayerView.teamIndex]). */

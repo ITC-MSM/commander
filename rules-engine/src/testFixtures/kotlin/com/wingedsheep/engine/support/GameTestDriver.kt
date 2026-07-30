@@ -152,18 +152,33 @@ class GameTestDriver {
         initGame(deck, deck, skipMulligans, startingLife, startingPlayer)
     }
 
-    /** Initialize a game with any number of players and return their IDs in turn order. */
+    /**
+     * Initialize a game with any number of players and return their IDs in turn order.
+     *
+     * @param format Runtime rules configuration. Pass a [com.wingedsheep.sdk.core.Format.Commander]
+     *   (with one [commanders] entry per seat) to set up a Commander pod — the format's own
+     *   `startingLife` then wins over [startingLife], as it does in a real game.
+     * @param commanders Commander card name per seat, positionally matched to [decks]. Empty for a
+     *   non-commander game. As in a real game the commander is *not* part of its deck list —
+     *   `GameInitializer` instantiates it separately into that seat's command zone.
+     */
     fun initMultiplayer(
         decks: List<Deck>,
         skipMulligans: Boolean = true,
         startingLife: Int = 20,
-        startingPlayer: Int = 0
+        startingPlayer: Int = 0,
+        format: com.wingedsheep.sdk.core.Format = com.wingedsheep.sdk.core.Format.Standard,
+        commanders: List<String> = emptyList(),
     ): List<EntityId> {
         val initializer = GameInitializer(cardRegistry)
         val result = initializer.initializeGame(
             GameConfig(
+                format = format,
                 players = decks.mapIndexed { index, deck ->
-                    PlayerConfig("Player ${index + 1}", deck, startingLife)
+                    PlayerConfig(
+                        "Player ${index + 1}", deck, startingLife,
+                        commanderCardName = commanders.getOrNull(index),
+                    )
                 },
                 skipMulligans = skipMulligans,
                 startingPlayerIndex = startingPlayer

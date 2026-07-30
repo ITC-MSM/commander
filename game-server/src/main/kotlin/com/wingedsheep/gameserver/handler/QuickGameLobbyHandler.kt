@@ -165,7 +165,9 @@ class QuickGameLobbyHandler(
             // lobby into the deckbuilding-free Vanguard mode (mutually exclusive with a deck-format
             // restriction). Any other choice clears Momir and applies the constructed format.
             current.momirBasic = message.momirBasic
-            current.format = if (message.momirBasic) null else message.format
+            // applyFormat re-derives the lobby's Rules axis from the new legality, so the two can't
+            // drift apart on this lobby kind (which has no separate Rules control).
+            current.applyFormat(if (message.momirBasic) null else message.format)
             // Re-validate every submitted deck under the new format. Submissions that no longer
             // pass un-ready the player so they have to update their deck or accept a new format.
             // Momir has no deckbuilding, so there is nothing to re-validate.
@@ -481,23 +483,24 @@ class QuickGameLobbyHandler(
     }
 
     private fun startGame(lobby: QuickGameLobby) {
-        if (lobby.twoHeadedGiant && lobby.format?.isCommanderShape == true) {
-            logger.warn("Lobby ${lobby.lobbyId}: Two-Headed Giant cannot use a Commander-shaped deck format")
-            broadcastClosed(lobby, "Two-Headed Giant cannot be combined with Commander, Brawl, or Standard Brawl")
+        // The one Rules × Table conflict, read from the single statement of it.
+        lobby.rulesTableConflict?.let { conflict ->
+            logger.warn("Lobby ${lobby.lobbyId}: $conflict")
+            broadcastClosed(lobby, conflict)
             lobbyRepository.remove(lobby.lobbyId)
             return
         }
 
-        // Commander-shape lobby with a human player who never designated a commander would crash
+        // A Commander lobby with a human player who never designated a commander would crash
         // mid-init when GameInitializer requires `commanderCardName`. Surface the error early so
         // the player can pick a different deck before everyone gets disconnected.
-        if (lobby.format?.isCommanderShape == true) {
+        if (lobby.usesCommanderRules) {
             val missing = lobby.players.firstOrNull { !it.isAi && it.deckList?.isNotEmpty() == true && it.commander.isNullOrBlank() }
             if (missing != null) {
                 logger.warn("Lobby ${lobby.lobbyId}: human player ${missing.playerName} has no commander designated for ${lobby.format} game start")
                 broadcastClosed(
                     lobby,
-                    "${missing.playerName}'s deck has no commander designated — pick a deck with a commander to play ${lobby.format!!.displayName}",
+                    "${missing.playerName}'s deck has no commander designated — pick a deck with a commander to play ${lobby.format?.displayName ?: "Commander"}",
                 )
                 lobbyRepository.remove(lobby.lobbyId)
                 return
@@ -528,12 +531,12 @@ class QuickGameLobbyHandler(
         if (lobby.ranked) {
             gameSession.ranked = true
             gameSession.rankedMode = com.wingedsheep.gameserver.ranking.Ranked
-                .modeForQuickGame(lobby.format, lobby.momirBasic)
+                .modeForQuickGame(lobby.rules, lobby.format, lobby.momirBasic)
         }
-        // Commander-shape formats (Commander / Brawl / Standard Brawl) run on the engine's 1v1
-        // Commander rules. Other formats fall through to Standard. Brawl-specific tweaks
-        // (60 cards, alternative life total) are Phase 4 territory — Phase 1 covers Commander.
-        if (lobby.format?.isCommanderShape == true) {
+        // Commander rules run on the engine's Commander format; everything else falls through to
+        // Standard. Brawl-specific tweaks (60 cards, alternative life total) are Phase 4 territory —
+        // Phase 1 covers Commander.
+        if (lobby.usesCommanderRules) {
             gameSession.engineFormat = com.wingedsheep.sdk.core.Format.Commander()
         }
         // Two-Headed Giant: run under the team format and forward the seat→team partition. The
@@ -590,11 +593,11 @@ class QuickGameLobbyHandler(
                 lobbyRepository.remove(lobby.lobbyId)
                 return
             }
-            // Pass the commander only for commander-shape formats; clear it otherwise so a stale
+            // Pass the commander only under Commander rules; clear it otherwise so a stale
             // commander on a saved deck doesn't accidentally route into a Standard game. Strip
             // one copy of the commander out of the wire deck list so the engine sees `cards`
             // (= library) excluding the commander, matching `Deck.cards` convention.
-            val commander = if (lobby.format?.isCommanderShape == true) lobbyPlayer.commander else null
+            val commander = if (lobby.usesCommanderRules) lobbyPlayer.commander else null
             // Momir Basic ignores any submitted deck: every seat plays the same fixed 60 basics.
             val engineDeckList = when {
                 lobby.momirBasic -> MomirBasicSetup.fixedBasicDeck
@@ -675,6 +678,7 @@ class QuickGameLobbyHandler(
             canStart = lobby.allReady(),
             isPublic = lobby.isPublic,
             format = lobby.format,
+            rules = lobby.rules.name,
             momirBasic = lobby.momirBasic,
             twoHeadedGiant = lobby.twoHeadedGiant,
             maxPlayers = lobby.maxPlayers,
@@ -723,6 +727,7 @@ class QuickGameLobbyHandler(
                 canStart = lobby.allReady(),
                 isPublic = lobby.isPublic,
                 format = lobby.format,
+                rules = lobby.rules.name,
                 momirBasic = lobby.momirBasic,
                 twoHeadedGiant = lobby.twoHeadedGiant,
                 maxPlayers = lobby.maxPlayers,

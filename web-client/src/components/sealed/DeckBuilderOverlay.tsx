@@ -19,6 +19,7 @@ import {
   type DeckEntry,
   type LandColor,
 } from '@/utils/landSuggestion'
+import { rulesFromLobbySettings } from '../lobby/axes'
 
 /**
  * Hard per-card copy cap while deckbuilding (basic lands exempt, managed via `landCounts`). Mirrors
@@ -143,10 +144,13 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
   const lobbyState = useGameStore((s) => s.lobbyState)
   const isInLobby = lobbyState !== null
   const isHost = lobbyState?.isHost ?? false
-  // Commander Draft / Sealed lobbies require a commander to be chosen from the pool before the
-  // deck can be submitted. The lobby's preset drives the minimum deck size (defaults to 60).
-  const lobbyFormat = lobbyState?.settings.format
-  const isCommanderShape = lobbyFormat === 'COMMANDER_DRAFT' || lobbyFormat === 'COMMANDER_SEALED'
+  // A Commander lobby requires a commander to be chosen from the pool before the deck can be
+  // submitted, and its preset drives the minimum deck size (defaults to 60). Read off the lobby's
+  // Rules axis rather than its pack format: the server validates a submitted deck against
+  // `usesCommanderRules`, so deriving this from the format would let a Commander game over ordinary
+  // draft packs submit with no commander and be rejected by the server instead of asked for one.
+  const isCommanderShape =
+    lobbyState !== null && rulesFromLobbySettings(lobbyState.settings) === 'COMMANDER'
   const commanderMinDeckSize = lobbyState?.settings.deckSizeMin ?? 60
   // AI assistance is host-gated in lobbies; practice mode (no lobby) always allows it. When off,
   // hide the controls AND any card score badges that were fetched before the host switched it off.

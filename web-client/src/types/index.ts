@@ -233,6 +233,7 @@ export type {
   // Lobby types
   TournamentFormat,
   CommanderPreset,
+  GameRules,
   LobbyPlayerInfo,
   LobbySettings,
   LobbyCreatedMessage,

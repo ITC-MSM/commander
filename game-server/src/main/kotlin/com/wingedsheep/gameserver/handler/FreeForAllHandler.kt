@@ -58,18 +58,16 @@ class FreeForAllHandler(
 
         val playerStates = lobby.players.values.toList()
 
-        // Commander-shape lobbies (premade Commander/Brawl decks) run under the engine's
-        // Commander rules; the wire deck list counts the commander, the engine's library
-        // excludes it. Mirrors TournamentMatchHandler.startSingleMatch.
-        val isCommanderShape = (lobby.format == com.wingedsheep.gameserver.lobby.TournamentFormat.PREMADE_DECKS &&
-            lobby.deckFormat?.isCommanderShape == true) || lobby.format.isCommanderFormat
-        if (isCommanderShape && lobby.isTwoHeadedGiant) {
-            logger.warn(
-                "FFA lobby ${lobby.lobbyId}: cannot start Two-Headed Giant with a Commander-shaped deck format"
-            )
+        // Commander rules come off the lobby's Rules axis; the wire deck list counts the commander,
+        // the engine's library excludes it. Mirrors TournamentMatchHandler.startSingleMatch.
+        val usesCommanders = lobby.usesCommanderRules
+        // The one Rules × Table conflict. The lobby's own gates reject it earlier; this is the
+        // defence in depth, reading the same statement rather than restating it.
+        lobby.rulesTableConflict?.let { conflict ->
+            logger.warn("FFA lobby ${lobby.lobbyId}: $conflict")
             return false
         }
-        if (isCommanderShape) {
+        if (usesCommanders) {
             val missing = playerStates.filter { it.commander == null }
             if (missing.isNotEmpty()) {
                 logger.warn(
@@ -88,11 +86,16 @@ class FreeForAllHandler(
             tokenArtRegistry = tokenArtRegistry,
             maxPlayers = playerStates.size,
         )
+        // A pod runs at CommanderPreset.POD's 40 life (TournamentLobby.effectiveCommanderPreset) —
+        // the host's Brawl/Commander tuning is a 1v1 knob, and applying its 25/30 to a table where
+        // damage arrives from three opponents ended pods before they started. Where the *deck* came
+        // from still decides which shape applies: a brought deck is paper Commander (the engine's
+        // 100/40/21 defaults), a generated pool is the lobby's 60-card limited configuration.
         val commanderFormat = when {
-            !isCommanderShape -> null
-            lobby.format.isCommanderFormat ->
-                lobby.commanderPreset.toFormat().copy(deckSize = lobby.deckSizeMin)
-            else -> com.wingedsheep.sdk.core.Format.Commander()
+            !usesCommanders -> null
+            lobby.format == com.wingedsheep.gameserver.lobby.TournamentFormat.PREMADE_DECKS ->
+                com.wingedsheep.sdk.core.Format.Commander()
+            else -> lobby.effectiveCommanderPreset.toFormat().copy(deckSize = lobby.deckSizeMin)
         }
         // CR 802 / 803 — the lobby's chosen attack rule applies to this multiplayer game.
         gameSession.attackMode = lobby.attackMode
@@ -136,7 +139,7 @@ class FreeForAllHandler(
             val deckWithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(
                 identity.playerName, baseDeck, gameProperties.easterEggs.enabled
             )
-            val commander = if (isCommanderShape) playerState.commander else null
+            val commander = if (usesCommanders) playerState.commander else null
             val deck = if (commander != null) stripCommanderFromCards(deckWithEgg, commander) else deckWithEgg
 
             val playerSession = identity.toPlayerSession()

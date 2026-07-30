@@ -31,6 +31,7 @@ import { AiDeckSection, AiOpponentRow, initialAiSource, type AiDeckSource } from
 import { LobbyAxes } from './LobbyAxes'
 import { LobbyAxisSummary } from './LobbyAxisSummary'
 import { TeamChip, TournamentLobbySettings } from './TournamentLobbySettings'
+import { rulesFromLobbySettings } from './axes'
 import { recreateTargetLabel, type RecreateSpec } from './axisChoices'
 import { fromQuickGameLobby, fromTournamentLobby, type UnifiedLobbyView } from './lobbyViewModel'
 import { takePendingDeckTab } from './pendingDeckTab'
@@ -504,8 +505,11 @@ function PremadeDeckPickerPanel({
   }
 
   const deckFormat = lobbyState.settings.deckFormat
-  const isCommanderShape =
-    deckFormat === 'COMMANDER' || deckFormat === 'BRAWL' || deckFormat === 'STANDARD_BRAWL'
+  // Whether this submission needs a commander follows the lobby's Rules axis, not its deck legality:
+  // the server's deck-submit path keys on `usesCommanderRules`, so deriving it from the legality here
+  // would ask for a commander the server doesn't want (Commander-legal decks under Standard rules) or
+  // — worse — not ask for one it requires.
+  const isCommanderShape = rulesFromLobbySettings(lobbyState.settings) === 'COMMANDER'
   const totalCards = Object.values(pendingDeck).reduce((a, b) => a + b, 0)
   const needsCommander = isCommanderShape && !pendingCommander
   const canSubmit = isValid && totalCards >= 40 && !needsCommander
