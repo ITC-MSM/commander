@@ -125,7 +125,9 @@ class GamePlayHandler(
         } else {
             message.deckList
         }
-        val deckList = EasterEggDeckInjector.maybeInjectEasterEggs(playerSession.playerName, baseDeck)
+        val deckList = EasterEggDeckInjector.maybeInjectEasterEggs(
+            playerSession.playerName, baseDeck, gameProperties.easterEggs.enabled
+        )
 
         val gameSession = GameSession(
             cardRegistry = cardRegistry,
@@ -272,7 +274,9 @@ class GamePlayHandler(
         } else {
             message.deckList
         }
-        val deckList = EasterEggDeckInjector.maybeInjectEasterEggs(playerSession.playerName, baseDeck)
+        val deckList = EasterEggDeckInjector.maybeInjectEasterEggs(
+            playerSession.playerName, baseDeck, gameProperties.easterEggs.enabled
+        )
 
         // A generated random deck (empty submission) has no sideboard.
         val sideboard = if (message.deckList.isEmpty()) emptyMap() else message.sideboard
