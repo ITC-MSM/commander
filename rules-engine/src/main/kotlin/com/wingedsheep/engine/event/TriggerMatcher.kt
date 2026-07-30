@@ -434,6 +434,12 @@ class TriggerMatcher(
                 // detectTapBatchTriggers — never once per event here.
                 if (trigger.batch) return false
                 if (binding == TriggerBinding.SELF && event.entityId != sourceId) return false
+                // "Whenever you tap …" — only a tap this trigger's controller caused counts.
+                val tapper = trigger.tapper
+                if (tapper != null) {
+                    val tappedById = event.tappedById ?: return false
+                    if (!matchesPlayer(tapper, tappedById, controllerId)) return false
+                }
                 val filter = trigger.filter
                 if (filter != null) {
                     val predicateEvaluator = PredicateEvaluator()

@@ -438,6 +438,9 @@ data class TargetFilter(
     /** Must be controlled by opponent */
     fun opponentControls() = copy(baseFilter = baseFilter.opponentControls())
 
+    /** Must have an Aura attached ("target enchanted creature", Graceful Takedown). */
+    fun enchanted() = copy(baseFilter = baseFilter.enchanted())
+
     /** Must be owned by you (for cards in graveyards/exile) */
     fun ownedByYou() = copy(baseFilter = baseFilter.ownedByYou())
 

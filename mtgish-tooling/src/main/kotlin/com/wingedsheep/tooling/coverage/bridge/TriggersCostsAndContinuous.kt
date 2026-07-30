@@ -40,6 +40,14 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // counter on it" (Tinybones, Bauble Burglar) expressible.
     supported("WhenAPlayerDiscardsACard", "trigger: a player discards a card (Triggers.AnyOpponentDiscards / YouDiscard / discards(player, cardFilter)); binds the discarded card as TriggeringEntity")
     supported("WhenAPermanentBecomesTapped", "trigger: this permanent becomes tapped (Triggers.BecomesTapped — Wylie Duke, Atiin Hero)")
+    // "Whenever you tap an untapped creature an opponent controls" — the tap-*attribution* trigger, a
+    // different axis from the passive WhenAPermanentBecomesTapped above: only a tap the trigger's
+    // controller caused fires it (Triggers.YouTap(filter); Hylda of the Icy Crown, Icewrought Sentry,
+    // Solitary Sanctuary). The IR's `IsUntapped` clause is intrinsic to the engine — tapping is a
+    // transition (CR 603.2f), so an already-tapped permanent emits no tap event — and the emitter drops
+    // it rather than recovering a `.untapped()` predicate that would read false at detection time.
+    // You-scope only; the emitter recovers the permanent filter exactly or declines -> SCAFFOLD.
+    supported("WhenAPlayerTapsAPermanent", "trigger: you tap an untapped permanent matching a filter (Triggers.YouTap)")
     supported("WhenACreatureDealsCombatDamageToAPlayer", "trigger: combat damage to player")
     // "Whenever you sacrifice a/another [filter] …" — the batched sacrifice trigger that fires when a
     // matching permanent you control is sacrificed (Triggers.YouSacrificeOneOrMore; the first matching

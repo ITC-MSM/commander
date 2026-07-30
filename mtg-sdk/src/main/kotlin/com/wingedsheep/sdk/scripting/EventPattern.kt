@@ -1405,12 +1405,35 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          * were tapped together (Deeproot Pilgrimage), instead of once per tapped permanent. Handled
          * by the dedicated batch pass; the per-event path skips it. ANY-binding only.
          */
-        val batch: Boolean = false
+        val batch: Boolean = false,
+        /**
+         * Who must have done the tapping, relative to the trigger's controller — the difference
+         * between the passive "**a** creature becomes tapped" (null, any tap from any cause) and
+         * the active "whenever **you tap** a creature an opponent controls"
+         * ([com.wingedsheep.sdk.scripting.references.Player.You], Wilds of Eldraine's Hylda of the
+         * Icy Crown / Icewrought Sentry / Solitary Sanctuary / Sharae of Numbing Depths).
+         *
+         * The tapper is the controller of the spell, ability, or cost payment that caused the
+         * permanent to become tapped; a permanent tapped as a turn-based action or to pay its own
+         * controller's cost is tapped by its controller. Per the Hylda ruling, a spell *you* control
+         * that instructs an **opponent** to tap a creature they control makes *them* the tapper, so
+         * a `You` pattern does not fire (Tangle Wire).
+         *
+         * "An **untapped** creature" needs no separate axis: tapping is a transition (CR 603.2f), so
+         * an already-tapped permanent emits no tap event at all.
+         */
+        val tapper: Player? = null
     ) : EventPattern {
         override val description: String = buildString {
-            append(if (batch) "one or more " else "a ")
-            append(filter?.description ?: "permanent")
-            append(if (batch) " become tapped" else " becomes tapped")
+            if (tapper != null) {
+                append(tapper.description.replaceFirstChar { it.uppercase() })
+                append(if (batch) " tap one or more " else " tap a ")
+                append(filter?.description ?: "permanent")
+            } else {
+                append(if (batch) "one or more " else "a ")
+                append(filter?.description ?: "permanent")
+                append(if (batch) " become tapped" else " becomes tapped")
+            }
         }
         override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
             val newFilter = filter?.applyTextReplacement(replacer)
