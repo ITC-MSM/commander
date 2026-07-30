@@ -600,27 +600,24 @@ data class WarpExileEffect(
 }
 
 /**
- * Return a dashed permanent to its owner's hand (CR 702.109a's second clause). Used by the dash
- * mechanic's delayed trigger: "At the beginning of the next end step, return this permanent to
- * its owner's hand." Per the official ruling, the return only happens if the permanent is still
- * on the battlefield when the delayed trigger resolves — dying or leaving some other way before
- * then leaves it wherever it went instead.
+ * Move one specifically tracked battlefield object to a zone.
  *
- * Structurally identical to [WarpExileEffect]'s blink-safety shape (same
- * [enteredBattlefieldTimestamp] CR 603.7c / 400.7 guard — a dashed creature that's blinked
- * before the trigger fires is a new object the trigger no longer tracks), differing only in the
- * destination zone (hand, not exile) and that it grants no cast-from-zone permission afterward.
+ * The optional [enteredBattlefieldTimestamp] identifies the object represented by [target], not
+ * merely its entity ID. At resolution, the move is skipped unless the target is still on the
+ * battlefield with that same entry timestamp. This is the reusable delayed-movement primitive for
+ * effects such as dash's return-to-hand clause: a permanent that left and returned is a new object
+ * and must not be moved by the old delayed trigger (CR 603.7c / 400.7).
  *
- * @property target The permanent to return (resolved to SpecificEntity by delayed trigger creation)
- * @property enteredBattlefieldTimestamp The tracked permanent's battlefield-entry timestamp,
- *   snapshotted when the delayed trigger is created. Null skips the check (pre-existing
- *   serialized states, or callers that resolve the target at fire time).
+ * When nested in [CreateDelayedTriggerEffect], the delayed-trigger executor resolves [target] and
+ * snapshots its entry timestamp when the trigger is created.
  */
-@SerialName("DashReturnToHand")
+@SerialName("MoveTrackedBattlefieldObject")
 @Serializable
-data class DashReturnToHandEffect(
+data class MoveTrackedBattlefieldObjectEffect(
     val target: EffectTarget,
+    val destination: Zone,
     val enteredBattlefieldTimestamp: Long? = null
 ) : Effect {
-    override val description: String = "Return ${target.description} to its owner's hand (dash)"
+    override val description: String =
+        "Move ${target.description} to its owner's ${destination.displayName}"
 }

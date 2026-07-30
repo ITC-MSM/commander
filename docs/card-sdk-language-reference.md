@@ -7938,6 +7938,10 @@ Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `Mo
 - `MoveToZoneEffect(target, zone, faceDown?, byDestruction?, linked?)` — single-target move. Card
   definitions construct it via the facade `Effects.Move(target, destination, …)` (or the named
   shortcuts `Effects.Destroy/Exile/ReturnToHand/PutOnTopOfLibrary/ShuffleIntoLibrary/…`).
+- `MoveTrackedBattlefieldObjectEffect(target, destination, enteredBattlefieldTimestamp?)` — moves
+  only the battlefield object identified by both entity ID and entry timestamp. When nested in a
+  delayed trigger, target resolution snapshots the timestamp automatically. Use for delayed moves
+  that must ignore a permanent that left and returned as a new object (CR 603.7c / 400.7).
 - `MoveCollectionEffect(collectionName, zone, faceDown?, linkToSource?, asOwner?, likelyPosition?)` — pipeline move of a
   stored collection.
 - `faceDown` (on both move effects) is a nullable **`FaceDownMode`** — `null` = enter face up;
@@ -8220,7 +8224,8 @@ Card authors rarely reference these directly; they are created/updated by the ma
   permission. The cast is tracked with a `DashedComponent` marker (not a floating continuous
   effect — an EntityId can be reused across a later fresh cast of the same card, so a
   `Duration.Permanent` effect keyed to the id could misfire) that `StateProjector` reads live to
-  grant haste, and a delayed trigger fires `DashReturnToHandEffect` at `Step.END`, snapshotting
+  grant haste, and a delayed trigger fires `MoveTrackedBattlefieldObjectEffect(..., HAND)` at
+  `Step.END`, snapshotting
   `enteredBattlefieldTimestamp` the same way warp's exile does — a dashed permanent blinked before
   the end step is a new object and stays on the battlefield; one that already left (died, was
   bounced) is left where it is, per the official ruling.
