@@ -417,7 +417,7 @@ class DashMechanicTest : FunSpec({
 
     test("a creature dashed then returned to hand does not retain haste when cast again for its normal cost") {
         // Regression guard for the exact hazard ZoneMovementUtils' `.without<DashedComponent>()`
-        // strip and DashReturnToHandExecutor's cleanup comment call out: the same EntityId is
+        // strip and MoveTrackedBattlefieldObjectExecutor's cleanup path ensure the same EntityId is
         // reused across a later fresh cast of the same physical card, so a stale DashedComponent
         // would silently grant haste it shouldn't.
         val driver = createDriver()

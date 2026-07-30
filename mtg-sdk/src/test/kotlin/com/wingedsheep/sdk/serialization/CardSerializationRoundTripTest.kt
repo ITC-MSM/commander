@@ -26,6 +26,7 @@ import com.wingedsheep.sdk.scripting.effects.LoseLifeEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
+import com.wingedsheep.sdk.scripting.effects.MoveTrackedBattlefieldObjectEffect
 import com.wingedsheep.sdk.scripting.effects.SetBaseStatsEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
@@ -97,6 +98,30 @@ class CardSerializationRoundTripTest : DescribeSpec({
             effect.power shouldBe null
             effect.toughness shouldBe DynamicAmount.Fixed(7)
             effect.duration shouldBe Duration.EndOfTurn
+        }
+
+        it("should round-trip a tracked battlefield-object move") {
+            val card = card("Tracked Move Test") {
+                manaCost = "{U}"
+                typeLine = "Instant"
+                spell {
+                    target = Targets.Permanent
+                    effect = MoveTrackedBattlefieldObjectEffect(
+                        target = EffectTarget.ContextTarget(0),
+                        destination = Zone.HAND,
+                        enteredBattlefieldTimestamp = 42L
+                    )
+                }
+            }
+
+            val serialized = CardLoader.toJson(card)
+            serialized shouldContain "MoveTrackedBattlefieldObject"
+
+            val deserialized = CardLoader.fromJson(serialized)
+            val effect = deserialized.script.spellEffect
+            effect.shouldBeInstanceOf<MoveTrackedBattlefieldObjectEffect>()
+            effect.destination shouldBe Zone.HAND
+            effect.enteredBattlefieldTimestamp shouldBe 42L
         }
 
         it("should round-trip a creature with triggered ability") {

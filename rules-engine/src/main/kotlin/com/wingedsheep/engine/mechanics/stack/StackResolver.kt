@@ -50,6 +50,7 @@ import com.wingedsheep.engine.event.DelayedTriggeredAbility
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.WarpExileEffect
+import com.wingedsheep.sdk.scripting.effects.MoveTrackedBattlefieldObjectEffect
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
@@ -1625,8 +1626,9 @@ class StackResolver(
                 ?.timestamp
             val delayedTrigger = DelayedTriggeredAbility(
                 id = java.util.UUID.randomUUID().toString(),
-                effect = com.wingedsheep.sdk.scripting.effects.DashReturnToHandEffect(
+                effect = MoveTrackedBattlefieldObjectEffect(
                     target = EffectTarget.SpecificEntity(spellId),
+                    destination = Zone.HAND,
                     enteredBattlefieldTimestamp = entryTimestamp
                 ),
                 fireAtStep = Step.END,

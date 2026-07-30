@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.scripting.effects.SacrificeTargetEffect
 import com.wingedsheep.sdk.scripting.effects.WarpExileEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
+import com.wingedsheep.sdk.scripting.effects.MoveTrackedBattlefieldObjectEffect
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.EventPattern
@@ -226,6 +227,17 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
                     // Snapshot the tracked object's entry stamp NOW (CR 603.7c), mirroring the
                     // StackResolver warp path — a permanent that leaves and re-enters before
                     // the trigger fires is a new object the exile must not hit.
+                    val entryTimestamp = state.getEntity(resolvedId)
+                        ?.get<BattlefieldEntryTimestampComponent>()?.timestamp
+                    effect.copy(
+                        target = EffectTarget.SpecificEntity(resolvedId),
+                        enteredBattlefieldTimestamp = entryTimestamp
+                    )
+                } else effect
+            }
+            is MoveTrackedBattlefieldObjectEffect -> {
+                val resolvedId = context.resolveTarget(effect.target)
+                if (resolvedId != null) {
                     val entryTimestamp = state.getEntity(resolvedId)
                         ?.get<BattlefieldEntryTimestampComponent>()?.timestamp
                     effect.copy(
