@@ -3862,9 +3862,6 @@ private fun EmitCtx.activatedAbilityStmts(
     // of the restriction lines above (it's a timing rule, not an ActivationRestriction).
     if (hasSorcerySpeedModifier(rule)) stmts.add(Assign("timing", Lit("TimingRule.SorcerySpeed")))
     if (activateFromZone != null) stmts.add(Assign("activateFromZone", Lit(activateFromZone)))
-    // A ReplaceNextDraw effect ("the next time you would draw … instead") prompts on the replaced draw,
-    // not at activation — the activated-ability flag the Words cycle's golden carries.
-    if (actions.any { it.strField("_Action") == "CreateFutureReplaceWouldDraw" }) stmts.add(Assign("promptOnDraw", Lit("true")))
     if (isManaAbility(tvar, actions)) {
         stmts.add(Assign("manaAbility", Lit("true")))
         stmts.add(Assign("timing", Lit("TimingRule.ManaAbility")))

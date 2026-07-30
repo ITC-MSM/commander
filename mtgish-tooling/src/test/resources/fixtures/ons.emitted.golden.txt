@@ -13596,7 +13596,6 @@ val WordsOfWaste = card("Words of Waste") {
     activatedAbility {
         cost = Costs.Mana("{1}")
         effect = Effects.ReplaceNextDraw(Patterns.Hand.eachOpponentDiscards(1))
-        promptOnDraw = true
     }
     metadata {
         rarity = Rarity.RARE
@@ -13637,7 +13636,6 @@ val WordsOfWilding = card("Words of Wilding") {
         effect = Effects.ReplaceNextDraw(
             Effects.CreateToken(power = 2, toughness = 2, colors = setOf(Color.GREEN), creatureTypes = setOf("Bear"))
         )
-        promptOnDraw = true
     }
     metadata {
         rarity = Rarity.RARE
@@ -13675,7 +13673,6 @@ val WordsOfWind = card("Words of Wind") {
     activatedAbility {
         cost = Costs.Mana("{1}")
         effect = Effects.ReplaceNextDraw(Effects.EachPlayerReturnPermanentToHand())
-        promptOnDraw = true
     }
     metadata {
         rarity = Rarity.RARE
@@ -13714,7 +13711,6 @@ val WordsOfWorship = card("Words of Worship") {
     activatedAbility {
         cost = Costs.Mana("{1}")
         effect = Effects.ReplaceNextDraw(GainLifeEffect(5))
-        promptOnDraw = true
     }
     metadata {
         rarity = Rarity.RARE

@@ -508,7 +508,8 @@ object ZoneMovementUtils {
         val container = state.getEntity(entityId) ?: return ZoneChangeRedirectResult(toZone)
 
         // Card-intrinsic "would be put into [zone] from anywhere → redirect instead" self-replacement
-        // (Darksteel Colossus, Progenitus). It functions in every zone (CR 614.12), so it is read off
+        // (Darksteel Colossus, Progenitus). It says "from anywhere", so it functions from every
+        // zone (CR 113.6b), and it is read off
         // the moving card itself rather than by scanning the battlefield. It stops applying only while
         // the source is on the battlefield and has lost all abilities.
         val selfRedirect = container

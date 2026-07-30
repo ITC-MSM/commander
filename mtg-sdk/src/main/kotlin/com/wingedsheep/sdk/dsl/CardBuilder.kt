@@ -1459,7 +1459,6 @@ class ActivatedAbilityBuilder {
     var timing: TimingRule = TimingRule.InstantSpeed
     var restrictions: List<ActivationRestriction> = emptyList()
     var activateFromZone: Zone = Zone.BATTLEFIELD
-    var promptOnDraw: Boolean = false
     var description: String? = null
     var hasConvoke: Boolean = false
     /**
@@ -1525,7 +1524,6 @@ class ActivatedAbilityBuilder {
             timing = timing,
             restrictions = effectiveRestrictions,
             activateFromZone = activateFromZone,
-            promptOnDraw = promptOnDraw,
             descriptionOverride = description,
             hasConvoke = hasConvoke,
             hasWaterbend = hasWaterbend,

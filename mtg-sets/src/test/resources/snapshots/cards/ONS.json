@@ -17991,8 +17991,7 @@
                         "type": "AnyTarget",
                         "id": "any target"
                     }
-                ],
-                "promptOnDraw": true
+                ]
             }
         ]
     },
@@ -18068,8 +18067,7 @@
                             ]
                         }
                     }
-                },
-                "promptOnDraw": true
+                }
             }
         ]
     },
@@ -18115,8 +18113,7 @@
                             "Bear"
                         ]
                     }
-                },
-                "promptOnDraw": true
+                }
             }
         ]
     },
@@ -18151,8 +18148,7 @@
                 "effect": {
                     "type": "ReplaceNextDrawWith",
                     "replacementEffect": "EachPlayerReturnsPermanentToHand"
-                },
-                "promptOnDraw": true
+                }
             }
         ]
     },
@@ -18194,8 +18190,7 @@
                             "amount": 5
                         }
                     }
-                },
-                "promptOnDraw": true
+                }
             }
         ]
     },

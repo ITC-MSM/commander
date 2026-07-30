@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.util.quantify
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -335,28 +336,3 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
     }
 }
 
-/**
- * "a Goblin" / "three Goblins" — the article-or-count phrase shared by the selection atoms. Small
- * counts are spelled out (oracle convention); the article respects a vowel-leading filter description.
- */
-private fun quantify(count: Int, filterDescription: String): String =
-    if (count == 1) {
-        val article = if (filterDescription.firstOrNull()?.lowercaseChar() in listOf('a', 'e', 'i', 'o', 'u')) "an" else "a"
-        "$article $filterDescription"
-    } else {
-        "${numberToWord(count)} ${filterDescription}s"
-    }
-
-private fun numberToWord(n: Int): String = when (n) {
-    1 -> "one"
-    2 -> "two"
-    3 -> "three"
-    4 -> "four"
-    5 -> "five"
-    6 -> "six"
-    7 -> "seven"
-    8 -> "eight"
-    9 -> "nine"
-    10 -> "ten"
-    else -> n.toString()
-}

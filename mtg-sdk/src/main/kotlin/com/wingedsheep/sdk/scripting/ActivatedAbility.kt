@@ -33,7 +33,6 @@ data class ActivatedAbility(
      */
     val isEquipAbility: Boolean = false,
     val activateFromZone: Zone = Zone.BATTLEFIELD,
-    val promptOnDraw: Boolean = false,
     val descriptionOverride: String? = null,
     val hasConvoke: Boolean = false,
     /**
@@ -101,7 +100,6 @@ data class ActivatedAbility(
         isManaAbility: Boolean = false,
         isPlaneswalkerAbility: Boolean = false,
         activateFromZone: Zone = Zone.BATTLEFIELD,
-        promptOnDraw: Boolean = false,
         descriptionOverride: String? = null
     ) : this(
         id = id,
@@ -113,7 +111,6 @@ data class ActivatedAbility(
         isManaAbility = isManaAbility,
         isPlaneswalkerAbility = isPlaneswalkerAbility,
         activateFromZone = activateFromZone,
-        promptOnDraw = promptOnDraw,
         descriptionOverride = descriptionOverride
     )
 

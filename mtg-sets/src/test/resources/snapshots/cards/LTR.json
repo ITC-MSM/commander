@@ -12904,21 +12904,20 @@
         ],
         "replacementEffects": [
             {
-                "type": "ModifyDrawAmount",
-                "modifier": 1,
+                "type": "ReplaceDrawWith",
+                "replacementEffect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
                 "restrictions": [
                     {
-                        "type": "Compare",
-                        "left": {
-                            "type": "Count",
-                            "player": "You",
-                            "zone": "Hand"
-                        },
-                        "operator": "LTE",
-                        "right": {
-                            "type": "Fixed",
-                            "amount": 0
-                        }
+                        "type": "Exists",
+                        "player": "You",
+                        "zone": "Hand",
+                        "negate": true
                     }
                 ]
             },

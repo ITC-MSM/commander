@@ -21,6 +21,7 @@ import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.StateProjector
+import com.wingedsheep.engine.replacement.ReplacementEffectIdentity
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.model.GameRng
 import com.wingedsheep.sdk.scripting.AbilityIdentity
@@ -318,6 +319,17 @@ data class GameState(
      * (auto-answer). Empty entries are pruned, so an absent key means "no yields".
      */
     val yieldsByPlayer: Map<EntityId, PlayerYields> = emptyMap(),
+
+    /**
+     * Active replacement-effect chain (CR 614.5 — each effect applies at most once).
+     *
+     * Set by the [com.wingedsheep.engine.replacement.ReplacementEffectProcessor] when a [com.wingedsheep.engine.handlers.effects.drawing.DrawReplacementDispatcher.DispatchResult.Replaced]
+     * outcome is produced, and cleared after the replacement effect finishes executing.
+     * Prevents already-applied effects from re-triggering when a replacement effect
+     * (e.g. Phial of Galadriel's "draw two cards instead") contains sub-effects that
+     * would be independently checked against the processor.
+     */
+    val activeReplacementChain: Set<ReplacementEffectIdentity>? = null,
 ) {
     /**
      * Cached projection of the game state with all continuous effects (Rule 613) applied.
@@ -540,7 +552,8 @@ data class GameState(
      * per-creature defending player — CR 802.2a).
      */
     fun getOpponents(playerId: EntityId): List<EntityId> {
-        // CR 810: an opponent is a player on an opposing team, so exclude the player's whole team
+        // CR 102.3: in a multiplayer game between teams a player's opponents are all players not
+        // on their team, so exclude the player's whole team
         // (themselves and any teammates), not just themselves. In a non-team game a player is its
         // own team, so this is identical to "everyone but me".
         val ownTeam = teamOf(playerId).toHashSet()

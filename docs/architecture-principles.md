@@ -712,6 +712,7 @@ actions at execution time:
 sealed interface ReplacementEffect {
     val description: String
     val appliesTo: EventPattern  // Pattern describing which actions to intercept
+    val restrictions: List<Condition> get() = emptyList()  // Extra gating conditions (default: unrestricted)
 }
 
 // Doubling Season: double token creation
@@ -751,27 +752,60 @@ serialize the state even when a replacement choice is pending.
   the same predicate composition as a trigger that fires on the same event — `RecipientFilter`,
   `SourceFilter`, and `DamageType` are shared between both systems.
 
-**Ordering multiple replacement effects.** When multiple replacement effects would apply to the same
-event, Rule 616.1 requires the affected player (or the controller of the affected object) to choose
-which applies first. The engine handles this pragmatically rather than with a fully general Rule 616
-framework:
+**Ordering multiple replacement effects (Rule 616.1).** When multiple replacement effects would apply
+to the same event, the `ReplacementEffectProcessor` implements the full CR 616.1 pipeline as a
+domain-agnostic central dispatcher. It is designed as the single entry point for all
+replacement-effect resolution across every domain — draw, damage, life-gain, token-creation,
+zone-change. **Only the draw domain is migrated onto it today**; the others still run through their
+own dispatchers and will move over one domain at a time.
 
-- **Combat damage prevention** is the primary case where ordering matters. When a single damage
-  prevention shield (e.g., "prevent the next 3 damage") can't cover all incoming damage from
-  multiple attackers, the engine pauses with a `DistributeDecision` and a
-  `DamagePreventionContinuation`. The player distributes the shield across sources, and the engine
-  creates source-specific prevention effects for each allocation.
-- **Non-combat replacements** (draw replacement, token doubling, counter doubling, damage
-  amplification) are applied sequentially — each category has a well-defined application point in
-  the engine, and multiple effects of the same type stack naturally (two doublers quadruple).
-  Player choice between competing replacements of *different* types is not yet needed because the
-  engine's card pool hasn't required it.
+The pipeline follows Rule 616.1a–e priority grouping:
 
-This design reflects a pragmatic choice: handle the critical case (combat damage distribution) with
-full player agency via the continuation system, while leaving other replacements to deterministic
-application order. The `ReplacementEffect` data model is expressive enough to support a general
-Rule 616 framework if future cards require it — the `appliesTo` patterns already provide the
-information needed to detect competing replacements.
+```kotlin
+enum class ReplacementPriorityGroup {
+    SELF_REPLACEMENT,  // CR 616.1a → 614.15 — an effect of a resolving spell/ability that replaces that same spell/ability's own effect (e.g. "If a spell was countered this way, exile it instead...")
+    CONTROL_CHANGE,    // CR 616.1b — control-changing effects
+    COPY,              // CR 616.1c — copy effects
+    TRANSFORM,         // CR 616.1d — replacements that cause entering with back face up
+    ANY                // CR 616.1e — all others, player chooses freely
+}
+```
+
+The processor:
+1. **Gathers** all active replacement effects from four sources — battlefield permanents with a
+   `ReplacementEffectSourceComponent`, floating effects carrying a replacement modification (the
+   Words cycle shields), `GameState.grantedReplacementEffects`, and entities with a
+   `SelfZoneRedirectComponent` — filtering by `EventPattern` match.
+2. **Filters out** effects already applied in the current chain (CR 614.5), tracked via
+   `GameState.activeReplacementChain` — a set of `ReplacementEffectIdentity` values stamped
+   onto state as replacements are consumed, preventing infinite loops.
+3. **Separates optional** replacement effects (those with `optional = true`, e.g. "you may
+   draw a card instead") — these present a yes/no prompt before entering the mandatory pipeline.
+4. **Groups by priority** and auto-applies single-effect groups. When multiple effects in the
+   same group compete, the player chooses via a `ChooseOptionDecision` continuation
+   (`ReplacementChoiceContinuation`).
+5. **Recurses** after each application (CR 616.1f) — applying one replacement may change the
+   event in a way that makes a new replacement eligible.
+
+**Duration.NextUse (consumable shields).** The SDK provides a general-purpose
+`Duration.NextUse(sourceDescription)` primitive for "consume on next use then expire" effects.
+A floating effect with this duration is removed after its replacement effect is applied, or at
+end of turn if never used. The Words cycle cards (Words of War, Words of Wind, etc.) use this mechanism.
+An activated ability creates a `Duration.NextUse` floating
+shield that replaces the next draw with a stored effect. Activation-time variables (`{X}` value,
+targets, named targets) are captured in `SerializableModification.ReplaceDrawWithEffect` and
+replayed when the shield is consumed.
+
+**Why a central processor instead of per-category dispatchers?**
+- **Uniform Rule 616 semantics.** Every replacement, regardless of domain, follows the same
+  priority-groups-and-choice flow. Adding a new domain (e.g., damage replacement) requires only
+  a new `PendingGameEvent` subtype implementing `matches` / `applyReplacement` — no new ordering code.
+- **CR 614.5 loop prevention.** The `activeReplacementChain` is maintained in one place and
+  automatically merged across nested executions, so a replacement that would re-trigger itself
+  (e.g., a `ModifyDrawAmount` on an already-modified event) is correctly skipped.
+- **Composable with continuations.** Player choice between competing replacements pauses the
+  pipeline and saves a `ReplacementChoiceContinuation`, which the `ReplacementContinuationResumer`
+  pops when the decision arrives — no per-card bespoke dispatchers for each choice point.
 
 ### 2.8 State-Based Actions
 
