@@ -3265,6 +3265,26 @@ object Effects {
         storeCountAs = storeCountAs
     )
 
+    /** Exile all spells on the stack in scope without countering them. */
+    fun ExileSpellsOnStack(
+        opponentsOnly: Boolean = false,
+        excludeSource: Boolean = true,
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ExileSpellsOnStackEffect(
+        opponentsOnly = opponentsOnly,
+        excludeSource = excludeSource,
+    )
+
+    /** Counter all selected stack-object kinds, optionally regardless of controller. */
+    fun CounterAllStackObjects(
+        spells: Boolean = true,
+        abilities: Boolean = true,
+        opponentsOnly: Boolean = false,
+    ): Effect = CounterAllOnStackEffect(
+        spells = spells,
+        abilities = abilities,
+        opponentsOnly = opponentsOnly,
+    )
+
     /**
      * Change the target of a spell to another creature.
      */

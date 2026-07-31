@@ -253,6 +253,26 @@ data class ExileTargetSpellEffect(
     }
 }
 
+/**
+ * Exile every spell on the stack matching the controller scope.
+ *
+ * This is not a counter: spells that can't be countered are still exiled. [excludeSource]
+ * supports the common "all other spells" wording when this effect is resolving from a spell.
+ */
+@SerialName("ExileSpellsOnStack")
+@Serializable
+data class ExileSpellsOnStackEffect(
+    val opponentsOnly: Boolean = false,
+    val excludeSource: Boolean = true,
+) : Effect {
+    override val description: String = buildString {
+        append("Exile all ")
+        if (excludeSource) append("other ")
+        if (opponentsOnly) append("opponents' ")
+        append("spells")
+    }
+}
+
 // =============================================================================
 // Stack Effects — Counter All
 // =============================================================================
