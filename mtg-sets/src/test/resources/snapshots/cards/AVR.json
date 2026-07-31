@@ -209,6 +209,30 @@
     ]
 }
 
+// Butcher Ghoul
+{
+    "name": "Butcher Ghoul",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "Undying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "UNDYING"
+    ],
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Christopher Moeller",
+        "flavorText": "Without a mind, it doesn't fear death. Without a soul, it doesn't mind killing.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44a91e62-e946-4101-8cef-d1c147caebf2.jpg?1783940705"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Cathars' Crusade
 {
     "name": "Cathars' Crusade",

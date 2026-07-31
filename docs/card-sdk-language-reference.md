@@ -5325,6 +5325,15 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > card types or subtypes. Author the printed dies-clause + reminder text into `oracleText`. The
 > `Keyword.ENDURING` display keyword carries no combat behavior.
 
+> **Undying** (`Keyword.UNDYING`, CR 702.93). "When this permanent is put into a graveyard from the
+> battlefield, if it had no +1/+1 counters on it, return it to the battlefield under its owner's
+> control with a +1/+1 counter on it." Like Persist, this is a synthesized SELF dies-trigger in
+> `DeathAndLeaveTriggerDetector`, built from `MoveToZoneEffect(Self, BATTLEFIELD)` followed by
+> `AddCountersEffect(PLUS_ONE_PLUS_ONE, 1, Self)`. It reads projected keywords and counters from the
+> `ZoneChangeEvent` last-known snapshot, so printed and granted undying work identically. A token's
+> undying ability triggers, but the token ceases to exist before the trigger resolves and cannot return.
+> Card definitions only need `keywords(Keyword.UNDYING)` plus the full reminder text in `oracleText`.
+
 > **Bargain** (CR 702.166, Wilds of Eldraine). "Bargain (You may sacrifice an artifact, enchantment, or
 > token as you cast this spell.)" — a static ability functioning on the stack that grants one **optional
 > additional cost** (702.166a): sacrificing an artifact, an enchantment, or a token you control. A spell
@@ -5440,7 +5449,7 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Defender, Indestructible, Hexproof, Shroud, Haste,
 Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Storm, Flashback, Harmonize, Mayhem, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
-Offspring, Persist, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
+Offspring, Persist, Undying, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
 composite abilities).
 
 **Parameterized `KeywordAbility.*`**
