@@ -189,7 +189,7 @@ class AIPlayer(
             val intents = if (profile.useCardIntent) IntentCatalog.of(cardRegistry) else IntentCatalog.NONE
 
             val simulator = GameSimulator(cardRegistry)
-            val evaluator = profile.evaluationWeights.toEvaluator(intents)
+            val evaluator = EvalWeights.resolve(profile.evalWeightsId).toEvaluator(intents)
             val combatAdvisor = CombatAdvisor(simulator, evaluator, cardRegistry, advisorRegistry)
             val responder = DecisionResponder(
                 simulator, evaluator,

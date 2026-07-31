@@ -1,7 +1,6 @@
 package com.wingedsheep.ai.puzzles
 
 import com.wingedsheep.ai.engine.AiProfile
-import com.wingedsheep.ai.engine.EvaluationWeights
 import com.wingedsheep.ai.engine.rollout.RolloutSettings
 import com.wingedsheep.engine.support.ScenarioTestBase
 
@@ -50,7 +49,7 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // Everything the plan proposes to ship.
                 AiProfile.PHASE4_PHASE6_PHASE7,
                 // The discrimination control, same as the arena's: every weight zero.
-                AiProfile.LEGACY_V0.copy(id = "v0-blind", evaluationWeights = EvaluationWeights.BLIND),
+                AiProfile.LEGACY_V0.copy(id = "v0-blind", evalWeightsId = "blind"),
             )
 
             val runs = profiles.map { profile ->

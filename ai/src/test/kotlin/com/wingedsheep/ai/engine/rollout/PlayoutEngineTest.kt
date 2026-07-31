@@ -3,7 +3,7 @@ package com.wingedsheep.ai.engine.rollout
 import com.wingedsheep.ai.engine.AIPlayer
 import com.wingedsheep.ai.engine.AiProfile
 import com.wingedsheep.ai.engine.CombatAdvisor
-import com.wingedsheep.ai.engine.EvaluationWeights
+import com.wingedsheep.ai.engine.evaluation.EvaluationWeights
 import com.wingedsheep.ai.engine.GameSimulator
 import com.wingedsheep.engine.core.ActionProcessor
 import com.wingedsheep.engine.state.GameState

@@ -6,69 +6,8 @@ import com.wingedsheep.ai.engine.advisor.modules.OnslaughtAdvisorModule
 import com.wingedsheep.ai.engine.budget.BudgetPolicy
 import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
 import com.wingedsheep.ai.engine.budget.TieredBudgetPolicy
-import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
-import com.wingedsheep.ai.engine.evaluation.BoardFeature
-import com.wingedsheep.ai.engine.evaluation.BoardPresence
-import com.wingedsheep.ai.engine.evaluation.CardAdvantage
-import com.wingedsheep.ai.engine.evaluation.CompositeBoardEvaluator
-import com.wingedsheep.ai.engine.evaluation.LifeDifferential
-import com.wingedsheep.ai.engine.evaluation.Tempo
-import com.wingedsheep.ai.engine.evaluation.ThreatAssessment
-import com.wingedsheep.ai.engine.knowledge.IntentCatalog
+import com.wingedsheep.ai.engine.evaluation.EvalWeights
 import com.wingedsheep.ai.engine.rollout.RolloutSettings
-
-/**
- * Weights for the five features [CompositeBoardEvaluator] combines.
- *
- * Every number here is a hand-guessed literal — that is the point of naming them: the arena can now
- * pit two weight sets against each other as two agents, and Phase 9 of
- * `backlog/engine-ai-improvement.md` replaces the guesses with a logistic fit.
- *
- * [DEFAULT] reproduces the values that used to be inline in `AIPlayer.defaultEvaluator()`, so
- * changing nothing changes nothing.
- */
-data class EvaluationWeights(
-    /** Life differential. Matters more when life is low — the non-linearity is inside the feature. */
-    val life: Double = 1.0,
-    /** Board presence. Creatures win games, so this is the largest term. */
-    val boardPresence: Double = 1.5,
-    /** Card advantage — a long-term edge. */
-    val cardAdvantage: Double = 1.0,
-    /** Threat assessment. Catches lethal-on-board situations the other features miss. */
-    val threatAssessment: Double = 1.2,
-    /** Tempo (mana development). Matters early, less late. Counts lands only today. */
-    val tempo: Double = 0.6,
-) {
-    /**
-     * Build the evaluator these weights describe.
-     *
-     * [intents] is Phase 6's structural card knowledge; on [IntentCatalog.NONE] (the default)
-     * [BoardPresence] behaves exactly as it did before Phase 6, so an agent that does not opt in
-     * evaluates identically.
-     */
-    fun toEvaluator(intents: IntentCatalog = IntentCatalog.NONE): BoardEvaluator = CompositeBoardEvaluator(
-        listOf(
-            life to LifeDifferential,
-            boardPresence to BoardFeature { state, projected, playerId ->
-                BoardPresence.score(state, projected, playerId, intents)
-            },
-            cardAdvantage to CardAdvantage,
-            threatAssessment to ThreatAssessment,
-            tempo to Tempo,
-        )
-    )
-
-    companion object {
-        val DEFAULT = EvaluationWeights()
-
-        /**
-         * Every weight zero, so the evaluator returns a constant and the Strategist can only
-         * ever pass. Not a playable agent — it exists so the arena can prove it *discriminates*:
-         * a harness that cannot separate this from [AiProfile.LEGACY_V0] is measuring noise.
-         */
-        val BLIND = EvaluationWeights(0.0, 0.0, 0.0, 0.0, 0.0)
-    }
-}
 
 /**
  * A named, reproducible configuration of the engine AI.
@@ -90,8 +29,8 @@ data class AiProfile(
      * singletons, so one profile instance is safe to share across threads and games.
      */
     val advisorModules: List<CardAdvisorModule> = emptyList(),
-    /** Leaf-evaluation weights. See [EvaluationWeights]. */
-    val evaluationWeights: EvaluationWeights = EvaluationWeights.DEFAULT,
+    /** Resource-backed leaf-evaluation vector. Unknown ids use the compiled default safely. */
+    val evalWeightsId: String = EvalWeights.DEFAULT_ID,
     /**
      * Phase 4a: only propose actions the AI can actually take, and skip windows where it has
      * none.

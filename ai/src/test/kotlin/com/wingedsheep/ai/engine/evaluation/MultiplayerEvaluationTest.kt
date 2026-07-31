@@ -1,6 +1,5 @@
 package com.wingedsheep.ai.engine.evaluation
 
-import com.wingedsheep.ai.engine.EvaluationWeights
 import com.wingedsheep.ai.engine.sidesFor
 import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.GameInitializer
