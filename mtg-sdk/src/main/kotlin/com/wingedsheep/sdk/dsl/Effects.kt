@@ -61,6 +61,7 @@ import com.wingedsheep.sdk.scripting.effects.CantAttackGroupEffect
 import com.wingedsheep.sdk.scripting.effects.CantAttackEffect
 import com.wingedsheep.sdk.scripting.effects.CantBlockEffect
 import com.wingedsheep.sdk.scripting.effects.GoadEffect
+import com.wingedsheep.sdk.scripting.effects.MarkMustAttackThisTurnEffect
 import com.wingedsheep.sdk.scripting.effects.SetSuspectedEffect
 import com.wingedsheep.sdk.scripting.effects.CantBlockGroupEffect
 import com.wingedsheep.sdk.scripting.effects.CantActivateLoyaltyAbilitiesEffect
@@ -3608,6 +3609,10 @@ object Effects {
      */
     fun Goad(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
         GoadEffect(target)
+
+    /** Mark a creature as required to attack this turn if able. */
+    fun MarkMustAttackThisTurn(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        MarkMustAttackThisTurnEffect(target)
 
     /**
      * Target creature becomes suspected (CR 701.60): atomic composite of the
