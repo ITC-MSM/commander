@@ -1092,6 +1092,94 @@
      `.lobbyOverlay` is the one scroll container now; the panel grows and the page absorbs it. */
 }
 
+/* =========================================================================
+ * Settings groups — five collapsibles instead of twenty stacked rows.
+ *
+ * A group is NOT a scroll container. That is the same rule `.settingsPanel` above records: one
+ * scroll container on this screen, `.lobbyOverlay`. A group collapses; it never scrolls.
+ * ========================================================================= */
+.settingsGroup {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settingsGroup:last-child {
+  border-bottom: none;
+}
+
+.settingsGroupBlocking {
+  background: rgba(251, 191, 36, 0.05);
+}
+
+.settingsGroupHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+}
+
+.settingsGroupLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 76px;
+  padding-top: 5px;
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+/* The axis strip and the live summary stack; the strip stays right-aligned with the button rows
+   inside the body so a group reads as one column rather than two. */
+.settingsGroupMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.settingsGroupSummaryRow {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  max-width: 100%;
+}
+
+.settingsGroupSummary {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+.settingsGroupBlockingNote {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--warning, #fbbf24);
+  text-align: right;
+}
+
+.settingsGroupChevron {
+  flex-shrink: 0;
+  align-self: center;
+  width: 28px;
+  padding: 4px 0;
+  background: none;
+  border: none;
+  color: var(--text-disabled);
+  font-size: var(--font-md);
+  cursor: pointer;
+}
+
+.settingsGroupChevron:hover {
+  color: var(--text-secondary);
+}
+
+.settingsGroupBody {
+  border-top: 1px solid var(--border-subtle);
+}
+
 /* Wraps on purpose. Without it the row is one unbreakable line, so an oversized control group
    gets *shrunk* instead — and since `.settingsButtons` is right-aligned, its overflow lands alone
    on a second line, reading as a layout bug. The Cards row does exactly that once all five values
@@ -1865,7 +1953,10 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* Gap rather than `space-between`: the header gained a third child (+ Add AI, which pushes itself
+     right), and with `space-between` the title and the count were spread apart from each other and
+     jammed together respectively. */
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border-medium);
   background-color: var(--bg-panel-light);
@@ -2077,10 +2168,82 @@
 /* =========================================================================
  * Actions Row
  * ========================================================================= */
-.actionsRow {
+/* The seat's position in the server's turn order — what "attack left"/"attack right" mean. */
+.seatNumber {
+  flex-shrink: 0;
+  width: 18px;
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--text-disabled);
+  text-align: right;
+}
+
+/* Team header inside the player list. The count is the whole point: an unbalanced pod can't start,
+   and until now the only place that said so was a caption inside the settings panel. */
+.teamHeader {
   display: flex;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-4);
+  background: rgba(148, 163, 184, 0.06);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--font-xs, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+
+.teamHeaderCount {
+  color: var(--success, #4ade80);
+}
+
+.teamHeaderCountOff {
+  color: var(--warning, #fbbf24);
+}
+
+.addAiInlineButton {
+  margin-left: auto;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--border-light);
+  background: none;
+  color: var(--text-secondary);
+  font-size: var(--font-xs, 0.75rem);
+  cursor: pointer;
+}
+
+.addAiInlineButton:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+/* Sticks to the bottom of the viewport so Start is reachable at any scroll position — with five
+   groups expanded the panel can still be taller than the screen, and before this the button sat
+   below all of it.
+
+   `position: sticky` is not a scroll container, so the one-scroll-container rule above holds. And it
+   lives *inside* `.lobbyContent`, inside the centred glass card — it is not the persistent nav bar
+   the menu restructure deliberately ruled out. */
+.actionsRow {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-1);
+  padding: var(--space-3) 0 var(--space-2);
+  /* Opaque under the buttons, fading only in the few pixels above them — a mostly-transparent bar
+     let the last settings row show through the Start button. */
+  background: linear-gradient(to top, rgba(6, 10, 20, 0.98) 0 78%, rgba(6, 10, 20, 0));
+}
+
+/* The reason Start is disabled, beside the button rather than only in its `title`. A tooltip on a
+   disabled control is the one place a hover hint is least likely to be found. */
+.actionsBlockReason {
+  flex-shrink: 1;
+  min-width: 0;
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--warning, #fbbf24);
 }
 
 .startButton {
@@ -3418,36 +3581,176 @@
 }
 
 /* Last completed selection, replayable in one click. */
-.playAgainChip {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  align-self: flex-start;
-  padding: var(--space-2) var(--space-3);
+/* Save-this-lobby, in the header beside the axis chips. */
+.saveSetupButton {
+  align-self: center;
+  margin-top: var(--space-2);
+  padding: 4px var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid rgba(139, 92, 246, 0.35);
   background: rgba(139, 92, 246, 0.1);
-  color: var(--text-secondary);
-  font-size: var(--font-sm);
+  color: #c4b5fd;
+  font-size: var(--font-xs, 0.75rem);
   cursor: pointer;
-  text-align: left;
 }
 
-.playAgainChip:hover {
+.saveSetupButton:hover {
   border-color: rgba(139, 92, 246, 0.6);
   background: rgba(139, 92, 246, 0.16);
 }
 
-.playAgainChipLead {
-  font-weight: var(--font-weight-semibold);
-  color: #c4b5fd;
-  flex-shrink: 0;
+/* What a setup couldn't restore. Stated, because the server discards a whole settings message on a
+   field it can't resolve and the loss is otherwise completely silent. */
+.lobbyNotes {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  align-self: stretch;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.08);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
 }
 
-.playAgainChipBody {
+.lobbyNotesBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lobbyNotesDismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-disabled);
+  font-size: var(--font-md);
+  cursor: pointer;
+}
+
+/* =========================================================================
+ * Setup rail — the games you play often, above the wizard.
+ *
+ * Replaces the single `playAgainChip`, which could only carry the three wizard answers because a
+ * bare `Selection` was all there was to store. A chip is a whole lobby now (see `lobbyRecipe.ts`),
+ * so it needs room for two lines and an overflow menu.
+ * ========================================================================= */
+.setupRail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-self: stretch;
+}
+
+.setupRailHeading {
+  font-size: var(--font-xs, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-disabled);
+}
+
+.setupRailChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.setupChipWrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: rgba(139, 92, 246, 0.1);
+  max-width: 100%;
+}
+
+.setupChipWrap:hover {
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.16);
+}
+
+.setupChip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.setupChipName {
+  font-weight: var(--font-weight-semibold);
+  color: #c4b5fd;
+}
+
+/* Wraps rather than truncating. A chip's whole job is to say what it will launch — "A group ·
+   Booster Draft · Round-robin brac…" answers the wrong half of the question, hiding exactly the
+   sets and pack counts that make a setup worth one click. */
+.setupChipBody {
   font-family: ui-monospace, monospace;
   font-size: var(--font-xs, 0.75rem);
   color: var(--text-tertiary);
+  max-width: 62ch;
+}
+
+.setupChipNote {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--warning, #fbbf24);
+}
+
+.setupChipMenuButton {
+  padding: 0 var(--space-2);
+  background: none;
+  border: none;
+  border-left: 1px solid rgba(139, 92, 246, 0.25);
+  color: var(--text-disabled);
+  cursor: pointer;
+  font-size: var(--font-sm);
+}
+
+.setupChipMenuButton:hover {
+  color: var(--text-secondary);
+}
+
+.setupChipMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.3));
+  background: var(--surface-raised, #1e293b);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.setupChipMenu button {
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.setupChipMenu button:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.setupChipMenuDanger {
+  color: var(--danger, #f87171) !important;
 }
 
 /* =========================================================================

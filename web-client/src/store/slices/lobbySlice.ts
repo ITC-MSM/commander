@@ -1,8 +1,15 @@
 /**
  * Lobby slice - handles tournament lobbies, spectating, and lobby management.
  */
-import type { SliceCreator, LobbyState, TournamentState, FfaState, SpectatingState } from './types'
-import type { DeckFormat, GameRules, TournamentFormat, LobbyGameMode, AttackMode } from '@/types'
+import type {
+  SliceCreator,
+  LobbyState,
+  LobbySettingsUpdate,
+  TournamentState,
+  FfaState,
+  SpectatingState,
+} from './types'
+import type { GameRules, TournamentFormat, LobbyGameMode } from '@/types'
 import {
   createCreateTournamentLobbyMessage,
   createJoinLobbyMessage,
@@ -38,7 +45,19 @@ export interface LobbySliceActions {
   startLobby: () => void
   leaveLobby: () => void
   stopLobby: () => void
-  updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; rules?: GameRules; chaosBoosters?: boolean; bannedCardNames?: string[]; cubeCards?: string[]; cubeName?: string; packSize?: number; cubeBasicLandSetCode?: string; cubePoolPlay?: boolean; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode; attackMode?: AttackMode; randomTeams?: boolean; teamAssignments?: Record<string, number>; ranked?: boolean }) => void
+  /**
+   * The omnibus settings message, as one partial bag.
+   *
+   * Derived from the wire type rather than restated: the hand-written copy this replaces had drifted
+   * — it was missing `deckSizeMin`, `allowDuplicates` and `commanderPreset`, all three of which the
+   * lobby's Commander rows have been sending for some time.
+   *
+   * **Send one message, not a field at a time.** `LobbyHandler.handleUpdateLobbySettings` is ordered
+   * for a whole bag (its own comments read "apply after format change"), and a `format` change resets
+   * `boosterCount`, `picksPerRound` and `chaosBoosters` and recalculates the booster distribution on
+   * the way through. Splitting a bag across messages would therefore lose fields, not just be slower.
+   */
+  updateLobbySettings: (settings: LobbySettingsUpdate) => void
   addAiToLobby: () => void
   removeAiFromLobby: (playerId: string) => void
   readyForNextRound: () => void

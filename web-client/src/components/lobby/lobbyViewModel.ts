@@ -28,6 +28,7 @@ import {
   type AxisSelection,
   type CardsKind,
 } from './axes'
+import type { GroupId } from './settingsGroups'
 
 /** Which server implementation is backing this lobby. */
 export type LobbyKind = 'QUICK' | 'TOURNAMENT'
@@ -102,6 +103,14 @@ export interface UnifiedLobbyView {
   canAddAi: boolean
   ranked: { available: boolean; on: boolean }
   teams: LobbyTeams
+  /**
+   * The settings group holding the reason Start is disabled, when one does.
+   *
+   * Lets the collapsed settings panel open the group that needs attention without maintaining a
+   * second "which row fixes this" mapping beside `startBlockReason`. Null when the blocker isn't a
+   * setting at all (too few players, decks not submitted) or when nothing is blocking.
+   */
+  blockGroup: GroupId | null
 }
 
 /* ── Quick game ─────────────────────────────────────────────────────────── */
@@ -170,6 +179,8 @@ export function fromQuickGameLobby(
     // The server's `QuickGameLobby.twoHeadedGiant` exists but no client has ever reached it (gap
     // #6): it isn't in `QuickGameLobbyStateMessage` at all, so there is nothing here to read.
     teams: { mode: 'NONE' },
+    // A quick lobby's only start condition is "pick a deck", which the deck picker answers directly.
+    blockGroup: null,
   }
 }
 
@@ -242,9 +253,10 @@ export function fromTournamentLobby(
           kind: 'START',
           label: startLabel(lobbyState),
           disabled: blockReason !== null,
-          reason: blockReason ?? undefined,
+          reason: blockReason?.reason,
         }
       : null,
+    blockGroup: blockReason?.group ?? null,
     isPublic: s.isPublic,
     // Commander limited excluded: `buildAiSealedDeck` submits a 40-card deck with no commander, and
     // `TournamentLobby.validateDeck` doesn't check for one — so the AI would sit down without a
@@ -355,32 +367,39 @@ function startLabel(lobbyState: LobbyState): string {
 }
 
 /**
- * Why the host can't press start yet, or null when they can.
+ * Why the host can't press start yet, or null when they can — and which settings group holds the
+ * answer.
  *
  * Every branch of the seat-count rule gets its own sentence. The old inline version fell through
  * to a bare "Need at least 2 players" for the exact-count shapes, so a Two-Headed Giant lobby
  * holding three players offered a disabled button and no explanation.
+ *
+ * The `group` half is what lets the settings panel collapse safely: the group holding the blocker
+ * opens itself and flags a `!`, derived from *this* function rather than from a second table that
+ * would drift from it. Null means nothing here can be opened to fix it — "need at least 2 players"
+ * is answered by the player list.
  */
-function startBlockReason(lobbyState: LobbyState): string | null {
+function startBlockReason(lobbyState: LobbyState): { reason: string; group: GroupId | null } | null {
   const s = lobbyState.settings
   const n = lobbyState.players.length
+  const at = (group: GroupId | null, reason: string) => ({ reason, group })
 
   switch (s.gameMode) {
     case 'TWO_HEADED_GIANT':
-      if (n !== 4) return `Two-Headed Giant is exactly 4 players — this lobby has ${n}`
+      if (n !== 4) return at('TABLE', `Two-Headed Giant is exactly 4 players — this lobby has ${n}`)
       break
     case 'TEAM_VS_TEAM':
-      if (n < 4 || n % 2 !== 0) return `Team vs. Team needs an even pod of 4, 6 or 8 — this lobby has ${n}`
+      if (n < 4 || n % 2 !== 0) return at('TABLE', `Team vs. Team needs an even pod of 4, 6 or 8 — this lobby has ${n}`)
       break
     default:
       break
   }
   switch (s.format) {
     case 'WINSTON_DRAFT':
-      if (n !== 2) return `Winston Draft is exactly 2 players — this lobby has ${n}`
+      if (n !== 2) return at('CARDS', `Winston Draft is exactly 2 players — this lobby has ${n}`)
       break
     case 'GRID_DRAFT':
-      if (n < 2 || n > 4) return `Grid Draft seats 2 to 4 players — this lobby has ${n}`
+      if (n < 2 || n > 4) return at('CARDS', `Grid Draft seats 2 to 4 players — this lobby has ${n}`)
       break
     default:
       break
@@ -391,12 +410,12 @@ function startBlockReason(lobbyState: LobbyState): string | null {
   // and it now also catches a Commander lobby whose decks were brought rather than drafted. Same
   // rejection the server's start gate sends, said before the host presses Start.
   const rulesConflict = rulesTableBlock(rulesFromLobbySettings(s), tableFromGameMode(s.gameMode))
-  if (rulesConflict !== null) return rulesConflict
-  if (n < 2) return 'Need at least 2 players'
+  if (rulesConflict !== null) return at('RULES', rulesConflict)
+  if (n < 2) return at(null, 'Need at least 2 players')
 
   if (s.format === 'PREMADE_DECKS') {
     const allSubmitted = lobbyState.players.filter((p) => p.isConnected).every((p) => p.deckSubmitted)
-    return allSubmitted ? null : 'All connected players must submit a deck first'
+    return allSubmitted ? null : at(null, 'All connected players must submit a deck first')
   }
   if (s.cubeName) {
     // Pool Play hands every player the whole cube instead of dealing from it, so it has no capacity
@@ -408,18 +427,18 @@ function startBlockReason(lobbyState: LobbyState): string | null {
     const cardsNeeded = packsNeeded * packSize
     const cubeCards = s.cubeCardCount ?? 0
     if (cardsNeeded > cubeCards) {
-      return sharedPool
+      return at('CARDS', sharedPool
         ? `${s.boosterCount} packs × ${packSize} = ${cardsNeeded} cards needed, cube has ${cubeCards}`
-        : `${n} players × ${s.boosterCount} packs × ${packSize} = ${cardsNeeded} cards needed, cube has ${cubeCards}`
+        : `${n} players × ${s.boosterCount} packs × ${packSize} = ${cardsNeeded} cards needed, cube has ${cubeCards}`)
     }
     return null
   }
-  if (s.setCodes.length === 0) return 'Select at least one set'
+  if (s.setCodes.length === 0) return at('CARDS', 'Select at least one set')
   // Extension sets (bonus sheets) can't carry a pool alone. Unknown codes count as regular; the
   // server re-validates. A deferred random slot always rolls a regular set, so it satisfies this.
   const hasBaseSet = s.setCodes.some(
     (code) => !s.availableSets.find((a) => a.code === code)?.extensionSet,
   )
-  if (!hasBaseSet) return 'Extension sets need a regular set alongside them — add one'
+  if (!hasBaseSet) return at('CARDS', 'Extension sets need a regular set alongside them — add one')
   return null
 }

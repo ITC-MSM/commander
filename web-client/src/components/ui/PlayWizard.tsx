@@ -36,14 +36,11 @@ import {
   cardsChoices,
   defaultCardsAxis,
   flowStages,
-  resolveLaunch,
   rosterChoices,
   rosterLabel,
-  selectionSummary,
   shapeChoices,
   shapeLabel,
   type Choice,
-  type LaunchSpec,
   type Roster,
   type Selection,
   type ShapeId,
@@ -69,20 +66,20 @@ type AnsweredStep = 'roster' | 'cards' | 'shape'
 /** The three steps, plus the state after the last one is answered. */
 type StepId = AnsweredStep | 'done'
 
-const LAST_LAUNCH_KEY = 'argentum-last-play-selection'
-
 export function PlayWizard({
   aiEnabled,
   onLaunch,
 }: {
   aiEnabled: boolean
-  /** Create the lobby this selection describes. The wizard never touches the store itself. */
-  onLaunch: (spec: LaunchSpec, selection: Selection) => void
+  /**
+   * Create the lobby this selection describes. The wizard never touches the store itself, and no
+   * longer knows how a selection becomes messages either — `recipeFromSelection` does.
+   */
+  onLaunch: (selection: Selection) => void
 }) {
   const navigate = useNavigate()
   const { pathname, search } = useLocation()
   const draft = useMemo(() => pathToDraft(pathname, aiEnabled), [pathname, aiEnabled])
-  const lastSelection = useMemo(() => loadLastSelection(aiEnabled), [aiEnabled])
 
   /** Answer a step: one history entry, so Back drops exactly this answer. */
   const setDraft = (next: Draft) => navigate(draftToPath(next))
@@ -183,12 +180,11 @@ export function PlayWizard({
   }
 
   const launch = (selection: Selection) => {
-    saveLastSelection(selection)
     // Hand the URL back before the lobby appears. A lobby is not a wizard step, and leaving
     // `/play/...` in the address bar would have it describe a screen that is no longer showing —
     // giving the in-`/` screens their own URLs is the rest of Phase 6.
     navigate('/', { replace: true })
-    onLaunch(resolveLaunch(selection), selection)
+    onLaunch(selection)
   }
 
   const complete: Selection | null =
@@ -198,18 +194,6 @@ export function PlayWizard({
 
   return (
     <>
-      {lastSelection && step === 'roster' && (
-        <button
-          type="button"
-          className={styles.playAgainChip}
-          data-testid="wizard-play-again"
-          onClick={() => launch(lastSelection)}
-        >
-          <span className={styles.playAgainChipLead}>Play again →</span>
-          <span className={styles.playAgainChipBody}>{selectionSummary(lastSelection)}</span>
-        </button>
-      )}
-
       <WizardStepper
         step={step}
         draft={draft}
@@ -458,42 +442,3 @@ function OptionGrid<V extends string>({
   )
 }
 
-/* ── Play again ─────────────────────────────────────────────────────────────
- * A wizard is excellent once and tedious the fifth time. The last completed selection comes back as
- * a one-click chip — the honest answer to that, and the reason the wizard can afford to be explicit.
- * ─────────────────────────────────────────────────────────────────────────── */
-
-function saveLastSelection(selection: Selection): void {
-  try {
-    localStorage.setItem(LAST_LAUNCH_KEY, JSON.stringify(selection))
-  } catch {
-    // Private browsing / full quota — the chip is a convenience, so failing to store is not an error.
-  }
-}
-
-/**
- * Re-validate on the way in rather than trusting it: the stored selection may predate a server whose
- * AI is switched off, or a build where the combination has changed shape.
- */
-function loadLastSelection(aiEnabled: boolean): Selection | null {
-  let parsed: unknown
-  try {
-    const raw = localStorage.getItem(LAST_LAUNCH_KEY)
-    if (!raw) return null
-    parsed = JSON.parse(raw)
-  } catch {
-    return null
-  }
-  if (typeof parsed !== 'object' || parsed === null) return null
-  // A selection stored before the wizard stopped asking for seats carries a `seats` field; it is
-  // simply ignored, which is the same thing a stale `?seats=` link gets.
-  const { roster, cards, shape } = parsed as Partial<Selection>
-  if (!roster || !cards || !shape) return null
-  if (roster === 'SOLO' && !aiEnabled) return null
-
-  const cardsOk = cardsChoices(roster).some((c) => c.value === cards.kind && !c.disabledReason)
-  const shapeOk = shapeChoices(roster, cards).some((c) => c.value === shape && !c.disabledReason)
-  if (!cardsOk || !shapeOk) return null
-
-  return { roster, cards, shape }
-}
