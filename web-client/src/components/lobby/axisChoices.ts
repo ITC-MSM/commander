@@ -29,6 +29,7 @@ import {
   TABLE_VALUES,
   cardsFromTournamentFormat,
   cardsKindLabel,
+  commanderAiBlock,
   eventFromGameMode,
   eventLabel,
   gameModeForTable,
@@ -164,6 +165,12 @@ function rulesAvailability(view: UnifiedLobbyView, rules: RulesAxis): ChoiceAvai
   const conflict = rulesTableBlock(rules, view.axes.table)
   if (conflict !== null) return blocked(conflict)
   if (rules === view.axes.rules) return DIRECT
+  // The AI is dealt every deck it plays and no generator picks a commander, so a lobby holding one
+  // cannot switch to Commander rules. Same rejection the server sends; said before the click.
+  if (view.players.some((p) => p.isAi)) {
+    const aiBlock = commanderAiBlock(rules)
+    if (aiBlock !== null) return blocked(aiBlock)
+  }
   // A quick lobby has no Rules field: the server derives it from deck legality (see
   // `QuickGameLobby.applyFormat`), so the control that changes it is the legality dropdown.
   if (view.kind === 'QUICK') return blocked(RULES_ARE_DERIVED_ON_A_QUICK_GAME)

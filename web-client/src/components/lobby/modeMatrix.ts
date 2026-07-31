@@ -38,6 +38,7 @@ import {
   cardsKindLabel,
   cardsLabel,
   cardsSeatCap,
+  commanderAiBlock,
   rulesForCards,
   rulesTableBlock,
   tournamentFormatForCards,
@@ -181,12 +182,6 @@ export interface Choice<V> {
  * which is why they say "go back and pick X" rather than the lobby's "switch the Table first".
  * ─────────────────────────────────────────────────────────────────────────── */
 
-const AI_NEEDS_A_QUICK_GAME =
-  'The AI can only bring a deck to a single 1v1 game — premade-deck brackets reject AI seats.'
-
-const AI_NOT_AT_A_MULTIPLAYER_TABLE =
-  'The AI can’t take a seat at a multiplayer table yet. Pick “A group” and invite people, or stay at 1v1.'
-
 const MOMIR_IS_A_1V1_SINGLE_GAME =
   'Momir Basic only exists as a 1v1 single game — it has no bracket or multiplayer implementation.'
 
@@ -314,19 +309,28 @@ export function shapeChoices(roster: Roster, cards: CardsAxis): Choice<ShapeId>[
     if (isQuickOnly(kind)) {
       return [choice('ONE_GAME'), choice('BRACKET', quickOnlyReason(kind))]
     }
+    // Every shape is open to a solo player: the AI takes a seat at a pod like anyone else, and where
+    // there is no pool for it to build from — a premade-deck lobby — it is dealt a generated deck,
+    // exactly as the quick game has always done. What is left is the Cards value's own limits, asked
+    // through the same shared predicates the group branch uses, so a solo pod and a human pod cannot
+    // disagree about which table a Commander pool can sit at.
+    const reasonFor = (shape: ShapeId): string | undefined =>
+      rulesTableBlock(rulesForCards(cards), shapeAxes(shape).table)
+      ?? commanderAiBlock(rulesForCards(cards))
+      ?? undefined
     if (kind === 'BRING_A_DECK') {
       return [
         choice('ONE_GAME'),
-        choice('BRACKET', AI_NEEDS_A_QUICK_GAME),
-        ...MULTIPLAYER_SHAPES.map((s) => choice(s, AI_NOT_AT_A_MULTIPLAYER_TABLE)),
+        choice('BRACKET'),
+        ...MULTIPLAYER_SHAPES.map((s) => choice(s, reasonFor(s))),
       ]
     }
-    // Limited vs the AI: a pod of AI drafters playing the bracket out. Fully supported and, before
-    // this screen, reachable only by creating a lobby and pressing "+ Add AI Player" repeatedly.
+    // A limited pool is meant to be played more than once, so a two-seat single game is the one
+    // shape it declines — the pod and the bracket both play it out.
     return [
       choice('ONE_GAME', LIMITED_ALWAYS_RUNS_AS_A_BRACKET),
-      choice('BRACKET'),
-      ...MULTIPLAYER_SHAPES.map((s) => choice(s, AI_NOT_AT_A_MULTIPLAYER_TABLE)),
+      choice('BRACKET', commanderAiBlock(rulesForCards(cards)) ?? undefined),
+      ...MULTIPLAYER_SHAPES.map((s) => choice(s, reasonFor(s))),
     ]
   }
 
@@ -358,7 +362,10 @@ export function shapeChoices(roster: Roster, cards: CardsAxis): Choice<ShapeId>[
  */
 export function seatCap(roster: Roster, cards: CardsAxis, shape: ShapeId): number {
   if (roster === 'FRIEND') return 2
-  if (roster === 'SOLO' && (isQuickOnly(cards.kind) || cards.kind === 'BRING_A_DECK')) return 2
+  // A solo 1v1 is two seats whatever the cards are, and the *shape* is what says so — not the Cards
+  // value. Brought decks used to be tested here too, back when the AI could only face one in a quick
+  // game; now it can bring a rolled deck to a pod, and a pod must open at its shape's own count.
+  if (roster === 'SOLO' && (isQuickOnly(cards.kind) || shape === 'ONE_GAME')) return 2
 
   const cap = Math.min(cardsSeatCap(cards), shape === 'FREE_FOR_ALL' ? 6 : 8)
   switch (shape) {

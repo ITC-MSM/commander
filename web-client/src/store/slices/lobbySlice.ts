@@ -9,7 +9,7 @@ import type {
   FfaState,
   SpectatingState,
 } from './types'
-import type { GameRules, TournamentFormat, LobbyGameMode } from '@/types'
+import type { AiDeckSpec, GameRules, TournamentFormat, LobbyGameMode } from '@/types'
 import {
   createCreateTournamentLobbyMessage,
   createJoinLobbyMessage,
@@ -17,6 +17,7 @@ import {
   createLeaveLobbyMessage,
   createAddAiToLobbyMessage,
   createRemoveAiFromLobbyMessage,
+  createSetLobbyAiDeckMessage,
   createStopLobbyMessage,
   createUpdateLobbySettingsMessage,
   createReadyForNextRoundMessage,
@@ -60,6 +61,8 @@ export interface LobbySliceActions {
   updateLobbySettings: (settings: LobbySettingsUpdate) => void
   addAiToLobby: () => void
   removeAiFromLobby: (playerId: string) => void
+  /** Host picks what one AI seat plays (premade-decks lobbies — elsewhere it builds from its pool). */
+  setLobbyAiDeck: (playerId: string, spec: AiDeckSpec) => void
   readyForNextRound: () => void
   addExtraRound: () => void
   spectateGame: (gameSessionId: string) => void
@@ -128,6 +131,10 @@ export const createLobbySlice: SliceCreator<LobbySlice> = (set, get) => ({
 
   removeAiFromLobby: (playerId) => {
     getWebSocket()?.send(createRemoveAiFromLobbyMessage(playerId))
+  },
+
+  setLobbyAiDeck: (playerId, spec) => {
+    getWebSocket()?.send(createSetLobbyAiDeckMessage(playerId, spec))
   },
 
   stopLobby: () => {

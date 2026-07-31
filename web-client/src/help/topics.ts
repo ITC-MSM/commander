@@ -353,8 +353,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         'Bracket play is 1v1 only. Every multiplayer table plays exactly one shared game.',
         'A limited pool always runs as a bracket. Sealed and draft build a pool that is meant to be played more than once; with two players and one game per matchup, that is a single game anyway.',
         'Ranked is 1v1 only. Multiplayer tables are always casual.',
-        'The AI can only be added to a 1v1 lobby. It cannot take a seat in a Free-for-All or a team game, or bring a deck to a “Bring a deck” lobby.',
-        'The AI cannot deckbuild from a Commander pool (Commander Draft / Commander Sealed): its automatic deckbuilding never picks a commander, so it would sit down without one.',
+        'The AI cannot play Commander, at any table or from any card source: nothing it deckbuilds with picks a commander, so it would sit down without one.',
         'Commander rules cannot be played as Two-Headed Giant: a 2HG team shares one life total, and Commander gives every player their own 40. A 1v1 bracket, a Free-for-All pod and Team vs. Team all work.',
         'Momir Basic and a rolled random pool are 1v1 single games only. Neither exists at a multiplayer table or in a bracket.',
       ] },
@@ -384,7 +383,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     summary:
       'The home screen asks who you are playing with, what you are playing with, and how it is played. The answers decide which lobby you get; everything stays changeable once you are in it.',
     body: [
-      { kind: 'p', text: 'Who you are playing with comes first because it rules out the most: the AI cannot sit at a multiplayer table yet, and a rolled random pool or a Momir game only exists as a 1v1.' },
+      { kind: 'p', text: 'Who you are playing with comes first because it rules out the most: a rolled random pool or a Momir game only exists as a 1v1, and the AI cannot play Commander.' },
       { kind: 'p', text: 'All three questions stay on screen, numbered, with your answer under each. Click an answer to go back and change it; the answers after it are re-checked against the change.' },
       { kind: 'ul', items: [
         'A question with only one possible answer is decided for you and marked “auto”.',
@@ -406,8 +405,8 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       'You and the built-in AI. Nobody else has to show up, and the game starts as soon as you have picked a deck.',
     body: [
       { kind: 'p', text: 'At 1v1 the AI can play any of the card sources — your own deck, a rolled pool, or Momir Basic.' },
-      { kind: 'p', text: 'Sealed and draft go further: the lobby opens as a full pod of AI drafters, so you can draft on your own and play the bracket out. Add or remove them in the lobby if you want a smaller pod.' },
-      { kind: 'p', text: 'What the AI cannot do yet is take a seat at a multiplayer table, or bring its own deck to a bracket.' },
+      { kind: 'p', text: 'Every table is open too: the lobby opens as a full pod of AI seats, so on your own you can play a Free-for-All pod, take an AI teammate into Two-Headed Giant, run Team vs. Team, or draft a pod and play the bracket out. Add or remove them in the lobby if you want a smaller table.' },
+      { kind: 'p', text: 'The AI never brings a deck of its own: it builds one from the pool it is dealt, and in a lobby where everyone brings a deck the server rolls it one instead. The one thing it cannot deckbuild is Commander — nothing it builds with picks a commander — so a Commander lobby is humans only.' },
     ],
     related: ['axis-limits', 'cards-draft', 'event-round-robin'],
   },

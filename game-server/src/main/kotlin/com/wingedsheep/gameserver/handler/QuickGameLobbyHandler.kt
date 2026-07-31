@@ -270,10 +270,15 @@ class QuickGameLobbyHandler(
             sender.sendError(session, ErrorCode.INVALID_ACTION, "AI opponent is not enabled on this server")
             return
         }
-        // Two-Headed Giant is four human seats; the built-in AI is not team-aware yet (Phase 8),
-        // and 2HG (a rules format) is orthogonal to Momir Basic.
+        // A quick lobby's `vsAi` seats exactly one AI, and 2HG needs three to fill its four seats.
+        // The AI itself is no obstacle — a Two-Headed Giant tournament lobby seats AI teammates and
+        // opponents — so this is about which lobby can hold them, not about what the AI can play.
         if (message.twoHeadedGiant && message.vsAi) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Two-Headed Giant does not support AI opponents yet")
+            sender.sendError(
+                session,
+                ErrorCode.INVALID_ACTION,
+                "A quick game seats only one AI — create a Two-Headed Giant lobby to play a full table against them",
+            )
             return
         }
         if (message.twoHeadedGiant && message.momirBasic) {

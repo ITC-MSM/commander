@@ -389,9 +389,29 @@ sealed, or premade), then one N-player game".
 
 - **`CreateTournamentLobby` / `UpdateLobbySettings`** gain an optional `gameMode` (default
   `TOURNAMENT`). `LobbySettings.gameMode` echoes it. Switching a lobby to `FREE_FOR_ALL` caps
-  `maxPlayers` at 6 and rejects AI seats (the built-in AI is 1v1-only; FFA pods are humans-only).
-  `TWO_HEADED_GIANT` and `TEAM_VS_TEAM` are the two **team** modes (see below); both also reject AI
-  seats and share the single-pod FFA lifecycle (one `GameSession`, play-again, standings).
+  `maxPlayers` at 6. `TWO_HEADED_GIANT` and `TEAM_VS_TEAM` are the two **team** modes (see below);
+  both share the single-pod FFA lifecycle (one `GameSession`, play-again, standings).
+- **AI seats at a pod.** `AddAiToLobby` works in every mode and every format: an AI is an ordinary
+  seat, counted by the mode's own cap, and the engine AI reads a pod as N opposing sides
+  (`ai/engine/Sides.kt`) and a 2HG team's pooled life as one total. `FreeForAllHandler` wires each AI
+  seat to the pod's `GameSession` when the game starts and marks them ready between games, so only
+  the humans are ever waited on. Where the AI's deck comes from follows the format: a generated pool
+  is built by `buildAiSealedDeck`, and `PREMADE_DECKS` — which generates no pool — has one rolled by
+  `RandomDeckResolver` at the moment the AI sits down, the same component and the same rule the quick
+  lobby's `vsAi` seat has always used. Changing the lobby's format or `deckFormat` afterwards
+  re-rolls it, since both decide what may be in it.
+- **`SetLobbyAiDeck { playerId, spec }`** is the per-seat twin of `SetQuickGameAiDeck`: the host picks
+  what *one* AI brings, in the same `AiDeckSpec` vocabulary (`auto` / `sets` / `deck`). Held per seat
+  on `LobbyPlayerState.aiDeckSpec` and echoed back as `LobbyPlayerInfo.aiDeck` — an `AiDeckSpecView`
+  summary (kind, sets, label, card count), never the decklist itself, since lobby state re-broadcasts
+  on every change. A `deck` list is validated against the lobby's `deckFormat` on arrival, and the
+  seat's deck is re-rolled immediately rather than at game start: the premade start gate wants every
+  seat to have submitted, so the deck has to exist while the host is still looking at the lobby.
+  Rejected outside `PREMADE_DECKS`, where the AI builds from the pool it was dealt.
+- **The one axis that still refuses an AI is Rules.** No generator the AI deckbuilds with picks a
+  commander, so `handleAddAiToLobby` rejects a lobby running Commander rules and
+  `UpdateLobbySettings` rejects switching a lobby that holds an AI onto them — refused at the change
+  rather than at Start, which would leave a pod that silently declines to begin.
 - **Attack rule.** The same two messages also carry an optional `attackMode` (default `MULTIPLE`),
   echoed by `LobbySettings.attackMode`, choosing which opponents creatures may attack in the FFA
   game (CR 802 / 803; CR 806.2b requires exactly one): `MULTIPLE` (any opponent), `LEFT`, or

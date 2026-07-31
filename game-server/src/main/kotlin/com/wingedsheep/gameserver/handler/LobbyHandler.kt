@@ -3,6 +3,7 @@ package com.wingedsheep.gameserver.handler
 import com.wingedsheep.gameserver.ai.AiGameManager
 import com.wingedsheep.gameserver.ai.AiWebSocketSession
 import com.wingedsheep.gameserver.handler.ConnectionHandler.Companion.cardToSealedCardInfo
+import com.wingedsheep.gameserver.lobby.AiDeckSpec
 import com.wingedsheep.gameserver.lobby.LobbyGameMode
 import com.wingedsheep.gameserver.lobby.LobbyState
 import com.wingedsheep.gameserver.lobby.commanderRulesTableConflict
@@ -59,6 +60,7 @@ class LobbyHandler(
     private val tournamentMatchHandler: TournamentMatchHandler,
     private val freeForAllHandler: FreeForAllHandler,
     private val deckValidator: DeckValidator,
+    private val randomDeckResolver: com.wingedsheep.gameserver.ai.RandomDeckResolver,
     private val tournamentResultSink: com.wingedsheep.gameserver.stats.TournamentResultSink
 ) {
     private val logger = LoggerFactory.getLogger(LobbyHandler::class.java)
@@ -102,15 +104,13 @@ class LobbyHandler(
                             launchAiDeckBuilding(lobby)
                             resumedDeckBuilding++
                         } else {
-                            // All AI decks already submitted — make sure the tournament progresses.
-                            val tournament = tournamentMatchHandler.ensureTournamentCreated(lobby)
-                            tournamentMatchHandler.autoReadyAiPlayers(lobby, tournament)
+                            // All AI decks already submitted — make sure the lobby progresses.
+                            resumeAiReadiness(lobby)
                             resumedAutoReady++
                         }
                     }
                     LobbyState.TOURNAMENT_ACTIVE -> {
-                        val tournament = tournamentMatchHandler.ensureTournamentCreated(lobby)
-                        tournamentMatchHandler.autoReadyAiPlayers(lobby, tournament)
+                        resumeAiReadiness(lobby)
                         resumedAutoReady++
                     }
                     else -> { /* nothing to resume in WAITING_FOR_PLAYERS / DRAFTING / TOURNAMENT_COMPLETE */ }
@@ -124,6 +124,20 @@ class LobbyHandler(
             logger.info("Resumed AI tournament work: {} deckbuilding, {} auto-ready",
                 resumedDeckBuilding, resumedAutoReady)
         }
+    }
+
+    /**
+     * Re-arm whatever "the AI is waiting on nobody" means for this lobby's shape, after a restart
+     * rebuilt its AI identities. A bracket consults its pairings; a pod has none, so its AI seats
+     * are simply ready and the next game starts when the humans are.
+     */
+    private fun resumeAiReadiness(lobby: TournamentLobby) {
+        if (lobby.isFreeForAll) {
+            freeForAllHandler.autoReadyAiSeats(lobby)
+            return
+        }
+        val tournament = tournamentMatchHandler.ensureTournamentCreated(lobby)
+        tournamentMatchHandler.autoReadyAiPlayers(lobby, tournament)
     }
 
     @Volatile
@@ -147,6 +161,7 @@ class LobbyHandler(
             is ClientMessage.UpdateLobbySettings -> handleUpdateLobbySettings(session, message)
             is ClientMessage.AddAiToLobby -> handleAddAiToLobby(session)
             is ClientMessage.RemoveAiFromLobby -> handleRemoveAiFromLobby(session, message)
+            is ClientMessage.SetLobbyAiDeck -> handleSetLobbyAiDeck(session, message)
             is ClientMessage.SpectateGame -> spectatingHandler.handleSpectateGame(session, message)
             is ClientMessage.StopSpectating -> spectatingHandler.handleStopSpectating(session)
             else -> {}
@@ -1360,8 +1375,13 @@ class LobbyHandler(
                 gridDraftHandler.startGridDraftTimer(lobby)
             }
             TournamentFormat.PREMADE_DECKS -> {
-                // Players brought their own decks during WAITING_FOR_PLAYERS.
-                // Require every (human) player to have submitted before the host can start.
+                // Players brought their own decks during WAITING_FOR_PLAYERS; an AI seat is dealt a
+                // generated one when it sits down. Re-asking here is the backstop for a seat whose
+                // generation failed, so a transient miss costs a retry rather than the lobby.
+                lobby.players.keys.filter { aiGameManager.isAiPlayer(it) }
+                    .forEach { ensureAiPremadeDeck(lobby, it) }
+
+                // Require every player to have submitted before the host can start.
                 val missing = lobby.players.values.filter { !it.hasSubmittedDeck }
                 if (missing.isNotEmpty()) {
                     val names = missing.joinToString(", ") { it.identity.playerName }
@@ -1441,27 +1461,23 @@ class LobbyHandler(
             return
         }
 
-        if (lobby.format == TournamentFormat.PREMADE_DECKS) {
+        if (lobby.usesCommanderRules) {
+            // Every other deck source the AI has is a generator, and none of them build a commander
+            // deck: `RandomDeckResolver` declines commander shapes rather than ship an illegal
+            // 100-card approximation, and `buildAiSealedDeck` never picks a commander out of a pool.
+            // A seat with no commander cannot start a Commander game (FreeForAllHandler.maybeStartGame
+            // refuses the pod), so this is refused here, where the host can still read why.
             sender.sendError(
                 session,
                 ErrorCode.INVALID_ACTION,
-                "AI opponents are not supported in Premade Decks tournaments yet"
-            )
-            return
-        }
-
-        if (lobby.isFreeForAll) {
-            // The built-in AI is deeply 1v1 (multiplayer.md "AI seats: deferred") — FFA pods are humans-only.
-            sender.sendError(
-                session,
-                ErrorCode.INVALID_ACTION,
-                "AI opponents are not supported in Free-for-All games yet"
+                "The AI can't build a Commander deck yet — switch the Rules axis off Commander to seat one"
             )
             return
         }
 
         val aiIdentity = aiGameManager.createAiIdentity()
         lobby.addPlayer(aiIdentity)
+        ensureAiPremadeDeck(lobby, aiIdentity.playerId)
         lobbyRepository.saveLobby(lobby)
 
         logger.info("AI player ${aiIdentity.playerName} (${aiIdentity.playerId.value}) added to lobby $lobbyId")
@@ -1519,6 +1535,128 @@ class LobbyHandler(
     }
 
     /**
+     * Host picks what one AI seat plays.
+     *
+     * The per-seat twin of [QuickGameLobbyHandler.handleSetAiDeck], and deliberately the same three
+     * answers: let the server decide, pin the pool to some sets, or hand it an exact list. Storing
+     * the spec and re-rolling immediately (rather than resolving at game start, as the quick lobby
+     * does) is what the premade start gate requires — it wants every seat to have submitted, so the
+     * seat's deck has to exist while the host is still looking at the lobby.
+     */
+    private fun handleSetLobbyAiDeck(session: WebSocketSession, message: ClientMessage.SetLobbyAiDeck) {
+        val (identity, lobby) = ctx.getIdentityAndLobby(session) ?: return
+
+        if (!lobby.isHost(identity.playerId)) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Only the host can choose an AI's deck")
+            return
+        }
+        if (lobby.state != LobbyState.WAITING_FOR_PLAYERS) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Can only change an AI's deck while waiting for players")
+            return
+        }
+        if (lobby.format != TournamentFormat.PREMADE_DECKS) {
+            // Not a silent no-op: in a limited lobby the AI plays the cards it was dealt, and a host
+            // who picked a deck for it should be told that is not how this format works.
+            sender.sendError(
+                session,
+                ErrorCode.INVALID_ACTION,
+                "The AI builds its deck from the pool it is dealt in this format — pick Bring a deck to choose one for it"
+            )
+            return
+        }
+
+        val aiPlayerId = EntityId(message.playerId)
+        val playerState = lobby.players[aiPlayerId]
+        if (playerState == null || !aiGameManager.isAiPlayer(aiPlayerId)) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "No such AI player in this lobby")
+            return
+        }
+
+        // A fixed list is refused at the point the host chooses it rather than seated and found
+        // illegal later; sets are only checked for existence, since whether the pool can carry a
+        // deck is the resolver's problem and it falls back rather than fails.
+        val spec = message.spec
+        if (spec is AiDeckSpec.Fixed) {
+            if (spec.deckList.isEmpty()) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "The AI's deck is empty")
+                return
+            }
+            val validation = deckValidator.validate(spec.deckList, lobby.deckFormat)
+            if (!validation.valid) {
+                val reason = validation.errors.firstOrNull()?.message ?: "Deck is not legal"
+                sender.sendError(session, ErrorCode.INVALID_DECK, "AI deck rejected: $reason")
+                return
+            }
+        }
+
+        playerState.aiDeckSpec = spec
+        lobby.discardSubmittedDeck(aiPlayerId)
+        ensureAiPremadeDeck(lobby, aiPlayerId)
+        lobbyRepository.saveLobby(lobby)
+
+        logger.info("Host set AI {} deck to {} in lobby {}", aiPlayerId.value, spec::class.simpleName, lobby.lobbyId)
+        ctx.broadcastLobbyUpdate(lobby)
+    }
+
+    /**
+     * Roll a deck for an AI seat in a **premade-decks** lobby, the way a quick game already does.
+     *
+     * Premade decks is the one format with no pool for [buildAiSealedDeck] to work from, which is
+     * why AI seats used to be refused here outright. But a seat that has to bring a deck and has
+     * none is exactly the quick lobby's `vsAi` seat, and that has always been answered by generating
+     * one — [com.wingedsheep.gameserver.ai.RandomDeckResolver] builds to the lobby's deck-legality
+     * axis when it has one and opens a sealed pool otherwise. Reusing it here means a premade lobby
+     * seats an AI under the same rule as a quick game, rather than under a second one.
+     *
+     * What it plays is the host's answer for *that seat* ([LobbyPlayerState.aiDeckSpec]), defaulting
+     * to Auto; the lobby's own set selection stands in for the quick lobby's "the same set as the
+     * human". Only ever generates for a seat that has no deck, so it is safe to call repeatedly.
+     */
+    private fun ensureAiPremadeDeck(lobby: TournamentLobby, aiPlayerId: EntityId) {
+        if (lobby.format != TournamentFormat.PREMADE_DECKS) return
+        val playerState = lobby.players[aiPlayerId] ?: return
+        if (playerState.hasSubmittedDeck) return
+
+        val deck = runCatching {
+            randomDeckResolver.resolve(playerState.aiDeckSpec, lobby.deckFormat, lobby.setCodes)
+        }
+            .onFailure { logger.error("Could not generate a deck for AI seat ${aiPlayerId.value}", it) }
+            .getOrNull() ?: return
+
+        when (val result = lobby.submitDeck(aiPlayerId, deck)) {
+            is TournamentLobby.DeckSubmissionResult.Success ->
+                logger.info(
+                    "AI {} brought a generated {} deck ({} cards) to premade lobby {}",
+                    playerState.identity.playerName,
+                    lobby.deckFormat?.displayName ?: "sealed",
+                    deck.values.sum(),
+                    lobby.lobbyId,
+                )
+            is TournamentLobby.DeckSubmissionResult.Error ->
+                logger.warn("Generated AI deck rejected in lobby ${lobby.lobbyId}: ${result.message}")
+        }
+    }
+
+    /**
+     * Keep every AI seat's deck consistent with the shape the lobby now has.
+     *
+     * The host can change the format or the deck-legality axis after seating an AI, and either
+     * makes the deck it is holding wrong: a generated premade deck built to no restriction is not
+     * legal under a restriction the host adds afterwards, and it has no business surviving a switch
+     * to a limited format, where the AI must build from the pool it is dealt like everyone else.
+     * Dropping it and re-rolling covers both, and touches only AI seats — a human's submitted deck
+     * is theirs to resubmit.
+     */
+    private fun resyncAiDecks(lobby: TournamentLobby) {
+        for (aiPlayerId in lobby.players.keys.filter { aiGameManager.isAiPlayer(it) }) {
+            lobby.discardSubmittedDeck(aiPlayerId)
+            // A no-op outside premade decks, which is the point: in a limited lobby the AI now has
+            // no deck and builds one from the pool it gets dealt, like every other seat.
+            ensureAiPremadeDeck(lobby, aiPlayerId)
+        }
+    }
+
+    /**
      * Launch AI deck building in a background coroutine so it doesn't block the
      * host's WebSocket handler thread. LLM deckbuilding can take 30+ seconds,
      * and blocking would prevent the human player from submitting their own deck.
@@ -1547,16 +1685,28 @@ class LobbyHandler(
                 }
             }
 
-            // After AI decks are built, broadcast updated lobby state and handle tournament readiness
+            // After AI decks are built, broadcast updated lobby state and handle readiness
             ctx.broadcastLobbyUpdate(lobby)
 
             if (lobby.allDecksSubmitted() && lobby.state == LobbyState.DECK_BUILDING) {
                 lobby.activateTournament()
             }
 
-            // Create tournament if needed and auto-ready AI players
-            val tournament = tournamentMatchHandler.ensureTournamentCreated(lobby)
-            tournamentMatchHandler.autoReadyAiPlayers(lobby, tournament)
+            if (lobby.isFreeForAll) {
+                // A pod has no bracket to build — the last deck in *is* the start signal, exactly as
+                // it is when the last human submits (handleSubmitSealedDeck). Routing an FFA lobby
+                // through ensureTournamentCreated would stand up a TournamentManager it never uses
+                // and leave the game unstarted whenever the AI happened to submit last.
+                // maybeStartGame carries its own preconditions, so it is safe to ask every time.
+                val lock = ctx.roundLocks.computeIfAbsent(lobby.lobbyId) { Any() }
+                synchronized(lock) {
+                    freeForAllHandler.maybeStartGame(lobby)
+                }
+            } else {
+                // Create tournament if needed and auto-ready AI players
+                val tournament = tournamentMatchHandler.ensureTournamentCreated(lobby)
+                tournamentMatchHandler.autoReadyAiPlayers(lobby, tournament)
+            }
             lobbyRepository.saveLobby(lobby)
         }
     }
@@ -2058,6 +2208,11 @@ class LobbyHandler(
             return
         }
 
+        // What an AI seat's generated deck was built for. Compared at the end: these two axes are
+        // the ones that decide what such a deck may contain, so a change to either invalidates it.
+        val formatBefore = lobby.format
+        val deckFormatBefore = lobby.deckFormat
+
         // Cube settings are a full replacement, like the ban list. Resolve immediately so an
         // unplayable list never becomes lobby state. Empty returns to catalogued-set mode.
         message.cubeCards?.let { rawNames ->
@@ -2240,11 +2395,27 @@ class LobbyHandler(
             return
         }
 
+        // Rules × AI seats, the other direction of the check `handleAddAiToLobby` makes: none of the
+        // AI's deck generators produce a commander, so a lobby holding an AI cannot switch its Rules
+        // axis to Commander. Refused here, before anything is written, rather than at Start — where
+        // the pod would simply decline to begin with no way for the host to see why.
+        if (nextRules.usesCommanders && !lobby.usesCommanderRules &&
+            lobby.players.keys.any { aiGameManager.isAiPlayer(it) }
+        ) {
+            sender.sendError(
+                session,
+                ErrorCode.INVALID_ACTION,
+                "The AI can't build a Commander deck yet — remove the AI players first"
+            )
+            return
+        }
+
         lobby.deckFormat = nextDeckFormat
         lobby.rules = nextRules
 
-        // Game-mode switch (mode axis is orthogonal to format). Switching to FREE_FOR_ALL caps the
-        // pod at 6 seats and requires a humans-only roster (AI pod players are a deferred project).
+        // Game-mode switch (mode axis is orthogonal to format). Each multiplayer mode caps the pod
+        // at its own seat count; AI seats are ordinary seats here and count toward those caps, so
+        // switching modes with AI in the lobby needs no separate check.
         message.gameMode?.let { modeStr ->
             val newMode = runCatching { LobbyGameMode.valueOf(modeStr.uppercase()) }.getOrNull()
             if (newMode == null) {
@@ -2255,17 +2426,6 @@ class LobbyHandler(
                 // Rules × Table is already settled above, against the mode this message is switching
                 // to — checked there rather than here so the deck-legality route through the same
                 // conflict is covered by the same line.
-                if (newMode != LobbyGameMode.TOURNAMENT) {
-                    if (lobby.players.keys.any { aiGameManager.isAiPlayer(it) }) {
-                        val label = when (newMode) {
-                            LobbyGameMode.TWO_HEADED_GIANT -> "Two-Headed Giant"
-                            LobbyGameMode.TEAM_VS_TEAM -> "Team vs. Team"
-                            else -> "Free-for-All"
-                        }
-                        sender.sendError(session, ErrorCode.INVALID_ACTION, "$label doesn't support AI players yet — remove them first")
-                        return
-                    }
-                }
                 when (newMode) {
                     // Two teams of two — always exactly four seats.
                     LobbyGameMode.TWO_HEADED_GIANT -> if (lobby.playerCount > 4) {
@@ -2383,6 +2543,13 @@ class LobbyHandler(
         // Ranked only applies to a TOURNAMENT-mode bracket (1v1 matches); a mode switch in this same
         // update — or one that landed earlier — forces it back off.
         if (!lobby.rankedEligible) lobby.ranked = false
+
+        // Re-roll AI decks only when this message actually moved one of the two axes that decide
+        // what may be in them — otherwise toggling an unrelated setting would deal the AI a
+        // different deck each time the host touched the lobby.
+        if (lobby.format != formatBefore || lobby.deckFormat != deckFormatBefore) {
+            resyncAiDecks(lobby)
+        }
 
         ctx.broadcastLobbyUpdate(lobby)
         lobbyRepository.saveLobby(lobby)

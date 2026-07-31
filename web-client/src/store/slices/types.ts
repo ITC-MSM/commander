@@ -915,6 +915,8 @@ export type GameStore = {
   leaveLobby: () => void
   addAiToLobby: () => void
   removeAiFromLobby: (playerId: string) => void
+  /** Host picks what one AI seat plays (premade-decks lobbies — elsewhere it builds from its pool). */
+  setLobbyAiDeck: (playerId: string, spec: AiDeckSpec) => void
   stopLobby: () => void
   updateLobbySettings: (settings: LobbySettingsUpdate) => void
   /** Disconnected tournament players: playerId -> info */

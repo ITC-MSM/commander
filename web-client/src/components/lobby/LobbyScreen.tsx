@@ -28,6 +28,7 @@ import { FullscreenButton } from '../ui/FullscreenButton'
 import { JoinQrModal } from '../ui/JoinQrModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import { AiDeckSection, AiOpponentRow, initialAiSource, type AiDeckSource } from './AiOpponentPanel'
+import { LobbyAiDeckModal, aiDeckSummary } from './LobbyAiDeckModal'
 import {
   CardsAxisBody,
   CardsAxisStrip,
@@ -79,6 +80,8 @@ export function LobbyScreen() {
   // deck" picker renders outside the settings panel the row lives in (see `AiDeckSection`).
   const [aiSource, setAiSource] = useState<AiDeckSource>(() => initialAiSource(quickLobby?.aiDeck))
   const [pendingRecreate, setPendingRecreate] = useState<RecreateSpec | null>(null)
+  /** Which AI seat's deck the host is choosing, by player id. Null = the modal is closed. */
+  const [aiDeckSeat, setAiDeckSeat] = useState<string | null>(null)
   // Which saved deck is loaded, by name — the identity `onDeckChange`'s card list can't carry, and
   // the one thing a setup needs in order to bring the same deck back. See `lobbyRecipe.ts`.
   const [savedDeckName, setSavedDeckName] = useState<string | null>(null)
@@ -279,6 +282,17 @@ export function LobbyScreen() {
                 {player.isHost && <span className={styles.hostBadge}>Host</span>}
               </div>
               <div className={styles.playerActions}>
+                {/* The AI's deck is the host's to pick only where the lobby deals it no pool; the
+                    view model already answers that by leaving `aiDeck` null everywhere else. */}
+                {view.isWaiting && view.isHost && player.isAi && player.aiDeck && (
+                  <button
+                    onClick={() => setAiDeckSeat(player.playerId)}
+                    className={styles.settingsButton}
+                    title={`Choose what ${player.name} plays`}
+                  >
+                    {aiDeckSummary(player.aiDeck)}
+                  </button>
+                )}
                 <span className={`${styles.playerStatus} ${statusClass(player.tone)}`}>{player.status}</span>
                 {view.isWaiting && view.isHost && player.isAi && view.kind === 'TOURNAMENT' && (
                   <button
@@ -407,6 +421,22 @@ export function LobbyScreen() {
           <p className={styles.waitingHint}>Waiting for host to start the game...</p>
         )}
       </div>
+
+      {aiDeckSeat && (() => {
+        // Read the seat back out of the view each render rather than closing over it: the roster is
+        // re-broadcast on every change, and a seat removed while its modal is open must close it.
+        const seat = view.players.find((p) => p.playerId === aiDeckSeat && p.isAi && p.aiDeck)
+        if (!seat) return null
+        return (
+          <LobbyAiDeckModal
+            playerId={seat.playerId}
+            playerName={seat.name}
+            aiDeck={seat.aiDeck ?? null}
+            format={lobbyState?.settings.deckFormat ?? null}
+            onClose={() => setAiDeckSeat(null)}
+          />
+        )
+      })()}
 
       {savingSetup && (
         <SaveSetupDialog

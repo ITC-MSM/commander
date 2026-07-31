@@ -217,6 +217,16 @@ data class LobbyPlayerState(
      * validator both rely on this invariant.
      */
     var commander: String? = null,
+    /**
+     * For an AI seat: what the host chose for it to play — the same [AiDeckSpec] vocabulary the
+     * quick lobby's single AI seat uses, held per seat because a pod has several and there is no
+     * reason they should all bring the same thing.
+     *
+     * Only consulted where the AI has no pool to build from ([TournamentFormat.PREMADE_DECKS]); in
+     * a limited lobby the deck comes from the cards it was dealt, which is the format working as
+     * intended and not something to override. Ignored entirely on a human seat.
+     */
+    var aiDeckSpec: AiDeckSpec = AiDeckSpec.Auto,
 ) {
     val hasSubmittedDeck: Boolean get() = submittedDeck != null
     /** Total number of packs held by this player (current + queued). */
@@ -1692,20 +1702,31 @@ class TournamentLobby(
             return false
         }
 
-        val playerState = players[playerId] ?: return false
-
-        if (!playerState.hasSubmittedDeck) {
+        if (players[playerId]?.hasSubmittedDeck != true) {
             return false // Nothing to unsubmit
         }
 
-        // Clear deck and ready state
+        discardSubmittedDeck(playerId)
+        return true
+    }
+
+    /**
+     * Drop [playerId]'s submitted deck and ready state, whatever state the lobby is in.
+     *
+     * [unsubmitDeck] is the player-facing action and is gated on the lobby being at a point where
+     * *they* may change their mind. This is the same clearing without that question, for a deck the
+     * lobby itself has just invalidated — a generated AI deck after the host changes the format or
+     * the deck-legality axis out from under it, where the gate would refuse and leave the seat
+     * holding a deck built for a lobby that no longer exists.
+     */
+    internal fun discardSubmittedDeck(playerId: EntityId) {
+        val playerState = players[playerId] ?: return
         players[playerId] = playerState.copy(
             submittedDeck = null,
             submittedSideboard = emptyMap(),
             commander = null,
         )
         playersReadyForNextRound.remove(playerId)
-        return true
     }
 
     /**
@@ -1797,7 +1818,10 @@ class TournamentLobby(
                 isHost = isHost(ps.identity.playerId),
                 isConnected = ps.identity.isConnected,
                 deckSubmitted = ps.hasSubmittedDeck,
-                isAi = isAiPlayer(ps.identity.playerId)
+                isAi = isAiPlayer(ps.identity.playerId),
+                // Summary only — never the decklist itself. Lobby state is re-broadcast on every
+                // change, and the only thing the seat's row renders is a label and a card count.
+                aiDeck = if (isAiPlayer(ps.identity.playerId)) AiDeckSpecView.of(ps.aiDeckSpec) else null,
             )
         }
 

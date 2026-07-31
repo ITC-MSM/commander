@@ -15,13 +15,13 @@
  * `useLobbyCommands.ts`.
  */
 import type { LobbyState } from '@/store/slices/types'
-import type { QuickGameLobbyStateMessage } from '@/types'
+import type { AiDeckSpecView, QuickGameLobbyStateMessage } from '@/types'
 import type { DeckPickerTab } from '../ui/DeckPicker'
 import {
   axesFromLobbySettings,
   axesFromQuickGameLobby,
+  commanderAiBlock,
   effectiveCommanderPreset,
-  isCommanderLimited,
   rulesFromLobbySettings,
   rulesTableBlock,
   tableFromGameMode,
@@ -43,6 +43,11 @@ export interface LobbyViewPlayer {
   /** Right-hand status text — "Deck Ready", "Choosing deck…", "✓ Ready · Custom (60)". */
   status: string
   tone: 'ready' | 'joined' | 'disconnected'
+  /**
+   * For an AI seat: what the host chose for it to play, or null where the choice doesn't exist —
+   * on a human seat, and in a lobby whose format deals the AI a pool to build from.
+   */
+  aiDeck?: AiDeckSpecView | null
 }
 
 /**
@@ -219,8 +224,11 @@ export function fromTournamentLobby(
   const playerCount = lobbyState.players.length
   const isWinston = s.format === 'WINSTON_DRAFT'
   const isGridDraft = s.format === 'GRID_DRAFT'
-  const isFfa = s.gameMode === 'FREE_FOR_ALL'
   const maxPlayers = isWinston ? 2 : isGridDraft ? 4 : (s.maxPlayers || 8)
+
+  // The AI's deck is only the host's to pick where the format doesn't deal it a pool; everywhere
+  // else it builds from the cards it drafted or opened, which is the format working as intended.
+  const aiDeckIsChosen = s.format === 'PREMADE_DECKS'
 
   const players = lobbyState.players.map((p): LobbyViewPlayer => ({
     playerId: p.playerId,
@@ -231,6 +239,7 @@ export function fromTournamentLobby(
     isConnected: p.isConnected,
     status: !p.isConnected ? 'Disconnected' : p.deckSubmitted ? 'Deck Ready' : 'Joined',
     tone: !p.isConnected ? 'disconnected' : p.deckSubmitted ? 'ready' : 'joined',
+    aiDeck: p.isAi && aiDeckIsChosen ? (p.aiDeck ?? { kind: 'auto' }) : null,
   }))
 
   const blockReason = startBlockReason(lobbyState)
@@ -258,11 +267,13 @@ export function fromTournamentLobby(
       : null,
     blockGroup: blockReason?.group ?? null,
     isPublic: s.isPublic,
-    // Commander limited excluded: `buildAiSealedDeck` submits a 40-card deck with no commander, and
-    // `TournamentLobby.validateDeck` doesn't check for one — so the AI would sit down without a
-    // commander rather than be rejected. `LobbyScreen` hides the button; the wizard says why.
-    canAddAi: isWaiting && lobbyState.isHost && opts.aiEnabled && !isFfa
-      && !isCommanderLimited(axes.cards) && playerCount < maxPlayers,
+    // Neither the Table nor the Cards axis narrows this any more: an AI takes a pod seat like anyone
+    // else, and a premade lobby deals it a generated deck the way a quick game always has. The one
+    // axis that still refuses — the server's own `handleAddAiToLobby` rejection — is Rules: none of
+    // the AI's deck generators picks a commander, so it would sit down at a Commander table without
+    // one. `LobbyScreen` hides the button; `LobbyAxes` says why from the other direction.
+    canAddAi: isWaiting && lobbyState.isHost && opts.aiEnabled
+      && commanderAiBlock(axes.rules) === null && playerCount < maxPlayers,
     // Ranked is a 1v1-bracket-only concept server-side (`TournamentLobby.rankedEligible`).
     ranked: { available: axes.table === 'ONE_V_ONE', on: s.ranked ?? false },
     teams: tournamentTeams(lobbyState),

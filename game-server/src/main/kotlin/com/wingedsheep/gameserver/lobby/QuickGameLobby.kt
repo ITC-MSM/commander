@@ -46,7 +46,10 @@ class QuickGameLobby(
     /**
      * When true this is a Two-Headed Giant lobby (CR 810): four seats forming two teams of two
      * (join order 0+1 vs 2+3), played under [com.wingedsheep.sdk.core.Format.TwoHeadedGiant].
-     * Fixed at creation. Human-only (the built-in AI is not team-aware yet — Phase 8).
+     * Fixed at creation. Human-only, because a quick lobby seats at most one AI ([vsAi] is a
+     * boolean, not a count) and 2HG needs three of them to fill the table. Not an AI limitation:
+     * the engine AI plays a team format (`ai/engine/Sides.kt` reads a team's pooled life as one
+     * total), and a Two-Headed Giant *tournament* lobby seats AI teammates and opponents today.
      */
     val twoHeadedGiant: Boolean = false,
     /**

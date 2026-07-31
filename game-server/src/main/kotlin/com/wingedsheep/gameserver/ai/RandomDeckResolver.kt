@@ -62,6 +62,28 @@ class RandomDeckResolver(
     }
 
     /**
+     * An AI seat's deck in a tournament lobby, where the lobby's own set selection stands in for the
+     * quick lobby's "the same set as the human" and an empty selection means any set rather than a
+     * failure. Same three answers, same order of preference — the two lobby kinds differ only in
+     * where the fallback set comes from.
+     */
+    fun resolve(spec: AiDeckSpec, format: DeckFormat?, setCodes: List<String>): Map<String, Int> =
+        resolve(spec, format, fallbackSetFrom(setCodes))
+
+    /**
+     * A generated deck for a seat that pinned no set of its own — [resolve] without a spec, for the
+     * seats that never had one to state.
+     */
+    fun randomDeck(format: DeckFormat?, setCodes: List<String>): Map<String, Int> {
+        val pinned = setCodes.filter { it.isNotBlank() }
+        return randomDeck(format, pinned, fallbackSetFrom(pinned))
+    }
+
+    /** The set to open boosters from when nothing pinned one: the lobby's first, else any set. */
+    private fun fallbackSetFrom(setCodes: List<String>): String =
+        setCodes.firstOrNull { it.isNotBlank() } ?: sealedDeckGenerator.randomSetCode()
+
+    /**
      * A generated deck for a seat with no submitted list, honouring the lobby's [format].
      *
      * @param format the lobby's deck-format restriction, or null for none.

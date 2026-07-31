@@ -416,7 +416,13 @@ sealed interface ServerMessage {
         val isHost: Boolean,
         val isConnected: Boolean,
         val deckSubmitted: Boolean = false,
-        val isAi: Boolean = false
+        val isAi: Boolean = false,
+        /**
+         * For an AI seat: a summary of what the host chose for it to play, so the row re-hydrates
+         * after a reconnect. Null on a human seat, and never the decklist itself — see
+         * [com.wingedsheep.gameserver.lobby.AiDeckSpecView].
+         */
+        val aiDeck: com.wingedsheep.gameserver.lobby.AiDeckSpecView? = null,
     )
 
     /**
