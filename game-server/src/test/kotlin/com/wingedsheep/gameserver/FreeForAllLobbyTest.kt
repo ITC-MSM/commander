@@ -410,7 +410,7 @@ class FreeForAllLobbyTest : FunSpec() {
             }
         }
 
-        test("a Commander lobby refuses AI seats — no generator it builds with picks a commander") {
+        test("a Commander premade lobby seats an AI once the host chooses its commander deck") {
             val host = createClient()
             host.connectAs("Commander Host")
             host.send(ClientMessage.CreateTournamentLobby(
@@ -425,14 +425,28 @@ class FreeForAllLobbyTest : FunSpec() {
             }
 
             host.send(ClientMessage.AddAiToLobby)
-            eventually(5.seconds) {
-                host.messages.filterIsInstance<ServerMessage.Error>()
-                    .any { it.message.contains("Commander") } shouldBe true
+            eventually(10.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 2
             }
-            host.latestLobbyUpdate()?.players?.size shouldBe 1
+            val ai = host.latestLobbyUpdate()!!.players.first { it.isAi }
+            ai.deckSubmitted shouldBe false
+
+            host.send(ClientMessage.SetLobbyAiDeck(
+                playerId = ai.playerId,
+                spec = com.wingedsheep.gameserver.lobby.AiDeckSpec.Fixed(
+                    deckList = mapOf("Plains" to 99),
+                    label = "Zetalpa",
+                    commander = "Zetalpa, Primal Dawn",
+                ),
+            ))
+            eventually(10.seconds) {
+                host.latestLobbyUpdate()?.players?.first { it.isAi }?.deckSubmitted shouldBe true
+            }
+            host.latestLobbyUpdate()?.players?.first { it.isAi }?.aiDeck?.commander shouldBe
+                "Zetalpa, Primal Dawn"
         }
 
-        test("a lobby holding an AI refuses the switch to Commander rules, rather than failing to start") {
+        test("a premade lobby holding an AI can switch to Commander and waits for its commander deck") {
             val host = createClient()
             host.connectAs("Rules Switch Host")
             host.send(ClientMessage.CreateTournamentLobby(
@@ -451,11 +465,9 @@ class FreeForAllLobbyTest : FunSpec() {
 
             host.send(ClientMessage.UpdateLobbySettings(rules = "COMMANDER"))
             eventually(5.seconds) {
-                host.messages.filterIsInstance<ServerMessage.Error>()
-                    .any { it.message.contains("Commander") } shouldBe true
+                host.latestLobbyUpdate()?.settings?.rules shouldBe "COMMANDER"
             }
-            // Refused before anything was written: the lobby is still the one the host had.
-            host.latestLobbyUpdate()?.settings?.rules shouldBe "STANDARD"
+            host.latestLobbyUpdate()?.players?.first { it.isAi }?.deckSubmitted shouldBe false
         }
 
         test("a sealed FFA pod of one human and two AI builds its decks, starts, and the AI plays") {

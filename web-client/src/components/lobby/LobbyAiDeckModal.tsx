@@ -82,13 +82,21 @@ export function LobbyAiDeckModal({
   // Deduped like the human picker's submission path: DeckPicker re-emits its current deck on every
   // render, and each send costs a re-roll and a lobby broadcast.
   const handleDeckChange = useCallback(
-    (deckList: Record<string, number>) => {
+    (deckList: Record<string, number>, commander?: string | null) => {
       const total = Object.values(deckList).reduce((a, b) => a + b, 0)
       if (total === 0) return
-      const key = Object.entries(deckList).sort().map(([n, c]) => `${n}:${c}`).join('|')
+      const key = `${Object.entries(deckList).sort().map(([n, c]) => `${n}:${c}`).join('|')}|${commander ?? ''}`
       if (key === lastDeckKeyRef.current) return
       lastDeckKeyRef.current = key
-      setLobbyAiDeck(playerId, { type: 'deck', deckList, label: 'Chosen deck' } satisfies AiDeckSpec)
+      setLobbyAiDeck(
+        playerId,
+        {
+          type: 'deck',
+          deckList,
+          label: 'Chosen deck',
+          commander: commander ?? null,
+        } satisfies AiDeckSpec,
+      )
     },
     [playerId, setLobbyAiDeck],
   )

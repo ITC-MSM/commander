@@ -1461,16 +1461,11 @@ class LobbyHandler(
             return
         }
 
-        if (lobby.usesCommanderRules) {
-            // Every other deck source the AI has is a generator, and none of them build a commander
-            // deck: `RandomDeckResolver` declines commander shapes rather than ship an illegal
-            // 100-card approximation, and `buildAiSealedDeck` never picks a commander out of a pool.
-            // A seat with no commander cannot start a Commander game (FreeForAllHandler.maybeStartGame
-            // refuses the pod), so this is refused here, where the host can still read why.
+        if (lobby.usesCommanderRules && lobby.format != TournamentFormat.PREMADE_DECKS) {
             sender.sendError(
                 session,
                 ErrorCode.INVALID_ACTION,
-                "The AI can't build a Commander deck yet — switch the Rules axis off Commander to seat one"
+                "The AI can't build a Commander deck from a limited pool yet — use Bring a deck to choose one for it"
             )
             return
         }
@@ -1581,7 +1576,7 @@ class LobbyHandler(
                 sender.sendError(session, ErrorCode.INVALID_ACTION, "The AI's deck is empty")
                 return
             }
-            val validation = deckValidator.validate(spec.deckList, lobby.deckFormat)
+            val validation = validateAiDeck(spec, lobby.deckFormat, lobby.usesCommanderRules)
             if (!validation.valid) {
                 val reason = validation.errors.firstOrNull()?.message ?: "Deck is not legal"
                 sender.sendError(session, ErrorCode.INVALID_DECK, "AI deck rejected: $reason")
@@ -1616,6 +1611,11 @@ class LobbyHandler(
         if (lobby.format != TournamentFormat.PREMADE_DECKS) return
         val playerState = lobby.players[aiPlayerId] ?: return
         if (playerState.hasSubmittedDeck) return
+        if (lobby.usesCommanderRules &&
+            (playerState.aiDeckSpec as? AiDeckSpec.Fixed)?.commander.isNullOrBlank()
+        ) {
+            return
+        }
 
         val deck = runCatching {
             randomDeckResolver.resolve(playerState.aiDeckSpec, lobby.deckFormat, lobby.setCodes)
@@ -1623,7 +1623,10 @@ class LobbyHandler(
             .onFailure { logger.error("Could not generate a deck for AI seat ${aiPlayerId.value}", it) }
             .getOrNull() ?: return
 
-        when (val result = lobby.submitDeck(aiPlayerId, deck)) {
+        val commander = (playerState.aiDeckSpec as? AiDeckSpec.Fixed)
+            ?.commander
+            ?.takeIf { lobby.usesCommanderRules }
+        when (val result = lobby.submitDeck(aiPlayerId, deck, commander = commander)) {
             is TournamentLobby.DeckSubmissionResult.Success ->
                 logger.info(
                     "AI {} brought a generated {} deck ({} cards) to premade lobby {}",
@@ -1635,6 +1638,22 @@ class LobbyHandler(
             is TournamentLobby.DeckSubmissionResult.Error ->
                 logger.warn("Generated AI deck rejected in lobby ${lobby.lobbyId}: ${result.message}")
         }
+    }
+
+    private fun validateAiDeck(
+        spec: AiDeckSpec.Fixed,
+        format: com.wingedsheep.sdk.core.DeckFormat?,
+        usesCommanderRules: Boolean,
+    ) = if (usesCommanderRules) {
+        deckValidator.validate(
+            com.wingedsheep.sdk.model.Deck(
+                cards = spec.deckList.flatMap { (name, count) -> List(count) { name } },
+                commander = spec.commander?.takeIf { it.isNotBlank() },
+            ),
+            format,
+        )
+    } else {
+        deckValidator.validate(spec.deckList, format)
     }
 
     /**
@@ -2208,10 +2227,11 @@ class LobbyHandler(
             return
         }
 
-        // What an AI seat's generated deck was built for. Compared at the end: these two axes are
-        // the ones that decide what such a deck may contain, so a change to either invalidates it.
+        // What an AI seat's generated deck was built for. Compared at the end: these axes decide
+        // both what may be in the deck and whether it needs a designated commander.
         val formatBefore = lobby.format
         val deckFormatBefore = lobby.deckFormat
+        val rulesBefore = lobby.rules
 
         // Cube settings are a full replacement, like the ban list. Resolve immediately so an
         // unplayable list never becomes lobby state. Empty returns to catalogued-set mode.
@@ -2395,17 +2415,16 @@ class LobbyHandler(
             return
         }
 
-        // Rules × AI seats, the other direction of the check `handleAddAiToLobby` makes: none of the
-        // AI's deck generators produce a commander, so a lobby holding an AI cannot switch its Rules
-        // axis to Commander. Refused here, before anything is written, rather than at Start — where
-        // the pod would simply decline to begin with no way for the host to see why.
+        // Generated limited pools do not designate commanders. A premade lobby is different: the
+        // host can choose a commander deck for every AI seat after switching the rules.
         if (nextRules.usesCommanders && !lobby.usesCommanderRules &&
+            lobby.format != TournamentFormat.PREMADE_DECKS &&
             lobby.players.keys.any { aiGameManager.isAiPlayer(it) }
         ) {
             sender.sendError(
                 session,
                 ErrorCode.INVALID_ACTION,
-                "The AI can't build a Commander deck yet — remove the AI players first"
+                "The AI can't build a Commander deck from a limited pool yet — use Bring a deck instead"
             )
             return
         }
@@ -2544,10 +2563,12 @@ class LobbyHandler(
         // update — or one that landed earlier — forces it back off.
         if (!lobby.rankedEligible) lobby.ranked = false
 
-        // Re-roll AI decks only when this message actually moved one of the two axes that decide
-        // what may be in them — otherwise toggling an unrelated setting would deal the AI a
-        // different deck each time the host touched the lobby.
-        if (lobby.format != formatBefore || lobby.deckFormat != deckFormatBefore) {
+        // Re-roll only when an axis that determines the AI deck changed. Under Commander rules,
+        // ensureAiPremadeDeck deliberately leaves Auto unsubmitted until the host picks a deck.
+        if (lobby.format != formatBefore ||
+            lobby.deckFormat != deckFormatBefore ||
+            lobby.rules != rulesBefore
+        ) {
             resyncAiDecks(lobby)
         }
 

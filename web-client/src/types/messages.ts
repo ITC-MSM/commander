@@ -2823,7 +2823,12 @@ export interface QuickGameLobbyStateMessage {
 export type AiDeckSpec =
   | { readonly type: 'auto' }
   | { readonly type: 'sets'; readonly setCodes: readonly string[] }
-  | { readonly type: 'deck'; readonly deckList: Record<string, number>; readonly label?: string }
+  | {
+      readonly type: 'deck'
+      readonly deckList: Record<string, number>
+      readonly label?: string
+      readonly commander?: string | null
+    }
 
 /**
  * The lobby-broadcast summary of an [AiDeckSpec]. The decklist behind a `deck` choice never rides
@@ -2834,6 +2839,7 @@ export interface AiDeckSpecView {
   readonly setCodes?: readonly string[]
   readonly label?: string | null
   readonly cardCount?: number
+  readonly commander?: string | null
 }
 
 export interface SetQuickGameAiDeckMessage {

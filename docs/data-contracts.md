@@ -403,15 +403,16 @@ sealed, or premade), then one N-player game".
 - **`SetLobbyAiDeck { playerId, spec }`** is the per-seat twin of `SetQuickGameAiDeck`: the host picks
   what *one* AI brings, in the same `AiDeckSpec` vocabulary (`auto` / `sets` / `deck`). Held per seat
   on `LobbyPlayerState.aiDeckSpec` and echoed back as `LobbyPlayerInfo.aiDeck` — an `AiDeckSpecView`
-  summary (kind, sets, label, card count), never the decklist itself, since lobby state re-broadcasts
-  on every change. A `deck` list is validated against the lobby's `deckFormat` on arrival, and the
+  summary (kind, sets, label, card count, designated commander), never the decklist itself, since
+  lobby state re-broadcasts on every change. A `deck` spec carries an optional `commander`; the list
+  is validated against the lobby's `deckFormat` on arrival, and the
   seat's deck is re-rolled immediately rather than at game start: the premade start gate wants every
   seat to have submitted, so the deck has to exist while the host is still looking at the lobby.
   Rejected outside `PREMADE_DECKS`, where the AI builds from the pool it was dealt.
-- **The one axis that still refuses an AI is Rules.** No generator the AI deckbuilds with picks a
-  commander, so `handleAddAiToLobby` rejects a lobby running Commander rules and
-  `UpdateLobbySettings` rejects switching a lobby that holds an AI onto them — refused at the change
-  rather than at Start, which would leave a pod that silently declines to begin.
+- **Commander AI requires a chosen deck.** The generated `auto` / `sets` paths still do not pick a
+  commander, so Commander limited pools remain unavailable to AI seats. In `PREMADE_DECKS`, the host
+  may seat an AI and choose a `deck` spec with a designated commander; the server validates the full
+  Commander deck and holds the lobby at its normal deck-submission gate until that choice exists.
 - **Attack rule.** The same two messages also carry an optional `attackMode` (default `MULTIPLE`),
   echoed by `LobbySettings.attackMode`, choosing which opponents creatures may attack in the FFA
   game (CR 802 / 803; CR 806.2b requires exactly one): `MULTIPLE` (any opponent), `LEFT`, or

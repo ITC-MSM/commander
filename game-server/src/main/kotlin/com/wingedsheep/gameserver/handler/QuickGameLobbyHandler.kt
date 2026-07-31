@@ -120,7 +120,7 @@ class QuickGameLobbyHandler(
                         sender.sendError(session, ErrorCode.INVALID_ACTION, "The AI's deck is empty")
                         return@withLock
                     }
-                    val result = deckValidator.validate(spec.deckList, current.format)
+                    val result = validateAiDeck(spec, current.format)
                     if (!result.valid) {
                         val reason = result.errors.firstOrNull()?.message ?: "Deck is not legal"
                         sender.sendError(session, ErrorCode.INVALID_ACTION, "AI deck rejected: $reason")
@@ -183,7 +183,7 @@ class QuickGameLobbyHandler(
                 // clear: an illegal list is dropped back to Auto, which always builds something
                 // legal for the new format. The host sees the seat's label change.
                 val aiSpec = current.aiDeckSpec
-                if (aiSpec is AiDeckSpec.Fixed && !deckValidator.validate(aiSpec.deckList, message.format).valid) {
+                if (aiSpec is AiDeckSpec.Fixed && !validateAiDeck(aiSpec, message.format).valid) {
                     logger.info(
                         "Lobby {}: AI deck '{}' is not legal in {}; reverting the AI to Auto",
                         current.lobbyId,
@@ -478,6 +478,17 @@ class QuickGameLobbyHandler(
                 sender.sendError(session, ErrorCode.INVALID_ACTION, "Pick a deck before readying up")
                 return@withLock
             }
+            if (message.ready && current.vsAi && current.usesCommanderRules) {
+                val aiDeck = current.aiDeckSpec as? AiDeckSpec.Fixed
+                if (aiDeck?.commander.isNullOrBlank()) {
+                    sender.sendError(
+                        session,
+                        ErrorCode.INVALID_ACTION,
+                        "Pick a Commander deck for the AI before readying up",
+                    )
+                    return@withLock
+                }
+            }
             player.ready = message.ready
             broadcastState(current)
             if (current.allReady() && !current.started) {
@@ -639,6 +650,9 @@ class QuickGameLobbyHandler(
                 onMulliganTake = { id -> gamePlayHandler.handleAiMulliganTake(gameSession, id) },
                 onBottomCards = { id, cardIds -> gamePlayHandler.handleAiBottomCards(gameSession, id, cardIds) },
                 deckOverride = aiDeck,
+                commanderCardName = (lobby.aiDeckSpec as? AiDeckSpec.Fixed)
+                    ?.commander
+                    ?.takeIf { lobby.usesCommanderRules },
             )
         }
 
@@ -806,6 +820,21 @@ class QuickGameLobbyHandler(
         }
         is AiDeckSpec.Sets ->
             if (spec.setCodes.isEmpty()) "Auto (sealed)" else "Built from ${spec.setCodes.joinToString(", ")}"
-        is AiDeckSpec.Fixed -> "${spec.label} (${spec.deckList.values.sum()})"
+        is AiDeckSpec.Fixed -> "${spec.label} (${spec.deckList.values.sum() + if (spec.commander != null) 1 else 0})"
+    }
+
+    private fun validateAiDeck(
+        spec: AiDeckSpec.Fixed,
+        format: com.wingedsheep.sdk.core.DeckFormat?,
+    ) = if (format?.isCommanderShape == true) {
+        deckValidator.validate(
+            com.wingedsheep.sdk.model.Deck(
+                cards = spec.deckList.flatMap { (name, count) -> List(count) { name } },
+                commander = spec.commander?.takeIf { it.isNotBlank() },
+            ),
+            format,
+        )
+    } else {
+        deckValidator.validate(spec.deckList, format)
     }
 }

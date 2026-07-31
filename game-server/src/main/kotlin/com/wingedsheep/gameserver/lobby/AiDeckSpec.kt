@@ -54,6 +54,8 @@ sealed interface AiDeckSpec {
     data class Fixed(
         val deckList: Map<String, Int>,
         val label: String = "Custom",
+        /** Designated commander for commander-shaped formats; absent for ordinary decks. */
+        val commander: String? = null,
     ) : AiDeckSpec
 }
 
@@ -76,6 +78,8 @@ data class AiDeckSpecView(
     val label: String? = null,
     /** Card count for [AiDeckSpec.Fixed]; 0 otherwise. */
     val cardCount: Int = 0,
+    /** Designated commander for [AiDeckSpec.Fixed]; null otherwise. */
+    val commander: String? = null,
 ) {
     companion object {
         fun of(spec: AiDeckSpec): AiDeckSpecView = when (spec) {
@@ -84,7 +88,8 @@ data class AiDeckSpecView(
             is AiDeckSpec.Fixed -> AiDeckSpecView(
                 kind = "deck",
                 label = spec.label,
-                cardCount = spec.deckList.values.sum(),
+                cardCount = spec.deckList.values.sum() + if (spec.commander != null) 1 else 0,
+                commander = spec.commander,
             )
         }
     }

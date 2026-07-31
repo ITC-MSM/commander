@@ -316,7 +316,7 @@ export function shapeChoices(roster: Roster, cards: CardsAxis): Choice<ShapeId>[
     // disagree about which table a Commander pool can sit at.
     const reasonFor = (shape: ShapeId): string | undefined =>
       rulesTableBlock(rulesForCards(cards), shapeAxes(shape).table)
-      ?? commanderAiBlock(rulesForCards(cards))
+      ?? commanderAiBlock(rulesForCards(cards), cards)
       ?? undefined
     if (kind === 'BRING_A_DECK') {
       return [
@@ -329,7 +329,7 @@ export function shapeChoices(roster: Roster, cards: CardsAxis): Choice<ShapeId>[
     // shape it declines — the pod and the bracket both play it out.
     return [
       choice('ONE_GAME', LIMITED_ALWAYS_RUNS_AS_A_BRACKET),
-      choice('BRACKET', commanderAiBlock(rulesForCards(cards)) ?? undefined),
+      choice('BRACKET', commanderAiBlock(rulesForCards(cards), cards) ?? undefined),
       ...MULTIPLAYER_SHAPES.map((s) => choice(s, reasonFor(s))),
     ]
   }

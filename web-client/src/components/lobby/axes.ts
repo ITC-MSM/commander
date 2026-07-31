@@ -248,9 +248,9 @@ export const COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL =
   'Commander can’t be played as Two-Headed Giant — a 2HG team shares one life total, and Commander gives every player their own 40. Free-for-All and Team vs. Team pods work.'
 
 /**
- * AI seats in a Commander lobby — the one axis that still refuses them.
+ * AI seats in a Commander limited lobby.
  *
- * The AI never brings a deck; it is dealt one by a generator, and no generator picks a commander.
+ * No generated AI deck picks a commander.
  * `LobbyHandler.buildAiSealedDeck` builds a 40-card deck out of a pool without one, and
  * `RandomDeckResolver` declines commander shapes outright rather than ship an illegal 100-card
  * approximation. Keyed on the **Rules** axis rather than on the Commander pack shape, because that
@@ -258,15 +258,14 @@ export const COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL =
  * for one just as much as a Commander Draft does, and the pack-shape reading could not see it.
  */
 export const COMMANDER_HAS_NO_AI =
-  'The AI can’t build a Commander deck — nothing it deckbuilds with picks a commander, so it would sit down without one. Play Commander with people.'
+  'The AI can’t build a Commander deck from a limited pool yet. Choose Bring a deck and pick a Commander deck for it.'
 
 /**
- * Why an AI can't sit in a lobby running these rules, or null — the client's copy of the server's
- * `handleAddAiToLobby` rejection, read by every surface that offers an AI seat or offers to switch
- * the Rules axis under one. The same one-statement discipline as {@link rulesTableBlock}.
+ * Why an AI can't use this rules/cards combination, or null. A brought deck is allowed because the
+ * host can designate its commander; generated limited pools remain blocked.
  */
-export function commanderAiBlock(rules: RulesAxis): string | null {
-  return rules === 'COMMANDER' ? COMMANDER_HAS_NO_AI : null
+export function commanderAiBlock(rules: RulesAxis, cards: CardsAxis): string | null {
+  return rules === 'COMMANDER' && cards.kind !== 'BRING_A_DECK' ? COMMANDER_HAS_NO_AI : null
 }
 
 /**

@@ -344,7 +344,7 @@ function shapeBlock(view: UnifiedLobbyView, cards: CardsAxis): string | null {
   const wouldRun: RulesAxis = isCommanderLimited(cards) ? 'COMMANDER' : view.axes.rules
   const conflict = rulesTableBlock(wouldRun, view.axes.table)
   if (conflict !== null) return conflict
-  if (view.players.some((p) => p.isAi)) return commanderAiBlock(wouldRun)
+  if (view.players.some((p) => p.isAi)) return commanderAiBlock(wouldRun, cards)
   return null
 }
 
