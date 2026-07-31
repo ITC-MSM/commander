@@ -112,7 +112,7 @@ export function AiOpponentRow({
         {source === 'auto' && (
           <div className={styles.variantCaption}>
             {isCommanderShape
-              ? `The AI can't build a ${format === 'COMMANDER' ? 'Commander' : 'Brawl'} deck yet, so it plays a 40-card sealed deck. Use “Pick a deck” to give it a real one.`
+              ? `The AI can't build a ${format === 'COMMANDER' ? 'Commander' : 'Brawl'} deck yet. Use “Pick a deck” and choose one with a designated commander.`
               : format
                 ? `The server builds the AI a 60-card ${format.replace('_', ' ').toLowerCase()}-legal deck.`
                 : 'The server opens eight boosters from your set and auto-builds the AI a 40-card deck.'}
@@ -154,7 +154,7 @@ export function AiOpponentRow({
               {setCodes.length === 0
                 ? 'Pick one or more sets — until you do, the AI falls back to Auto.'
                 : isCommanderShape
-                  ? 'Commander decks aren’t buildable yet, so the AI opens a sealed pool from these sets.'
+                  ? 'Commander decks aren’t buildable from sets yet. Use “Pick a deck” and choose one with a designated commander.'
                   : format
                     ? `Only ${format.replace('_', ' ').toLowerCase()}-legal cards from these sets are used.`
                     : 'Eight boosters are opened across these sets and auto-built into a deck.'}
@@ -225,13 +225,18 @@ export function AiDeckSection({
   // Deduped like the human picker's submission path: DeckPicker re-emits its current deck on every
   // render, and each send costs a lobby broadcast.
   const handleDeckChange = useCallback(
-    (deckList: Record<string, number>) => {
+    (deckList: Record<string, number>, commander?: string | null) => {
       const total = Object.values(deckList).reduce((a, b) => a + b, 0)
       if (total === 0) return
-      const key = Object.entries(deckList).sort().map(([n, c]) => `${n}:${c}`).join('|')
+      const key = `${Object.entries(deckList).sort().map(([n, c]) => `${n}:${c}`).join('|')}|${commander ?? ''}`
       if (key === lastDeckKeyRef.current) return
       lastDeckKeyRef.current = key
-      setAiDeck({ type: 'deck', deckList, label: 'Chosen deck' } satisfies AiDeckSpec)
+      setAiDeck({
+        type: 'deck',
+        deckList,
+        label: 'Chosen deck',
+        commander: commander ?? null,
+      } satisfies AiDeckSpec)
     },
     [setAiDeck],
   )

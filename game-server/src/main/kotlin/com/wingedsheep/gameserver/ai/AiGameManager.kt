@@ -235,6 +235,8 @@ class AiGameManager(
          * Null = the existing behaviour (generate a random sealed deck for [setCode]).
          */
         deckOverride: Map<String, Int>? = null,
+        /** Commander to place in the command zone when [deckOverride] is a commander deck. */
+        commanderCardName: String? = null,
     ): PlayerSession {
         require(isEnabled) { "AI is not enabled. Set game.ai.enabled=true." }
 
@@ -258,7 +260,7 @@ class AiGameManager(
         // sealed deck, using the same set as the human player when one was provided.
         val aiDeck = deckOverride
             ?: if (setCode != null) deckGenerator.generate(setCode) else deckGenerator.generate()
-        gameSession.addPlayer(playerSession, aiDeck)
+        gameSession.addPlayer(playerSession, aiDeck, commanderCardName = commanderCardName)
 
         // Give the AI knowledge of its deck composition
         controller.setDeckList(aiDeck)

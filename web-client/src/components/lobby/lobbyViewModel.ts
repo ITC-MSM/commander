@@ -138,6 +138,8 @@ export function fromQuickGameLobby(
   const youReady = you?.ready ?? false
   const needsDeck = !isMomir && (!opts.deckValid || !you?.deckSelected)
   const axes = axesFromQuickGameLobby(lobby, you, opts.deckTab)
+  const needsAiCommander =
+    lobby.vsAi && axes.rules === 'COMMANDER' && !lobby.aiDeck?.commander
 
   const players = lobby.players.map((p): LobbyViewPlayer => ({
     playerId: p.playerId,
@@ -174,8 +176,12 @@ export function fromQuickGameLobby(
       : {
           kind: 'READY',
           label: "I'm ready",
-          disabled: needsDeck,
-          reason: needsDeck ? 'Pick a deck first' : undefined,
+          disabled: needsDeck || needsAiCommander,
+          reason: needsDeck
+            ? 'Pick a deck first'
+            : needsAiCommander
+              ? 'Pick a Commander deck for the AI'
+              : undefined,
         },
     isPublic: lobby.isPublic,
     // AI is a create-time flag on a quick lobby, not a seat the host can add later.
@@ -267,13 +273,10 @@ export function fromTournamentLobby(
       : null,
     blockGroup: blockReason?.group ?? null,
     isPublic: s.isPublic,
-    // Neither the Table nor the Cards axis narrows this any more: an AI takes a pod seat like anyone
-    // else, and a premade lobby deals it a generated deck the way a quick game always has. The one
-    // axis that still refuses — the server's own `handleAddAiToLobby` rejection — is Rules: none of
-    // the AI's deck generators picks a commander, so it would sit down at a Commander table without
-    // one. `LobbyScreen` hides the button; `LobbyAxes` says why from the other direction.
+    // Commander AI is available when the host brings its deck and designates its commander.
+    // Generated limited pools remain blocked because their builders cannot make that choice.
     canAddAi: isWaiting && lobbyState.isHost && opts.aiEnabled
-      && commanderAiBlock(axes.rules) === null && playerCount < maxPlayers,
+      && commanderAiBlock(axes.rules, axes.cards) === null && playerCount < maxPlayers,
     // Ranked is a 1v1-bracket-only concept server-side (`TournamentLobby.rankedEligible`).
     ranked: { available: axes.table === 'ONE_V_ONE', on: s.ranked ?? false },
     teams: tournamentTeams(lobbyState),
