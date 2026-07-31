@@ -343,12 +343,7 @@ class FreeForAllHandler(
         if (gameSession.isGameOver()) return
 
         logger.info("FFA lobby ${lobby.lobbyId}: conceding departed player $playerId from game $gameSessionId")
-        gameSession.playerConcedes(playerId)
-        if (gameSession.isGameOver()) {
-            gamePlayHandler.handleGameOver(gameSession, com.wingedsheep.gameserver.protocol.GameOverReason.CONCESSION)
-        } else {
-            gamePlayHandler.broadcastStateUpdate(gameSession, emptyList())
-        }
+        gamePlayHandler.concedeSeat(gameSession, playerId)
     }
 
     /**

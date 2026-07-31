@@ -565,11 +565,29 @@ class GamePlayHandler(
      * everyone else just sees the seat drop out of the state. In a 2-player game conceding always
      * ends it — the degenerate case.
      */
-    private fun concedeSeat(gameSession: GameSession, playerId: EntityId) {
+    internal fun concedeSeat(gameSession: GameSession, playerId: EntityId) {
         gameSession.playerConcedes(playerId)
         if (gameSession.isGameOver()) {
             handleGameOver(gameSession, GameOverReason.CONCESSION)
             return
+        }
+
+        // A lobby game exists for its human participants. Once the last living human concedes,
+        // do not leave an AI-only multiplayer table running in the background. Eliminate all but
+        // one remaining AI seat so the normal game-over path records standings, reports the lobby
+        // result, removes the session, and shuts down every AI controller.
+        if (gameRepository.getLobbyForGame(gameSession.sessionId) != null) {
+            val activePlayers = gameSession.getActivePlayerIds()
+            if (activePlayers.isNotEmpty() && activePlayers.all(aiGameManager::isAiPlayer)) {
+                logger.info(
+                    "Finalizing lobby game ${gameSession.sessionId} because only AI seats remain"
+                )
+                activePlayers.drop(1).forEach(gameSession::playerConcedes)
+                if (gameSession.isGameOver()) {
+                    handleGameOver(gameSession, GameOverReason.CONCESSION)
+                    return
+                }
+            }
         }
         broadcastStateUpdate(gameSession, emptyList())
     }

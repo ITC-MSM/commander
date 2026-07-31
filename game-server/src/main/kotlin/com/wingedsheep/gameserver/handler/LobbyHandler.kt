@@ -2045,6 +2045,17 @@ class LobbyHandler(
         // A departing FFA player's seat is conceded; the game continues for the rest (CR 800.4a).
         if (lobby.isFreeForAll) {
             freeForAllHandler.handlePlayerLeft(lobby, identity.playerId)
+        } else {
+            // Explicitly leaving a bracket is permanent, unlike a disconnect. Concede any match
+            // that is already running so its game session and AI controller cannot outlive the
+            // player who quit the tournament.
+            val activeMatch = lobbyRepository.findTournamentById(lobbyId)
+                ?.getAllInProgressMatches()
+                ?.firstOrNull { it.player1Id == identity.playerId || it.player2Id == identity.playerId }
+            activeMatch?.gameSessionId
+                ?.let(gameRepository::findById)
+                ?.takeUnless(GameSession::isGameOver)
+                ?.let { gamePlayHandler.concedeSeat(it, identity.playerId) }
         }
 
         // Use forceRemovePlayer for explicit leave - player cannot rejoin

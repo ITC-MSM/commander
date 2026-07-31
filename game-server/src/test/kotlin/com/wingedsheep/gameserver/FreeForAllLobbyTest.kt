@@ -526,6 +526,16 @@ class FreeForAllLobbyTest : FunSpec() {
                 state.shouldNotBeNull()
                 state.players shouldHaveSize 3
             }
+
+            // Once the only human concedes there is nobody left for the AI-only table to serve.
+            // The server finalizes it through the normal completion path instead of letting both
+            // AI controllers keep playing an invisible game in the background.
+            host.send(ClientMessage.Concede)
+            eventually(10.seconds) {
+                host.messages.any { it is ServerMessage.FreeForAllGameComplete } shouldBe true
+            }
+            host.messages.filterIsInstance<ServerMessage.GameOver>()
+                .any { it.gameId == starting.gameSessionId } shouldBe true
         }
 
         test("4-player Commander FFA pod: every seat starts at 40 life with its own commander in its own command zone") {

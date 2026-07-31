@@ -97,6 +97,14 @@ class GameSession(
     /** Players in the order they lost (first eliminated first). Empty while everyone is alive. */
     fun getEliminationOrder(): List<EntityId> = eliminationOrder.toList()
 
+    /** Player seats that have not been eliminated yet. */
+    fun getActivePlayerIds(): List<EntityId> = synchronized(stateLock) {
+        val state = gameState ?: return@synchronized emptyList()
+        players.keys.mapNotNull { playerId ->
+            playerId.takeUnless { state.getEntity(it)?.has<PlayerLostComponent>() == true }
+        }
+    }
+
     /**
      * Seats already sent their personal [ServerMessage.PlayerEliminated]. A seat is told exactly
      * once, however it died — conceding, damage, decking out — so its client shows the "you're out,
