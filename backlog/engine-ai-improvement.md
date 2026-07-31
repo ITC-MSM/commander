@@ -3,7 +3,8 @@
 A phased plan to make the in-game engine AI measurably stronger, on a scoreboard we trust, using
 mechanisms that generalize across the whole card catalog rather than per-card special cases.
 
-**Status:** **Phases 0–8 shipped**, plus 3 of Phase 2b's 6 categories (Phase 8 on 2026-07-29) —
+**Status:** **Phases 0–8 shipped**, plus 3 of Phase 2b's 6 categories; **Phase 9 is underway**
+(resource-backed evaluation vectors landed on 2026-07-31) —
 baselines in [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md), measurement guide in
 [`docs/ai/measurement.md`](../docs/ai/measurement.md). Four scoreboards now exist: the arena
 (`just arena`), the 66-puzzle suite (`just arena-puzzles`, **60/66 today**), the multiplayer pod
@@ -12,8 +13,8 @@ The primary strength lever is in: the rollout evaluator beats `v0` **56.0%, CI [
 Phase 8 removes exact opponent-hand and library-order knowledge from rollout search. Its paired
 smoke found no detectable dip against the full-information control (49%, CI [43%, 55%]) and retained
 the Phase 7 strength point estimate against `v0` (55%, CI [48%, 62%]); the merge-sized measurement
-remains intentionally separate because rollout arenas are expensive. Next up is **Phase 9,
-Texel-style evaluation tuning**.
+remains intentionally separate because rollout arenas are expensive. Next in Phase 9 is
+**raw-feature collection for Texel-style evaluation tuning**.
 
 **Related:** [`engine-performance.md`](engine-performance.md) — the CPU profile this plan's
 performance phase built on. **Every step in that document is now closed**; Phase 5a was its Step 4
@@ -1354,7 +1355,8 @@ dip quantified in `docs/ai/`.
 Stop guessing the ~25 constants in `BoardFeatures.kt` and the 5 weights in
 `AIPlayer.defaultEvaluator()` (`:179-187`).
 
-**Weights as data.** `ai/src/main/resources/ai/eval-weights.json` (profileId → weight vector) +
+**Weights as data. ✅ DONE 2026-07-31.** `ai/src/main/resources/ai/eval-weights.json`
+(profileId → weight vector) +
 `evaluation/EvalWeights.kt` with **today's values compiled in as the default**, so a missing or
 malformed resource can never break the AI. `AiProfile.evalWeightsId` selects; the arena A/Bs two
 weight sets as two agents, no recompile.

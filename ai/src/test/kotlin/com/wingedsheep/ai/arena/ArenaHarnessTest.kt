@@ -18,6 +18,11 @@ import io.kotest.matchers.shouldBe
  */
 class ArenaHarnessTest : FunSpec({
 
+    test("resource-backed evaluation vectors are arena-addressable without recompiling") {
+        ArenaAgents.resolve("eval-default").profile.evalWeightsId shouldBe "default"
+        ArenaAgents.resolve("eval-blind").profile.evalWeightsId shouldBe "blind"
+    }
+
     // Six games. Enough for the structural claims; small enough to stay in the always-on suite.
     val config = ArenaConfig(
         agentA = ArenaAgents.resolve("v0"),

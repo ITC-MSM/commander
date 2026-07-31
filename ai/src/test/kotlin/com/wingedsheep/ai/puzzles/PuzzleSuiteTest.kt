@@ -1,7 +1,6 @@
 package com.wingedsheep.ai.puzzles
 
 import com.wingedsheep.ai.engine.AiProfile
-import com.wingedsheep.ai.engine.EvaluationWeights
 import com.wingedsheep.engine.support.ScenarioTestBase
 import io.kotest.assertions.withClue
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
@@ -51,7 +50,7 @@ class PuzzleSuiteTest : ScenarioTestBase() {
         test("a zero-weight agent solves strictly fewer puzzles") {
             val blind = AiProfile.LEGACY_V0.copy(
                 id = "v0-blind",
-                evaluationWeights = EvaluationWeights.BLIND,
+                evalWeightsId = "blind",
             )
             val blindResults = runner.runAll(PuzzleCatalog.all, blind)
             val blindPassed = blindResults.count { it.passed }

@@ -2,11 +2,11 @@ package com.wingedsheep.ai.arena
 
 import com.wingedsheep.ai.engine.AIPlayer
 import com.wingedsheep.ai.engine.AiProfile
-import com.wingedsheep.ai.engine.EvaluationWeights
 import com.wingedsheep.ai.engine.advisor.modules.BloomburrowAdvisorModule
 import com.wingedsheep.ai.engine.advisor.modules.OnslaughtAdvisorModule
 import com.wingedsheep.ai.engine.budget.RolloutBudgetPolicy
 import com.wingedsheep.ai.engine.budget.TieredBudgetPolicy
+import com.wingedsheep.ai.engine.evaluation.EvalWeights
 import com.wingedsheep.ai.engine.rollout.RolloutSettings
 import com.wingedsheep.ai.engine.hidden.OpponentModel
 import com.wingedsheep.engine.registry.CardRegistry
@@ -42,7 +42,7 @@ data class ArenaAgent(val name: String, val profile: AiProfile) {
  */
 object ArenaAgents {
 
-    private val all: List<ArenaAgent> = listOf(
+    private val builtIn: List<ArenaAgent> = listOf(
         // The permanent reference opponent. Every version reports against this one.
         ArenaAgent("v0", AiProfile.LEGACY_V0),
         // Whatever `AIPlayer.create(registry, playerId)` builds today.
@@ -64,7 +64,7 @@ object ArenaAgents {
         // that cannot separate this from `v0` is measuring noise, not strength.
         ArenaAgent("v0-blind", AiProfile.LEGACY_V0.copy(
             id = "v0-blind",
-            evaluationWeights = EvaluationWeights.BLIND,
+            evalWeightsId = "blind",
         )),
         // ── Phase 4 ──
         // The meaningful-action filter alone. `just arena v0 v0-meaningful 1000` is the phase's
@@ -119,6 +119,20 @@ object ArenaAgents {
         // Everything Phases 4, 6 and 7 add — what the plan proposes to ship.
         ArenaAgent("v0-phase4-intent-rollout", AiProfile.PHASE4_PHASE6_PHASE7),
     )
+
+    /**
+     * Every resource vector is automatically arena-addressable as `eval-<id>`. A tuning run can
+     * replace the JSON artifact and immediately A/B its candidates without changing Kotlin.
+     */
+    private val all: List<ArenaAgent> = builtIn + EvalWeights.ids.map { weightsId ->
+        ArenaAgent(
+            name = "eval-$weightsId",
+            profile = AiProfile.LEGACY_V0.copy(
+                id = "eval-$weightsId",
+                evalWeightsId = weightsId,
+            ),
+        )
+    }
 
     /** `v0` plus rollouts, with nothing changed but how many playouts a decision may spend. */
     private fun rolloutAgent(playouts: Int): AiProfile = AiProfile.PHASE7.copy(
