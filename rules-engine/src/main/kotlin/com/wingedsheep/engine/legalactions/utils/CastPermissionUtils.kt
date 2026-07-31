@@ -9,6 +9,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedEverComponent
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
+import com.wingedsheep.engine.state.components.battlefield.CastFromTopOfLibraryUsesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.GraveyardPlayPermissionUsedComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -434,8 +435,12 @@ class CastPermissionUtils(
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
             for (ability in cardDef.script.staticAbilities) {
                 if (ability is CastSpellTypesFromTopOfLibrary) {
+                    val uses = state.getEntity(entityId)
+                        ?.get<CastFromTopOfLibraryUsesThisTurnComponent>()?.uses ?: 0
+                    val maxCasts = ability.maxCastsPerTurn
+                    if (maxCasts != null && uses >= maxCasts) continue
                     if (ability.filter == GameObjectFilter.Any) return GameObjectFilter.Any
-                    filter = ability.filter
+                    filter = filter?.let { it or ability.filter } ?: ability.filter
                 }
             }
         }

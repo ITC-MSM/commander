@@ -13,6 +13,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.ExileEntryTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.CastFromTopOfLibraryUsesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.GraveyardPlayPermissionUsedComponent
 import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.battlefield.MayCastFromLinkedExileUsedThisTurnComponent
@@ -557,7 +558,11 @@ class CastZoneResolver(
                     ability.ability
                 } else ability
                 if (unwrapped is CastSpellTypesFromTopOfLibrary) {
-                    if (matchesCardFilter(cardComponent, unwrapped.filter)) return true
+                    val uses = state.getEntity(entityId)
+                        ?.get<CastFromTopOfLibraryUsesThisTurnComponent>()?.uses ?: 0
+                    val maxCasts = unwrapped.maxCastsPerTurn
+                    val hasUse = maxCasts == null || uses < maxCasts
+                    if (hasUse && matchesCardFilter(cardComponent, unwrapped.filter)) return true
                 }
                 if (unwrapped is PlayLandsAndCastFilteredFromTopOfLibrary) {
                     if (matchesCardFilter(cardComponent, unwrapped.spellFilter)) return true
@@ -565,6 +570,46 @@ class CastZoneResolver(
             }
         }
         return false
+    }
+
+    /**
+     * Returns the limited top-of-library permission source that should consume a use for this cast.
+     * An unlimited matching source wins without consuming a limited source. Otherwise each source
+     * has its own allowance, matching the identity of the granting permanent.
+     */
+    fun findLimitedTopLibraryCastSourceToConsume(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): EntityId? {
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
+        // A card-specific MayPlayPermission (for example, a reveal-then-cast effect whose card
+        // remains in the library) can authorize the cast independently of a battlefield source.
+        if (state.hasMayPlayFor(cardId, playerId, conditionEvaluator, cardRegistry)) return null
+        var limitedSource: EntityId? = null
+        for (entityId in state.getBattlefield(playerId)) {
+            val sourceCard = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(sourceCard.cardDefinitionId) ?: continue
+            for (ability in cardDef.script.staticAbilities) {
+                val unwrapped = if (ability is ConditionalStaticAbility) {
+                    val ctx = EffectContext(sourceId = entityId, controllerId = playerId)
+                    if (!conditionEvaluator.evaluate(state, ability.condition, ctx)) continue
+                    ability.ability
+                } else ability
+                if (unwrapped is PlayFromTopOfLibrary) return null
+                if (unwrapped is PlayLandsAndCastFilteredFromTopOfLibrary &&
+                    matchesCardFilter(cardComponent, unwrapped.spellFilter)
+                ) return null
+                if (unwrapped !is CastSpellTypesFromTopOfLibrary ||
+                    !matchesCardFilter(cardComponent, unwrapped.filter)
+                ) continue
+                val maxCasts = unwrapped.maxCastsPerTurn ?: return null
+                val uses = state.getEntity(entityId)
+                    ?.get<CastFromTopOfLibraryUsesThisTurnComponent>()?.uses ?: 0
+                if (uses < maxCasts && limitedSource == null) limitedSource = entityId
+            }
+        }
+        return limitedSource
     }
 
     private fun hasPlayFromTopOfLibrary(state: GameState, playerId: EntityId): Boolean {

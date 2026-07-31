@@ -341,10 +341,20 @@ data object PlayFromTopOfLibrary : StaticAbility {
 @SerialName("CastSpellTypesFromTopOfLibrary")
 @Serializable
 data class CastSpellTypesFromTopOfLibrary(
-    val filter: GameObjectFilter
+    val filter: GameObjectFilter,
+    /**
+     * Maximum number of times this specific permanent's permission may be used each turn.
+     * Null means unlimited. Usage belongs to the granting object, so a permanent that leaves
+     * and returns supplies a fresh permission.
+     */
+    val maxCastsPerTurn: Int? = null
 ) : StaticAbility {
     override val description: String =
-        "You may cast ${filter.description} spells from the top of your library."
+        if (maxCastsPerTurn == 1) {
+            "Once each turn, you may cast a ${filter.description} spell from the top of your library."
+        } else {
+            "You may cast ${filter.description} spells from the top of your library."
+        }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
         return if (newFilter !== filter) copy(filter = newFilter) else this

@@ -7802,6 +7802,45 @@
     ]
 }
 
+// Johann, Apprentice Sorcerer
+{
+    "name": "Johann, Apprentice Sorcerer",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Legendary Creature — Human Wizard Sorcerer",
+    "oracleText": "You may look at the top card of your library any time.\nOnce each turn, you may cast an instant or sorcery spell from the top of your library. (You still pay its costs. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "script": {
+        "staticAbilities": [
+            "LookAtTopOfLibrary",
+            {
+                "type": "CastSpellTypesFromTopOfLibrary",
+                "filter": "instant|sorcery",
+                "maxCastsPerTurn": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "207",
+        "rarity": "UNCOMMON",
+        "artist": "Dmitry Burmak",
+        "flavorText": "\"Okay. First I'll calm the elementals. Then I'll put out the fire. Then I'll unflood the basement. Then I'll do the chores myself.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b88a762d-19ed-451d-a3a9-b3e7eea40f67.jpg?1783915071",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If Johann leaves the battlefield and returns, its new casting permission may be used once even if the old object's permission was used that turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Kellan's Lightblades
 {
     "name": "Kellan's Lightblades",

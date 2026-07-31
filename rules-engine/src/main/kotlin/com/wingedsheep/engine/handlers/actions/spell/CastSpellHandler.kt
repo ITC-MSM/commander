@@ -2039,6 +2039,9 @@ class CastSpellHandler(
         // fail, but we still need the entry to enforce once-per-turn marking after a
         // successful cast.
         val linkedExileGranterEntry = zoneResolver.findLinkedExileGranterEntry(currentState, action.playerId, action.cardId)
+        val limitedTopLibraryCastSource = if (action.cardId in currentState.getLibrary(action.playerId)) {
+            zoneResolver.findLimitedTopLibraryCastSourceToConsume(currentState, action.playerId, action.cardId)
+        } else null
 
         // Calculate effective cost (free if PlayWithoutPayingCostComponent is present, or if a
         // MayCastWithoutPayingManaCost battlefield source (e.g. Weftwalking) is the chosen alt).
@@ -3337,6 +3340,20 @@ class CastSpellHandler(
         if (linkedExileGranterEntry?.ability?.oncePerTurn == true) {
             currentCastState = currentCastState.updateEntity(linkedExileGranterEntry.granterId) { c ->
                 c.with(com.wingedsheep.engine.state.components.battlefield.MayCastFromLinkedExileUsedThisTurnComponent)
+            }
+        }
+
+        // The permission belongs to its granting permanent, not to the player. Mark the source
+        // captured before the card left the library; a source that leaves and returns is a new
+        // object with a fresh allowance, and an unlimited matching source consumes nothing.
+        if (limitedTopLibraryCastSource != null) {
+            currentCastState = currentCastState.updateEntity(limitedTopLibraryCastSource) { c ->
+                val tracker = c.get<com.wingedsheep.engine.state.components.battlefield.CastFromTopOfLibraryUsesThisTurnComponent>()
+                c.with(
+                    com.wingedsheep.engine.state.components.battlefield.CastFromTopOfLibraryUsesThisTurnComponent(
+                        uses = (tracker?.uses ?: 0) + 1
+                    )
+                )
             }
         }
 

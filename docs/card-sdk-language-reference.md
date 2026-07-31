@@ -5175,8 +5175,11 @@ concerns — the `ClientStateTransformer` reveals the top card for `PlayFromTopO
   `ConditionalStaticAbility` wrapper — the play/cast-from-top readers unwrap the conditional and
   evaluate its gate against the granting permanent, so the permission can be time-restricted (The
   Lunar Whale: `condition = Conditions.SourceAttackedThisTurn` — only after the Whale attacked).
-- `CastSpellTypesFromTopOfLibrary(filter)` — cast only matching spell types from the top; no land
-  play, no full public reveal. (Precognition Field = instants/sorceries)
+- `CastSpellTypesFromTopOfLibrary(filter, maxCastsPerTurn?)` — cast only matching spell types from
+  the top; no land play, no full public reveal. `maxCastsPerTurn` limits each granting permanent's
+  permission independently and resets at cleanup; when that permanent leaves and returns, the new
+  object has a fresh allowance. (Precognition Field = unlimited instants/sorceries; Johann,
+  Apprentice Sorcerer = one instant/sorcery each turn.)
 - `LookAtTopOfLibrary` — *private*: the controller may look at their own top card any time (revealed
   only to them, not opponents). (Lens of Clarity, Vizier of the Menagerie)
 - `PlotFromTopOfLibrary(filter = Nonland)` — the controller may **plot** (CR 718) the top card of
