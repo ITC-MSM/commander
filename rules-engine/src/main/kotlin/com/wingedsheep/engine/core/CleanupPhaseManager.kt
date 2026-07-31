@@ -4,6 +4,7 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.CastFromTopOfLibraryUsesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.CrewSaddleContributorsComponent
 import com.wingedsheep.engine.state.components.battlefield.SaddledComponent
 import com.wingedsheep.engine.state.components.battlefield.AbilityResolutionCountThisTurnComponent
@@ -888,13 +889,15 @@ class CleanupPhaseManager(
             val removePlayFree = playFree != null && !playFree.permanent
             val removeLinkedExileUsed = container.get<MayCastFromLinkedExileUsedThisTurnComponent>() != null
             val removeFreeCastUsed = container.get<MayCastWithoutPayingCostUsedThisTurnComponent>() != null
+            val removeTopLibraryCastUses = container.get<CastFromTopOfLibraryUsesThisTurnComponent>() != null
             val removeExileEntryTurn = container.get<ExileEntryTurnComponent>() != null
-            if (removePlayFree || removeLinkedExileUsed || removeFreeCastUsed || removeExileEntryTurn) {
+            if (removePlayFree || removeLinkedExileUsed || removeFreeCastUsed || removeTopLibraryCastUses || removeExileEntryTurn) {
                 newState = newState.updateEntity(entityId) { c ->
                     var updated = c
                     if (removePlayFree) updated = updated.without<PlayWithoutPayingCostComponent>()
                     if (removeLinkedExileUsed) updated = updated.without<MayCastFromLinkedExileUsedThisTurnComponent>()
                     if (removeFreeCastUsed) updated = updated.without<MayCastWithoutPayingCostUsedThisTurnComponent>()
+                    if (removeTopLibraryCastUses) updated = updated.without<CastFromTopOfLibraryUsesThisTurnComponent>()
                     if (removeExileEntryTurn) updated = updated.without<ExileEntryTurnComponent>()
                     updated
                 }

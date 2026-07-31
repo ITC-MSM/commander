@@ -1030,3 +1030,13 @@ data object MayCastFromLinkedExileUsedThisTurnComponent : Component
  */
 @Serializable
 data object MayCastWithoutPayingCostUsedThisTurnComponent : Component
+
+/**
+ * Counts uses of a permanent's limited [com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary]
+ * permission during the current turn. The count is stored on the granting permanent so each object
+ * has its own allowance; leaving and returning creates a fresh object without this component.
+ */
+@Serializable
+data class CastFromTopOfLibraryUsesThisTurnComponent(
+    val uses: Int = 1
+) : Component

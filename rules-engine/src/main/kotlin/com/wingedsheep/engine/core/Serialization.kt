@@ -450,6 +450,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CraftedFromExiledComponent::class)
         subclass(MayCastFromLinkedExileUsedThisTurnComponent::class)
         subclass(MayCastWithoutPayingCostUsedThisTurnComponent::class)
+        subclass(CastFromTopOfLibraryUsesThisTurnComponent::class)
         subclass(ReplacementEffectSourceComponent::class)
         subclass(SagaComponent::class)
         subclass(NotedCreatureTypesComponent::class)
