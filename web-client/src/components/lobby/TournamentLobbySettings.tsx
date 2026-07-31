@@ -21,6 +21,7 @@ import { SetPickerModal } from '../ui/SetPickerModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import { COMMANDER_PRESETS, effectiveCommanderPreset } from './axes'
 import type { UnifiedLobbyView } from './lobbyViewModel'
+import type { GroupId } from './settingsGroups'
 import styles from '../ui/GameUI.module.css'
 
 /**
@@ -32,10 +33,32 @@ const RANDOM_SET_CODE = 'RANDOM'
 const isRandomSetCode = (code: string): boolean =>
   code === RANDOM_SET_CODE || code.startsWith(`${RANDOM_SET_CODE}-`)
 
+/**
+ * The tournament-only rows belonging to one settings group.
+ *
+ * Everything below is a faithful move from the single flat list this file used to render; what
+ * changed is that each row now declares which axis it refines, and `LobbyScreen` asks for one group
+ * at a time. The mapping is not a new taxonomy — it is what the conditions in this file already
+ * said. The Commander deckbuild knobs were already gated on `axes.rules === 'COMMANDER'`, the
+ * matchup count on `axes.event === 'ROUND_ROBIN'`, and the attack rule on a Free-for-All *table*.
+ *
+ * | group | rows |
+ * |---|---|
+ * | Cards | cube · card pool · sets · booster mix · ban list · packs · pick timer · cards per pick |
+ * | Rules | preset · min deck size · singleton |
+ * | Table | teams · attack |
+ * | Event | games per matchup |
+ * | This lobby | AI assistance |
+ *
+ * There is no Seats row to place: the lobby already holds as many players as its shape allows and
+ * people join until it is full.
+ */
 export function TournamentLobbySettings({
+  group,
   view,
   lobbyState,
 }: {
+  group: GroupId
   view: UnifiedLobbyView
   lobbyState: LobbyState
 }) {
@@ -106,7 +129,7 @@ export function TournamentLobbySettings({
   return (
     <>
       {/* Team setup (2HG — CR 810; Team vs. Team — CR 808). */}
-      {view.teams.mode !== 'NONE' && (
+      {group === 'TABLE' && view.teams.mode !== 'NONE' && (
         <div className={styles.settingsRow}>
           <SettingsLabel topicId="table-two-headed-giant">Teams</SettingsLabel>
           <div className={styles.variantGroup}>
@@ -138,7 +161,7 @@ export function TournamentLobbySettings({
       )}
 
       {/* Free-for-All attack rule (CR 802/803) — only relevant once 3+ players share one table. */}
-      {isFfa && (
+      {group === 'TABLE' && isFfa && (
         <div className={styles.settingsRow}>
           <SettingsLabel topicId="table-free-for-all">Attack</SettingsLabel>
           <div className={styles.variantGroup}>
@@ -169,7 +192,7 @@ export function TournamentLobbySettings({
           generates no boosters, so it needs none of this. */}
       {/* Cube — a pack source, so it stands in for the set picker rather than adding to it. Always
           offered (even with no cube yet) so the host can find it; picking one hides the set controls. */}
-      {!isPremade && (
+      {group === 'CARDS' && !isPremade && (
         <div className={styles.settingsRow} style={{ alignItems: 'flex-start' }}>
           <span style={{ paddingTop: 7 }}>
             <SettingsLabel topicId="cards-cube">Cube</SettingsLabel>
@@ -183,7 +206,7 @@ export function TournamentLobbySettings({
       )}
 
       {/* Pool Play (cube Sealed only): no draft at all — everyone builds from the whole cube. */}
-      {isCube && isSealed && (
+      {group === 'CARDS' && isCube && isSealed && (
         <div className={styles.settingsRow}>
           <SettingsLabel topicId="cube-pool-play">Card pool</SettingsLabel>
           <div className={styles.variantGroup}>
@@ -212,7 +235,7 @@ export function TournamentLobbySettings({
         </div>
       )}
 
-      {!isPremade && !isCube && (
+      {group === 'CARDS' && !isPremade && !isCube && (
         <>
           <div className={styles.settingsRow} style={{ alignItems: 'flex-start' }}>
             <span className={styles.settingsLabel} style={{ paddingTop: 7 }}>Sets</span>
@@ -296,7 +319,7 @@ export function TournamentLobbySettings({
 
       {/* Booster/pack counts. Grid Draft uses fixed counts, Premade generates none, and Pool Play
           deals no packs at all — so it gets no pack count rather than an inert one. */}
-      {!isPremade && !isGridDraft && !isPoolPlay && (
+      {group === 'CARDS' && !isPremade && !isGridDraft && !isPoolPlay && (
         perSetCounts ? (
           <div className={styles.settingsRow} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
             <span className={styles.settingsLabel}>{boosterCountLabel(isWinston, countsPacks)}</span>
@@ -357,7 +380,7 @@ export function TournamentLobbySettings({
       )}
 
       {/* Draft timing and pick size. */}
-      {isAnyDraft && (
+      {group === 'CARDS' && isAnyDraft && (
         <div className={styles.settingsRow}>
           <span className={styles.settingsLabel}>{isWinston ? 'Turn timer (seconds)' : 'Pick timer (seconds)'}</span>
           <select
@@ -369,7 +392,7 @@ export function TournamentLobbySettings({
           </select>
         </div>
       )}
-      {(isDraft || isCommanderDraft) && (
+      {group === 'CARDS' && (isDraft || isCommanderDraft) && (
         <div className={styles.settingsRow}>
           <span className={styles.settingsLabel}>Cards per pick</span>
           <div className={styles.settingsButtons}>
@@ -387,7 +410,7 @@ export function TournamentLobbySettings({
       )}
 
       {/* Commander preset + deck-shape knobs — a Commander game built from a generated pool. */}
-      {isPoolBuiltCommander && (
+      {group === 'RULES' && isPoolBuiltCommander && (
         <>
           <div className={styles.settingsRow}>
             <span className={styles.settingsLabel}>Preset</span>
@@ -462,7 +485,7 @@ export function TournamentLobbySettings({
           says where it currently stands. */}
 
       {/* Only a bracket has matchups. */}
-      {view.axes.event === 'ROUND_ROBIN' && (
+      {group === 'EVENT' && view.axes.event === 'ROUND_ROBIN' && (
         <div className={styles.settingsRow}>
           <span className={styles.settingsLabel}>Games per matchup</span>
           <select
@@ -475,6 +498,7 @@ export function TournamentLobbySettings({
         </div>
       )}
 
+      {group === 'LOBBY' && (
       <div className={styles.settingsRow}>
         <span className={styles.settingsLabel} title="Lets players use Suggest Pick and Auto-build during this event">
           AI assistance
@@ -494,8 +518,9 @@ export function TournamentLobbySettings({
           </button>
         </div>
       </div>
+      )}
 
-      {showSetPicker && (
+      {group === 'CARDS' && showSetPicker && (
         <SetPickerModal
           sets={allSets}
           selectedCodes={s.setCodes}

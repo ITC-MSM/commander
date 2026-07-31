@@ -1,35 +1,31 @@
 /**
  * The four axes, as the lobby's primary controls.
  *
- * Every lobby shows all three rows and every value of each, whichever server implementation is
- * backing it. What differs is what a value *costs* — `axisChoices.ts` decides that, and this file
- * only renders the answer:
+ * Every lobby shows every value of each, whichever server implementation is backing it. What differs
+ * is what a value *costs* — `axisChoices.ts` decides that, and this file only renders the answer:
  *
  * - selectable → a normal button
  * - selectable but only on the other lobby kind → a button marked `⇄`, which asks for confirmation
  *   before tearing this lobby down (plan § 4b v1)
  * - not implemented anywhere yet → **disabled with the reason attached**, not hidden
  *
- * Sub-options hang off their own axis only: deck legality, sealed shape and draft shape are
- * indented rows directly under **Cards**, never a peer row. That rule is what stopped "Format"
- * from meaning two different things again.
+ * Sub-options hang off their own axis only: deck legality, sealed shape and draft shape belong to
+ * **Cards**, never to a peer. That rule is what stopped "Format" from meaning two different things
+ * again, and it is now also the seam the settings groups are cut along (`settingsGroups.ts`).
  *
- * Reading order is the order of the rows: what deck → under what rules → at what table → over how
- * many games.
+ * Each axis therefore exports two pieces rather than one row: a **strip** of buttons, which lives in
+ * its group's header and is never hidden, and a **body** of sub-options and captions, which the
+ * group collapses. Reading order across the groups is unchanged: what deck → under what rules → at
+ * what table → over how many games.
  */
 import { useEffect } from 'react'
-import { SettingsLabel } from '../ui/SettingsLabel'
 import {
   COMMANDER_LIMITED_HAS_NO_AI,
-  cardsKindTopicId,
   cardsLabel,
   cardsSeatCap,
   isCommanderLimited,
-  eventTopicId,
   legalityOptionsForTable,
   rulesTableBlock,
-  rulesTopicId,
-  tableTopicId,
   type CardsAxis,
   type CardsKind,
   type EventAxis,
@@ -75,18 +71,43 @@ const TABLE_CAPTIONS: Record<TableAxis, string> = {
     'An even pod (4/6/8) split into two teams — 2v2, 3v3, or 4v4. Each player keeps their own 20 life and their own turn; players are knocked out one at a time. The last team with anyone standing wins.',
 }
 
-export function LobbyAxes({
-  view,
-  commands,
-  onRecreate,
-}: {
+interface AxisProps {
   view: UnifiedLobbyView
   commands: LobbyCommands
   /** A value that lives on the other lobby kind — confirmed by the screen before it happens. */
   onRecreate: (spec: RecreateSpec) => void
-}) {
+}
+
+/* ── Strips: always visible, in the group headers ─────────────────────────── */
+
+export function CardsAxisStrip({ view, commands, onRecreate }: AxisProps) {
+  return <AxisButtons choices={cardsChoices(view)} onPick={commands.setCards} onRecreate={onRecreate} />
+}
+
+export function RulesAxisStrip({ view, commands, onRecreate }: AxisProps) {
+  return <AxisButtons choices={rulesChoices(view)} onPick={commands.setRules} onRecreate={onRecreate} />
+}
+
+export function TableAxisStrip({ view, commands, onRecreate }: AxisProps) {
+  return <AxisButtons choices={tableChoices(view)} onPick={commands.setTable} onRecreate={onRecreate} />
+}
+
+export function EventAxisStrip({ view, onRecreate }: AxisProps) {
+  return (
+    <AxisButtons
+      choices={eventChoices(view)}
+      // Event has no directly-settable second value on either kind: server-side
+      // `gameMode = TOURNAMENT` *is* the bracket. Every cross-value pick recreates.
+      onPick={() => {}}
+      onRecreate={onRecreate}
+    />
+  )
+}
+
+/* ── Bodies: the sub-options and captions a group collapses ───────────────── */
+
+export function CardsAxisBody({ view, commands }: Omit<AxisProps, 'onRecreate'>) {
   const cards = view.axes.cards
-  const rulesConflict = rulesTableBlock(view.axes.rules, view.axes.table)
   // Deck legality is filtered by table, but *derived* from the Rules × Table rule rather than
   // restating it: commander legality implies Commander rules (CR 903.4 anchors colour identity to
   // the commander), so a table that can't have those can't offer it either.
@@ -108,17 +129,9 @@ export function LobbyAxes({
 
   return (
     <>
-      {/* ── Cards: where the deck comes from. ── */}
       <div className={styles.settingsRow}>
-        <SettingsLabel topicId={cardsKindTopicId(cards.kind)}>Cards</SettingsLabel>
-        <div className={styles.variantGroup}>
-          <AxisButtons
-            choices={cardsChoices(view)}
-            onPick={commands.setCards}
-            onRecreate={onRecreate}
-          />
-          <div className={styles.variantCaption}>{CARDS_CAPTIONS[cards.kind]}</div>
-        </div>
+        <span className={styles.settingsLabel} />
+        <div className={styles.variantCaption}>{CARDS_CAPTIONS[cards.kind]}</div>
       </div>
 
       {/* Cards → Bring a deck: which constructed format submitted decks must be legal in. */}
@@ -211,58 +224,48 @@ export function LobbyAxes({
           </div>
         </div>
       )}
-
-      {/* ── Rules: which rules the game runs under. ── */}
-      <div className={styles.settingsRow}>
-        <SettingsLabel topicId={rulesTopicId(view.axes.rules)}>Rules</SettingsLabel>
-        <div className={styles.variantGroup}>
-          <AxisButtons
-            choices={rulesChoices(view)}
-            onPick={commands.setRules}
-            onRecreate={onRecreate}
-          />
-          {/* A lobby can be sitting on a Rules × Table contradiction (the server defaults Rules to
-              Commander when the host picks commander deck legality, whatever the table). Say so here
-              rather than only on a disabled Start button. */}
-          <div className={styles.variantCaption}>
-            {rulesConflict ?? RULES_CAPTIONS[view.axes.rules]}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Table: who is at it. ── */}
-      <div className={styles.settingsRow}>
-        <SettingsLabel topicId={tableTopicId(view.axes.table)}>Table</SettingsLabel>
-        <div className={styles.variantGroup}>
-          <AxisButtons
-            choices={tableChoices(view)}
-            onPick={commands.setTable}
-            onRecreate={onRecreate}
-          />
-          <div className={styles.variantCaption}>{TABLE_CAPTIONS[view.axes.table]}</div>
-        </div>
-      </div>
-
-      {/* ── Event: one game, or a series. ── */}
-      <div className={styles.settingsRow}>
-        <SettingsLabel topicId={eventTopicId(view.axes.event)}>Event</SettingsLabel>
-        <div className={styles.variantGroup}>
-          <AxisButtons
-            choices={eventChoices(view)}
-            // Event has no directly-settable second value on either kind: server-side
-            // `gameMode = TOURNAMENT` *is* the bracket. Every cross-value pick recreates.
-            onPick={() => {}}
-            onRecreate={onRecreate}
-          />
-          <div className={styles.variantCaption}>{eventCaption(view)}</div>
-        </div>
-      </div>
     </>
   )
 }
 
-/** The caption under Event: what the value you *didn't* pick would take. */
-function eventCaption(view: UnifiedLobbyView): string {
+export function RulesAxisBody({ view }: { view: UnifiedLobbyView }) {
+  // A lobby can be sitting on a Rules × Table contradiction (the server defaults Rules to Commander
+  // when the host picks commander deck legality, whatever the table). Say so here rather than only
+  // on a disabled Start button.
+  const rulesConflict = rulesTableBlock(view.axes.rules, view.axes.table)
+  return (
+    <div className={styles.settingsRow}>
+      <span className={styles.settingsLabel} />
+      <div className={styles.variantCaption}>
+        {rulesConflict ?? RULES_CAPTIONS[view.axes.rules]}
+      </div>
+    </div>
+  )
+}
+
+export function TableAxisBody({ view }: { view: UnifiedLobbyView }) {
+  return (
+    <div className={styles.settingsRow}>
+      <span className={styles.settingsLabel} />
+      <div className={styles.variantCaption}>{TABLE_CAPTIONS[view.axes.table]}</div>
+    </div>
+  )
+}
+
+export function EventAxisBody({ view }: { view: UnifiedLobbyView }) {
+  const caption = eventCaption(view)
+  if (!caption) return null
+  return (
+    <div className={styles.settingsRow}>
+      <span className={styles.settingsLabel} />
+      <div className={styles.variantCaption}>{caption}</div>
+    </div>
+  )
+}
+
+/** The caption under Event: what the value you *didn't* pick would take. Empty when there is
+ *  nothing to say, which is how `LobbyScreen` knows the group has no body. */
+export function eventCaption(view: UnifiedLobbyView): string {
   const other = eventChoices(view).find((c) => !c.selected)
   if (!other) return ''
   switch (other.availability.kind) {
