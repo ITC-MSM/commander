@@ -80,6 +80,7 @@ export function LobbyScreen() {
   const [aiSource, setAiSource] = useState<AiDeckSource>(() => initialAiSource(quickLobby?.aiDeck))
   /** Which quick-lobby seat's deck modal is open. */
   const [quickDeckSeat, setQuickDeckSeat] = useState<'human' | 'ai' | null>(null)
+  const [tournamentDeckOpen, setTournamentDeckOpen] = useState(false)
   const [pendingRecreate, setPendingRecreate] = useState<RecreateSpec | null>(null)
   /** Which AI seat's deck the host is choosing, by player id. Null = the modal is closed. */
   const [aiDeckSeat, setAiDeckSeat] = useState<string | null>(null)
@@ -223,17 +224,8 @@ export function LobbyScreen() {
           </div>
         </div>
 
-        {/* Tournament deck submission remains inline for pods and brackets. A quick 1v1 attaches
-            each picker to its player row below, so two large pickers never precede the roster. */}
-        {view.kind === 'TOURNAMENT' && lobbyState && view.isWaiting &&
-          lobbyState.settings.format === 'PREMADE_DECKS' && (
-            <PremadeDeckPickerPanel
-              lobbyState={lobbyState}
-              playerId={playerId}
-              initialSavedDeckName={intent?.deckName}
-              onSavedDeckNameChange={setSavedDeckName}
-            />
-        )}
+        {/* Every brought deck now belongs to a player row; no lobby puts a deck browser before its
+            roster, whether it is backed by the quick or tournament implementation. */}
         <div className={styles.playerListPanel}>
           <div className={styles.playerListHeader}>
             <span className={styles.playerListTitle}>Players</span>
@@ -295,6 +287,17 @@ export function LobbyScreen() {
                     {player.status} <span aria-hidden>✎</span>
                   </button>
                 )}
+                {view.kind === 'TOURNAMENT' && view.isWaiting &&
+                  view.axes.cards.kind === 'BRING_A_DECK' && player.isYou && (
+                    <button
+                      type="button"
+                      onClick={() => setTournamentDeckOpen(true)}
+                      className={`${styles.playerStatus} ${styles.playerDeckButton} ${statusClass(player.tone)}`}
+                      title={player.tone === 'ready' ? 'View or change your submitted deck' : 'Choose and submit your deck'}
+                    >
+                      {player.status} <span aria-hidden>✎</span>
+                    </button>
+                )}
                 {/* The AI's deck is the host's to pick only where the lobby deals it no pool; the
                     view model already answers that by leaving `aiDeck` null everywhere else. */}
                 {view.isWaiting && view.isHost && player.isAi && player.aiDeck && (
@@ -306,7 +309,9 @@ export function LobbyScreen() {
                     {aiDeckSummary(player.aiDeck)}
                   </button>
                 )}
-                {!(view.kind === 'QUICK' && !isMomir && (player.isYou || (player.isAi && view.isHost))) && (
+                {!(view.kind === 'QUICK' && !isMomir && (player.isYou || (player.isAi && view.isHost))) &&
+                  !(view.kind === 'TOURNAMENT' && view.isWaiting &&
+                    view.axes.cards.kind === 'BRING_A_DECK' && player.isYou) && (
                   <span className={`${styles.playerStatus} ${statusClass(player.tone)}`}>{player.status}</span>
                 )}
                 {view.isWaiting && view.isHost && player.isAi && (
@@ -444,6 +449,18 @@ export function LobbyScreen() {
           />
         )
       })()}
+
+      {tournamentDeckOpen && lobbyState && view.kind === 'TOURNAMENT' && view.isWaiting &&
+        lobbyState.settings.format === 'PREMADE_DECKS' && (
+          <DeckPickerModal title={`${view.you?.name ?? 'Your'} deck`} onClose={() => setTournamentDeckOpen(false)}>
+            <PremadeDeckPickerPanel
+              lobbyState={lobbyState}
+              playerId={playerId}
+              initialSavedDeckName={intent?.deckName}
+              onSavedDeckNameChange={setSavedDeckName}
+            />
+          </DeckPickerModal>
+      )}
 
       {aiDeckSeat && (() => {
         // Read the seat back out of the view each render rather than closing over it: the roster is

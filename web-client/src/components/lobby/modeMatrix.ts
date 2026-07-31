@@ -357,8 +357,8 @@ export function shapeChoices(roster: Roster, cards: CardsAxis): Choice<ShapeId>[
  *
  * The shapes that force a count still force it here: Two-Headed Giant is exactly four, Team vs. Team
  * needs an even pod, Free-for-All is capped by the board layout, and the two-player sub-shapes cap
- * themselves through {@link cardsSeatCap}. For a solo pod this is also the number of AI seats that
- * get filled (`resolveLaunch`), which the lobby can add to and remove from afterwards.
+ * themselves through {@link cardsSeatCap}. A solo lobby uses this as expansion capacity, not as its
+ * initial AI count; {@link defaultSoloAiSeats} chooses the smaller roster it starts with.
  */
 export function seatCap(roster: Roster, cards: CardsAxis, shape: ShapeId): number {
   if (roster === 'FRIEND') return 2
@@ -374,6 +374,27 @@ export function seatCap(roster: Roster, cards: CardsAxis, shape: ShapeId): numbe
     case 'TEAM_VS_TEAM': return Math.max(4, cap - (cap % 2))
     default: return Math.max(2, cap)
   }
+}
+
+/**
+ * A useful starting roster for a solo tournament lobby, deliberately separate from its capacity.
+ *
+ * Capacity answers how far the host may grow the lobby. Filling every one of those seats with AI
+ * made an eight-seat lobby feel mandatory and forced the host to delete opponents before playing.
+ * These defaults make a representative table/event immediately playable while leaving Add AI
+ * available up to {@link seatCap}.
+ */
+export function defaultSoloAiSeats(cards: CardsAxis, shape: ShapeId): number {
+  const totalPlayers = (() => {
+    switch (shape) {
+      case 'ONE_GAME': return 2
+      case 'TWO_HEADED_GIANT': return 4
+      case 'FREE_FOR_ALL': return 4
+      case 'TEAM_VS_TEAM': return 4
+      case 'BRACKET': return cards.kind === 'DRAFT' || cards.kind === 'SEALED' ? 6 : 4
+    }
+  })()
+  return Math.max(0, Math.min(totalPlayers, seatCap('SOLO', cards, shape)) - 1)
 }
 
 /* ── What will actually happen ──────────────────────────────────────────── */
@@ -437,7 +458,7 @@ export type LaunchSpec =
       rules: GameRules
       gameMode: LobbyGameMode
       maxPlayers: number
-      /** AI seats to fill after the lobby exists. Only ever non-zero for a solo limited pod. */
+      /** AI seats to seed after the lobby exists. Only non-zero for a solo tournament lobby. */
       aiSeats: number
     }
 
@@ -478,7 +499,7 @@ export function resolveLaunch(selection: Selection): LaunchSpec {
     rules: rulesForCards(cards),
     gameMode: gameModeForTable(shapeAxes(shape).table),
     maxPlayers: seats,
-    aiSeats: roster === 'SOLO' ? Math.max(0, seats - 1) : 0,
+    aiSeats: roster === 'SOLO' ? defaultSoloAiSeats(cards, shape) : 0,
   }
 }
 

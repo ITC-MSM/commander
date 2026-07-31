@@ -94,11 +94,16 @@ describe('recipeFromSelection', () => {
     }
   })
 
-  it('fills AI seats only for a solo pod, never for a two-seat quick lobby', () => {
+  it('seeds a useful AI roster only for a solo tournament lobby', () => {
     const soloDraft = recipeFromSelection({
       roster: 'SOLO', cards: { kind: 'DRAFT', shape: 'BOOSTER' }, shape: 'BRACKET',
     })
-    expect(soloDraft.aiSeats).toBe(7)
+    expect(soloDraft.aiSeats).toBe(5)
+
+    const soloFreeForAll = recipeFromSelection({
+      roster: 'SOLO', cards: { kind: 'BRING_A_DECK', legality: null }, shape: 'FREE_FOR_ALL',
+    })
+    expect(soloFreeForAll.aiSeats).toBe(3)
 
     const soloOneGame = recipeFromSelection({
       roster: 'SOLO', cards: { kind: 'BRING_A_DECK', legality: null }, shape: 'ONE_GAME',

@@ -46,6 +46,7 @@ import type { LobbyState } from '@/store/slices/types'
 import { CARDS_KINDS, type CardsAxis, type CardsKind } from './axes'
 import {
   ROSTERS,
+  defaultSoloAiSeats,
   SHAPE_IDS,
   cardsChoices,
   seatCap,
@@ -152,7 +153,7 @@ export function recipeFromSelection(selection: Selection): LobbyRecipe {
     settings: {},
     deck: deckForCards(cards),
     aiSeats: roster === 'SOLO' && lobbyNeedsAiSeats(selection)
-      ? Math.max(0, seatCap(roster, cards, shape) - 1)
+      ? defaultSoloAiSeats(cards, shape)
       : 0,
     // A solo game has nobody to wait for, but a brand-new selection has no deck yet either, so the
     // lobby is where you pick one. Auto-start is earned by a *captured* recipe, which knows the deck.

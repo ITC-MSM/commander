@@ -405,7 +405,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       'You and the built-in AI. Nobody else has to show up, and the game starts as soon as you have picked a deck.',
     body: [
       { kind: 'p', text: 'At 1v1 the AI can play any of the card sources — your own deck, a rolled pool, or Momir Basic.' },
-      { kind: 'p', text: 'Every table is open too: the lobby opens as a full pod of AI seats, so on your own you can play a Free-for-All pod, take an AI teammate into Two-Headed Giant, run Team vs. Team, or draft a pod and play the bracket out. Add or remove them in the lobby if you want a smaller table.' },
+      { kind: 'p', text: 'Every table is open too: the lobby starts with a useful AI roster — four players for a shared table, six for a limited round robin, and four for a brought-deck round robin. You can add or remove AI seats in the lobby without making the maximum capacity the default.' },
       { kind: 'p', text: 'The AI builds from the pool it is dealt, and in a lobby where everyone brings a deck the server normally rolls it one. Commander is the exception: choose a saved, example, or pasted Commander deck for the AI so its commander can start in the command zone.' },
     ],
     related: ['axis-limits', 'cards-draft', 'event-round-robin'],
