@@ -2778,6 +2778,8 @@ export interface QuickGameLobbyPlayerView {
   readonly deckLabel: string
   /** Per-player set choice for Random pools; null = "any set". */
   readonly setCode: string | null
+  /** All sets used to build a Random deck; empty means any set. */
+  readonly setCodes?: readonly string[]
 }
 
 export type DeckFormat =
@@ -2937,7 +2939,8 @@ export interface SetQuickGameLobbyReadyMessage {
 
 export interface SetQuickGameLobbySetCodeMessage {
   readonly type: 'setQuickGameLobbySetCode'
-  readonly setCode: string | null
+  readonly setCode?: string | null
+  readonly setCodes: readonly string[]
 }
 
 export interface SetQuickGameLobbyPublicMessage {
@@ -2998,8 +3001,8 @@ export function createSubmitQuickGameLobbyDeckMessage(
 export function createSetQuickGameLobbyReadyMessage(ready: boolean): SetQuickGameLobbyReadyMessage {
   return { type: 'setQuickGameLobbyReady', ready }
 }
-export function createSetQuickGameLobbySetCodeMessage(setCode: string | null): SetQuickGameLobbySetCodeMessage {
-  return { type: 'setQuickGameLobbySetCode', setCode }
+export function createSetQuickGameLobbySetCodeMessage(setCodes: readonly string[]): SetQuickGameLobbySetCodeMessage {
+  return { type: 'setQuickGameLobbySetCode', setCodes }
 }
 export function createSetQuickGameLobbyPublicMessage(isPublic: boolean): SetQuickGameLobbyPublicMessage {
   return { type: 'setQuickGameLobbyPublic', isPublic }

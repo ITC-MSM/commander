@@ -22,7 +22,7 @@ class QuickGameLobby(
     val lobbyId: String = generateLobbyCode(),
     val createdAt: Long = System.currentTimeMillis(),
     @Volatile var vsAi: Boolean,
-    /** Set used for "Random" sealed-pool decks. Mutable: the host can change it from the lobby UI. */
+    /** Legacy lobby-wide fallback set for "Random" decks. New clients choose sets per player. */
     @Volatile var setCode: String?,
     /**
      * If true the lobby is listed by `GET /api/quick-games/public` so other players can find it
@@ -152,10 +152,12 @@ data class QuickGameLobbyPlayer(
     var deckList: Map<String, Int>? = null,
     var ready: Boolean = false,
     /**
-     * Per-player set code used when [deckList] is empty (Random pool).
-     * null means "any set, server picks one". Each player chooses their own.
+     * Legacy single-set view used when [deckList] is empty (Random pool).
+     * Kept on the wire for older clients; [setCodes] is authoritative.
      */
     var setCode: String? = null,
+    /** All sets used to build a Random deck. Empty means any set. */
+    var setCodes: List<String> = listOfNotNull(setCode),
     /**
      * Designated commander card name for commander-shape formats (Commander / Brawl / Standard
      * Brawl). Null when [deckList] is empty (random pool) or the lobby format isn't commander-

@@ -602,13 +602,17 @@ sealed interface ClientMessage {
     data class SetQuickGameLobbyReady(val ready: Boolean) : ClientMessage
 
     /**
-     * Update the quick-game lobby's set code (used when a player has chosen the "Random" deck
-     * tab — picks a sealed pool from this set). Pass null to mean "any set, server picks one".
-     * Only the host (first non-AI player) is allowed to change this.
+     * Update the sets used for this player's "Random" deck. An empty list means the server chooses
+     * a set. [setCode] remains as a backwards-compatible input for older clients.
      */
     @Serializable
     @SerialName("setQuickGameLobbySetCode")
-    data class SetQuickGameLobbySetCode(val setCode: String?) : ClientMessage
+    data class SetQuickGameLobbySetCode(
+        /** Legacy single-set client field. */
+        val setCode: String? = null,
+        /** Sets used to build this player's random deck; empty means any set. */
+        val setCodes: List<String> = listOfNotNull(setCode),
+    ) : ClientMessage
 
     /**
      * Toggle whether the quick-game lobby is publicly listed so other players can find it

@@ -308,8 +308,10 @@ class QuickGameLobbyHandler(
         lobbyRepository.withLock(lobby.lobbyId) { current ->
             if (current == null) return@withLock
             val player = current.findPlayer(playerSession.playerId) ?: return@withLock
-            if (player.setCode == message.setCode) return@withLock
-            player.setCode = message.setCode
+            val requested = message.setCodes.filter { it.isNotBlank() }.distinct()
+            if (player.setCodes == requested) return@withLock
+            player.setCodes = requested
+            player.setCode = requested.singleOrNull()
             broadcastState(current)
         }
     }
@@ -780,8 +782,7 @@ class QuickGameLobbyHandler(
             // that ignores the restriction their opponent's list was validated against. Without a
             // format it stays a sealed pool from their own set choice, falling back to the caller's
             // pre-resolved set (shared with the AI in a vs-AI lobby so both play the same set).
-            val setCode = player.setCode ?: randomFallbackSet
-            return randomDeckResolver.randomDeck(format, emptyList(), setCode)
+            return randomDeckResolver.randomDeck(format, player.setCodes, randomFallbackSet)
         }
         return submitted
     }
@@ -851,7 +852,7 @@ class QuickGameLobbyHandler(
             // `aiDeckSpec` resolves to at game start — so it labels from the spec instead.
             isAi -> aiDeckLabel(lobby)
             deckList == null -> "Choosing…"
-            deckList!!.isEmpty() -> if (setCode != null) "Random Pool ($setCode)" else "Random Pool"
+            deckList!!.isEmpty() -> if (setCodes.isNotEmpty()) "Random Pool (${setCodes.joinToString(", ")})" else "Random Pool"
             else -> "Custom ($total)"
         }
         return ServerMessage.QuickGameLobbyPlayerView(
@@ -863,6 +864,7 @@ class QuickGameLobbyHandler(
             deckCardCount = if (lobby.momirBasic) MomirBasicSetup.COPIES_PER_BASIC * MomirBasicSetup.BASIC_LAND_NAMES.size else total,
             deckLabel = label,
             setCode = setCode,
+            setCodes = setCodes,
             teamIndex = lobby.teamIndexOf(seatIndex),
         )
     }

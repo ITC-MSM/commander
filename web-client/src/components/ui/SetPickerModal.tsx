@@ -8,7 +8,7 @@
  *               asks the parent to add a random set to the selection.
  *   - `single`: clicking a row selects it and closes the modal. With `onSelectRandom` a top
  *               "Random Set" row clears the selection so the server rolls a random set
- *               (Quick Game random sealed pool).
+ *               (callers that need exactly one set).
  *
  * Extension sets (bonus sheets like The Big Score) carry an "extension" badge and are only
  * playable alongside a regular set, so single mode hides them entirely.

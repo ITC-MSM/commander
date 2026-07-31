@@ -15,7 +15,7 @@
  * replayed. For a lobby with an invite code the click ends on a configured lobby with the code
  * already on screen; for one nobody can join, it ends in the game.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { useSetupLibrary, usableSetups, LAST_SETUP_ID, type SavedSetup } from '@/store/setupLibrary'
 import { recipeSummary, type LobbyRecipe } from '../lobby/lobbyRecipe'
@@ -33,8 +33,25 @@ export function SetupRail({
   const deleteSetup = useSetupLibrary((s) => s.deleteSetup)
   const renameSetup = useSetupLibrary((s) => s.renameSetup)
   const [menuFor, setMenuFor] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => { hydrate() }, [hydrate])
+
+  useEffect(() => {
+    if (menuFor === null) return
+    const closeWhenOutside = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuFor(null)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuFor(null)
+    }
+    document.addEventListener('pointerdown', closeWhenOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeWhenOutside)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [menuFor])
 
   // Re-checked against *this* server, not trusted: a setup outlives the build that made it, and the
   // AI can be switched off between sessions. Anything unreachable simply isn't offered.
@@ -84,7 +101,7 @@ export function SetupRail({
               ⋯
             </button>
             {menuFor === setup.id && (
-              <div className={styles.setupChipMenu} role="menu">
+              <div ref={menuRef} className={styles.setupChipMenu} role="menu">
                 <button
                   type="button"
                   role="menuitem"

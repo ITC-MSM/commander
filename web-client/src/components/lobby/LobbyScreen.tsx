@@ -423,6 +423,7 @@ export function LobbyScreen() {
         <DeckPickerModal title={`${view.you?.name ?? 'Your'} deck`} onClose={() => setQuickDeckSeat(null)}>
           <QuickGameDeckPicker
             youSetCode={quickLobby.players.find((p) => p.playerId === quickLobby.youPlayerId)?.setCode ?? null}
+            youSetCodes={quickLobby.players.find((p) => p.playerId === quickLobby.youPlayerId)?.setCodes}
             format={quickLobby.format ?? null}
             disabled={view.you?.tone === 'ready'}
             tab={deckTab}
@@ -709,6 +710,7 @@ function RecreateConfirm({
  */
 function QuickGameDeckPicker({
   youSetCode,
+  youSetCodes,
   format,
   disabled,
   tab,
@@ -718,6 +720,7 @@ function QuickGameDeckPicker({
   onSavedDeckNameChange,
 }: {
   youSetCode: string | null
+  youSetCodes: readonly string[] | undefined
   format: string | null
   disabled: boolean
   tab: DeckPickerTab | undefined
@@ -773,8 +776,9 @@ function QuickGameDeckPicker({
     <DeckPicker
       onDeckChange={handleDeckChange}
       onValidityChange={onValidityChange}
-      onSetCodeChange={setSetCode}
+      onSetCodesChange={setSetCode}
       initialSetCode={youSetCode}
+      {...(youSetCodes ? { initialSetCodes: youSetCodes } : {})}
       availableSets={availableSets}
       disabled={disabled}
       format={format}

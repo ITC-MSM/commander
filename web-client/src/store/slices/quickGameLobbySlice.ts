@@ -43,7 +43,7 @@ export interface QuickGameLobbySliceActions {
   leaveQuickGameLobby: () => void
   submitQuickGameLobbyDeck: (deckList: Record<string, number>, commander?: string | null) => void
   setQuickGameLobbyReady: (ready: boolean) => void
-  setQuickGameLobbySetCode: (setCode: string | null) => void
+  setQuickGameLobbySetCode: (setCodes: readonly string[]) => void
   setQuickGameLobbyPublic: (isPublic: boolean) => void
   setQuickGameLobbyRanked: (ranked: boolean) => void
   setQuickGameLobbyFormat: (format: DeckFormat | null, momirBasic?: boolean) => void
@@ -79,8 +79,8 @@ export const createQuickGameLobbySlice: SliceCreator<QuickGameLobbySlice> = (set
     getWebSocket()?.send(createSetQuickGameLobbyReadyMessage(ready))
   },
 
-  setQuickGameLobbySetCode: (setCode) => {
-    getWebSocket()?.send(createSetQuickGameLobbySetCodeMessage(setCode))
+  setQuickGameLobbySetCode: (setCodes) => {
+    getWebSocket()?.send(createSetQuickGameLobbySetCodeMessage(setCodes))
   },
 
   setQuickGameLobbyPublic: (isPublic) => {

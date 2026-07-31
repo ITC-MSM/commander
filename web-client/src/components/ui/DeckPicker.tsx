@@ -67,14 +67,11 @@ export interface DeckPickerProps {
     sideboard?: Record<string, number>,
   ) => void
   onValidityChange?: (isValid: boolean) => void
-  /**
-   * Optional set selection callback for the "Random" tab. When the picker is on Random and
-   * the user changes the set, this is fired with the chosen set code (or null = "any set").
-   * Only meaningful for the Quick Game lobby; standalone uses can ignore it.
-   */
-  onSetCodeChange?: (setCode: string | null) => void
+  /** Set selection for quick-game Random decks. Empty means the server chooses a set. */
+  onSetCodesChange?: (setCodes: readonly string[]) => void
   /** Initial set code for the Random tab — used to re-hydrate after a reconnect. */
   initialSetCode?: string | null
+  initialSetCodes?: readonly string[]
   /** Available sets for the Random tab set picker. Empty list hides the picker. */
   availableSets?: ReadonlyArray<AvailableSet>
   disabled?: boolean
@@ -171,8 +168,9 @@ const COMMANDER_SHAPES = ['COMMANDER', 'BRAWL', 'STANDARD_BRAWL']
 export function DeckPicker({
   onDeckChange,
   onValidityChange,
-  onSetCodeChange,
+  onSetCodesChange,
   initialSetCode = null,
+  initialSetCodes,
   availableSets = [],
   disabled = false,
   tabs = ALL_TABS,
@@ -239,14 +237,16 @@ export function DeckPicker({
   const [cards, setCards] = useState<Record<string, CardSummary>>({})
   const [examples, setExamples] = useState<ExampleDeck[]>([])
   const [validation, setValidation] = useState<ValidationResult | null>(null)
-  const [randomSetCode, setRandomSetCode] = useState<string | null>(initialSetCode)
+  const [randomSetCodes, setRandomSetCodes] = useState<readonly string[]>(
+    initialSetCodes ?? (initialSetCode ? [initialSetCode] : []),
+  )
   const [showSetPicker, setShowSetPicker] = useState(false)
   const validateAbortRef = useRef<AbortController | null>(null)
 
   // Re-hydrate on initial-set-code change (e.g. server-driven on reconnect).
   useEffect(() => {
-    setRandomSetCode(initialSetCode)
-  }, [initialSetCode])
+    setRandomSetCodes(initialSetCodes ?? (initialSetCode ? [initialSetCode] : []))
+  }, [initialSetCode, initialSetCodes])
 
   // Tell a controlling parent which tab we resolved to, so it starts in sync rather than having
   // to guess the default. Fires once; every later change goes through `setTab`.
@@ -586,30 +586,30 @@ export function DeckPicker({
                 {randomIsConstructed
                   ? `A 60-card ${formatLabel}-legal deck, auto-built from the whole legal card pool
                      the moment the game starts. Nothing to pick, nothing to submit — just ready up.`
-                  : `Eight boosters from one set, auto-built into a 40-card deck the moment the game
-                     starts. Nothing to pick, nothing to submit — just ready up.`}
+                  : `Eight boosters across the sets you choose (or one set chosen for you), auto-built
+                     into a 40-card deck the moment the game starts. Nothing else to submit — just ready up.`}
               </p>
               <p className={styles.randomBody}>
                 This covers your seat only. Your opponent can still bring a deck of their own.
               </p>
               {!randomIsConstructed && availableSets.length > 0 && (() => {
-                const selectedSet = randomSetCode
-                  ? availableSets.find((s) => s.code === randomSetCode) ?? null
-                  : null
                 return (
                   <div className={styles.randomSetRow}>
-                    <label className={styles.helperText} style={{ flexShrink: 0 }}>Set</label>
-                    <span
-                      className={`${lobbyStyles.setChip} ${selectedSet?.partial ? lobbyStyles.setChipPartial : ''}`}
-                      title={selectedSet?.name ?? 'A random set is rolled when the game starts'}
-                    >
-                      {selectedSet ? (
-                        <SetIcon code={selectedSet.code} className={lobbyStyles.setChipIcon} />
-                      ) : (
+                    <label className={styles.helperText} style={{ flexShrink: 0 }}>Sets</label>
+                    {randomSetCodes.length === 0 ? (
+                      <span className={lobbyStyles.setChip} title="A random set is rolled when the game starts">
                         <span className={lobbyStyles.setChipIcon} aria-hidden>🎲</span>
-                      )}
-                      <span className={lobbyStyles.setChipName}>{selectedSet?.name ?? 'Random Set'}</span>
-                    </span>
+                        <span className={lobbyStyles.setChipName}>Random Set</span>
+                      </span>
+                    ) : randomSetCodes.map((code) => {
+                      const selectedSet = availableSets.find((s) => s.code === code)
+                      return (
+                        <span key={code} className={`${lobbyStyles.setChip} ${selectedSet?.partial ? lobbyStyles.setChipPartial : ''}`}>
+                          <SetIcon code={code} className={lobbyStyles.setChipIcon} />
+                          <span className={lobbyStyles.setChipName}>{selectedSet?.name ?? code}</span>
+                        </span>
+                      )
+                    })}
                     <button
                       type="button"
                       className={lobbyStyles.addSetsButton}
@@ -617,7 +617,7 @@ export function DeckPicker({
                       disabled={disabled}
                       style={{ marginLeft: 'auto' }}
                     >
-                      Choose set
+                      Choose sets
                     </button>
                   </div>
                 )
@@ -626,18 +626,24 @@ export function DeckPicker({
             {showSetPicker && (
               <SetPickerModal
                 sets={availableSets}
-                mode="single"
-                selectedCodes={randomSetCode ? [randomSetCode] : []}
+                mode="multi"
+                selectedCodes={randomSetCodes}
                 onToggleSet={(code) => {
-                  setRandomSetCode(code)
-                  onSetCodeChange?.(code)
+                  const next = randomSetCodes.includes(code)
+                    ? randomSetCodes.filter((selected) => selected !== code)
+                    : [...randomSetCodes, code]
+                  setRandomSetCodes(next)
+                  onSetCodesChange?.(next)
                 }}
                 onSelectRandom={() => {
-                  setRandomSetCode(null)
-                  onSetCodeChange?.(null)
+                  const candidates = availableSets.filter((set) => !set.extensionSet && !randomSetCodes.includes(set.code))
+                  const chosen = candidates[Math.floor(Math.random() * candidates.length)]
+                  const next = chosen ? [...randomSetCodes, chosen.code] : randomSetCodes
+                  setRandomSetCodes(next)
+                  onSetCodesChange?.(next)
                 }}
                 onClose={() => setShowSetPicker(false)}
-                title="Choose a set"
+                title="Choose sets"
               />
             )}
           </>

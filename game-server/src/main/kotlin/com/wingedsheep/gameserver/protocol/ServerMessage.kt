@@ -1164,6 +1164,8 @@ sealed interface ServerMessage {
         val deckLabel: String,
         /** Per-player set choice for Random pools; null = "any set". */
         val setCode: String? = null,
+        /** All set choices for Random decks; empty = "any set". */
+        val setCodes: List<String> = listOfNotNull(setCode),
         /**
          * Team membership in a Two-Headed Giant lobby (CR 810): seats sharing a [teamIndex] are
          * teammates. Derived from the seat's join order (0+1 = team 0, 2+3 = team 1). Null in a
