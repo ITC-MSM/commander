@@ -226,6 +226,7 @@ export enum Keyword {
   TOXIC = 'TOXIC',
   // Death replacement
   PERSIST = 'PERSIST',
+  UNDYING = 'UNDYING',
   // Dies-and-returns-as-enchantment (Duskmourn Glimmer cycle)
   ENDURING = 'ENDURING',
   // Resolution-time city's blessing grant (Ixalan)
@@ -309,6 +310,7 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.WITHER]: 'Wither',
   [Keyword.TOXIC]: 'Toxic',
   [Keyword.PERSIST]: 'Persist',
+  [Keyword.UNDYING]: 'Undying',
   [Keyword.ENDURING]: 'Enduring',
   [Keyword.ASCEND]: 'Ascend',
   [Keyword.START_YOUR_ENGINES]: 'Start your engines!',

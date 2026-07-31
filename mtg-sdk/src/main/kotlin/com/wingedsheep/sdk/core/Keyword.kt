@@ -330,6 +330,7 @@ enum class Keyword(val displayName: String) {
     // ── Creature mechanics ────────────────────────────────
     OFFSPRING("Offspring"),
     PERSIST("Persist"),
+    UNDYING("Undying"),
 
     /**
      * Enduring (Duskmourn: House of Horror — the Glimmer "Enduring" cycle).
