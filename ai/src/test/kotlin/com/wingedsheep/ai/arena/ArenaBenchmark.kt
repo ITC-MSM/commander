@@ -3,6 +3,7 @@ package com.wingedsheep.ai.arena
 import io.kotest.core.spec.style.FunSpec
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.nio.file.Path
 
 /**
  * The arena's command-line entry point. Both tests are disabled unless explicitly switched on, so
@@ -24,6 +25,7 @@ class ArenaBenchmark : FunSpec({
     val maxTurns = System.getProperty("arenaMaxTurns")?.toIntOrNull() ?: 50
     val threads = System.getProperty("arenaThreads")?.toIntOrNull()
         ?: Runtime.getRuntime().availableProcessors()
+    val featureOutput = System.getProperty("arenaEmitFeatures")?.let(Path::of)
 
     val headToHead = System.getProperty("arena") == "true"
     val gauntlet = System.getProperty("arenaGauntlet") == "true"
@@ -32,7 +34,7 @@ class ArenaBenchmark : FunSpec({
     test("arena: head to head").config(enabled = headToHead) {
         val agentA = ArenaAgents.resolve(requireProperty("arenaA"))
         val agentB = ArenaAgents.resolve(requireProperty("arenaB"))
-        val config = ArenaConfig(agentA, agentB, games, seed, setCode, maxTurns, threads)
+        val config = ArenaConfig(agentA, agentB, games, seed, setCode, maxTurns, threads, featureOutput)
 
         println("=== ARENA: ${agentA.name} vs ${agentB.name} — ${config.pairs} pairs " +
             "(${config.pairs * 2} games) on $threads threads, $setCode, seed $seed ===")

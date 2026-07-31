@@ -176,6 +176,7 @@ object TableGameRunner {
         /** Hash every action and decision into [TableGameOutcome.actionStreamHash]. Off by
          *  default: it costs a string per action, and only `FrozenBaselineTest` needs it. */
         recordActionStream: Boolean = false,
+        featureCollector: ArenaFeatureCollector? = null,
     ): TableGameOutcome {
         require(agents.size == setup.seats && decks.size == setup.seats) {
             "${setup.id} has ${setup.seats} seats but got ${agents.size} agents / ${decks.size} decks."
@@ -228,6 +229,7 @@ object TableGameRunner {
         val maxPlayerTurns = maxTurns * setup.seats
         val stream = if (recordActionStream) MessageDigest.getInstance("SHA-256") else null
         fun record(entry: String) = stream?.update(entry.toByteArray(Charsets.UTF_8))
+        val featureGame = featureCollector?.newGame("$groupId-$rotation-$seed")
 
         val duration = measureTime {
             try {
@@ -261,6 +263,12 @@ object TableGameRunner {
                     if (priorityPlayer == null) {
                         drawReason = "noPriority(turn=${state.turnNumber})"
                         break
+                    }
+
+                    // A quiet position has no unresolved prompt and an empty stack. Sampling at
+                    // this boundary avoids teaching the evaluator transient resolution states.
+                    if (state.stack.isEmpty()) {
+                        featureGame?.observe(state, priorityPlayer)
                     }
 
                     actionCount++
@@ -303,6 +311,7 @@ object TableGameRunner {
         // the authoritative answer and the seat is the representative's.
         val winnerSeat = if (state.gameOver) state.winnerId?.let { bySeat[it] } else null
         val winnerTeam = winnerSeat?.let { setup.teamOfSeat[it] }
+        featureGame?.finish(if (state.gameOver) state.winnerId else null)
         record("END|turns=${state.turnNumber}|winner=$winnerSeat|life=${lifeBySeat.joinToString("/")}\n")
 
         return TableGameOutcome(

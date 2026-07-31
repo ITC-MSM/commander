@@ -64,6 +64,7 @@ object ArenaGameRunner {
         /** Hash every action and decision into [ArenaGameOutcome.actionStreamHash]. Off by
          *  default: it costs a string per action, and only `FrozenBaselineTest` needs it. */
         recordActionStream: Boolean = false,
+        featureCollector: ArenaFeatureCollector? = null,
     ): ArenaGameOutcome {
         val game = TableGameRunner.play(
             registry = registry,
@@ -75,6 +76,7 @@ object ArenaGameRunner {
             rotation = gameIndex,
             maxTurns = maxTurns,
             recordActionStream = recordActionStream,
+            featureCollector = featureCollector,
         )
         return ArenaGameOutcome(
             pairId = pairId,

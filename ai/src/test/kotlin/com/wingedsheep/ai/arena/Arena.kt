@@ -8,6 +8,7 @@ import java.util.Locale
 import java.util.concurrent.ExecutorCompletionService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import java.nio.file.Path
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlin.time.Duration
@@ -32,6 +33,7 @@ data class ArenaConfig(
     val setCode: String = "BLB",
     val maxTurns: Int = 50,
     val threads: Int = Runtime.getRuntime().availableProcessors(),
+    val featureOutput: Path? = null,
 ) {
     val pairs: Int get() = (games + 1) / 2
 
@@ -57,6 +59,7 @@ object Arena {
             register(set.cards)
             register(set.basicLands)
         }
+        val featureCollector = config.featureOutput?.let { ArenaFeatureCollector(it, registry) }
 
         val pool = Executors.newFixedThreadPool(config.threads)
         try {
@@ -67,7 +70,7 @@ object Arena {
                 // Submitted as pairs, never as individual games: a partial run then always holds a
                 // whole number of pairs, so an interrupted arena is still an unbiased sample.
                 (1..config.pairs).forEach { pairId ->
-                    completionService.submit { playPair(registry, set, config, pairId) }
+                    completionService.submit { playPair(registry, set, config, pairId, featureCollector) }
                 }
                 pairs = (1..config.pairs).map {
                     completionService.take().get().also { pair ->
@@ -92,7 +95,13 @@ object Arena {
      * The seed is per pair, not per game, so game A and game B share seat 0's library, seat 1's
      * library and the turn order. The only thing that differs is which agent sits where.
      */
-    private fun playPair(registry: CardRegistry, set: MtgSet, config: ArenaConfig, pairId: Int): ArenaPair {
+    private fun playPair(
+        registry: CardRegistry,
+        set: MtgSet,
+        config: ArenaConfig,
+        pairId: Int,
+        featureCollector: ArenaFeatureCollector?,
+    ): ArenaPair {
         val pairSeed = mixSeed(config.seed, pairId.toLong())
         val deck = buildSeededSealedDeck(set.cards, Random(pairSeed))
 
@@ -100,11 +109,13 @@ object Arena {
             registry, seat0 = config.agentA, seat1 = config.agentB,
             seat0Deck = deck, seat1Deck = deck,
             seed = pairSeed, pairId = pairId, gameIndex = 0, maxTurns = config.maxTurns,
+            featureCollector = featureCollector,
         )
         val gameB = ArenaGameRunner.play(
             registry, seat0 = config.agentB, seat1 = config.agentA,
             seat0Deck = deck, seat1Deck = deck,
             seed = pairSeed, pairId = pairId, gameIndex = 1, maxTurns = config.maxTurns,
+            featureCollector = featureCollector,
         )
         return ArenaPair(pairId, gameA, gameB)
     }

@@ -1,5 +1,11 @@
 # Engine AI — How to Measure a Change
 
+To collect labelled positions for Phase 9 evaluation tuning, add
+`-DarenaEmitFeatures=/path/to/positions.jsonl` to an arena invocation. The collector samples every
+eighth quiet state and appends one JSON object per position after the game result is known. Use a new
+path (or remove an old artifact yourself) when you want a clean dataset; collection intentionally
+appends so interrupted runs remain usable.
+
 How to run the arena, how to read a report, and what does and does not count as evidence that the
 AI got better. Built in Phase 1 of [`backlog/engine-ai-improvement.md`](../../backlog/engine-ai-improvement.md).
 

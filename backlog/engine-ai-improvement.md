@@ -1361,9 +1361,11 @@ Stop guessing the ~25 constants in `BoardFeatures.kt` and the 5 weights in
 malformed resource can never break the AI. `AiProfile.evalWeightsId` selects; the arena A/Bs two
 weight sets as two agents, no recompile.
 
-**Collection.** `-DarenaEmitFeatures=<path>` appends JSONL `{features, toMove, turn, gameId, result}`
-at every 8th quiet state (decorrelation). Mirror `gym-trainer/.../defaults/JsonlSelfPlaySink.kt`'s
-shape.
+**Collection. ✅ DONE 2026-07-31.** `-DarenaEmitFeatures=<path>` appends JSONL
+`{features, toMove, turn, gameId, result}` at every 8th quiet state (decorrelation). Rows are buffered
+until the result is known and appended as one synchronized game batch, so parallel arena workers
+cannot interleave JSON. `RawBoardFeatures` reads battlefield characteristics through projected state
+and emits the unweighted Phase 9 schema; no fitted constants have entered the runtime evaluator yet.
 
 **Fit ~30 raw features, not the 5 composites.** The composites *are* the hand-tuned aggregation we're
 replacing; weighting them can't fix `lifeValue`'s hand-drawn piecewise curve or `creatureValue`'s

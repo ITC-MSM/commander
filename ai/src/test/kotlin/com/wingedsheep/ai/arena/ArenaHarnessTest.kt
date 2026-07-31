@@ -4,6 +4,11 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.ints.shouldBeGreaterThan
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import java.nio.file.Files
 
 /**
  * Proves the arena measures what it claims to, before anyone reads a win rate off it.
@@ -83,6 +88,23 @@ class ArenaHarnessTest : FunSpec({
         val run = Arena.run(config)
         run.stats.illegalActions.keys.shouldBeEmpty()
         run.stats.exceptions.keys.shouldBeEmpty()
+    }
+
+    test("feature collection writes labelled raw positions as JSONL") {
+        val output = Files.createTempFile("argentum-arena-features-", ".jsonl")
+        try {
+            Arena.run(config.copy(games = 2, threads = 2, featureOutput = output))
+            val rows = Files.readAllLines(output)
+            rows.size shouldBeGreaterThan 0
+            rows.forEach { line ->
+                val row = Json.parseToJsonElement(line).jsonObject
+                row.keys shouldBe setOf("features", "toMove", "turn", "gameId", "result")
+                row.getValue("features").jsonObject.containsKey("lifeDifference") shouldBe true
+                (row.getValue("result").jsonPrimitive.content.toInt() in (-1..1)) shouldBe true
+            }
+        } finally {
+            Files.deleteIfExists(output)
+        }
     }
 
     test("every name in gauntlet.json resolves to a real agent") {
