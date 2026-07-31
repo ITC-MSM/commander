@@ -104,12 +104,7 @@ export function LobbyScreen() {
         GROUP_IDS.map((id) => [id, situationalOptions(id, view, lobbyState)]),
       ) as Record<GroupId, readonly string[]>)
     : null
-  const { isGroupOpen, toggleGroup, revealedIn } = useGroupOpenState(
-    view?.blockGroup ?? null,
-    // A lobby a setup built already has its sets; a fresh one is about to need them.
-    intent !== undefined,
-    situational,
-  )
+  const { isGroupOpen, toggleGroup, revealedIn } = useGroupOpenState(view?.blockGroup ?? null, situational)
 
   /**
    * Start the game, remembering what it was first.
@@ -329,10 +324,11 @@ export function LobbyScreen() {
           )}
         </div>
 
-        {/* Settings sit below the players and the deck picker, not above them.
-            Below the fold is where a *configured* lobby wants them: with the groups collapsed the
-            whole panel is around 320px, it is host-only, and it is set once. What you keep coming
-            back to while waiting is who has arrived and whether the teams are even. */}
+        {/* Settings sit below the players and the deck picker, not above them. What you keep coming
+            back to while waiting is who has arrived and whether the teams are even; the settings are
+            host-only and set once. Below the fold is also what makes opening the groups by default
+            affordable — the panel is long again (see `useGroupOpenState`), and it grows downward into
+            `.lobbyOverlay`'s scroll rather than pushing the roster off screen. */}
         {showSettings && (
           <div className={styles.settingsPanel}>
             {GROUP_IDS.map((id) => {
@@ -586,32 +582,39 @@ function VisibilityRow({
 }
 
 /**
- * Which settings groups are open, derived rather than hand-tuned.
+ * Which settings groups are open. **Open is the default**; collapsing is the host's own doing.
  *
- * Four rules, in order:
+ * The panel used to open with everything but Cards collapsed, on the theory that a *configured*
+ * lobby doesn't need its knobs on screen. What that actually produced was a host who never learned
+ * the Free-for-All attack rule, the private/public switch or the AI-assistance toggle existed —
+ * naming them in the collapsed header helped, but a name is still not the control. A group only ever
+ * renders rows that apply to this lobby's shape (that filtering is in `TournamentLobbySettings` and
+ * in the `push` conditions in `LobbyScreen`), so "open by default" and "open when relevant" are the
+ * same rule: what's on screen is exactly what this lobby can be asked about.
  *
- * 1. **The group holding the reason Start is disabled is open.** Not a courtesy — it is what keeps
- *    collapsing compatible with the project's disabled-with-reason rule: nothing you need to act on
- *    can be hidden. It reads `view.blockGroup`, which comes from the same `startBlockReason` that
- *    writes the Start button's tooltip.
- * 2. **A group that just gained an option opens itself**, and says which one. Switching the Table
- *    axis to Free-for-All *creates* the attack rule; switching to Two-Headed Giant creates the team
- *    setup. Landing that new decision inside a box the host has never expanded is how it stays
- *    unfound — and the host is looking at the axis strip they just clicked, which is exactly where
- *    the group that opens is. Only genuine appearances count (see {@link situationalOptions}); a
- *    value changing inside an option that was already there does not re-open anything.
- * 3. **Cards is open on a lobby that wasn't launched from a setup**, because a fresh lobby's next
- *    move is almost always choosing sets. A lobby a setup built already has them.
- * 4. Otherwise closed — and whatever the host opened or closed by hand wins over all of it, kept in
- *    localStorage so it survives the recreate that switching an axis can cause.
+ * The cost is height — a booster draft with Commander rules and two sets is the case the collapse
+ * was introduced for, and it is long again. That is the trade this screen is choosing: `.lobbyOverlay`
+ * scrolls, and a host who wants the short version collapses the groups they're done with, which
+ * persists.
  *
- * Rule 2 writes into the same overrides the host's own clicks use, rather than sitting beside them
- * as a third source of truth: a group opened this way is a group the host can simply close again,
- * and it stays closed.
+ * Three rules, in order:
+ *
+ * 1. **The group holding the reason Start is disabled is open**, whatever the host last did to it.
+ *    It reads `view.blockGroup`, which comes from the same `startBlockReason` that writes the Start
+ *    button's tooltip.
+ * 2. **A group the host collapsed stays collapsed** — kept in localStorage so it survives the
+ *    recreate that switching an axis can cause. This is the only source of a closed group now.
+ * 3. **Except when a collapsed group gains an option**, which re-opens it and says which one.
+ *    Switching the Table axis to Free-for-All *creates* the attack rule; switching to Two-Headed
+ *    Giant creates the team setup. A host who collapsed Table an hour ago did not thereby decline a
+ *    decision that didn't exist yet. Only genuine appearances count (see {@link situationalOptions}),
+ *    and only into a group that is actually closed — over an open one there is nothing to announce.
+ *
+ * Rule 3 writes into the same overrides rule 2 reads, rather than sitting beside them as a third
+ * source of truth: a group opened this way is a group the host can simply close again.
  */
 function useGroupOpenState(
   blockGroup: GroupId | null,
-  fromSetup: boolean,
   /** Null until the lobby state has arrived — see the effect. */
   situational: Record<GroupId, readonly string[]> | null,
 ) {
@@ -625,6 +628,10 @@ function useGroupOpenState(
   })
   const [revealed, setRevealed] = useState<Partial<Record<GroupId, readonly string[]>>>({})
   const previous = useRef<Record<GroupId, readonly string[]> | null>(null)
+  // The effect below runs on a `signature` change, so its closure over `overrides` can be a render
+  // behind. It needs today's answer to "did the host put this group away?".
+  const overridesRef = useRef(overrides)
+  overridesRef.current = overrides
 
   // Depend on the *contents*, not the object: `situational` is rebuilt every render because the view
   // it derives from is.
@@ -632,8 +639,8 @@ function useGroupOpenState(
     ? GROUP_IDS.map((id) => `${id}:${situational[id].join(',')}`).join('|')
     : null
   useEffect(() => {
-    // Nothing to compare against yet. Tracking the empty pre-state would make the lobby's *first*
-    // state message look like five groups' worth of options appearing at once, and open all of them.
+    // Nothing to compare against yet. Tracking the empty pre-state would count the lobby's *first*
+    // state message as five groups' worth of options appearing at once.
     if (!situational) return
     const before = previous.current
     previous.current = situational
@@ -642,6 +649,12 @@ function useGroupOpenState(
 
     const gained: Partial<Record<GroupId, readonly string[]>> = {}
     for (const id of GROUP_IDS) {
+      // Only a group the host has collapsed. An open group needs no rescuing — the control is
+      // already on screen, and announcing `New:` over it is noise. It is also the only way to stay
+      // quiet on a *fresh* lobby: the wizard's shape lands as a settings update just after the lobby
+      // opens, so a Free-for-All lobby really does go 1v1 → Free-for-All on its first two messages,
+      // and the attack rule really does "appear". Nobody collapsed anything yet, so nobody is told.
+      if (overridesRef.current[id] !== false) continue
       const added = situational[id].filter((option) => !before[id].includes(option))
       if (added.length > 0) gained[id] = added
     }
@@ -655,9 +668,7 @@ function useGroupOpenState(
 
   const isGroupOpen = (id: GroupId): boolean => {
     if (blockGroup === id) return true
-    const override = overrides[id]
-    if (override !== undefined) return override
-    return id === 'CARDS' && !fromSetup
+    return overrides[id] ?? true
   }
 
   const toggleGroup = (id: GroupId) => {
