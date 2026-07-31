@@ -1613,6 +1613,94 @@
     ]
 }
 
+// Seize the Storm
+{
+    "name": "Seize the Storm",
+    "manaCost": "{4}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create a red Elemental creature token with trample and \"This token's power and toughness are each equal to the number of instant and sorcery cards in your graveyard plus the number of cards with flashback you own in exile.\"\nFlashback {6}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{6}{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "power": 0,
+            "toughness": 0,
+            "colors": [
+                "RED"
+            ],
+            "creatureTypes": [
+                "Elemental"
+            ],
+            "keywords": [
+                "TRAMPLE"
+            ],
+            "imageUri": "https://cards.scryfall.io/normal/front/c/4/c4052aed-981b-41d0-85f0-20c2599811ba.jpg?1783925224",
+            "staticAbilities": [
+                {
+                    "type": "SetBasePowerToughnessDynamicStatic",
+                    "power": {
+                        "type": "Add",
+                        "left": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Graveyard",
+                            "filter": "instant|sorcery"
+                        },
+                        "right": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Exile",
+                            "filter": "kw:flashback own:you"
+                        }
+                    },
+                    "toughness": {
+                        "type": "Add",
+                        "left": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Graveyard",
+                            "filter": "instant|sorcery"
+                        },
+                        "right": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Exile",
+                            "filter": "kw:flashback own:you"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "158",
+        "rarity": "UNCOMMON",
+        "artist": "Deruchenko Alexander",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/3/532e079f-55b7-4b92-b489-aed4d3becae7.jpg?1783925591",
+        "rulings": [
+            {
+                "date": "2021-09-24",
+                "text": "The power and toughness of the Elemental token will change as the number of instant and sorcery cards in your graveyard and the number of cards with flashback you own in exile change."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "If you cast Seize the Storm with no instant or sorcery cards in your graveyard and no cards with flashback in exile, the Elemental will survive because Seize the Storm will be in your graveyard or in exile before state-based actions are checked."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Shipwreck Marsh
 {
     "name": "Shipwreck Marsh",
