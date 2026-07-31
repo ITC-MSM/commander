@@ -3353,16 +3353,8 @@
   color: var(--text-tertiary);
 }
 
-.wizardSubLabel {
-  font-size: 10px;
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-
 /*
- * The launch block: what happens, how many seats, and the button.
+ * The launch block: what happens, and the button.
  *
  * These used to share one wrapping flex row with `align-items: flex-end`, which put a six-chip seat
  * picker and its two-line caption beside a large primary button — the caption wrapped under the
@@ -3378,27 +3370,6 @@
   border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.025);
-}
-
-.wizardSeats {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1, 4px);
-  min-width: 0;
-}
-
-.wizardSeatsRow {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.wizardSeatsCaption {
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.4;
-  color: var(--text-disabled);
 }
 
 /* What will actually happen, stage by stage: "Open boosters → Build a deck → Standings". The one

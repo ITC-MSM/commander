@@ -20,10 +20,9 @@ import {
 import {
   cardsChoices,
   defaultCardsAxis,
-  defaultSeats,
   lobbyKindFor,
   resolveLaunch,
-  seatRule,
+  seatCap,
   shapeAxes,
   shapeChoices,
   ROSTERS,
@@ -31,11 +30,13 @@ import {
 } from './modeMatrix'
 
 /**
- * Every selection the wizard can reach: roster × enabled Cards kind × open shapes × seat counts.
+ * Every selection the wizard can reach: roster × enabled Cards kind × open shapes.
  *
- * Cards is a *kind* at its default sub-shape, because that is all the wizard commits to — which sealed
- * or draft shape it is stays a lobby sub-option, alongside deck legality. The lobby's own reachability
- * for the non-default shapes lives in `axisChoices`/`LobbyAxes.shapeBlock`, not here.
+ * Seats are not part of the space: the lobby opens at the cap its shape allows and people join until
+ * it is full, so a selection no longer carries a count. Cards is a *kind* at its default sub-shape,
+ * because that is all the wizard commits to — which sealed or draft shape it is stays a lobby
+ * sub-option, alongside deck legality. The lobby's own reachability for the non-default shapes lives
+ * in `axisChoices`/`LobbyAxes.shapeBlock`, not here.
  */
 function everySelection(): Selection[] {
   const out: Selection[] = []
@@ -45,10 +46,7 @@ function everySelection(): Selection[] {
       for (const cards of [defaultCardsAxis(cardsChoice.value)]) {
         for (const shapeChoice of shapeChoices(roster, cards)) {
           if (shapeChoice.disabledReason) continue
-          const rule = seatRule(roster, cards, shapeChoice.value)
-          for (const seats of rule.values) {
-            out.push({ roster, cards, shape: shapeChoice.value, seats })
-          }
+          out.push({ roster, cards, shape: shapeChoice.value })
         }
       }
     }
@@ -68,11 +66,20 @@ describe('modeMatrix', () => {
     }
   })
 
-  it('never offers a seat count outside the Cards value’s cap', () => {
+  it('opens every lobby at a cap the server will accept', () => {
     for (const selection of everySelection()) {
-      const cap = selection.shape === 'FREE_FOR_ALL' ? 6 : 8
-      expect(selection.seats, JSON.stringify(selection)).toBeLessThanOrEqual(cap)
-      expect(selection.seats).toBeGreaterThanOrEqual(2)
+      const { roster, cards, shape } = selection
+      const seats = seatCap(roster, cards, shape)
+      const label = JSON.stringify(selection)
+      // `LobbyHandler.seatCapFor` — the board layout caps a Free-for-All at 6, everything else at 8.
+      expect(seats, label).toBeLessThanOrEqual(shape === 'FREE_FOR_ALL' ? 6 : 8)
+      expect(seats, label).toBeGreaterThanOrEqual(2)
+      // Two even teams, and the server refuses a Team vs. Team pod under four.
+      if (shape === 'TEAM_VS_TEAM') {
+        expect(seats % 2, label).toBe(0)
+        expect(seats, label).toBeGreaterThanOrEqual(4)
+      }
+      if (shape === 'TWO_HEADED_GIANT') expect(seats, label).toBe(4)
     }
   })
 
@@ -118,19 +125,6 @@ describe('modeMatrix', () => {
     }
   })
 
-  it('asks for a seat count each multiplayer shape actually allows, AI seats or not', () => {
-    for (const selection of everySelection()) {
-      const label = JSON.stringify(selection)
-      // Mirrors `FreeForAllHandler.maybeStartGame`, which refuses to seat a pod that doesn't
-      // satisfy its shape — a solo pod is subject to exactly the same arithmetic.
-      if (selection.shape === 'TWO_HEADED_GIANT') expect(selection.seats, label).toBe(4)
-      if (selection.shape === 'TEAM_VS_TEAM') {
-        expect(selection.seats, label).toBeGreaterThanOrEqual(4)
-        expect(selection.seats % 2, label).toBe(0)
-      }
-    }
-  })
-
   it('routes Momir and a rolled pool to the quick lobby, which is the only thing that has them', () => {
     for (const kind of CARDS_KINDS) {
       if (kind !== 'MOMIR' && kind !== 'RANDOM') continue
@@ -139,13 +133,7 @@ describe('modeMatrix', () => {
         if (!enabled) continue
         const cards = defaultCardsAxis(kind)
         const shape = shapeChoices(roster, cards).find((c) => !c.disabledReason)!.value
-        const selection: Selection = {
-          roster,
-          cards,
-          shape,
-          seats: defaultSeats(seatRule(roster, cards, shape)),
-        }
-        expect(lobbyKindFor(selection)).toBe('QUICK')
+        expect(lobbyKindFor({ roster, cards, shape })).toBe('QUICK')
       }
     }
   })
@@ -179,12 +167,16 @@ describe('modeMatrix', () => {
     }
   })
 
-  it('sizes a solo multiplayer pod by the shape, not by the roster', () => {
+  it('sizes a solo pod by the shape, not by the Cards value', () => {
+    // A brought deck used to force two seats for a solo player whatever the shape, because the AI
+    // could only face one in a quick game. It can bring a rolled deck to a pod now, so only the
+    // 1v1 shape is two — the rest open at their own count, which is what the server will accept.
     const cards = defaultCardsAxis('BRING_A_DECK')
-    expect(seatRule('SOLO', cards, 'ONE_GAME').values).toEqual([2])
-    expect(seatRule('SOLO', cards, 'TWO_HEADED_GIANT').values).toEqual([4])
-    expect(seatRule('SOLO', cards, 'TEAM_VS_TEAM').values.every((n) => n >= 4 && n % 2 === 0)).toBe(true)
-    // A pod of you and one AI is a legal Free-for-All, so unlike a group's it starts at two.
-    expect(seatRule('SOLO', cards, 'FREE_FOR_ALL').values[0]).toBe(2)
+    expect(seatCap('SOLO', cards, 'ONE_GAME')).toBe(2)
+    expect(seatCap('SOLO', cards, 'TWO_HEADED_GIANT')).toBe(4)
+    const tvt = seatCap('SOLO', cards, 'TEAM_VS_TEAM')
+    expect(tvt).toBeGreaterThanOrEqual(4)
+    expect(tvt % 2).toBe(0)
+    expect(seatCap('SOLO', cards, 'FREE_FOR_ALL')).toBeGreaterThanOrEqual(2)
   })
 })

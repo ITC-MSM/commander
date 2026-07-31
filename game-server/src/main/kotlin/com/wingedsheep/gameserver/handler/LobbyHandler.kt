@@ -574,6 +574,30 @@ class LobbyHandler(
         return "$names $verb — add at least one regular set to play with"
     }
 
+    /**
+     * How many seats a lobby of this shape holds — the cap people join up to.
+     *
+     * Since the client stopped offering a Seats control (nobody is asked for a number; players join
+     * until the lobby is full), the cap has to follow the shape by itself. It used to be *narrowed*
+     * on each switch, which was fine while a host could raise it again: a lobby that dropped to six
+     * for Free-for-All and then went back to a bracket would now be stuck at six forever, with no
+     * control left to fix it. So every shape change re-derives it rather than clamping it.
+     *
+     * Format wins over game mode where both have an opinion, which is the order the create path
+     * below already used: a Winston lobby is two seats whatever table it claims to be.
+     */
+    private fun seatCapFor(format: TournamentFormat, gameMode: LobbyGameMode): Int = when {
+        format == TournamentFormat.WINSTON_DRAFT -> 2
+        format == TournamentFormat.GRID_DRAFT -> 4
+        // Two teams of two.
+        gameMode == LobbyGameMode.TWO_HEADED_GIANT -> 4
+        // Two even teams: 4 (2v2), 6 (3v3) or 8 (4v4) — the even-pod rule is re-checked at start.
+        gameMode == LobbyGameMode.TEAM_VS_TEAM -> 8
+        // FFA pods cap at 6 — the multiplayer UI lays opponent boards out around the table.
+        gameMode == LobbyGameMode.FREE_FOR_ALL -> 6
+        else -> 8
+    }
+
     private fun handleCreateTournamentLobby(session: WebSocketSession, message: ClientMessage.CreateTournamentLobby) {
         val playerSession = sessionRegistry.getPlayerSession(session.id)
         if (playerSession == null) {
@@ -625,17 +649,17 @@ class LobbyHandler(
             LobbyGameMode.TOURNAMENT
         }
 
+        // The client's own wizard sends the shape's cap (it no longer asks anyone for a number), so
+        // this is really only clamping a hand-rolled or older message.
+        val seatCap = seatCapFor(format, gameMode)
         val maxPlayers = when {
-            format == TournamentFormat.WINSTON_DRAFT -> 2
-            format == TournamentFormat.GRID_DRAFT -> message.maxPlayers.coerceIn(2, 4)
-            // Two-Headed Giant is always exactly four seats (two teams of two).
-            gameMode == LobbyGameMode.TWO_HEADED_GIANT -> 4
+            // Exactly four seats, and exactly two — no client number overrides the shape.
+            gameMode == LobbyGameMode.TWO_HEADED_GIANT -> seatCap
+            format == TournamentFormat.WINSTON_DRAFT -> seatCap
             // Team vs. Team is two even teams: 4 (2v2), 6 (3v3), or 8 (4v4). The even-pod rule is
             // re-checked at game start; an odd cap simply never starts a game.
-            gameMode == LobbyGameMode.TEAM_VS_TEAM -> message.maxPlayers.coerceIn(4, 8)
-            // FFA pods cap at 6 — the multiplayer UI lays opponent boards out around the table.
-            gameMode == LobbyGameMode.FREE_FOR_ALL -> message.maxPlayers.coerceIn(2, 6)
-            else -> message.maxPlayers.coerceIn(2, 8)
+            gameMode == LobbyGameMode.TEAM_VS_TEAM -> message.maxPlayers.coerceIn(4, seatCap)
+            else -> message.maxPlayers.coerceIn(2, seatCap)
         }
 
         // Set appropriate default booster count based on format
@@ -2214,11 +2238,7 @@ class LobbyHandler(
                 // Pool Play only exists for cube Sealed; don't leave it set (and shown) on a format
                 // that ignores it.
                 if (newFormat != TournamentFormat.SEALED) lobby.cubePoolPlay = false
-                if (newFormat == TournamentFormat.WINSTON_DRAFT) {
-                    lobby.maxPlayers = 2
-                } else if (newFormat == TournamentFormat.GRID_DRAFT) {
-                    lobby.maxPlayers = minOf(lobby.maxPlayers, 4)
-                }
+                lobby.maxPlayers = seatCapFor(newFormat, lobby.gameMode)
                 // Commander draft / sealed plays best with a broad mix of sets, so when the
                 // host first switches into a commander format we replace the single-set
                 // default with a curated mix (DOM / BLB / ECL / KTK) for variety. Honor any
@@ -2338,32 +2358,24 @@ class LobbyHandler(
                 // to — checked there rather than here so the deck-legality route through the same
                 // conflict is covered by the same line.
                 when (newMode) {
-                    LobbyGameMode.TWO_HEADED_GIANT -> {
-                        // Two teams of two — always exactly four seats.
-                        if (lobby.playerCount > 4) {
-                            sender.sendError(session, ErrorCode.INVALID_ACTION, "Two-Headed Giant is exactly four players")
-                            return
-                        }
-                        lobby.maxPlayers = 4
+                    // Two teams of two — always exactly four seats.
+                    LobbyGameMode.TWO_HEADED_GIANT -> if (lobby.playerCount > 4) {
+                        sender.sendError(session, ErrorCode.INVALID_ACTION, "Two-Headed Giant is exactly four players")
+                        return
                     }
-                    LobbyGameMode.TEAM_VS_TEAM -> {
-                        // Two even teams: at most eight players (4v4).
-                        if (lobby.playerCount > 8) {
-                            sender.sendError(session, ErrorCode.INVALID_ACTION, "Team vs. Team supports at most 8 players")
-                            return
-                        }
-                        lobby.maxPlayers = lobby.maxPlayers.coerceIn(4, 8)
+                    // Two even teams: at most eight players (4v4).
+                    LobbyGameMode.TEAM_VS_TEAM -> if (lobby.playerCount > 8) {
+                        sender.sendError(session, ErrorCode.INVALID_ACTION, "Team vs. Team supports at most 8 players")
+                        return
                     }
-                    LobbyGameMode.FREE_FOR_ALL -> {
-                        if (lobby.playerCount > 6) {
-                            sender.sendError(session, ErrorCode.INVALID_ACTION, "Free-for-All supports at most 6 players")
-                            return
-                        }
-                        lobby.maxPlayers = lobby.maxPlayers.coerceIn(2, 6)
+                    LobbyGameMode.FREE_FOR_ALL -> if (lobby.playerCount > 6) {
+                        sender.sendError(session, ErrorCode.INVALID_ACTION, "Free-for-All supports at most 6 players")
+                        return
                     }
                     LobbyGameMode.TOURNAMENT -> Unit
                 }
                 lobby.gameMode = newMode
+                lobby.maxPlayers = seatCapFor(lobby.format, newMode)
             }
         }
 
@@ -2411,17 +2423,19 @@ class LobbyHandler(
                 lobby.boosterDistribution = dist
             }
         }
+        // No client asks for a seat count any more — the lobby holds what its shape allows and people
+        // join until it is full — but an explicit request is still honoured within that cap, so an
+        // older or hand-rolled client isn't silently ignored.
         message.maxPlayers?.let {
             val oldMaxPlayers = lobby.maxPlayers
-            val modeCap = if (lobby.isFreeForAll) 6 else 8
-            when {
-                // Two-Headed Giant is locked at four seats — the host can't change it.
-                lobby.isTwoHeadedGiant -> lobby.maxPlayers = 4
-                // Team vs. Team allows 4/6/8 (two even teams), above the FFA board-layout cap of 6.
-                lobby.isTeamVsTeam -> lobby.maxPlayers = it.coerceIn(4, 8)
-                lobby.format == TournamentFormat.WINSTON_DRAFT -> lobby.maxPlayers = 2
-                lobby.format == TournamentFormat.GRID_DRAFT -> lobby.maxPlayers = it.coerceIn(2, 4)
-                else -> lobby.maxPlayers = it.coerceIn(2, modeCap)
+            val cap = seatCapFor(lobby.format, lobby.gameMode)
+            lobby.maxPlayers = when {
+                // Locked by the shape — the request can't move these.
+                lobby.isTwoHeadedGiant -> cap
+                lobby.format == TournamentFormat.WINSTON_DRAFT -> cap
+                // Team vs. Team is two even teams, so never fewer than four.
+                lobby.isTeamVsTeam -> it.coerceIn(4, cap)
+                else -> it.coerceIn(2, cap)
             }
             // Auto-adjust grid draft booster count when player count changes (always, since it's fixed)
             if (lobby.format == TournamentFormat.GRID_DRAFT && lobby.maxPlayers != oldMaxPlayers) {

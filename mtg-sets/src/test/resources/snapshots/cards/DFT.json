@@ -936,6 +936,66 @@
     "colorIdentityOverride": []
 }
 
+// Back on Track
+{
+    "name": "Back on Track",
+    "manaCost": "{4}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return target creature or Vehicle card from your graveyard to the battlefield. Create a 1/1 colorless Pilot creature token with \"This token saddles Mounts and crews Vehicles as though its power were 2 greater.\"",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or Vehicle card in your graveyard"
+                    },
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Pilot"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/8/6/8672d795-04f9-4089-9c92-6d6ff628da12.jpg?1783907682",
+                    "staticAbilities": [
+                        {
+                            "type": "CrewSaddleContribution",
+                            "modifier": 2
+                        }
+                    ]
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|Vehicle own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target creature or Vehicle card in your graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "UNCOMMON",
+        "artist": "Raoul Vitale",
+        "flavorText": "At the Tombs Before Time, the living of Amonkhet made vital alliances with the honored dead.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/884c0032-9c62-4028-a55f-6a3da2545654.jpg?1783907899"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Beastrider Vanguard
 {
     "name": "Beastrider Vanguard",
@@ -2917,6 +2977,54 @@
     ]
 }
 
+// Deathless Pilot
+{
+    "name": "Deathless Pilot",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Zombie Pilot",
+    "oracleText": "This creature saddles Mounts and crews Vehicles as though its power were 2 greater.\n{3}{B}: Return this card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "{3}{B}: Return this card from your graveyard to your hand."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CrewSaddleContribution",
+                "modifier": 2
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "artist": "Justin Cornell",
+        "flavorText": "Amonkhet champions become markedly more reckless after dying.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e704fb95-17b7-432a-831c-18abe7d9cc73.jpg?1783907896"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Debris Beetle
 {
     "name": "Debris Beetle",
@@ -3573,6 +3681,60 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Dynamite Diver
+{
+    "name": "Dynamite Diver",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Pilot",
+    "oracleText": "This creature saddles Mounts and crews Vehicles as though its power were 2 greater.\nWhen this creature dies, it deals 1 damage to any target.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CrewSaddleContribution",
+                "modifier": 2
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "artist": "Pete Venters",
+        "flavorText": "\"Launch the explosives! No, you idiot, not like that!\"\n—Redshift, Rocketeer chief",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5a4f96f6-dd91-4357-ae19-1c35db2c2bcb.jpg?1783907883"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

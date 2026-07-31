@@ -9,11 +9,10 @@
  * present, exactly as `PlayWizard` already derives it from its draft — so there is still one source
  * of truth, and `history.back()` is by construction "drop the last answer".
  *
- *     /                                  who with?
- *     /play/group                        what with?
- *     /play/group/draft                  how?
- *     /play/group/draft/bracket          ready
- *     /play/group/draft/bracket?seats=4  ready, narrowed
+ *     /                             who with?
+ *     /play/group                   what with?
+ *     /play/group/draft             how?
+ *     /play/group/draft/bracket     ready
  *
  * Two consequences worth naming:
  *
@@ -34,8 +33,6 @@
 import {
   ROSTERS,
   SHAPE_IDS,
-  defaultSeats,
-  seatRule,
   shapeChoices,
   cardsChoices,
   defaultCardsAxis,
@@ -52,10 +49,9 @@ export interface WizardDraft {
   roster: Roster | null
   cards: CardsAxis | null
   shape: ShapeId | null
-  seats: number | null
 }
 
-export const EMPTY_DRAFT: WizardDraft = { roster: null, cards: null, shape: null, seats: null }
+export const EMPTY_DRAFT: WizardDraft = { roster: null, cards: null, shape: null }
 
 /* ── Slugs ──────────────────────────────────────────────────────────────────
  * Hand-written rather than derived from the enum names, because these are URLs: `two-headed-giant`
@@ -97,31 +93,26 @@ function cardsSlug(kind: CardsKind): string {
   }
 }
 
-/** The canonical path (plus query) for a draft. `/` when nothing is answered yet. */
+/** The canonical path for a draft. `/` when nothing is answered yet. */
 export function draftToPath(draft: WizardDraft): string {
   if (draft.roster === null) return '/'
   const parts = [WIZARD_PREFIX, rosterSlug(draft.roster)]
   if (draft.cards !== null) parts.push(cardsSlug(draft.cards.kind))
   if (draft.cards !== null && draft.shape !== null) parts.push(shapeSlug(draft.shape))
-  const path = parts.join('/')
-
-  // Only a *narrowed* seat count is written down. The default is implied, so the common path stays
-  // clean and a link that does carry `?seats=` is saying something the default wouldn't.
-  if (draft.roster !== null && draft.cards !== null && draft.shape !== null && draft.seats !== null) {
-    const rule = seatRule(draft.roster, draft.cards, draft.shape)
-    if (!rule.fixed && draft.seats !== defaultSeats(rule)) return `${path}?seats=${draft.seats}`
-  }
-  return path
+  return parts.join('/')
 }
 
 /**
- * Parse a location into a draft, keeping only the prefix of answers that still holds.
+ * Parse a path into a draft, keeping only the prefix of answers that still holds.
  *
  * Each answer is validated against the one before it, so an unreachable combination truncates rather
  * than throwing: `/play/group/momir` (Momir has no group implementation) yields just the roster, and
  * the player lands on step 2 with Momir visibly disabled and its reason attached.
+ *
+ * The query string carries no answers — a saved `?seats=4` link from when the wizard asked for a
+ * seat count decodes to the same selection as one without it, and normalising drops the query.
  */
-export function pathToDraft(pathname: string, search: string, aiEnabled: boolean): WizardDraft {
+export function pathToDraft(pathname: string, aiEnabled: boolean): WizardDraft {
   const segments = pathname.replace(/\/+$/, '').split('/').filter(Boolean)
   if (segments[0] !== WIZARD_PREFIX.slice(1)) return EMPTY_DRAFT
 
@@ -143,10 +134,7 @@ export function pathToDraft(pathname: string, search: string, aiEnabled: boolean
         : null
   if (shape === null) return { ...EMPTY_DRAFT, roster, cards }
 
-  const rule = seatRule(roster, cards, shape)
-  const asked = Number(new URLSearchParams(search).get('seats'))
-  const seats = rule.values.includes(asked) ? asked : defaultSeats(rule)
-  return { roster, cards, shape, seats }
+  return { roster, cards, shape }
 }
 
 /** A Cards slug, checked against what this roster can actually pick, at its default sub-shape. */

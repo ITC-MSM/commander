@@ -114,8 +114,12 @@ class CrewVehicleHandler(
             }
 
             // Summoning sickness does NOT prevent crewing (CR 702.122c)
-            val power = projected.getPower(creatureId) ?: 0
-            totalPower += power
+            totalPower += CrewSaddleContributionEvaluator.evaluate(
+                state = state,
+                projected = projected,
+                cardRegistry = cardRegistry,
+                creatureId = creatureId
+            )
         }
 
         if (totalPower < crewAbility.n) {

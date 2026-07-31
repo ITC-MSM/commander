@@ -390,7 +390,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         'Each option says whether it is one game or an event with steps — “Play right away” and “One game” versus “Build a deck first” and “Several rounds · standings”. Once everything is answered, the line above the button spells the whole sequence out.',
         'Greyed-out options are combinations nothing implements yet — hover for the reason.',
         'Options that are simply missing would contradict an earlier answer. A group of five is not offered a 1v1 single game.',
-        'The seat count is a limit, not a requirement: start whenever everyone has arrived, and change it in the lobby.',
+        'Nobody is asked how many seats to open. A lobby holds as many as its table allows, people join until it is full, and the host starts whenever everyone has arrived.',
         'The lobby you land in can change all of it, so a wrong turn costs nothing.',
         '“Play again” repeats your last setup in one click.',
       ] },
@@ -405,7 +405,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       'You and the built-in AI. Nobody else has to show up, and the game starts as soon as you have picked a deck.',
     body: [
       { kind: 'p', text: 'At 1v1 the AI can play any of the card sources — your own deck, a rolled pool, or Momir Basic.' },
-      { kind: 'p', text: 'Every table is open too: the lobby fills with AI seats, so on your own you can play a Free-for-All pod, take an AI teammate into Two-Headed Giant, run Team vs. Team, or draft a full pod and play the bracket out. Pick the pod size on the last step, and add or remove seats in the lobby afterwards.' },
+      { kind: 'p', text: 'Every table is open too: the lobby opens as a full pod of AI seats, so on your own you can play a Free-for-All pod, take an AI teammate into Two-Headed Giant, run Team vs. Team, or draft a pod and play the bracket out. Add or remove them in the lobby if you want a smaller table.' },
       { kind: 'p', text: 'The AI never brings a deck of its own: it builds one from the pool it is dealt, and in a lobby where everyone brings a deck the server rolls it one instead. The one thing it cannot deckbuild is Commander — nothing it builds with picks a commander — so a Commander lobby is humans only.' },
     ],
     related: ['axis-limits', 'cards-draft', 'event-round-robin'],
