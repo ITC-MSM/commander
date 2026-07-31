@@ -27,7 +27,6 @@ import {
   shapeAxes,
   shapeChoices,
   ROSTERS,
-  type Roster,
   type Selection,
 } from './modeMatrix'
 
@@ -110,11 +109,25 @@ describe('modeMatrix', () => {
     for (const selection of everySelection()) {
       const spec = resolveLaunch(selection)
       if (spec.kind !== 'TOURNAMENT' || spec.aiSeats === 0) continue
-      // `LobbyHandler.handleAddAiToLobby` rejects PREMADE_DECKS and every multiplayer shape
-      // (`TournamentLobby.isFreeForAll` covers FFA, 2HG and Team vs. Team).
-      expect(spec.format, JSON.stringify(selection)).not.toBe('PREMADE_DECKS')
-      expect(spec.gameMode, JSON.stringify(selection)).toBe('TOURNAMENT')
+      // The only axis `LobbyHandler.handleAddAiToLobby` still rejects is Rules: no generator the AI
+      // deckbuilds with picks a commander. Neither the game mode nor the format is part of that
+      // answer any more — an AI takes a pod seat like any other player, and a premade lobby rolls
+      // it a deck the way a quick game does.
+      expect(spec.rules, JSON.stringify(selection)).not.toBe('COMMANDER')
       expect(spec.aiSeats).toBeLessThan(spec.maxPlayers)
+    }
+  })
+
+  it('asks for a seat count each multiplayer shape actually allows, AI seats or not', () => {
+    for (const selection of everySelection()) {
+      const label = JSON.stringify(selection)
+      // Mirrors `FreeForAllHandler.maybeStartGame`, which refuses to seat a pod that doesn't
+      // satisfy its shape — a solo pod is subject to exactly the same arithmetic.
+      if (selection.shape === 'TWO_HEADED_GIANT') expect(selection.seats, label).toBe(4)
+      if (selection.shape === 'TEAM_VS_TEAM') {
+        expect(selection.seats, label).toBeGreaterThanOrEqual(4)
+        expect(selection.seats % 2, label).toBe(0)
+      }
     }
   })
 
@@ -137,15 +150,41 @@ describe('modeMatrix', () => {
     }
   })
 
-  it('a group is never offered a 1v1 single game, and solo is never offered a multiplayer table', () => {
+  it('a group is never offered a 1v1 single game', () => {
     const groupShapes = shapeChoices('GROUP', { kind: 'BRING_A_DECK', legality: null })
     expect(groupShapes.map((c) => c.value)).not.toContain('ONE_GAME')
+  })
 
-    const soloOpen = (roster: Roster) =>
-      shapeChoices(roster, { kind: 'BRING_A_DECK', legality: null })
+  it('offers a friend only the two 1v1 shapes — a multiplayer table needs a third player', () => {
+    const open = shapeChoices('FRIEND', { kind: 'BRING_A_DECK', legality: null })
+      .filter((c) => !c.disabledReason)
+      .map((c) => c.value)
+    expect(open).toEqual(['ONE_GAME', 'BRACKET'])
+  })
+
+  it('offers a solo player every multiplayer table, whatever the cards come from', () => {
+    const everyCards = [
+      defaultCardsAxis('BRING_A_DECK'),
+      defaultCardsAxis('SEALED'),
+      defaultCardsAxis('DRAFT'),
+    ]
+    for (const cards of everyCards) {
+      const open = shapeChoices('SOLO', cards)
         .filter((c) => !c.disabledReason)
         .map((c) => c.value)
-    expect(soloOpen('SOLO')).toEqual(['ONE_GAME'])
-    expect(soloOpen('FRIEND')).toEqual(['ONE_GAME', 'BRACKET'])
+      const label = JSON.stringify(cards)
+      expect(open, label).toContain('FREE_FOR_ALL')
+      expect(open, label).toContain('TWO_HEADED_GIANT')
+      expect(open, label).toContain('TEAM_VS_TEAM')
+    }
+  })
+
+  it('sizes a solo multiplayer pod by the shape, not by the roster', () => {
+    const cards = defaultCardsAxis('BRING_A_DECK')
+    expect(seatRule('SOLO', cards, 'ONE_GAME').values).toEqual([2])
+    expect(seatRule('SOLO', cards, 'TWO_HEADED_GIANT').values).toEqual([4])
+    expect(seatRule('SOLO', cards, 'TEAM_VS_TEAM').values.every((n) => n >= 4 && n % 2 === 0)).toBe(true)
+    // A pod of you and one AI is a legal Free-for-All, so unlike a group's it starts at two.
+    expect(seatRule('SOLO', cards, 'FREE_FOR_ALL').values[0]).toBe(2)
   })
 })

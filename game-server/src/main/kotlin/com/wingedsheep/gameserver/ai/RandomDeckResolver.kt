@@ -62,6 +62,16 @@ class RandomDeckResolver(
     }
 
     /**
+     * A generated deck for a seat that pinned no set of its own — a tournament lobby's AI seat,
+     * where the lobby's own set selection stands in for the quick lobby's "the human's set", and an
+     * empty selection means any set rather than a failure.
+     */
+    fun randomDeck(format: DeckFormat?, setCodes: List<String>): Map<String, Int> {
+        val pinned = setCodes.filter { it.isNotBlank() }
+        return randomDeck(format, pinned, pinned.firstOrNull() ?: sealedDeckGenerator.randomSetCode())
+    }
+
+    /**
      * A generated deck for a seat with no submitted list, honouring the lobby's [format].
      *
      * @param format the lobby's deck-format restriction, or null for none.

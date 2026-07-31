@@ -32,8 +32,17 @@ import kotlin.time.Duration.Companion.seconds
  * a 3-player premade-decks FFA pod plays one multiplayer game; a mid-game concede
  * continues the game 2-way (CR 800.4a); the second concede ends it; standings come back
  * as the elimination order; readying up starts a play-again game with the same pod.
+ *
+ * Also the AI's seat at a multiplayer table: that a pod and a 2HG lobby accept AI players at all,
+ * and that a seated AI is wired to the pod's game rather than sitting there holding no-op callbacks.
+ *
+ * AI deckbuilding is pinned to the deterministic heuristic builder: left to the server's own config
+ * these tests would call an LLM whenever the machine running them happens to export an API key.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = ["game.ai.heuristic-deckbuilding=true"],
+)
 class FreeForAllLobbyTest : FunSpec() {
 
     @LocalServerPort
@@ -192,7 +201,7 @@ class FreeForAllLobbyTest : FunSpec() {
             (secondGame.gameSessionId == gameSessionId) shouldBe false
         }
 
-        test("FFA lobby refuses AI seats and caps the pod at 6 players") {
+        test("FFA lobby seats AI players and caps the pod at 6") {
             val host = createClient()
             host.connectAs("Host")
             host.send(ClientMessage.CreateTournamentLobby(
@@ -209,10 +218,215 @@ class FreeForAllLobbyTest : FunSpec() {
                 host.latestLobbyUpdate()?.settings?.maxPlayers shouldBe 6
             }
 
+            // An AI takes a pod seat like any other player: nothing about the Table axis decides
+            // whether it may sit down, and the engine AI reads a pod as N opposing sides.
+            repeat(3) { host.send(ClientMessage.AddAiToLobby) }
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 4
+            }
+            host.latestLobbyUpdate()?.players?.count { it.isAi } shouldBe 3
+            host.messages.none { it is ServerMessage.Error } shouldBe true
+
+            // The cap is the pod's, not the roster's — six seats, three of them still open.
+            repeat(3) { host.send(ClientMessage.AddAiToLobby) }
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 6
+            }
             host.send(ClientMessage.AddAiToLobby)
             eventually(5.seconds) {
                 host.messages.filterIsInstance<ServerMessage.Error>()
-                    .any { it.message.contains("Free-for-All") } shouldBe true
+                    .any { it.message.contains("full") } shouldBe true
+            }
+            host.latestLobbyUpdate()?.players?.size shouldBe 6
+        }
+
+        test("a Two-Headed Giant lobby seats AI teammates and opponents") {
+            val host = createClient()
+            host.connectAs("2HG Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "SEALED",
+                maxPlayers = 4,
+                gameMode = "TWO_HEADED_GIANT",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+
+            // Three AI fill out the two teams of two (CR 810) — one of them is the host's teammate.
+            repeat(3) { host.send(ClientMessage.AddAiToLobby) }
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 4
+            }
+            host.latestLobbyUpdate()?.players?.count { it.isAi } shouldBe 3
+            host.messages.none { it is ServerMessage.Error } shouldBe true
+        }
+
+        test("switching a lobby holding AI players to a multiplayer table is allowed") {
+            val host = createClient()
+            host.connectAs("Mode Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "SEALED",
+                maxPlayers = 4,
+                gameMode = "TOURNAMENT",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+            host.send(ClientMessage.AddAiToLobby)
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 2
+            }
+
+            // The seat counts are the only thing a mode switch has to reconcile now; a pod of two
+            // (you and one AI) is a legal Free-for-All.
+            host.send(ClientMessage.UpdateLobbySettings(gameMode = "FREE_FOR_ALL"))
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.settings?.gameMode shouldBe "FREE_FOR_ALL"
+            }
+            host.latestLobbyUpdate()?.players?.count { it.isAi } shouldBe 1
+            host.messages.none { it is ServerMessage.Error } shouldBe true
+        }
+
+        test("an AI seated in a premade-decks pod is dealt a deck, the way a quick game rolls one") {
+            // The AI has no deck to bring, which used to make premade decks the one format it was
+            // refused from. A quick game had always answered that by generating one for it; this is
+            // the same answer in a lobby, so "just me, my own deck, at a pod" reaches a table.
+            val host = createClient()
+            host.connectAs("Premade Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "PREMADE_DECKS",
+                maxPlayers = 4,
+                gameMode = "FREE_FOR_ALL",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+
+            repeat(3) { host.send(ClientMessage.AddAiToLobby) }
+            eventually(15.seconds) {
+                val players = host.latestLobbyUpdate()?.players
+                players?.size shouldBe 4
+                // Dealt at the moment they sit down: the premade start gate wants every seat to have
+                // submitted, so an AI that arrived empty-handed would block the host forever.
+                players?.filter { it.isAi }?.all { it.deckSubmitted } shouldBe true
+            }
+            host.messages.none { it is ServerMessage.Error } shouldBe true
+
+            host.send(ClientMessage.SubmitSealedDeck(deckList = mapOf("Forest" to 40)))
+            host.send(ClientMessage.StartTournamentLobby)
+            eventually(30.seconds) {
+                host.messages.any { it is ServerMessage.FreeForAllGameStarting } shouldBe true
+            }
+            host.messages.filterIsInstance<ServerMessage.FreeForAllGameStarting>()
+                .first().players shouldHaveSize 4
+        }
+
+        test("a Commander lobby refuses AI seats — no generator it builds with picks a commander") {
+            val host = createClient()
+            host.connectAs("Commander Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "PREMADE_DECKS",
+                maxPlayers = 4,
+                gameMode = "FREE_FOR_ALL",
+                rules = "COMMANDER",
+            ))
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.settings?.rules shouldBe "COMMANDER"
+            }
+
+            host.send(ClientMessage.AddAiToLobby)
+            eventually(5.seconds) {
+                host.messages.filterIsInstance<ServerMessage.Error>()
+                    .any { it.message.contains("Commander") } shouldBe true
+            }
+            host.latestLobbyUpdate()?.players?.size shouldBe 1
+        }
+
+        test("a lobby holding an AI refuses the switch to Commander rules, rather than failing to start") {
+            val host = createClient()
+            host.connectAs("Rules Switch Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "PREMADE_DECKS",
+                maxPlayers = 4,
+                gameMode = "FREE_FOR_ALL",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+            host.send(ClientMessage.AddAiToLobby)
+            eventually(10.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 2
+            }
+
+            host.send(ClientMessage.UpdateLobbySettings(rules = "COMMANDER"))
+            eventually(5.seconds) {
+                host.messages.filterIsInstance<ServerMessage.Error>()
+                    .any { it.message.contains("Commander") } shouldBe true
+            }
+            // Refused before anything was written: the lobby is still the one the host had.
+            host.latestLobbyUpdate()?.settings?.rules shouldBe "STANDARD"
+        }
+
+        test("a sealed FFA pod of one human and two AI builds its decks, starts, and the AI plays") {
+            // The end-to-end proof that an AI seat is wired to the pod's game rather than merely
+            // allowed into the lobby. Every assertion after the game starts depends on
+            // `FreeForAllHandler.wireAiSeats`: without it the AI holds the no-op callbacks
+            // `createAiIdentity` gave it, never answers its mulligan, and the pod hangs there.
+            val host = createClient()
+            host.connectAs("Pod Human")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "SEALED",
+                maxPlayers = 3,
+                gameMode = "FREE_FOR_ALL",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+            repeat(2) { host.send(ClientMessage.AddAiToLobby) }
+            eventually(5.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 3
+            }
+
+            host.send(ClientMessage.StartTournamentLobby)
+            // Sealed pools are dealt to every seat, the AI ones auto-built in the background.
+            eventually(10.seconds) {
+                host.messages.any { it is ServerMessage.SealedPoolGenerated } shouldBe true
+            }
+
+            // Basics are always legal in a sealed deck, so the human's deck needs nothing from the
+            // pool — this test is about the pod, not about deckbuilding.
+            host.send(ClientMessage.SubmitSealedDeck(deckList = mapOf("Forest" to 40)))
+
+            // The last deck in starts the pod game — and on this path the last deck is often an
+            // AI's, submitted from `launchAiDeckBuilding`'s coroutine rather than a WebSocket.
+            eventually(60.seconds) {
+                host.messages.any { it is ServerMessage.FreeForAllGameStarting } shouldBe true
+            }
+            val starting = host.messages.filterIsInstance<ServerMessage.FreeForAllGameStarting>().first()
+            starting.players shouldHaveSize 3
+
+            eventually(30.seconds) {
+                host.messages.filterIsInstance<ServerMessage.GameStarted>().any { it.players.size == 3 } shouldBe true
+                host.messages.any { it is ServerMessage.MulliganDecision } shouldBe true
+            }
+            host.send(ClientMessage.KeepHand)
+
+            // Both AI seats answered their own mulligans, so the game left the mulligan phase and
+            // is running. A pod with an unwired AI never gets here.
+            eventually(30.seconds) {
+                host.messages.any { it is ServerMessage.StateUpdate } shouldBe true
+            }
+            host.send(ClientMessage.RequestResync)
+            eventually(30.seconds) {
+                val state = host.latestState()
+                state.shouldNotBeNull()
+                state.players shouldHaveSize 3
             }
         }
 

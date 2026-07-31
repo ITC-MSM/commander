@@ -248,15 +248,26 @@ export const COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL =
   'Commander can’t be played as Two-Headed Giant — a 2HG team shares one life total, and Commander gives every player their own 40. Free-for-All and Team vs. Team pods work.'
 
 /**
- * AI seats in a Commander limited lobby.
+ * AI seats in a Commander lobby — the one axis that still refuses them.
  *
- * `LobbyHandler.buildAiSealedDeck` builds a 40-card sealed deck and calls `submitDeck` without a
- * commander, and `TournamentLobby.validateDeck` doesn't check for one — so the AI would not be
- * rejected, it would sit down in a Commander game with no commander and a 40-card deck. Silently
- * wrong is worse than blocked.
+ * The AI never brings a deck; it is dealt one by a generator, and no generator picks a commander.
+ * `LobbyHandler.buildAiSealedDeck` builds a 40-card deck out of a pool without one, and
+ * `RandomDeckResolver` declines commander shapes outright rather than ship an illegal 100-card
+ * approximation. Keyed on the **Rules** axis rather than on the Commander pack shape, because that
+ * is the axis that decides whether the game wants a commander at all: a premade Commander pod asks
+ * for one just as much as a Commander Draft does, and the pack-shape reading could not see it.
  */
-export const COMMANDER_LIMITED_HAS_NO_AI =
-  'The AI can’t build a Commander deck — its automatic deckbuilding never picks a commander, so it would sit down without one. Play these with people.'
+export const COMMANDER_HAS_NO_AI =
+  'The AI can’t build a Commander deck — nothing it deckbuilds with picks a commander, so it would sit down without one. Play Commander with people.'
+
+/**
+ * Why an AI can't sit in a lobby running these rules, or null — the client's copy of the server's
+ * `handleAddAiToLobby` rejection, read by every surface that offers an AI seat or offers to switch
+ * the Rules axis under one. The same one-statement discipline as {@link rulesTableBlock}.
+ */
+export function commanderAiBlock(rules: RulesAxis): string | null {
+  return rules === 'COMMANDER' ? COMMANDER_HAS_NO_AI : null
+}
 
 /**
  * The Commander life / commander-damage presets, mirroring `CommanderPreset` in

@@ -20,8 +20,8 @@ import type { DeckPickerTab } from '../ui/DeckPicker'
 import {
   axesFromLobbySettings,
   axesFromQuickGameLobby,
+  commanderAiBlock,
   effectiveCommanderPreset,
-  isCommanderLimited,
   rulesFromLobbySettings,
   rulesTableBlock,
   tableFromGameMode,
@@ -208,7 +208,6 @@ export function fromTournamentLobby(
   const playerCount = lobbyState.players.length
   const isWinston = s.format === 'WINSTON_DRAFT'
   const isGridDraft = s.format === 'GRID_DRAFT'
-  const isFfa = s.gameMode === 'FREE_FOR_ALL'
   const maxPlayers = isWinston ? 2 : isGridDraft ? 4 : (s.maxPlayers || 8)
 
   const players = lobbyState.players.map((p): LobbyViewPlayer => ({
@@ -246,11 +245,13 @@ export function fromTournamentLobby(
         }
       : null,
     isPublic: s.isPublic,
-    // Commander limited excluded: `buildAiSealedDeck` submits a 40-card deck with no commander, and
-    // `TournamentLobby.validateDeck` doesn't check for one — so the AI would sit down without a
-    // commander rather than be rejected. `LobbyScreen` hides the button; the wizard says why.
-    canAddAi: isWaiting && lobbyState.isHost && opts.aiEnabled && !isFfa
-      && !isCommanderLimited(axes.cards) && playerCount < maxPlayers,
+    // Neither the Table nor the Cards axis narrows this any more: an AI takes a pod seat like anyone
+    // else, and a premade lobby deals it a generated deck the way a quick game always has. The one
+    // axis that still refuses — the server's own `handleAddAiToLobby` rejection — is Rules: none of
+    // the AI's deck generators picks a commander, so it would sit down at a Commander table without
+    // one. `LobbyScreen` hides the button; `LobbyAxes` says why from the other direction.
+    canAddAi: isWaiting && lobbyState.isHost && opts.aiEnabled
+      && commanderAiBlock(axes.rules) === null && playerCount < maxPlayers,
     // Ranked is a 1v1-bracket-only concept server-side (`TournamentLobby.rankedEligible`).
     ranked: { available: axes.table === 'ONE_V_ONE', on: s.ranked ?? false },
     teams: tournamentTeams(lobbyState),

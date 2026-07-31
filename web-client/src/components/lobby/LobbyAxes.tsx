@@ -20,10 +20,10 @@
 import { useEffect } from 'react'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import {
-  COMMANDER_LIMITED_HAS_NO_AI,
   cardsKindTopicId,
   cardsLabel,
   cardsSeatCap,
+  commanderAiBlock,
   isCommanderLimited,
   eventTopicId,
   legalityOptionsForTable,
@@ -327,22 +327,21 @@ function AxisButtons<V extends CardsKind | RulesAxis | TableAxis | EventAxis>({
  * Three reasons, all facts shared with the landing wizard rather than numbers written at the call
  * site: the shape seats fewer players than this lobby is holding ({@link cardsSeatCap}); it would
  * default the Rules axis to Commander at a table that can't have it ({@link rulesTableBlock} — the
- * one statement of that rule, so this row can never offer what the Rules row refuses); or it is a
- * Commander *pool*, which the AI cannot deckbuild from ({@link COMMANDER_LIMITED_HAS_NO_AI}).
+ * one statement of that rule, so this row can never offer what the Rules row refuses); or it would
+ * default those rules on with an AI in the lobby, which no generator can deckbuild for
+ * ({@link commanderAiBlock}).
  */
 function shapeBlock(view: UnifiedLobbyView, cards: CardsAxis): string | null {
   const cap = cardsSeatCap(cards)
   if (view.players.length > cap) {
     return `${cardsLabel(cards)} seats at most ${cap} — this lobby has ${view.players.length}`
   }
-  // Picking a Commander pack shape defaults Rules to Commander, so it inherits the Rules × Table
-  // conflict; a non-commander shape asks the question of the rules the lobby already has.
+  // Picking a Commander pack shape defaults Rules to Commander, so it inherits both of the rules'
+  // own blocks; a non-commander shape asks them of the rules the lobby already has.
   const wouldRun: RulesAxis = isCommanderLimited(cards) ? 'COMMANDER' : view.axes.rules
   const conflict = rulesTableBlock(wouldRun, view.axes.table)
   if (conflict !== null) return conflict
-  if (isCommanderLimited(cards) && view.players.some((p) => p.isAi)) {
-    return COMMANDER_LIMITED_HAS_NO_AI
-  }
+  if (view.players.some((p) => p.isAi)) return commanderAiBlock(wouldRun)
   return null
 }
 

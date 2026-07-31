@@ -38,6 +38,7 @@ import {
   cardsKindLabel,
   cardsLabel,
   cardsSeatCap,
+  commanderAiBlock,
   rulesForCards,
   rulesTableBlock,
   tournamentFormatForCards,
@@ -163,12 +164,6 @@ export interface Choice<V> {
  * Each of these is a Phase 5 gap (§ 4c), phrased for someone who has not yet created anything —
  * which is why they say "go back and pick X" rather than the lobby's "switch the Table first".
  * ─────────────────────────────────────────────────────────────────────────── */
-
-const AI_NEEDS_A_QUICK_GAME =
-  'The AI can only bring a deck to a single 1v1 game — premade-deck brackets reject AI seats.'
-
-const AI_NOT_AT_A_MULTIPLAYER_TABLE =
-  'The AI can’t take a seat at a multiplayer table yet. Pick “A group” and invite people, or stay at 1v1.'
 
 const MOMIR_IS_A_1V1_SINGLE_GAME =
   'Momir Basic only exists as a 1v1 single game — it has no bracket or multiplayer implementation.'
@@ -297,19 +292,28 @@ export function shapeChoices(roster: Roster, cards: CardsAxis): Choice<ShapeId>[
     if (isQuickOnly(kind)) {
       return [choice('ONE_GAME'), choice('BRACKET', quickOnlyReason(kind))]
     }
+    // Every shape is open to a solo player: the AI takes a seat at a pod like anyone else, and where
+    // there is no pool for it to build from — a premade-deck lobby — it is dealt a generated deck,
+    // exactly as the quick game has always done. What is left is the Cards value's own limits, asked
+    // through the same shared predicates the group branch uses, so a solo pod and a human pod cannot
+    // disagree about which table a Commander pool can sit at.
+    const reasonFor = (shape: ShapeId): string | undefined =>
+      rulesTableBlock(rulesForCards(cards), shapeAxes(shape).table)
+      ?? commanderAiBlock(rulesForCards(cards))
+      ?? undefined
     if (kind === 'BRING_A_DECK') {
       return [
         choice('ONE_GAME'),
-        choice('BRACKET', AI_NEEDS_A_QUICK_GAME),
-        ...MULTIPLAYER_SHAPES.map((s) => choice(s, AI_NOT_AT_A_MULTIPLAYER_TABLE)),
+        choice('BRACKET'),
+        ...MULTIPLAYER_SHAPES.map((s) => choice(s, reasonFor(s))),
       ]
     }
-    // Limited vs the AI: a pod of AI drafters playing the bracket out. Fully supported and, before
-    // this screen, reachable only by creating a lobby and pressing "+ Add AI Player" repeatedly.
+    // A limited pool is meant to be played more than once, so a two-seat single game is the one
+    // shape it declines — the pod and the bracket both play it out.
     return [
       choice('ONE_GAME', LIMITED_ALWAYS_RUNS_AS_A_BRACKET),
-      choice('BRACKET'),
-      ...MULTIPLAYER_SHAPES.map((s) => choice(s, AI_NOT_AT_A_MULTIPLAYER_TABLE)),
+      choice('BRACKET', commanderAiBlock(rulesForCards(cards)) ?? undefined),
+      ...MULTIPLAYER_SHAPES.map((s) => choice(s, reasonFor(s))),
     ]
   }
 
@@ -354,39 +358,45 @@ export function seatRule(roster: Roster, cards: CardsAxis, shape: ShapeId): Seat
   const twoSeats = (caption: string): SeatRule => ({ values: [2], label: '', fixed: true, caption })
 
   if (roster === 'FRIEND') return twoSeats('Two seats. Share the invite code and they take the other one.')
-  if (roster === 'SOLO' && (isQuickOnly(cards.kind) || cards.kind === 'BRING_A_DECK')) {
+  // A solo 1v1 is two seats whatever the cards are; the shape is what says so, not the Cards value.
+  // Brought decks used to be listed here too, back when the AI could only face one in a quick game.
+  if (roster === 'SOLO' && (isQuickOnly(cards.kind) || shape === 'ONE_GAME')) {
     return twoSeats('You and one AI opponent.')
   }
   const cap = Math.min(cardsSeatCap(cards), shape === 'FREE_FOR_ALL' ? 6 : 8)
 
-  if (roster === 'SOLO') {
-    // A limited pod against AI drafters. This one really is a choice — it decides how many AI seats
-    // get filled — but the lobby can add and remove them afterwards.
-    const values = range(2, cap)
-    return {
-      values,
-      label: 'Pod size',
-      fixed: values.length === 1,
-      caption: 'You plus AI opponents. Add or remove them in the lobby.',
-    }
-  }
-
-  const openCaption =
-    'A limit, not a requirement — start whenever everyone is in. Changeable in the lobby.'
+  // A solo pod fills every seat but yours with AI, so its count is an exact number of opponents
+  // rather than a cap someone might not reach — and it can go down to two, where a group's opens at
+  // three because two of them is the bracket. What it cannot do is escape the shape's own
+  // arithmetic: Two-Headed Giant is four seats whether the other three are people or not.
+  const solo = roster === 'SOLO'
+  const label = solo ? 'Pod size' : 'Up to'
+  const openCaption = solo
+    ? 'You plus AI opponents. Add or remove them in the lobby.'
+    : 'A limit, not a requirement — start whenever everyone is in. Changeable in the lobby.'
 
   switch (shape) {
     case 'TWO_HEADED_GIANT':
-      return { values: [4], label: '', fixed: true, caption: 'Two-Headed Giant is exactly four seats: two teams of two.' }
-    case 'TEAM_VS_TEAM':
       return {
-        values: [4, 6, 8].filter((n) => n <= cap),
-        label: 'Up to',
-        fixed: false,
+        values: [4],
+        label: '',
+        fixed: true,
+        caption: solo
+          ? 'Two-Headed Giant is exactly four seats: you and an AI teammate against two more.'
+          : 'Two-Headed Giant is exactly four seats: two teams of two.',
+      }
+    case 'TEAM_VS_TEAM': {
+      const values = [4, 6, 8].filter((n) => n <= cap)
+      return {
+        values,
+        label,
+        fixed: values.length === 1,
         caption: `Teams need an even pod. ${openCaption}`,
       }
+    }
     default: {
-      const values = range(3, cap)
-      return { values, label: 'Up to', fixed: values.length === 1, caption: openCaption }
+      const values = range(solo ? 2 : 3, cap)
+      return { values, label, fixed: values.length === 1, caption: openCaption }
     }
   }
 }

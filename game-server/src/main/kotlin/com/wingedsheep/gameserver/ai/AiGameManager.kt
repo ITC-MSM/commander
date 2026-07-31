@@ -36,7 +36,21 @@ class AiGameManager(
     private val cardRegistry: CardRegistry,
     private val llmCostTracker: com.wingedsheep.gameserver.tournament.llm.LlmCostTracker
 ) {
-    private val activeSessions = ConcurrentHashMap<String, AiWebSocketSession>()
+    /**
+     * The live AI sessions of each game, keyed game → AI player. A multiplayer pod seats more than
+     * one AI (an FFA table, a Two-Headed Giant team), so this is per *seat* and not per game: keyed
+     * by game alone, the second AI wired into a pod replaced the first, and [cleanupGame] shut down
+     * one of them and leaked the rest.
+     */
+    private val activeSessions = ConcurrentHashMap<String, ConcurrentHashMap<EntityId, AiWebSocketSession>>()
+
+    /** Register [session] as [aiPlayerId]'s live session in [gameSessionId], shutting down any predecessor. */
+    private fun trackSession(gameSessionId: String, aiPlayerId: EntityId, session: AiWebSocketSession) {
+        val previous = activeSessions
+            .computeIfAbsent(gameSessionId) { ConcurrentHashMap() }
+            .put(aiPlayerId, session)
+        previous?.shutdown()
+    }
 
     @PostConstruct
     fun logConfig() {
@@ -192,7 +206,7 @@ class AiGameManager(
         identity.currentGameSessionId = gameSession.sessionId
         sessionRegistry.register(identity, aiSession, playerSession)
 
-        activeSessions[gameSession.sessionId] = aiSession
+        trackSession(gameSession.sessionId, aiPlayerId, aiSession)
         aiPlayerIds.add(aiPlayerId)
         return playerSession to identity
     }
@@ -463,7 +477,7 @@ class AiGameManager(
             sessionRegistry.setPlayerSession(newSession.id, playerSession)
         }
 
-        activeSessions[gameSession.sessionId] = newSession
+        trackSession(gameSession.sessionId, aiPlayerId, newSession)
         logger.info("Wired AI {} for game {} [mode={}]", aiPlayerId.value, gameSession.sessionId, aiProperties.mode)
     }
 
@@ -491,16 +505,15 @@ class AiGameManager(
      * Clean up AI resources when a game ends.
      */
     fun cleanupGame(gameSessionId: String) {
-        val session = activeSessions.remove(gameSessionId)
-        if (session != null) {
-            session.shutdown()
-            logger.info("Cleaned up AI session for game $gameSessionId")
-        }
+        val sessions = activeSessions.remove(gameSessionId) ?: return
+        sessions.values.forEach { it.shutdown() }
+        logger.info("Cleaned up {} AI session(s) for game {}", sessions.size, gameSessionId)
     }
 
     /**
      * Check if a game has an AI player.
      */
-    fun hasAiPlayer(gameSessionId: String): Boolean = activeSessions.containsKey(gameSessionId)
+    fun hasAiPlayer(gameSessionId: String): Boolean =
+        activeSessions[gameSessionId]?.isNotEmpty() == true
 
 }

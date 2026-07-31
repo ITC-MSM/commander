@@ -153,6 +153,12 @@ class FreeForAllHandler(
             )
         }
 
+        // Point every AI seat at this game before it starts. Without this the AI sits at the table
+        // holding the no-op callbacks `createAiIdentity` gave it and never acts — the pod stalls on
+        // its priority. The engine AI itself is pod- and team-aware (`Sides` folds over every
+        // opposing side and reads Two-Headed Giant's pooled life), so a seat is all it needs.
+        wireAiSeats(gameSession, lobby, playerStates.map { it.identity.playerId })
+
         gameSession.publicSpectate = lobby.isPublic
         gameRepository.save(gameSession)
         gameRepository.linkToLobby(gameSession.sessionId, lobby.lobbyId)
@@ -200,6 +206,65 @@ class FreeForAllHandler(
     }
 
     /**
+     * Give every AI seat in [seatedPlayerIds] a live session bound to [gameSession].
+     *
+     * The bracket counterpart is the loop in [TournamentMatchHandler.startSingleMatch], and the two
+     * halves are both load-bearing: `wireAiForGame` swaps the identity's no-op callbacks for ones
+     * that feed this game, and [GameSession.replacePlayerSession] repoints the seat at the session
+     * that wiring just created — the [PlayerSession] added above still holds the stale one.
+     *
+     * Unlike the bracket, a pod can seat several AI at once; [com.wingedsheep.gameserver.ai.AiGameManager]
+     * tracks them per seat rather than per game so they don't evict each other.
+     */
+    private fun wireAiSeats(gameSession: GameSession, lobby: TournamentLobby, seatedPlayerIds: List<EntityId>) {
+        for (playerId in seatedPlayerIds) {
+            if (!ctx.aiGameManager.isAiPlayer(playerId)) continue
+
+            ctx.aiGameManager.wireAiForGame(
+                gameSession = gameSession,
+                aiPlayerId = playerId,
+                deckList = lobby.getSubmittedDeck(playerId),
+                onActionReady = { aiPlayerId, action ->
+                    gamePlayHandler.handleAiAction(gameSession, aiPlayerId, action)
+                },
+                onMulliganKeep = { aiPlayerId ->
+                    gamePlayHandler.handleAiMulliganKeep(gameSession, aiPlayerId)
+                },
+                onMulliganTake = { aiPlayerId ->
+                    gamePlayHandler.handleAiMulliganTake(gameSession, aiPlayerId)
+                },
+                onBottomCards = { aiPlayerId, cardIds ->
+                    gamePlayHandler.handleAiBottomCards(gameSession, aiPlayerId, cardIds)
+                },
+            )
+
+            val identity = lobby.players[playerId]?.identity ?: continue
+            val ws = identity.webSocketSession ?: continue
+            gameSession.replacePlayerSession(playerId, PlayerSession(
+                webSocketSession = ws,
+                playerId = playerId,
+                playerName = identity.playerName,
+                currentGameSessionId = gameSession.sessionId,
+            ))
+        }
+    }
+
+    /**
+     * Mark every AI seat ready for the next pod game.
+     *
+     * "Play again" waits on [TournamentLobby.areAllPlayersReady], which counts every connected
+     * seat — and an AI is always connected. Nothing routes a ready-up to an AI session, so without
+     * this a pod containing one could never start its second game. The bracket solves the same
+     * problem in [TournamentMatchHandler.autoReadyAiPlayers]; a pod has no rounds or pairings to
+     * consult, so readiness here is unconditional.
+     */
+    fun autoReadyAiSeats(lobby: TournamentLobby) {
+        for (playerId in lobby.players.keys) {
+            if (ctx.aiGameManager.isAiPlayer(playerId)) lobby.markPlayerReady(playerId)
+        }
+    }
+
+    /**
      * The FFA game finished. Standings = elimination order, winner first ([GameSession.getEliminationOrder]
      * reversed; a player never eliminated but not the winner — a simultaneous-loss draw — slots in
      * after the winner). Broadcasts [ServerMessage.FreeForAllGameComplete]; the lobby stays
@@ -221,6 +286,8 @@ class FreeForAllHandler(
             lobby.ffaGamesPlayed += 1
             lobby.ffaLastStandings = standings
             lobby.clearReadyState()
+            // The AI seats are ready the moment the pod is between games; only the humans are asked.
+            autoReadyAiSeats(lobby)
             ctx.lobbyRepository.saveLobby(lobby)
 
             logger.info(

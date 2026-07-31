@@ -1692,20 +1692,31 @@ class TournamentLobby(
             return false
         }
 
-        val playerState = players[playerId] ?: return false
-
-        if (!playerState.hasSubmittedDeck) {
+        if (players[playerId]?.hasSubmittedDeck != true) {
             return false // Nothing to unsubmit
         }
 
-        // Clear deck and ready state
+        discardSubmittedDeck(playerId)
+        return true
+    }
+
+    /**
+     * Drop [playerId]'s submitted deck and ready state, whatever state the lobby is in.
+     *
+     * [unsubmitDeck] is the player-facing action and is gated on the lobby being at a point where
+     * *they* may change their mind. This is the same clearing without that question, for a deck the
+     * lobby itself has just invalidated — a generated AI deck after the host changes the format or
+     * the deck-legality axis out from under it, where the gate would refuse and leave the seat
+     * holding a deck built for a lobby that no longer exists.
+     */
+    internal fun discardSubmittedDeck(playerId: EntityId) {
+        val playerState = players[playerId] ?: return
         players[playerId] = playerState.copy(
             submittedDeck = null,
             submittedSideboard = emptyMap(),
             commander = null,
         )
         playersReadyForNextRound.remove(playerId)
-        return true
     }
 
     /**
