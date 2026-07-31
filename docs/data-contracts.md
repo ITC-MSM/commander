@@ -400,6 +400,14 @@ sealed, or premade), then one N-player game".
   `RandomDeckResolver` at the moment the AI sits down, the same component and the same rule the quick
   lobby's `vsAi` seat has always used. Changing the lobby's format or `deckFormat` afterwards
   re-rolls it, since both decide what may be in it.
+- **`SetLobbyAiDeck { playerId, spec }`** is the per-seat twin of `SetQuickGameAiDeck`: the host picks
+  what *one* AI brings, in the same `AiDeckSpec` vocabulary (`auto` / `sets` / `deck`). Held per seat
+  on `LobbyPlayerState.aiDeckSpec` and echoed back as `LobbyPlayerInfo.aiDeck` — an `AiDeckSpecView`
+  summary (kind, sets, label, card count), never the decklist itself, since lobby state re-broadcasts
+  on every change. A `deck` list is validated against the lobby's `deckFormat` on arrival, and the
+  seat's deck is re-rolled immediately rather than at game start: the premade start gate wants every
+  seat to have submitted, so the deck has to exist while the host is still looking at the lobby.
+  Rejected outside `PREMADE_DECKS`, where the AI builds from the pool it was dealt.
 - **The one axis that still refuses an AI is Rules.** No generator the AI deckbuilds with picks a
   commander, so `handleAddAiToLobby` rejects a lobby running Commander rules and
   `UpdateLobbySettings` rejects switching a lobby that holds an AI onto them — refused at the change

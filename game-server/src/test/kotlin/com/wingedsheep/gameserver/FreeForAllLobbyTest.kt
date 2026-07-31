@@ -324,6 +324,92 @@ class FreeForAllLobbyTest : FunSpec() {
                 .first().players shouldHaveSize 4
         }
 
+        test("the host picks each AI seat's deck separately, and only that seat's changes") {
+            val host = createClient()
+            host.connectAs("Deck Picker Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "PREMADE_DECKS",
+                maxPlayers = 4,
+                gameMode = "FREE_FOR_ALL",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+            repeat(2) { host.send(ClientMessage.AddAiToLobby) }
+            eventually(15.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 3
+            }
+            // Both seats start on Auto — the rolled deck, which is what they were dealt on arrival.
+            host.latestLobbyUpdate()?.players?.filter { it.isAi }?.all { it.aiDeck?.kind == "auto" } shouldBe true
+
+            val aiSeats = host.latestLobbyUpdate()!!.players.filter { it.isAi }
+            val chosen = aiSeats[0].playerId
+            val untouched = aiSeats[1].playerId
+
+            // An exact list, the way the "Pick a deck" tab sends one. Every name is checked against
+            // the registry on arrival, so these are real Portal cards.
+            val burn = mapOf("Mountain" to 32, "Lava Axe" to 4, "Raging Goblin" to 4)
+            host.send(ClientMessage.SetLobbyAiDeck(
+                playerId = chosen,
+                spec = com.wingedsheep.gameserver.lobby.AiDeckSpec.Fixed(burn, label = "Burn"),
+            ))
+            eventually(10.seconds) {
+                host.messages.filterIsInstance<ServerMessage.Error>().map { it.message } shouldBe emptyList()
+                val seat = host.latestLobbyUpdate()?.players?.first { it.playerId == chosen }
+                seat?.aiDeck?.kind shouldBe "deck"
+                seat?.aiDeck?.label shouldBe "Burn"
+                seat?.aiDeck?.cardCount shouldBe burn.values.sum()
+                // Re-rolled onto the chosen list, so the seat is still ready to start.
+                seat?.deckSubmitted shouldBe true
+            }
+            // Per seat means per seat: the other AI is still on what it was dealt.
+            host.latestLobbyUpdate()?.players?.first { it.playerId == untouched }?.aiDeck?.kind shouldBe "auto"
+            host.messages.none { it is ServerMessage.Error } shouldBe true
+
+            // Pinning the pool to sets is the middle answer, and it round-trips as one.
+            host.send(ClientMessage.SetLobbyAiDeck(
+                playerId = untouched,
+                spec = com.wingedsheep.gameserver.lobby.AiDeckSpec.Sets(listOf("POR")),
+            ))
+            eventually(15.seconds) {
+                val seat = host.latestLobbyUpdate()?.players?.first { it.playerId == untouched }
+                seat?.aiDeck?.kind shouldBe "sets"
+                seat?.aiDeck?.setCodes shouldBe listOf("POR")
+                seat?.deckSubmitted shouldBe true
+            }
+        }
+
+        test("choosing an AI's deck is refused in a limited lobby, where it builds from its pool") {
+            val host = createClient()
+            host.connectAs("Sealed Host")
+            host.send(ClientMessage.CreateTournamentLobby(
+                setCodes = listOf("POR"),
+                format = "SEALED",
+                maxPlayers = 4,
+                gameMode = "FREE_FOR_ALL",
+            ))
+            eventually(5.seconds) {
+                host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
+            }
+            host.send(ClientMessage.AddAiToLobby)
+            eventually(10.seconds) {
+                host.latestLobbyUpdate()?.players?.size shouldBe 2
+            }
+            // No pool yet, so no deck either — and no choice to make about it.
+            host.latestLobbyUpdate()?.players?.first { it.isAi }?.deckSubmitted shouldBe false
+
+            val aiId = host.latestLobbyUpdate()!!.players.first { it.isAi }.playerId
+            host.send(ClientMessage.SetLobbyAiDeck(
+                playerId = aiId,
+                spec = com.wingedsheep.gameserver.lobby.AiDeckSpec.Fixed(mapOf("Forest" to 40)),
+            ))
+            eventually(5.seconds) {
+                host.messages.filterIsInstance<ServerMessage.Error>()
+                    .any { it.message.contains("pool it is dealt") } shouldBe true
+            }
+        }
+
         test("a Commander lobby refuses AI seats — no generator it builds with picks a commander") {
             val host = createClient()
             host.connectAs("Commander Host")

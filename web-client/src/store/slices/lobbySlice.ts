@@ -2,7 +2,7 @@
  * Lobby slice - handles tournament lobbies, spectating, and lobby management.
  */
 import type { SliceCreator, LobbyState, TournamentState, FfaState, SpectatingState } from './types'
-import type { DeckFormat, GameRules, TournamentFormat, LobbyGameMode, AttackMode } from '@/types'
+import type { AiDeckSpec, DeckFormat, GameRules, TournamentFormat, LobbyGameMode, AttackMode } from '@/types'
 import {
   createCreateTournamentLobbyMessage,
   createJoinLobbyMessage,
@@ -10,6 +10,7 @@ import {
   createLeaveLobbyMessage,
   createAddAiToLobbyMessage,
   createRemoveAiFromLobbyMessage,
+  createSetLobbyAiDeckMessage,
   createStopLobbyMessage,
   createUpdateLobbySettingsMessage,
   createReadyForNextRoundMessage,
@@ -41,6 +42,8 @@ export interface LobbySliceActions {
   updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; rules?: GameRules; chaosBoosters?: boolean; bannedCardNames?: string[]; cubeCards?: string[]; cubeName?: string; packSize?: number; cubeBasicLandSetCode?: string; cubePoolPlay?: boolean; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode; attackMode?: AttackMode; randomTeams?: boolean; teamAssignments?: Record<string, number>; ranked?: boolean }) => void
   addAiToLobby: () => void
   removeAiFromLobby: (playerId: string) => void
+  /** Host picks what one AI seat plays (premade-decks lobbies — elsewhere it builds from its pool). */
+  setLobbyAiDeck: (playerId: string, spec: AiDeckSpec) => void
   readyForNextRound: () => void
   addExtraRound: () => void
   spectateGame: (gameSessionId: string) => void
@@ -109,6 +112,10 @@ export const createLobbySlice: SliceCreator<LobbySlice> = (set, get) => ({
 
   removeAiFromLobby: (playerId) => {
     getWebSocket()?.send(createRemoveAiFromLobbyMessage(playerId))
+  },
+
+  setLobbyAiDeck: (playerId, spec) => {
+    getWebSocket()?.send(createSetLobbyAiDeckMessage(playerId, spec))
   },
 
   stopLobby: () => {

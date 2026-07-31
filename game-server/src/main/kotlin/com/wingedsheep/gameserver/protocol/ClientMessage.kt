@@ -223,7 +223,7 @@ sealed interface ClientMessage {
     data object WinstonSkipPile : ClientMessage
 
     /**
-     * Add an AI player to the current lobby (host only, sealed format only).
+     * Add an AI player to the current lobby (host only, waiting state only).
      */
     @Serializable
     @SerialName("addAiToLobby")
@@ -235,6 +235,23 @@ sealed interface ClientMessage {
     @Serializable
     @SerialName("removeAiFromLobby")
     data class RemoveAiFromLobby(val playerId: String) : ClientMessage
+
+    /**
+     * Host picks what one AI seat plays — the per-seat twin of [SetQuickGameAiDeck], which asks the
+     * same question of a lobby that only ever has one AI. A pod has several and no reason for them
+     * to bring the same thing, so the seat is named.
+     *
+     * Only meaningful where the AI has no pool to build from (premade decks); in a limited lobby it
+     * plays the cards it was dealt, and the server refuses rather than silently ignoring the choice.
+     * A [com.wingedsheep.gameserver.lobby.AiDeckSpec.Fixed] list is validated on arrival, so the
+     * host finds out here rather than at game start.
+     */
+    @Serializable
+    @SerialName("setLobbyAiDeck")
+    data class SetLobbyAiDeck(
+        val playerId: String,
+        val spec: com.wingedsheep.gameserver.lobby.AiDeckSpec,
+    ) : ClientMessage
 
     /**
      * Leave the current lobby.

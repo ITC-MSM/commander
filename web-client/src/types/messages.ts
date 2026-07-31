@@ -1250,6 +1250,8 @@ export interface LobbyPlayerInfo {
   readonly isConnected: boolean
   readonly deckSubmitted: boolean
   readonly isAi: boolean
+  /** For an AI seat: what the host chose for it to play. Null on a human seat. */
+  readonly aiDeck?: AiDeckSpecView | null
 }
 
 export interface AvailableSet {
@@ -1862,6 +1864,7 @@ export type ClientMessage =
   | LeaveLobbyMessage
   | AddAiToLobbyMessage
   | RemoveAiFromLobbyMessage
+  | SetLobbyAiDeckMessage
   | StopLobbyMessage
   | UnsubmitDeckMessage
   | UpdateLobbySettingsMessage
@@ -2277,6 +2280,13 @@ export interface RemoveAiFromLobbyMessage {
   readonly playerId: string
 }
 
+/** Host picks what one AI seat plays — the per-seat twin of `setQuickGameAiDeck`. */
+export interface SetLobbyAiDeckMessage {
+  readonly type: 'setLobbyAiDeck'
+  readonly playerId: string
+  readonly spec: AiDeckSpec
+}
+
 export interface StopLobbyMessage {
   readonly type: 'stopLobby'
 }
@@ -2535,6 +2545,10 @@ export function createAddAiToLobbyMessage(): AddAiToLobbyMessage {
 
 export function createRemoveAiFromLobbyMessage(playerId: string): RemoveAiFromLobbyMessage {
   return { type: 'removeAiFromLobby', playerId }
+}
+
+export function createSetLobbyAiDeckMessage(playerId: string, spec: AiDeckSpec): SetLobbyAiDeckMessage {
+  return { type: 'setLobbyAiDeck', playerId, spec }
 }
 
 export function createStopLobbyMessage(): StopLobbyMessage {

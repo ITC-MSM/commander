@@ -15,7 +15,7 @@
  * `useLobbyCommands.ts`.
  */
 import type { LobbyState } from '@/store/slices/types'
-import type { QuickGameLobbyStateMessage } from '@/types'
+import type { AiDeckSpecView, QuickGameLobbyStateMessage } from '@/types'
 import type { DeckPickerTab } from '../ui/DeckPicker'
 import {
   axesFromLobbySettings,
@@ -42,6 +42,11 @@ export interface LobbyViewPlayer {
   /** Right-hand status text — "Deck Ready", "Choosing deck…", "✓ Ready · Custom (60)". */
   status: string
   tone: 'ready' | 'joined' | 'disconnected'
+  /**
+   * For an AI seat: what the host chose for it to play, or null where the choice doesn't exist —
+   * on a human seat, and in a lobby whose format deals the AI a pool to build from.
+   */
+  aiDeck?: AiDeckSpecView | null
 }
 
 /**
@@ -210,6 +215,10 @@ export function fromTournamentLobby(
   const isGridDraft = s.format === 'GRID_DRAFT'
   const maxPlayers = isWinston ? 2 : isGridDraft ? 4 : (s.maxPlayers || 8)
 
+  // The AI's deck is only the host's to pick where the format doesn't deal it a pool; everywhere
+  // else it builds from the cards it drafted or opened, which is the format working as intended.
+  const aiDeckIsChosen = s.format === 'PREMADE_DECKS'
+
   const players = lobbyState.players.map((p): LobbyViewPlayer => ({
     playerId: p.playerId,
     name: p.playerName,
@@ -219,6 +228,7 @@ export function fromTournamentLobby(
     isConnected: p.isConnected,
     status: !p.isConnected ? 'Disconnected' : p.deckSubmitted ? 'Deck Ready' : 'Joined',
     tone: !p.isConnected ? 'disconnected' : p.deckSubmitted ? 'ready' : 'joined',
+    aiDeck: p.isAi && aiDeckIsChosen ? (p.aiDeck ?? { kind: 'auto' }) : null,
   }))
 
   const blockReason = startBlockReason(lobbyState)

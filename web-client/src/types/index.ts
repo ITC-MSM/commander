@@ -380,6 +380,7 @@ export {
   createLeaveLobbyMessage,
   createAddAiToLobbyMessage,
   createRemoveAiFromLobbyMessage,
+  createSetLobbyAiDeckMessage,
   createStopLobbyMessage,
   createUnsubmitDeckMessage,
   createUpdateLobbySettingsMessage,

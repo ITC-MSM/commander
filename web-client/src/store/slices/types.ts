@@ -906,6 +906,8 @@ export type GameStore = {
   leaveLobby: () => void
   addAiToLobby: () => void
   removeAiFromLobby: (playerId: string) => void
+  /** Host picks what one AI seat plays (premade-decks lobbies — elsewhere it builds from its pool). */
+  setLobbyAiDeck: (playerId: string, spec: AiDeckSpec) => void
   stopLobby: () => void
   updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; rules?: GameRules; deckSizeMin?: number; allowDuplicates?: boolean; commanderPreset?: CommanderPreset; chaosBoosters?: boolean; bannedCardNames?: string[]; cubeCards?: string[]; cubeName?: string; packSize?: number; cubeBasicLandSetCode?: string; cubePoolPlay?: boolean; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode; attackMode?: AttackMode; randomTeams?: boolean; teamAssignments?: Record<string, number>; ranked?: boolean }) => void
   /** Disconnected tournament players: playerId -> info */

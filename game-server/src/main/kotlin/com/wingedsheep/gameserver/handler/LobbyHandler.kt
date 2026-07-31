@@ -3,6 +3,7 @@ package com.wingedsheep.gameserver.handler
 import com.wingedsheep.gameserver.ai.AiGameManager
 import com.wingedsheep.gameserver.ai.AiWebSocketSession
 import com.wingedsheep.gameserver.handler.ConnectionHandler.Companion.cardToSealedCardInfo
+import com.wingedsheep.gameserver.lobby.AiDeckSpec
 import com.wingedsheep.gameserver.lobby.LobbyGameMode
 import com.wingedsheep.gameserver.lobby.LobbyState
 import com.wingedsheep.gameserver.lobby.commanderRulesTableConflict
@@ -160,6 +161,7 @@ class LobbyHandler(
             is ClientMessage.UpdateLobbySettings -> handleUpdateLobbySettings(session, message)
             is ClientMessage.AddAiToLobby -> handleAddAiToLobby(session)
             is ClientMessage.RemoveAiFromLobby -> handleRemoveAiFromLobby(session, message)
+            is ClientMessage.SetLobbyAiDeck -> handleSetLobbyAiDeck(session, message)
             is ClientMessage.SpectateGame -> spectatingHandler.handleSpectateGame(session, message)
             is ClientMessage.StopSpectating -> spectatingHandler.handleStopSpectating(session)
             else -> {}
@@ -1533,6 +1535,70 @@ class LobbyHandler(
     }
 
     /**
+     * Host picks what one AI seat plays.
+     *
+     * The per-seat twin of [QuickGameLobbyHandler.handleSetAiDeck], and deliberately the same three
+     * answers: let the server decide, pin the pool to some sets, or hand it an exact list. Storing
+     * the spec and re-rolling immediately (rather than resolving at game start, as the quick lobby
+     * does) is what the premade start gate requires — it wants every seat to have submitted, so the
+     * seat's deck has to exist while the host is still looking at the lobby.
+     */
+    private fun handleSetLobbyAiDeck(session: WebSocketSession, message: ClientMessage.SetLobbyAiDeck) {
+        val (identity, lobby) = ctx.getIdentityAndLobby(session) ?: return
+
+        if (!lobby.isHost(identity.playerId)) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Only the host can choose an AI's deck")
+            return
+        }
+        if (lobby.state != LobbyState.WAITING_FOR_PLAYERS) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Can only change an AI's deck while waiting for players")
+            return
+        }
+        if (lobby.format != TournamentFormat.PREMADE_DECKS) {
+            // Not a silent no-op: in a limited lobby the AI plays the cards it was dealt, and a host
+            // who picked a deck for it should be told that is not how this format works.
+            sender.sendError(
+                session,
+                ErrorCode.INVALID_ACTION,
+                "The AI builds its deck from the pool it is dealt in this format — pick Bring a deck to choose one for it"
+            )
+            return
+        }
+
+        val aiPlayerId = EntityId(message.playerId)
+        val playerState = lobby.players[aiPlayerId]
+        if (playerState == null || !aiGameManager.isAiPlayer(aiPlayerId)) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "No such AI player in this lobby")
+            return
+        }
+
+        // A fixed list is refused at the point the host chooses it rather than seated and found
+        // illegal later; sets are only checked for existence, since whether the pool can carry a
+        // deck is the resolver's problem and it falls back rather than fails.
+        val spec = message.spec
+        if (spec is AiDeckSpec.Fixed) {
+            if (spec.deckList.isEmpty()) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "The AI's deck is empty")
+                return
+            }
+            val validation = deckValidator.validate(spec.deckList, lobby.deckFormat)
+            if (!validation.valid) {
+                val reason = validation.errors.firstOrNull()?.message ?: "Deck is not legal"
+                sender.sendError(session, ErrorCode.INVALID_DECK, "AI deck rejected: $reason")
+                return
+            }
+        }
+
+        playerState.aiDeckSpec = spec
+        lobby.discardSubmittedDeck(aiPlayerId)
+        ensureAiPremadeDeck(lobby, aiPlayerId)
+        lobbyRepository.saveLobby(lobby)
+
+        logger.info("Host set AI {} deck to {} in lobby {}", aiPlayerId.value, spec::class.simpleName, lobby.lobbyId)
+        ctx.broadcastLobbyUpdate(lobby)
+    }
+
+    /**
      * Roll a deck for an AI seat in a **premade-decks** lobby, the way a quick game already does.
      *
      * Premade decks is the one format with no pool for [buildAiSealedDeck] to work from, which is
@@ -1542,15 +1608,18 @@ class LobbyHandler(
      * axis when it has one and opens a sealed pool otherwise. Reusing it here means a premade lobby
      * seats an AI under the same rule as a quick game, rather than under a second one.
      *
-     * The lobby's own set selection stands in for the quick lobby's "the same set as the human".
-     * Only ever generates for a seat that has no deck, so it is safe to call repeatedly.
+     * What it plays is the host's answer for *that seat* ([LobbyPlayerState.aiDeckSpec]), defaulting
+     * to Auto; the lobby's own set selection stands in for the quick lobby's "the same set as the
+     * human". Only ever generates for a seat that has no deck, so it is safe to call repeatedly.
      */
     private fun ensureAiPremadeDeck(lobby: TournamentLobby, aiPlayerId: EntityId) {
         if (lobby.format != TournamentFormat.PREMADE_DECKS) return
         val playerState = lobby.players[aiPlayerId] ?: return
         if (playerState.hasSubmittedDeck) return
 
-        val deck = runCatching { randomDeckResolver.randomDeck(lobby.deckFormat, lobby.setCodes) }
+        val deck = runCatching {
+            randomDeckResolver.resolve(playerState.aiDeckSpec, lobby.deckFormat, lobby.setCodes)
+        }
             .onFailure { logger.error("Could not generate a deck for AI seat ${aiPlayerId.value}", it) }
             .getOrNull() ?: return
 
