@@ -339,8 +339,9 @@ printing, per the reprint rule (`just check-card-printing "<Card>"`).
 
 **DFT — Aetherdrift (3)**
 - [x] Guidelight Optimizer · Nesting Bot · Marketback Walker *(artifact creatures)*
-- [ ] Howlsquad Heavy · Webstrike Elite *(creatures — Marauding Mako done)*
-- [ ] Monument to Endurance *(artifact — Lumbering Worldwagon, Perilous Snare, Repurposing Bay done)*
+- [x] Howlsquad Heavy *(creature — Marauding Mako done)*
+- [ ] Webstrike Elite *(creature)*
+- [x] Monument to Endurance *(artifact — Lumbering Worldwagon, Perilous Snare, Repurposing Bay done)*
 - [x] Momentum Breaker *(enchantment)*
 
 **SPM — Marvel's Spider-Man (6)**
