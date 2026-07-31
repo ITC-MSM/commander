@@ -1406,6 +1406,57 @@
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
 }
 
+/* A deck picker is a temporary editor for one player seat, not part of the lobby's vertical flow. */
+.deckPickerModal {
+  width: min(1060px, 96vw);
+  max-height: calc(100vh - 2 * var(--space-4));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface-2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.deckPickerModalHeader {
+  position: sticky;
+  top: calc(-1 * var(--space-5));
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) 0;
+  padding: var(--space-5);
+  background: var(--bg-surface-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.deckPickerModalHeader .confirmBody {
+  margin-bottom: 0;
+}
+
+.deckPickerModalClose {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.deckPickerModalClose:hover {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
 .confirmTitle {
   font-size: var(--font-lg);
   font-weight: var(--font-weight-semibold);
@@ -2100,6 +2151,29 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.playerDeckButton {
+  max-width: min(300px, 45vw);
+  padding: 4px 8px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playerDeckButton:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: rgba(79, 195, 247, 0.08);
+}
+
+.playerDeckButton:disabled {
+  border-color: transparent;
+  background: transparent;
+  cursor: not-allowed;
 }
 
 .removeAiButton {

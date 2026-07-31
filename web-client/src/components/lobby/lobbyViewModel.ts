@@ -233,7 +233,7 @@ function quickGuidance({
   if (needsDeck) {
     return {
       title: 'Choose your deck',
-      detail: 'Your selection is saved automatically. When it is valid, mark yourself ready below.',
+      detail: 'Open your player row to choose one. When it is valid, mark yourself ready below.',
       tone: 'action',
     }
   }

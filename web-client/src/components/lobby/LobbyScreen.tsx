@@ -27,7 +27,7 @@ import { DeckPicker, type DeckPickerTab } from '../ui/DeckPicker'
 import { FullscreenButton } from '../ui/FullscreenButton'
 import { JoinQrModal } from '../ui/JoinQrModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
-import { AiDeckSection, AiOpponentRow, initialAiSource, type AiDeckSource } from './AiOpponentPanel'
+import { QuickAiDeckModal, initialAiSource, type AiDeckSource } from './AiOpponentPanel'
 import { LobbyAiDeckModal, aiDeckSummary } from './LobbyAiDeckModal'
 import {
   CardsAxisBody,
@@ -75,9 +75,11 @@ export function LobbyScreen() {
   const [intent] = useState(takePendingLobbyIntent)
   const [deckTab, setDeckTab] = useState<DeckPickerTab | undefined>(intent?.deckTab)
   const [copied, setCopied] = useState(false)
-  // Which source the AI-deck control is on. Lifted out of `AiOpponentRow` because its "Pick a
-  // deck" picker renders outside the settings panel the row lives in (see `AiDeckSection`).
+  // Which source the AI-deck control is on. Kept above the modal so closing it does not forget the
+  // source while the server's updated summary is in flight.
   const [aiSource, setAiSource] = useState<AiDeckSource>(() => initialAiSource(quickLobby?.aiDeck))
+  /** Which quick-lobby seat's deck modal is open. */
+  const [quickDeckSeat, setQuickDeckSeat] = useState<'human' | 'ai' | null>(null)
   const [pendingRecreate, setPendingRecreate] = useState<RecreateSpec | null>(null)
   /** Which AI seat's deck the host is choosing, by player id. Null = the modal is closed. */
   const [aiDeckSeat, setAiDeckSeat] = useState<string | null>(null)
@@ -221,9 +223,8 @@ export function LobbyScreen() {
           </div>
         </div>
 
-        {/* Deck section. The two kinds genuinely differ here: a quick lobby submits as you pick
-            (and un-readies you when you change your mind), while a premade tournament lobby has an
-            explicit Submit the host waits on. */}
+        {/* Tournament deck submission remains inline for pods and brackets. A quick 1v1 attaches
+            each picker to its player row below, so two large pickers never precede the roster. */}
         {view.kind === 'TOURNAMENT' && lobbyState && view.isWaiting &&
           lobbyState.settings.format === 'PREMADE_DECKS' && (
             <PremadeDeckPickerPanel
@@ -233,25 +234,6 @@ export function LobbyScreen() {
               onSavedDeckNameChange={setSavedDeckName}
             />
         )}
-        {view.kind === 'QUICK' && quickLobby?.vsAi && !isMomir && aiSource === 'deck' && (
-          <AiDeckSection
-            format={quickLobby.format ?? null}
-            disabled={view.you?.tone === 'ready'}
-          />
-        )}
-        {view.kind === 'QUICK' && quickLobby && !isMomir && (
-          <QuickGameDeckPicker
-            youSetCode={quickLobby.players.find((p) => p.playerId === quickLobby.youPlayerId)?.setCode ?? null}
-            format={quickLobby.format ?? null}
-            disabled={view.you?.tone === 'ready'}
-            tab={deckTab}
-            onTabChange={setDeckTab}
-            onValidityChange={setDeckValid}
-            initialSavedDeckName={intent?.deckName}
-            onSavedDeckNameChange={setSavedDeckName}
-          />
-        )}
-
         <div className={styles.playerListPanel}>
           <div className={styles.playerListHeader}>
             <span className={styles.playerListTitle}>Players</span>
@@ -291,6 +273,28 @@ export function LobbyScreen() {
                 {player.isHost && <span className={styles.hostBadge}>Host</span>}
               </div>
               <div className={styles.playerActions}>
+                {view.kind === 'QUICK' && !isMomir && player.isYou && (
+                  <button
+                    type="button"
+                    onClick={() => setQuickDeckSeat('human')}
+                    disabled={player.tone === 'ready'}
+                    className={`${styles.playerStatus} ${styles.playerDeckButton} ${statusClass(player.tone)}`}
+                    title={player.tone === 'ready' ? 'Cancel ready before changing your deck' : 'Choose your deck'}
+                  >
+                    {player.status} <span aria-hidden>✎</span>
+                  </button>
+                )}
+                {view.kind === 'QUICK' && !isMomir && player.isAi && view.isHost && (
+                  <button
+                    type="button"
+                    onClick={() => setQuickDeckSeat('ai')}
+                    disabled={view.you?.tone === 'ready'}
+                    className={`${styles.playerStatus} ${styles.playerDeckButton} ${statusClass(player.tone)}`}
+                    title={view.you?.tone === 'ready' ? 'Cancel ready before changing the AI deck' : `Choose what ${player.name} plays`}
+                  >
+                    {player.status} <span aria-hidden>✎</span>
+                  </button>
+                )}
                 {/* The AI's deck is the host's to pick only where the lobby deals it no pool; the
                     view model already answers that by leaving `aiDeck` null everywhere else. */}
                 {view.isWaiting && view.isHost && player.isAi && player.aiDeck && (
@@ -302,7 +306,9 @@ export function LobbyScreen() {
                     {aiDeckSummary(player.aiDeck)}
                   </button>
                 )}
-                <span className={`${styles.playerStatus} ${statusClass(player.tone)}`}>{player.status}</span>
+                {!(view.kind === 'QUICK' && !isMomir && (player.isYou || (player.isAi && view.isHost))) && (
+                  <span className={`${styles.playerStatus} ${statusClass(player.tone)}`}>{player.status}</span>
+                )}
                 {view.isWaiting && view.isHost && player.isAi && (
                   <button
                     onClick={() => commands.removeAi(player.playerId)}
@@ -357,20 +363,6 @@ export function LobbyScreen() {
               if (id === 'LOBBY' && view.invitable) {
                 rows.push(<VisibilityRow key="vis" isPublic={view.isPublic} onChange={commands.setPublic} />)
               }
-              // Only a quick vs-AI lobby has an AI seat whose deck is the host's to choose. Momir
-              // Basic hands every seat the same fixed 60 basics, so there is nothing to pick.
-              if (id === 'LOBBY' && view.kind === 'QUICK' && quickLobby?.vsAi && !isMomir) {
-                rows.push(
-                  <AiOpponentRow
-                    key="ai"
-                    aiDeck={quickLobby.aiDeck ?? null}
-                    format={quickLobby.format ?? null}
-                    disabled={view.you?.tone === 'ready'}
-                    source={aiSource}
-                    onSourceChange={setAiSource}
-                  />,
-                )
-              }
               // Event is the one group whose tournament rows can *all* be absent — everything else
               // has either an unconditional row (AI assistance) or an axis caption. Asked here as one
               // condition rather than as a table of "which rows does this group have", which would be
@@ -421,6 +413,37 @@ export function LobbyScreen() {
         </div>
 
       </div>
+
+      {quickDeckSeat === 'human' && quickLobby && !isMomir && (
+        <DeckPickerModal title={`${view.you?.name ?? 'Your'} deck`} onClose={() => setQuickDeckSeat(null)}>
+          <QuickGameDeckPicker
+            youSetCode={quickLobby.players.find((p) => p.playerId === quickLobby.youPlayerId)?.setCode ?? null}
+            format={quickLobby.format ?? null}
+            disabled={view.you?.tone === 'ready'}
+            tab={deckTab}
+            onTabChange={setDeckTab}
+            onValidityChange={setDeckValid}
+            initialSavedDeckName={intent?.deckName}
+            onSavedDeckNameChange={setSavedDeckName}
+          />
+        </DeckPickerModal>
+      )}
+
+      {quickDeckSeat === 'ai' && quickLobby?.vsAi && !isMomir && (() => {
+        const ai = view.players.find((player) => player.isAi)
+        if (!ai) return null
+        return (
+          <QuickAiDeckModal
+            playerName={ai.name}
+            aiDeck={quickLobby.aiDeck ?? null}
+            format={quickLobby.format ?? null}
+            disabled={view.you?.tone === 'ready'}
+            source={aiSource}
+            onSourceChange={setAiSource}
+            onClose={() => setQuickDeckSeat(null)}
+          />
+        )
+      })()}
 
       {aiDeckSeat && (() => {
         // Read the seat back out of the view each render rather than closing over it: the roster is
@@ -743,6 +766,36 @@ function QuickGameDeckPicker({
       initialSavedDeckName={initialSavedDeckName}
       onSavedDeckNameChange={onSavedDeckNameChange}
     />
+  )
+}
+
+function DeckPickerModal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string
+  onClose: () => void
+  children: ReactNode
+}) {
+  return (
+    <div className={styles.confirmBackdrop} role="dialog" aria-modal="true" onClick={onClose}>
+      <div className={styles.deckPickerModal} onClick={(event) => event.stopPropagation()}>
+        <div className={styles.deckPickerModalHeader}>
+          <div>
+            <div className={styles.confirmTitle}>{title}</div>
+            <p className={styles.confirmBody}>Choose the deck for this player seat.</p>
+          </div>
+          <button type="button" onClick={onClose} className={styles.deckPickerModalClose} aria-label="Close deck picker">
+            ×
+          </button>
+        </div>
+        {children}
+        <div className={styles.confirmActions}>
+          <button type="button" onClick={onClose} className={styles.startButton}>Done</button>
+        </div>
+      </div>
+    </div>
   )
 }
 

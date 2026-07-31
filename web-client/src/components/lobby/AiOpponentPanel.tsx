@@ -14,12 +14,9 @@
  *     collapse into one `deck` spec on the wire; the `random` tab is omitted because that is what
  *     "From sets" already is.
  *
- * Rendered as **two pieces** by `LobbyScreen`, sharing only the selected source:
- * {@link AiOpponentRow} is a settings row inside the settings panel, and {@link AiDeckSection} is
- * the "Pick a deck" picker, which sits *outside* that panel. The panel is itself a scroll
- * container (`max-height: min(62vh, 640px); overflow: auto`), and the deck picker scrolls too, so
- * nesting them put a scrollable inside a scrollable — two competing wheel targets over one control.
- * Your own deck picker already lives outside the panel for the same reason; this just matches it.
+ * The quick lobby opens these controls from the AI's player row. Keeping the source controls and
+ * picker in one modal makes it unambiguous whose deck is being changed and keeps the roster as the
+ * lobby's visual centre.
  */
 import { useCallback, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
@@ -201,16 +198,7 @@ function SourceButton({
   )
 }
 
-/**
- * The "Pick a deck" picker for the AI seat, rendered *outside* the lobby's settings panel.
- *
- * Outside, because the settings panel is a scroll container and so is the deck picker — nesting
- * them gives one control two competing wheel targets. Your own picker is a sibling of the panel
- * for the same reason, which makes this the consistent placement rather than a special case.
- *
- * That does put two identical-looking pickers on one screen, so the heading carries the whole
- * burden of telling them apart and is deliberately blunt about whose deck this is.
- */
+/** The exact-deck branch inside the AI seat's modal. */
 export function AiDeckSection({
   format,
   disabled,
@@ -246,7 +234,7 @@ export function AiDeckSection({
       <div className={styles.aiDeckSectionHeader}>
         <span className={styles.aiDeckSectionTitle}>The AI opponent’s deck</span>
         <span className={styles.aiDeckSectionHint}>
-          Not your own — yours is below. Checked against the lobby format.
+          Checked against the lobby format when you pick it.
         </span>
       </div>
       <DeckPicker
@@ -256,6 +244,52 @@ export function AiDeckSection({
         format={format}
         tabs={['saved', 'examples', 'paste']}
       />
+    </div>
+  )
+}
+
+/** Seat-scoped wrapper used by the quick lobby's AI player row. */
+export function QuickAiDeckModal({
+  playerName,
+  aiDeck,
+  format,
+  disabled,
+  source,
+  onSourceChange,
+  onClose,
+}: {
+  playerName: string
+  aiDeck: AiDeckSpecView | null
+  format: string | null
+  disabled: boolean
+  source: AiDeckSource
+  onSourceChange: (source: AiDeckSource) => void
+  onClose: () => void
+}) {
+  return (
+    <div className={styles.confirmBackdrop} role="dialog" aria-modal="true" onClick={onClose}>
+      <div className={styles.deckPickerModal} onClick={(event) => event.stopPropagation()}>
+        <div className={styles.deckPickerModalHeader}>
+          <div>
+            <div className={styles.confirmTitle}>{playerName}’s deck</div>
+            <p className={styles.confirmBody}>Choose what this seat brings to the game.</p>
+          </div>
+          <button type="button" onClick={onClose} className={styles.deckPickerModalClose} aria-label="Close deck picker">
+            ×
+          </button>
+        </div>
+        <AiOpponentRow
+          aiDeck={aiDeck}
+          format={format}
+          disabled={disabled}
+          source={source}
+          onSourceChange={onSourceChange}
+        />
+        {source === 'deck' && <AiDeckSection format={format} disabled={disabled} />}
+        <div className={styles.confirmActions}>
+          <button type="button" onClick={onClose} className={styles.startButton}>Done</button>
+        </div>
+      </div>
     </div>
   )
 }
