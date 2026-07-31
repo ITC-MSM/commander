@@ -181,6 +181,57 @@
     "hasNoManaCost": true
 }
 
+// Bruna, the Fading Light
+{
+    "name": "Bruna, the Fading Light",
+    "manaCost": "{5}{W}{W}",
+    "typeLine": "Legendary Creature — Angel Horror",
+    "oracleText": "When you cast this spell, you may return target Angel or Human creature card from your graveyard to the battlefield.\nFlying, vigilance\n(Melds with Gisela, the Broken Blade.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 7
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CastThisSpellEvent",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Angel or Human creature card in your graveyard"
+                    },
+                    "destination": "Battlefield"
+                },
+                "optional": true,
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature Angel|Human own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target Angel or Human creature card in your graveyard"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "RARE",
+        "artist": "Clint Cearley",
+        "flavorText": "She now sees only Emrakul's visions.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27907985-b5f6-4098-ab43-15a0c2bf94d5.jpg?1783937523"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Cemetery Recruitment
 {
     "name": "Cemetery Recruitment",
