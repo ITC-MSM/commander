@@ -391,7 +391,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         'Each option says whether it is one game or an event with steps — “Play right away” and “One game” versus “Build a deck first” and “Several rounds · standings”. Once everything is answered, the line above the button spells the whole sequence out.',
         'Greyed-out options are combinations nothing implements yet — hover for the reason.',
         'Options that are simply missing would contradict an earlier answer. A group of five is not offered a 1v1 single game.',
-        'The seat count is a limit, not a requirement: start whenever everyone has arrived, and change it in the lobby.',
+        'Nobody is asked how many seats to open. A lobby holds as many as its table allows, people join until it is full, and the host starts whenever everyone has arrived.',
         'The lobby you land in can change all of it, so a wrong turn costs nothing.',
         '“Play again” repeats your last setup in one click.',
       ] },
@@ -406,7 +406,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       'You and the built-in AI. Nobody else has to show up, and the game starts as soon as you have picked a deck.',
     body: [
       { kind: 'p', text: 'At 1v1 the AI can play any of the card sources — your own deck, a rolled pool, or Momir Basic.' },
-      { kind: 'p', text: 'Sealed and draft go further: the lobby fills with AI seats, so you can draft a full pod on your own and play the bracket out. Pick the pod size on the last step.' },
+      { kind: 'p', text: 'Sealed and draft go further: the lobby opens as a full pod of AI drafters, so you can draft on your own and play the bracket out. Add or remove them in the lobby if you want a smaller pod.' },
       { kind: 'p', text: 'What the AI cannot do yet is take a seat at a multiplayer table, or bring its own deck to a bracket.' },
     ],
     related: ['axis-limits', 'cards-draft', 'event-round-robin'],

@@ -28,8 +28,6 @@ export interface WizardChoice {
   roster: Roster
   cards: Cards
   shape?: Shape
-  /** Seat count, when the shape offers a choice. */
-  seats?: number
 }
 
 /** Wait for the landing screen to be interactive (step 1 rendered). */
@@ -56,10 +54,7 @@ export async function createLobby(page: Page, choice: WizardChoice): Promise<str
     if (await tile.isVisible({ timeout: 2000 }).catch(() => false)) await tile.click()
   }
 
-  if (choice.seats !== undefined) {
-    await page.getByTestId(`wizard-seats-${choice.seats}`).click()
-  }
-
+  // No seat step: the lobby opens at the cap its shape allows and people join until it is full.
   await page.getByTestId('wizard-create').click()
   await expect(page.getByText('Invite Code')).toBeVisible({ timeout: 10000 })
   const lobbyId = await page.getByTestId('invite-code').textContent() ?? ''
