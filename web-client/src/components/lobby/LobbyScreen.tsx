@@ -16,7 +16,7 @@
  * Table to Free-for-All without backing out to the home screen, because the axis rows are the same
  * rows on both kinds and `axisChoices.ts` knows which ones need the lobby recreating.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import type { LobbyState } from '@/store/slices/types'
 import { randomBackground } from '@/utils/background'
@@ -29,13 +29,33 @@ import { JoinQrModal } from '../ui/JoinQrModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import { AiDeckSection, AiOpponentRow, initialAiSource, type AiDeckSource } from './AiOpponentPanel'
 import { LobbyAiDeckModal, aiDeckSummary } from './LobbyAiDeckModal'
-import { LobbyAxes } from './LobbyAxes'
+import {
+  CardsAxisBody,
+  CardsAxisStrip,
+  EventAxisBody,
+  EventAxisStrip,
+  RulesAxisBody,
+  RulesAxisStrip,
+  TableAxisBody,
+  TableAxisStrip,
+  eventCaption,
+} from './LobbyAxes'
+import { SettingsGroup } from './SettingsGroup'
+import {
+  GROUP_IDS,
+  groupLabel,
+  groupSummary,
+  groupTopicId,
+  type GroupId,
+} from './settingsGroups'
 import { LobbyAxisSummary } from './LobbyAxisSummary'
 import { TeamChip, TournamentLobbySettings } from './TournamentLobbySettings'
 import { rulesFromLobbySettings } from './axes'
 import { recreateTargetLabel, type RecreateSpec } from './axisChoices'
 import { fromQuickGameLobby, fromTournamentLobby, type UnifiedLobbyView } from './lobbyViewModel'
-import { takePendingDeckTab } from './pendingDeckTab'
+import { takePendingLobbyIntent } from '@/store/slices/pendingLobbyIntent'
+import { useSetupLibrary } from '@/store/setupLibrary'
+import { useCaptureRecipe } from './useCaptureRecipe'
 import { useLobbyCommands } from './useLobbyCommands'
 import styles from '../ui/GameUI.module.css'
 
@@ -44,13 +64,17 @@ export function LobbyScreen() {
   const lobbyState = useGameStore((s) => s.lobbyState)
   const aiEnabled = useGameStore((s) => s.aiEnabled)
   const playerId = useGameStore((s) => s.playerId)
+  const captureLast = useSetupLibrary((s) => s.captureLast)
+  const saveSetup = useSetupLibrary((s) => s.saveSetup)
 
   // Deck-picker state the Cards axis needs to read: its validity gates the ready button, and its
   // tab *is* the Cards value on a quick lobby (Random pool is the Random tab).
   const [deckValid, setDeckValid] = useState(true)
-  // Seeded from whatever created this lobby: the landing wizard and the cross-kind recreate both
-  // promise a Random pool from outside any mounted lobby screen. See `pendingDeckTab.ts`.
-  const [deckTab, setDeckTab] = useState<DeckPickerTab | undefined>(takePendingDeckTab)
+  // Whatever created this lobby had things to say about it that no message could carry — which tab
+  // the deck picker opens on, which saved deck to preselect, whether to start straight away, and
+  // anything a setup couldn't restore. Read once, on mount. See `pendingLobbyIntent.ts`.
+  const [intent] = useState(takePendingLobbyIntent)
+  const [deckTab, setDeckTab] = useState<DeckPickerTab | undefined>(intent?.deckTab)
   const [copied, setCopied] = useState(false)
   // Which source the AI-deck control is on. Lifted out of `AiOpponentRow` because its "Pick a
   // deck" picker renders outside the settings panel the row lives in (see `AiDeckSection`).
@@ -58,6 +82,11 @@ export function LobbyScreen() {
   const [pendingRecreate, setPendingRecreate] = useState<RecreateSpec | null>(null)
   /** Which AI seat's deck the host is choosing, by player id. Null = the modal is closed. */
   const [aiDeckSeat, setAiDeckSeat] = useState<string | null>(null)
+  // Which saved deck is loaded, by name — the identity `onDeckChange`'s card list can't carry, and
+  // the one thing a setup needs in order to bring the same deck back. See `lobbyRecipe.ts`.
+  const [savedDeckName, setSavedDeckName] = useState<string | null>(null)
+  const [savingSetup, setSavingSetup] = useState(false)
+  const [notes, setNotes] = useState<readonly string[]>(intent?.notes ?? [])
 
   const view: UnifiedLobbyView | null = quickLobby
     ? fromQuickGameLobby(quickLobby, { deckValid, deckTab })
@@ -66,6 +95,45 @@ export function LobbyScreen() {
       : null
 
   const commands = useLobbyCommands(view, setDeckTab)
+  const capture = useCaptureRecipe(view, lobbyState, quickLobby, deckTab, savedDeckName)
+  const { isGroupOpen, toggleGroup } = useGroupOpenState(
+    view?.blockGroup ?? null,
+    // A lobby a setup built already has its sets; a fresh one is about to need them.
+    intent !== undefined,
+  )
+
+  /**
+   * Start the game, remembering what it was first.
+   *
+   * The primary action is the right moment and the only one: it is where the settings stop moving
+   * and the deck has been chosen. The wizard is too early (it knows three of twenty-odd answers) and
+   * the server is too late (it never learns which of *your* decks this is).
+   */
+  const runPrimary = () => {
+    const kind = view?.primaryAction?.kind
+    if (kind === 'START' || kind === 'READY') captureLast(capture().recipe)
+    commands.runPrimary()
+  }
+
+  /**
+   * Auto-start, for a setup that had nothing left to ask.
+   *
+   * Not a second launch path — the same button, pressed for you — so nothing here can drift from the
+   * normal flow, and a recipe that only half-applied leaves you sitting in a correctly-built lobby
+   * with its notes on screen instead of in a game you didn't mean to start.
+   *
+   * **Only when nobody can join.** A lobby with an invite code exists so that people can use it;
+   * starting it the instant it opens would slam the door on them.
+   */
+  const canAutoStart = intent?.autoStart === true && view !== null && !view.invitable &&
+    view.primaryAction?.kind === 'READY' && !view.primaryAction.disabled
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (!canAutoStart || autoStarted.current) return
+    autoStarted.current = true
+    runPrimary()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canAutoStart])
 
   if (!view) return null
 
@@ -87,7 +155,38 @@ export function LobbyScreen() {
           <h1 className={styles.lobbyTitle}>{view.title}</h1>
           <p className={styles.lobbySubtitle}>{view.subtitle}</p>
           <LobbyAxisSummary axes={view.axes} />
+          {view.isWaiting && view.isHost && (
+            <button
+              type="button"
+              className={styles.saveSetupButton}
+              data-testid="save-setup"
+              onClick={() => setSavingSetup(true)}
+              title="Save this lobby — sets, packs, timer, deck and all — to launch again in one click"
+            >
+              ★ Save setup
+            </button>
+          )}
         </div>
+
+        {/* What a setup couldn't bring back, said once and dismissable.
+            The server aborts an entire `updateLobbySettings` on a field it can't resolve — an unknown
+            set code, a cube card that isn't implemented — so a partially-applied setup is a real
+            outcome, and one that is invisible unless it is stated. */}
+        {notes.length > 0 && (
+          <div className={styles.lobbyNotes} role="status">
+            <div className={styles.lobbyNotesBody}>
+              {notes.map((note) => <p key={note}>{note}</p>)}
+            </div>
+            <button
+              type="button"
+              className={styles.lobbyNotesDismiss}
+              aria-label="Dismiss"
+              onClick={() => setNotes([])}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {view.invitable && (
           <div style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'stretch', gap: 8 }}>
@@ -113,90 +212,17 @@ export function LobbyScreen() {
           </div>
         )}
 
-        {showSettings && (
-          <div className={styles.settingsPanel}>
-            <LobbyAxes view={view} commands={commands} onRecreate={setPendingRecreate} />
-
-            {view.ranked.available && (
-              <div className={styles.settingsRow}>
-                <SettingsLabel topicId="ranked">Ranked</SettingsLabel>
-                <div className={styles.variantGroup}>
-                  <div className={styles.settingsButtons}>
-                    <button
-                      type="button"
-                      onClick={() => commands.setRanked(false)}
-                      className={`${styles.settingsButton} ${!view.ranked.on ? styles.settingsButtonActive : ''}`}
-                      title="Casual — no rating change"
-                    >
-                      Casual
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => commands.setRanked(true)}
-                      className={`${styles.settingsButton} ${view.ranked.on ? styles.settingsButtonActive : ''}`}
-                      title="Ranked — adjusts each player's ELO"
-                    >
-                      Ranked
-                    </button>
-                  </div>
-                  {view.ranked.on && (
-                    <div className={styles.variantCaption}>
-                      Ranked games adjust each player's ELO. All players must be signed in for it to
-                      count — otherwise it just plays unranked.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* A lobby nobody can join has nothing to make public — the server forces a vs-AI
-                lobby private regardless (`QuickGameLobbyHandler.handleCreate`). */}
-            {view.invitable && (
-            <div className={styles.settingsRow}>
-              <span className={styles.settingsLabel}>Visibility</span>
-              <div className={styles.settingsButtons}>
-                <button
-                  type="button"
-                  onClick={() => commands.setPublic(false)}
-                  className={`${styles.settingsButton} ${!view.isPublic ? styles.settingsButtonActive : ''}`}
-                >
-                  Private
-                </button>
-                <button
-                  type="button"
-                  onClick={() => commands.setPublic(true)}
-                  className={`${styles.settingsButton} ${view.isPublic ? styles.settingsButtonActive : ''}`}
-                >
-                  Public
-                </button>
-              </div>
-            </div>
-            )}
-
-            {/* Only a quick vs-AI lobby has an AI seat whose deck is the host's to choose.
-                Momir Basic hands every seat the same fixed 60 basics, so there is nothing to pick. */}
-            {view.kind === 'QUICK' && quickLobby?.vsAi && !isMomir && (
-              <AiOpponentRow
-                aiDeck={quickLobby.aiDeck ?? null}
-                format={quickLobby.format ?? null}
-                disabled={view.you?.tone === 'ready'}
-                source={aiSource}
-                onSourceChange={setAiSource}
-              />
-            )}
-
-            {lobbyState && view.kind === 'TOURNAMENT' && (
-              <TournamentLobbySettings view={view} lobbyState={lobbyState} />
-            )}
-          </div>
-        )}
-
         {/* Deck section. The two kinds genuinely differ here: a quick lobby submits as you pick
             (and un-readies you when you change your mind), while a premade tournament lobby has an
             explicit Submit the host waits on. */}
         {view.kind === 'TOURNAMENT' && lobbyState && view.isWaiting &&
           lobbyState.settings.format === 'PREMADE_DECKS' && (
-            <PremadeDeckPickerPanel lobbyState={lobbyState} playerId={playerId} />
+            <PremadeDeckPickerPanel
+              lobbyState={lobbyState}
+              playerId={playerId}
+              initialSavedDeckName={intent?.deckName}
+              onSavedDeckNameChange={setSavedDeckName}
+            />
         )}
         {view.kind === 'QUICK' && quickLobby?.vsAi && !isMomir && aiSource === 'deck' && (
           <AiDeckSection
@@ -212,6 +238,8 @@ export function LobbyScreen() {
             tab={deckTab}
             onTabChange={setDeckTab}
             onValidityChange={setDeckValid}
+            initialSavedDeckName={intent?.deckName}
+            onSavedDeckNameChange={setSavedDeckName}
           />
         )}
 
@@ -219,14 +247,27 @@ export function LobbyScreen() {
           <div className={styles.playerListHeader}>
             <span className={styles.playerListTitle}>Players</span>
             <span className={styles.playerCount}>{view.players.length} / {view.maxPlayers}</span>
+            {/* Beside the count rather than under a list that can be eight rows long — at a full
+                pod the old placement put "+ Add AI Player" below the fold of its own panel. */}
+            {view.canAddAi && (
+              <button onClick={commands.addAi} className={styles.addAiInlineButton}>+ Add AI</button>
+            )}
           </div>
-          {view.players.map((player, i) => (
-            <div
-              key={player.playerId}
-              className={styles.playerRow}
-              style={{ borderBottom: i < view.players.length - 1 ? undefined : 'none' }}
-            >
+          {seatRows(view).map(({ player, seat, teamHeader }) => (
+            <Fragment key={player.playerId}>
+              {teamHeader && (
+                <div className={styles.teamHeader}>
+                  <span>{teamHeader.label}</span>
+                  <span className={teamHeader.balanced ? styles.teamHeaderCount : styles.teamHeaderCountOff}>
+                    {teamHeader.have} / {teamHeader.need}
+                  </span>
+                </div>
+              )}
+            <div className={styles.playerRow}>
               <div className={styles.playerInfo}>
+                {/* "Attack: left only" says left and right follow the seating order, and until now
+                    the seating order was nowhere on screen. */}
+                <span className={styles.seatNumber}>{seat}</span>
                 <div className={`${styles.statusDot} ${player.isConnected ? styles.statusDotOnline : styles.statusDotOffline}`} />
                 <span className={styles.playerName}>{player.name}</span>
                 {player.isYou && <span className={styles.hostBadge}>You</span>}
@@ -264,6 +305,7 @@ export function LobbyScreen() {
                 )}
               </div>
             </div>
+            </Fragment>
           ))}
           {view.players.length === 0 && (
             <div className={styles.emptyPlayerList}>Waiting for players to join...</div>
@@ -276,16 +318,90 @@ export function LobbyScreen() {
               Waiting for opponent…
             </div>
           )}
-          {view.canAddAi && (
-            <button onClick={commands.addAi} className={styles.addAiButton}>+ Add AI Player</button>
-          )}
         </div>
 
+        {/* Settings sit below the players and the deck picker, not above them.
+            Below the fold is where a *configured* lobby wants them: with the groups collapsed the
+            whole panel is around 320px, it is host-only, and it is set once. What you keep coming
+            back to while waiting is who has arrived and whether the teams are even. */}
+        {showSettings && (
+          <div className={styles.settingsPanel}>
+            {GROUP_IDS.map((id) => {
+              const axisStrip = {
+                CARDS: <CardsAxisStrip view={view} commands={commands} onRecreate={setPendingRecreate} />,
+                RULES: <RulesAxisStrip view={view} commands={commands} onRecreate={setPendingRecreate} />,
+                TABLE: <TableAxisStrip view={view} commands={commands} onRecreate={setPendingRecreate} />,
+                EVENT: <EventAxisStrip view={view} commands={commands} onRecreate={setPendingRecreate} />,
+                LOBBY: null,
+              }[id]
+              // Built as a list rather than a fragment so "is this group empty?" is answerable:
+              // an empty group must render no chevron, and a group that is empty *and* has no axis
+              // strip must not render at all.
+              const rows: ReactNode[] = []
+              if (id === 'CARDS') rows.push(<CardsAxisBody key="axis" view={view} commands={commands} />)
+              if (id === 'RULES') rows.push(<RulesAxisBody key="axis" view={view} />)
+              if (id === 'TABLE') rows.push(<TableAxisBody key="axis" view={view} />)
+              if (id === 'EVENT' && eventCaption(view) !== '') {
+                rows.push(<EventAxisBody key="axis" view={view} />)
+              }
+              if (id === 'EVENT' && view.ranked.available) {
+                rows.push(<RankedRow key="ranked" on={view.ranked.on} onChange={commands.setRanked} />)
+              }
+              // A lobby nobody can join has nothing to make public — the server forces a vs-AI
+              // lobby private regardless (`QuickGameLobbyHandler.handleCreate`).
+              if (id === 'LOBBY' && view.invitable) {
+                rows.push(<VisibilityRow key="vis" isPublic={view.isPublic} onChange={commands.setPublic} />)
+              }
+              // Only a quick vs-AI lobby has an AI seat whose deck is the host's to choose. Momir
+              // Basic hands every seat the same fixed 60 basics, so there is nothing to pick.
+              if (id === 'LOBBY' && view.kind === 'QUICK' && quickLobby?.vsAi && !isMomir) {
+                rows.push(
+                  <AiOpponentRow
+                    key="ai"
+                    aiDeck={quickLobby.aiDeck ?? null}
+                    format={quickLobby.format ?? null}
+                    disabled={view.you?.tone === 'ready'}
+                    source={aiSource}
+                    onSourceChange={setAiSource}
+                  />,
+                )
+              }
+              // Event is the one group whose tournament rows can *all* be absent — everything else
+              // has either an unconditional row (AI assistance) or an axis caption. Asked here as one
+              // condition rather than as a table of "which rows does this group have", which would be
+              // a second copy of what `TournamentLobbySettings` already decides and would drift.
+              if (lobbyState && view.kind === 'TOURNAMENT' &&
+                  (id !== 'EVENT' || view.axes.event === 'ROUND_ROBIN')) {
+                rows.push(
+                  <TournamentLobbySettings key="tournament" group={id} view={view} lobbyState={lobbyState} />,
+                )
+              }
+              // A group with neither a strip nor a row is not a group: a quick lobby has no
+              // AI-assistance switch and no tournament rows, so "This lobby" would be an empty box.
+              if (!axisStrip && rows.length === 0) return null
+              return (
+                <SettingsGroup
+                  key={id}
+                  label={groupLabel(id)}
+                  topicId={groupTopicId(id, view)}
+                  summary={groupSummary(id, view, lobbyState)}
+                  axisStrip={axisStrip}
+                  blocking={view.blockGroup === id ? view.primaryAction?.reason : undefined}
+                  open={isGroupOpen(id)}
+                  onToggle={() => toggleGroup(id)}
+                  testId={id.toLowerCase()}
+                >
+                  {rows.length > 0 ? rows : null}
+                </SettingsGroup>
+              )
+            })}
+          </div>
+        )}
         <div className={styles.actionsRow}>
           {view.primaryAction && (
             <button
               type="button"
-              onClick={commands.runPrimary}
+              onClick={runPrimary}
               disabled={view.primaryAction.disabled}
               title={view.primaryAction.reason ?? ''}
               className={styles.startButton}
@@ -294,6 +410,11 @@ export function LobbyScreen() {
             </button>
           )}
           <button onClick={commands.leave} className={styles.leaveButton} type="button">Leave</button>
+          {/* Said, not just hovered: a `title` on a disabled button is the least discoverable place
+              to put the one sentence explaining why it can't be pressed. */}
+          {view.primaryAction?.disabled && view.primaryAction.reason && (
+            <span className={styles.actionsBlockReason}>{view.primaryAction.reason}</span>
+          )}
         </div>
 
         {view.isWaiting && !view.isHost && view.startModel === 'HOST_START' && (
@@ -317,6 +438,17 @@ export function LobbyScreen() {
         )
       })()}
 
+      {savingSetup && (
+        <SaveSetupDialog
+          defaultName={view.title}
+          onCancel={() => setSavingSetup(false)}
+          onSave={(name) => {
+            saveSetup({ name, recipe: capture().recipe })
+            setSavingSetup(false)
+          }}
+        />
+      )}
+
       {pendingRecreate && (
         <RecreateConfirm
           spec={pendingRecreate}
@@ -328,6 +460,167 @@ export function LobbyScreen() {
     </div>
   )
 }
+
+/**
+ * The player list as numbered seats, grouped by team when the host is choosing them.
+ *
+ * Two problems this fixes, both only visible at 3+ players — the case the lobby was least designed
+ * for and the one a group setup lands you in.
+ *
+ * **Seat numbers.** The Free-for-All attack rule offers "left only" and "right only" and its own
+ * caption says they follow the seating order, but the seating order was nowhere on the screen. The
+ * order the server uses is the order of `view.players`, so numbering the rows is all it takes.
+ *
+ * **Team grouping.** At a 6-player Team vs. Team the host had six rows of identical shape with a
+ * colour-coded chip on each, and the only statement of whether the teams were *legal* was a sentence
+ * inside a settings caption. `view.teams` already computes `size` and `balanced`; this surfaces them
+ * where the decision is actually made. Grouping only happens in MANUAL mode — under RANDOM the teams
+ * are rolled at game start, so any grouping shown here would be fiction.
+ */
+function seatRows(view: UnifiedLobbyView): Array<{
+  player: UnifiedLobbyView['players'][number]
+  seat: number
+  teamHeader: { label: string; have: number; need: number; balanced: boolean } | null
+}> {
+  const seatOf = new Map(view.players.map((p, i) => [p.playerId, i + 1]))
+  const teams = view.teams
+  if (teams.mode !== 'MANUAL') {
+    return view.players.map((player) => ({ player, seat: seatOf.get(player.playerId)!, teamHeader: null }))
+  }
+
+  const out: ReturnType<typeof seatRows> = []
+  for (const team of [0, 1]) {
+    const members = view.players.filter((p) => (teams.byPlayerId[p.playerId] ?? 0) === team)
+    members.forEach((player, i) => {
+      out.push({
+        player,
+        seat: seatOf.get(player.playerId)!,
+        teamHeader: i === 0
+          ? {
+              label: `Team ${team + 1}`,
+              have: members.length,
+              need: teams.size,
+              balanced: members.length === teams.size,
+            }
+          : null,
+      })
+    })
+  }
+  return out
+}
+
+/** Ranked is a 1v1-bracket concept server-side, so it refines **Event** rather than the lobby. */
+function RankedRow({ on, onChange }: { on: boolean; onChange: (ranked: boolean) => void }) {
+  return (
+    <div className={styles.settingsRow}>
+      <SettingsLabel topicId="ranked">Ranked</SettingsLabel>
+      <div className={styles.variantGroup}>
+        <div className={styles.settingsButtons}>
+          <button
+            type="button"
+            onClick={() => onChange(false)}
+            className={`${styles.settingsButton} ${!on ? styles.settingsButtonActive : ''}`}
+            title="Casual — no rating change"
+          >
+            Casual
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange(true)}
+            className={`${styles.settingsButton} ${on ? styles.settingsButtonActive : ''}`}
+            title="Ranked — adjusts each player's ELO"
+          >
+            Ranked
+          </button>
+        </div>
+        {on && (
+          <div className={styles.variantCaption}>
+            Ranked games adjust each player's ELO. All players must be signed in for it to count —
+            otherwise it just plays unranked.
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function VisibilityRow({
+  isPublic,
+  onChange,
+}: {
+  isPublic: boolean
+  onChange: (isPublic: boolean) => void
+}) {
+  return (
+    <div className={styles.settingsRow}>
+      <span className={styles.settingsLabel}>Visibility</span>
+      <div className={styles.settingsButtons}>
+        <button
+          type="button"
+          onClick={() => onChange(false)}
+          className={`${styles.settingsButton} ${!isPublic ? styles.settingsButtonActive : ''}`}
+        >
+          Private
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(true)}
+          className={`${styles.settingsButton} ${isPublic ? styles.settingsButtonActive : ''}`}
+        >
+          Public
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Which settings groups are open, derived rather than hand-tuned.
+ *
+ * Three rules, in order:
+ *
+ * 1. **The group holding the reason Start is disabled is open.** Not a courtesy — it is what keeps
+ *    collapsing compatible with the project's disabled-with-reason rule: nothing you need to act on
+ *    can be hidden. It reads `view.blockGroup`, which comes from the same `startBlockReason` that
+ *    writes the Start button's tooltip.
+ * 2. **Cards is open on a lobby that wasn't launched from a setup**, because a fresh lobby's next
+ *    move is almost always choosing sets. A lobby a setup built already has them.
+ * 3. Otherwise closed — and whatever the host opened or closed by hand wins over all of it, kept in
+ *    localStorage so it survives the recreate that switching an axis can cause.
+ */
+function useGroupOpenState(blockGroup: GroupId | null, fromSetup: boolean) {
+  const [overrides, setOverrides] = useState<Partial<Record<GroupId, boolean>>>(() => {
+    try {
+      const raw = localStorage.getItem(GROUP_OPEN_KEY)
+      return raw ? (JSON.parse(raw) as Partial<Record<GroupId, boolean>>) : {}
+    } catch {
+      return {}
+    }
+  })
+
+  const isGroupOpen = (id: GroupId): boolean => {
+    if (blockGroup === id) return true
+    const override = overrides[id]
+    if (override !== undefined) return override
+    return id === 'CARDS' && !fromSetup
+  }
+
+  const toggleGroup = (id: GroupId) => {
+    setOverrides((prev) => {
+      const next = { ...prev, [id]: !isGroupOpen(id) }
+      try {
+        localStorage.setItem(GROUP_OPEN_KEY, JSON.stringify(next))
+      } catch {
+        // Private browsing / full quota. Remembering the panel's shape is a nicety.
+      }
+      return next
+    })
+  }
+
+  return { isGroupOpen, toggleGroup }
+}
+
+const GROUP_OPEN_KEY = 'argentum-lobby-groups'
 
 function statusClass(tone: 'ready' | 'joined' | 'disconnected'): string {
   switch (tone) {
@@ -425,6 +718,8 @@ function QuickGameDeckPicker({
   tab,
   onTabChange,
   onValidityChange,
+  initialSavedDeckName,
+  onSavedDeckNameChange,
 }: {
   youSetCode: string | null
   format: string | null
@@ -432,6 +727,9 @@ function QuickGameDeckPicker({
   tab: DeckPickerTab | undefined
   onTabChange: (tab: DeckPickerTab) => void
   onValidityChange: (valid: boolean) => void
+  /** A saved setup's deck, preselected once the library hydrates. */
+  initialSavedDeckName: string | undefined
+  onSavedDeckNameChange: (name: string | null) => void
 }) {
   const submitDeck = useGameStore((s) => s.submitQuickGameLobbyDeck)
   const setSetCode = useGameStore((s) => s.setQuickGameLobbySetCode)
@@ -486,7 +784,62 @@ function QuickGameDeckPicker({
       format={format}
       tab={tab}
       onTabChange={onTabChange}
+      initialSavedDeckName={initialSavedDeckName}
+      onSavedDeckNameChange={onSavedDeckNameChange}
     />
+  )
+}
+
+/**
+ * Name a setup before saving it.
+ *
+ * Deliberately a real dialog rather than a `window.prompt`: this is the moment someone commits to
+ * replaying a lobby they may have spent a few minutes configuring, and the default name is worth
+ * showing selected and editable rather than as a browser chrome string.
+ */
+function SaveSetupDialog({
+  defaultName,
+  onCancel,
+  onSave,
+}: {
+  defaultName: string
+  onCancel: () => void
+  onSave: (name: string) => void
+}) {
+  const [name, setName] = useState(defaultName)
+  const trimmed = name.trim()
+
+  return (
+    <div className={styles.confirmBackdrop} role="dialog" aria-modal="true" onClick={onCancel}>
+      <div className={styles.confirmPanel} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.confirmTitle}>Save this setup</div>
+        <p className={styles.confirmBody}>
+          It comes back on the home screen as one click — sets, packs, timer, ban list, cube and the
+          deck you picked.
+        </p>
+        <input
+          className={styles.settingsSelect}
+          style={{ width: '100%' }}
+          value={name}
+          autoFocus
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && trimmed) onSave(trimmed) }}
+          aria-label="Setup name"
+        />
+        <div className={styles.confirmActions}>
+          <button type="button" onClick={onCancel} className={styles.leaveButton}>Cancel</button>
+          <button
+            type="button"
+            onClick={() => onSave(trimmed)}
+            disabled={!trimmed}
+            className={styles.startButton}
+            data-testid="confirm-save-setup"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -497,9 +850,13 @@ function QuickGameDeckPicker({
 function PremadeDeckPickerPanel({
   lobbyState,
   playerId,
+  initialSavedDeckName,
+  onSavedDeckNameChange,
 }: {
   lobbyState: LobbyState
   playerId: string | null
+  initialSavedDeckName: string | undefined
+  onSavedDeckNameChange: (name: string | null) => void
 }) {
   const submitLobbyDeck = useGameStore((s) => s.submitLobbyDeck)
   const unsubmitLobbyDeck = useGameStore((s) => s.unsubmitLobbyDeck)
@@ -559,6 +916,8 @@ function PremadeDeckPickerPanel({
           onDeckChange={handleDeckChange}
           onValidityChange={setIsValid}
           format={deckFormat ?? null}
+          initialSavedDeckName={initialSavedDeckName}
+          onSavedDeckNameChange={onSavedDeckNameChange}
         />
         <button
           onClick={() => submitLobbyDeck(pendingDeck, isCommanderShape ? pendingCommander : null, pendingSideboard)}

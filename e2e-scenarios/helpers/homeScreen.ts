@@ -62,6 +62,35 @@ export async function createLobby(page: Page, choice: WizardChoice): Promise<str
   return lobbyId
 }
 
+/**
+ * Launch a saved setup from the rail above the wizard.
+ *
+ * The rail only exists once something has been played — a fresh browser profile sees the three
+ * questions and nothing else — so a spec that wants this has to create and start a lobby first.
+ * `name` is the setup's name lower-cased and hyphenated; the auto-captured slot is `'last'`.
+ */
+export async function launchSetup(page: Page, name: string): Promise<string> {
+  await page.getByTestId(`setup-chip-${name}`).click()
+  await expect(page.getByText('Invite Code')).toBeVisible({ timeout: 10000 })
+  return await page.getByTestId('invite-code').textContent() ?? ''
+}
+
+/** Save the current lobby as a named setup, from the host's ★ button. */
+export async function saveSetup(page: Page, name: string): Promise<void> {
+  await page.getByTestId('save-setup').click()
+  await page.getByLabel('Setup name').fill(name)
+  await page.getByTestId('confirm-save-setup').click()
+}
+
+/** Open one of the lobby's settings groups by name (`cards`, `rules`, `table`, `event`, `lobby`). */
+export async function openSettingsGroup(page: Page, group: string): Promise<void> {
+  const panel = page.getByTestId(`settings-group-${group}`)
+  if ((await panel.getAttribute('data-open')) !== 'true') {
+    await page.getByTestId(`settings-group-toggle-${group}`).click()
+  }
+  await expect(panel).toHaveAttribute('data-open', 'true')
+}
+
 /** Join an existing lobby by code from the landing screen. */
 export async function joinLobby(page: Page, lobbyId: string): Promise<void> {
   await page.getByPlaceholder(JOIN_PLACEHOLDER).fill(lobbyId)

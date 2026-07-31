@@ -28,9 +28,10 @@ import { DeckMigrationPrompt } from '@/components/auth/DeckMigrationPrompt'
 import { AccountBenefitsCallout } from '@/components/auth/AccountBenefitsCallout'
 import { FullscreenButton } from './FullscreenButton'
 import { PlayWizard } from './PlayWizard'
-import type { LaunchSpec } from '../lobby/modeMatrix'
-import { setPendingDeckTab } from '../lobby/pendingDeckTab'
-import { DEFAULT_LOBBY_SET_CODE } from '../lobby/useLobbyCommands'
+import { SetupRail } from './SetupRail'
+import type { Selection } from '../lobby/modeMatrix'
+import { recipeFromSelection } from '../lobby/lobbyRecipe'
+import { useApplyRecipe } from '../lobby/useApplyRecipe'
 import { loadLobbyId, clearLobbyId } from '@/store/slices/shared'
 import styles from './GameUI.module.css'
 
@@ -106,10 +107,8 @@ export function HomeScreen({
   const navigate = useNavigate()
   const connect = useGameStore((state) => state.connect)
   const aiEnabled = useGameStore((state) => state.aiEnabled)
-  const createTournamentLobby = useGameStore((state) => state.createTournamentLobby)
-  const createQuickGameLobby = useGameStore((state) => state.createQuickGameLobby)
-  const addAiToLobby = useGameStore((state) => state.addAiToLobby)
   const joinQuickGameLobby = useGameStore((state) => state.joinQuickGameLobby)
+  const applyRecipe = useApplyRecipe()
   const lobbyState = useGameStore((state) => state.lobbyState)
   const [joinSessionId, setJoinSessionId] = useState('')
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('argentum-player-name') || '')
@@ -160,28 +159,12 @@ export function HomeScreen({
   /**
    * Create the lobby a completed wizard selection describes.
    *
-   * The only place that talks to the store about lobby creation. `resolveLaunch` derived the spec;
-   * this turns it into messages, which is the whole of what used to be `ModePreset.launch`'s
-   * six hand-written cases.
+   * A selection is the thinnest possible recipe — three answers and no settings — so the wizard and
+   * a saved setup take the same path out of this screen. That is what stopped this function
+   * hardcoding `['ECL'], 6, 45, false`: the values now come from the recipe, and a wizard-made draft
+   * lobby opens on no sets rather than on one nobody picked.
    */
-  const launch = (spec: LaunchSpec) => {
-    if (spec.kind === 'QUICK') {
-      // Random pool is the deck picker's Random tab, not a lobby flag, so it is handed to the lobby
-      // screen that has not mounted yet. See `pendingDeckTab.ts`.
-      setPendingDeckTab(spec.deckTab)
-      createQuickGameLobby(spec.vsAi, undefined, false, undefined, spec.momirBasic)
-      return
-    }
-    // Sets are configured inside the lobby; this is only the starting selection, and is ignored
-    // entirely by PREMADE_DECKS (which generates no boosters).
-    createTournamentLobby(
-      [DEFAULT_LOBBY_SET_CODE], spec.format, 6, spec.maxPlayers, 45, false, spec.gameMode, spec.rules,
-    )
-    // Fill the AI seats of a solo pod. Sent straight after the create rather than on the lobby
-    // update, because the screen that would observe that update is not this one — and messages go
-    // out over one socket in order, the same assumption `useLobbyCommands.recreate` already makes.
-    for (let i = 0; i < spec.aiSeats; i += 1) addAiToLobby()
-  }
+  const launch = (selection: Selection) => applyRecipe(recipeFromSelection(selection))
 
   // Replay a join that was queued while disconnected.
   useEffect(() => {
@@ -381,6 +364,9 @@ export function HomeScreen({
               {/* ── PLAY ─────────────────────────────────────────────── */}
               <section className={styles.homeTier}>
                 <SectionHeading label="Play" />
+                {/* Above the wizard, and absent until you have played something: a returning player
+                    gets one click, a first-time player gets the three questions unchanged. */}
+                <SetupRail onLaunch={applyRecipe} />
                 <PlayWizard aiEnabled={aiEnabled} onLaunch={launch} />
 
                 {/* Not a step. Someone who has a code has had the three questions answered for them,

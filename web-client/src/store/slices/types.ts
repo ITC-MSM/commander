@@ -21,14 +21,12 @@ import type {
   LobbyPlayerInfo,
   LobbySettings,
   TournamentFormat,
-  CommanderPreset,
   GameRules,
   PlayerStandingInfo,
   MatchResultInfo,
   ActiveMatchInfo,
   FfaStandingInfo,
   LobbyGameMode,
-  AttackMode,
   SpectatorPlayerState,
   SealedCardInfo,
   Step,
@@ -39,7 +37,18 @@ import type {
   YieldKind,
 } from '@/types'
 import type { ConnectionStatus } from '@/network/websocket.ts'
-import type { CounterRemovalCreatureInfo, SpectatorCombatState, SpectatorDecisionStatus } from '@/types/messages.ts'
+import type { CounterRemovalCreatureInfo, SpectatorCombatState, SpectatorDecisionStatus, UpdateLobbySettingsMessage } from '@/types/messages.ts'
+
+/**
+ * Every field of the omnibus lobby-settings message except its discriminator.
+ *
+ * Derived from the wire type rather than restated. There used to be *two* hand-written copies of this
+ * object — one here and one in `lobbySlice.ts` — and they had drifted: the slice's was missing
+ * `deckSizeMin`, `allowDuplicates` and `commanderPreset`, all three of which the lobby's Commander
+ * rows had been sending for some time. Only this copy was reachable from components, which is the
+ * only reason that compiled.
+ */
+export type LobbySettingsUpdate = Omit<UpdateLobbySettingsMessage, 'type'>
 
 // Re-export for convenience
 export type { EntityId, ConnectionStatus }
@@ -909,7 +918,7 @@ export type GameStore = {
   /** Host picks what one AI seat plays (premade-decks lobbies — elsewhere it builds from its pool). */
   setLobbyAiDeck: (playerId: string, spec: AiDeckSpec) => void
   stopLobby: () => void
-  updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; rules?: GameRules; deckSizeMin?: number; allowDuplicates?: boolean; commanderPreset?: CommanderPreset; chaosBoosters?: boolean; bannedCardNames?: string[]; cubeCards?: string[]; cubeName?: string; packSize?: number; cubeBasicLandSetCode?: string; cubePoolPlay?: boolean; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode; attackMode?: AttackMode; randomTeams?: boolean; teamAssignments?: Record<string, number>; ranked?: boolean }) => void
+  updateLobbySettings: (settings: LobbySettingsUpdate) => void
   /** Disconnected tournament players: playerId -> info */
   disconnectedPlayers: Record<string, { playerName: string; secondsRemaining: number; disconnectedAt: number }>
   readyForNextRound: () => void

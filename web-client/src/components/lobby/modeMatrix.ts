@@ -82,6 +82,23 @@ export function shapeAxes(shape: ShapeId): { table: TableAxis; event: EventAxis 
   return SHAPE_AXES[shape]
 }
 
+/**
+ * The inverse: which named shape a live lobby's Table and Event add up to.
+ *
+ * Needed to read a *selection* back out of a lobby that already exists — capturing a recipe, which
+ * is the one direction the wizard never had to go. Only the 1v1 table has two shapes to tell apart;
+ * every multiplayer table plays exactly one game, so `eventFromGameMode` derives `SINGLE_GAME` for
+ * all of them and the Event half carries no information there.
+ */
+export function shapeFromAxes(table: TableAxis, event: EventAxis): ShapeId {
+  switch (table) {
+    case 'FREE_FOR_ALL': return 'FREE_FOR_ALL'
+    case 'TWO_HEADED_GIANT': return 'TWO_HEADED_GIANT'
+    case 'TEAM_VS_TEAM': return 'TEAM_VS_TEAM'
+    case 'ONE_V_ONE': return event === 'ROUND_ROBIN' ? 'BRACKET' : 'ONE_GAME'
+  }
+}
+
 export function rosterLabel(roster: Roster): string {
   switch (roster) {
     case 'SOLO': return 'Just me'
