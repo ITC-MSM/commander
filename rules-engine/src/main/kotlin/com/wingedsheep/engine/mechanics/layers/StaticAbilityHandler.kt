@@ -28,6 +28,7 @@ import com.wingedsheep.sdk.scripting.AddLandTypeByCounter
 import com.wingedsheep.sdk.scripting.CantBeBlocked
 import com.wingedsheep.sdk.scripting.CantAttack
 import com.wingedsheep.sdk.scripting.CantBlock
+import com.wingedsheep.sdk.scripting.CrewSaddleContribution
 import com.wingedsheep.sdk.scripting.CanBlockAdditionalForCreatureGroup
 import com.wingedsheep.sdk.scripting.MustBeBlocked
 import com.wingedsheep.sdk.scripting.MustBlock
@@ -840,6 +841,7 @@ class StaticAbilityHandler(
             is CantBlockCreaturesWithGreaterPower,
             is CantBlockUnless,
             is CantBlockUnlessCoBlocker,
+            is CrewSaddleContribution,
 
             // Combat: damage assignment (CombatDamageManager / CombatDamageUtils / DamageUtils):
             is AssignCombatDamageAsUnblocked,

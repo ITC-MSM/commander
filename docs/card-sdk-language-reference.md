@@ -5610,6 +5610,13 @@ composite abilities).
   Conditions.SourceIsSaddled` for "whenever this attacks while saddled"). The marker (engine
   `SaddledComponent`) is cleared at end of turn or when the permanent leaves the battlefield, and
   is not a copiable value (CR 702.171b). Mounts that gate on the saddled state use this.
+- `CrewSaddleContribution(characteristic = POWER, modifier = 0)` — changes only the numeric value
+  a creature contributes while paying a Crew or Saddle cost; it does not change that creature's
+  power or toughness. The selected `characteristic` is read from projected state before `modifier`
+  is applied, so counters and continuous effects are honored. Pilot text such as “saddles Mounts
+  and crews Vehicles as though its power were 2 greater” uses `modifier = 2`; “using its toughness
+  rather than its power” uses `characteristic = CrewSaddleCharacteristic.TOUGHNESS`. Printed and
+  token-granted instances use the same handler path.
 - `Modular(n)` — ETB with +1/+1 counters, transfer on death.
 - `Fading(n)` — ETB with N fade counters; removes one each upkeep, sacrifice if can't.
 - `Vanishing(n)` — same idea with time counters.
