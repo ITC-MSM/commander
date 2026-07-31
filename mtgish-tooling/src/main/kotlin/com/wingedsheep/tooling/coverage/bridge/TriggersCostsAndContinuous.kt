@@ -3,6 +3,14 @@ package com.wingedsheep.tooling.coverage.bridge
 /** Triggered-ability conditions and costs (accepted as [supported] pending a `Triggers.*`/`Costs.*`
  *  facade scan), plus the duration-scoped trigger/replacement creators (composed from primitives). */
 internal fun BridgeBuilder.triggersCostsAndContinuous() {
+    supported(
+        "CrewsVehiclesAsThoughPowerWereGreater",
+        "static ability: projected power plus N contributes to Crew (CrewSaddleContribution)"
+    )
+    supported(
+        "SaddlesMountsAsThoughPowerWereGreater",
+        "static ability: projected power plus N contributes to Saddle (CrewSaddleContribution)"
+    )
     // Triggers — validated by a Triggers.* facade scan in a later phase.
     supported("WhenAPermanentEntersTheBattlefield", "trigger: ETB (Triggers.* scan validates in P1)")
     // Batched ETB — "whenever one or more permanents [matching a filter] enter" fires once per event

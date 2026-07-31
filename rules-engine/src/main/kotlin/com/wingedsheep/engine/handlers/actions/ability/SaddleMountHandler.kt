@@ -104,7 +104,12 @@ class SaddleMountHandler(
                 return "Creature is already tapped: $creatureId"
             }
 
-            totalPower += projected.getPower(creatureId) ?: 0
+            totalPower += CrewSaddleContributionEvaluator.evaluate(
+                state = state,
+                projected = projected,
+                cardRegistry = cardRegistry,
+                creatureId = creatureId
+            )
         }
 
         if (totalPower < saddleAbility.n) {

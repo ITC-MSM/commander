@@ -12,6 +12,41 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
+ * Changes the value a creature contributes when it is tapped to crew a Vehicle or saddle a Mount.
+ *
+ * This does not change the creature's power or toughness. It only changes the number used while
+ * paying a crew or saddle cost. [characteristic] is read from projected state, so counters and
+ * continuous effects are reflected before [modifier] is applied.
+ *
+ * A Pilot that "saddles Mounts and crews Vehicles as though its power were 2 greater" uses
+ * `CrewSaddleContribution(modifier = 2)`. A creature that uses its toughness rather than its power
+ * uses `CrewSaddleContribution(characteristic = CrewSaddleCharacteristic.TOUGHNESS)`.
+ */
+@SerialName("CrewSaddleContribution")
+@Serializable
+data class CrewSaddleContribution(
+    val characteristic: CrewSaddleCharacteristic = CrewSaddleCharacteristic.POWER,
+    val modifier: Int = 0
+) : StaticAbility {
+    override val description: String = when {
+        characteristic == CrewSaddleCharacteristic.TOUGHNESS && modifier == 0 ->
+            "This creature saddles Mounts and crews Vehicles using its toughness rather than its power"
+        characteristic == CrewSaddleCharacteristic.POWER && modifier > 0 ->
+            "This creature saddles Mounts and crews Vehicles as though its power were $modifier greater"
+        else ->
+            "This creature's crew and saddle contribution uses its ${characteristic.name.lowercase()} with a ${modifier.signed()} modifier"
+    }
+
+    private fun Int.signed(): String = if (this >= 0) "+$this" else toString()
+}
+
+@Serializable
+enum class CrewSaddleCharacteristic {
+    POWER,
+    TOUGHNESS
+}
+
+/**
  * You control enchanted permanent.
  * Used for Auras like Annex that steal control of the enchanted permanent.
  */
