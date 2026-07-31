@@ -18,7 +18,7 @@ This is an `add-feature` project (client capability, plus a tail of server work 
 **Audience we optimise for: knows Magic, new to Argentum.** Not a rules tutorial — no teaching what
 a phase or the stack is. Explicitly out of scope at the bottom.
 
-## Status: **in progress** (2026-07-26) — Phases 0, 1, 2, 3, 4, 7 landed and polished; PR #1421 ready
+## Status: **in progress** (2026-07-31) — Phases 0–4, 6a, 7 and 8 landed; 5, 6b and 9 open
 
 | Phase | State |
 |---|---|
@@ -30,8 +30,10 @@ a phase or the stack is. Explicitly out of scope at the bottom.
 | 7 — landing wizard: three questions, not six cards | **done** |
 | — polish pass | **done** — see § *Polish pass* |
 | 6a — wizard-step URLs | **done** — see § *Phase 6, the wizard half* |
+| 8 — `LobbyRecipe`, saved setups, grouped lobby, vs-AI rematch | **done** — see § *Phase 8* |
 | 5 — server gaps (4c) | not started — **next**, in the numbered order |
 | 6b — `convertLobby`, URLs for the other in-`/` screens | not started |
+| 9 — setups in the account (`V13__setups.sql`), human 1v1 rematch | not started — the server tail of Phase 8 |
 
 Everything landed so far is **client-only**. Phase 5 is where this project first touches the server,
 and it is deliberately a separate PR: each of the seven gaps stands alone and each one deletes a
@@ -52,8 +54,11 @@ Cube ships is worth a little scheduling effort.
 
 - **Keep the centred glass card.** No persistent nav bar. The landing stays a single
   `styles.contentBackdrop` panel; only its *contents* get restructured into tiers.
-- **Presets, not modes.** The home screen shows six named entry points that set lobby defaults. They
-  are not six systems — they all land in one lobby.
+- ~~**Presets, not modes.** The home screen shows six named entry points that set lobby defaults.~~
+  Superseded by Phase 7 (the six cards became three questions). Phase 8 reuses the *word* for
+  something else entirely — a saved **setup** is a whole lobby you have already built, not a preset
+  that seeds defaults — which is why its internal type is `LobbyRecipe` and not `Preset`: the lobby
+  already renders a row literally labelled **Preset** (`commanderPreset`: Brawl / Commander / Pod).
 - **Unify the lobby presentation first, the server second.** A full server-side lobby merge is a
   large project on its own (see § *The honest constraint*); the client unifies over a view model and
   the server gaps get closed behind it, individually.
@@ -650,6 +655,61 @@ Resolve the phantom number-key comment (`useMultiplayerView.ts:64`) while doing 
 | **5** | Server gaps from 4c, in the numbered order. Each one deletes a disabled option from the wizard. | yes, each |
 | ~~**6a**~~ | ~~A URL per wizard step~~ — **done.** `wizardUrl.ts`; the stepper's Back and the browser's Back finally agree, and a selection is shareable. Client-only. | **yes** |
 | **6b** | `convertLobby` preserving the invite code (server); real URLs for the remaining in-`/` screens so Back works across them. | yes |
+
+### Phase 8 — a game you want to play, written down
+
+The three questions were answered well; what happened to the answers was not. The wizard produced a
+three-field `Selection`, `resolveLaunch` widened it to a five-field `LaunchSpec`, and
+`HomeScreen.launch` threw even that away — `createTournamentLobby(['ECL'], format, 6, maxPlayers, 45,
+false, …)`. The other ~20 answers only ever existed as server-owned `LobbySettings` that die with the
+lobby.
+
+One missing object, three symptoms: repeat play was slow (nothing to repeat — the `Play again` chip
+carried four of ~24 knobs), the lobby was a wall (the only place those answers could live), and there
+was no 1v1 rematch (the thing to replay had never been recorded).
+
+**[`components/lobby/lobbyRecipe.ts`](../web-client/src/components/lobby/lobbyRecipe.ts)** is that
+object; [`useApplyRecipe.ts`](../web-client/src/components/lobby/useApplyRecipe.ts) replays it. What
+landed on top of it:
+
+- **Saved setups** — auto-captured when you press Start or Ready, plus a named `★ Save setup`, on a
+  rail above the wizard ([`SetupRail.tsx`](../web-client/src/components/ui/SetupRail.tsx),
+  [`store/setupLibrary.ts`](../web-client/src/store/setupLibrary.ts)). The rail does not render until
+  you have played something, so a first-time player sees exactly the wizard described in Part 3. The
+  old `argentum-last-play-selection` key migrates into it on first read.
+- **Five collapsible settings groups** ([`settingsGroups.ts`](../web-client/src/components/lobby/settingsGroups.ts))
+  named for the four axes plus "This lobby". ~20 rows / ~1500px → 5 headers / ~320px.
+- **A vs-AI rematch** on the game-over overlay ([`useRematch.ts`](../web-client/src/components/lobby/useRematch.ts)).
+
+Three server behaviours the applier depends on, all verified against `LobbyHandler`:
+
+1. `handleUpdateLobbySettings` is **already ordered for a whole bag** — its own comments read "apply
+   after format change" and "apply after boosterCount", and the format branch honours a `setCodes` in
+   the same message. A `format` change resets `boosterCount`, `picksPerRound` and `chaosBoosters`, so
+   **field-by-field replay would be wrong**, not merely slower.
+2. `cubeCards` resolves immediately and `return`s on a card it can't find, discarding the rest of the
+   message. The cube goes first, alone.
+3. `boosterCount == 6` is a **sentinel** on the *create* message meaning "use the format default" (3
+   packs for a draft). A captured 6 is restated in the bag, where the same field is read literally.
+
+Queued settings flush on `onLobbyCreated` rather than firing straight after the create: the server
+keys `updateLobbySettings` on `identity.currentLobbyId`, which is only set once `handleCreate` has run.
+
+**Deviations from the plan, both deliberate.**
+
+- The plan had a wizard-made lobby open with *no* sets, on the grounds that `'ECL'` was arbitrary. It
+  is more honest but a regression on the goal — every draft lobby would then need a set picked before
+  Start could be pressed, and it broke the `draft-tournament` spec, which is the
+  wizard-straight-to-Start path. It now opens on the **newest complete, non-extension set**, which is
+  named in the title and the Sets chip the moment the lobby opens.
+- No Seats row was distributed into a group: it had already been removed, since the lobby holds as
+  many players as its shape allows and people join until it is full.
+
+**Notes for the phases still open.** `applyRecipe` performs the same leave→create→configure sequence
+`recreate` does, so **6b's `convertLobby` becomes a cheaper path inside it** when it lands. And gap #5
+(the two `ranked` defaults disagree — `CreateTournamentLobby.ranked` is true, `TournamentLobby.ranked`
+is false) no longer *shows*, because a recipe always states `ranked` explicitly — but the gap itself is
+untouched, and the opt-in/opt-out product call this project deferred is still deferred.
 
 ### Phase 6, the wizard half
 

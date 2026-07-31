@@ -1953,7 +1953,10 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* Gap rather than `space-between`: the header gained a third child (+ Add AI, which pushes itself
+     right), and with `space-between` the title and the count were spread apart from each other and
+     jammed together respectively. */
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border-medium);
   background-color: var(--bg-panel-light);
@@ -2228,8 +2231,10 @@
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-1);
-  padding: var(--space-2) 0;
-  background: linear-gradient(to top, var(--bg-panel-light) 70%, transparent);
+  padding: var(--space-3) 0 var(--space-2);
+  /* Opaque under the buttons, fading only in the few pixels above them — a mostly-transparent bar
+     let the last settings row show through the Start button. */
+  background: linear-gradient(to top, rgba(6, 10, 20, 0.98) 0 78%, rgba(6, 10, 20, 0));
 }
 
 /* The reason Start is disabled, beside the button rather than only in its `title`. A tooltip on a
@@ -3686,14 +3691,14 @@
   color: #c4b5fd;
 }
 
+/* Wraps rather than truncating. A chip's whole job is to say what it will launch — "A group ·
+   Booster Draft · Round-robin brac…" answers the wrong half of the question, hiding exactly the
+   sets and pack counts that make a setup worth one click. */
 .setupChipBody {
   font-family: ui-monospace, monospace;
   font-size: var(--font-xs, 0.75rem);
   color: var(--text-tertiary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 44ch;
+  max-width: 62ch;
 }
 
 .setupChipNote {
