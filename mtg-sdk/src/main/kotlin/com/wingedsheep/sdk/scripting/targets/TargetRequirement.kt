@@ -395,7 +395,15 @@ data class TargetObject(
      * mana value N or less" shape. `null` (the default) imposes no aggregate cap. Distinct from
      * `dynamicMaxCount`, which caps the *count* of targets, not their summed mana value.
      */
-    val totalManaValueAtMost: DynamicAmount? = null
+    val totalManaValueAtMost: DynamicAmount? = null,
+    /**
+     * When true and more than one target is chosen for this requirement, every chosen target must
+     * have a **different name** from the others — "up to six target creature cards with different
+     * names" (Behold the Sinister Six!). Enforced cross-target by `TargetValidator` (authoritative)
+     * and the interactive `DecisionValidators`, grouping by each target's *projected* card name; a
+     * no-op for single-target requirements. Defaults to false.
+     */
+    val differentNames: Boolean = false
 ) : TargetRequirement {
     override val description: String = run {
         val base = if (id != null) {

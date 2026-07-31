@@ -29,6 +29,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AttackTax
 import com.wingedsheep.sdk.scripting.AttackerCountLimit
 import com.wingedsheep.sdk.scripting.CantAttackUnlessCoAttacker
+import com.wingedsheep.sdk.scripting.MustAttack
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.PredicateContext
@@ -623,6 +624,21 @@ internal class AttackPhaseManager(
     }
 
     /**
+     * Whether [attackerId] is required to attack this combat by a "must attack" static — either the
+     * projected one (printed `MustAttack`: Valley Dasher, Grand Melee) or an entity-scoped
+     * `MustAttack` granted at runtime and stored in [GameState.grantedStaticAbilities] (Carnage's
+     * reanimated target: "attacks each combat if able"). Granted statics never reach projection, so
+     * they must be consulted here at the point of use, alongside the projected value.
+     */
+    private fun mustAttackThisCombat(state: GameState, attackerId: EntityId): Boolean {
+        if (state.projectedState.mustAttack(attackerId)) return true
+        return state.grantedStaticAbilities.any {
+            it.entityId == attackerId && it.ability is MustAttack &&
+                (it.ability as MustAttack).filter.scope is Scope.Self
+        }
+    }
+
+    /**
      * Validate projected "must attack" requirements (e.g., from Grand Melee).
      */
     private fun validateProjectedMustAttackRequirements(
@@ -631,10 +647,9 @@ internal class AttackPhaseManager(
         attackers: Map<EntityId, EntityId>
     ): String? {
         val validAttackers = getValidAttackers(state, attackingPlayer)
-        val projected = state.projectedState
 
         for (attackerId in validAttackers) {
-            if (!projected.mustAttack(attackerId)) continue
+            if (!mustAttackThisCombat(state, attackerId)) continue
 
             if (attackerId !in attackers.keys) {
                 val cardName = state.getEntity(attackerId)?.get<CardComponent>()?.name ?: "Creature"
@@ -670,7 +685,6 @@ internal class AttackPhaseManager(
      */
     fun getMandatoryAttackers(state: GameState, attackingPlayer: EntityId): List<EntityId> {
         val validAttackers = getValidAttackers(state, attackingPlayer)
-        val projected = state.projectedState
         val mandatory = mutableSetOf<EntityId>()
 
         // 1. MustAttackPlayerComponent (Taunt effect) — all valid attackers must attack
@@ -687,9 +701,10 @@ internal class AttackPhaseManager(
             }
         }
 
-        // 3. Projected mustAttack (static ability like Valley Dasher, Grand Melee)
+        // 3. Projected mustAttack (static ability like Valley Dasher, Grand Melee) or a granted
+        // entity-scoped MustAttack (Carnage's reanimated target), which never reaches projection.
         for (attackerId in validAttackers) {
-            if (projected.mustAttack(attackerId)) {
+            if (mustAttackThisCombat(state, attackerId)) {
                 mandatory.add(attackerId)
             }
         }

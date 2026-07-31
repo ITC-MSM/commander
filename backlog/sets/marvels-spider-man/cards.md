@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 175 / 188
+**Implemented:** 179 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -13,10 +13,10 @@
 - [x] Aunt May
 - [x] Bagel and Schmear
 - [x] Beetle, Legacy Criminal
-- [ ] Behold the Sinister Six!
+- [x] Behold the Sinister Six!
 - [x] Biorganic Carapace
 - [ ] Black Cat, Cunning Thief
-- [ ] Carnage, Crimson Chaos
+- [x] Carnage, Crimson Chaos
 - [x] Chameleon, Master of Disguise
 - [x] Cheering Crowd
 - [x] City Pigeon
@@ -71,7 +71,7 @@
 - [x] Mechanical Mobster
 - [x] Merciless Enforcers
 - [x] Miles Morales // Ultimate Spider-Man
-- [ ] Mister Negative
+- [x] Mister Negative
 - [x] Mob Lookout
 - [x] Molten Man, Inferno Incarnate
 - [x] Morbius the Living Vampire
@@ -145,7 +145,7 @@
 - [x] Spider-Slayer, Hatred Honed
 - [x] Spider-Suit
 - [x] Spider-UK
-- [ ] Spider-Verse
+- [x] Spider-Verse
 - [x] Spider-Woman, Stunning Savior
 - [x] Spiders-Man, Heroic Horde
 - [x] Spinneret and Spiderling

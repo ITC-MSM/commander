@@ -643,7 +643,8 @@ class TriggerProcessor(
                 minTargets = effectiveMinTargets,
                 maxTargets = maxTargets,
                 sameOwner = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.sameOwner == true,
-                totalManaValueAtMost = resolveTotalManaValueAtMost(state, trigger, req)
+                totalManaValueAtMost = resolveTotalManaValueAtMost(state, trigger, req),
+                differentNames = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.differentNames == true
             )
         }
 

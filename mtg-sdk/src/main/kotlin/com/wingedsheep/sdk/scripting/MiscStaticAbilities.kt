@@ -815,6 +815,20 @@ data class RetainUnspentColoredMana(val color: Color) : StaticAbility {
 }
 
 /**
+ * The "legend rule" (CR 704.5j) doesn't apply to permanents matching [filter] that the controller
+ * of this permanent controls (Spider-Verse: "The 'legend rule' doesn't apply to Spiders you
+ * control"). Such permanents are excluded from the legend-rule duplicate grouping in
+ * `LegendRuleCheck`, so the controller may keep multiple same-named copies.
+ */
+@SerialName("LegendRuleDoesNotApplyTo")
+@Serializable
+data class LegendRuleDoesNotApplyTo(
+    val filter: GameObjectFilter
+) : StaticAbility {
+    override val description: String = "The \"legend rule\" doesn't apply to ${filter.description} you control"
+}
+
+/**
  * Removes the maximum hand size limit for the controller.
  * Used for cards like Thought Vessel and Reliquary Tower: "You have no maximum hand size."
  *

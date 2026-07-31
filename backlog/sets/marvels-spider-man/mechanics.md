@@ -92,10 +92,10 @@ Implemented cards (9): **Swarm, Being of Bees** [69] · **Spider-Islanders** [91
 **Rocket-Powered Goblin Glider** [172] (ETB attach gated on `WasCastFromGraveyard`).
 
 Still blocked (not on Mayhem itself):
-- **Carnage, Crimson Chaos** [125] — `{2}{B}{R}` Trample + Mayhem `{B}{R}` work; the ETB "reanimate a creature card
-  with mv ≤ 3, **it gains 'attacks each combat if able' and 'when it deals combat damage to a player, sacrifice it'**"
-  needs a persistent **grant-abilities-to-a-reanimated-target** effect (no clean facade to durably grant a
-  must-attack static + a combat-damage sacrifice trigger to a chosen target). Deferred rather than approximated.
+- **Carnage, Crimson Chaos** [125] — ✅ **IMPLEMENTED** on branch `spm-grant-reanimate`. The persistent
+  grant-abilities-to-a-reanimated-target was expressible after all: `GrantStaticAbilityEffect(MustAttack())`
+  + `GrantTriggeredAbilityEffect(TriggeredAbility.create(DealsCombatDamageToPlayer → SacrificeSelfEffect))`,
+  both `Duration.Permanent`, keyed to the reanimated `Effects.Move(...fromZone = GRAVEYARD)` target.
 - **Oscorp Industries** [182] — ✅ **IMPLEMENTED** on branch `spm-land-plays`. The no-cost 702.187c form is a
   land-play from graveyard: `PlayLandEnumerator` now offers a discarded-this-turn Mayhem land as a `PlayLand`
   action and `PlayLandHandler` allows it (both gated on `MayhemGrants.effectiveMayhem`, via `mayhem("")`). Its
@@ -190,7 +190,16 @@ event filters (e.g. `DealsDamageEvent.sourceFilter`), + verify the delayed match
 Blocked cards:
 - **The Clone Saga** [28] — `{3}{U}` Enchantment — Saga; chapters I (Surveil 3) and II (copy your next creature spell, non-legendary — both expressible today) are fine, but chapter III ("choose a card name … whenever a creature with the chosen name deals combat damage, draw") is blocked
 
-## Exchange life totals with a player (CR 701.12c) + "life you lost this way" draw amount
+## Exchange life totals with a player (CR 701.12c) + "life you lost this way" draw amount — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-life-exchange`. Added `ExchangeLifeTotalsEffect(target, drawEqualToLifeLost)`
++ `ExchangeLifeTotalsExecutor` — reads both totals before any change (simultaneous swap, CR 701.12c),
+emits gain/loss `LifeChangedEvent`s for both players (for lifelink/triggers), marks life gained/lost, and —
+because the draw amount is the controller's life-loss delta that no `DynamicAmount` exposes — draws that
+many cards itself (via `DrawCardPrimitive`, `cardRegistry` threaded through `LifeExecutors`). Card:
+**Mister Negative** [135] (`MayEffect(Effects.ExchangeLifeTotals(drawEqualToLifeLost = true))`).
+
+<details><summary>Original analysis</summary>
 
 > You may **exchange life totals** with target opponent. If you lost life this way, draw that
 > many cards.
@@ -206,8 +215,18 @@ for lifelink/triggers) + a way to feed the controller's life-lost delta into `Dr
 
 Blocked cards:
 - **Mister Negative** [135] — `{5}{W}{B}` Vigilance/lifelink; "you may exchange life totals with target opponent. If you lost life this way, draw that many cards." (Vigilance + lifelink are fine; the ETB exchange is blocked.)
+</details>
 
-## "Different names" multi-target distinctness constraint
+## "Different names" multi-target distinctness constraint — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-target-constraints`. Added a `differentNames: Boolean` field to
+`TargetObject`, enforced cross-target by `TargetValidator` (authoritative) and `DecisionValidators`
+(interactive, via a new `TargetRequirementInfo.differentNames` propagated at the target-decision build
+sites) — grouping chosen targets by projected name (battlefield) / base card name (other zones). Card:
+**Behold the Sinister Six!** [51] (`TargetObject(count = 6, optional = true, differentNames = true)` +
+`ForEachTargetEffect(PutOntoBattlefield)`).
+
+<details><summary>Original analysis</summary>
 
 > Return up to six **target creature cards with different names** from your graveyard to the
 > battlefield.
@@ -222,6 +241,7 @@ reference + `CardLinter`).
 
 Blocked cards:
 - **Behold the Sinister Six!** [51] — `{6}{B}` Sorcery; "Return up to six target creature cards with different names from your graveyard to the battlefield." Dropping the constraint would wrongly allow six copies of the same-named creature, so it is not approximated.
+</details>
 
 ## Color-filtered permanent "don't lose unspent [color] mana" static — ✅ IMPLEMENTED
 
@@ -415,7 +435,15 @@ Blocked cards:
 - **With Great Power . . .** [24] — `{3}{W}` Aura; "+2/+2 per attached Aura/Equipment" (fine) + "all damage that would be dealt to you is dealt to enchanted creature instead" (the redirect is the blocker).
 </details>
 
-## "The legend rule doesn't apply to [filter]" exemption
+## "The legend rule doesn't apply to [filter]" exemption — ✅ IMPLEMENTED
+
+**Implemented** on branch `spm-keywords-statics`. Added `LegendRuleDoesNotApplyTo(filter)` StaticAbility
+(scan-based) + a consult hook in `LegendRuleCheck.check` (`isExemptFromLegendRule` — excludes matching
+permanents from the duplicate grouping; the check now takes a `CardRegistry`). Card: **Spider-Verse** [93]
+(the copy-spell-from-non-hand clause uses `youCastSpell(CastFromZoneOtherThan(HAND))` + `oncePerTurn` +
+`CopyTargetSpell(addedTokenKeywords = HASTE)`, wrapped in `MayEffect`).
+
+<details><summary>Original analysis</summary>
 
 > The "legend rule" doesn't apply to **Spiders you control**.
 
@@ -429,6 +457,7 @@ fully expressible via `youCastSpell(CastFromZoneOtherThan(HAND))` + `oncePerTurn
 
 Blocked cards:
 - **Spider-Verse** [93] — `{3}{R}{R}` Enchantment; the legend-rule exemption for Spiders is the blocker (the copy-spell-from-non-hand clause is fine).
+</details>
 
 ## Play cards exiled **face down** from an opponent's library (controller may look + cast)
 

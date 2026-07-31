@@ -632,6 +632,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   is worded "equal to the life lost this way".
 - `SetLifeTotal(amount, target)` — set target's life total to N.
 - `ExchangeLifeAndPower(target)` — swap target's power with controller's life total.
+- `ExchangeLifeTotals(target, drawEqualToLifeLost)` — swap the controller's life total with `target`
+  player's (CR 701.12c): each player gains/loses the life needed to reach the other's former total,
+  applied through the shared gain/lose-life primitives so gain prevention/replacements and loss
+  modification apply and gain/loss triggers fire. With `drawEqualToLifeLost = true`, the controller
+  then draws a card for each point of life they **actually lost** in the swap (Mister Negative). Wrap
+  the whole thing in `MayEffect` for "you may exchange".
 - `LoseHalfLife(roundUp, target, lifePlayer?)` — lose half of life total (round up/down).
 - `LockLifeGain(target?, duration?)` — "target player can't gain life" for `duration` (default
   `Duration.Permanent` = rest of the game; `EndOfTurn` / `UntilYourNextTurn` also honored). A one-shot
@@ -2600,6 +2606,12 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   TargetFilter(GameObjectFilter.Creature.ownedByTriggeringPlayer(), zone = Zone.GRAVEYARD),
   totalManaValueAtMost = DynamicAmount.XValue)` — **Fire Lord Sozin** (back face of The Rise of Sozin),
   reanimating post-payment via a `MayPayXForEffect(ReflexiveTriggerEffect(...))`.
+- `differentNames = false` — on `TargetObject`; when `true` and more than one target is chosen, no two
+  chosen targets may share a **name** ("**up to six target creature cards with different names**" —
+  Behold the Sinister Six!). Enforced cross-target by `TargetValidator` (authoritative) and, on the
+  interactive target decision, `DecisionValidators` (via `TargetRequirementInfo.differentNames`),
+  grouping by projected name (battlefield) / base card name (other zones). E.g.
+  `TargetObject(count = 6, optional = true, filter = TargetFilter.CreatureInYourGraveyard, differentNames = true)`.
 - `chooser = TargetChooser.Controller` — **who selects this requirement's target(s)**. Set to
   `TargetChooser.Opponent` for "**… of an opponent's choice**" wording (Cuombajj Witches). The chosen
   target is still a real target of *your* spell/ability — announced together with your own targets,
@@ -4780,6 +4792,9 @@ staticAbility {
   *replaces* other colours with red, this simply keeps that one colour and lets every other colour empty.
   Merged into the `retain` set at `CleanupPhaseManager.emptyManaPools` (control-aware). The static twin of
   the turn-scoped one-shot `RetainUnspentMana(vararg colors)` effect (The Last Agni Kai).
+- `LegendRuleDoesNotApplyTo(filter)` — "The 'legend rule' doesn't apply to [filter] you control"
+  (Spider-Verse — Spiders). Scan-based: `LegendRuleCheck` excludes permanents you control matching
+  `filter` from the same-name duplicate grouping, so you may keep multiple copies (CR 704.5j).
 - `NoMaximumHandSize` — controller has no hand-size limit *while this permanent is on the
   battlefield*. (Thought Vessel, Reliquary Tower) For a one-shot resolution effect that confers a
   *permanent, player-scoped* "no maximum hand size for the rest of the game" (survives the source

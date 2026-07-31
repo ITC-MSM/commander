@@ -67,7 +67,7 @@ class EffectExecutorRegistry(
 
     init {
         // Register all effect executors by module
-        registerModule(LifeExecutors(amountEvaluator))
+        registerModule(LifeExecutors(amountEvaluator, cardRegistry))
         registerModule(DamageExecutors(amountEvaluator, decisionHandler))
         // Wire the recursion (for ModifyExplore's Composite delegation) before registering, so the
         // ref is read lazily at explore time (order is not load-bearing — see libraryExecutors).

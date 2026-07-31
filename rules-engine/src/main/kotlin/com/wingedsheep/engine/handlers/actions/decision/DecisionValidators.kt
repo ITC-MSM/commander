@@ -224,6 +224,16 @@ object DecisionValidators {
                         return "Targets for requirement $reqIndex exceed total mana value $manaCap"
                     }
                 }
+                // "... with different names" — no two chosen targets may share a name (Behold the
+                // Sinister Six!). TargetValidator is authoritative; this rejects it interactively too.
+                if (req.differentNames && selectedIds.size > 1 && state != null) {
+                    val names = selectedIds.map { id ->
+                        state.projectedState.getName(id) ?: state.getEntity(id)?.get<CardComponent>()?.name
+                    }
+                    if (names.size != names.toSet().size) {
+                        return "Targets for requirement $reqIndex must have different names"
+                    }
+                }
             }
         }
         return null

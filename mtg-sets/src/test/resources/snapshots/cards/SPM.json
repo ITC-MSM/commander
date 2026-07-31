@@ -655,6 +655,49 @@
     ]
 }
 
+// Behold the Sinister Six!
+{
+    "name": "Behold the Sinister Six!",
+    "manaCost": "{6}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return up to six target creature cards with different names from your graveyard to the battlefield.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "MoveToZone",
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                },
+                "destination": "Battlefield"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 6,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "differentNames": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "rarity": "RARE",
+        "artist": "Nathaniel Himawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/1919bfec-1906-4178-ad32-d4589842e563.jpg?1783905348"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Biorganic Carapace
 {
     "name": "Biorganic Carapace",
@@ -760,6 +803,97 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
+    ]
+}
+
+// Carnage, Crimson Chaos
+{
+    "name": "Carnage, Crimson Chaos",
+    "manaCost": "{2}{B}{R}",
+    "typeLine": "Legendary Creature — Symbiote Villain",
+    "oracleText": "Trample\nWhen Carnage enters, return target creature card with mana value 3 or less from your graveyard to the battlefield. It gains \"This creature attacks each combat if able\" and \"When this creature deals combat damage to a player, sacrifice it.\"\nMayhem {B}{R} (You may cast this card from your graveyard for {B}{R} if you discarded it this turn. Timing rules still apply.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "TRAMPLE",
+        "MAYHEM"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Mayhem",
+            "cost": "{B}{R}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card"
+                            },
+                            "destination": "Battlefield",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "GrantStaticAbility",
+                            "ability": "MustAttack",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "GrantTriggeredAbility",
+                            "ability": {
+                                "id": "ability_2",
+                                "trigger": {
+                                    "type": "DealsDamageEvent",
+                                    "damageType": "DamageCombat",
+                                    "recipient": "AnyPlayer"
+                                },
+                                "effect": "SacrificeSelf"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card"
+                            },
+                            "duration": "Permanent"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature mv<=3 own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "rarity": "RARE",
+        "artist": "Lordigan",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/930befba-6068-493e-baa2-e9371cd99e93.jpg?1783905319"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -4781,6 +4915,59 @@
         "GREEN",
         "RED",
         "WHITE"
+    ]
+}
+
+// Mister Negative
+{
+    "name": "Mister Negative",
+    "manaCost": "{5}{W}{B}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "Vigilance, lifelink\nDarkforce Inversion — When Mister Negative enters, you may exchange life totals with target opponent. If you lost life this way, draw that many cards.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ExchangeLifeTotals",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target opponent"
+                        },
+                        "drawEqualToLifeLost": true
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "rarity": "MYTHIC",
+        "artist": "Thanh Tuấn",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2c9cb13d-55ff-4e26-aa49-755f8bcebc11.jpg?1783905315"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
     ]
 }
 
@@ -9808,6 +9995,58 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Spider-Verse
+{
+    "name": "Spider-Verse",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "The \"legend rule\" doesn't apply to Spiders you control.\nWhenever you cast a spell from anywhere other than your hand, you may copy it. If you do, you may choose new targets for the copy. If the copy is a permanent spell, it gains haste. Do this only once each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellCastFromZoneOtherThan",
+                            "zone": "Hand"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CopyTargetSpell",
+                        "target": "TriggeringEntity",
+                        "addedTokenKeywords": [
+                            "HASTE"
+                        ]
+                    }
+                },
+                "oncePerTurn": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "LegendRuleDoesNotApplyTo",
+                "filter": "creature Spider"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "93",
+        "rarity": "MYTHIC",
+        "artist": "Alexander Gering",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8779eb2-1210-430d-8d42-3077053441ee.jpg?1783905331"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
