@@ -19,7 +19,7 @@ import { CubePanel } from './CubePanel'
 import { SetIcon } from '../ui/SetIcon'
 import { SetPickerModal } from '../ui/SetPickerModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
-import { COMMANDER_PRESETS, cardsSeatCap, effectiveCommanderPreset } from './axes'
+import { COMMANDER_PRESETS, effectiveCommanderPreset } from './axes'
 import type { UnifiedLobbyView } from './lobbyViewModel'
 import styles from '../ui/GameUI.module.css'
 
@@ -31,24 +31,6 @@ import styles from '../ui/GameUI.module.css'
 const RANDOM_SET_CODE = 'RANDOM'
 const isRandomSetCode = (code: string): boolean =>
   code === RANDOM_SET_CODE || code.startsWith(`${RANDOM_SET_CODE}-`)
-
-/**
- * Seat counts this lobby could be set to, from the same seat facts the landing wizard uses.
- *
- * A single option (or none) means the shape decides it: Two-Headed Giant is exactly four, and the
- * two-player sub-shapes cap themselves. Team vs. Team needs an even pod. Never offers fewer seats
- * than the lobby is already holding.
- */
-function seatOptions(view: UnifiedLobbyView): number[] {
-  const cap = Math.min(
-    cardsSeatCap(view.axes.cards),
-    view.axes.table === 'FREE_FOR_ALL' ? 6 : 8,
-  )
-  if (view.axes.table === 'TWO_HEADED_GIANT') return []
-  const floor = Math.max(2, view.players.length)
-  const all = view.axes.table === 'TEAM_VS_TEAM' ? [4, 6, 8] : [2, 3, 4, 5, 6, 7, 8]
-  return all.filter((n) => n <= cap && n >= floor)
-}
 
 export function TournamentLobbySettings({
   view,
@@ -473,30 +455,11 @@ export function TournamentLobbySettings({
         </>
       )}
 
-      {/* How many seats the lobby can hold.
-          A cap, not a quorum — `startBlockReason` counts the players actually present — so the host
-          can leave it wide and start when everyone has arrived. It lives here as well as on the
-          landing wizard precisely so the wizard doesn't have to make anyone predict the number:
-          the server has always accepted `maxPlayers` on `updateLobbySettings`, and until now no
-          client could send it. Shapes with a forced count (Two-Headed Giant is exactly four) and the
-          sub-shapes that cap themselves (Winston, Grid, the Commander pair) are excluded. */}
-      {seatOptions(view).length > 1 && (
-        <div className={styles.settingsRow}>
-          <span
-            className={styles.settingsLabel}
-            title="The most players this lobby will hold. You can start before it is full."
-          >
-            Seats
-          </span>
-          <select
-            value={view.maxPlayers}
-            onChange={(e) => updateLobbySettings({ maxPlayers: Number(e.target.value) })}
-            className={styles.settingsSelect}
-          >
-            {seatOptions(view).map((n) => <option key={n} value={n}>{n}</option>)}
-          </select>
-        </div>
-      )}
+      {/* No Seats row: the lobby holds as many as its shape allows and people join until it is full.
+          The cap was never a quorum — `startBlockReason` counts the players actually present, so the
+          host starts when everyone has arrived — which made it a number to predict and then correct.
+          It follows the shape server-side (`LobbyHandler.seatCapFor`), and the header's `n / max`
+          says where it currently stands. */}
 
       {/* Only a bracket has matchups. */}
       {view.axes.event === 'ROUND_ROBIN' && (

@@ -327,85 +327,29 @@ export function shapeChoices(roster: Roster, cards: CardsAxis): Choice<ShapeId>[
 /* ── Seats ──────────────────────────────────────────────────────────────── */
 
 /**
- * How many seats the lobby opens with, and whether the player gets to choose.
+ * How many seats the lobby opens with: always the most the selection allows.
  *
- * `values` is the exact allowed list rather than a min/max pair because Team vs. Team needs an even
- * count and Two-Headed Giant needs exactly four — a range with holes in it is a control that lets you
- * pick something the start button then refuses.
+ * Nobody is asked. `maxPlayers` is a cap, not a quorum — `startBlockReason` only ever counts the
+ * players actually present — so a lobby that opens as wide as its shape permits is one people join
+ * until it is full, and the host starts whenever everyone has arrived. Asking up front only ever
+ * meant predicting a number and then having to notice it was wrong.
+ *
+ * The shapes that force a count still force it here: Two-Headed Giant is exactly four, Team vs. Team
+ * needs an even pod, Free-for-All is capped by the board layout, and the two-player sub-shapes cap
+ * themselves through {@link cardsSeatCap}. For a solo pod this is also the number of AI seats that
+ * get filled (`resolveLaunch`), which the lobby can add to and remove from afterwards.
  */
-export interface SeatRule {
-  values: number[]
-  /** Rendered next to the control; empty when there is nothing to choose. */
-  label: string
-  /** True when the count is forced, so the wizard shows it as a fact instead of a control. */
-  fixed: boolean
-  /**
-   * One line under the control. Says whether the number has to be right *now*.
-   *
-   * For a group it does not: `maxPlayers` is a cap, not a quorum — `startBlockReason` only ever
-   * checks how many players are actually present — so the wizard defaults to the maximum and the
-   * host starts whenever everyone has arrived. For a solo pod it decides how many AI seats to fill,
-   * so it is a real choice, but the lobby can still add and remove them afterwards.
-   */
-  caption: string
-}
+export function seatCap(roster: Roster, cards: CardsAxis, shape: ShapeId): number {
+  if (roster === 'FRIEND') return 2
+  if (roster === 'SOLO' && (isQuickOnly(cards.kind) || cards.kind === 'BRING_A_DECK')) return 2
 
-export function seatRule(roster: Roster, cards: CardsAxis, shape: ShapeId): SeatRule {
-  const twoSeats = (caption: string): SeatRule => ({ values: [2], label: '', fixed: true, caption })
-
-  if (roster === 'FRIEND') return twoSeats('Two seats. Share the invite code and they take the other one.')
-  if (roster === 'SOLO' && (isQuickOnly(cards.kind) || cards.kind === 'BRING_A_DECK')) {
-    return twoSeats('You and one AI opponent.')
-  }
   const cap = Math.min(cardsSeatCap(cards), shape === 'FREE_FOR_ALL' ? 6 : 8)
-
-  if (roster === 'SOLO') {
-    // A limited pod against AI drafters. This one really is a choice — it decides how many AI seats
-    // get filled — but the lobby can add and remove them afterwards.
-    const values = range(2, cap)
-    return {
-      values,
-      label: 'Pod size',
-      fixed: values.length === 1,
-      caption: 'You plus AI opponents. Add or remove them in the lobby.',
-    }
-  }
-
-  const openCaption =
-    'A limit, not a requirement — start whenever everyone is in. Changeable in the lobby.'
-
   switch (shape) {
-    case 'TWO_HEADED_GIANT':
-      return { values: [4], label: '', fixed: true, caption: 'Two-Headed Giant is exactly four seats: two teams of two.' }
-    case 'TEAM_VS_TEAM':
-      return {
-        values: [4, 6, 8].filter((n) => n <= cap),
-        label: 'Up to',
-        fixed: false,
-        caption: `Teams need an even pod. ${openCaption}`,
-      }
-    default: {
-      const values = range(3, cap)
-      return { values, label: 'Up to', fixed: values.length === 1, caption: openCaption }
-    }
+    case 'TWO_HEADED_GIANT': return 4
+    // Two even teams, and the server rejects fewer than four.
+    case 'TEAM_VS_TEAM': return Math.max(4, cap - (cap % 2))
+    default: return Math.max(2, cap)
   }
-}
-
-function range(from: number, to: number): number[] {
-  const out: number[] = []
-  for (let n = from; n <= to; n += 1) out.push(n)
-  return out.length > 0 ? out : [from]
-}
-
-/**
- * The seat count a fresh selection starts on: always the **maximum**.
- *
- * For a group that means the lobby opens as wide as it can — the count is a cap and the host starts
- * once everyone has arrived, so a default of "the smallest legal pod" only ever meant the host had
- * to notice and raise it. For a solo pod it means a full table of AI, which is the interesting case.
- */
-export function defaultSeats(rule: SeatRule): number {
-  return rule.values[rule.values.length - 1] ?? 2
 }
 
 /* ── What will actually happen ──────────────────────────────────────────── */
@@ -419,7 +363,8 @@ export function defaultSeats(rule: SeatRule): number {
  * "Sealed" does not say that a deckbuilding phase and a standings table are coming.
  */
 export function flowStages(selection: Selection): string[] {
-  const { cards, shape, seats } = selection
+  const { roster, cards, shape } = selection
+  const seats = seatCap(roster, cards, shape)
   const stages: string[] = []
 
   switch (cards.kind) {
@@ -433,12 +378,15 @@ export function flowStages(selection: Selection): string[] {
   switch (shape) {
     case 'ONE_GAME': stages.push('One game'); break
     case 'BRACKET':
-      stages.push(seats > 2 ? `Everyone plays everyone (${seats} players)` : 'Play the matchup', 'Standings')
+      stages.push(seats > 2 ? 'Everyone plays everyone' : 'Play the matchup', 'Standings')
+      break
+    // Two-Headed Giant is the one table whose count is exact rather than a cap.
+    case 'TWO_HEADED_GIANT':
+      stages.push('One shared game, 4 seats')
       break
     case 'FREE_FOR_ALL':
-    case 'TWO_HEADED_GIANT':
     case 'TEAM_VS_TEAM':
-      stages.push(`One shared game, ${seats} seats`)
+      stages.push(`One shared game, up to ${seats} seats`)
       break
   }
   return stages
@@ -473,7 +421,6 @@ export interface Selection {
   roster: Roster
   cards: CardsAxis
   shape: ShapeId
-  seats: number
 }
 
 /**
@@ -487,7 +434,8 @@ export function lobbyKindFor(selection: Selection): 'QUICK' | 'TOURNAMENT' {
 }
 
 export function resolveLaunch(selection: Selection): LaunchSpec {
-  const { roster, cards, shape, seats } = selection
+  const { roster, cards, shape } = selection
+  const seats = seatCap(roster, cards, shape)
 
   if (lobbyKindFor(selection) === 'QUICK') {
     return {
@@ -510,14 +458,12 @@ export function resolveLaunch(selection: Selection): LaunchSpec {
   }
 }
 
-/** "Just me · Booster Draft · Round-robin bracket · 8 seats" — the recap, and the Play again chip. */
+/** "Just me · Booster Draft · Round-robin bracket" — the recap, and the Play again chip. */
 export function selectionSummary(selection: Selection): string {
-  const parts = [
+  return [
     rosterLabel(selection.roster),
     // `cardsLabel` already folds the sub-shape in ("Commander Sealed", "Winston Draft").
     cardsLabel(selection.cards),
     shapeLabel(selection.shape),
-  ]
-  if (selection.seats > 2) parts.push(`${selection.seats} seats`)
-  return parts.join(' · ')
+  ].join(' · ')
 }

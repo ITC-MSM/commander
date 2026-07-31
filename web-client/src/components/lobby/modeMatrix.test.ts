@@ -20,10 +20,9 @@ import {
 import {
   cardsChoices,
   defaultCardsAxis,
-  defaultSeats,
   lobbyKindFor,
   resolveLaunch,
-  seatRule,
+  seatCap,
   shapeAxes,
   shapeChoices,
   ROSTERS,
@@ -32,11 +31,13 @@ import {
 } from './modeMatrix'
 
 /**
- * Every selection the wizard can reach: roster × enabled Cards kind × open shapes × seat counts.
+ * Every selection the wizard can reach: roster × enabled Cards kind × open shapes.
  *
- * Cards is a *kind* at its default sub-shape, because that is all the wizard commits to — which sealed
- * or draft shape it is stays a lobby sub-option, alongside deck legality. The lobby's own reachability
- * for the non-default shapes lives in `axisChoices`/`LobbyAxes.shapeBlock`, not here.
+ * Seats are not part of the space: the lobby opens at the cap its shape allows and people join until
+ * it is full, so a selection no longer carries a count. Cards is a *kind* at its default sub-shape,
+ * because that is all the wizard commits to — which sealed or draft shape it is stays a lobby
+ * sub-option, alongside deck legality. The lobby's own reachability for the non-default shapes lives
+ * in `axisChoices`/`LobbyAxes.shapeBlock`, not here.
  */
 function everySelection(): Selection[] {
   const out: Selection[] = []
@@ -46,10 +47,7 @@ function everySelection(): Selection[] {
       for (const cards of [defaultCardsAxis(cardsChoice.value)]) {
         for (const shapeChoice of shapeChoices(roster, cards)) {
           if (shapeChoice.disabledReason) continue
-          const rule = seatRule(roster, cards, shapeChoice.value)
-          for (const seats of rule.values) {
-            out.push({ roster, cards, shape: shapeChoice.value, seats })
-          }
+          out.push({ roster, cards, shape: shapeChoice.value })
         }
       }
     }
@@ -69,11 +67,20 @@ describe('modeMatrix', () => {
     }
   })
 
-  it('never offers a seat count outside the Cards value’s cap', () => {
+  it('opens every lobby at a cap the server will accept', () => {
     for (const selection of everySelection()) {
-      const cap = selection.shape === 'FREE_FOR_ALL' ? 6 : 8
-      expect(selection.seats, JSON.stringify(selection)).toBeLessThanOrEqual(cap)
-      expect(selection.seats).toBeGreaterThanOrEqual(2)
+      const { roster, cards, shape } = selection
+      const seats = seatCap(roster, cards, shape)
+      const label = JSON.stringify(selection)
+      // `LobbyHandler.seatCapFor` — the board layout caps a Free-for-All at 6, everything else at 8.
+      expect(seats, label).toBeLessThanOrEqual(shape === 'FREE_FOR_ALL' ? 6 : 8)
+      expect(seats, label).toBeGreaterThanOrEqual(2)
+      // Two even teams, and the server refuses a Team vs. Team pod under four.
+      if (shape === 'TEAM_VS_TEAM') {
+        expect(seats % 2, label).toBe(0)
+        expect(seats, label).toBeGreaterThanOrEqual(4)
+      }
+      if (shape === 'TWO_HEADED_GIANT') expect(seats, label).toBe(4)
     }
   })
 
@@ -126,13 +133,7 @@ describe('modeMatrix', () => {
         if (!enabled) continue
         const cards = defaultCardsAxis(kind)
         const shape = shapeChoices(roster, cards).find((c) => !c.disabledReason)!.value
-        const selection: Selection = {
-          roster,
-          cards,
-          shape,
-          seats: defaultSeats(seatRule(roster, cards, shape)),
-        }
-        expect(lobbyKindFor(selection)).toBe('QUICK')
+        expect(lobbyKindFor({ roster, cards, shape })).toBe('QUICK')
       }
     }
   })

@@ -199,7 +199,7 @@ describe('the wizard and the lobby agree', () => {
     // lobby. The launch spec has to carry it, or the lobby would come back Standard and disagree
     // with the reasoning the wizard just did.
     const selection = (cards: CardsAxis): Selection =>
-      ({ roster: 'GROUP', cards, shape: 'FREE_FOR_ALL', seats: 4 })
+      ({ roster: 'GROUP', cards, shape: 'FREE_FOR_ALL' })
 
     for (const cards of commanderCards) {
       const spec = resolveLaunch(selection(cards))

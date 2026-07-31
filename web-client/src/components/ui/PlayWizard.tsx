@@ -25,8 +25,7 @@
  * with the answers in `useState`, which left the landing screen with two back affordances that
  * disagreed: the stepper stepped back a question, the browser's Back left Argentum. Now each answer
  * is a path segment, so `history.back()` *is* "drop the last answer" and every step is linkable.
- * One user action = one `navigate`, which is the invariant that keeps Back honest; a seat narrowing
- * replaces instead, since it refines the current answer rather than adding one.
+ * One user action = one `navigate`, which is the invariant that keeps Back honest.
  *
  * Everything selectable comes from `lobby/modeMatrix.ts`; this file only renders it.
  */
@@ -36,12 +35,10 @@ import { HelpTip } from '@/components/help/HelpTip'
 import {
   cardsChoices,
   defaultCardsAxis,
-  defaultSeats,
   flowStages,
   resolveLaunch,
   rosterChoices,
   rosterLabel,
-  seatRule,
   selectionSummary,
   shapeChoices,
   shapeLabel,
@@ -84,19 +81,16 @@ export function PlayWizard({
 }) {
   const navigate = useNavigate()
   const { pathname, search } = useLocation()
-  const draft = useMemo(() => pathToDraft(pathname, search, aiEnabled), [pathname, search, aiEnabled])
+  const draft = useMemo(() => pathToDraft(pathname, aiEnabled), [pathname, aiEnabled])
   const lastSelection = useMemo(() => loadLastSelection(aiEnabled), [aiEnabled])
 
   /** Answer a step: one history entry, so Back drops exactly this answer. */
   const setDraft = (next: Draft) => navigate(draftToPath(next))
 
-  /** Refine the current answer (seats) without adding a step to walk back through. */
-  const replaceDraft = (next: Draft) => navigate(draftToPath(next), { replace: true })
-
   /**
    * Normalise the address bar onto the canonical path for what is selected — `/play/solo/bring-a-deck`
-   * gains the shape that was auto-resolved for it, `?seats=99` loses a count no rule allows. Replace,
-   * never push, so tidying a URL never becomes an extra Back to press.
+   * gains the shape that was auto-resolved for it, a saved `?seats=4` loses a query that no longer
+   * answers anything. Replace, never push, so tidying a URL never becomes an extra Back to press.
    *
    * **It may only ever complete a path, never shorten one.** Shortening would mean acting on a
    * *reachability* verdict, and reachability depends on `aiEnabled`, which arrives with the connection
@@ -164,19 +158,13 @@ export function PlayWizard({
     const roster = draft.roster
     if (roster === null) return
     const open = shapeChoices(roster, cards).filter((c) => !c.disabledReason)
-    const only = open.length === 1 ? open[0]!.value : null
-    setDraft({
-      roster,
-      cards,
-      shape: only,
-      seats: only === null ? null : defaultSeats(seatRule(roster, cards, only)),
-    })
+    setDraft({ roster, cards, shape: open.length === 1 ? open[0]!.value : null })
   }
 
   const pickShape = (shape: ShapeId) => {
     const { roster, cards } = draft
     if (roster === null || cards === null) return
-    setDraft({ roster, cards, shape, seats: defaultSeats(seatRule(roster, cards, shape)) })
+    setDraft({ roster, cards, shape })
   }
 
   /**
@@ -190,7 +178,7 @@ export function PlayWizard({
     switch (target) {
       case 'roster': return setDraft(EMPTY)
       case 'cards': return setDraft({ ...EMPTY, roster: draft.roster })
-      case 'shape': if (shapeIsAQuestion) setDraft({ ...draft, shape: null, seats: null })
+      case 'shape': if (shapeIsAQuestion) setDraft({ ...draft, shape: null })
     }
   }
 
@@ -205,7 +193,7 @@ export function PlayWizard({
 
   const complete: Selection | null =
     draft.roster !== null && draft.cards !== null && draft.shape !== null
-      ? { roster: draft.roster, cards: draft.cards, shape: draft.shape, seats: draft.seats ?? 2 }
+      ? { roster: draft.roster, cards: draft.cards, shape: draft.shape }
       : null
 
   return (
@@ -277,10 +265,6 @@ export function PlayWizard({
                 </span>
               ))}
             </p>
-            <SeatControl
-              selection={complete}
-              onChange={(seats) => replaceDraft({ ...complete, seats })}
-            />
             <button
               type="button"
               className={styles.primaryButton}
@@ -413,51 +397,6 @@ function WizardStepper({
 }
 
 /**
- * How many seats the lobby opens with — an optional narrowing, not a question to get past.
- *
- * It defaults to the maximum and the caption says so, because for a group the count is a *cap*:
- * `startBlockReason` only ever counts the players actually present, so the host starts when everyone
- * has arrived and nobody has to predict the number up front. `TournamentLobbySettings` has the same
- * control, so it stays changeable afterwards too.
- *
- * Only rendered when there is something to narrow: a pair is always two, Two-Headed Giant is always
- * four. The allowed counts are an explicit list rather than a range because Team vs. Team needs an
- * even number — a slider with holes in it is a control that lets you pick something the start button
- * then refuses.
- */
-function SeatControl({
-  selection,
-  onChange,
-}: {
-  selection: Selection
-  onChange: (seats: number) => void
-}) {
-  const rule = seatRule(selection.roster, selection.cards, selection.shape)
-  if (rule.fixed || rule.values.length <= 1) return null
-  return (
-    <span className={styles.wizardSeats}>
-      <span className={styles.wizardSeatsRow}>
-        <span className={styles.wizardSubLabel}>{rule.label}</span>
-        <div className={styles.settingsButtons}>
-          {rule.values.map((n) => (
-            <button
-              key={n}
-              type="button"
-              className={`${styles.settingsButton} ${n === selection.seats ? styles.settingsButtonActive : ''}`}
-              data-testid={`wizard-seats-${n}`}
-              onClick={() => onChange(n)}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-      </span>
-      <p className={styles.wizardSeatsCaption}>{rule.caption}</p>
-    </span>
-  )
-}
-
-/**
  * One step's options.
  *
  * Disabled tiles stay visible with their reason on hover, which is the same rule the lobby's axis
@@ -546,14 +485,15 @@ function loadLastSelection(aiEnabled: boolean): Selection | null {
     return null
   }
   if (typeof parsed !== 'object' || parsed === null) return null
-  const { roster, cards, shape, seats } = parsed as Partial<Selection>
-  if (!roster || !cards || !shape || typeof seats !== 'number') return null
+  // A selection stored before the wizard stopped asking for seats carries a `seats` field; it is
+  // simply ignored, which is the same thing a stale `?seats=` link gets.
+  const { roster, cards, shape } = parsed as Partial<Selection>
+  if (!roster || !cards || !shape) return null
   if (roster === 'SOLO' && !aiEnabled) return null
 
   const cardsOk = cardsChoices(roster).some((c) => c.value === cards.kind && !c.disabledReason)
   const shapeOk = shapeChoices(roster, cards).some((c) => c.value === shape && !c.disabledReason)
   if (!cardsOk || !shapeOk) return null
 
-  const rule = seatRule(roster, cards, shape)
-  return { roster, cards, shape, seats: rule.values.includes(seats) ? seats : defaultSeats(rule) }
+  return { roster, cards, shape }
 }
