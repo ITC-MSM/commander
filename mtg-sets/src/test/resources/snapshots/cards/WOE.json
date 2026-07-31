@@ -1312,6 +1312,146 @@
     ]
 }
 
+// Beseech the Mirror
+{
+    "name": "Beseech the Mirror",
+    "manaCost": "{1}{B}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nSearch your library for a card, exile it face down, then shuffle. If this spell was bargained, you may cast the exiled card without paying its mana cost if that spell's mana value is 4 or less. Put the exiled card into your hand if it wasn't cast this way.",
+    "keywords": [
+        "BARGAIN"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact|enchantment|token"
+                }
+            },
+            "displayPrefix": "Bargain",
+            "keyword": "BARGAIN",
+            "declaredSlot": "BARGAINED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library"
+                    },
+                    "storeAs": "beseechLibrary"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "beseechLibrary",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "beseechFound",
+                    "prompt": "Search your library for a card"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "beseechFound",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile"
+                    },
+                    "faceDown": "HIDDEN",
+                    "storeMovedAs": "beseechExiled"
+                },
+                "ShuffleLibrary",
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "BARGAINED"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "FilterCollection",
+                                "from": "beseechExiled",
+                                "filter": {
+                                    "type": "ManaValueAtMost",
+                                    "max": {
+                                        "type": "Fixed",
+                                        "amount": 4
+                                    }
+                                },
+                                "storeMatching": "beseechCastable"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "beseechCastable",
+                                "ifNotEmpty": {
+                                    "type": "Gated",
+                                    "gate": "Gate.MayDecide",
+                                    "then": {
+                                        "type": "CastFromCollectionWithoutPayingCost",
+                                        "from": "beseechCastable"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "beseechExiled",
+                    "filter": {
+                        "type": "InZone",
+                        "zone": "Exile"
+                    },
+                    "storeMatching": "beseechUncast"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "beseechUncast",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "MYTHIC",
+        "artist": "Cynthia Sheppard",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/8/18c59776-e1f1-4197-a128-db1d603f56b7.jpg?1783915111",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "You may sacrifice only one artifact, enchantment, or token to pay a spell's bargain cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you copy a bargained spell, the copy is also bargained."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Besotted Knight
 {
     "name": "Besotted Knight",
@@ -5443,6 +5583,84 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Gadwick's First Duel
+{
+    "name": "Gadwick's First Duel",
+    "manaCost": "{1}{U}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Create a Cursed Role token attached to up to one target creature. (If you control another Role on it, put that one into the graveyard. Enchanted creature is 1/1.)\nII — Scry 2.\nIII — When you next cast an instant or sorcery spell with mana value 3 or less this turn, copy that spell. You may choose new targets for the copy.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "CreateRoleToken",
+                    "roleName": "Cursed Role",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "Scry",
+                    "count": 2
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "CopyNextSpellCast",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            },
+                            {
+                                "type": "ManaValueAtMost",
+                                "max": 3
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Seaman",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af07c47f-8b4e-43cb-b469-2efb82aa5590.jpg?1783915120",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If you don't choose a target for the first chapter ability, the Cursed Role token won't be created."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "The copy is created on the stack, so it isn't cast."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
