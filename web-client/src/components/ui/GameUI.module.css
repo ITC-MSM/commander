@@ -985,6 +985,10 @@
   transition: all 0.2s;
   margin-bottom: var(--space-3);
   min-width: 0;
+  width: auto;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 
 @media (max-width: 639px) {
@@ -1024,6 +1028,62 @@
 
 .inviteCopyLabelCopied {
   color: var(--color-accent);
+}
+
+/* One role-aware answer to “what do I do now?”, placed between sharing the lobby and the controls
+   that fulfil it. The server snapshot remains authoritative; this only explains its current state. */
+.lobbyGuidance {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  background: var(--bg-panel-light);
+}
+
+.lobbyGuidanceAction {
+  border-color: rgba(79, 195, 247, 0.32);
+  background: rgba(79, 195, 247, 0.07);
+}
+
+.lobbyGuidanceWaiting {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.lobbyGuidanceReady {
+  border-color: rgba(76, 175, 80, 0.35);
+  background: rgba(76, 175, 80, 0.08);
+}
+
+.lobbyGuidanceIcon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border-radius: 50%;
+  background: var(--bg-surface-4);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-bold);
+}
+
+.lobbyGuidanceBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lobbyGuidanceBody strong {
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+}
+
+.lobbyGuidanceBody span {
+  color: var(--text-faint);
+  font-size: var(--font-xs, 0.75rem);
+  line-height: 1.4;
 }
 
 /* =========================================================================

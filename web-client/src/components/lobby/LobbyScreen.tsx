@@ -183,10 +183,12 @@ export function LobbyScreen() {
 
         {view.invitable && (
           <div style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'stretch', gap: 8 }}>
-            <div
+            <button
+              type="button"
               onClick={copyLobbyId}
               className={`${styles.inviteBox} ${copied ? styles.inviteBoxCopied : ''}`}
               style={{ flex: 1, marginBottom: 0, justifyContent: 'space-between' }}
+              aria-label={copied ? 'Invite code copied' : `Copy invite code ${view.lobbyId}`}
             >
               <div>
                 <div style={{ color: 'var(--text-disabled)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
@@ -200,10 +202,24 @@ export function LobbyScreen() {
               >
                 {copied ? 'Copied!' : 'Copy'}
               </span>
-            </div>
+            </button>
             <JoinQrModal url={buildJoinUrl(view.lobbyId)} />
           </div>
         )}
+
+        <div
+          className={`${styles.lobbyGuidance} ${styles[`lobbyGuidance${capitalize(view.guidance.tone)}`]}`}
+          role="status"
+          data-testid="lobby-guidance"
+        >
+          <span className={styles.lobbyGuidanceIcon} aria-hidden>
+            {view.guidance.tone === 'ready' ? '✓' : view.guidance.tone === 'action' ? '→' : '…'}
+          </span>
+          <div className={styles.lobbyGuidanceBody}>
+            <strong>{view.guidance.title}</strong>
+            <span>{view.guidance.detail}</span>
+          </div>
+        </div>
 
         {/* Deck section. The two kinds genuinely differ here: a quick lobby submits as you pick
             (and un-readies you when you change your mind), while a premade tournament lobby has an
@@ -404,9 +420,6 @@ export function LobbyScreen() {
           )}
         </div>
 
-        {view.isWaiting && !view.isHost && view.startModel === 'HOST_START' && (
-          <p className={styles.waitingHint}>Waiting for host to start the game...</p>
-        )}
       </div>
 
       {aiDeckSeat && (() => {
@@ -567,6 +580,10 @@ function statusClass(tone: 'ready' | 'joined' | 'disconnected'): string {
     case 'disconnected': return styles.playerStatusDisconnected ?? ''
     case 'joined': return styles.playerStatusJoined ?? ''
   }
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 function MomirCrest() {

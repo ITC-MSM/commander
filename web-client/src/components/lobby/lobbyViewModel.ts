@@ -85,6 +85,13 @@ export interface LobbyPrimaryAction {
   reason: string | undefined
 }
 
+/** The role-aware sentence at the top of the lobby: what this viewer should do next. */
+export interface LobbyGuidance {
+  title: string
+  detail: string
+  tone: 'action' | 'waiting' | 'ready'
+}
+
 export interface UnifiedLobbyView {
   kind: LobbyKind
   lobbyId: string
@@ -103,6 +110,8 @@ export interface UnifiedLobbyView {
   startModel: StartModel
   /** The one action button beside Leave, or null when there is nothing for this viewer to press. */
   primaryAction: LobbyPrimaryAction | null
+  /** Viewer-specific next step, derived only from the server's lobby snapshot. */
+  guidance: LobbyGuidance
   isPublic: boolean
   /** Whether the host may currently add an AI seat. */
   canAddAi: boolean
@@ -156,6 +165,14 @@ export function fromQuickGameLobby(
         : `Deck: ${p.deckLabel}`,
     tone: p.ready ? 'ready' : 'joined',
   }))
+  const guidance = quickGuidance({
+    players,
+    isHost,
+    youReady,
+    needsDeck,
+    needsAiCommander,
+    invitable: !lobby.vsAi,
+  })
 
   return {
     kind: 'QUICK',
@@ -184,6 +201,7 @@ export function fromQuickGameLobby(
               ? 'Pick a Commander deck for the AI'
               : undefined,
         },
+    guidance,
     isPublic: lobby.isPublic,
     canAddAi: isHost && opts.aiEnabled && !lobby.vsAi && lobby.players.length < 2,
     ranked: { available: lobby.rankedEligible ?? false, on: lobby.ranked ?? false },
@@ -192,6 +210,69 @@ export function fromQuickGameLobby(
     teams: { mode: 'NONE' },
     // A quick lobby's only start condition is "pick a deck", which the deck picker answers directly.
     blockGroup: null,
+  }
+}
+
+function quickGuidance({
+  players,
+  isHost,
+  youReady,
+  needsDeck,
+  needsAiCommander,
+  invitable,
+}: {
+  players: readonly LobbyViewPlayer[]
+  isHost: boolean
+  youReady: boolean
+  needsDeck: boolean
+  needsAiCommander: boolean
+  invitable: boolean
+}): LobbyGuidance {
+  const other = players.find((p) => !p.isYou)
+
+  if (needsDeck) {
+    return {
+      title: 'Choose your deck',
+      detail: 'Your selection is saved automatically. When it is valid, mark yourself ready below.',
+      tone: 'action',
+    }
+  }
+  if (needsAiCommander) {
+    return {
+      title: 'Choose a deck for the AI',
+      detail: 'Commander games need an AI deck with a designated commander.',
+      tone: 'action',
+    }
+  }
+  if (youReady) {
+    return {
+      title: 'You’re ready',
+      detail: other?.tone === 'ready'
+        ? 'Everyone is ready. The game is starting.'
+        : `Waiting for ${other?.name ?? 'the other player'} to get ready. You can cancel ready below.`,
+      tone: 'ready',
+    }
+  }
+  if (invitable && !other) {
+    return {
+      title: isHost ? 'Invite your opponent' : 'Waiting for the host',
+      detail: isHost
+        ? 'Copy the invite code or share the QR code. You can choose your deck while you wait.'
+        : 'The host will invite the other player.',
+      tone: 'waiting',
+    }
+  }
+  if (other?.tone === 'ready') {
+    return {
+      title: `${other.name} is ready`,
+      detail: 'Mark yourself ready below to start the game.',
+      tone: 'action',
+    }
+  }
+  return {
+    title: 'Ready when you are',
+    detail: 'Mark yourself ready below. The game starts automatically when both players are ready.',
+    tone: 'action',
   }
 }
 
@@ -243,12 +324,19 @@ export function fromTournamentLobby(
     isHost: p.isHost,
     isAi: p.isAi,
     isConnected: p.isConnected,
-    status: !p.isConnected ? 'Disconnected' : p.deckSubmitted ? 'Deck Ready' : 'Joined',
+    status: !p.isConnected ? 'Disconnected' : p.deckSubmitted ? 'Deck Ready' : 'In lobby',
     tone: !p.isConnected ? 'disconnected' : p.deckSubmitted ? 'ready' : 'joined',
     aiDeck: p.isAi && aiDeckIsChosen ? (p.aiDeck ?? { kind: 'auto' }) : null,
   }))
 
   const blockReason = startBlockReason(lobbyState)
+  const guidance = tournamentGuidance({
+    players,
+    isHost: lobbyState.isHost,
+    isWaiting,
+    bringsDeck: axes.cards.kind === 'BRING_A_DECK',
+    blockReason: blockReason?.reason ?? null,
+  })
 
   return {
     kind: 'TOURNAMENT',
@@ -271,6 +359,7 @@ export function fromTournamentLobby(
           reason: blockReason?.reason,
         }
       : null,
+    guidance,
     blockGroup: blockReason?.group ?? null,
     isPublic: s.isPublic,
     // Commander AI is available when the host brings its deck and designates its commander.
@@ -280,6 +369,66 @@ export function fromTournamentLobby(
     // Ranked is a 1v1-bracket-only concept server-side (`TournamentLobby.rankedEligible`).
     ranked: { available: axes.table === 'ONE_V_ONE', on: s.ranked ?? false },
     teams: tournamentTeams(lobbyState),
+  }
+}
+
+function tournamentGuidance({
+  players,
+  isHost,
+  isWaiting,
+  bringsDeck,
+  blockReason,
+}: {
+  players: readonly LobbyViewPlayer[]
+  isHost: boolean
+  isWaiting: boolean
+  bringsDeck: boolean
+  blockReason: string | null
+}): LobbyGuidance {
+  if (!isWaiting) {
+    return {
+      title: 'Event in progress',
+      detail: 'The lobby will move everyone on when the current stage is complete.',
+      tone: 'waiting',
+    }
+  }
+
+  const you = players.find((p) => p.isYou)
+  if (!isHost) {
+    if (bringsDeck && you?.tone !== 'ready') {
+      return {
+        title: 'Choose and submit your deck',
+        detail: 'The host can start after every connected player has submitted a deck.',
+        tone: 'action',
+      }
+    }
+    return {
+      title: bringsDeck ? 'Your deck is submitted' : 'You’re in the lobby',
+      detail: 'The host controls the settings and will start when everyone is ready.',
+      tone: bringsDeck ? 'ready' : 'waiting',
+    }
+  }
+
+  if (players.length < 2) {
+    return {
+      title: 'Invite players',
+      detail: 'Share the invite code above. You can finish configuring the lobby while they join.',
+      tone: 'waiting',
+    }
+  }
+  if (blockReason) {
+    return {
+      title: blockReason.startsWith('All connected players')
+        ? 'Waiting for deck submissions'
+        : 'Finish the lobby setup',
+      detail: blockReason,
+      tone: 'action',
+    }
+  }
+  return {
+    title: 'Ready to start',
+    detail: 'The player count and settings are valid. Start the event when your group is ready.',
+    tone: 'ready',
   }
 }
 
