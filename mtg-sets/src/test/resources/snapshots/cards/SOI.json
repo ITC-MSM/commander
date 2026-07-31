@@ -676,6 +676,106 @@
     ]
 }
 
+// Harvest Hand
+{
+    "name": "Harvest Hand",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Scarecrow",
+    "oracleText": "When this creature dies, return it to the battlefield transformed under your control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": "ReturnSelfFromZoneTransformed",
+                "descriptionOverride": "When Harvest Hand dies, return it to the battlefield transformed under your control."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Scrounged Scythe",
+        "manaCost": "",
+        "typeLine": "Artifact — Equipment",
+        "oracleText": "Equipped creature gets +1/+1.\nAs long as equipped creature is a Human, it has menace.\nEquip {2}",
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{2}"
+                        }
+                    },
+                    "effect": {
+                        "type": "AttachEquipment",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature you control"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            },
+                            "id": "creature you control"
+                        }
+                    ],
+                    "timing": "SorcerySpeed",
+                    "isEquipAbility": true
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1
+                },
+                {
+                    "type": "ConditionalStaticAbility",
+                    "ability": {
+                        "type": "GrantKeyword",
+                        "keyword": "MENACE"
+                    },
+                    "condition": {
+                        "type": "EntityMatches",
+                        "entity": "EquippedCreature",
+                        "filter": "creature Human"
+                    }
+                }
+            ]
+        },
+        "equipCost": "{2}",
+        "metadata": {
+            "collectorNumber": "256",
+            "rarity": "UNCOMMON",
+            "artist": "Jason Felix",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/d/0d200f98-3377-46a3-9197-3cbd95d03dbf.jpg?1783937712"
+        },
+        "colorIdentityOverride": [],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "UNCOMMON",
+        "artist": "Jason Felix",
+        "flavorText": "The harvest is never finished.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0d200f98-3377-46a3-9197-3cbd95d03dbf.jpg?1783937712"
+    },
+    "colorIdentityOverride": []
+}
+
 // Howlpack Resurgence
 {
     "name": "Howlpack Resurgence",

@@ -13,7 +13,9 @@ docs it points at; load those when the work needs them.
 
 - **Focus on your own work.** If a change you didn't make breaks the build, report it and stop. Never
   revert, stash, or discard others' changes — that's likely another agent's in-flight work. Pause until
-  the user confirms it's safe to continue.
+  the user confirms it's safe to continue. If the user confirms or explicitly asks for a PR despite the
+  unrelated failure, opening the PR is allowed; disclose the failure and the verification that did pass
+  in the PR body.
 - **Route to the matching skill, don't freelance:**
   - Implementing a card, from a backlog file or by name → **`add-card`** (Scryfall lookup, oracle
     errata, canonical-printing placement, scenario test).
