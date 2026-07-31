@@ -17,17 +17,9 @@ import type { DeckFormat, TournamentFormat } from '@/types'
 import { gameModeForTable, type CardsKind, type RulesAxis, type TableAxis } from './axes'
 import type { RecreateSpec } from './axisChoices'
 import type { UnifiedLobbyView } from './lobbyViewModel'
-import { setPendingDeckTab } from './pendingDeckTab'
+import { BOOTSTRAP_SET_CODE } from './useApplyRecipe'
+import { setPendingLobbyIntent } from '@/store/slices/pendingLobbyIntent'
 import type { DeckPickerTab } from '../ui/DeckPicker'
-
-/**
- * Starting set selection for a lobby created from inside another lobby.
- *
- * The server requires at least one set code even for `PREMADE_DECKS`, which generates no boosters
- * and ignores it entirely. Sets are then configured in the lobby, so this is only ever a starting
- * point — the home screen's `launchPreset` uses the same constant for the same reason.
- */
-export const DEFAULT_LOBBY_SET_CODE = 'ECL'
 
 export interface LobbyCommands {
   /** Cards values the current lobby can express directly. Recreate goes through {@link recreate}. */
@@ -102,11 +94,15 @@ export function useLobbyCommands(
         // has to move the picker itself — otherwise the new lobby opens on "Bring a deck". Leaving
         // has already unmounted this screen (both slices are null until the new lobby arrives), so
         // the tab is handed to the *next* one rather than set on this one.
-        setPendingDeckTab(spec.deckTab)
+        setPendingLobbyIntent({ deckTab: spec.deckTab })
         s().createQuickGameLobby(false, undefined, view.isPublic, spec.format ?? undefined, spec.momirBasic)
       } else {
+        // A recreate deliberately does *not* carry the old lobby's settings across: the confirm
+        // dialog has just told the host that "set selection and any submitted decks are reset",
+        // because the new lobby is a different shape and most of what was configured wouldn't mean
+        // the same thing. It is the one path that still opens on the bootstrap set.
         s().createTournamentLobby(
-          [DEFAULT_LOBBY_SET_CODE], spec.format, 6, 8, 45, view.isPublic, spec.gameMode,
+          [BOOTSTRAP_SET_CODE], spec.format, 6, 8, 45, view.isPublic, spec.gameMode,
         )
       }
     }

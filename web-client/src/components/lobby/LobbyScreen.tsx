@@ -34,7 +34,7 @@ import { TeamChip, TournamentLobbySettings } from './TournamentLobbySettings'
 import { rulesFromLobbySettings } from './axes'
 import { recreateTargetLabel, type RecreateSpec } from './axisChoices'
 import { fromQuickGameLobby, fromTournamentLobby, type UnifiedLobbyView } from './lobbyViewModel'
-import { takePendingDeckTab } from './pendingDeckTab'
+import { takePendingLobbyIntent } from '@/store/slices/pendingLobbyIntent'
 import { useLobbyCommands } from './useLobbyCommands'
 import styles from '../ui/GameUI.module.css'
 
@@ -47,9 +47,11 @@ export function LobbyScreen() {
   // Deck-picker state the Cards axis needs to read: its validity gates the ready button, and its
   // tab *is* the Cards value on a quick lobby (Random pool is the Random tab).
   const [deckValid, setDeckValid] = useState(true)
-  // Seeded from whatever created this lobby: the landing wizard and the cross-kind recreate both
-  // promise a Random pool from outside any mounted lobby screen. See `pendingDeckTab.ts`.
-  const [deckTab, setDeckTab] = useState<DeckPickerTab | undefined>(takePendingDeckTab)
+  // Whatever created this lobby had things to say about it that no message could carry — which tab
+  // the deck picker opens on, which saved deck to preselect, whether to start straight away, and
+  // anything a setup couldn't restore. Read once, on mount. See `pendingLobbyIntent.ts`.
+  const [intent] = useState(takePendingLobbyIntent)
+  const [deckTab, setDeckTab] = useState<DeckPickerTab | undefined>(intent?.deckTab)
   const [copied, setCopied] = useState(false)
   // Which source the AI-deck control is on. Lifted out of `AiOpponentRow` because its "Pick a
   // deck" picker renders outside the settings panel the row lives in (see `AiDeckSection`).
