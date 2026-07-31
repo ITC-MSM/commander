@@ -1139,71 +1139,13 @@
   min-width: 0;
 }
 
-.settingsGroupSummaryRow,
-.settingsGroupToggle {
+.settingsGroupSummaryRow {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-2);
   max-width: 100%;
-}
-
-/* The summary line *is* the collapse control, not a caption beside one.
-   It replaced a 28px `⌄` in `--text-disabled` sitting off to the right of a grey status line —
-   between them there was nothing on a collapsed group that looked pressable, which is how a host
-   ends up never finding the attack rule or the private/public switch. So: full-width hit target, a
-   hover state, and the word `Edit`/`Hide` next to the chevron. `text-align: right` keeps it aligned
-   with the axis strip above it, since the header's main column is right-aligned. */
-.settingsGroupToggle {
-  margin: 0;
-  padding: 3px 6px;
-  background: none;
-  border: none;
-  border-radius: var(--radius-md);
-  color: inherit;
-  font: inherit;
-  text-align: right;
-  cursor: pointer;
-}
-
-.settingsGroupToggle:hover {
-  background: var(--bg-panel-hover);
-}
-
-.settingsGroupToggle:hover .settingsGroupMore {
-  color: var(--text-primary);
-  border-color: var(--border-strong);
-}
-
-.settingsGroupToggle:focus-visible {
-  outline: 1px solid var(--border-strong);
-  outline-offset: 1px;
-}
-
-.settingsGroupMore {
-  flex-shrink: 0;
-  padding: 1px 6px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-xs, 0.75rem);
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-
-/* What's inside that the host can't guess is inside — "+ Attack rule". Accent-coloured because it
-   is the one part of a collapsed header that is an invitation rather than a readout. */
-.settingsGroupSituational {
-  font-size: var(--font-xs, 0.75rem);
-  color: var(--color-accent);
-  text-align: right;
-}
-
-/* Why this group just opened by itself. */
-.settingsGroupRevealed {
-  font-size: var(--font-xs, 0.75rem);
-  color: var(--color-accent);
-  text-align: right;
 }
 
 .settingsGroupSummary {

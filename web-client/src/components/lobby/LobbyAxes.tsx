@@ -13,9 +13,8 @@
  * **Cards**, never to a peer. That rule is what stopped "Format" from meaning two different things
  * again, and it is now also the seam the settings groups are cut along (`settingsGroups.ts`).
  *
- * Each axis therefore exports two pieces rather than one row: a **strip** of buttons, which lives in
- * its group's header and is never hidden, and a **body** of sub-options and captions, which the
- * group collapses. Reading order across the groups is unchanged: what deck → under what rules → at
+ * Each axis therefore exports two pieces rather than one row: a **strip** of buttons in the group
+ * header and an always-visible **body** of sub-options and captions. Reading order is unchanged: what deck → under what rules → at
  * what table → over how many games.
  */
 import { useEffect } from 'react'
@@ -104,7 +103,7 @@ export function EventAxisStrip({ view, onRecreate }: AxisProps) {
   )
 }
 
-/* ── Bodies: the sub-options and captions a group collapses ───────────────── */
+/* ── Bodies: always-visible sub-options and captions ──────────────────── */
 
 export function CardsAxisBody({ view, commands }: Omit<AxisProps, 'onRecreate'>) {
   const cards = view.axes.cards

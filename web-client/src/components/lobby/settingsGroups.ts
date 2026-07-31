@@ -21,24 +21,20 @@
  * deck are facts about *this room*, not about the game being played, and they are the rows a saved
  * setup is least likely to be about.
  *
- * ## Grouped, but not hidden
+ * ## Grouped, never hidden
  *
- * The groups **open by default** — see `useGroupOpenState`. They were briefly collapsed by default,
- * and the result was a host who never found the Free-for-All attack rule or the private/public
- * switch, which is the whole reason grouping had to earn its keep some other way. It still does: the
- * five headers are what turns twenty rows into five answers you can scan, and collapsing the ones
- * you're done with is one click.
+ * Every relevant row stays visible. The five headers turn the long form into answers that can be
+ * scanned without making discoverability depend on opening the right section.
  *
  * The project's standing rule is *disabled-with-reason over hiding* — every greyed option is a
  * tracked server gap, and rendering it teaches the shape of the system. Nothing here bends it: each
  * group header carries its axis's full button strip, every value keeps its reason and its `⇄`, and
- * the refinements below are on screen unless the host put them away.
+ * the refinements below remain on screen.
  *
  * Two guards, still:
  *
- * - a group holding the reason Start is disabled is open and shows a `!` even if the host collapsed
- *   it — see {@link blockingGroupFor}, which reads the same `startBlockReason` that writes the
- *   button's tooltip rather than a second hand-maintained mapping;
+ * - a group holding the reason Start is disabled shows a `!`; the mapping reads the same
+ *   `startBlockReason` that writes the button's tooltip;
  * - a group is never a scroll container. `.lobbyOverlay` remains the single one, which is the lesson
  *   written into `GameUI.module.css` after an earlier attempt at a scrolling settings panel produced
  *   three competing scrollbars.
@@ -86,11 +82,8 @@ export function groupTopicId(id: GroupId, view: UnifiedLobbyView): string | null
 }
 
 /**
- * The live values a collapsed group is holding — "ECL + BLB · 6 packs · 45s".
- *
- * This is what makes collapsing honest rather than merely tidier: a host scanning five headers can
- * see what every group currently *is* without opening any of them, and only opens the one that is
- * wrong. It deliberately names values, never row labels: "45s" is useful, "Pick timer" is not.
+ * Compact live values for a group — "ECL + BLB · 6 packs · 45s". These remain useful as an
+ * overview even though the controls are always visible.
  */
 export function groupSummary(id: GroupId, view: UnifiedLobbyView, lobbyState: LobbyState | null): string {
   const s = lobbyState?.settings
@@ -143,63 +136,6 @@ export function groupSummary(id: GroupId, view: UnifiedLobbyView, lobbyState: Lo
     }
   }
   return parts.join(' · ')
-}
-
-/**
- * The options inside this group that only exist in *some* lobby shapes.
- *
- * The attack rule appears when the table goes Free-for-All, teams when it goes 2HG, ranked when the
- * bracket qualifies, the AI seat's deck when the opponent is a bot. Since the groups open by default
- * these are normally just *on screen*, which is the point. This list is for the two cases where they
- * aren't:
- *
- * - a group the host collapsed **re-opens** when one of them appears, and says which — see
- *   {@link useGroupOpenState}. Collapsing Table an hour ago wasn't a decision to decline a control
- *   that didn't exist yet.
- * - a group the host is keeping collapsed still **names them in its header** (`+ Attack rule`), so
- *   the fact that there is a decision in there survives being put away.
- *
- * Yes, these conditions are stated a second time here (the first is the `&&` in front of each row).
- * That is the same trade `groupSummary` above already makes, and for the same reason: nothing else
- * knows what a *collapsed* group contains. Keep the two in step — a row whose gate changes changes
- * here too.
- *
- * Cards is deliberately empty: its rows are unconditional for any non-premade pool, so a collapsed
- * Cards is never withholding a surprise, and its summary already names every value it holds.
- */
-export function situationalOptions(
-  id: GroupId,
-  view: UnifiedLobbyView,
-  lobbyState: LobbyState | null,
-): readonly string[] {
-  const s = lobbyState?.settings
-  const out: string[] = []
-
-  switch (id) {
-    case 'CARDS':
-      break
-    case 'RULES':
-      if (s && view.axes.rules === 'COMMANDER' && s.format !== 'PREMADE_DECKS') out.push('Deck rules')
-      break
-    case 'TABLE':
-      if (view.teams.mode !== 'NONE') out.push('Teams')
-      if (s?.gameMode === 'FREE_FOR_ALL') out.push('Attack rule')
-      break
-    case 'EVENT':
-      if (s && view.axes.event === 'ROUND_ROBIN') out.push('Games per matchup')
-      if (view.ranked.available) out.push('Ranked')
-      break
-    case 'LOBBY':
-      if (view.invitable) out.push('Private / public')
-      // A quick lobby with nobody to invite is the vs-AI one — see `UnifiedLobbyView.invitable`.
-      // Momir hands every seat the same 60 basics, so its AI seat has no deck to pick.
-      if (view.kind === 'QUICK' && !view.invitable && view.axes.cards.kind !== 'MOMIR') {
-        out.push('AI opponent deck')
-      }
-      if (s) out.push('AI assistance')
-      break
-  }
-  return out
 }
 
 function attackLabel(mode: LobbyState['settings']['attackMode'] | undefined): string {
