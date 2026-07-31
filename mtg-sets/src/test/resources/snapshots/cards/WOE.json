@@ -7901,6 +7901,99 @@
     ]
 }
 
+// Kellan, the Fae-Blooded
+{
+    "name": "Kellan, the Fae-Blooded",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Human Faerie",
+    "oracleText": "Double strike\nOther creatures you control get +1/+0 for each Aura and Equipment attached to Kellan.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "DOUBLE_STRIKE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "creature ctrl:you",
+                    "excludeSelf": true
+                },
+                "powerBonus": {
+                    "type": "EntityProperty",
+                    "entity": "Source",
+                    "numericProperty": "AttachmentCount"
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "230",
+        "rarity": "MYTHIC",
+        "artist": "Anna Steinbauer",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec5e2680-8b42-4571-ab45-4936aec51901.jpg?1783915063"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Birthright Boon",
+            "manaCost": "{1}{W}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Search your library for an Aura or Equipment card, reveal it, put it into your hand, then shuffle. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "Aura|Equipment"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Kindled Heroism
 {
     "name": "Kindled Heroism",
