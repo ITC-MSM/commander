@@ -44,26 +44,21 @@ import type { DeckPickerTab } from '../ui/DeckPicker'
 export const BOOTSTRAP_SET_CODE = 'ECL'
 
 /**
- * The set a lobby opens on when the recipe names none: the newest complete, non-extension set.
+ * The set a lobby opens on when the recipe names none: Lorwyn Eclipsed.
  *
  * The alternative considered — and rejected — was opening with *no* sets at all, so that nothing
  * is chosen on the host's behalf. It is more honest about what has been decided, but it is a
  * regression on the thing this whole change is for: every wizard-made draft lobby would need a set
  * picked before Start could be pressed, and the host has to open the picker whatever they want.
  *
- * A newest-set default is not the arbitrary `'ECL'` it replaces. It is the set most people mean by
- * "a draft", it is named in the lobby title and in the Sets chip the moment the lobby opens, and it
- * is one click to change. Extension sets are excluded because they can't carry a pool alone
- * (`startBlockReason` rejects an extension-only selection) and partial sets because their pool is
- * knowingly incomplete.
+ * Prefer the catalogue entry rather than blindly returning the bootstrap code, so an unusual server
+ * catalogue can still provide a usable complete, non-extension set. Extension sets can't carry a
+ * pool alone (`startBlockReason` rejects an extension-only selection), and partial sets have a
+ * knowingly incomplete pool.
  */
 function defaultSetCode(availableSets: readonly AvailableSet[]): string {
-  const usable = availableSets.filter((s) => !s.extensionSet && !s.partial && s.releaseDate)
-  const newest = usable.reduce<AvailableSet | null>(
-    (best, s) => (best === null || (s.releaseDate ?? '') > (best.releaseDate ?? '') ? s : best),
-    null,
-  )
-  return newest?.code ?? availableSets.find((s) => !s.extensionSet && !s.partial)?.code
+  return availableSets.find((s) => s.code === BOOTSTRAP_SET_CODE)?.code
+    ?? availableSets.find((s) => !s.extensionSet && !s.partial)?.code
     ?? BOOTSTRAP_SET_CODE
 }
 
