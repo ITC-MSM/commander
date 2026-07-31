@@ -1231,8 +1231,8 @@ function GameCardImpl({
         } : {}),
       }}
     >
-      {/* Token with art_crop image — render a custom card frame */}
-      {!faceDown && card.isToken && card.imageUri ? (
+      {/* Legacy art-only token images need a generated frame; full token-card images render directly. */}
+      {!faceDown && card.isToken && card.imageUri?.includes('/art_crop/') ? (
         <div style={{
           ...styles.tokenFrame,
           background: getTokenFrameGradient(card.colors),

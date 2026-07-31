@@ -644,7 +644,7 @@ export const styles: Record<string, React.CSSProperties> = {
     height: '100%',
     objectFit: 'cover',
   },
-  // Token card frame — art_crop image within a colored frame (MTG-style)
+  // Legacy token card frame — art_crop image within a colored frame (MTG-style)
   tokenFrame: {
     position: 'absolute',
     top: 0,

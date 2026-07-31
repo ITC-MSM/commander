@@ -27,7 +27,7 @@ import java.time.Duration
  * art behind [TokenArtData].
  *
  * For every registered set, fetches Scryfall's matching token set (`t<code>`) and writes one row
- * per token printing: name, `art_crop` image, P/T, colors. Sets with no token set on Scryfall
+ * per token printing: name, `normal` card image, P/T, colors. Sets with no token set on Scryfall
  * (everything before roughly Odyssey never had token *cards*) are skipped and reported.
  *
  * Run with: `./gradlew :mtg-sets:syncTokenArt`
@@ -41,7 +41,8 @@ import java.time.Duration
  * genuinely has no token set is recorded as an empty list (checked, none); a set whose fetch
  * *failed* is left absent, so a dropped request can never harden into "prints no tokens".
  *
- * Image form is `art_crop`, matching the art box in the client's generated token frame.
+ * Image form is `normal`, preserving the printed token's rules and reminder text. The client still
+ * supports legacy `art_crop` rows by rendering those inside its generated token frame.
  *
  * Rate limit: Scryfall asks for 50–100 ms between requests. Syncing ~150 sets back to back will
  * still trip the limiter, so we pace at 250 ms and back off exponentially on 429/503 — and abort
@@ -191,7 +192,7 @@ private fun fetchTokenSet(client: HttpClient, scryfallSet: String): Fetch {
 
 private fun toRow(card: JsonObject): Row? {
     val name = card["name"]?.jsonPrimitive?.contentOrNull ?: return null
-    val image = (card["image_uris"] as? JsonObject)?.get("art_crop")?.jsonPrimitive?.contentOrNull
+    val image = (card["image_uris"] as? JsonObject)?.get("normal")?.jsonPrimitive?.contentOrNull
         ?: return null
     // Emblems and art-series cards live in token sets too but are never minted by CreateToken.
     val typeLine = card["type_line"]?.jsonPrimitive?.contentOrNull.orEmpty()

@@ -362,7 +362,7 @@ function MobileCardPreview({ card }: { card: import('@/types').ClientCard }) {
           width: previewWidth,
           height: previewHeight,
         }}>
-          {card.isToken && card.imageUri ? (
+          {card.isToken && card.imageUri?.includes('/art_crop/') ? (
             <div style={{
               ...styles.tokenFrame,
               background: getTokenFrameGradient(card.colors),
