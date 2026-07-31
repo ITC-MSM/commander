@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Carnage, Crimson Chaos (SPM) — ETB reanimates a mv≤3 creature card and grants it "attacks each
@@ -60,8 +61,13 @@ class CarnageCrimsonChaosScenarioTest : FunSpec({
         driver.state.getBattlefield().contains(grunt) shouldBe true // reanimated
         driver.removeSummoningSickness(grunt) // so it can attack this turn
 
-        // The grunt attacks; it deals combat damage and is then sacrificed (granted trigger).
+        // The granted "attacks each combat if able" is enforced: declaring no attackers is illegal
+        // while the grunt can attack. (Regression: granted MustAttack lives in
+        // grantedStaticAbilities, not projection, so the point-of-use check must consult it.)
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(you, emptyList(), defendingPlayer = opponent).error shouldNotBe null
+
+        // The grunt attacks; it deals combat damage and is then sacrificed (granted trigger).
         driver.declareAttackers(you, listOf(grunt), defendingPlayer = opponent).error shouldBe null
         driver.passPriorityUntil(Step.COMBAT_DAMAGE)
         resolveStack(driver)

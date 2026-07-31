@@ -187,9 +187,10 @@ data class ExchangeLifeAndPowerEffect(
 }
 
 /**
- * Exchange the controller's life total with [target] player's (CR 701.12c — a simultaneous swap:
- * each becomes the other's former total). Emits gain/loss `LifeChangedEvent`s for both players so
- * lifelink / life-change triggers see them, and marks life gained/lost this turn.
+ * Exchange the controller's life total with [target] player's (CR 701.12c): each player gains or
+ * loses the life needed to reach the other's former total. Applied through the shared gain/lose-life
+ * primitives, so life-gain prevention/replacements and life-loss modification apply, and both
+ * players' `LifeChangedEvent`s fire for "whenever you gain/lose life" triggers.
  *
  * When [drawEqualToLifeLost] is true, the controller then draws a card for each point of life they
  * **lost** in the exchange (their former total minus their new total, when positive) — Mister
