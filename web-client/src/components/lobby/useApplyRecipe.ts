@@ -22,7 +22,7 @@
  */
 import { useCallback } from 'react'
 import { useGameStore } from '@/store/gameStore'
-import type { AiDeckSpec } from '@/types'
+import type { AiDeckSpec, AvailableSet } from '@/types'
 import {
   setPendingLobbyApply,
   setPendingLobbyIntent,
@@ -34,18 +34,38 @@ import type { LobbyRecipe, RecipeSettings } from './lobbyRecipe'
 import type { DeckPickerTab } from '../ui/DeckPicker'
 
 /**
- * The set a lobby is created with when the recipe names none.
+ * Last-resort set code, for a create that happens before the catalogue has arrived.
  *
  * The server requires at least one set code on `createTournamentLobby` and rejects the whole create
- * without one (`LobbyHandler:597`), so a lobby that is *meant* to open with no sets still has to be
- * born holding one. {@link applyRecipe} clears it in the queued update — which is why a wizard-made
- * draft lobby now opens on "No sets selected yet" instead of quietly pre-selecting this one.
- *
- * Left as an arbitrary code on purpose. A *good* default set would be a product choice ("newest
- * complete set", say); an arbitrary one that survives into the lobby is how people end up drafting
- * something they never picked.
+ * without one (`LobbyHandler:597`), so a lobby always has to be born holding *something*.
+ * {@link defaultSetCode} normally picks a real one; this is only the fallback for the first seconds
+ * of a connection, and for the cross-kind recreate, which has no recipe to consult.
  */
 export const BOOTSTRAP_SET_CODE = 'ECL'
+
+/**
+ * The set a lobby opens on when the recipe names none: the newest complete, non-extension set.
+ *
+ * The alternative considered — and rejected — was opening with *no* sets at all, so that nothing
+ * is chosen on the host's behalf. It is more honest about what has been decided, but it is a
+ * regression on the thing this whole change is for: every wizard-made draft lobby would need a set
+ * picked before Start could be pressed, and the host has to open the picker whatever they want.
+ *
+ * A newest-set default is not the arbitrary `'ECL'` it replaces. It is the set most people mean by
+ * "a draft", it is named in the lobby title and in the Sets chip the moment the lobby opens, and it
+ * is one click to change. Extension sets are excluded because they can't carry a pool alone
+ * (`startBlockReason` rejects an extension-only selection) and partial sets because their pool is
+ * knowingly incomplete.
+ */
+function defaultSetCode(availableSets: readonly AvailableSet[]): string {
+  const usable = availableSets.filter((s) => !s.extensionSet && !s.partial && s.releaseDate)
+  const newest = usable.reduce<AvailableSet | null>(
+    (best, s) => (best === null || (s.releaseDate ?? '') > (best.releaseDate ?? '') ? s : best),
+    null,
+  )
+  return newest?.code ?? availableSets.find((s) => !s.extensionSet && !s.partial)?.code
+    ?? BOOTSTRAP_SET_CODE
+}
 
 /**
  * The `boosterCount` that means "you choose" on a create message.
@@ -93,7 +113,7 @@ export function useApplyRecipe(): (recipe: LobbyRecipe, notes?: readonly string[
 
     const setCodes = settings.setCodes && settings.setCodes.length > 0
       ? [...settings.setCodes]
-      : [BOOTSTRAP_SET_CODE]
+      : [defaultSetCode(s.availableSets)]
     s.createTournamentLobby(
       setCodes,
       spec.format,
@@ -112,15 +132,7 @@ export function useApplyRecipe(): (recipe: LobbyRecipe, notes?: readonly string[
     const cube = cubeUpdateFor(settings)
     setPendingLobbyApply({
       ...(cube ? { cube } : {}),
-      settings: {
-        // Sets that the create had to invent are cleared here rather than left to be drafted.
-        // Premade Decks generates no boosters and ignores them entirely, so it keeps whatever it got.
-        ...(setCodes[0] === BOOTSTRAP_SET_CODE && !settings.setCodes?.length &&
-            spec.format !== 'PREMADE_DECKS'
-          ? { setCodes: [] }
-          : {}),
-        ...tournamentSettings(settings),
-      },
+      settings: tournamentSettings(settings),
       aiSeats: recipe.aiSeats,
     })
   }, [store])

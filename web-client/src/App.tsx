@@ -28,6 +28,7 @@ import { trackPageView } from './utils/analytics'
 import { randomBackground } from './utils/background'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from './store/gameStore'
+import { useRematch } from '@/components/lobby/useRematch'
 import { useViewingPlayer, useBattlefieldCards } from './store/selectors'
 import type { ClientAttacker, EntityId } from './types'
 import { GameOverReason } from './types'
@@ -441,6 +442,7 @@ function GameOverlay() {
   const returnToMenu = useGameStore((state) => state.returnToMenu)
   const enterEliminatedSpectate = useGameStore((state) => state.enterEliminatedSpectate)
   const navigate = useNavigate()
+  const rematch = useRematch()
 
   // Auto-dismiss is handled centrally in the store (setError schedules clearError), so it
   // works on every route — not just where this overlay happens to be mounted. The × button
@@ -474,6 +476,23 @@ function GameOverlay() {
                 style={overlayStyles.replayButton}
               >
                 Keep Watching
+              </button>
+            )}
+            {/* The quick lobby is destroyed when the game starts
+                (`QuickGameLobbyHandler.startGame` removes it), but the recipe that built it is not —
+                so a rematch is that recipe replayed, and for a vs-AI game every input is decidable
+                locally: no new protocol, no lobby to keep alive. A human 1v1 rematch needs the
+                server to re-seat both players and is deliberately not faked here.
+
+                A rematch and a saved setup are the same object with different seats: a rematch is
+                a recipe replayed with the seats intact, a setup is one replayed with them open. */}
+            {rematch && (
+              <button
+                onClick={rematch.play}
+                style={overlayStyles.button}
+                data-testid="game-over-play-again"
+              >
+                Play Again
               </button>
             )}
             <button
