@@ -46,6 +46,7 @@ import {
   groupLabel,
   groupSummary,
   groupTopicId,
+  situationalOptions,
   type GroupId,
 } from './settingsGroups'
 import { LobbyAxisSummary } from './LobbyAxisSummary'
@@ -96,10 +97,18 @@ export function LobbyScreen() {
 
   const commands = useLobbyCommands(view, setDeckTab)
   const capture = useCaptureRecipe(view, lobbyState, quickLobby, deckTab, savedDeckName)
-  const { isGroupOpen, toggleGroup } = useGroupOpenState(
+  // Which shape-dependent options each group is currently holding — read twice: named in the
+  // collapsed header, and diffed by `useGroupOpenState` to open a group the moment one appears.
+  const situational = view
+    ? (Object.fromEntries(
+        GROUP_IDS.map((id) => [id, situationalOptions(id, view, lobbyState)]),
+      ) as Record<GroupId, readonly string[]>)
+    : null
+  const { isGroupOpen, toggleGroup, revealedIn } = useGroupOpenState(
     view?.blockGroup ?? null,
     // A lobby a setup built already has its sets; a fresh one is about to need them.
     intent !== undefined,
+    situational,
   )
 
   /**
@@ -387,6 +396,8 @@ export function LobbyScreen() {
                   summary={groupSummary(id, view, lobbyState)}
                   axisStrip={axisStrip}
                   blocking={view.blockGroup === id ? view.primaryAction?.reason : undefined}
+                  situational={situational?.[id] ?? EMPTY_OPTIONS}
+                  revealed={revealedIn(id)}
                   open={isGroupOpen(id)}
                   onToggle={() => toggleGroup(id)}
                   testId={id.toLowerCase()}
@@ -577,18 +588,33 @@ function VisibilityRow({
 /**
  * Which settings groups are open, derived rather than hand-tuned.
  *
- * Three rules, in order:
+ * Four rules, in order:
  *
  * 1. **The group holding the reason Start is disabled is open.** Not a courtesy — it is what keeps
  *    collapsing compatible with the project's disabled-with-reason rule: nothing you need to act on
  *    can be hidden. It reads `view.blockGroup`, which comes from the same `startBlockReason` that
  *    writes the Start button's tooltip.
- * 2. **Cards is open on a lobby that wasn't launched from a setup**, because a fresh lobby's next
+ * 2. **A group that just gained an option opens itself**, and says which one. Switching the Table
+ *    axis to Free-for-All *creates* the attack rule; switching to Two-Headed Giant creates the team
+ *    setup. Landing that new decision inside a box the host has never expanded is how it stays
+ *    unfound — and the host is looking at the axis strip they just clicked, which is exactly where
+ *    the group that opens is. Only genuine appearances count (see {@link situationalOptions}); a
+ *    value changing inside an option that was already there does not re-open anything.
+ * 3. **Cards is open on a lobby that wasn't launched from a setup**, because a fresh lobby's next
  *    move is almost always choosing sets. A lobby a setup built already has them.
- * 3. Otherwise closed — and whatever the host opened or closed by hand wins over all of it, kept in
+ * 4. Otherwise closed — and whatever the host opened or closed by hand wins over all of it, kept in
  *    localStorage so it survives the recreate that switching an axis can cause.
+ *
+ * Rule 2 writes into the same overrides the host's own clicks use, rather than sitting beside them
+ * as a third source of truth: a group opened this way is a group the host can simply close again,
+ * and it stays closed.
  */
-function useGroupOpenState(blockGroup: GroupId | null, fromSetup: boolean) {
+function useGroupOpenState(
+  blockGroup: GroupId | null,
+  fromSetup: boolean,
+  /** Null until the lobby state has arrived — see the effect. */
+  situational: Record<GroupId, readonly string[]> | null,
+) {
   const [overrides, setOverrides] = useState<Partial<Record<GroupId, boolean>>>(() => {
     try {
       const raw = localStorage.getItem(GROUP_OPEN_KEY)
@@ -597,6 +623,35 @@ function useGroupOpenState(blockGroup: GroupId | null, fromSetup: boolean) {
       return {}
     }
   })
+  const [revealed, setRevealed] = useState<Partial<Record<GroupId, readonly string[]>>>({})
+  const previous = useRef<Record<GroupId, readonly string[]> | null>(null)
+
+  // Depend on the *contents*, not the object: `situational` is rebuilt every render because the view
+  // it derives from is.
+  const signature = situational
+    ? GROUP_IDS.map((id) => `${id}:${situational[id].join(',')}`).join('|')
+    : null
+  useEffect(() => {
+    // Nothing to compare against yet. Tracking the empty pre-state would make the lobby's *first*
+    // state message look like five groups' worth of options appearing at once, and open all of them.
+    if (!situational) return
+    const before = previous.current
+    previous.current = situational
+    // First state for this lobby: everything present arrived with it, so nothing "appeared".
+    if (!before) return
+
+    const gained: Partial<Record<GroupId, readonly string[]>> = {}
+    for (const id of GROUP_IDS) {
+      const added = situational[id].filter((option) => !before[id].includes(option))
+      if (added.length > 0) gained[id] = added
+    }
+    const ids = Object.keys(gained) as GroupId[]
+    if (ids.length === 0) return
+
+    setRevealed(gained)
+    setOverrides((prev) => persistOverrides({ ...prev, ...Object.fromEntries(ids.map((id) => [id, true])) }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature])
 
   const isGroupOpen = (id: GroupId): boolean => {
     if (blockGroup === id) return true
@@ -606,19 +661,24 @@ function useGroupOpenState(blockGroup: GroupId | null, fromSetup: boolean) {
   }
 
   const toggleGroup = (id: GroupId) => {
-    setOverrides((prev) => {
-      const next = { ...prev, [id]: !isGroupOpen(id) }
-      try {
-        localStorage.setItem(GROUP_OPEN_KEY, JSON.stringify(next))
-      } catch {
-        // Private browsing / full quota. Remembering the panel's shape is a nicety.
-      }
-      return next
-    })
+    // The "New:" note answered "why did this open?". Acting on the group is the answer being read.
+    setRevealed((prev) => (prev[id] ? { ...prev, [id]: undefined } : prev))
+    setOverrides((prev) => persistOverrides({ ...prev, [id]: !isGroupOpen(id) }))
   }
 
-  return { isGroupOpen, toggleGroup }
+  return { isGroupOpen, toggleGroup, revealedIn: (id: GroupId) => revealed[id] ?? EMPTY_OPTIONS }
 }
+
+function persistOverrides(next: Partial<Record<GroupId, boolean>>): Partial<Record<GroupId, boolean>> {
+  try {
+    localStorage.setItem(GROUP_OPEN_KEY, JSON.stringify(next))
+  } catch {
+    // Private browsing / full quota. Remembering the panel's shape is a nicety.
+  }
+  return next
+}
+
+const EMPTY_OPTIONS: readonly string[] = []
 
 const GROUP_OPEN_KEY = 'argentum-lobby-groups'
 

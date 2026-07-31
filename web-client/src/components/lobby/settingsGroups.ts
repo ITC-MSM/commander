@@ -140,6 +140,67 @@ export function groupSummary(id: GroupId, view: UnifiedLobbyView, lobbyState: Lo
   return parts.join(' · ')
 }
 
+/**
+ * The options inside this group that only exist in *some* lobby shapes — named, so the host can be
+ * told they are there.
+ *
+ * The attack rule appears when the table goes Free-for-All, teams when it goes 2HG, ranked when the
+ * bracket qualifies, the AI seat's deck when the opponent is a bot. Each is already gated correctly;
+ * the problem is that the gate opens *inside a collapsed group*, so a host who has never expanded
+ * "Table" has no way to learn that choosing Free-for-All just handed them a decision. A summary line
+ * reading "attack any" doesn't fix that — it reads as a fact about the game, not as a control.
+ *
+ * Two things consume this list:
+ *
+ * - the collapsed header names them (`+ Attack rule`), so they are discoverable on a lobby that was
+ *   restored from a saved setup or reloaded, where nothing "became" relevant during this session;
+ * - {@link useGroupOpenState} diffs it across renders and **opens the group** the moment one
+ *   appears, which is the case the header hint can't cover — the host is looking at the axis strip
+ *   they just clicked, not at the group three rows down.
+ *
+ * Yes, these conditions are stated a second time here (the first is the `&&` in front of each row).
+ * That is the same trade `groupSummary` above already makes, and for the same reason: nothing else
+ * knows what a *collapsed* group contains. Keep the two in step — a row whose gate changes changes
+ * here too.
+ *
+ * Cards is deliberately empty: it is the group that opens by default, its rows are unconditional for
+ * any non-premade pool, and its summary already names every value it holds.
+ */
+export function situationalOptions(
+  id: GroupId,
+  view: UnifiedLobbyView,
+  lobbyState: LobbyState | null,
+): readonly string[] {
+  const s = lobbyState?.settings
+  const out: string[] = []
+
+  switch (id) {
+    case 'CARDS':
+      break
+    case 'RULES':
+      if (s && view.axes.rules === 'COMMANDER' && s.format !== 'PREMADE_DECKS') out.push('Deck rules')
+      break
+    case 'TABLE':
+      if (view.teams.mode !== 'NONE') out.push('Teams')
+      if (s?.gameMode === 'FREE_FOR_ALL') out.push('Attack rule')
+      break
+    case 'EVENT':
+      if (s && view.axes.event === 'ROUND_ROBIN') out.push('Games per matchup')
+      if (view.ranked.available) out.push('Ranked')
+      break
+    case 'LOBBY':
+      if (view.invitable) out.push('Private / public')
+      // A quick lobby with nobody to invite is the vs-AI one — see `UnifiedLobbyView.invitable`.
+      // Momir hands every seat the same 60 basics, so its AI seat has no deck to pick.
+      if (view.kind === 'QUICK' && !view.invitable && view.axes.cards.kind !== 'MOMIR') {
+        out.push('AI opponent deck')
+      }
+      if (s) out.push('AI assistance')
+      break
+  }
+  return out
+}
+
 function attackLabel(mode: LobbyState['settings']['attackMode'] | undefined): string {
   switch (mode ?? 'MULTIPLE') {
     case 'LEFT': return 'attack left'
