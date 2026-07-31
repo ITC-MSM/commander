@@ -35,6 +35,8 @@ import { rulesFromLobbySettings } from './axes'
 import { recreateTargetLabel, type RecreateSpec } from './axisChoices'
 import { fromQuickGameLobby, fromTournamentLobby, type UnifiedLobbyView } from './lobbyViewModel'
 import { takePendingLobbyIntent } from '@/store/slices/pendingLobbyIntent'
+import { useSetupLibrary } from '@/store/setupLibrary'
+import { useCaptureRecipe } from './useCaptureRecipe'
 import { useLobbyCommands } from './useLobbyCommands'
 import styles from '../ui/GameUI.module.css'
 
@@ -43,6 +45,8 @@ export function LobbyScreen() {
   const lobbyState = useGameStore((s) => s.lobbyState)
   const aiEnabled = useGameStore((s) => s.aiEnabled)
   const playerId = useGameStore((s) => s.playerId)
+  const captureLast = useSetupLibrary((s) => s.captureLast)
+  const saveSetup = useSetupLibrary((s) => s.saveSetup)
 
   // Deck-picker state the Cards axis needs to read: its validity gates the ready button, and its
   // tab *is* the Cards value on a quick lobby (Random pool is the Random tab).
@@ -57,6 +61,11 @@ export function LobbyScreen() {
   // deck" picker renders outside the settings panel the row lives in (see `AiDeckSection`).
   const [aiSource, setAiSource] = useState<AiDeckSource>(() => initialAiSource(quickLobby?.aiDeck))
   const [pendingRecreate, setPendingRecreate] = useState<RecreateSpec | null>(null)
+  // Which saved deck is loaded, by name — the identity `onDeckChange`'s card list can't carry, and
+  // the one thing a setup needs in order to bring the same deck back. See `lobbyRecipe.ts`.
+  const [savedDeckName, setSavedDeckName] = useState<string | null>(null)
+  const [savingSetup, setSavingSetup] = useState(false)
+  const [notes, setNotes] = useState<readonly string[]>(intent?.notes ?? [])
 
   const view: UnifiedLobbyView | null = quickLobby
     ? fromQuickGameLobby(quickLobby, { deckValid, deckTab })
@@ -65,6 +74,40 @@ export function LobbyScreen() {
       : null
 
   const commands = useLobbyCommands(view, setDeckTab)
+  const capture = useCaptureRecipe(view, lobbyState, quickLobby, deckTab, savedDeckName)
+
+  /**
+   * Start the game, remembering what it was first.
+   *
+   * The primary action is the right moment and the only one: it is where the settings stop moving
+   * and the deck has been chosen. The wizard is too early (it knows three of twenty-odd answers) and
+   * the server is too late (it never learns which of *your* decks this is).
+   */
+  const runPrimary = () => {
+    const kind = view?.primaryAction?.kind
+    if (kind === 'START' || kind === 'READY') captureLast(capture().recipe)
+    commands.runPrimary()
+  }
+
+  /**
+   * Auto-start, for a setup that had nothing left to ask.
+   *
+   * Not a second launch path — the same button, pressed for you — so nothing here can drift from the
+   * normal flow, and a recipe that only half-applied leaves you sitting in a correctly-built lobby
+   * with its notes on screen instead of in a game you didn't mean to start.
+   *
+   * **Only when nobody can join.** A lobby with an invite code exists so that people can use it;
+   * starting it the instant it opens would slam the door on them.
+   */
+  const canAutoStart = intent?.autoStart === true && view !== null && !view.invitable &&
+    view.primaryAction?.kind === 'READY' && !view.primaryAction.disabled
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (!canAutoStart || autoStarted.current) return
+    autoStarted.current = true
+    runPrimary()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canAutoStart])
 
   if (!view) return null
 
@@ -86,7 +129,38 @@ export function LobbyScreen() {
           <h1 className={styles.lobbyTitle}>{view.title}</h1>
           <p className={styles.lobbySubtitle}>{view.subtitle}</p>
           <LobbyAxisSummary axes={view.axes} />
+          {view.isWaiting && view.isHost && (
+            <button
+              type="button"
+              className={styles.saveSetupButton}
+              data-testid="save-setup"
+              onClick={() => setSavingSetup(true)}
+              title="Save this lobby — sets, packs, timer, deck and all — to launch again in one click"
+            >
+              ★ Save setup
+            </button>
+          )}
         </div>
+
+        {/* What a setup couldn't bring back, said once and dismissable.
+            The server aborts an entire `updateLobbySettings` on a field it can't resolve — an unknown
+            set code, a cube card that isn't implemented — so a partially-applied setup is a real
+            outcome, and one that is invisible unless it is stated. */}
+        {notes.length > 0 && (
+          <div className={styles.lobbyNotes} role="status">
+            <div className={styles.lobbyNotesBody}>
+              {notes.map((note) => <p key={note}>{note}</p>)}
+            </div>
+            <button
+              type="button"
+              className={styles.lobbyNotesDismiss}
+              aria-label="Dismiss"
+              onClick={() => setNotes([])}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {view.invitable && (
           <div style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'stretch', gap: 8 }}>
@@ -195,7 +269,12 @@ export function LobbyScreen() {
             explicit Submit the host waits on. */}
         {view.kind === 'TOURNAMENT' && lobbyState && view.isWaiting &&
           lobbyState.settings.format === 'PREMADE_DECKS' && (
-            <PremadeDeckPickerPanel lobbyState={lobbyState} playerId={playerId} />
+            <PremadeDeckPickerPanel
+              lobbyState={lobbyState}
+              playerId={playerId}
+              initialSavedDeckName={intent?.deckName}
+              onSavedDeckNameChange={setSavedDeckName}
+            />
         )}
         {view.kind === 'QUICK' && quickLobby?.vsAi && !isMomir && aiSource === 'deck' && (
           <AiDeckSection
@@ -211,6 +290,8 @@ export function LobbyScreen() {
             tab={deckTab}
             onTabChange={setDeckTab}
             onValidityChange={setDeckValid}
+            initialSavedDeckName={intent?.deckName}
+            onSavedDeckNameChange={setSavedDeckName}
           />
         )}
 
@@ -273,7 +354,7 @@ export function LobbyScreen() {
           {view.primaryAction && (
             <button
               type="button"
-              onClick={commands.runPrimary}
+              onClick={runPrimary}
               disabled={view.primaryAction.disabled}
               title={view.primaryAction.reason ?? ''}
               className={styles.startButton}
@@ -288,6 +369,17 @@ export function LobbyScreen() {
           <p className={styles.waitingHint}>Waiting for host to start the game...</p>
         )}
       </div>
+
+      {savingSetup && (
+        <SaveSetupDialog
+          defaultName={view.title}
+          onCancel={() => setSavingSetup(false)}
+          onSave={(name) => {
+            saveSetup({ name, recipe: capture().recipe })
+            setSavingSetup(false)
+          }}
+        />
+      )}
 
       {pendingRecreate && (
         <RecreateConfirm
@@ -397,6 +489,8 @@ function QuickGameDeckPicker({
   tab,
   onTabChange,
   onValidityChange,
+  initialSavedDeckName,
+  onSavedDeckNameChange,
 }: {
   youSetCode: string | null
   format: string | null
@@ -404,6 +498,9 @@ function QuickGameDeckPicker({
   tab: DeckPickerTab | undefined
   onTabChange: (tab: DeckPickerTab) => void
   onValidityChange: (valid: boolean) => void
+  /** A saved setup's deck, preselected once the library hydrates. */
+  initialSavedDeckName: string | undefined
+  onSavedDeckNameChange: (name: string | null) => void
 }) {
   const submitDeck = useGameStore((s) => s.submitQuickGameLobbyDeck)
   const setSetCode = useGameStore((s) => s.setQuickGameLobbySetCode)
@@ -458,7 +555,62 @@ function QuickGameDeckPicker({
       format={format}
       tab={tab}
       onTabChange={onTabChange}
+      initialSavedDeckName={initialSavedDeckName}
+      onSavedDeckNameChange={onSavedDeckNameChange}
     />
+  )
+}
+
+/**
+ * Name a setup before saving it.
+ *
+ * Deliberately a real dialog rather than a `window.prompt`: this is the moment someone commits to
+ * replaying a lobby they may have spent a few minutes configuring, and the default name is worth
+ * showing selected and editable rather than as a browser chrome string.
+ */
+function SaveSetupDialog({
+  defaultName,
+  onCancel,
+  onSave,
+}: {
+  defaultName: string
+  onCancel: () => void
+  onSave: (name: string) => void
+}) {
+  const [name, setName] = useState(defaultName)
+  const trimmed = name.trim()
+
+  return (
+    <div className={styles.confirmBackdrop} role="dialog" aria-modal="true" onClick={onCancel}>
+      <div className={styles.confirmPanel} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.confirmTitle}>Save this setup</div>
+        <p className={styles.confirmBody}>
+          It comes back on the home screen as one click — sets, packs, timer, ban list, cube and the
+          deck you picked.
+        </p>
+        <input
+          className={styles.settingsSelect}
+          style={{ width: '100%' }}
+          value={name}
+          autoFocus
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && trimmed) onSave(trimmed) }}
+          aria-label="Setup name"
+        />
+        <div className={styles.confirmActions}>
+          <button type="button" onClick={onCancel} className={styles.leaveButton}>Cancel</button>
+          <button
+            type="button"
+            onClick={() => onSave(trimmed)}
+            disabled={!trimmed}
+            className={styles.startButton}
+            data-testid="confirm-save-setup"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -469,9 +621,13 @@ function QuickGameDeckPicker({
 function PremadeDeckPickerPanel({
   lobbyState,
   playerId,
+  initialSavedDeckName,
+  onSavedDeckNameChange,
 }: {
   lobbyState: LobbyState
   playerId: string | null
+  initialSavedDeckName: string | undefined
+  onSavedDeckNameChange: (name: string | null) => void
 }) {
   const submitLobbyDeck = useGameStore((s) => s.submitLobbyDeck)
   const unsubmitLobbyDeck = useGameStore((s) => s.unsubmitLobbyDeck)
@@ -531,6 +687,8 @@ function PremadeDeckPickerPanel({
           onDeckChange={handleDeckChange}
           onValidityChange={setIsValid}
           format={deckFormat ?? null}
+          initialSavedDeckName={initialSavedDeckName}
+          onSavedDeckNameChange={onSavedDeckNameChange}
         />
         <button
           onClick={() => submitLobbyDeck(pendingDeck, isCommanderShape ? pendingCommander : null, pendingSideboard)}

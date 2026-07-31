@@ -99,6 +99,24 @@ export interface DeckPickerProps {
   tab?: DeckPickerTab | undefined
   /** Fired for every tab change, whether the user clicked it or the picker moved itself. */
   onTabChange?: (tab: DeckPickerTab) => void
+  /**
+   * A saved deck to preselect, by name, once the library has hydrated.
+   *
+   * By *name* rather than id because that is what a saved setup can portably store — the unified
+   * library already merges cloud and local decks on `name.toLowerCase()`, so a name survives signing
+   * in where `cloud:7` would not. See `lobbyRecipe.ts`.
+   *
+   * Deliberately inert unless the picker is sitting on Saved with nothing chosen: it must never
+   * fight a Random tab the caller asked for, nor overwrite a deck the player has already picked.
+   */
+  initialSavedDeckName?: string | undefined
+  /**
+   * Fired with the name of the selected saved deck, or null when the selection isn't one.
+   *
+   * This is how a lobby records *which* deck was played without holding the card list — the half of
+   * `onDeckChange` a recipe needs and that one can't give, since a decklist has no identity.
+   */
+  onSavedDeckNameChange?: (name: string | null) => void
 }
 
 interface ExampleDeck {
@@ -161,6 +179,8 @@ export function DeckPicker({
   format = null,
   tab: controlledTab,
   onTabChange,
+  initialSavedDeckName,
+  onSavedDeckNameChange,
 }: DeckPickerProps) {
   // Unified library: cloud decks (when signed in) + browser-only decks, each tagged with where it
   // lives. Selecting a cloud deck works the same as a local one because both carry their card list.
@@ -245,6 +265,31 @@ export function DeckPicker({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [decks.length])
+
+  /**
+   * Preselect the deck a saved setup asked for, once the library has arrived.
+   *
+   * Guarded on three things, each of which is a way this could otherwise do harm: only on the Saved
+   * tab (so a promised Random pool is never overwritten), only with nothing already chosen (so a
+   * player's own pick wins), and only while the name still matches something. A name that no longer
+   * resolves simply leaves the picker where it was — the setup says so in its notes rather than
+   * silently substituting a different deck.
+   */
+  const wantedSavedName = initialSavedDeckName?.trim().toLowerCase()
+  useEffect(() => {
+    if (!wantedSavedName || selectedSavedId !== null || tab !== 'saved') return
+    const match = decks.find((d) => d.name.trim().toLowerCase() === wantedSavedName)
+    if (match) setSelectedSavedId(match.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantedSavedName, decks, tab])
+
+  // Report the *identity* of the chosen deck, which `onDeckChange`'s card list cannot carry.
+  useEffect(() => {
+    onSavedDeckNameChange?.(
+      tab === 'saved' ? (decks.find((d) => d.id === selectedSavedId)?.name ?? null) : null,
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, selectedSavedId, decks])
 
   // If the active tab gets removed (e.g. the Random tab is hidden), fall back.
   useEffect(() => {

@@ -28,6 +28,7 @@ import { DeckMigrationPrompt } from '@/components/auth/DeckMigrationPrompt'
 import { AccountBenefitsCallout } from '@/components/auth/AccountBenefitsCallout'
 import { FullscreenButton } from './FullscreenButton'
 import { PlayWizard } from './PlayWizard'
+import { SetupRail } from './SetupRail'
 import type { Selection } from '../lobby/modeMatrix'
 import { recipeFromSelection } from '../lobby/lobbyRecipe'
 import { useApplyRecipe } from '../lobby/useApplyRecipe'
@@ -363,6 +364,9 @@ export function HomeScreen({
               {/* ── PLAY ─────────────────────────────────────────────── */}
               <section className={styles.homeTier}>
                 <SectionHeading label="Play" />
+                {/* Above the wizard, and absent until you have played something: a returning player
+                    gets one click, a first-time player gets the three questions unchanged. */}
+                <SetupRail onLaunch={applyRecipe} />
                 <PlayWizard aiEnabled={aiEnabled} onLaunch={launch} />
 
                 {/* Not a step. Someone who has a code has had the three questions answered for them,
