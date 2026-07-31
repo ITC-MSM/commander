@@ -20,6 +20,8 @@ import {
   createSetQuickGameLobbyRankedMessage,
   createSetQuickGameLobbyFormatMessage,
   createSetQuickGameAiDeckMessage,
+  createAddQuickGameAiMessage,
+  createRemoveQuickGameAiMessage,
 } from '@/types'
 import type { SliceCreator } from './types'
 import { getWebSocket } from './shared'
@@ -47,6 +49,8 @@ export interface QuickGameLobbySliceActions {
   setQuickGameLobbyFormat: (format: DeckFormat | null, momirBasic?: boolean) => void
   /** Host-only: choose what the AI opponent plays. No-op in a human lobby (server rejects). */
   setQuickGameAiDeck: (spec: AiDeckSpec) => void
+  addQuickGameAi: () => void
+  removeQuickGameAi: () => void
 }
 
 export type QuickGameLobbySlice = QuickGameLobbySliceState & QuickGameLobbySliceActions
@@ -93,5 +97,13 @@ export const createQuickGameLobbySlice: SliceCreator<QuickGameLobbySlice> = (set
 
   setQuickGameAiDeck: (spec) => {
     getWebSocket()?.send(createSetQuickGameAiDeckMessage(spec))
+  },
+
+  addQuickGameAi: () => {
+    getWebSocket()?.send(createAddQuickGameAiMessage())
+  },
+
+  removeQuickGameAi: () => {
+    getWebSocket()?.send(createRemoveQuickGameAiMessage())
   },
 })

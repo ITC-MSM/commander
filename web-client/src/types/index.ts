@@ -319,6 +319,8 @@ export type {
   AiDeckSpec,
   AiDeckSpecView,
   SetQuickGameAiDeckMessage,
+  AddQuickGameAiMessage,
+  RemoveQuickGameAiMessage,
   CreateQuickGameLobbyMessage,
   JoinQuickGameLobbyMessage,
   LeaveQuickGameLobbyMessage,
@@ -440,6 +442,8 @@ export {
   createSetQuickGameLobbyRankedMessage,
   createSetQuickGameLobbyFormatMessage,
   createSetQuickGameAiDeckMessage,
+  createAddQuickGameAiMessage,
+  createRemoveQuickGameAiMessage,
   isQuickGameLobbyStateMessage,
   isQuickGameLobbyClosedMessage,
 } from './messages'

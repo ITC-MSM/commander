@@ -940,6 +940,8 @@ export type GameStore = {
   // Quick Game Lobby slice
   quickGameLobbyState: QuickGameLobbyStateMessage | null
   createQuickGameLobby: (vsAi?: boolean, setCode?: string, isPublic?: boolean, format?: DeckFormat, momirBasic?: boolean, ranked?: boolean) => void
+  addQuickGameAi: () => void
+  removeQuickGameAi: () => void
   joinQuickGameLobby: (lobbyId: string) => void
   leaveQuickGameLobby: () => void
   submitQuickGameLobbyDeck: (deckList: Record<string, number>, commander?: string | null) => void

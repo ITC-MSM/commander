@@ -79,12 +79,6 @@ export function CubePanel({ settings, playerCount, updateLobbySettings }: CubePa
     setEditing(null)
   }
 
-  /** Clearing the cube card list is what returns the lobby to catalogued-set play. */
-  function clearCube() {
-    updateLobbySettings({ cubeCards: [] })
-    setShowLibrary(false)
-  }
-
   const capacity = useMemo(() => {
     if (!activeCubeName) return null
     if (settings.format === 'PREMADE_DECKS') return null
@@ -124,7 +118,7 @@ export function CubePanel({ settings, playerCount, updateLobbySettings }: CubePa
             </span>
           </>
         ) : (
-          <span className={styles.meta}>No cube — packs come from the selected sets.</span>
+          <span className={styles.meta}>Choose a saved cube or create a new one.</span>
         )}
       </div>
 
@@ -142,11 +136,6 @@ export function CubePanel({ settings, playerCount, updateLobbySettings }: CubePa
         {activeCube && (
           <button type="button" className={styles.button} onClick={() => setEditing({ cube: activeCube })}>
             Edit {activeCube.name}
-          </button>
-        )}
-        {activeCubeName && (
-          <button type="button" className={styles.button} onClick={clearCube}>
-            Use sets instead
           </button>
         )}
       </div>

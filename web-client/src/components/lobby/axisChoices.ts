@@ -141,10 +141,6 @@ function cardsAvailability(view: UnifiedLobbyView, kind: CardsKind): ChoiceAvail
 
 /* ── Rules ──────────────────────────────────────────────────────────────── */
 
-/** Asking for a rules change on the lobby kind that derives them instead of offering them. */
-const RULES_ARE_DERIVED_ON_A_QUICK_GAME =
-  'A single 1v1 game takes its rules from the deck legality you pick — choose Commander, Brawl or Standard Brawl under Cards to play Commander here.'
-
 export function rulesChoices(view: UnifiedLobbyView): AxisChoice<RulesAxis>[] {
   return RULES_VALUES.map((rules) => ({
     value: rules,
@@ -170,9 +166,6 @@ function rulesAvailability(view: UnifiedLobbyView, rules: RulesAxis): ChoiceAvai
     const aiBlock = commanderAiBlock(rules, view.axes.cards)
     if (aiBlock !== null) return blocked(aiBlock)
   }
-  // A quick lobby has no Rules field: the server derives it from deck legality (see
-  // `QuickGameLobby.applyFormat`), so the control that changes it is the legality dropdown.
-  if (view.kind === 'QUICK') return blocked(RULES_ARE_DERIVED_ON_A_QUICK_GAME)
   return DIRECT
 }
 

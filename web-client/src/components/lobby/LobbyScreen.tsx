@@ -88,7 +88,7 @@ export function LobbyScreen() {
   const [notes, setNotes] = useState<readonly string[]>(intent?.notes ?? [])
 
   const view: UnifiedLobbyView | null = quickLobby
-    ? fromQuickGameLobby(quickLobby, { deckValid, deckTab })
+    ? fromQuickGameLobby(quickLobby, { deckValid, deckTab, aiEnabled })
     : lobbyState
       ? fromTournamentLobby(lobbyState, { aiEnabled, playerId })
       : null
@@ -287,7 +287,7 @@ export function LobbyScreen() {
                   </button>
                 )}
                 <span className={`${styles.playerStatus} ${statusClass(player.tone)}`}>{player.status}</span>
-                {view.isWaiting && view.isHost && player.isAi && view.kind === 'TOURNAMENT' && (
+                {view.isWaiting && view.isHost && player.isAi && (
                   <button
                     onClick={() => commands.removeAi(player.playerId)}
                     className={styles.removeAiButton}
@@ -328,7 +328,7 @@ export function LobbyScreen() {
               // Built as a list so a group with neither an axis nor any relevant rows can disappear.
               const rows: ReactNode[] = []
               if (id === 'CARDS') rows.push(<CardsAxisBody key="axis" view={view} commands={commands} />)
-              if (id === 'RULES') rows.push(<RulesAxisBody key="axis" view={view} />)
+              if (id === 'RULES') rows.push(<RulesAxisBody key="axis" view={view} commands={commands} />)
               if (id === 'TABLE') rows.push(<TableAxisBody key="axis" view={view} />)
               if (id === 'EVENT' && eventCaption(view) !== '') {
                 rows.push(<EventAxisBody key="axis" view={view} />)

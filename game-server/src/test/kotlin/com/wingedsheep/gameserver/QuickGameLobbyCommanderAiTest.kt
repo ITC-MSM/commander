@@ -11,6 +11,31 @@ import kotlin.time.Duration.Companion.seconds
 class QuickGameLobbyCommanderAiTest : GameServerTestBase() {
 
     init {
+        test("host can fill and reopen a normal 1v1 lobby with an AI opponent") {
+            val client = createClient()
+            client.connectAs("Flexible Host")
+            client.send(ClientMessage.CreateQuickGameLobby())
+            eventually(5.seconds) {
+                client.messages.filterIsInstance<ServerMessage.QuickGameLobbyState>()
+                    .lastOrNull()?.players?.size shouldBe 1
+            }
+
+            client.send(ClientMessage.AddQuickGameAi)
+            eventually(5.seconds) {
+                val state = client.messages.filterIsInstance<ServerMessage.QuickGameLobbyState>().lastOrNull()
+                state?.vsAi shouldBe true
+                state?.players?.count { it.isAi } shouldBe 1
+            }
+
+            client.send(ClientMessage.RemoveQuickGameAi)
+            eventually(5.seconds) {
+                val state = client.messages.filterIsInstance<ServerMessage.QuickGameLobbyState>().lastOrNull()
+                state?.vsAi shouldBe false
+                state?.players?.size shouldBe 1
+            }
+            client.allErrors() shouldBe emptyList()
+        }
+
         test("AI quick lobby starts Commander with a host-supplied commander deck") {
             val client = createClient()
             client.connectAs("Commander Host")

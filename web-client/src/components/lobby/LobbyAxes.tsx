@@ -9,9 +9,10 @@
  *   before tearing this lobby down (plan § 4b v1)
  * - not implemented anywhere yet → **disabled with the reason attached**, not hidden
  *
- * Sub-options hang off their own axis only: deck legality, sealed shape and draft shape belong to
- * **Cards**, never to a peer. That rule is what stopped "Format" from meaning two different things
- * again, and it is now also the seam the settings groups are cut along (`settingsGroups.ts`).
+ * Sub-options hang off their controlling axis: sealed and draft shape belong to **Cards**, while
+ * deck legality belongs to **Rules** because that choice determines which formats are coherent.
+ * This keeps "Format" from meaning two different things and remains the seam the settings groups
+ * are cut along (`settingsGroups.ts`).
  *
  * Each axis therefore exports two pieces rather than one row: a **strip** of buttons in the group
  * header and an always-visible **body** of sub-options and captions. Reading order is unchanged: what deck → under what rules → at
@@ -23,7 +24,7 @@ import {
   cardsSeatCap,
   commanderAiBlock,
   isCommanderLimited,
-  legalityOptionsForTable,
+  legalityOptionsForRules,
   rulesTableBlock,
   type CardsAxis,
   type CardsKind,
@@ -107,24 +108,6 @@ export function EventAxisStrip({ view, onRecreate }: AxisProps) {
 
 export function CardsAxisBody({ view, commands }: Omit<AxisProps, 'onRecreate'>) {
   const cards = view.axes.cards
-  // Deck legality is filtered by table, but *derived* from the Rules × Table rule rather than
-  // restating it: commander legality implies Commander rules (CR 903.4 anchors colour identity to
-  // the commander), so a table that can't have those can't offer it either.
-  const legalityOptions = legalityOptionsForTable(view.axes.table)
-
-  // Clear a legality the current table can't offer. Reachable when the host sets Commander legality,
-  // switches Rules back to Standard — which the server allows, the axes being independent — and then
-  // moves to a 2HG table, leaving a restriction whose defining rule the validator would silently
-  // skip. Keyed off the same filtered list so it can never disagree with the dropdown.
-  useEffect(() => {
-    if (
-      cards.kind === 'BRING_A_DECK' &&
-      cards.legality !== null &&
-      !legalityOptions.some((option) => option.value === cards.legality)
-    ) {
-      commands.setLegality(null)
-    }
-  }, [cards, commands, legalityOptions])
 
   return (
     <>
@@ -132,24 +115,6 @@ export function CardsAxisBody({ view, commands }: Omit<AxisProps, 'onRecreate'>)
         <span className={styles.settingsLabel} />
         <div className={styles.variantCaption}>{CARDS_CAPTIONS[cards.kind]}</div>
       </div>
-
-      {/* Cards → Bring a deck: which constructed format submitted decks must be legal in. */}
-      {cards.kind === 'BRING_A_DECK' && (
-        <div className={`${styles.settingsRow} ${styles.settingsRowSub}`}>
-          <span className={styles.settingsLabel}>Deck legality</span>
-          <select
-            value={cards.legality ?? ''}
-            onChange={(e) => commands.setLegality((e.target.value || null) as never)}
-            className={styles.settingsSelect}
-            title="Restrict submitted decks to a constructed format. No restriction = anything the engine implements."
-          >
-            <option value="">No restriction</option>
-            {legalityOptions.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
-        </div>
-      )}
 
       {/* Cards → Sealed: which sealed shape. */}
       {cards.kind === 'SEALED' && (
@@ -227,18 +192,47 @@ export function CardsAxisBody({ view, commands }: Omit<AxisProps, 'onRecreate'>)
   )
 }
 
-export function RulesAxisBody({ view }: { view: UnifiedLobbyView }) {
+export function RulesAxisBody({ view, commands }: { view: UnifiedLobbyView; commands: LobbyCommands }) {
   // A lobby can be sitting on a Rules × Table contradiction (the server defaults Rules to Commander
   // when the host picks commander deck legality, whatever the table). Say so here rather than only
   // on a disabled Start button.
   const rulesConflict = rulesTableBlock(view.axes.rules, view.axes.table)
+  const cards = view.axes.cards
+  const legalityOptions = legalityOptionsForRules(view.axes.rules, view.axes.table)
+
+  // Rules own deck construction. If the host changes Rules, immediately replace a now-incoherent
+  // legality; Commander rules always carry one of the commander-aware formats.
+  useEffect(() => {
+    if (cards.kind !== 'BRING_A_DECK') return
+    if (legalityOptions.length === 0) return
+    if (cards.legality && legalityOptions.some((option) => option.value === cards.legality)) return
+    commands.setLegality(view.axes.rules === 'COMMANDER' ? 'COMMANDER' : 'STANDARD')
+  }, [cards, commands, legalityOptions, view.axes.rules])
+
   return (
-    <div className={styles.settingsRow}>
-      <span className={styles.settingsLabel} />
-      <div className={styles.variantCaption}>
-        {rulesConflict ?? RULES_CAPTIONS[view.axes.rules]}
+    <>
+      <div className={styles.settingsRow}>
+        <span className={styles.settingsLabel} />
+        <div className={styles.variantCaption}>
+          {rulesConflict ?? RULES_CAPTIONS[view.axes.rules]}
+        </div>
       </div>
-    </div>
+      {cards.kind === 'BRING_A_DECK' && (
+        <div className={`${styles.settingsRow} ${styles.settingsRowSub}`}>
+          <span className={styles.settingsLabel}>Deck legality</span>
+          <select
+            value={cards.legality ?? ''}
+            onChange={(e) => commands.setLegality(e.target.value as never)}
+            className={styles.settingsSelect}
+            title="Submitted decks must be legal under the selected rules and constructed format."
+          >
+            {legalityOptions.map((format) => (
+              <option key={format.value} value={format.value}>{format.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </>
   )
 }
 

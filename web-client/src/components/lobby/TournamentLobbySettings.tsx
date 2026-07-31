@@ -10,7 +10,7 @@
  * Everything in this file is a faithful move out of the old `LobbyOverlay`, except that the rows
  * are ordered by what they belong to rather than by the order they were added.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import type { LobbyState } from '@/store/slices/types'
 import { teamColor } from '@/styles/seatColors'
@@ -85,6 +85,15 @@ export function TournamentLobbySettings({
   const podPreset = effectivePreset === 'POD'
   const isFfa = s.gameMode === 'FREE_FOR_ALL'
   const isCube = Boolean(s.cubeName)
+  const [cardSource, setCardSource] = useState<'SETS' | 'CUBE'>(isCube ? 'CUBE' : 'SETS')
+  useEffect(() => {
+    setCardSource(isCube ? 'CUBE' : 'SETS')
+  }, [isCube])
+
+  const chooseCardSource = (source: 'SETS' | 'CUBE') => {
+    setCardSource(source)
+    if (source === 'SETS' && isCube) updateLobbySettings({ cubeCards: [] })
+  }
   // Pool Play hands out the whole cube instead of dealing packs, so the pack-count controls are
   // meaningless while it's on. Matches TournamentLobby.isCubePoolPlay.
   const isPoolPlay = isCube && isSealed && Boolean(s.cubePoolPlay)
@@ -188,20 +197,82 @@ export function TournamentLobbySettings({
         </div>
       )}
 
-      {/* Set selection — chips here, the full searchable browser behind a modal. Premade Decks
-          generates no boosters, so it needs none of this. */}
-      {/* Cube — a pack source, so it stands in for the set picker rather than adding to it. Always
-          offered (even with no cube yet) so the host can find it; picking one hides the set controls. */}
+      {/* Sets and cubes are alternative pack sources. Keep them in one row so the relationship is
+          explicit; a lobby with no cube starts on Sets. */}
       {group === 'CARDS' && !isPremade && (
         <div className={styles.settingsRow} style={{ alignItems: 'flex-start' }}>
           <span style={{ paddingTop: 7 }}>
-            <SettingsLabel topicId="cards-cube">Cube</SettingsLabel>
+            <SettingsLabel topicId="cards-cube">Card source</SettingsLabel>
           </span>
-          <CubePanel
-            settings={s}
-            playerCount={view.players.length}
-            updateLobbySettings={updateLobbySettings}
-          />
+          <div className={styles.cardSourceControl}>
+            <div className={styles.settingsButtons}>
+              <button
+                type="button"
+                aria-pressed={cardSource === 'SETS'}
+                onClick={() => chooseCardSource('SETS')}
+                className={`${styles.settingsButton} ${cardSource === 'SETS' ? styles.settingsButtonActive : ''}`}
+              >
+                Sets
+              </button>
+              <button
+                type="button"
+                aria-pressed={cardSource === 'CUBE'}
+                onClick={() => chooseCardSource('CUBE')}
+                className={`${styles.settingsButton} ${cardSource === 'CUBE' ? styles.settingsButtonActive : ''}`}
+              >
+                Cube
+              </button>
+            </div>
+
+            {cardSource === 'CUBE' ? (
+              <CubePanel
+                settings={s}
+                playerCount={view.players.length}
+                updateLobbySettings={updateLobbySettings}
+              />
+            ) : (
+              <div className={styles.setSelection}>
+                {selectedSets.length > 0 ? (
+                  <div className={styles.setChips}>
+                    {selectedSets.map((set) => (
+                      <span
+                        key={set.code}
+                        className={`${styles.setChip} ${isAnyDraft ? styles.setChipDraft : ''} ${set.partial ? styles.setChipPartial : ''}`}
+                        title={set.random
+                          ? 'Random Set — revealed when the game starts'
+                          : set.partial
+                            ? `${set.name} — partial (reduced card pool)`
+                            : set.extensionSet
+                              ? `${set.name} — extension set (needs a regular set alongside)`
+                              : set.name}
+                      >
+                        {set.random
+                          ? <span className={styles.setChipIcon} aria-hidden>🎲</span>
+                          : <SetIcon code={set.code} className={styles.setChipIcon} />}
+                        <span className={styles.setChipName}>{set.name}</span>
+                        <button
+                          type="button"
+                          className={styles.setChipRemove}
+                          aria-label={`Remove ${set.name}`}
+                          onClick={() => toggleSet(set.code)}
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className={styles.setSelectionEmpty}>No sets selected yet</span>
+                )}
+                {hasSelectedSets && !hasBaseSet && (
+                  <span className={styles.setSelectionEmpty}>
+                    Extension sets need a regular set alongside them.
+                  </span>
+                )}
+                <button type="button" onClick={() => setShowSetPicker(true)} className={styles.addSetsButton}>
+                  + Add sets
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -235,52 +306,8 @@ export function TournamentLobbySettings({
         </div>
       )}
 
-      {group === 'CARDS' && !isPremade && !isCube && (
+      {group === 'CARDS' && !isPremade && cardSource === 'SETS' && (
         <>
-          <div className={styles.settingsRow} style={{ alignItems: 'flex-start' }}>
-            <span className={styles.settingsLabel} style={{ paddingTop: 7 }}>Sets</span>
-            <div className={styles.setSelection}>
-              {selectedSets.length > 0 ? (
-                <div className={styles.setChips}>
-                  {selectedSets.map((set) => (
-                    <span
-                      key={set.code}
-                      className={`${styles.setChip} ${isAnyDraft ? styles.setChipDraft : ''} ${set.partial ? styles.setChipPartial : ''}`}
-                      title={set.random
-                        ? 'Random Set — revealed when the game starts'
-                        : set.partial
-                          ? `${set.name} — partial (reduced card pool)`
-                          : set.extensionSet
-                            ? `${set.name} — extension set (needs a regular set alongside)`
-                            : set.name}
-                    >
-                      {set.random
-                        ? <span className={styles.setChipIcon} aria-hidden>🎲</span>
-                        : <SetIcon code={set.code} className={styles.setChipIcon} />}
-                      <span className={styles.setChipName}>{set.name}</span>
-                      <button
-                        type="button"
-                        className={styles.setChipRemove}
-                        aria-label={`Remove ${set.name}`}
-                        onClick={() => toggleSet(set.code)}
-                      >×</button>
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <span className={styles.setSelectionEmpty}>No sets selected yet</span>
-              )}
-              {hasSelectedSets && !hasBaseSet && (
-                <span className={styles.setSelectionEmpty}>
-                  Extension sets need a regular set alongside them.
-                </span>
-              )}
-              <button type="button" onClick={() => setShowSetPicker(true)} className={styles.addSetsButton}>
-                + Add sets
-              </button>
-            </div>
-          </div>
-
           {/* Chaos boosters — only meaningful with >1 set and a booster-based format. */}
           {!isGridDraft && s.setCodes.length > 1 && (
             <div className={styles.settingsRow}>

@@ -123,6 +123,16 @@ export function legalityOptionsForTable(table: TableAxis): typeof LEGALITY_OPTIO
   )
 }
 
+/** Deck-construction formats compatible with both the selected game rules and table. */
+export function legalityOptionsForRules(
+  rules: RulesAxis,
+  table: TableAxis,
+): typeof LEGALITY_OPTIONS {
+  return legalityOptionsForTable(table).filter(
+    (option) => rulesForLegality(option.value) === rules,
+  )
+}
+
 export function cardsLabel(cards: CardsAxis): string {
   switch (cards.kind) {
     case 'BRING_A_DECK':

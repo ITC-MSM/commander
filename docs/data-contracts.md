@@ -461,7 +461,11 @@ sealed, or premade), then one N-player game".
   are ready, a new game (`gameNumber + 1`) starts with the same seats. Replays are saved per game as
   usual and browsable via the lobby's replay endpoint.
 - Quick Game stays strictly 2-player (its `QuickGameLobby.MAX_PLAYERS` is untouched); FFA lives only
-  in the tournament-lobby infrastructure.
+  in the tournament-lobby infrastructure. Its opponent seat is mutable: the host sends
+  **`AddQuickGameAi`** to fill an open 1v1 seat with the built-in AI and **`RemoveQuickGameAi`** to
+  reopen that same seat to a human. `QuickGameLobbyState.vsAi` reports the current occupant rather
+  than a separate lobby kind; the create message's `vsAi` remains a shortcut for initially filling
+  the seat.
 
 ## 4. Scenario Builder Payload (REST / HTTP)
 

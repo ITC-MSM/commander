@@ -129,7 +129,7 @@ export interface UnifiedLobbyView {
  */
 export function fromQuickGameLobby(
   lobby: QuickGameLobbyStateMessage,
-  opts: { deckValid: boolean; deckTab: DeckPickerTab | undefined },
+  opts: { deckValid: boolean; deckTab: DeckPickerTab | undefined; aiEnabled: boolean },
 ): UnifiedLobbyView {
   const you = lobby.players.find((p) => p.playerId === lobby.youPlayerId)
   // Host is the first non-AI seat — the same convention the server's leave handler uses.
@@ -160,11 +160,12 @@ export function fromQuickGameLobby(
   return {
     kind: 'QUICK',
     lobbyId: lobby.lobbyId,
-    title: lobby.vsAi ? 'vs AI' : 'Lobby',
+    title: '1v1 Lobby',
     subtitle: quickSubtitle(axes.cards.kind, lobby.vsAi),
     isHost,
     // A quick lobby has no state machine: it is staging right up until the game starts.
     isWaiting: true,
+    // An AI fills the only opponent seat. Removing it reopens the same lobby and invite flow.
     invitable: !lobby.vsAi,
     axes,
     players,
@@ -184,8 +185,7 @@ export function fromQuickGameLobby(
               : undefined,
         },
     isPublic: lobby.isPublic,
-    // AI is a create-time flag on a quick lobby, not a seat the host can add later.
-    canAddAi: false,
+    canAddAi: isHost && opts.aiEnabled && !lobby.vsAi && lobby.players.length < 2,
     ranked: { available: lobby.rankedEligible ?? false, on: lobby.ranked ?? false },
     // The server's `QuickGameLobby.twoHeadedGiant` exists but no client has ever reached it (gap
     // #6): it isn't in `QuickGameLobbyStateMessage` at all, so there is nothing here to read.

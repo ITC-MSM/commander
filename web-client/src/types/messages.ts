@@ -1901,6 +1901,8 @@ export type ClientMessage =
   | SetQuickGameLobbyPublicMessage
   | SetQuickGameLobbyRankedMessage
   | SetQuickGameAiDeckMessage
+  | AddQuickGameAiMessage
+  | RemoveQuickGameAiMessage
   | SetQuickGameLobbyFormatMessage
 
 /**
@@ -2847,6 +2849,14 @@ export interface SetQuickGameAiDeckMessage {
   readonly spec: AiDeckSpec
 }
 
+export interface AddQuickGameAiMessage {
+  readonly type: 'addQuickGameAi'
+}
+
+export interface RemoveQuickGameAiMessage {
+  readonly type: 'removeQuickGameAi'
+}
+
 export interface QuickGameLobbyClosedMessage {
   readonly type: 'quickGameLobbyClosed'
   readonly reason: string
@@ -2996,6 +3006,12 @@ export function createSetQuickGameLobbyPublicMessage(isPublic: boolean): SetQuic
 }
 export function createSetQuickGameAiDeckMessage(spec: AiDeckSpec): SetQuickGameAiDeckMessage {
   return { type: 'setQuickGameAiDeck', spec }
+}
+export function createAddQuickGameAiMessage(): AddQuickGameAiMessage {
+  return { type: 'addQuickGameAi' }
+}
+export function createRemoveQuickGameAiMessage(): RemoveQuickGameAiMessage {
+  return { type: 'removeQuickGameAi' }
 }
 export function createSetQuickGameLobbyRankedMessage(ranked: boolean): SetQuickGameLobbyRankedMessage {
   return { type: 'setQuickGameLobbyRanked', ranked }

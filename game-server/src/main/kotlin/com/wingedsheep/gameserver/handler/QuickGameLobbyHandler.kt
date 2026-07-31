@@ -41,9 +41,8 @@ import org.springframework.web.socket.WebSocketSession
  *  - When all players in the lobby are ready, hand off to [GamePlayHandler.startQuickGameFromLobby]
  *    which builds the [GameSession], wires AI if needed, and sends `GameStarted`.
  *
- * AI lobbies (`vsAi = true`): the AI is added immediately at lobby creation and is auto-ready.
- * The host therefore only has to pick a deck (or stay on Random) and click Ready, giving the
- * fast UX we wanted while still routing through one consistent surface.
+ * An AI can fill or leave the ordinary 1v1 opponent seat and is auto-ready while present. The
+ * create-time `vsAi` shortcut uses that same state for the wizard's fast solo path.
  */
 @Component
 class QuickGameLobbyHandler(
@@ -84,7 +83,64 @@ class QuickGameLobbyHandler(
             is ClientMessage.SetQuickGameLobbyRanked -> handleSetRanked(session, message)
             is ClientMessage.SetQuickGameLobbyFormat -> handleSetFormat(session, message)
             is ClientMessage.SetQuickGameAiDeck -> handleSetAiDeck(session, message)
+            is ClientMessage.AddQuickGameAi -> handleAddAi(session)
+            is ClientMessage.RemoveQuickGameAi -> handleRemoveAi(session)
             else -> {}
+        }
+    }
+
+    private fun handleAddAi(session: WebSocketSession) {
+        val playerSession = sessionRegistry.getPlayerSession(session.id) ?: run {
+            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected"); return
+        }
+        val lobby = lobbyRepository.findContainingPlayer(playerSession.playerId) ?: run {
+            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Not in a lobby"); return
+        }
+        lobbyRepository.withLock(lobby.lobbyId) { current ->
+            if (current == null) return@withLock
+            val host = current.players.firstOrNull { !it.isAi }
+            if (host?.playerId != playerSession.playerId) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "Only the host can add an AI player")
+                return@withLock
+            }
+            if (!aiGameManager.isEnabled) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "AI opponent is not enabled on this server")
+                return@withLock
+            }
+            if (current.twoHeadedGiant || current.players.size != 1) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "The opponent seat is not available")
+                return@withLock
+            }
+            current.players += QuickGameLobbyPlayer(
+                playerId = com.wingedsheep.sdk.model.EntityId("ai-pending-${current.lobbyId}"),
+                playerName = "AI Opponent",
+                isAi = true,
+                ready = true,
+            )
+            current.vsAi = true
+            current.isPublic = false
+            current.ranked = false
+            broadcastState(current)
+        }
+    }
+
+    private fun handleRemoveAi(session: WebSocketSession) {
+        val playerSession = sessionRegistry.getPlayerSession(session.id) ?: run {
+            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected"); return
+        }
+        val lobby = lobbyRepository.findContainingPlayer(playerSession.playerId) ?: run {
+            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Not in a lobby"); return
+        }
+        lobbyRepository.withLock(lobby.lobbyId) { current ->
+            if (current == null) return@withLock
+            val host = current.players.firstOrNull { !it.isAi }
+            if (host?.playerId != playerSession.playerId) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "Only the host can remove the AI player")
+                return@withLock
+            }
+            if (!current.players.removeIf { it.isAi }) return@withLock
+            current.vsAi = false
+            broadcastState(current)
         }
     }
 

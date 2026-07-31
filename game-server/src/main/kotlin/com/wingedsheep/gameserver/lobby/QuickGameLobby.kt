@@ -21,7 +21,7 @@ import java.util.UUID
 class QuickGameLobby(
     val lobbyId: String = generateLobbyCode(),
     val createdAt: Long = System.currentTimeMillis(),
-    val vsAi: Boolean,
+    @Volatile var vsAi: Boolean,
     /** Set used for "Random" sealed-pool decks. Mutable: the host can change it from the lobby UI. */
     @Volatile var setCode: String?,
     /**

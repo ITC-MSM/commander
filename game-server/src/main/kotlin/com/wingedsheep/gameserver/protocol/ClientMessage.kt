@@ -556,6 +556,16 @@ sealed interface ClientMessage {
         val spec: com.wingedsheep.gameserver.lobby.AiDeckSpec,
     ) : ClientMessage
 
+    /** Host fills the open opponent seat in a 1v1 quick lobby with the built-in AI. */
+    @Serializable
+    @SerialName("addQuickGameAi")
+    data object AddQuickGameAi : ClientMessage
+
+    /** Host removes the AI opponent, reopening the seat to a human player. */
+    @Serializable
+    @SerialName("removeQuickGameAi")
+    data object RemoveQuickGameAi : ClientMessage
+
     /** Join an existing quick-game lobby by its short code. */
     @Serializable
     @SerialName("joinQuickGameLobby")

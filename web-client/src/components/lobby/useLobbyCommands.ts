@@ -148,7 +148,13 @@ export function useLobbyCommands(
       },
 
       setRules: (rules) => {
-        if (!isQuick) s().updateLobbySettings({ rules })
+        if (isQuick) {
+          const current = view.axes.cards.kind === 'BRING_A_DECK' ? view.axes.cards.legality : null
+          if (rules === 'COMMANDER') s().setQuickGameLobbyFormat('COMMANDER', false)
+          else s().setQuickGameLobbyFormat(current && !['COMMANDER', 'BRAWL', 'STANDARD_BRAWL'].includes(current) ? current : 'STANDARD', false)
+        } else {
+          s().updateLobbySettings({ rules })
+        }
       },
 
       setTable: (table) => {
@@ -186,8 +192,8 @@ export function useLobbyCommands(
         else s().leaveLobby()
       },
 
-      addAi: () => s().addAiToLobby(),
-      removeAi: (playerId) => s().removeAiFromLobby(playerId),
+      addAi: () => isQuick ? s().addQuickGameAi() : s().addAiToLobby(),
+      removeAi: (playerId) => isQuick ? s().removeQuickGameAi() : s().removeAiFromLobby(playerId),
     }
-  }, [s, view?.kind, view?.isPublic, view?.axes.cards.kind, view?.primaryAction?.kind, view?.teams, setDeckTab])
+  }, [s, view?.kind, view?.isPublic, view?.axes.cards, view?.primaryAction?.kind, view?.teams, setDeckTab])
 }

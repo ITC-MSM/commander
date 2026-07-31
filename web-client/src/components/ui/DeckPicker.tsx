@@ -474,12 +474,12 @@ export function DeckPicker({
   }, [decks])
   const legalityMap = useDeckLegalFormats(legalityInput)
 
-  // Examples filtered by the lobby's format (when set). Examples with no format hint stay
-  // visible everywhere — same permissive rule as the existing saved-deck legality fallback.
+  // Examples are curated for a concrete format. Once the lobby chooses one, do not show untagged
+  // or differently-shaped decks that the server will reject on submission.
   const visibleExamples = useMemo(() => {
     if (!format) return examples
     const target = format.toUpperCase()
-    return examples.filter((ex) => !ex.format || ex.format.toUpperCase() === target)
+    return examples.filter((ex) => ex.format?.toUpperCase() === target)
   }, [examples, format])
 
   // Saved decks filtered by the lobby's format (when set). While the legality response is in

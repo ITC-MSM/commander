@@ -1296,6 +1296,15 @@
   font-weight: var(--font-weight-semibold);
 }
 
+.cardSourceControl {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
 .settingsButtonDraft {
   background-color: var(--color-accent-dark);
 }
