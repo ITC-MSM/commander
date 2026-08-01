@@ -1985,6 +1985,63 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     // =========================================================================
+    // Exile Batching Triggers
+    // =========================================================================
+
+    /**
+     * Whenever one or more cards matching [filter] are put into exile from any of [fromZones].
+     *
+     * This is a **batching trigger** (CR 603.2c) — it fires at most once per event batch,
+     * regardless of how many cards were exiled or which of the watched zones each came from.
+     * Unlike [CardsPutIntoYourGraveyardEvent] / [CardsLeftYourGraveyardEvent] it is **not** scoped
+     * to a single player's zone: "from graveyards and/or the battlefield" means *any* graveyard and
+     * *any* player's permanents, so every controller with this trigger sees the same batch.
+     *
+     * Only cards fire it — tokens are not cards (CR 111.6), so a token exiled from the battlefield
+     * never satisfies it even though it briefly occupies the exile zone before CR 111.7 sweeps it.
+     *
+     * The common "during your turn" timing restriction is expressed on the card via
+     * `triggerCondition = Conditions.IsYourTurn` rather than baked into the event.
+     *
+     * Examples:
+     * - "Whenever one or more cards are put into exile from graveyards and/or the battlefield
+     *   during your turn, …" → `CardsPutIntoExileEvent()` + `triggerCondition = Conditions.IsYourTurn`
+     *   (Ketramose, the New Dawn)
+     */
+    @SerialName("CardsPutIntoExileEvent")
+    @Serializable
+    data class CardsPutIntoExileEvent(
+        val fromZones: Set<Zone> = setOf(Zone.GRAVEYARD, Zone.BATTLEFIELD),
+        val filter: GameObjectFilter = GameObjectFilter.Any
+    ) : EventPattern {
+        override val description: String = buildString {
+            append("one or more ")
+            if (filter != GameObjectFilter.Any) {
+                append(filter.cardPredicates.joinToString(" ") { it.description })
+                append(" ")
+            }
+            append("cards are put into exile from ")
+            append(
+                fromZones.sortedBy { it.ordinal }.joinToString(" and/or ") { zone ->
+                    when (zone) {
+                        Zone.GRAVEYARD -> "graveyards"
+                        Zone.BATTLEFIELD -> "the battlefield"
+                        Zone.HAND -> "hands"
+                        Zone.LIBRARY -> "libraries"
+                        Zone.STACK -> "the stack"
+                        else -> zone.displayName
+                    }
+                }
+            )
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
+
+    // =========================================================================
     // Sacrifice Triggers
     // =========================================================================
 

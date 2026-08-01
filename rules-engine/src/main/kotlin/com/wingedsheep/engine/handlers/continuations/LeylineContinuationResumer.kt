@@ -147,9 +147,7 @@ class LeylineContinuationResumer(
                 it is ZoneChangeEvent && it.entityId == leylineCardId
             },
             cardNameOptions = if (firstChoice.choiceType == ChoiceType.CARD_NAME) {
-                if (firstChoice.cardNamePool == CardNamePool.ANY) {
-                    services.cardRegistry.allCardNames().toList()
-                } else services.cardRegistry.landCardNames().toList()
+                services.cardRegistry.cardNamesIn(firstChoice.cardNamePool).toList()
             } else emptyList(),
         )
     }

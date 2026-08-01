@@ -375,9 +375,7 @@ object PermanentEntryReplacements {
                     revealOpponentHandForEntersChoice(state, controllerId)
                 } else state to emptyList()
                 val id = "choose-card-name-enters-${entityId.value}"
-                val prompt = if (choice.cardNamePool == CardNamePool.ANY) {
-                    "Choose a card name"
-                } else "Choose a land card name"
+                val prompt = choice.cardNamePool.prompt
                 val decision = ChooseOptionDecision(
                     id = id,
                     playerId = chooserId,

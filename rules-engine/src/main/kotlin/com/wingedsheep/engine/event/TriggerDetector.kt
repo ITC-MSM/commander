@@ -264,6 +264,11 @@ class TriggerDetector(
         // "during your turn" restriction is a triggerCondition (Conditions.IsYourTurn) on the card.
         detectCardsLeftGraveyardBatchTriggers(state, events, triggers, index)
 
+        // Detect "whenever one or more cards are put into exile from graveyards and/or the
+        // battlefield" batching triggers (Ketramose, the New Dawn). Unlike the graveyard batches
+        // this is not scoped to one player's zones, so it fires once per qualifying source.
+        detectCardsPutIntoExileBatchTriggers(state, events, triggers, index)
+
         // Detect "whenever you sacrifice one or more [permanents]" batching triggers
         // (e.g., Camellia, the Seedmiser). Groups sacrifice events per controller
         // and fires the trigger at most once per controller.
@@ -1883,6 +1888,53 @@ class TriggerDetector(
                         )
                     )
                 }
+            }
+        }
+    }
+
+    /**
+     * Detect "whenever one or more cards are put into exile from graveyards and/or the
+     * battlefield" batching triggers (Ketramose, the New Dawn).
+     *
+     * Unlike the graveyard batch passes this is **not** scoped to one player's zone — the printed
+     * text says "graveyards" (plural) and doesn't restrict whose battlefield the permanent left,
+     * so every exile out of a watched zone counts for every controller with the trigger. The batch
+     * fires at most once per detection pass (CR 603.2c), no matter how many cards moved or which
+     * of the watched zones they came from.
+     *
+     * The "during your turn" restriction is expressed on the card as
+     * `triggerCondition = Conditions.IsYourTurn` and applied later in detectTriggers.
+     */
+    private fun detectCardsPutIntoExileBatchTriggers(
+        state: GameState,
+        events: List<EngineGameEvent>,
+        triggers: MutableList<PendingTrigger>,
+        index: TriggerIndex
+    ) {
+        val exiled = events.filterIsInstance<ZoneChangeEvent>()
+            .filter { it.toZone == Zone.EXILE && it.fromZone != Zone.EXILE }
+        if (exiled.isEmpty()) return
+
+        for (entry in index.getEntitiesForCategory(TriggerCategory.CARDS_EXILED_BATCH)) {
+            for (ability in entry.abilities) {
+                val trigger = ability.trigger
+                if (trigger !is EventPattern.CardsPutIntoExileEvent) continue
+
+                val hasMatch = exiled.any { event ->
+                    event.fromZone in trigger.fromZones &&
+                        cardMatchesGraveyardBatchFilter(state, event.entityId, trigger.filter)
+                }
+                if (!hasMatch) continue
+
+                triggers.add(
+                    PendingTrigger(
+                        ability = ability,
+                        sourceId = entry.entityId,
+                        sourceName = entry.cardComponent.name,
+                        controllerId = entry.controllerId,
+                        triggerContext = TriggerContext()
+                    )
+                )
             }
         }
     }

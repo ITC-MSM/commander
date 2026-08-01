@@ -1477,13 +1477,24 @@ enum class ChoiceType {
  * The pool of card names offered by a [ChoiceType.CARD_NAME] [EntersWithChoice].
  *
  * - [LAND] — only registered *land* card names (Petrified Hamlet: "choose a land card name").
+ * - [NONLAND] — every registered card name that isn't a land (Skyseer's Chariot: "choose a nonland
+ *   card name").
  * - [ANY] — every registered card name (Sorcerous Spyglass / Pithing Needle: "choose any card
  *   name"). The chosen name is still stored under [com.wingedsheep.sdk.scripting.ChoiceSlot.CARD_NAME]
  *   and read the same way; only the offered option set differs.
  */
 enum class CardNamePool {
     LAND,
-    ANY
+    NONLAND,
+    ANY;
+
+    /** The decision prompt shown when naming a card from this pool. */
+    val prompt: String
+        get() = when (this) {
+            LAND -> "Choose a land card name"
+            NONLAND -> "Choose a nonland card name"
+            ANY -> "Choose a card name"
+        }
 }
 
 /**

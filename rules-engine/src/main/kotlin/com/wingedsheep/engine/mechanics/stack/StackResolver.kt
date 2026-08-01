@@ -3557,10 +3557,7 @@ class StackResolver(
                 // (Sorcerous Spyglass / Pithing Needle) as the permanent spell resolves. The pool
                 // is land names or every registered card name per [EntersWithChoice.cardNamePool];
                 // the chosen name is stored durably under [ChoiceSlot.CARD_NAME] by the resumer.
-                val cardNames = when (choice.cardNamePool) {
-                    com.wingedsheep.sdk.scripting.CardNamePool.ANY -> cardRegistry.allCardNames()
-                    com.wingedsheep.sdk.scripting.CardNamePool.LAND -> cardRegistry.landCardNames()
-                }.sorted()
+                val cardNames = cardRegistry.cardNamesIn(choice.cardNamePool).sorted()
                 if (cardNames.isEmpty()) return null
                 // "As this enters, look at an opponent's hand, then …": reveal the opponent's hand
                 // to the controller before presenting the name choice.
@@ -3568,9 +3565,7 @@ class StackResolver(
                     com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
                         .revealOpponentHandForEntersChoice(state, controllerId)
                 } else state to emptyList()
-                val prompt = if (choice.cardNamePool == com.wingedsheep.sdk.scripting.CardNamePool.ANY) {
-                    "Choose a card name"
-                } else "Choose a land card name"
+                val prompt = choice.cardNamePool.prompt
                 val decisionId = "choose-card-name-enters-${spellId.value}"
                 val decision = ChooseOptionDecision(
                     id = decisionId,
