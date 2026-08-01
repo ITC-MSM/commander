@@ -315,11 +315,22 @@ object HandPatterns {
         )
     }
 
+    /**
+     * "Put up to [count] cards from your hand onto the battlefield" — Gather (hand, matching
+     * [filter]) → Select up to [count] → Move to the battlefield. The `ChooseUpTo` selection models
+     * the "you may" (Elvish Pioneer, Kaalia of the Vast, Spelunking).
+     *
+     * [anyNumber] swaps the selection for [SelectionMode.ChooseAnyNumber], i.e. the unbounded
+     * "put **any number** of … cards from your hand onto the battlefield" wording (Redshift,
+     * Rocketeer Chief's exhaust ability) — [count] is then ignored.
+     */
     fun putFromHand(
         filter: GameObjectFilter = GameObjectFilter.Any,
         count: Int = 1,
         entersTapped: Boolean = false,
-        entersAttacking: Boolean = false
+        entersAttacking: Boolean = false,
+        anyNumber: Boolean = false,
+        prompt: String? = null
     ): CompositeEffect = CompositeEffect(
         listOf(
             GatherCardsEffect(
@@ -328,8 +339,13 @@ object HandPatterns {
             ),
             SelectFromCollectionEffect(
                 from = "put_candidates",
-                selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(count)),
-                storeSelected = "putting"
+                selection = if (anyNumber) {
+                    SelectionMode.ChooseAnyNumber
+                } else {
+                    SelectionMode.ChooseUpTo(DynamicAmount.Fixed(count))
+                },
+                storeSelected = "putting",
+                prompt = prompt
             ),
             MoveCollectionEffect(
                 from = "putting",

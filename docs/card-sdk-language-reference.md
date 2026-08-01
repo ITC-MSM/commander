@@ -2166,11 +2166,15 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`.
 - `readTheRunes()` — "draw X cards; for each, discard a card unless you sacrifice a permanent." Composes `RepeatDynamicTimesEffect(XValue, ChooseActionEffect(...))` with feasibility guards. Exposed as `Effects.ReadTheRunes()`.
 - `eachOpponentMayPutFromHand(filter?)` — each opponent may dump a matching card.
-- `putFromHand(filter?, count?, entersTapped?, entersAttacking?)` — you may put N from hand onto
-  battlefield. `entersAttacking = true` puts them in **tapped and attacking**
+- `putFromHand(filter?, count?, entersTapped?, entersAttacking?, anyNumber?, prompt?)` — you may put N
+  from hand onto battlefield. `entersAttacking = true` puts them in **tapped and attacking**
   (`ZonePlacement.TappedAndAttacking`; the engine adds an `AttackingComponent` against the defending
   player), e.g. Shadowfax, Lord of Horses ("put a creature card with lesser power from your hand onto
-  the battlefield tapped and attacking").
+  the battlefield tapped and attacking"). `anyNumber = true` swaps the default `ChooseUpTo(count)`
+  selection for `SelectionMode.ChooseAnyNumber`, i.e. the unbounded *"put **any number** of … cards
+  from your hand onto the battlefield"* wording (`count` is then ignored); zero is a legal choice, so
+  declining and an empty hand are both no-ops rather than stuck decisions. Redshift, Rocketeer Chief's
+  exhaust ability (`filter = Filters.Permanent, anyNumber = true`).
 - `incubate(n)` — make an Incubator token with N counters.
 - `impulse(count?, expiry?)` — impulse draw: exile the top N of your library, may play those cards until `expiry` (default end of turn); played cards still pay their mana. For the play-free variant compose with `GrantPlayWithoutPayingCostEffect` (cf. `shuffleAndExileTopPlayFree`). Irascible Wolverine (1), Annie Flash, the Veteran (2). `MayPlayExpiry` options: `EndOfTurn` (default), `Permanent` ("for as long as it remains exiled"), `UntilControllerStep(step, includeCurrentTurn?)` / the `UntilEndOfNextTurn` + `UntilNextEndStep` shorthands (turn-keyed, cleaned up at the matching cleanup), and `UntilSourceExilesAnother` — a **self-superseding** permission that persists across turns (and survives the granting source leaving play) but is revoked the moment that *same source* grants another such permission (exiles another card), so only the source's most-recently-exiled card stays playable and the earlier one remains in exile but unplayable. Requires the grant to carry a source id (falls back to `Permanent` behaviour without one); models "you may play that card until you exile another card with this creature" (**Superior Foes of Spider-Man**).
 - `returnLinkedExile(underOwnersControl?)` — bring back linked exile pile.

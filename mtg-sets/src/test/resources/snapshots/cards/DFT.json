@@ -12229,6 +12229,109 @@
     ]
 }
 
+// Redshift, Rocketeer Chief
+{
+    "name": "Redshift, Rocketeer Chief",
+    "manaCost": "{R}{G}",
+    "typeLine": "Legendary Creature — Goblin Pilot",
+    "oracleText": "Vigilance\n{T}: Add X mana of any one color, where X is Redshift's power. Spend this mana only to activate abilities.\nExhaust — {10}{R}{G}: Put any number of permanent cards from your hand onto the battlefield. (Activate each exhaust ability only once.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "restriction": "AbilityActivationOnly"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add X mana of any one color, where X is Redshift's power. Spend this mana only to activate abilities."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{10}{R}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "filter": "permanent"
+                            },
+                            "storeAs": "put_candidates"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "put_candidates",
+                            "selection": "ChooseAnyNumber",
+                            "storeSelected": "putting",
+                            "prompt": "Choose any number of permanent cards to put onto the battlefield"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "putting",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put any number of permanent cards from your hand onto the battlefield.",
+                "isExhaust": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "218",
+        "rarity": "RARE",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5fba3820-32ba-47e9-9fa8-f985ff471b3f.jpg?1783907854",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Exhaust abilities can be activated any time you could normally activate an ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an ability triggers whenever you activate an exhaust ability, that ability resolves before the exhaust ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Reef Roads
 {
     "name": "Reef Roads",
