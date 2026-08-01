@@ -147,7 +147,13 @@ data class DamageDealtEvent(
      * Perfect Shot) via `ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS`. `null` for players,
      * planeswalkers, and events emitted before this was captured.
      */
-    val targetToughnessAtDamage: Int? = null
+    val targetToughnessAtDamage: Int? = null,
+    /**
+     * The damage source's chosen targets at the instant damage was dealt. Resolving spells lose
+     * their TargetsComponent before event-trigger detection, so target/recipient relationship
+     * predicates consume this event-side snapshot instead of consulting later state.
+     */
+    val sourceTargetIdsAtDamage: List<EntityId>? = null
 ) : GameEvent
 
 /**

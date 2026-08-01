@@ -553,6 +553,7 @@ object Triggers {
         binding: TriggerBinding = TriggerBinding.SELF,
         requireExcess: Boolean = false,
         batch: Boolean = false,
+        requires: Set<com.wingedsheep.sdk.scripting.events.DamagePredicate> = emptySet(),
     ): TriggerSpec = TriggerSpec(
         event = DealsDamageEvent(
             damageType = damageType,
@@ -560,6 +561,7 @@ object Triggers {
             sourceFilter = sourceFilter,
             requireExcess = requireExcess,
             batch = batch,
+            requires = requires,
         ),
         binding = binding,
     )

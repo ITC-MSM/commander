@@ -1382,7 +1382,14 @@ class TriggerMatcher(
         // damage past lethal — CR 120.4a. Non-creature targets and at-or-below-lethal hits leave
         // event.excessAmount at 0 and silently fail this gate.
         val excessMatches = !trigger.requireExcess || event.excessAmount > 0
-        return combatMatches && recipientMatches && sourceMatches && excessMatches
+        val requirementsMatch = trigger.requires.all { requirement ->
+            when (requirement) {
+                DamagePredicate.SourceSoleTargetIsRecipient -> {
+                    event.sourceTargetIdsAtDamage?.singleOrNull() == event.targetId
+                }
+            }
+        }
+        return combatMatches && recipientMatches && sourceMatches && excessMatches && requirementsMatch
     }
 
     /**
