@@ -40,6 +40,7 @@ import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.engine.state.components.player.DamageBonusComponent
+import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.scripting.NoncombatDamageBonus
@@ -81,6 +82,18 @@ sealed interface DeflectOutcome {
         val events: List<com.wingedsheep.engine.core.GameEvent>
     ) : DeflectOutcome
 }
+
+/**
+ * One [DoubleDamage] replacement that currently applies to damage dealt to a player, as reported by
+ * [DamageUtils.damageDoublersAffectingPlayer] for the client's player badges.
+ */
+data class ActiveDamageDoubler(
+    /** The battlefield permanent hosting the replacement (Twinflame Tyrant, Gratuitous Violence). */
+    val sourceId: EntityId,
+    val sourceName: String,
+    /** Whether the doubling is scoped to combat or noncombat damage (CR 616 damage-type filter). */
+    val damageType: DamageType,
+)
 
 /**
  * Utility functions for dealing damage, applying damage prevention/amplification/redirection,
@@ -212,8 +225,10 @@ object DamageUtils {
             }
         }
 
-        // Apply damage amplification (e.g., Gratuitous Violence - DoubleDamage)
-        var effectiveAmount = applyStaticDamageAmplification(state, targetId, amount, sourceId)
+        // Apply damage amplification (e.g., Gratuitous Violence - DoubleDamage). The combat flag has
+        // to ride along: a doubler scoped to one damage type (The Rollercrusher Ride — noncombat
+        // only) reads it to decide whether it applies.
+        var effectiveAmount = applyStaticDamageAmplification(state, targetId, amount, sourceId, isCombatDamage)
         var newState = state
 
         // Check for damage-to-counters replacement (Force Bubble)
@@ -1303,6 +1318,165 @@ object DamageUtils {
     }
 
     /**
+     * Whether the source of a damage instance matches a damage replacement's [SourceFilter].
+     *
+     * Shared by every `EventPattern.DamageEvent`-scoped replacement scan below (prevention,
+     * doubling, flat/dynamic modification) so the three cannot drift apart — a filter supported by
+     * one is supported by all. That drift was a real bug: [DoubleDamage] silently ignored
+     * [SourceFilter.YouControl] and fell through to "no match", so Twinflame Tyrant never doubled
+     * anything.
+     *
+     * @param hostId the permanent hosting the replacement effect
+     * @param hostControllerId that permanent's *current* controller — the "you" in "a source you
+     *   control" (see [replacementHostController])
+     * @param recipientId the entity being damaged, exposed to source-relative predicates
+     */
+    private fun damageSourceMatches(
+        state: GameState,
+        projected: ProjectedState,
+        filter: SourceFilter,
+        sourceId: EntityId?,
+        hostId: EntityId,
+        hostControllerId: EntityId,
+        recipientId: EntityId,
+    ): Boolean = when (filter) {
+        is SourceFilter.Any -> true
+        is SourceFilter.Self -> sourceId != null && sourceId == hostId
+        is SourceFilter.EnchantedCreature -> {
+            val attachedTo = state.getEntity(hostId)?.get<AttachedToComponent>()?.targetId
+            sourceId != null && sourceId == attachedTo
+        }
+        // "A source you control" — any source (permanent, spell, or ability) whose controller is
+        // this replacement's controller. Projected control for battlefield permanents; the base
+        // ControllerComponent for spells and abilities on the stack.
+        is SourceFilter.YouControl -> {
+            if (sourceId == null) false
+            else {
+                val sourceController = projected.getController(sourceId)
+                    ?: state.getEntity(sourceId)?.get<ControllerComponent>()?.playerId
+                sourceController == hostControllerId
+            }
+        }
+        is SourceFilter.Matching -> {
+            if (sourceId == null) false
+            else {
+                val context = PredicateContext(
+                    controllerId = hostControllerId,
+                    sourceId = hostId,
+                    recipientId = recipientId,
+                )
+                predicateEvaluator.matches(state, projected, sourceId, filter.filter, context)
+            }
+        }
+        else -> false
+    }
+
+    /**
+     * Whether the recipient of a damage instance matches a damage replacement's [RecipientFilter].
+     * Companion to [damageSourceMatches]; see that doc for why the matching is shared.
+     *
+     * @param hostId the permanent hosting the replacement effect
+     * @param hostControllerId that permanent's current controller — the "you" the filters are
+     *   relative to
+     */
+    private fun damageRecipientMatches(
+        state: GameState,
+        projected: ProjectedState,
+        filter: RecipientFilter,
+        targetId: EntityId,
+        hostId: EntityId,
+        hostControllerId: EntityId,
+    ): Boolean {
+        // Projected control for battlefield permanents, base control for anything else (a
+        // planeswalker mid-zone-change, a stack object). Null for players.
+        fun controllerOf(entityId: EntityId): EntityId? = projected.getController(entityId)
+            ?: state.getEntity(entityId)?.get<ControllerComponent>()?.playerId
+
+        return when (filter) {
+            is RecipientFilter.Any -> true
+            is RecipientFilter.Self -> targetId == hostId
+            is RecipientFilter.You -> targetId == hostControllerId
+            is RecipientFilter.Opponent -> targetId in state.turnOrder && targetId != hostControllerId
+            is RecipientFilter.AnyPlayer -> targetId in state.turnOrder
+            is RecipientFilter.AnyPlayerOrPlaneswalker ->
+                targetId in state.turnOrder || projected.isPlaneswalker(targetId)
+            is RecipientFilter.EnchantedCreature, is RecipientFilter.EquippedCreature -> {
+                val attachedTo = state.getEntity(hostId)?.get<AttachedToComponent>()?.targetId
+                targetId == attachedTo
+            }
+            is RecipientFilter.AnyCreature -> projected.isCreature(targetId)
+            is RecipientFilter.CreatureYouControl ->
+                projected.isCreature(targetId) && controllerOf(targetId) == hostControllerId
+            is RecipientFilter.CreatureOpponentControls ->
+                projected.isCreature(targetId) &&
+                    controllerOf(targetId).let { it != null && it != hostControllerId }
+            is RecipientFilter.AnyPermanent -> targetId in state.getBattlefield()
+            is RecipientFilter.PermanentYouControl ->
+                targetId in state.getBattlefield() && controllerOf(targetId) == hostControllerId
+            // "An opponent or a permanent an opponent controls" (Twinflame Tyrant, Fated Firepower).
+            is RecipientFilter.OpponentOrPermanentTheyControl ->
+                if (targetId in state.turnOrder) targetId != hostControllerId
+                else controllerOf(targetId).let { it != null && it != hostControllerId }
+            is RecipientFilter.Matching -> {
+                // sourceId is the permanent that owns the replacement (e.g. Camel), so
+                // source-relative recipient predicates like InSameBandAsSource can resolve
+                // "this creature and creatures banded with it".
+                val context = PredicateContext(controllerId = hostControllerId, sourceId = hostId)
+                predicateEvaluator.matches(state, projected, targetId, filter.filter, context)
+            }
+        }
+    }
+
+    /**
+     * Battlefield permanents whose [DoubleDamage] replacement currently applies to damage dealt to
+     * [playerId] — what the client turns into the player's "damage doubled" badge, the counterpart
+     * of the prevention-shield badges.
+     *
+     * One entry per applicable replacement, because each applies once (CR 616.1): two Twinflame
+     * Tyrants means two entries and quadrupled damage. Recipient-side only — the source-side filter
+     * needs a concrete damage source to evaluate, so an entry means "damage dealt to this player
+     * can be doubled by this permanent", not that every instance will be.
+     */
+    fun damageDoublersAffectingPlayer(state: GameState, playerId: EntityId): List<ActiveDamageDoubler> {
+        val projected = state.projectedState
+        val doublers = mutableListOf<ActiveDamageDoubler>()
+
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
+            val hostControllerId = replacementHostController(state, entityId) ?: continue
+
+            for (effect in replacementComponent.replacementEffects) {
+                if (effect !is DoubleDamage) continue
+                val damageEvent = effect.appliesTo
+                if (damageEvent !is EventPattern.DamageEvent) continue
+
+                // Gated doublers (The Rollercrusher Ride's delirium) only warn while the gate holds.
+                if (effect.restrictions.isNotEmpty()) {
+                    val context = EffectContext(sourceId = entityId, controllerId = hostControllerId)
+                    if (effect.restrictions.any { !conditionEvaluator.evaluate(state, it, context) }) continue
+                }
+
+                val matches = damageRecipientMatches(
+                    state, projected, damageEvent.recipient, playerId,
+                    hostId = entityId, hostControllerId = hostControllerId,
+                )
+                if (!matches) continue
+
+                doublers.add(
+                    ActiveDamageDoubler(
+                        sourceId = entityId,
+                        sourceName = container.get<CardComponent>()?.name ?: "A permanent",
+                        damageType = damageEvent.damageType,
+                    )
+                )
+            }
+        }
+
+        return doublers
+    }
+
+    /**
      * Apply static damage reduction from permanents on the battlefield.
      *
      * Scans all battlefield entities for ReplacementEffectSourceComponent containing
@@ -1363,50 +1537,17 @@ object DamageUtils {
                 }
 
                 // Check if the damage source matches the source filter
-                val sourceMatches = when (val source = damageEvent.source) {
-                    is SourceFilter.Any -> true
-                    is SourceFilter.Self -> sourceId != null && sourceId == entityId
-                    is SourceFilter.EnchantedCreature -> {
-                        val attachedTo = container.get<AttachedToComponent>()?.targetId
-                        sourceId != null && sourceId == attachedTo
-                    }
-                    is SourceFilter.Matching -> {
-                        if (sourceId == null) false
-                        else {
-                            val context = PredicateContext(controllerId = sourceControllerId, sourceId = entityId, recipientId = targetId)
-                            predicateEvaluator.matches(state, projected, sourceId, source.filter, context)
-                        }
-                    }
-                    else -> false
-                }
+                val sourceMatches = damageSourceMatches(
+                    state, projected, damageEvent.source, sourceId,
+                    hostId = entityId, hostControllerId = sourceControllerId, recipientId = targetId,
+                )
                 if (!sourceMatches) continue
 
                 // Check if the target matches the recipient filter
-                val recipientMatches = when (val recipient = damageEvent.recipient) {
-                    is RecipientFilter.Self -> targetId == entityId
-                    is RecipientFilter.You -> targetId == sourceControllerId
-                    is RecipientFilter.EnchantedCreature, is RecipientFilter.EquippedCreature -> {
-                        val attachedTo = container.get<AttachedToComponent>()?.targetId
-                        targetId == attachedTo
-                    }
-                    is RecipientFilter.Matching -> {
-                        // sourceId here is the permanent that owns the prevention effect (e.g.
-                        // Camel), so source-relative recipient predicates like InSameBandAsSource
-                        // can resolve "this creature and creatures banded with it".
-                        val context = PredicateContext(controllerId = sourceControllerId, sourceId = entityId)
-                        predicateEvaluator.matches(state, projected, targetId, recipient.filter, context)
-                    }
-                    is RecipientFilter.CreatureYouControl -> {
-                        val isCreature = projected.isCreature(targetId)
-                        val isControlled = projected.getController(targetId) == sourceControllerId
-                        isCreature && isControlled
-                    }
-                    is RecipientFilter.AnyCreature -> projected.isCreature(targetId)
-                    is RecipientFilter.AnyPlayer -> targetId in state.turnOrder
-                    is RecipientFilter.AnyPermanent -> targetId in state.getBattlefield()
-                    is RecipientFilter.Any -> true
-                    else -> false
-                }
+                val recipientMatches = damageRecipientMatches(
+                    state, projected, damageEvent.recipient, targetId,
+                    hostId = entityId, hostControllerId = sourceControllerId,
+                )
 
                 if (recipientMatches) {
                     val preventAmount = effect.amount
@@ -1475,35 +1616,21 @@ object DamageUtils {
                 }
 
                 // Check if the damage source matches the source filter
-                val sourceMatches = when (val sourceFilter = damageEvent.source) {
-                    is SourceFilter.Any -> true
-                    is SourceFilter.Matching -> {
-                        if (sourceId == null) false
-                        else {
-                            val context = PredicateContext(controllerId = sourceControllerId, sourceId = entityId)
-                            predicateEvaluator.matches(state, projected, sourceId, sourceFilter.filter, context)
-                        }
-                    }
-                    else -> false
-                }
+                val sourceMatches = damageSourceMatches(
+                    state, projected, damageEvent.source, sourceId,
+                    hostId = entityId, hostControllerId = sourceControllerId, recipientId = targetId,
+                )
                 if (!sourceMatches) continue
 
                 // Check if the target matches the recipient filter
-                val recipientMatches = when (val recipient = damageEvent.recipient) {
-                    is RecipientFilter.Any -> true
-                    is RecipientFilter.Matching -> {
-                        val context = PredicateContext(controllerId = sourceControllerId, sourceId = entityId)
-                        predicateEvaluator.matches(state, projected, targetId, recipient.filter, context)
-                    }
-                    is RecipientFilter.CreatureYouControl -> {
-                        val isCreature = projected.isCreature(targetId)
-                        val isControlled = projected.getController(targetId) == sourceControllerId
-                        isCreature && isControlled
-                    }
-                    else -> false
-                }
+                val recipientMatches = damageRecipientMatches(
+                    state, projected, damageEvent.recipient, targetId,
+                    hostId = entityId, hostControllerId = sourceControllerId,
+                )
                 if (!recipientMatches) continue
 
+                // Each DoubleDamage source is its own replacement effect and applies once
+                // (CR 616.1), so two Twinflame Tyrants quadruple rather than double.
                 amplifiedAmount *= 2
             }
         }
@@ -1547,56 +1674,17 @@ object DamageUtils {
                 }
 
                 // Check if the damage source matches the source filter
-                val sourceMatches = when (val sourceFilter = damageEvent.source) {
-                    is SourceFilter.Any -> true
-                    is SourceFilter.YouControl -> {
-                        // "A source you control" — any source (permanent, spell, ability) whose
-                        // controller is this replacement's controller. Read projected control for
-                        // battlefield permanents; fall back to the base ControllerComponent for
-                        // spells/abilities on the stack.
-                        if (sourceId == null) false
-                        else {
-                            val srcController = projected.getController(sourceId)
-                                ?: state.getEntity(sourceId)?.get<ControllerComponent>()?.playerId
-                            srcController == sourceControllerId
-                        }
-                    }
-                    is SourceFilter.Matching -> {
-                        if (sourceId == null) false
-                        else {
-                            val context = PredicateContext(controllerId = sourceControllerId)
-                            predicateEvaluator.matches(state, projected, sourceId, sourceFilter.filter, context)
-                        }
-                    }
-                    else -> false
-                }
+                val sourceMatches = damageSourceMatches(
+                    state, projected, damageEvent.source, sourceId,
+                    hostId = entityId, hostControllerId = sourceControllerId, recipientId = targetId,
+                )
                 if (!sourceMatches) continue
 
                 // Check if the target matches the recipient filter
-                val recipientMatches = when (val recipient = damageEvent.recipient) {
-                    is RecipientFilter.Any -> true
-                    is RecipientFilter.OpponentOrPermanentTheyControl -> {
-                        if (targetId in state.turnOrder) {
-                            // An opponent player of the replacement's controller.
-                            targetId != sourceControllerId
-                        } else {
-                            // A permanent an opponent controls.
-                            val ctrl = projected.getController(targetId)
-                                ?: state.getEntity(targetId)?.get<ControllerComponent>()?.playerId
-                            ctrl != null && ctrl != sourceControllerId
-                        }
-                    }
-                    is RecipientFilter.Matching -> {
-                        val context = PredicateContext(controllerId = sourceControllerId)
-                        predicateEvaluator.matches(state, projected, targetId, recipient.filter, context)
-                    }
-                    is RecipientFilter.CreatureYouControl -> {
-                        val isCreature = projected.isCreature(targetId)
-                        val isControlled = projected.getController(targetId) == sourceControllerId
-                        isCreature && isControlled
-                    }
-                    else -> false
-                }
+                val recipientMatches = damageRecipientMatches(
+                    state, projected, damageEvent.recipient, targetId,
+                    hostId = entityId, hostControllerId = sourceControllerId,
+                )
                 if (!recipientMatches) continue
 
                 // Additive bonus: a dynamic amount (evaluated against the replacement's source

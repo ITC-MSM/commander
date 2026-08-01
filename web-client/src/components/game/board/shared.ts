@@ -813,6 +813,8 @@ export function getEffectIcon(icon: string): string {
       return '⚔️'
     case 'prevent-damage':
       return '🛡️'
+    case 'double-damage':
+      return '🔥'
     case 'regeneration':
       return '♻️'
     case 'emblem':
