@@ -3348,6 +3348,113 @@
     ]
 }
 
+// Daretti, Rocketeer Engineer
+{
+    "name": "Daretti, Rocketeer Engineer",
+    "manaCost": "{4}{R}",
+    "typeLine": "Legendary Creature — Goblin Artificer",
+    "oracleText": "Daretti's power is equal to the greatest mana value among artifacts you control.\nWhenever Daretti enters or attacks, choose target artifact card in your graveyard. You may sacrifice an artifact. If you do, return the chosen card to the battlefield.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "artifact",
+                "aggregation": "MAX",
+                "property": "MANA_VALUE"
+            }
+        },
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "Sacrifice",
+                            "filter": "artifact"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target artifact card in your graveyard"
+                        },
+                        "destination": "Battlefield"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target artifact card in your graveyard"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "Sacrifice",
+                            "filter": "artifact"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target artifact card in your graveyard"
+                        },
+                        "destination": "Battlefield"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target artifact card in your graveyard"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "rarity": "RARE",
+        "artist": "Borja Pindado",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/be626e2f-1075-4497-bd5b-bd805777afd3.jpg?1783907885",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If an artifact on the battlefield has {X} in its mana cost, X is 0 when determining its mana value."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "You choose the target card in your graveyard as Daretti's second ability is put on the stack, but you don't choose whether to sacrifice an artifact or which one to sacrifice until the ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Daring Mechanic
 {
     "name": "Daring Mechanic",
@@ -9151,6 +9258,89 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b199ce2-0ea0-47e5-a36c-36373be53fec.jpg"
     },
     "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Mendicant Core, Guidelight
+{
+    "name": "Mendicant Core, Guidelight",
+    "manaCost": "{W}{U}",
+    "typeLine": "Legendary Artifact Creature — Robot",
+    "oracleText": "Mendicant Core's power is equal to the number of artifacts you control.\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — Whenever you cast an artifact spell, you may pay {1}. If you do, copy it. (The copy becomes a token.)",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "artifact"
+            }
+        },
+        "toughness": 3
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsArtifact"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}"
+                        }
+                    },
+                    "then": {
+                        "type": "CopyTargetSpell",
+                        "target": "TriggeringEntity"
+                    }
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "Speed",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                "descriptionOverride": "Max speed — you casts a artifact spell, you may pay {1}. If you do, copy target spell."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "213",
+        "rarity": "RARE",
+        "artist": "Zezhou Chen",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f434b103-490f-424e-a0a1-efb1b931c8e6.jpg?1783907856",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "A resolving copy of a permanent spell becomes a token, so the token isn't created. Effects that care about a token being created won't interact with a token that enters the battlefield from Mendicant Core's last ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "The copy remembers any decisions that were made for the original spell as it was cast, including values chosen for X in its mana cost and whether any alternative or additional costs were chosen."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
         "BLUE"
     ]
 }
