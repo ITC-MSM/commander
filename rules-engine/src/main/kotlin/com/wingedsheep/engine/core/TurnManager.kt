@@ -606,6 +606,10 @@ class TurnManager(
                 if (!hasAttackingCreatures(newState)) {
                     return advanceStep(newState.copy(step = Step.COMBAT_DAMAGE))
                 }
+                // CR 510.1 / 510.4: this step's damage is assigned from scratch. Anything a
+                // first-strike assignment locked in belongs to the step that just ended — a
+                // double striker re-divides among the blockers still blocking it.
+                newState = combatManager.clearDamageAssignmentsForNewDamageStep(newState)
                 val damageResult = combatManager.applyCombatDamage(newState, firstStrike = false)
                 if (!damageResult.isSuccess) return damageResult
                 newState = damageResult.newState
