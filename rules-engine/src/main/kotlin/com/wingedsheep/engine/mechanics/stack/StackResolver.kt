@@ -939,7 +939,8 @@ class StackResolver(
                         nameOverride = entersAsCopy.nameOverride,
                         powerOverride = entersAsCopy.powerOverride,
                         toughnessOverride = entersAsCopy.toughnessOverride,
-                        exileCopiedCard = entersAsCopy.exileCopiedCard
+                        exileCopiedCard = entersAsCopy.exileCopiedCard,
+                        additionalCounters = entersAsCopy.additionalCounters
                     )
 
                     val pausedState = state

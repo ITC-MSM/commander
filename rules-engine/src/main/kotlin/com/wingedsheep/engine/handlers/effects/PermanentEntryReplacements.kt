@@ -173,6 +173,7 @@ object PermanentEntryReplacements {
             toughnessOverride = effect.toughnessOverride,
             exileCopiedCard = effect.exileCopiedCard,
             tappedIfCopied = effect.tappedIfCopied,
+            additionalCounters = effect.additionalCounters,
         )
         val paused = state.pushContinuation(continuation).withPendingDecision(decision)
         return ExecutionResult.paused(paused, decision, carryEvents)

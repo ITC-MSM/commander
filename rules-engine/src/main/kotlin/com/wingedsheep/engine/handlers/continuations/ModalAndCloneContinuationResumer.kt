@@ -1,8 +1,10 @@
 package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.*
+import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
+import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
@@ -13,12 +15,16 @@ import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
+import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.targets.TargetOpponent
 import com.wingedsheep.sdk.scripting.targets.TargetPlayer
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 class ModalAndCloneContinuationResumer(
     private val services: com.wingedsheep.engine.core.EngineServices
 ) : ContinuationResumerModule {
+
+    private val dynamicAmountEvaluator = DynamicAmountEvaluator()
 
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
         resumer(ModalContinuation::class, ::resumeModal),
@@ -303,6 +309,32 @@ class ModalAndCloneContinuationResumer(
     }
 
     /**
+     * Apply an `EntersAsCopy.additionalCounters` rider — "except it enters with N additional +1/+1
+     * counters on it" (Altered Ego, Spark Double). Only ever called when a copy was actually made:
+     * the rider is part of the copy effect, so declining the copy declines the counters (printed
+     * ruling). Routes through [EntersWithReplacements.placeEntryCounters] so Hardened Scales-style
+     * counter-placement modifiers and the "counter placed this turn" tracker behave exactly as they
+     * do for a printed "enters with counters".
+     *
+     * @param xValue the value chosen for X while casting, for a [DynamicAmount.XValue] amount; null
+     *   on the non-spell entry path (a land/token copy has no cast X).
+     */
+    private fun applyCopyEntryCounters(
+        state: GameState,
+        entityId: EntityId,
+        controllerId: EntityId,
+        amount: DynamicAmount,
+        xValue: Int?,
+    ): Pair<GameState, List<GameEvent>> {
+        val context = EffectContext(sourceId = entityId, controllerId = controllerId, xValue = xValue)
+        val count = dynamicAmountEvaluator.evaluate(state, amount, context)
+        val entityName = state.getEntity(entityId)?.get<CardComponent>()?.name ?: ""
+        return EntersWithReplacements.placeEntryCounters(
+            state, entityId, CounterTypeFilter.PlusOnePlusOne, count, controllerId, entityName
+        )
+    }
+
+    /**
      * Resume after player selects a creature to copy for Clone-style effects.
      */
     fun resumeCloneEnters(
@@ -357,6 +389,19 @@ class ModalAndCloneContinuationResumer(
                     powerOverride = continuation.powerOverride,
                     toughnessOverride = continuation.toughnessOverride,
                 )
+
+                // "except it enters with X additional +1/+1 counters on it" (Altered Ego) — part of
+                // the copy effect, so it only applies when a copy was actually made. Stamped before
+                // the permanent enters so it is genuinely *entering* with them: state-based actions
+                // never see the 0/0, and enters-with-counters triggers read the final total.
+                val extraCounters = continuation.additionalCounters
+                if (extraCounters != null) {
+                    val (afterCounters, counterEvents) = applyCopyEntryCounters(
+                        newState, spellId, controllerId, extraCounters, spellComponent.xValue
+                    )
+                    newState = afterCounters
+                    events.addAll(counterEvents)
+                }
 
                 // Look up the card definition for the copied creature
                 copiedCardDef = services.cardRegistry.getCard(targetCardComponent.cardDefinitionId)
@@ -463,6 +508,17 @@ class ModalAndCloneContinuationResumer(
             newState = newState.updateEntity(entityId) { c ->
                 c.with(com.wingedsheep.engine.state.components.battlefield.TappedComponent)
             }
+        }
+
+        // "except it enters with N additional +1/+1 counters on it" — likewise only when a copy
+        // was actually made.
+        val bfExtraCounters = continuation.additionalCounters
+        if (copyApplied && bfExtraCounters != null) {
+            val (afterCounters, counterEvents) = applyCopyEntryCounters(
+                newState, entityId, continuation.controllerId, bfExtraCounters, xValue = null
+            )
+            newState = afterCounters
+            outEvents.addAll(counterEvents)
         }
 
         // "When you do, exile that card." (graveyard copies) — exile the copied card afterward.
