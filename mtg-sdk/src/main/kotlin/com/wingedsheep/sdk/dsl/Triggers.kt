@@ -1171,6 +1171,12 @@ object Triggers {
         binding = TriggerBinding.ANY
     )
 
+    /** Whenever you activate an exhaust ability. */
+    val YouActivateExhaustAbility: TriggerSpec = TriggerSpec(
+        event = AbilityActivatedEvent(player = Player.You, requireExhaust = true),
+        binding = TriggerBinding.ANY
+    )
+
     /**
      * Whenever this creature crews a Vehicle. The Vehicle is available to the effect as
      * `EffectTarget.TriggeringEntity`.

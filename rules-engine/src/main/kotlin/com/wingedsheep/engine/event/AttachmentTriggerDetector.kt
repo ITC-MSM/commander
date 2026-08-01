@@ -140,7 +140,11 @@ class AttachmentTriggerDetector(private val matcher: TriggerMatcher) {
                 if (!matcher.matchesPlayer(trigger.player, event.controllerId, auraControllerId)) return false
                 // Mirror the main matcher's two wordings (see TriggerMatcher.AbilityActivatedEvent):
                 // "without {T} in its activation cost" vs. "isn't a mana ability".
-                if (trigger.requireNoTapInCost) !event.costsTap else !event.isManaAbility
+                when {
+                    trigger.requireExhaust -> event.isExhaust
+                    trigger.requireNoTapInCost -> !event.costsTap
+                    else -> !event.isManaAbility
+                }
             }
             is EventPattern.TurnFaceUpEvent -> {
                 event is TurnFaceUpEvent && event.entityId == attachedEntityId

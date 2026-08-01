@@ -67,6 +67,7 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // the payoff is renderable (else SCAFFOLD).
     supported("AtTheBeginningOfCombatDuringAPlayersTurn", "trigger: beginning of combat on your turn (Triggers.BeginCombat)")
     supported("WhenAPlayerCastsASpell", "trigger: a player casts a spell (Triggers.YouCastSpell / AnyPlayerCastsSpell / OpponentCastsSpell + type filters)")
+    supported("WhenAPlayerActivatesAnAbility", "trigger: you activate an exhaust ability (Triggers.YouActivateExhaustAbility)")
     supported("WhenAPlayerCastsTheirNthSpellInATurn", "trigger: you cast your Nth spell each turn (Triggers.NthSpellCast(N, Player.You) — Rodeo Pyromancers)")
     // Breeches, the Blastmaker stays a DELIBERATE DECLINE — its second-spell payoff (NthSpellCast above)
     // is a `MayCost(sacrifice an artifact)`-gated `FlipACoin_OnWinAndLose` that sets up two reflexive

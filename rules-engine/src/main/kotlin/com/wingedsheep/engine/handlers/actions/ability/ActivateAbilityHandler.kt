@@ -1733,6 +1733,7 @@ class ActivateAbilityHandler(
             currentState, abilityOnStack, action.targets,
             targetRequirements = effectiveTargetReqs,
             costsTap = hasTapCost(effectiveCost),
+            isExhaust = ability.isExhaust,
             cantBeCopied = ability.cantBeCopied
         )
         currentState = stackResult.newState
@@ -1822,7 +1823,8 @@ class ActivateAbilityHandler(
                 )
                 val repeatStackResult = stackResolver.putActivatedAbility(
                     currentState, repeatAbilityOnStack, action.targets,
-                    targetRequirements = effectiveTargetReqs
+                    targetRequirements = effectiveTargetReqs,
+                    isExhaust = ability.isExhaust,
                 )
                 currentState = repeatStackResult.newState
                 events.addAll(repeatStackResult.events)

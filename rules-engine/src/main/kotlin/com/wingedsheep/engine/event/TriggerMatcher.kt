@@ -263,7 +263,9 @@ class TriggerMatcher(
             is EventPattern.AbilityActivatedEvent -> {
                 if (event !is AbilityActivatedEvent) return false
                 if (!matchesPlayer(trigger.player, event.controllerId, controllerId)) return false
-                if (trigger.requireNoTapInCost) {
+                if (trigger.requireExhaust) {
+                    if (!event.isExhaust) return false
+                } else if (trigger.requireNoTapInCost) {
                     // Antiquities "activates an ability without {T} in its activation cost"
                     // (Haunting Wind / Powerleech / Artifact Possession). Match any activated
                     // ability whose cost lacks {T} — mana abilities without {T} count too.
