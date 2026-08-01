@@ -662,6 +662,184 @@
     }
 }
 
+// Docent of Perfection
+{
+    "name": "Docent of Perfection",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Creature — Insect Horror",
+    "oracleText": "Flying\nWhenever you cast an instant or sorcery spell, create a 1/1 blue Human Wizard creature token. Then if you control three or more Wizards, transform this creature.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [
+                                "BLUE"
+                            ],
+                            "creatureTypes": [
+                                "Human",
+                                "Wizard"
+                            ]
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "AggregateBattlefield",
+                                        "player": "You",
+                                        "filter": "creature Wizard"
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 3
+                                    }
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Create a 1/1 blue Human Wizard creature token. Then if you control three or more Wizards, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Final Iteration",
+        "manaCost": "",
+        "typeLine": "Creature — Eldrazi Insect",
+        "oracleText": "Flying\nWizards you control get +2/+1 and have flying.\nWhenever you cast an instant or sorcery spell, create a 1/1 blue Human Wizard creature token.",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 5
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "SpellCastEvent",
+                        "spellFilter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        "IsInstant",
+                                        "IsSorcery"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "BLUE"
+                        ],
+                        "creatureTypes": [
+                            "Human",
+                            "Wizard"
+                        ]
+                    },
+                    "descriptionOverride": "Create a 1/1 blue Human Wizard creature token."
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 2,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "creature Wizard ctrl:you"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "filter": {
+                        "baseFilter": "creature Wizard ctrl:you"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "56",
+            "rarity": "RARE",
+            "artist": "Nils Hamm",
+            "imageUri": "https://cards.scryfall.io/normal/back/3/0/30c3d4c1-dc3d-4529-9d6e-8c16149cf6da.jpg?1783937509"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "rarity": "RARE",
+        "artist": "Nils Hamm",
+        "flavorText": "The time had come for him to share his findings.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/30c3d4c1-dc3d-4529-9d6e-8c16149cf6da.jpg?1783937509",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "An ability that triggers when a player casts a spell resolves before the spell that caused it to trigger. It resolves even if that spell is countered or otherwise leaves the stack without resolving."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If you control three or more Wizards while you control Docent of Perfection, it won't transform yet. It only transforms while its triggered ability is resolving after you cast an instant or sorcery spell."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "When Docent of Perfection transforms into Final Iteration, the instant or sorcery spell that's on the stack doesn't cause Final Iteration's triggered ability to trigger."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "All Wizards you control get +2/+1 and have flying, not just those created by Docent of Perfection or Final Iteration."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Drogskol Shieldmate
 {
     "name": "Drogskol Shieldmate",
@@ -1105,6 +1283,153 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Grizzled Angler
+{
+    "name": "Grizzled Angler",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human",
+    "oracleText": "{T}: Mill two cards. Then if there is a colorless creature card in your graveyard, transform this creature. (To mill two cards, put the top two cards of your library into your graveyard.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        },
+                                        "isMill": true
+                                    },
+                                    "storeAs": "milled"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "milled",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "Count",
+                                        "player": "You",
+                                        "zone": "Graveyard",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsCreature",
+                                                "IsColorless"
+                                            ]
+                                        }
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Mill two cards. Then if there is a colorless creature card in your graveyard, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Grisly Anglerfish",
+        "manaCost": "",
+        "typeLine": "Creature — Eldrazi Fish",
+        "oracleText": "{6}: Creatures your opponents control attack this turn if able.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 5
+        },
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{6}"
+                        }
+                    },
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            }
+                        },
+                        "body": "MarkMustAttackThisTurn"
+                    },
+                    "descriptionOverride": "Creatures your opponents control attack this turn if able."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "63",
+            "rarity": "UNCOMMON",
+            "artist": "Kev Walker",
+            "flavorText": "\". . . it's that the lure of the sea is impossible to ignore.\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/1/e/1eb4ddf4-f695-412d-be80-b93392432498.jpg?1783937503"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "UNCOMMON",
+        "artist": "Kev Walker",
+        "flavorText": "\"There's no question that these waters are treacherous, but if there's one thing I've learned in all my years of sailing . . .\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/e/1eb4ddf4-f695-412d-be80-b93392432498.jpg?1783937503",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "If you have a colorless creature card in your graveyard while you control Grizzled Angler, it won't transform yet. It only transforms while its activated ability is resolving."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If a creature affected by Grisly Anglerfish's effect hasn't been under its controller's control since the turn began, is tapped, or is affected by a spell or ability that says it can't attack, then it doesn't attack. If there's a cost associated with having that creature attack, its controller isn't forced to pay that cost, so it doesn't have to attack in that case either."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Each creature's controller still chooses the player, planeswalker, or battle it attacks. The creatures that have to attack don't necessarily have to attack you if there are other options."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

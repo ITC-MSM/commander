@@ -79,7 +79,8 @@ enum class CounterType {
     INGENUITY,
     FILM,
     SKEWER,
-    ENERGY;
+    ENERGY,
+    ICE;
 
     companion object {
         /**
@@ -394,6 +395,18 @@ object Counters {
      * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val ENERGY = "energy"
+
+    /**
+     * Ice counter (SOI — Thing in the Ice). Passive "thaw countdown" counter with no inherent rule
+     * of its own — Thing in the Ice enters with four (`EntersWithCounters(CounterTypeFilter.Named(
+     * Counters.ICE), count = 4, selfOnly = true)`) and its instant/sorcery cast trigger removes one,
+     * then transforms the permanent once the tally reaches zero (a `Gate.WhenCondition` on
+     * `Conditions.SourceCounterCountAtMost(Counters.ICE, 0)`). Same countdown shape as
+     * `Counters.WISH` / `Counters.FILM`, but read down to zero rather than spent as a cost — and
+     * per the printed ruling, removing the last counter *any other way* does not transform it.
+     * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val ICE = "ice"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.

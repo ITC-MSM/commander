@@ -785,6 +785,7 @@ export const PASSIVE_COUNTER_TYPES: readonly CounterType[] = [
   CounterType.REVIVAL,
   CounterType.INGENUITY,
   CounterType.FILM,
+  CounterType.ICE,
   CounterType.PLUS_ONE_PLUS_ZERO,
   CounterType.PLUS_ZERO_PLUS_ONE,
   CounterType.MINUS_ONE_MINUS_ZERO,

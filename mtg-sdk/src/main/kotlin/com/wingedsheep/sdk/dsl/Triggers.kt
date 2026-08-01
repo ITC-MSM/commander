@@ -1654,6 +1654,23 @@ object Triggers {
         binding = TriggerBinding.SELF
     )
 
+    /**
+     * Generic "transforms" factory — use [Transforms] / [TransformsToBack] / [TransformsToFront]
+     * for the SELF forms; reach for this factory to bind the trigger elsewhere.
+     *
+     * `binding = TriggerBinding.ATTACHED` is "when **equipped/enchanted** creature transforms"
+     * (Neglected Heirloom: "When equipped creature transforms, transform this Equipment"), routed
+     * through `AttachmentTriggerDetector` like every other ATTACHED trigger. [intoBackFace] filters
+     * direction: `true` = to back, `false` = to front, `null` = either.
+     */
+    fun transforms(
+        binding: TriggerBinding = TriggerBinding.SELF,
+        intoBackFace: Boolean? = null
+    ): TriggerSpec = TriggerSpec(
+        event = TransformEvent(intoBackFace = intoBackFace),
+        binding = binding
+    )
+
     // =========================================================================
     // Targeting Triggers
     // =========================================================================

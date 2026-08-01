@@ -1265,6 +1265,136 @@
     ]
 }
 
+// Neglected Heirloom
+{
+    "name": "Neglected Heirloom",
+    "manaCost": "{1}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +1/+1.\nWhen equipped creature transforms, transform this Equipment.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TransformEvent",
+                "binding": "ATTACHED",
+                "effect": "Transform",
+                "descriptionOverride": "Transform this Equipment."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            }
+        ]
+    },
+    "equipCost": "{1}",
+    "backFace": {
+        "name": "Ashmouth Blade",
+        "manaCost": "",
+        "typeLine": "Artifact — Equipment",
+        "oracleText": "Equipped creature gets +3/+3 and has first strike.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)",
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_3",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{3}"
+                        }
+                    },
+                    "effect": {
+                        "type": "AttachEquipment",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature you control"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            },
+                            "id": "creature you control"
+                        }
+                    ],
+                    "timing": "SorcerySpeed",
+                    "isEquipAbility": true
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 3,
+                    "toughnessBonus": 3
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE"
+                }
+            ]
+        },
+        "equipCost": "{3}",
+        "metadata": {
+            "collectorNumber": "260",
+            "rarity": "UNCOMMON",
+            "artist": "Volkan Baǵa",
+            "flavorText": "\"Its previous owners had some stories to share, I'm certain.\"\n—Old Rutstein",
+            "imageUri": "https://cards.scryfall.io/normal/back/5/c/5cc2ac21-d31f-4a0d-956a-dabb6e1f3b5a.jpg?1783937716"
+        },
+        "colorIdentityOverride": [],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "260",
+        "rarity": "UNCOMMON",
+        "artist": "Volkan Baǵa",
+        "flavorText": "\"There is a rich history in a blade like this.\"\n—Old Rutstein",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5cc2ac21-d31f-4a0d-956a-dabb6e1f3b5a.jpg?1783937716",
+        "rulings": [
+            {
+                "date": "2016-04-08",
+                "text": "When Neglected Heirloom transforms, it remains attached to the creature it's attached to. If the equipped creature transforms into a noncreature permanent, Neglected Heirloom will become unattached before it transforms into Ashmouth Blade."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Open the Armory
 {
     "name": "Open the Armory",
@@ -1879,6 +2009,180 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Thing in the Ice
+{
+    "name": "Thing in the Ice",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Horror",
+    "oracleText": "Defender\nThis creature enters with four ice counters on it.\nWhenever you cast an instant or sorcery spell, remove an ice counter from this creature. Then if it has no ice counters on it, transform it.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "RemoveCounters",
+                            "counterType": "ice",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": {
+                                            "type": "CounterCount",
+                                            "counterType": {
+                                                "type": "Named",
+                                                "name": "ice"
+                                            }
+                                        }
+                                    },
+                                    "operator": "LTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 0
+                                    }
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Remove an ice counter from this creature. Then if it has no ice counters on it, transform it."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "ice"
+                },
+                "count": 4,
+                "selfOnly": true
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Awoken Horror",
+        "manaCost": "",
+        "typeLine": "Creature — Kraken Horror",
+        "oracleText": "When this creature transforms into Awoken Horror, return all non-Horror creatures to their owners' hands.",
+        "creatureStats": {
+            "power": 7,
+            "toughness": 8
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "TransformEvent",
+                        "intoBackFace": true
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsCreature",
+                                            {
+                                                "type": "NotSubtype",
+                                                "subtype": "Horror"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "storeAs": "returnAllToHand_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "returnAllToHand_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Return all non-Horror creatures to their owners' hands."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "92",
+            "rarity": "RARE",
+            "artist": "Svetlin Velinov",
+            "flavorText": "\"It serves as evidence of the ancient power of the deep, a reminder that the sea is the only thing worthy of reverence.\"\n—Runo Stromkirk",
+            "imageUri": "https://cards.scryfall.io/normal/back/3/5/359d1b13-6156-43b0-a9a7-6bfff36c1a91.jpg?1783937788"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "RARE",
+        "artist": "Svetlin Velinov",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/359d1b13-6156-43b0-a9a7-6bfff36c1a91.jpg?1783937788",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "An ability that triggers when a player casts a spell resolves before the spell that caused it to trigger. It resolves even if that spell is countered or otherwise leaves the stack without resolving."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "When Thing in the Ice's triggered ability transforms it, Awoken Horror's ability will trigger and resolve before the spell that caused Thing in the Ice's last ability to trigger."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Removing all ice counters from Thing in the Ice some other way will not cause it to transform. You'll need to cast an instant or sorcery spell and cause its last ability to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
