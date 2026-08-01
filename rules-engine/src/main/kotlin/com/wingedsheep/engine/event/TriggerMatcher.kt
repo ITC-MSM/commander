@@ -640,6 +640,8 @@ class TriggerMatcher(
             is EventPattern.CardsPutIntoYourGraveyardEvent -> false
             // Leave-graveyard batch triggers are handled by detectCardsLeftGraveyardBatchTriggers
             is EventPattern.CardsLeftYourGraveyardEvent -> false
+            // Exile batch triggers are handled by detectCardsPutIntoExileBatchTriggers
+            is EventPattern.CardsPutIntoExileEvent -> false
             // Sacrifice batch triggers are handled by detectSacrificeBatchTriggers
             is EventPattern.PermanentsSacrificedEvent -> false
             // Combat damage batch triggers are handled by detectCombatDamageBatchTriggers

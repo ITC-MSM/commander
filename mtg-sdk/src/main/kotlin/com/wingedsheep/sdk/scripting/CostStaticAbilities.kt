@@ -869,3 +869,43 @@ data class ReduceActivatedAbilityCost(
         return if (newFilter !== filter || newAmount !== amount) copy(filter = newFilter, amount = newAmount) else this
     }
 }
+
+/**
+ * The activated abilities of sources matching [filter] cost [amount] generic mana **more** to
+ * activate — the taxing mirror of [ReduceActivatedAbilityCost], summed against it into a single
+ * net delta so a reduction and an increase on the same ability cancel (CR 601.2f: increases and
+ * reductions are applied to the mana part of the cost, and the two are netted before payment).
+ *
+ * Unlike a reduction, an increase applies even when the ability has *no* mana in its cost — a bare
+ * `{T}:` ability taxed by {2} becomes `{2}, {T}:`. There is no floor parameter: costs only grow.
+ *
+ * Used by Skyseer's Chariot — "Activated abilities of sources with the chosen name cost {2} more to
+ * activate", where [filter] is the bare chosen-name predicate
+ * ([com.wingedsheep.sdk.scripting.GameObjectFilter.namedFromChosenComponent]) so the tax keys off
+ * the Vehicle's durable as-enters card-name choice.
+ *
+ * @property filter Which sources' activated abilities are taxed (matched via projected state; use
+ *   [com.wingedsheep.sdk.scripting.filters.unified.GroupFilter.source] for "this permanent's
+ *   abilities" or a battlefield filter for a group).
+ * @property amount Dynamic generic-mana increase applied to each matching ability's cost.
+ */
+@SerialName("IncreaseActivatedAbilityCost")
+@Serializable
+data class IncreaseActivatedAbilityCost(
+    val filter: GroupFilter,
+    val amount: DynamicAmount
+) : StaticAbility {
+    override val description: String = buildString {
+        append(filter.description.replaceFirstChar { it.uppercase() })
+        when (amount) {
+            is DynamicAmount.Fixed -> append("'s activated abilities cost {${amount.amount}} more to activate")
+            else -> append("'s activated abilities cost {X} more to activate, where X is ${amount.description}")
+        }
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        val newAmount = amount.applyTextReplacement(replacer)
+        return if (newFilter !== filter || newAmount !== amount) copy(filter = newFilter, amount = newAmount) else this
+    }
+}

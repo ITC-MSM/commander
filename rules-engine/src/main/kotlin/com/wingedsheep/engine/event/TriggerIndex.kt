@@ -63,6 +63,7 @@ enum class TriggerCategory {
     LIBRARY_TO_GRAVEYARD,
     ANY_TO_GRAVEYARD,
     CARDS_LEFT_GRAVEYARD,
+    CARDS_EXILED_BATCH,
     SACRIFICE,
     COMBAT_DAMAGE_BATCH,
     LEAVE_WITHOUT_DYING,
@@ -252,6 +253,7 @@ class TriggerIndex(
                 is SdkGameEvent.CardsPutIntoGraveyardFromLibraryEvent -> listOf(TriggerCategory.LIBRARY_TO_GRAVEYARD)
                 is SdkGameEvent.CardsPutIntoYourGraveyardEvent -> listOf(TriggerCategory.ANY_TO_GRAVEYARD)
                 is SdkGameEvent.CardsLeftYourGraveyardEvent -> listOf(TriggerCategory.CARDS_LEFT_GRAVEYARD)
+                is SdkGameEvent.CardsPutIntoExileEvent -> listOf(TriggerCategory.CARDS_EXILED_BATCH)
                 is SdkGameEvent.PermanentsSacrificedEvent -> listOf(TriggerCategory.SACRIFICE)
                 is SdkGameEvent.OneOrMoreDealCombatDamageToPlayerEvent -> listOf(TriggerCategory.COMBAT_DAMAGE_BATCH)
                 is SdkGameEvent.OneOrMoreDealCombatDamageToYouEvent -> listOf(TriggerCategory.COMBAT_DAMAGE_BATCH)

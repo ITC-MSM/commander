@@ -827,6 +827,27 @@ object Triggers {
     )
 
     // =========================================================================
+    // Exile Batching Triggers
+    // =========================================================================
+
+    /**
+     * Whenever one or more cards matching [filter] are put into exile from [fromZones].
+     * Batching trigger — fires at most once per event batch regardless of how many cards were
+     * exiled or which of the watched zones each came from, and it is *not* scoped to one player's
+     * zones ("graveyards", plural, and anyone's battlefield permanents).
+     *
+     * Pair with `triggerCondition = Conditions.IsYourTurn` for the common "during your turn"
+     * wording (Ketramose, the New Dawn).
+     */
+    fun CardsPutIntoExile(
+        fromZones: Set<Zone> = setOf(Zone.GRAVEYARD, Zone.BATTLEFIELD),
+        filter: GameObjectFilter = GameObjectFilter.Any
+    ): TriggerSpec = TriggerSpec(
+        event = CardsPutIntoExileEvent(fromZones = fromZones, filter = filter),
+        binding = TriggerBinding.ANY
+    )
+
+    // =========================================================================
     // Card Drawing Triggers
     // =========================================================================
 

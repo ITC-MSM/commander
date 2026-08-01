@@ -121,6 +121,26 @@ class CardRegistry(private val parent: CardRegistry? = null) {
     }
 
     /**
+     * Get the names of every registered card whose type line does *not* include Land (Skyseer's
+     * Chariot's "choose a nonland card name"). Unique names only; the mirror of [landCardNames].
+     */
+    fun nonlandCardNames(): Set<String> {
+        val own = cardsByName.values.filter { !it.isLand }.map { it.name }.toSet()
+        return if (parent == null) own else own + parent.nonlandCardNames().filter { it !in cardsByName }
+    }
+
+    /**
+     * The names offered by an `EntersWithChoice(ChoiceType.CARD_NAME)` drawing from [pool] — the
+     * single place the pool-to-registry mapping lives, so every naming path (spell resolution,
+     * land drop, leyline opening) offers the same option set.
+     */
+    fun cardNamesIn(pool: com.wingedsheep.sdk.scripting.CardNamePool): Set<String> = when (pool) {
+        com.wingedsheep.sdk.scripting.CardNamePool.ANY -> allCardNames()
+        com.wingedsheep.sdk.scripting.CardNamePool.LAND -> landCardNames()
+        com.wingedsheep.sdk.scripting.CardNamePool.NONLAND -> nonlandCardNames()
+    }
+
+    /**
      * Get all cards with a given name (useful for basic lands with multiple variants).
      *
      * @param name The card name (e.g., "Plains")

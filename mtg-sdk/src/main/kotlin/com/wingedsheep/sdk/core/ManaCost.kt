@@ -58,6 +58,18 @@ data class ManaCost(val symbols: List<ManaSymbol>) {
     }
 
     /**
+     * Increase the generic mana portion of this cost by [amount] (CR 601.2f / 602.2b — cost
+     * increases are applied to the mana part of the cost). Colored/hybrid/Phyrexian symbols are
+     * untouched, and a cost with no mana at all (`{T}:` abilities) gains the generic outright:
+     * `{}` → `{2}`, `{1}{U}` → `{3}{U}`.
+     */
+    fun increaseGeneric(amount: Int): ManaCost {
+        if (amount <= 0) return this
+        val nonGeneric = symbols.filter { it !is ManaSymbol.Generic }
+        return ManaCost(listOf(ManaSymbol.Generic(genericAmount + amount)) + nonGeneric)
+    }
+
+    /**
      * Reduce the generic portion by [amount], but never below a *total* of [minTotalMana] mana
      * (generic + every other mana symbol). Colored/hybrid/phyrexian/colorless symbols are never
      * removed; only generic mana is reduced, and only down to the point where the whole cost still

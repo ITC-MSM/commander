@@ -876,6 +876,7 @@ class StaticAbilityHandler(
             is FreeFirstEquipEachTurn,
             is ReduceEquipCost,
             is ReduceActivatedAbilityCost,
+            is com.wingedsheep.sdk.scripting.IncreaseActivatedAbilityCost,
             is PlayFromTopOfLibrary,
             is PlayLandsAndCastFilteredFromTopOfLibrary,
             is PlotFromTopOfLibrary,

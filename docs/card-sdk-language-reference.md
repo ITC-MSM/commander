@@ -3643,6 +3643,13 @@ in the repo today):
   **during your turn**" wording, add `triggerCondition = Conditions.IsYourTurn`; for "this
   ability triggers only once each turn", add `oncePerTurn = true`. (Attuned Hunter, Kishla
   Skimmer, Kheru Goldkeeper.)
+- `CardsPutIntoExile(fromZones?, filter?)` — batching trigger; fires once per event batch when one
+  or more matching **cards** are put into exile from any of `fromZones` (default: graveyard and
+  battlefield). Unlike the graveyard batches above it is **not** scoped to one player's zones —
+  "graveyards and/or the battlefield" means any graveyard and anyone's permanents, so every
+  controller of the trigger sees the same batch. Tokens never satisfy it (CR 111.6). Add
+  `triggerCondition = Conditions.IsYourTurn` for the "during your turn" wording.
+  (Ketramose, the New Dawn.)
 
 ### Discard
 
@@ -5113,6 +5120,14 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   Note that `GroupFilter.excludeSelf` (the printed "**other** permanents") is honored by this read
   site directly — the projection layer never sees this static — so a lord never discounts its own
   abilities.
+- `IncreaseActivatedAbilityCost(filter, amount)` — the taxing mirror of
+  `ReduceActivatedAbilityCost`: activated abilities of sources matching `filter` cost `amount`
+  generic mana **more** to activate. The two are summed into a single net delta before either is
+  applied, so a reduction and an increase on the same ability cancel (CR 601.2f). Unlike a
+  reduction, a tax also applies to abilities with **no mana in their cost** — a bare `{T}:` ability
+  taxed by {2} becomes `{2}, {T}:` — and there is no `manaFloor`, since costs only grow. Skyseer's
+  Chariot: "Activated abilities of sources with the chosen name cost {2} more to activate" →
+  `IncreaseActivatedAbilityCost(GroupFilter(GameObjectFilter.Any.namedFromChosenComponent()), DynamicAmount.Fixed(2))`.
 - `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null)`
   — cast spells matching `filter` from your graveyard following normal timing, optionally paying
   `lifeCost` life. Free for Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1,
@@ -7709,8 +7724,10 @@ the `CastChoicesComponent` under `ChoiceSlot.CARD_NAME` as a `ChoiceValue.TextCh
 `chosenCardName()` or, for name-keyed static-ability filters,
 `GameObjectFilter.namedFromChosenComponent()` (→ `CardPredicate.NameEqualsChosenComponent`, see §7).
 The offered pool is controlled by `cardNamePool: CardNamePool` — `CardNamePool.LAND` (default) offers
-every registered land name (Petrified Hamlet's "choose a land card name"); `CardNamePool.ANY` offers
-every registered card name (Sorcerous Spyglass / Pithing Needle's "choose any card name"). Set
+every registered land name (Petrified Hamlet's "choose a land card name"); `CardNamePool.NONLAND`
+offers every registered nonland name (Skyseer's Chariot's "choose a nonland card name");
+`CardNamePool.ANY` offers every registered card name (Sorcerous Spyglass / Pithing Needle's "choose
+any card name"). Set
 `lookAtOpponentHand = true` to first reveal an opponent's hand to the controller as the permanent
 enters, immediately before the choice (durable reveal via `RevealedToComponent`, correctly masked to
 show only to the controller; purely informational — it never restricts the name chosen, so an empty

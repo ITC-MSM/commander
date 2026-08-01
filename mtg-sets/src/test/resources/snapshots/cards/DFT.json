@@ -8530,6 +8530,109 @@
     ]
 }
 
+// Ketramose, the New Dawn
+{
+    "name": "Ketramose, the New Dawn",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Legendary Creature — God",
+    "oracleText": "Menace, lifelink, indestructible\nKetramose can't attack or block unless there are seven or more cards in exile.\nWhenever one or more cards are put into exile from graveyards and/or the battlefield during your turn, you draw a card and lose 1 life.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE",
+        "LIFELINK",
+        "INDESTRUCTIBLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CardsPutIntoExileEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": "Controller"
+                        }
+                    ]
+                },
+                "triggerCondition": "IsYourTurn",
+                "descriptionOverride": "Whenever one or more cards are put into exile from graveyards and/or the battlefield during your turn, you draw a card and lose 1 life."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantAttackUnless",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "Each",
+                        "zone": "Exile"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            },
+            {
+                "type": "CantBlockUnless",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "Each",
+                        "zone": "Exile"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "rarity": "MYTHIC",
+        "artist": "Maaz Ali Khan",
+        "flavorText": "Let the past die so the future might live.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cffae8d0-7b4e-42ed-8124-24a86b38f490.jpg?1783907856",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "The ability that prevents Ketramose from attacking or blocking counts the total number of cards in exile, regardless of who owns them or how they were exiled."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Once Ketramose has been declared as an attacker or blocker, it will continue to attack or block that combat even if the number of cards in exile falls below seven."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Kickoff Celebrations
 {
     "name": "Kickoff Celebrations",
@@ -14847,6 +14950,64 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Skyseer's Chariot
+{
+    "name": "Skyseer's Chariot",
+    "manaCost": "{1}{W}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Flying\nAs this Vehicle enters, choose a nonland card name.\nActivated abilities of sources with the chosen name cost {2} more to activate.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "IncreaseActivatedAbilityCost",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "NameEqualsChosenComponent"
+                        ]
+                    }
+                },
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 2
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "CARD_NAME",
+                "cardNamePool": "NONLAND"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "RARE",
+        "artist": "Carl Critchlow",
+        "flavorText": "\"It's the dawn of a new era, and we shall rise like the suns to greet it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96ed5b66-8e74-4a90-ad4e-c39d15993994.jpg?1783907914"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

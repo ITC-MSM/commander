@@ -722,60 +722,89 @@ class CastPermissionUtils(
         isExhaustAbility: Boolean = false
     ): AbilityCost {
         if (sourceId == null) return cost
-        val (amount, manaFloor) = sumActivatedAbilityCostReductions(state, sourceId, isExhaustAbility)
-        if (amount <= 0) return cost
+        val (net, manaFloor) = sumActivatedAbilityCostModifications(state, sourceId, isExhaustAbility)
+        if (net == 0) return cost
+        // net > 0 reduces (floored), net < 0 taxes. A reduction can only shrink mana that is
+        // already there; a tax applies to *every* activated ability, so a cost with no mana part
+        // (`{T}:`, sacrifice, crew) gains one — "{T}:" taxed by {2} becomes "{2}, {T}:".
+        val modify: (ManaCost) -> ManaCost =
+            if (net > 0) { mana -> mana.reduceGenericWithManaFloor(net, manaFloor) }
+            else { mana -> mana.increaseGeneric(-net) }
+        val taxAtom = { AbilityCost.Atom(CostAtom.Mana(modify(ManaCost.ZERO))) }
         return when (cost) {
             is AbilityCost.Atom -> cost.manaCostOrNull
-                ?.let { AbilityCost.Atom(CostAtom.Mana(it.reduceGenericWithManaFloor(amount, manaFloor))) } ?: cost
+                ?.let { AbilityCost.Atom(CostAtom.Mana(modify(it))) }
+                ?: if (net < 0) AbilityCost.Composite(listOf(taxAtom(), cost)) else cost
             is AbilityCost.Composite -> {
                 var applied = false
-                AbilityCost.Composite(cost.costs.map { sub ->
+                val modified = AbilityCost.Composite(cost.costs.map { sub ->
                     val subMana = sub.manaCostOrNull
                     if (!applied && subMana != null) {
                         applied = true
-                        AbilityCost.Atom(CostAtom.Mana(subMana.reduceGenericWithManaFloor(amount, manaFloor)))
+                        AbilityCost.Atom(CostAtom.Mana(modify(subMana)))
                     } else sub
                 })
+                if (!applied && net < 0) AbilityCost.Composite(listOf(taxAtom()) + cost.costs) else modified
             }
-            else -> cost
+            // Every other shape (Tap, TapAttachedCreature, Loyalty, Craft, …) carries no mana part:
+            // a reduction is a no-op, a tax prepends the mana the player must now also pay.
+            else -> if (net < 0) AbilityCost.Composite(listOf(taxAtom(), cost)) else cost
         }
     }
 
     /**
-     * Sum the generic reduction (and take the most restrictive mana floor) from every
-     * [ReduceActivatedAbilityCost] static on the battlefield whose [ReduceActivatedAbilityCost.filter]
-     * matches the ability source [sourceId]. The filter scope is resolved directly:
-     * `Scope.Self` → the static's own source; `Scope.AttachedTo` → the permanent the static's
-     * source (an Aura/Equipment) is attached to; any other (battlefield) scope → the source's
-     * base filter matched against [sourceId] under projected state.
+     * Net the generic cost modification (and take the most restrictive mana floor) from every
+     * [ReduceActivatedAbilityCost] / [com.wingedsheep.sdk.scripting.IncreaseActivatedAbilityCost]
+     * static on the battlefield whose filter matches the ability source [sourceId]. The returned
+     * delta is **positive for a net reduction** and negative for a net tax — reductions and
+     * increases on the same ability cancel before either is applied to the cost.
      *
-     * An `exhaustOnly` static contributes nothing unless [isExhaustAbility] is set.
+     * The filter scope is resolved directly: `Scope.Self` → the static's own source;
+     * `Scope.AttachedTo` → the permanent the static's source (an Aura/Equipment) is attached to;
+     * any other (battlefield) scope → the source's base filter matched against [sourceId] under
+     * projected state.
+     *
+     * An `exhaustOnly` reduction contributes nothing unless [isExhaustAbility] is set.
      */
-    private fun sumActivatedAbilityCostReductions(
+    private fun sumActivatedAbilityCostModifications(
         state: GameState,
         sourceId: EntityId,
         isExhaustAbility: Boolean
     ): Pair<Int, Int> {
-        var totalAmount = 0
+        var net = 0
         var floor = 0
+        val evaluator = DynamicAmountEvaluator()
         for (entityId in state.getBattlefield()) {
             val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            val controllerId by lazy { state.getEntity(entityId)?.get<ControllerComponent>()?.playerId }
             for (ability in cardDef.script.staticAbilities) {
-                val reduce = ability as? com.wingedsheep.sdk.scripting.ReduceActivatedAbilityCost ?: continue
-                if (reduce.exhaustOnly && !isExhaustAbility) continue
-                if (activatedAbilityReductionApplies(state, entityId, reduce.filter, sourceId)) {
-                    val controllerId = state.getEntity(entityId)?.get<ControllerComponent>()?.playerId ?: continue
-                    totalAmount += DynamicAmountEvaluator().evaluate(
-                        state,
-                        reduce.amount,
-                        EffectContext(sourceId = entityId, controllerId = controllerId)
-                    ).coerceAtLeast(0)
-                    floor = maxOf(floor, reduce.manaFloor)
+                when (ability) {
+                    is com.wingedsheep.sdk.scripting.ReduceActivatedAbilityCost -> {
+                        if (ability.exhaustOnly && !isExhaustAbility) continue
+                        if (!activatedAbilityReductionApplies(state, entityId, ability.filter, sourceId)) continue
+                        val owner = controllerId ?: continue
+                        net += evaluator.evaluate(
+                            state,
+                            ability.amount,
+                            EffectContext(sourceId = entityId, controllerId = owner)
+                        ).coerceAtLeast(0)
+                        floor = maxOf(floor, ability.manaFloor)
+                    }
+                    is com.wingedsheep.sdk.scripting.IncreaseActivatedAbilityCost -> {
+                        if (!activatedAbilityReductionApplies(state, entityId, ability.filter, sourceId)) continue
+                        val owner = controllerId ?: continue
+                        net -= evaluator.evaluate(
+                            state,
+                            ability.amount,
+                            EffectContext(sourceId = entityId, controllerId = owner)
+                        ).coerceAtLeast(0)
+                    }
+                    else -> continue
                 }
             }
         }
-        return totalAmount to floor
+        return net to floor
     }
 
     /**
@@ -801,7 +830,13 @@ class CastPermissionUtils(
             val projected = state.projectedState
             predicateEvaluator.matches(
                 state, projected, sourceId, filter.baseFilter,
-                PredicateContext(controllerId = state.getEntity(staticSourceId)?.get<ControllerComponent>()?.playerId ?: staticSourceId)
+                // sourceId = the *static's* permanent, not the ability's: name-keyed predicates
+                // (`NameEqualsChosenComponent`, Skyseer's Chariot) read the chosen name off the
+                // permanent that carries the static.
+                PredicateContext(
+                    sourceId = staticSourceId,
+                    controllerId = state.getEntity(staticSourceId)?.get<ControllerComponent>()?.playerId ?: staticSourceId
+                )
             )
         }
     }
