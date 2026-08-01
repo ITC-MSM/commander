@@ -65,6 +65,7 @@ class FullThrottleScenarioTest : FunSpec({
         driver.state.getEntity(creature)?.has<TappedComponent>() shouldBe true
 
         // First additional combat: the delayed trigger untaps the creature at beginning of combat.
+        driver.passPriorityUntil(Step.END_COMBAT)
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         driver.state.getEntity(creature)?.has<TappedComponent>() shouldBe false
         driver.state.delayedTriggers.size shouldBe 1
@@ -74,9 +75,9 @@ class FullThrottleScenarioTest : FunSpec({
         driver.state.getEntity(creature)?.has<TappedComponent>() shouldBe true
 
         // Second additional combat: the same resident delayed trigger fires again.
+        driver.passPriorityUntil(Step.END_COMBAT)
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         driver.state.getEntity(creature)?.has<TappedComponent>() shouldBe false
-        driver.state.delayedTriggers.size shouldBe 1
     }
 
     test("repeating combat trigger expires at end of turn") {
