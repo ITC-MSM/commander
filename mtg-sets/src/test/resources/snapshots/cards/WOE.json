@@ -6189,6 +6189,139 @@
     ]
 }
 
+// Goddric, Cloaked Reveler
+{
+    "name": "Goddric, Cloaked Reveler",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Legendary Creature — Human Noble",
+    "oracleText": "Haste\nCelebration — As long as two or more nonland permanents entered the battlefield under your control this turn, Goddric is a Dragon with base power and toughness 4/4, flying, and \"{R}: Dragons you control get +1/+0 until end of turn.\" (It loses all other creature types.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "CompositeStaticAbility",
+                    "abilities": [
+                        {
+                            "type": "TransformPermanent",
+                            "setSubtypes": [
+                                "Dragon"
+                            ],
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        },
+                        {
+                            "type": "SetBasePowerToughnessStatic",
+                            "power": 4,
+                            "toughness": 4,
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        },
+                        {
+                            "type": "GrantActivatedAbility",
+                            "ability": {
+                                "id": "ability_1",
+                                "cost": {
+                                    "type": "CostAtomWrapper",
+                                    "atom": {
+                                        "type": "AtomMana",
+                                        "cost": "{R}"
+                                    }
+                                },
+                                "effect": {
+                                    "type": "ForEach",
+                                    "space": {
+                                        "type": "IterationSpace.Group",
+                                        "filter": {
+                                            "baseFilter": "creature Dragon ctrl:you"
+                                        }
+                                    },
+                                    "body": {
+                                        "type": "ModifyStats",
+                                        "powerModifier": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        },
+                                        "toughnessModifier": {
+                                            "type": "Fixed",
+                                            "amount": 0
+                                        },
+                                        "target": "Self"
+                                    }
+                                },
+                                "descriptionOverride": "{R}: Dragons you control get +1/+0 until end of turn."
+                            },
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        }
+                    ]
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "NONLAND_PERMANENTS_ENTERED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "rarity": "RARE",
+        "artist": "Jason A. Engle",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/e/fe93ef82-51de-40ad-9b52-8f3fd11c144f.jpg?1783915094",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If an effect causes Goddric to lose all abilities during a turn in which it has already become a Dragon, he's still a Dragon creature with base power and toughness 4/4."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Goddric's activated ability affects only Dragons you control at the time it resolves. Any Dragons that come under your control later in the turn won't be affected."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Celebration abilities only care if two or more nonland permanents entered the battlefield under your control in a turn. They won't get more powerful if more than two permanents entered the battlefield under your control in a turn."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "The permanents that entered the battlefield don't need to remain on the battlefield or under your control. Celebration abilities are checking for past events, not the current game state."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Grabby Giant
 {
     "name": "Grabby Giant",
@@ -7989,6 +8122,93 @@
                 }
             }
         }
+    ]
+}
+
+// Ingenious Prodigy
+{
+    "name": "Ingenious Prodigy",
+    "manaCost": "{X}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "Skulk (This creature can't be blocked by creatures with greater power.)\nThis creature enters with X +1/+1 counters on it.\nAt the beginning of your upkeep, if this creature has one or more +1/+1 counters on it, you may remove a +1/+1 counter from it. If you do, draw a card.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "RemoveCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "PLUS_ONE_PLUS_ONE"
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "PowerGreaterThanEntity",
+                            "reference": "Source"
+                        }
+                    ]
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": "CastX"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "rarity": "RARE",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cf224968-b676-40dd-83c1-a9ee2ceba574.jpg?1783915119"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
