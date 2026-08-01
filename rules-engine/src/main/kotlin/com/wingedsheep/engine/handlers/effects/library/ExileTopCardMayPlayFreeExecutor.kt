@@ -145,6 +145,7 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
                     expiryControllerId = expiryControllerId,
                     supersededBySameSource = supersedesSameSource,
                     nonLandOnly = effect.nonLandOnly,
+                    castFaceIndex = effect.castFaceIndex,
                     timestamp = state.timestamp,
                 )
             )

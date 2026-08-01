@@ -1379,12 +1379,31 @@ data class GrantMayPlayFromExileEffect(
      * lands. Read by the from-exile enumerator, which otherwise offers a `PlayLand` action for any
      * exiled land under an active permission.
      */
-    val nonLandOnly: Boolean = false
+    val nonLandOnly: Boolean = false,
+    /**
+     * When set, the permission authorizes casting the card's **alternative face** at this index
+     * (`CardDefinition.cardFaces[castFaceIndex]`) rather than its primary characteristics — the
+     * face's mana cost, type line, timing, cast restrictions, target requirements, and spell
+     * script all apply, and the emitted `CastSpell` carries the same `faceIndex`.
+     *
+     * Models "you may cast it … as an Adventure" (CR 715.3, Mosswood Dreadknight: "When this
+     * creature dies, you may cast it from your graveyard as an Adventure until the end of your
+     * next turn") — index 0 is the Adventure face of an `ADVENTURE`-layout card. The permission
+     * grants *only* that face: the creature side stays uncastable from the graveyard, exactly as
+     * the oracle text says. The Adventure's own resolution then exiles the card and grants the
+     * usual cast-the-creature-from-exile permission (CR 715.3d), so the two halves chain without
+     * any card-specific wiring.
+     *
+     * Read by the from-exile/graveyard cast enumerator and enforced by the authoritative cast
+     * handler, which rejects a hand-constructed `faceIndex` no permission authorizes.
+     */
+    val castFaceIndex: Int? = null
 ) : Effect {
     override val description: String = buildString {
         val who = if (ownerControls) "its owner" else "you"
         val verb = if (nonLandOnly) "cast" else "play"
         append("${expiry.description.replaceFirstChar { it.uppercase() }}, $who may $verb ${if (nonLandOnly) "that card" else "those cards"} from exile")
+        if (castFaceIndex != null) append(" as its alternative face")
         if (fixedAlternativeCostIsManaValue) {
             append(if (waterbend) " by waterbending {X} rather than paying their mana cost, where X is their mana value"
                    else " for their mana value rather than their mana cost")
