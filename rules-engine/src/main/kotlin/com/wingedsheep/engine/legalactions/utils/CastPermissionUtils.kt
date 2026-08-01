@@ -709,14 +709,20 @@ class CastPermissionUtils(
      *
      * Generic-only (colored pips untouched, CR 118.7); reductions stack additively and the most
      * restrictive (largest) [ReduceActivatedAbilityCost.manaFloor] is applied as the floor.
+     *
+     * [isExhaustAbility] is the activated ability's `isExhaust` flag (CR 702.177). A static with
+     * [ReduceActivatedAbilityCost.exhaustOnly] applies only when it is true — Boom Scholar's "Exhaust
+     * abilities of other permanents you control cost {2} less to activate" leaves those permanents'
+     * ordinary activated abilities at full price.
      */
     fun applyActivatedAbilityCostReduction(
         cost: AbilityCost,
         state: GameState,
-        sourceId: EntityId?
+        sourceId: EntityId?,
+        isExhaustAbility: Boolean = false
     ): AbilityCost {
         if (sourceId == null) return cost
-        val (amount, manaFloor) = sumActivatedAbilityCostReductions(state, sourceId)
+        val (amount, manaFloor) = sumActivatedAbilityCostReductions(state, sourceId, isExhaustAbility)
         if (amount <= 0) return cost
         return when (cost) {
             is AbilityCost.Atom -> cost.manaCostOrNull
@@ -742,8 +748,14 @@ class CastPermissionUtils(
      * `Scope.Self` → the static's own source; `Scope.AttachedTo` → the permanent the static's
      * source (an Aura/Equipment) is attached to; any other (battlefield) scope → the source's
      * base filter matched against [sourceId] under projected state.
+     *
+     * An `exhaustOnly` static contributes nothing unless [isExhaustAbility] is set.
      */
-    private fun sumActivatedAbilityCostReductions(state: GameState, sourceId: EntityId): Pair<Int, Int> {
+    private fun sumActivatedAbilityCostReductions(
+        state: GameState,
+        sourceId: EntityId,
+        isExhaustAbility: Boolean
+    ): Pair<Int, Int> {
         var totalAmount = 0
         var floor = 0
         for (entityId in state.getBattlefield()) {
@@ -751,6 +763,7 @@ class CastPermissionUtils(
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
             for (ability in cardDef.script.staticAbilities) {
                 val reduce = ability as? com.wingedsheep.sdk.scripting.ReduceActivatedAbilityCost ?: continue
+                if (reduce.exhaustOnly && !isExhaustAbility) continue
                 if (activatedAbilityReductionApplies(state, entityId, reduce.filter, sourceId)) {
                     val controllerId = state.getEntity(entityId)?.get<ControllerComponent>()?.playerId ?: continue
                     totalAmount += DynamicAmountEvaluator().evaluate(
@@ -765,13 +778,20 @@ class CastPermissionUtils(
         return totalAmount to floor
     }
 
-    /** Whether a [ReduceActivatedAbilityCost] on [staticSourceId] reaches the ability source [sourceId]. */
+    /**
+     * Whether a [ReduceActivatedAbilityCost] on [staticSourceId] reaches the ability source [sourceId].
+     *
+     * `filter.excludeSelf` is honored here rather than left to the projection layer (which never sees
+     * this static): a `GroupFilter(..., excludeSelf = true)` is the "**other** permanents you control"
+     * wording, so the static's own source must not discount its own abilities (Boom Scholar's own
+     * exhaust ability costs full price).
+     */
     private fun activatedAbilityReductionApplies(
         state: GameState,
         staticSourceId: EntityId,
         filter: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter,
         sourceId: EntityId
-    ): Boolean = when (filter.scope) {
+    ): Boolean = if (filter.excludeSelf && staticSourceId == sourceId) false else when (filter.scope) {
         is com.wingedsheep.sdk.scripting.filters.unified.Scope.Self -> staticSourceId == sourceId
         is com.wingedsheep.sdk.scripting.filters.unified.Scope.AttachedTo ->
             state.getEntity(staticSourceId)

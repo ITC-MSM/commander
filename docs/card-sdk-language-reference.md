@@ -2166,11 +2166,15 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`.
 - `readTheRunes()` — "draw X cards; for each, discard a card unless you sacrifice a permanent." Composes `RepeatDynamicTimesEffect(XValue, ChooseActionEffect(...))` with feasibility guards. Exposed as `Effects.ReadTheRunes()`.
 - `eachOpponentMayPutFromHand(filter?)` — each opponent may dump a matching card.
-- `putFromHand(filter?, count?, entersTapped?, entersAttacking?)` — you may put N from hand onto
-  battlefield. `entersAttacking = true` puts them in **tapped and attacking**
+- `putFromHand(filter?, count?, entersTapped?, entersAttacking?, anyNumber?, prompt?)` — you may put N
+  from hand onto battlefield. `entersAttacking = true` puts them in **tapped and attacking**
   (`ZonePlacement.TappedAndAttacking`; the engine adds an `AttackingComponent` against the defending
   player), e.g. Shadowfax, Lord of Horses ("put a creature card with lesser power from your hand onto
-  the battlefield tapped and attacking").
+  the battlefield tapped and attacking"). `anyNumber = true` swaps the default `ChooseUpTo(count)`
+  selection for `SelectionMode.ChooseAnyNumber`, i.e. the unbounded *"put **any number** of … cards
+  from your hand onto the battlefield"* wording (`count` is then ignored); zero is a legal choice, so
+  declining and an empty hand are both no-ops rather than stuck decisions. Redshift, Rocketeer Chief's
+  exhaust ability (`filter = Filters.Permanent, anyNumber = true`).
 - `incubate(n)` — make an Incubator token with N counters.
 - `impulse(count?, expiry?)` — impulse draw: exile the top N of your library, may play those cards until `expiry` (default end of turn); played cards still pay their mana. `count` takes a plain `Int` or a `DynamicAmount` for "exile *that many* cards" (Virtue of Courage, counting off the noncombat damage just dealt via `ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT`). For the play-free variant compose with `GrantPlayWithoutPayingCostEffect` (cf. `shuffleAndExileTopPlayFree`). Irascible Wolverine (1), Annie Flash, the Veteran (2). `MayPlayExpiry` options: `EndOfTurn` (default), `Permanent` ("for as long as it remains exiled"), `UntilControllerStep(step, includeCurrentTurn?)` / the `UntilEndOfNextTurn` + `UntilNextEndStep` shorthands (turn-keyed, cleaned up at the matching cleanup), and `UntilSourceExilesAnother` — a **self-superseding** permission that persists across turns (and survives the granting source leaving play) but is revoked the moment that *same source* grants another such permission (exiles another card), so only the source's most-recently-exiled card stays playable and the earlier one remains in exile but unplayable. Requires the grant to carry a source id (falls back to `Permanent` behaviour without one); models "you may play that card until you exile another card with this creature" (**Superior Foes of Spider-Man**).
 - `returnLinkedExile(underOwnersControl?)` — bring back linked exile pile.
@@ -5030,7 +5034,8 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   equip ability's source. Because it is typically granted to a token (via
   `CreateTokenCopyOfTargetEffect.addedStaticAbilities`), the equip-cost reader unions
   `grantedStaticAbilities` with printed statics.
-- `ReduceActivatedAbilityCost(filter, amount, manaFloor = 0)` — the activated abilities of permanents
+- `ReduceActivatedAbilityCost(filter, amount, manaFloor = 0, exhaustOnly = false)` — the activated
+  abilities of permanents
   matching `filter` cost the dynamic `amount` of generic mana less to activate, with the mana in each
   cost floored
   at `manaFloor` *total* mana (generic + colored). The activated-ability sibling of `ReduceEquipCost`,
@@ -5047,6 +5052,14 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   from both the enumerator (displayed cost) and `ActivateAbilityHandler` (paid cost), keyed on the
   ability's source permanent; non-mana costs (`{T}`, sacrifice) and abilities with no mana cost are
   unaffected. Backed by `ManaCost.reduceGenericWithManaFloor(amount, minTotalMana)`.
+  `exhaustOnly = true` narrows the reduction to abilities marked `isExhaust` (CR 702.177) — it gates
+  on the **ability**, not the permanent, so a matching permanent's ordinary activated abilities stay
+  at full price while its exhaust ability is discounted. Boom Scholar: "Exhaust abilities of other
+  permanents you control cost {2} less to activate" →
+  `ReduceActivatedAbilityCost(GroupFilter(GameObjectFilter.Permanent.youControl(), excludeSelf = true), DynamicAmount.Fixed(2), exhaustOnly = true)`.
+  Note that `GroupFilter.excludeSelf` (the printed "**other** permanents") is honored by this read
+  site directly — the projection layer never sees this static — so a lord never discounts its own
+  abilities.
 - `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null)`
   — cast spells matching `filter` from your graveyard following normal timing, optionally paying
   `lifeCost` life. Free for Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1,
