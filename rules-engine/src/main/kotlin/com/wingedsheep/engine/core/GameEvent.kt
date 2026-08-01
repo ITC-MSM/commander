@@ -1613,6 +1613,20 @@ data class CardCycledEvent(
     val cardName: String
 ) : GameEvent
 
+/**
+ * A creature was tapped as a contributor to a Crew or Saddle activation cost.
+ *
+ * One event is emitted per contributing creature. [permanentId] is the Vehicle or Mount that the
+ * creature crewed or saddled and becomes the triggering entity for the resolving payoff.
+ */
+@Serializable
+@SerialName("CrewOrSaddleContributionEvent")
+data class CrewOrSaddleContributionEvent(
+    val contributorId: EntityId,
+    val permanentId: EntityId,
+    val controllerId: EntityId
+) : GameEvent
+
 // =============================================================================
 // Plot Events
 // =============================================================================

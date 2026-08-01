@@ -109,6 +109,7 @@ val engineSerializersModule = SerializersModule {
         subclass(AbilityCounteredEvent::class)
         subclass(BecomesTargetEvent::class)
         subclass(CardCycledEvent::class)
+        subclass(CrewOrSaddleContributionEvent::class)
         subclass(CardPlottedEvent::class)
         subclass(CardsRevealedEvent::class)
         subclass(ClassLevelChangedEvent::class)

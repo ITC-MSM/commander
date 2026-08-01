@@ -3845,6 +3845,12 @@ Triggers.youCastSpell(
   `firstThisTurn` flag, which is true only when the permanent wasn't already saddled when the ability
   resolved (re-saddling in the same turn reports false, since `SaddledComponent` persists until
   cleanup). Use an `ANY` binding + `filter` for "whenever a [filter] becomes saddled".
+- `CrewsOrSaddles` — SELF-bound "whenever this creature saddles a Mount or crews a Vehicle". Crew
+  and Saddle action handlers emit one `CrewOrSaddleContributionEvent` for each creature tapped to
+  pay the activation cost. The contributing creature is used for SELF matching; the Mount or Vehicle
+  it contributed to is exposed as `EffectTarget.TriggeringEntity`. Because the contribution happens
+  while the cost is paid, its trigger is put above the Crew or Saddle ability and resolves first. Add
+  `triggerCondition = Conditions.IsYourMainPhase` for the Aetherdrift Pilot wording.
 - `becomesAttached(attachmentFilter = Any, attachmentController = Any, attachedToFilter = Any, binding = SELF)`
   — "whenever an Aura/Equipment becomes attached to a permanent" (CR 603.2e). Fires from
   `PermanentAttachedEvent`, emitted at every attach site (aura ETB onto its enchant target, equip

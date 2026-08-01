@@ -1835,6 +1835,18 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         }
     }
 
+    /**
+     * Whenever this creature saddles a Mount or crews a Vehicle.
+     *
+     * The source is the creature tapped as part of the Crew or Saddle activation cost. The
+     * permanent it helped crew or saddle is exposed as `EffectTarget.TriggeringEntity`.
+     */
+    @SerialName("CrewsOrSaddlesEvent")
+    @Serializable
+    data object CrewsOrSaddlesEvent : EventPattern {
+        override val description: String = "this creature saddles a Mount or crews a Vehicle"
+    }
+
     // =========================================================================
     // Batched Zone Change Events (Triggers)
     // =========================================================================

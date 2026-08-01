@@ -211,6 +211,13 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // (Giant Beaver) -> GameObjectFilter.Creature.crewedOrSaddledSourceThisTurn().
     supported("SaddledPermanentThisTurn", "filter: a creature that saddled this permanent this turn (crewedOrSaddledSourceThisTurn)")
     supported("CrewedPermanentThisTurn", "filter: a creature that crewed this permanent this turn (crewedOrSaddledSourceThisTurn)")
+    // Pilot payoff: "whenever this creature saddles a Mount or crews a Vehicle". The engine emits
+    // one contributor event per creature tapped for either activation cost and binds the destination
+    // permanent as EffectTarget.TriggeringEntity. Capability-only: mtgish drops Aetherdrift's
+    // "during your main phase" rider from these trigger nodes, so the emitter must keep them at
+    // SCAFFOLD rather than produce an over-broad AUTO draft.
+    supported("WhenACreatureSaddlesAMount", "trigger: this creature saddles a Mount (Triggers.CrewsOrSaddles)")
+    supported("WhenACreatureCrewsAVehicle", "trigger: this creature crews a Vehicle (Triggers.CrewsOrSaddles)")
     // Graveyard-arrival filters, both backed by the one PutIntoGraveyardThisTurnComponent stamp:
     // "…that was put there this turn" (Abyssal Harvester) reads the stamp, the battlefield-only
     // variant (Samwise the Stouthearted, Lobelia Sackville-Baggins) also requires its

@@ -1157,6 +1157,15 @@ object Triggers {
     )
 
     /**
+     * Whenever this creature saddles a Mount or crews a Vehicle. The contributed-to permanent is
+     * available to the effect as `EffectTarget.TriggeringEntity`.
+     */
+    val CrewsOrSaddles: TriggerSpec = TriggerSpec(
+        event = CrewsOrSaddlesEvent,
+        binding = TriggerBinding.SELF
+    )
+
+    /**
      * Whenever you activate an ability whose chosen targets satisfy [targetMatch] — e.g.
      * [AbilityTargetMatch.CreatureOrPlayer] for Ertha Jo, Frontier Mentor's
      * "Whenever you activate an ability that targets a creature or player". A non-targeting

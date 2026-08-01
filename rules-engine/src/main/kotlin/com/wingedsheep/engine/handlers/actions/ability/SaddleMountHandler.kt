@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.actions.ability
 
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.core.CrewOrSaddleContributionEvent
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.SaddleMount
 import com.wingedsheep.engine.core.tap
@@ -133,7 +134,16 @@ class SaddleMountHandler(
         for (creatureId in action.saddleCreatures) {
             val (tappedState, tapEvent) = tap(currentState, creatureId)
             currentState = tappedState
-            tapEvent?.let(events::add)
+            tapEvent?.let {
+                events.add(it)
+                events.add(
+                    CrewOrSaddleContributionEvent(
+                        contributorId = creatureId,
+                        permanentId = action.mountId,
+                        controllerId = action.playerId
+                    )
+                )
+            }
         }
 
         // Record the saddlers so Mount payoffs can read "creatures that saddled it this turn".

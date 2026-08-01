@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.actions.ability
 
 import com.wingedsheep.engine.core.CrewVehicle
+import com.wingedsheep.engine.core.CrewOrSaddleContributionEvent
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.tap
@@ -146,7 +147,16 @@ class CrewVehicleHandler(
         for (creatureId in action.crewCreatures) {
             val (tappedState, tapEvent) = tap(currentState, creatureId)
             currentState = tappedState
-            tapEvent?.let(events::add)
+            tapEvent?.let {
+                events.add(it)
+                events.add(
+                    CrewOrSaddleContributionEvent(
+                        contributorId = creatureId,
+                        permanentId = action.vehicleId,
+                        controllerId = action.playerId
+                    )
+                )
+            }
         }
 
         // Record the crew so Vehicle payoffs can read "creatures that crewed it this turn"

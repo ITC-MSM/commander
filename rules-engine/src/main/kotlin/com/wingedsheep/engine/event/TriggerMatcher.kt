@@ -356,6 +356,10 @@ class TriggerMatcher(
                     )
                 } else true
             }
+            is EventPattern.CrewsOrSaddlesEvent ->
+                event is com.wingedsheep.engine.core.CrewOrSaddleContributionEvent &&
+                    binding == TriggerBinding.SELF &&
+                    event.contributorId == sourceId
             is EventPattern.BecomesAttachedEvent -> {
                 if (event !is com.wingedsheep.engine.core.PermanentAttachedEvent) return false
                 // SELF binding = "whenever THIS Equipment/Aura becomes attached" (the attachment
