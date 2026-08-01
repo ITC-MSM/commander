@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.mechanics.sba.permanent
 
 import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.handlers.PredicateContext
+import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.cleanupReverseAttachmentLink
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
@@ -12,8 +14,12 @@ import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachmentHostLeftComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GrantProtection
+import com.wingedsheep.sdk.scripting.targets.TargetObject
+import com.wingedsheep.sdk.scripting.targets.TargetOther
+import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 
 /**
  * 704.5m - An Aura attached to an illegal object/player or not attached goes to graveyard.
@@ -29,6 +35,14 @@ import com.wingedsheep.sdk.scripting.GrantProtection
  * 704.5p - A battle or creature attached to an object or player becomes unattached but
  *          remains on the battlefield.
  *
+ * Enchant restrictions (CR 303.4c): an Aura's "Enchant …" ability restricts what it can *stay*
+ * attached to, not just what its spell could target — the restriction is checked continuously, so
+ * an Aura whose host stops matching it becomes an illegal attachment and is put into its owner's
+ * graveyard by 704.5m. E.g. Cradle of Safety ("Enchant creature you control") falls off when an
+ * opponent steals the creature, and Pacifism ("Enchant creature") falls off when its host stops
+ * being a creature. The restriction is re-read from the card's `auraTarget` and evaluated against
+ * the *projected* host so layer-4 type/control changes are seen.
+ *
  * Protection (CR 702.16c/d): a permanent with protection from a quality can't be enchanted by
  * Auras (put into their owners' graveyards as a state-based action) or equipped by Equipment
  * (becomes unattached, stays on the battlefield) that have the stated quality. This covers
@@ -41,6 +55,8 @@ class UnattachedAurasCheck(
 ) : StateBasedActionCheck {
     override val name = "704.5m/n/p Unattached Auras"
     override val order = SbaOrder.UNATTACHED_AURAS
+
+    private val predicateEvaluator = PredicateEvaluator()
 
     override fun check(state: GameState): ExecutionResult {
         var newState = state
@@ -143,6 +159,18 @@ class UnattachedAurasCheck(
                         c.without<AttachedToComponent>()
                     }
                 } else if (
+                    isAura && hostFailsEnchantRestriction(state, projected, entityId, cardComponent, attachedTo.targetId)
+                ) {
+                    // CR 303.4c / 704.5m: the host no longer matches this Aura's "Enchant …"
+                    // restriction (control changed hands, the host stopped being a creature, …),
+                    // so the Aura is illegally attached and goes to its owner's graveyard.
+                    val result = SbaZoneMovementHelper.putPermanentInGraveyard(
+                        newState, entityId, cardComponent,
+                        lastKnownAttachedTo = attachedTo.targetId
+                    )
+                    newState = result.newState
+                    events.addAll(result.events)
+                } else if (
                     hostProtectedFromAttachmentColor(projected, entityId, cardComponent, attachedTo.targetId)
                 ) {
                     // CR 702.16c/d: the host has protection from one of this attachment's colors
@@ -167,6 +195,54 @@ class UnattachedAurasCheck(
         }
 
         return ExecutionResult.success(newState, events)
+    }
+
+    /**
+     * True when [hostId] no longer satisfies the Aura's printed "Enchant …" restriction (CR 303.4c).
+     *
+     * Only the requirement's *filter* is re-evaluated — not full targeting legality. An attached
+     * Aura isn't re-targeted, so hexproof/shroud/"can't be the target of" gained after the fact
+     * don't dislodge it (CR 702.11b); protection is the one quality that does, and
+     * [hostProtectedFromAttachmentColor] handles it separately.
+     *
+     * Deliberately fails *open* — an Aura we can't judge (printing not in the registry, an
+     * "enchant player" requirement, a filter scoped to a zone other than the battlefield) is left
+     * attached rather than destroyed, because a wrong verdict here silently removes a card from
+     * the game.
+     */
+    private fun hostFailsEnchantRestriction(
+        state: GameState,
+        projected: ProjectedState,
+        auraId: EntityId,
+        auraCard: CardComponent,
+        hostId: EntityId
+    ): Boolean {
+        val requirement = cardRegistry.getCard(auraCard.cardDefinitionId)?.script?.auraTarget ?: return false
+        val filter = enchantFilter(requirement) ?: return false
+        // "you" in "Enchant creature you control" is the Aura's controller, read from the
+        // projection so a control-changing effect on the Aura itself is honored.
+        val controllerId = projected.getController(auraId) ?: return false
+        val context = PredicateContext(controllerId = controllerId, sourceId = auraId)
+        // A cross-zone union requirement is satisfied by any one clause; only battlefield clauses
+        // can describe a host an Aura is attached to.
+        val battlefieldClauses = filter.clauses().filter { it.zone == Zone.BATTLEFIELD }
+        if (battlefieldClauses.isEmpty()) return false
+        return battlefieldClauses.none {
+            predicateEvaluator.matches(state, projected, hostId, it.baseFilter, context)
+        }
+    }
+
+    /**
+     * The battlefield filter behind an Aura's `auraTarget`, or null when the requirement isn't one
+     * we can re-check against a permanent host (an "enchant player" [TargetRequirement], say).
+     */
+    private fun enchantFilter(
+        requirement: TargetRequirement
+    ): com.wingedsheep.sdk.scripting.filters.unified.TargetFilter? = when (requirement) {
+        is TargetObject -> requirement.filter
+        // "Enchant another …" — the distinctness rule is targeting-only; the filter is the base's.
+        is TargetOther -> enchantFilter(requirement.baseRequirement)
+        else -> null
     }
 
     /**
