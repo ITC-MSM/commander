@@ -15,6 +15,7 @@ class StackExecutors(
     override fun executors(): List<EffectExecutor<*>> = listOf(
         CounterEffectExecutor(amountEvaluator, cardRegistry),
         ExileTargetSpellExecutor(cardRegistry),
+        ExileSpellsOnStackExecutor(cardRegistry),
         CounterAllOnStackExecutor(cardRegistry),
         WardCounterEffectExecutor(cardRegistry),
         ChangeSpellTargetExecutor(),

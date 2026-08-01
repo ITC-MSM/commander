@@ -1809,6 +1809,47 @@
     ]
 }
 
+// Summary Dismissal
+{
+    "name": "Summary Dismissal",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Exile all other spells and counter all abilities.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                "ExileSpellsOnStack",
+                {
+                    "type": "CounterAllOnStack",
+                    "spells": false,
+                    "opponentsOnly": false
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "RARE",
+        "artist": "Igor Kieryluk",
+        "flavorText": "\"Let's start fresh, shall we?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0b75794d-3334-4b4d-9446-0a251dd3bd15.jpg?1783937493",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "Spells that can't be countered are exiled by Summary Dismissal. They won't resolve."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "Only activated and triggered abilities on the stack are countered. Static abilities of objects remain unaffected, and activated and triggered abilities of objects may be activated or may trigger again later in the turn. Spells and abilities that have already resolved aren't affected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Thalia, Heretic Cathar
 {
     "name": "Thalia, Heretic Cathar",
