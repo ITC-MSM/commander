@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.effects.SearchDestination
 import com.wingedsheep.sdk.scripting.effects.TransformEffect
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantKeyword
+import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.GrantWard
 import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.SetBasePowerToughnessStatic
@@ -657,6 +658,26 @@ object PredefinedTokens {
     }
 
     /**
+     * Vehicle token — the 3/2 colorless Vehicle artifact token with crew 1 that Aetherdrift's
+     * Pilots hand out (Mu Yanling, Wind Rider; Chandra, Spark Hunter; …).
+     *
+     * A *noncreature* artifact, like the printed token: it has power and toughness but no Creature
+     * card type, so it can't attack or block until something crews it. Crew is the ordinary
+     * [KeywordAbility.crew] keyword, so it goes through the same crew path as a printed Vehicle.
+     */
+    val Vehicle = card("Vehicle") {
+        typeLine = "Artifact — Vehicle"
+        power = 3
+        toughness = 2
+
+        keywordAbility(KeywordAbility.crew(1))
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/a/3/a3803365-ed78-409f-8ca5-7aa3634faf76.jpg?1783907677"
+        }
+    }
+
+    /**
      * All predefined token definitions.
      * Register these in the CardRegistry so token abilities are resolved.
      */
@@ -684,6 +705,7 @@ object PredefinedTokens {
         Everywhere,
         Munitions,
         Mutagen,
-        Frog
+        Frog,
+        Vehicle
     )
 }
