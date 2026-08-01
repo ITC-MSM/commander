@@ -67,14 +67,18 @@ import com.wingedsheep.sdk.scripting.targets.TargetChooser
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.LevelUpClassEffect
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaSpendOnChosenTypeEffect
+import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
+import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.AdditionalManaOnSourceTap
+import com.wingedsheep.sdk.scripting.MultiplyManaOnSourceTap
 import com.wingedsheep.sdk.scripting.TappedForManaType
 import com.wingedsheep.sdk.scripting.ReplaceLandManaColor
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.ManaColorSet
 import com.wingedsheep.engine.core.LandTappedForManaEvent
 import com.wingedsheep.sdk.scripting.AdditionalManaOnTap
@@ -1422,6 +1426,18 @@ class ActivateAbilityHandler(
                     else -> finalEffect
                 }
             }
+            // Multiplicative mana replacement (Virtue of Strength: "If you tap a basic land for
+            // mana, it produces three times as much of that mana instead"). Scaling the resolving
+            // effect's amount — rather than the pool afterwards — keeps restricted mana, riders and
+            // per-source provenance intact, and makes the ManaAddedEvent below report the real
+            // amount for free. Gated on {T} in the cost: you are only "tapping a permanent for
+            // mana" when the mana ability's cost includes the tap symbol.
+            if (hasTapCost(effectiveCost)) {
+                val manaMultiplier = manaProductionMultiplierFor(currentState, action.sourceId)
+                if (manaMultiplier > 1) {
+                    finalEffect = multiplyManaProduced(finalEffect, manaMultiplier)
+                }
+            }
             val context = EffectContext(
                 sourceId = action.sourceId,
                 controllerId = action.playerId,
@@ -2482,6 +2498,62 @@ class ActivateAbilityHandler(
             }
         }
         return false
+    }
+
+    /**
+     * The combined [MultiplyManaOnSourceTap] factor applying to [sourceId] being tapped for mana
+     * (Virtue of Strength: 3). Returns 1 when nothing on the battlefield multiplies this source.
+     *
+     * Instances stack **multiplicatively** — two Virtues of Strength make a basic land produce nine
+     * times as much, per the printed ruling — so the factors are folded with `*`.
+     *
+     * Mirrors [landMatchesManaColorReplacement]: each static's filter is evaluated from the
+     * *static's own* projected controller, so `.youControl()` means "controlled by the player who
+     * controls the Virtue", which for a mana ability is necessarily the tapping player.
+     */
+    private fun manaProductionMultiplierFor(
+        state: GameState,
+        sourceId: EntityId
+    ): Int {
+        var multiplier = 1
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val card = container.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            for (staticAbility in cardDef.script.staticAbilities) {
+                val static = staticAbility as? MultiplyManaOnSourceTap ?: continue
+                if (static.multiplier <= 1) continue
+                val staticController = state.projectedState.getController(entityId) ?: continue
+                val filterContext = PredicateContext(controllerId = staticController, sourceId = entityId)
+                if (predicateEvaluator.matches(
+                        state, state.projectedState, sourceId, static.sourceFilter, filterContext
+                    )
+                ) {
+                    multiplier *= static.multiplier
+                }
+            }
+        }
+        return multiplier
+    }
+
+    /**
+     * Scales the mana [effect] produces by [multiplier], leaving everything else about it — color,
+     * restriction, riders, expiry — untouched. Recurses into a [CompositeEffect] so a mana ability
+     * bundled with a side effect (pain, a counter) scales its mana half only.
+     *
+     * [AddOneManaOfEachColorAmongEffect] has no amount to scale (it is "one of each colour among
+     * …"), so it is deliberately left alone rather than silently mis-scaled.
+     */
+    private fun multiplyManaProduced(effect: Effect, multiplier: Int): Effect = when (effect) {
+        is AddManaEffect -> effect.copy(amount = DynamicAmount.Multiply(effect.amount, multiplier))
+        is AddColorlessManaEffect -> effect.copy(amount = DynamicAmount.Multiply(effect.amount, multiplier))
+        is AddManaOfChoiceEffect -> effect.copy(amount = DynamicAmount.Multiply(effect.amount, multiplier))
+        is AddAnyColorManaSpendOnChosenTypeEffect ->
+            effect.copy(amount = DynamicAmount.Multiply(effect.amount, multiplier))
+        is AddDynamicManaEffect ->
+            effect.copy(amountSource = DynamicAmount.Multiply(effect.amountSource, multiplier))
+        is CompositeEffect -> effect.copy(effects = effect.effects.map { multiplyManaProduced(it, multiplier) })
+        else -> effect
     }
 
     private fun resolveAdditionalManaOnTap(

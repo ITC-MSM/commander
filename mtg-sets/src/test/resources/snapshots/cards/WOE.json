@@ -19727,6 +19727,83 @@
     ]
 }
 
+// Virtue of Strength
+{
+    "name": "Virtue of Strength",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "If you tap a basic land for mana, it produces three times as much of that mana instead.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "MultiplyManaOnSourceTap",
+                "sourceFilter": "basicland ctrl:you",
+                "multiplier": 3
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "197",
+        "rarity": "MYTHIC",
+        "artist": "Piotr Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff857d41-767d-4e99-83cc-444738341b92.jpg?1783915075",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "An object with the land card type and a basic land type has the intrinsic ability \"{T}: Add [mana symbol],\" even if the text box doesn't actually contain that text or the object has no text box. For example, a basic Forest will have the intrinsic ability \"{T}: Add {G}.\""
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You're \"tapping a basic land for mana\" only if you're activating a mana ability of a basic land that includes the {T} symbol in its cost. A mana ability produces mana as part of its effect."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If an ability triggers \"whenever you tap\" a basic land for mana and produces mana, that triggered mana ability won't be affected by Virtue of Strength."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Virtue of Strength doesn't produce any mana itself. Rather, it causes basic lands you tap for mana to produce more mana."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "The effects of multiple copies of Virtue of Strength are cumulative. For example, if you have two Virtue of Strengths on the battlefield, you'll get nine times the original amount and type of mana."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Garenbrig Growth",
+            "manaCost": "{G}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Return target creature or land card from your graveyard to your hand. (Then exile this card. You may cast the enchantment later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or land card in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature|land own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target creature or land card in your graveyard"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Voracious Vermin
 {
     "name": "Voracious Vermin",

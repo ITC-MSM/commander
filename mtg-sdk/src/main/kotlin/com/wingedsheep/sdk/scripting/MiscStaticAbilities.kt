@@ -320,6 +320,52 @@ data class ReplaceLandManaColor(
 }
 
 /**
+ * Multiplies the mana a permanent matching [sourceFilter] produces when it is **tapped** for mana:
+ * "it produces [multiplier] times as much of that mana instead".
+ *
+ * The multiplicative sibling of [AdditionalManaOnSourceTap], and it shares that ability's filter
+ * convention: the filter is evaluated from the *static-ability source's* projected controller, so
+ * `.youControl()` reads as "you, the controller of this static, control the tapped permanent".
+ * Since only a permanent's controller can activate its mana abilities, that is exactly the
+ * "**If you** tap a basic land for mana" wording of **Virtue of Strength**
+ * (`MultiplyManaOnSourceTap(GameObjectFilter.BasicLand.youControl(), multiplier = 3)`).
+ *
+ * Unlike [AdditionalManaOnSourceTap] this is a **replacement effect on the mana ability's own
+ * output** (CR 614), not a triggered mana ability, which has three consequences worth stating:
+ *
+ * - **The `{T}` symbol is required.** Per the Virtue of Strength rulings, you are only "tapping a
+ *   permanent for mana" when you activate a mana ability whose cost includes `{T}`. An untapped
+ *   mana ability (Ashnod's Altar's "Sacrifice a creature: Add {C}{C}") is untouched.
+ * - **Only the ability's own mana scales.** A bonus added by a separate triggered mana ability
+ *   (Lavaleaper, Fertile Ground) is a different ability's output and is *not* multiplied — the
+ *   rulings call this out explicitly.
+ * - **Multiple instances are cumulative and multiplicative.** Two Virtues of Strength make a
+ *   basic land produce nine times as much, not six.
+ *
+ * Read at every point mana production is computed: [MultiplyManaOnSourceTap] scales the resolving
+ * mana effect's amount on the manual-tap path (`ActivateAbilityHandler`), the per-tap `manaAmount`
+ * the auto-tap solver budgets with (`ManaSolver`, via `ManaStaticsIndex`), and therefore the
+ * `ManaAddedEvent` the client renders.
+ *
+ * @property sourceFilter Which permanents, when tapped for mana, have their output multiplied.
+ * @property multiplier How much to multiply the produced mana by (3 for Virtue of Strength).
+ */
+@SerialName("MultiplyManaOnSourceTap")
+@Serializable
+data class MultiplyManaOnSourceTap(
+    val sourceFilter: GameObjectFilter,
+    val multiplier: Int
+) : StaticAbility {
+    override val description: String =
+        "If you tap a ${sourceFilter.description} for mana, it produces $multiplier times as much of that mana instead"
+
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = sourceFilter.applyTextReplacement(replacer)
+        return if (newFilter !== sourceFilter) copy(sourceFilter = newFilter) else this
+    }
+}
+
+/**
  * Play with the top card of your library revealed.
  * You may play lands and cast spells from the top of your library.
  * Used for Future Sight.

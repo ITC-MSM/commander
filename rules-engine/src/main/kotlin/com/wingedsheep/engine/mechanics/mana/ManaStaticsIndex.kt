@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalManaOnSourceTap
 import com.wingedsheep.sdk.scripting.AdditionalManaOnTap
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.MultiplyManaOnSourceTap
 import com.wingedsheep.sdk.scripting.OverrideEnchantedLandManaColor
 import com.wingedsheep.sdk.scripting.ReplaceLandManaColor
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
@@ -23,16 +24,17 @@ import com.wingedsheep.sdk.scripting.filters.unified.Scope
  * Five of the solver's helpers used to open with `for (id in state.getBattlefield())` and were
  * called once per candidate source, making mana enumeration O(battlefield²) — and enumeration runs
  * at every priority window. Every one of them is hunting for a static that is absent from the vast
- * majority of boards, so the fix is to look for all five at once, up front: [build] costs one
+ * majority of boards, so the fix is to look for all of them at once, up front: [build] costs one
  * battlefield walk, and each list is empty on a board with no Greenhouse / Fertile Ground /
- * Lavaleaper / Pulse of Llanowar / Shimmerwilds Growth in play, which is nearly all of them.
+ * Lavaleaper / Pulse of Llanowar / Shimmerwilds Growth / Virtue of Strength in play, which is
+ * nearly all of them.
  *
  * Each bucket reproduces its helper's original collection rules exactly, including where those
  * rules disagree with each other:
  *
  * - [manaAbilityGrantors] skips face-down permanents (CR 708.2) and reads
  *   [RoomFaceStatics.activeStaticAbilities], so an unlocked Room face's grant counts (CR 709.5).
- * - The other four read `script.staticAbilities` and do **not** skip face-down permanents.
+ * - The others read `script.staticAbilities` and do **not** skip face-down permanents.
  *
  * Those differences are pre-existing behaviour, preserved deliberately: this is a hoist, not a
  * rules change.
@@ -62,6 +64,8 @@ class ManaStaticsIndex private constructor(
     val auraBonusManaByTarget: Map<EntityId, List<AuraBonusMana>>,
     /** [AdditionalManaOnSourceTap] statics (Lavaleaper, Badgermole Cub) anywhere on the battlefield. */
     val sourceTapBonuses: List<SourceTapBonus>,
+    /** [MultiplyManaOnSourceTap] statics (Virtue of Strength) anywhere on the battlefield. */
+    val sourceTapMultipliers: List<SourceTapMultiplier>,
 ) {
     /** A battlefield-scope grant of a mana ability, with the granter's projected controller. */
     data class ManaAbilityGrantor(
@@ -94,16 +98,25 @@ class ManaStaticsIndex private constructor(
         val sourceControllerId: EntityId,
     )
 
+    /** A [MultiplyManaOnSourceTap] static, with the projected controller its filter reads as "you". */
+    data class SourceTapMultiplier(
+        val sourceId: EntityId,
+        val static: MultiplyManaOnSourceTap,
+        val sourceControllerId: EntityId,
+    )
+
     /** True when no bucket holds anything — the overwhelmingly common case. */
     val isEmpty: Boolean =
         manaAbilityGrantors.isEmpty() &&
             landColorOverrideByTarget.isEmpty() &&
             landColorReplacements.isEmpty() &&
             auraBonusManaByTarget.isEmpty() &&
-            sourceTapBonuses.isEmpty()
+            sourceTapBonuses.isEmpty() &&
+            sourceTapMultipliers.isEmpty()
 
     companion object {
-        val EMPTY = ManaStaticsIndex(emptyList(), emptyMap(), emptyList(), emptyMap(), emptyList())
+        val EMPTY =
+            ManaStaticsIndex(emptyList(), emptyMap(), emptyList(), emptyMap(), emptyList(), emptyList())
 
         /**
          * Walk the battlefield once and bucket every mana-relevant static on it.
@@ -117,6 +130,7 @@ class ManaStaticsIndex private constructor(
             var replacements: MutableList<LandColorReplacement>? = null
             var auraBonuses: MutableMap<EntityId, MutableList<AuraBonusMana>>? = null
             var sourceTapBonuses: MutableList<SourceTapBonus>? = null
+            var sourceTapMultipliers: MutableList<SourceTapMultiplier>? = null
 
             val projected = state.projectedState
 
@@ -170,13 +184,21 @@ class ManaStaticsIndex private constructor(
                                 .add(SourceTapBonus(permanentId, static, controller))
                         }
 
+                        is MultiplyManaOnSourceTap -> {
+                            val controller = projected.getController(permanentId) ?: continue
+                            (
+                                sourceTapMultipliers
+                                    ?: mutableListOf<SourceTapMultiplier>().also { sourceTapMultipliers = it }
+                                ).add(SourceTapMultiplier(permanentId, static, controller))
+                        }
+
                         else -> {}
                     }
                 }
             }
 
             if (grantors == null && overrides == null && replacements == null &&
-                auraBonuses == null && sourceTapBonuses == null
+                auraBonuses == null && sourceTapBonuses == null && sourceTapMultipliers == null
             ) {
                 return EMPTY
             }
@@ -187,6 +209,7 @@ class ManaStaticsIndex private constructor(
                 landColorReplacements = replacements ?: emptyList(),
                 auraBonusManaByTarget = auraBonuses ?: emptyMap(),
                 sourceTapBonuses = sourceTapBonuses ?: emptyList(),
+                sourceTapMultipliers = sourceTapMultipliers ?: emptyList(),
             )
         }
     }

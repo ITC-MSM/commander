@@ -26,7 +26,9 @@ import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaSpendOnChosenTypeEffect
+import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
@@ -338,6 +340,35 @@ class ManaAbilityEnumerator : ActionEnumerator {
      * Also overrides the description when an aura attached to the source forces the land
      * to produce a different color (e.g., Shimmerwilds Growth → "{T}: Add {U}").
      */
+    /**
+     * The combined [com.wingedsheep.sdk.scripting.MultiplyManaOnSourceTap] factor for [entityId]
+     * (Virtue of Strength: 3), for labelling only — the authoritative scaling happens in
+     * `ActivateAbilityHandler` (manual tap) and `ManaSolver` (auto-tap). Instances multiply
+     * together, matching both of those.
+     */
+    private fun sourceTapManaMultiplier(
+        state: com.wingedsheep.engine.state.GameState,
+        entityId: EntityId,
+        context: EnumerationContext
+    ): Int {
+        if (context.manaStatics.sourceTapMultipliers.isEmpty()) return 1
+        var multiplier = 1
+        for (entry in context.manaStatics.sourceTapMultipliers) {
+            if (entry.static.multiplier <= 1) continue
+            val filterContext = PredicateContext(
+                controllerId = entry.sourceControllerId,
+                sourceId = entry.sourceId
+            )
+            if (context.predicateEvaluator.matches(
+                    state, state.projectedState, entityId, entry.static.sourceFilter, filterContext
+                )
+            ) {
+                multiplier *= entry.static.multiplier
+            }
+        }
+        return multiplier
+    }
+
     private fun runtimeDescription(
         ability: com.wingedsheep.sdk.scripting.ActivatedAbility,
         state: com.wingedsheep.engine.state.GameState,
@@ -353,6 +384,26 @@ class ManaAbilityEnumerator : ActionEnumerator {
             if (override != null) {
                 val costDesc = ability.cost.description
                 return "$costDesc: Add {${override.symbol}}"
+            }
+        }
+
+        // Multiplied output (Virtue of Strength) — label what the tap will actually produce, so
+        // the button reads "{T}: Add {G}{G}{G}" rather than the printed "{T}: Add {G}".
+        val manaMultiplier = sourceTapManaMultiplier(state, entityId, context)
+        if (manaMultiplier > 1) {
+            val symbol = when {
+                effect is AddManaEffect && effect.amount is DynamicAmount.Fixed -> "{${effect.color.symbol}}"
+                effect is AddColorlessManaEffect && effect.amount is DynamicAmount.Fixed -> "{C}"
+                else -> null
+            }
+            if (symbol != null) {
+                val baseAmount = when (effect) {
+                    is AddManaEffect -> (effect.amount as DynamicAmount.Fixed).amount
+                    is AddColorlessManaEffect -> (effect.amount as DynamicAmount.Fixed).amount
+                    else -> 0
+                }
+                val total = baseAmount * manaMultiplier
+                if (total > 0) return "${ability.cost.description}: Add ${symbol.repeat(total)}"
             }
         }
 

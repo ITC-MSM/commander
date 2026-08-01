@@ -4973,6 +4973,21 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   Oblivion** = `GameObjectFilter.Land.youControl()`, `color = null`, `whenProducing = COLORLESS`. Gated
   on all three mana paths (manual tap, color-choice-resume mirror, and the auto-pay `ManaSolver`, whose
   colorless bonus floats as a colorless `BonusManaEntry`).
+- `MultiplyManaOnSourceTap(sourceFilter, multiplier)` — global: "If you tap a `<sourceFilter>` for mana, it
+  produces `<multiplier>` times as much of that mana instead." The **multiplicative** sibling of
+  `AdditionalManaOnSourceTap`, sharing its filter convention (the filter is evaluated from the static's own
+  projected controller, so `.youControl()` is the printed "**If you** tap …" — only a permanent's controller
+  can activate its mana abilities). (**Virtue of Strength** = `GameObjectFilter.BasicLand.youControl()`,
+  `multiplier = 3`.) Three narrowings, all from the printed rulings: (1) **`{T}` is required** — you are
+  "tapping a permanent for mana" only when the mana ability's cost carries the tap symbol, so a tapless mana
+  ability (Ashnod's Altar) is untouched; (2) **only the ability's own output scales** — a bonus from a
+  *separate* triggered mana ability (`AdditionalManaOnTap` / `AdditionalManaOnSourceTap`: Fertile Ground,
+  Lavaleaper) is not multiplied; (3) **instances are cumulative and multiplicative** — two Virtues make a
+  basic land produce nine times as much, not six. Implemented by scaling the resolving mana effect's
+  `amount` (`DynamicAmount.Multiply`) rather than the pool afterwards, so restricted mana, spell riders and
+  per-source provenance survive and the `ManaAddedEvent` reports the real total. Wired on all three read
+  sites: `ActivateAbilityHandler` (manual tap), `ManaSolver` via `ManaStaticsIndex.sourceTapMultipliers`
+  (auto-pay budgeting), and `ManaAbilityEnumerator` (the button reads "{T}: Add {G}{G}{G}").
 - `ReplaceLandManaColor(filter)` — global: lands matching `filter` produce one mana of a color of their
   controller's choice instead of their normal mana. Implemented by swapping the land's base mana effect
   for "add one mana of any color", so the choice flows through the normal any-color machinery (manual tap
