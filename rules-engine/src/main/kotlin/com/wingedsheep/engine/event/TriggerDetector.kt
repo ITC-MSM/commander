@@ -466,7 +466,8 @@ class TriggerDetector(
                     trigger = EventPattern.StepEvent(Step.END, Player.Each),
                     binding = TriggerBinding.ANY,
                     effect = delayed.effect,
-                    targetRequirement = delayed.targetRequirement
+                    targetRequirement = delayed.targetRequirement,
+                    additionalTargetRequirements = delayed.additionalTargetRequirements
                 ),
                 sourceId = delayed.sourceId,
                 sourceName = delayed.sourceName,
@@ -858,7 +859,8 @@ class TriggerDetector(
                                     trigger = spec.event,
                                     binding = spec.binding,
                                     effect = delayed.effect,
-                                    targetRequirement = delayed.targetRequirement
+                                    targetRequirement = delayed.targetRequirement,
+                                    additionalTargetRequirements = delayed.additionalTargetRequirements
                                 ),
                                 sourceId = delayed.sourceId,
                                 sourceName = delayed.sourceName,
@@ -878,7 +880,8 @@ class TriggerDetector(
                             trigger = spec.event,
                             binding = spec.binding,
                             effect = delayed.effect,
-                            targetRequirement = delayed.targetRequirement
+                            targetRequirement = delayed.targetRequirement,
+                            additionalTargetRequirements = delayed.additionalTargetRequirements
                         ),
                         sourceId = delayed.sourceId,
                         sourceName = delayed.sourceName,

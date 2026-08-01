@@ -68,6 +68,15 @@ data class DelayedTriggeredAbility(
      */
     val targetRequirement: com.wingedsheep.sdk.scripting.targets.TargetRequirement? = null,
     /**
+     * Further target requirements beyond [targetRequirement], for a delayed trigger that targets
+     * more than once — Feral Encounter's "target creature you control deals damage equal to its
+     * power to up to one target creature you don't control". Mirrors
+     * [com.wingedsheep.sdk.scripting.TriggeredAbility.additionalTargetRequirements], which is where
+     * these end up on the synthesised ability; the whole list is chosen fresh each firing.
+     */
+    val additionalTargetRequirements: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement> =
+        emptyList(),
+    /**
      * For step-based delayed triggers: the single "whose turn" gate. If non-null, only fires
      * when this player is the active player; null means it fires on the next matching step of
      * any turn. Setting it to the source's [controllerId] expresses the common "only on the

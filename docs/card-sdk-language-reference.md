@@ -2172,7 +2172,7 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   player), e.g. Shadowfax, Lord of Horses ("put a creature card with lesser power from your hand onto
   the battlefield tapped and attacking").
 - `incubate(n)` — make an Incubator token with N counters.
-- `impulse(count?, expiry?)` — impulse draw: exile the top N of your library, may play those cards until `expiry` (default end of turn); played cards still pay their mana. For the play-free variant compose with `GrantPlayWithoutPayingCostEffect` (cf. `shuffleAndExileTopPlayFree`). Irascible Wolverine (1), Annie Flash, the Veteran (2). `MayPlayExpiry` options: `EndOfTurn` (default), `Permanent` ("for as long as it remains exiled"), `UntilControllerStep(step, includeCurrentTurn?)` / the `UntilEndOfNextTurn` + `UntilNextEndStep` shorthands (turn-keyed, cleaned up at the matching cleanup), and `UntilSourceExilesAnother` — a **self-superseding** permission that persists across turns (and survives the granting source leaving play) but is revoked the moment that *same source* grants another such permission (exiles another card), so only the source's most-recently-exiled card stays playable and the earlier one remains in exile but unplayable. Requires the grant to carry a source id (falls back to `Permanent` behaviour without one); models "you may play that card until you exile another card with this creature" (**Superior Foes of Spider-Man**).
+- `impulse(count?, expiry?)` — impulse draw: exile the top N of your library, may play those cards until `expiry` (default end of turn); played cards still pay their mana. `count` takes a plain `Int` or a `DynamicAmount` for "exile *that many* cards" (Virtue of Courage, counting off the noncombat damage just dealt via `ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT`). For the play-free variant compose with `GrantPlayWithoutPayingCostEffect` (cf. `shuffleAndExileTopPlayFree`). Irascible Wolverine (1), Annie Flash, the Veteran (2). `MayPlayExpiry` options: `EndOfTurn` (default), `Permanent` ("for as long as it remains exiled"), `UntilControllerStep(step, includeCurrentTurn?)` / the `UntilEndOfNextTurn` + `UntilNextEndStep` shorthands (turn-keyed, cleaned up at the matching cleanup), and `UntilSourceExilesAnother` — a **self-superseding** permission that persists across turns (and survives the granting source leaving play) but is revoked the moment that *same source* grants another such permission (exiles another card), so only the source's most-recently-exiled card stays playable and the earlier one remains in exile but unplayable. Requires the grant to carry a source id (falls back to `Permanent` behaviour without one); models "you may play that card until you exile another card with this creature" (**Superior Foes of Spider-Man**).
 - `returnLinkedExile(underOwnersControl?)` — bring back linked exile pile.
 - `takeFromLinkedExile()` — pull one card from linked exile.
 - `shuffleGraveyardIntoLibrary(target?)` — Elixir of Immortality shape.
@@ -4166,6 +4166,16 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
     - `NEXT_TURN` — stricter "on your next turn"-style timing: the current turn never qualifies
       regardless of step. Pair with `fireOnPlayer = PlayerRef(Player.You)` to land on the
       controller's upcoming own turn rather than an intervening opponent turn. (Kav Landseeker.)
+    - `THIS_TURN_ONLY` — "…the next [step] **this turn**": no turn floor, but the trigger is swept
+      at end of turn instead of waiting across the boundary, so a turn with no further matching step
+      drops it unfired. (Feral Encounter: cast it in a postcombat main phase and the combat ability
+      simply never triggers.) `CURRENT_TURN_OR_LATER` is the open-ended cousin.
+  - `targetRequirement` / `additionalTargetRequirements` — targets chosen *each time* the delayed
+    trigger fires (not when it's scheduled), exposed to the inner `effect` as `ContextTarget(0)`,
+    `ContextTarget(1)`, … in that order. One requirement is the common case (Rediscover the Way
+    chapter III, Fatal Fissure); the list carries the rest for a trigger that targets more than once
+    — Feral Encounter's "target creature you control deals damage equal to its power to up to one
+    target creature you don't control", where the *spell* takes no targets at all.
   - `repeatAtEachMatchingStep = true` keeps a step-based delayed trigger resident after it fires,
     repeating at every matching step until `expiry` removes it. The default is `false`, preserving
     the one-shot "at the beginning of the next ..." shape. Pair with
