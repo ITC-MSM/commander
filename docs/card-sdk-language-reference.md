@@ -4131,6 +4131,11 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
     - `NEXT_TURN` — stricter "on your next turn"-style timing: the current turn never qualifies
       regardless of step. Pair with `fireOnPlayer = PlayerRef(Player.You)` to land on the
       controller's upcoming own turn rather than an intervening opponent turn. (Kav Landseeker.)
+  - `repeatAtEachMatchingStep = true` keeps a step-based delayed trigger resident after it fires,
+    repeating at every matching step until `expiry` removes it. The default is `false`, preserving
+    the one-shot "at the beginning of the next ..." shape. Pair with
+    `expiry = DelayedTriggerExpiry.EndOfTurn` for "at the beginning of each [step] this turn"
+    (Full Throttle uses `step = BEGIN_COMBAT`).
 - **Event-based delayed triggers** — pass `trigger = <TriggerSpec>` (instead of `step`) and the
   delayed ability fires whenever a matching *event* occurs, staying resident until `expiry`
   (`DelayedTriggerExpiry.EndOfTurn`) removes it. Supported events include `DealsDamageEvent`,

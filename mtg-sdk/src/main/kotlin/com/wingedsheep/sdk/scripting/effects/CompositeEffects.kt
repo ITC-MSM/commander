@@ -720,6 +720,12 @@ data class CreateDelayedTriggerEffect(
      */
     val fireOnce: Boolean = false,
     /**
+     * For step-based delayed triggers: keep the trigger resident after it fires so it repeats at
+     * every matching step until [expiry]. The default preserves the ordinary one-shot "at the
+     * beginning of the next ..." shape.
+     */
+    val repeatAtEachMatchingStep: Boolean = false,
+    /**
      * The earliest turn this step-based delayed trigger may fire. See
      * [DelayedTriggerTiming]. Orthogonal to [fireOnPlayer], which gates *whose* turn the
      * trigger fires on (not *which* turn is the earliest eligible one).

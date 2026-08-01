@@ -925,8 +925,9 @@ class CleanupPhaseManager(
             )
         }
 
-        // 10. Expire event-based delayed triggered abilities with EndOfTurn expiry
-        // (e.g., Long River Lurker's "whenever that creature deals combat damage this turn").
+        // 10. Expire delayed triggered abilities with EndOfTurn expiry. This covers event-based
+        // triggers and repeating step-based triggers such as "at the beginning of each combat this
+        // turn"; ordinary one-shot step triggers are consumed when they fire.
         if (newState.delayedTriggers.isNotEmpty()) {
             val remainingDelayed = newState.delayedTriggers.filter { delayed ->
                 delayed.expiry !is DelayedTriggerExpiry.EndOfTurn

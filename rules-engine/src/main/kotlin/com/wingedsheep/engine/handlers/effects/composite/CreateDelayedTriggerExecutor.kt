@@ -137,8 +137,9 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
             trigger = resolvedTrigger,
             watchedEntityId = watchedEntityId,
             watchedRecipientId = watchedRecipientId,
-            expiry = if (effect.trigger != null) effect.expiry else null,
+            expiry = if (effect.trigger != null || effect.repeatAtEachMatchingStep) effect.expiry else null,
             fireOnce = effect.trigger != null && effect.fireOnce,
+            repeatAtEachMatchingStep = effect.trigger == null && effect.repeatAtEachMatchingStep,
             notBeforeTurn = notBeforeTurn,
             targetRequirement = effect.targetRequirement,
             fireOnPlayerId = fireOnPlayerId

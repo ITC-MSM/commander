@@ -478,7 +478,7 @@ class TriggerDetector(
                 )
             )
         }
-        val consumedIds = matching.map { it.id }.toSet()
+        val consumedIds = matching.filterNot { it.repeatAtEachMatchingStep }.map { it.id }.toSet()
         return matcher.sortByApnapOrder(state, triggers) to consumedIds
     }
 
