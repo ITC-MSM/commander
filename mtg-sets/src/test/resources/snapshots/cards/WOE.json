@@ -1847,6 +1847,190 @@
     ]
 }
 
+// Blossoming Tortoise
+{
+    "name": "Blossoming Tortoise",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Turtle",
+    "oracleText": "Whenever this creature enters or attacks, mill three cards, then return a land card from your graveyard to the battlefield tapped.\nActivated abilities of lands you control cost {1} less to activate.\nLand creatures you control get +1/+1.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            },
+                            "storeAs": "tortoiseMilled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "tortoiseMilled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "land"
+                            },
+                            "storeAs": "tortoiseLands"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "tortoiseLands",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "tortoiseLandToReturn",
+                            "prompt": "Return a land card from your graveyard to the battlefield tapped",
+                            "selectedLabel": "Return tapped",
+                            "remainderLabel": "Leave in graveyard",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "tortoiseLandToReturn",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature enters, mill three cards, then return a land card from your graveyard to the battlefield tapped."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            },
+                            "storeAs": "tortoiseMilled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "tortoiseMilled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "land"
+                            },
+                            "storeAs": "tortoiseLands"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "tortoiseLands",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "tortoiseLandToReturn",
+                            "prompt": "Return a land card from your graveyard to the battlefield tapped",
+                            "selectedLabel": "Return tapped",
+                            "remainderLabel": "Leave in graveyard",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "tortoiseLandToReturn",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks, mill three cards, then return a land card from your graveyard to the battlefield tapped."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ReduceActivatedAbilityCost",
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                },
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature land ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "rarity": "MYTHIC",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/7811a45d-6bfb-4c2a-b5a2-cccbd8cff186.jpg?1783915085",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Activated abilities contain a colon. Triggered abilities are unaffected by Blossoming Tortoise's cost reduction ability."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Blossoming Tortoise's second ability affects only abilities of lands you control on the battlefield, not abilities of land cards in other zones."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Boundary Lands Ranger
 {
     "name": "Boundary Lands Ranger",
@@ -13633,6 +13817,141 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Sentinel of Lost Lore
+{
+    "name": "Sentinel of Lost Lore",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Creature — Elf Knight",
+    "oracleText": "When this creature enters, choose one or more —\n• Return target card you own in exile that has an Adventure to your hand.\n• Put target card you don't own in exile that has an Adventure on the bottom of its owner's library.\n• Exile target player's graveyard.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Hand"
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": {
+                                            "cardPredicates": [
+                                                "HasAdventure"
+                                            ],
+                                            "controllerPredicate": "OwnedByYou"
+                                        },
+                                        "zone": "Exile"
+                                    }
+                                }
+                            ],
+                            "description": "Return target card you own in exile that has an Adventure to your hand."
+                        },
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Library",
+                                "placement": "Bottom"
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": {
+                                            "cardPredicates": [
+                                                "HasAdventure"
+                                            ],
+                                            "controllerPredicate": "OwnedByOpponent"
+                                        },
+                                        "zone": "Exile"
+                                    }
+                                }
+                            ],
+                            "description": "Put target card you don't own in exile that has an Adventure on the bottom of its owner's library."
+                        },
+                        {
+                            "effect": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Graveyard",
+                                            "player": {
+                                                "type": "ContextPlayer",
+                                                "index": 0
+                                            }
+                                        },
+                                        "storeAs": "sentinelTargetGraveyard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "sentinelTargetGraveyard",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Exile",
+                                            "player": {
+                                                "type": "ContextPlayer",
+                                                "index": 0
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "targetRequirements": [
+                                "TargetPlayer"
+                            ],
+                            "description": "Exile target player's graveyard."
+                        }
+                    ],
+                    "chooseCount": 3,
+                    "minChooseCount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "184",
+        "rarity": "RARE",
+        "artist": "Cristi Balanescu",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f109a5bf-1472-4b87-b3d3-70db0e123693.jpg?1783915078",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The first and second modes can target any face-up exiled card that has an Adventure and has an appropriate owner, whether or not it was cast as an Adventure."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You must choose at least one mode if possible. The last mode can target a player whose graveyard is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
