@@ -759,6 +759,53 @@
     ]
 }
 
+// Gisela, the Broken Blade
+{
+    "name": "Gisela, the Broken Blade",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Legendary Creature — Angel Horror",
+    "oracleText": "Flying, first strike, lifelink\nAt the beginning of your end step, if you both own and control Gisela and a creature named Bruna, the Fading Light, exile them, then meld them into Brisela, Voice of Nightmares.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "FIRST_STRIKE",
+        "LIFELINK"
+    ],
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "MYTHIC",
+        "artist": "Clint Cearley",
+        "flavorText": "She now hears only Emrakul's murmurs.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c75c035a-7da9-4b36-982d-fca8220b1797.jpg?1783937515"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Graf Rats
+{
+    "name": "Graf Rats",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Rat",
+    "oracleText": "At the beginning of combat on your turn, if you both own and control this creature and a creature named Midnight Scavengers, exile them, then meld them into Chittering Host.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "artist": "Jason Felix",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3dedaff6-bd69-4fe3-a301-f7ea7c2f2861.jpg?1783937482"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Grapple with the Past
 {
     "name": "Grapple with the Past",
@@ -892,6 +939,74 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Hanweir Battlements
+{
+    "name": "Hanweir Battlements",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{R}, {T}: Target creature gains haste until end of turn.\n{3}{R}{R}, {T}: If you both own and control this land and a creature named Hanweir Garrison, exile them, then meld them into Hanweir, the Writhing Township.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{R}, {T}: Target creature gains haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "204",
+        "rarity": "RARE",
+        "artist": "Vincent Proce",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d743ad6-6ca2-409a-9773-581cc195dbf2.jpg?1783937421"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
