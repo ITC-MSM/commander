@@ -654,7 +654,19 @@ enum class DelayedTriggerTiming {
      * rather than an intervening opponent turn. (Kav Landseeker.)
      */
     @SerialName("NextTurn")
-    NEXT_TURN
+    NEXT_TURN,
+
+    /**
+     * "…the next [step] **this turn**": no turn floor, but the trigger is discarded at end of turn
+     * if that step never comes around again. Feral Encounter ("at the beginning of the next combat
+     * phase this turn") is the shape — cast it in a postcombat main phase and the ability simply
+     * never triggers, rather than lying in wait for the opponent's combat.
+     *
+     * [CURRENT_TURN_OR_LATER] is the open-ended cousin: it also allows the current turn but keeps
+     * waiting across turn boundaries, which is what "at the beginning of the next end step" wants.
+     */
+    @SerialName("ThisTurnOnly")
+    THIS_TURN_ONLY
 }
 
 /**
@@ -739,6 +751,15 @@ data class CreateDelayedTriggerEffect(
      * Null for non-targeting delayed triggers (the common case).
      */
     val targetRequirement: TargetRequirement? = null,
+    /**
+     * Further target requirements beyond [targetRequirement], for a delayed trigger that targets
+     * more than once — Feral Encounter's "at the beginning of the next combat phase this turn,
+     * target creature you control deals damage equal to its power to up to one target creature you
+     * don't control". They are exposed to [effect] as
+     * [com.wingedsheep.sdk.scripting.targets.EffectTarget.ContextTarget] 1, 2, … in order, with
+     * [targetRequirement] at index 0, and the whole list is chosen fresh each time the trigger fires.
+     */
+    val additionalTargetRequirements: List<TargetRequirement> = emptyList(),
     /**
      * For step-based delayed triggers: restrict firing to a specific player's matching step,
      * rather than every player's. Resolved to a concrete player entity id at scheduling time

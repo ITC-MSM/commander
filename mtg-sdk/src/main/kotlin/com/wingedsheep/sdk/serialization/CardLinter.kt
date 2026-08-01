@@ -657,7 +657,7 @@ object CardLinter {
                     "CreateDelayedTrigger" -> return walkDeferredEffect(
                         element, scope, state,
                         effectField = "effect",
-                        reqFields = listOf("targetRequirement"),
+                        reqFields = listOf("targetRequirement", "additionalTargetRequirements"),
                         label = "delayed trigger of ${scope.label}",
                     )
                 }
@@ -674,7 +674,8 @@ object CardLinter {
      * target requirements: a `ReflexiveTriggerEffect`'s reflexive effect targets via
      * `reflexiveTargetRequirements` (chosen when the reflexive trigger goes on the stack —
      * Foray of Orcs et al.), and a `CreateDelayedTriggerEffect`'s effect targets via its
-     * `targetRequirement` (chosen each time the delayed trigger fires — Rediscover the Way).
+     * `targetRequirement` plus `additionalTargetRequirements` (chosen each time the delayed trigger
+     * fires — Rediscover the Way for one, Feral Encounter for two).
      * `ContextTarget` indices inside the deferred effect are scoped to those requirements;
      * when none are declared, they inherit the outer ability's targets ("exile target card …
      * when you do, return it"). Pipeline collections flow through — the engine snapshots them

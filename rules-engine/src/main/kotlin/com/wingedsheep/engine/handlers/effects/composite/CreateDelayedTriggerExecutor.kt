@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect
+import com.wingedsheep.sdk.scripting.effects.DelayedTriggerExpiry
 import com.wingedsheep.sdk.scripting.effects.DelayedTriggerTiming
 import com.wingedsheep.sdk.scripting.effects.DealDamagePerEntityInZoneEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -125,6 +126,17 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
                 if (onControllersTurn && endStepAlreadyStarted) state.turnNumber + 1 else null
             }
             DelayedTriggerTiming.CURRENT_TURN_OR_LATER -> null
+            DelayedTriggerTiming.THIS_TURN_ONLY -> null
+        }
+
+        // A step-based one-shot normally carries no expiry: "at the beginning of your next end
+        // step" has to survive the turn boundary when it's scheduled during the end step itself.
+        // THIS_TURN_ONLY is the opposite promise — "the next [step] *this turn*" — so it takes the
+        // end-of-turn sweep, and a turn with no further matching step drops it unfired.
+        val expiry = when {
+            effect.trigger != null || effect.repeatAtEachMatchingStep -> effect.expiry
+            effect.timing == DelayedTriggerTiming.THIS_TURN_ONLY -> DelayedTriggerExpiry.EndOfTurn
+            else -> null
         }
 
         val delayedTrigger = DelayedTriggeredAbility(
@@ -137,11 +149,12 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
             trigger = resolvedTrigger,
             watchedEntityId = watchedEntityId,
             watchedRecipientId = watchedRecipientId,
-            expiry = if (effect.trigger != null || effect.repeatAtEachMatchingStep) effect.expiry else null,
+            expiry = expiry,
             fireOnce = effect.trigger != null && effect.fireOnce,
             repeatAtEachMatchingStep = effect.trigger == null && effect.repeatAtEachMatchingStep,
             notBeforeTurn = notBeforeTurn,
             targetRequirement = effect.targetRequirement,
+            additionalTargetRequirements = effect.additionalTargetRequirements,
             fireOnPlayerId = fireOnPlayerId
         )
 
