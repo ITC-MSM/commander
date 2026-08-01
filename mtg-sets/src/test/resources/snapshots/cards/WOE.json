@@ -36,6 +36,120 @@
     ]
 }
 
+// Agatha of the Vile Cauldron
+{
+    "name": "Agatha of the Vile Cauldron",
+    "manaCost": "{R}{G}",
+    "typeLine": "Legendary Creature — Human Warlock",
+    "oracleText": "Activated abilities of creatures you control cost {X} less to activate, where X is Agatha's power. This effect can't reduce the mana in that cost to less than one mana.\n{4}{R}{G}: Other creatures you control get +1/+1 and gain trample and haste until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{R}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you",
+                                    "excludeSelf": true
+                                }
+                            },
+                            "body": {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you",
+                                    "excludeSelf": true
+                                }
+                            },
+                            "body": {
+                                "type": "GrantKeyword",
+                                "keyword": "TRAMPLE",
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you",
+                                    "excludeSelf": true
+                                }
+                            },
+                            "body": {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Other creatures you control get +1/+1 and gain trample and haste until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ReduceActivatedAbilityCost",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "amount": {
+                    "type": "EntityProperty",
+                    "entity": "Source",
+                    "numericProperty": "Power"
+                },
+                "manaFloor": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "199",
+        "rarity": "MYTHIC",
+        "artist": "Jason A. Engle",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6c48f07-63b7-4a60-8da6-ce77405abf1e.jpg?1783915073",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Agatha of the Vile Cauldron's first ability affects only abilities of creatures you control on the battlefield. The costs of activated abilities of creature cards that work in other zones (such as cycling) won't be reduced."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Agatha's Champion
 {
     "name": "Agatha's Champion",
@@ -16138,6 +16252,154 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// The End
+{
+    "name": "The End",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {2} less to cast if your life total is 5 or less.\nExile target creature or planeswalker. Search its controller's graveyard, hand, and library for any number of cards with the same name as that permanent and exile them. That player shuffles, then draws a card for each card exiled from their hand this way.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "target"
+                },
+                {
+                    "type": "CaptureControllers",
+                    "from": "target",
+                    "storeAs": "targetControllers"
+                },
+                {
+                    "type": "StoreCardName",
+                    "from": "target",
+                    "storeAs": "targetName"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "target",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile"
+                    }
+                },
+                {
+                    "type": "ForEachCapturedController",
+                    "collection": "target",
+                    "originalCollection": "target",
+                    "controllerSnapshot": "targetControllers",
+                    "countVariable": "count4",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromMultipleZones",
+                                "zones": [
+                                    "Graveyard",
+                                    "Hand",
+                                    "Library"
+                                ],
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "NameEqualsChosen",
+                                            "variableName": "targetName"
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "matches"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "matches",
+                            "selection": "ChooseAnyNumber",
+                            "chooser": "SourceController",
+                            "storeSelected": "selected",
+                            "prompt": "Choose any number of matching cards to exile",
+                            "showAllCards": true,
+                            "alwaysPrompt": true
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "selected",
+                            "filter": {
+                                "type": "InZone",
+                                "zone": "Hand"
+                            },
+                            "storeMatching": "selectedFromHand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        "ShuffleLibrary",
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "VariableReference",
+                                "variableName": "selectedFromHand_count"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target creature or planeswalker"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 2
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "Compare",
+                        "left": {
+                            "type": "LifeTotal",
+                            "player": "You"
+                        },
+                        "operator": "LTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 5
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "rarity": "RARE",
+        "artist": "Donato Giancola",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/1/b18402dc-c4ab-417c-92d1-5e4d9cfb840d.jpg?1783915109",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If the permanent that's exiled was the back face of a double-faced card, you will not be able to exile any additional cards, because those cards have only their front-face characteristics (including name) in the graveyard, hand, and library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

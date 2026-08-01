@@ -2,6 +2,7 @@ package com.wingedsheep.engine.legalactions.utils
 
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.registry.CardRegistry
@@ -751,7 +752,12 @@ class CastPermissionUtils(
             for (ability in cardDef.script.staticAbilities) {
                 val reduce = ability as? com.wingedsheep.sdk.scripting.ReduceActivatedAbilityCost ?: continue
                 if (activatedAbilityReductionApplies(state, entityId, reduce.filter, sourceId)) {
-                    totalAmount += reduce.amount
+                    val controllerId = state.getEntity(entityId)?.get<ControllerComponent>()?.playerId ?: continue
+                    totalAmount += DynamicAmountEvaluator().evaluate(
+                        state,
+                        reduce.amount,
+                        EffectContext(sourceId = entityId, controllerId = controllerId)
+                    ).coerceAtLeast(0)
                     floor = maxOf(floor, reduce.manaFloor)
                 }
             }

@@ -3,6 +3,7 @@ package com.wingedsheep.sdk.scripting
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -815,11 +816,12 @@ sealed interface UnlockCostTarget {
  * generalized so one type covers the family:
  *  - **Power Artifact** ("Enchanted artifact's activated abilities cost {2} less to activate. This
  *    effect can't reduce the mana in that cost to less than one mana.") →
- *    `ReduceActivatedAbilityCost(GroupFilter.attachedCreature(), amount = 2, manaFloor = 1)`. The
+ *    `ReduceActivatedAbilityCost(GroupFilter.attachedCreature(), amount = DynamicAmount.Fixed(2), manaFloor = 1)`. The
  *    `attachedCreature()` scope resolves to the enchanted permanent, so the reduction keys to the
  *    artifact this Aura is attached to.
- *  - A future "your creatures' activated abilities cost {1} less" lord →
- *    `ReduceActivatedAbilityCost(GroupFilter(GameObjectFilter.Creature.youControl()), amount = 1)`.
+ *  - A "your creatures' activated abilities cost {X} less, where X is this creature's power" lord →
+ *    `ReduceActivatedAbilityCost(GroupFilter(GameObjectFilter.Creature.youControl()),
+ *    amount = DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.Power))`.
  *
  * Only the **generic** portion of the ability's mana cost is reduced; colored/hybrid/Phyrexian pips
  * are untouched (CR 118.7). [manaFloor] is the minimum *total* mana the cost may be reduced to: with
@@ -831,19 +833,22 @@ sealed interface UnlockCostTarget {
  * @property filter Which permanents' activated abilities are cheaper (matched via projected state;
  *   use [GroupFilter.attachedCreature] for an Aura's enchanted permanent, [GroupFilter.source] for
  *   "this permanent's abilities", or a battlefield filter for a group).
- * @property amount Generic-mana reduction applied to each matching ability's cost.
+ * @property amount Dynamic generic-mana reduction applied to each matching ability's cost.
  * @property manaFloor Minimum total mana the cost may be reduced to (default 0).
  */
 @SerialName("ReduceActivatedAbilityCost")
 @Serializable
 data class ReduceActivatedAbilityCost(
     val filter: GroupFilter,
-    val amount: Int,
+    val amount: DynamicAmount,
     val manaFloor: Int = 0
 ) : StaticAbility {
     override val description: String = buildString {
         append(filter.description.replaceFirstChar { it.uppercase() })
-        append("'s activated abilities cost {$amount} less to activate")
+        when (amount) {
+            is DynamicAmount.Fixed -> append("'s activated abilities cost {${amount.amount}} less to activate")
+            else -> append("'s activated abilities cost {X} less to activate, where X is ${amount.description}")
+        }
         if (manaFloor > 0) {
             append(". This effect can't reduce the mana in that cost to less than ")
             append(if (manaFloor == 1) "one mana" else "$manaFloor mana")
@@ -852,6 +857,7 @@ data class ReduceActivatedAbilityCost(
 
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
-        return if (newFilter !== filter) copy(filter = newFilter) else this
+        val newAmount = amount.applyTextReplacement(replacer)
+        return if (newFilter !== filter || newAmount !== amount) copy(filter = newFilter, amount = newAmount) else this
     }
 }
