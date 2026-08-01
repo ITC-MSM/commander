@@ -194,6 +194,17 @@ decide what to hide. See `data-contracts.md` §B3 for the payload and its two ma
 particular that `remaining` means "copies you haven't seen", which is not always the same as
 "copies in your library".
 
+### Face-up top card
+
+The Deck pile itself renders its top card face up — with an amber ring, an 👁 badge and the normal
+hover preview — whenever the server sent details for entry **0** of that library's `cardIds`. The
+library zone is always transmitted in full (opaque ids for unknown cards), so position is all the
+client needs; the decision about *which* cards carry details is entirely the server's, and it makes
+it for a public reveal (Future Sight, Goblin Spy), a private peek ("you may look at the top card of
+your library any time"), and a scry/surveil the viewer just performed alike. `ZonePiles.tsx` never
+asks why. `TopOfLibraryClientViewTest` pins both halves of the contract: position 0 is the top, and
+the private peek stays out of an opponent's view.
+
 ## Battlefield card grouping (token quantity aggregation)
 
 Identical permanents on one player's board collapse into a single visual **stack**

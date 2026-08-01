@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useGameStore } from '@/store/gameStore.ts'
-import { useZoneCards, useStackCards, useZone, selectGameState } from '@/store/selectors.ts'
+import { useZoneCards, useStackCards, useZone, useCard, selectGameState } from '@/store/selectors.ts'
 import { graveyard, exile, library } from '@/types'
 import type { ClientCard, ClientDeckCard, ClientPlayer } from '@/types'
 import { CARD_BACK_IMAGE_URL } from '@/utils/cardImages.ts'
@@ -23,6 +23,16 @@ const BASE_PILE_COUNT = 3
 // Concede button so the top pile doesn't render under it.
 const OPPONENT_TOP_RESERVED = 52
 const MIN_PILE_WIDTH = 28
+
+/**
+ * Native tooltip for the Deck pile. When the top card is face up, lead with its name — that's
+ * the reason the pile looks different, and it doubles as the accessible label for the image.
+ */
+function deckPileTitle(canBrowseDeck: boolean, isOwnDeck: boolean, topCard: ClientCard | null): string | undefined {
+  if (!canBrowseDeck) return topCard ? `Top card: ${topCard.name}` : undefined
+  const browse = isOwnDeck ? 'Your deck list and library (D)' : 'Library'
+  return topCard ? `Top card: ${topCard.name} · ${browse}` : browse
+}
 
 /**
  * Deck, graveyard, exile — and, when present, a dedicated Plotted pile — display.
@@ -49,6 +59,13 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
   const topSuspendedCard = suspendedCards[suspendedCards.length - 1]
   const libraryZone = useZone(library(player.playerId))
   const libraryEntityIds = libraryZone?.cardIds ?? []
+  // A library card only carries details when the server decided its identity is legitimately
+  // known to this viewer: a public "play with the top card revealed" (Future Sight, Goblin Spy),
+  // a private "you may look at the top card of your library any time" (Glarb, Lens of Clarity),
+  // or a scry/surveil the viewer just performed. Whenever that holds for the *top* card, show it
+  // face up on the pile rather than making the player open the browser to read it. Index 0 is the
+  // top of the library — the same ordering the Library-order tab renders.
+  const topLibraryCard = useCard(libraryEntityIds[0] ?? null)
   // The server sends `deck` only for the viewing player, so this is empty on every other seat's
   // pile — which is exactly what suppresses the deck-list tab there.
   const ownDeck = useGameStore((state) => {
@@ -152,6 +169,7 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
   // The deck list is worth opening even on an empty library (you can still read what you played).
   const isOwnDeck = ownDeck.length > 0
   const canBrowseDeck = player.librarySize > 0 || isOwnDeck
+  const showsTopLibraryCard = player.librarySize > 0 && topLibraryCard !== null
 
   // `D` opens your own deck — the shortcut lives here rather than in a global handler because
   // exactly one ZonePile on the table is the viewer's, and `ownDeck` is how we know which.
@@ -175,19 +193,38 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
       <div style={styles.zoneStack}>
         <div
           data-zone={isOpponent ? 'opponent-library' : 'player-library'}
-          title={canBrowseDeck ? (isOwnDeck ? 'Your deck list and library (D)' : 'Library') : undefined}
-          style={{ ...styles.deckPile, ...pileStyle, cursor: canBrowseDeck ? 'pointer' : 'default' }}
+          title={deckPileTitle(canBrowseDeck, isOwnDeck, showsTopLibraryCard ? topLibraryCard : null)}
+          style={{
+            ...styles.deckPile,
+            ...pileStyle,
+            cursor: canBrowseDeck ? 'pointer' : 'default',
+            ...(showsTopLibraryCard ? styles.deckPileTopRevealed : null),
+          }}
           onClick={() => { if (canBrowseDeck) setBrowsingLibrary(true) }}
+          onMouseEnter={(e) => { if (showsTopLibraryCard) hoverCard(topLibraryCard.id, { x: e.clientX, y: e.clientY }) }}
+          onMouseLeave={() => hoverCard(null)}
         >
           {player.librarySize > 0 ? (
-            <img
-              src={CARD_BACK_IMAGE_URL}
-              alt="Library"
-              style={styles.pileImage}
-            />
+            showsTopLibraryCard ? (
+              <img
+                src={getCardImageUrl(topLibraryCard.name, topLibraryCard.imageUri, 'normal')}
+                alt={topLibraryCard.name}
+                style={styles.pileImage}
+                onError={(e) => handleImageError(e, topLibraryCard.name, 'normal')}
+              />
+            ) : (
+              <img
+                src={CARD_BACK_IMAGE_URL}
+                alt="Library"
+                style={styles.pileImage}
+              />
+            )
           ) : (
             <div style={styles.emptyPile} />
           )}
+          {/* Badge the face-up top card so it doesn't read as "the whole deck is public" — the
+              rest of the library is still a card back's worth of unknown. */}
+          {showsTopLibraryCard && <div style={styles.deckTopRevealedBadge}>👁</div>}
           <div style={{ ...styles.pileCount, fontSize: responsive.fontSize.small }}>{player.librarySize}</div>
         </div>
         <span style={{ ...styles.zoneLabel, fontSize: responsive.isMobile ? 8 : 10 }}>Deck</span>
