@@ -1131,6 +1131,56 @@
     ]
 }
 
+// Become Brutes
+{
+    "name": "Become Brutes",
+    "manaCost": "{1}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "One or two target creatures each gain haste until end of turn. For each of those creatures, create a Monster Role token attached to it. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1 and has trample.)",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "GrantKeyword",
+                        "keyword": "HASTE",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    {
+                        "type": "CreateRoleToken",
+                        "roleName": "Monster Role"
+                    }
+                ]
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "minCount": 1,
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "317",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Griffin",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/1/a154dadc-be5b-4ad6-9946-bdc54c251bff.jpg?1783915039"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Belligerent of the Ball
 {
     "name": "Belligerent of the Ball",
@@ -9827,6 +9877,67 @@
     ]
 }
 
+// Malevolent Witchkite
+{
+    "name": "Malevolent Witchkite",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Creature — Dragon Warlock",
+    "oracleText": "Flying\nWhen this creature enters, sacrifice any number of artifacts, enchantments, and/or tokens, then draw that many cards.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Sacrifice",
+                            "filter": "artifact|enchantment|token",
+                            "any": true
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": "PermanentsSacrificedThisWay"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, sacrifice any number of artifacts, enchantments, and/or tokens, then draw that many cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "315",
+        "rarity": "RARE",
+        "artist": "Donato Giancola",
+        "flavorText": "\"Was there a fearsome witch around here? Or was it a cruel dragon? The tales were confu—oh no.\"\n—Osval, adventurer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6cb3c6d-560d-40ca-b5c0-27322863cead.jpg?1783915040",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "As Malevolent Witchkite's triggered ability resolves, you may choose to sacrifice zero permanents."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If any abilities trigger when you sacrifice permanents, those abilities won't be put onto the stack until after you've drawn cards. Those abilities won't trigger if you choose to sacrifice zero permanents."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Merfolk Coralsmith
 {
     "name": "Merfolk Coralsmith",
@@ -16571,6 +16682,137 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// The Apprentice's Folly
+{
+    "name": "The Apprentice's Folly",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI, II — Choose target nontoken creature you control that doesn't have the same name as a token you control. Create a token that's a copy of it, except it isn't legendary, is a Reflection in addition to its other types, and has haste.\nIII — Sacrifice all Reflections you control.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "CreateTokenCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nontoken creature you control that doesn't have the same name as a token you control"
+                    },
+                    "addedKeywords": [
+                        "HASTE"
+                    ],
+                    "removedSupertypes": [
+                        "LEGENDARY"
+                    ],
+                    "addedSubtypes": [
+                        "Reflection"
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                "IsNontoken",
+                                "NameNotSharedWithControlledToken"
+                            ],
+                            "controllerPredicate": "ControlledByYou"
+                        }
+                    },
+                    "id": "target nontoken creature you control that doesn't have the same name as a token you control"
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "CreateTokenCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nontoken creature you control that doesn't have the same name as a token you control"
+                    },
+                    "addedKeywords": [
+                        "HASTE"
+                    ],
+                    "removedSupertypes": [
+                        "LEGENDARY"
+                    ],
+                    "addedSubtypes": [
+                        "Reflection"
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                "IsNontoken",
+                                "NameNotSharedWithControlledToken"
+                            ],
+                            "controllerPredicate": "ControlledByYou"
+                        }
+                    },
+                    "id": "target nontoken creature you control that doesn't have the same name as a token you control"
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "creature Reflection ctrl:you"
+                            },
+                            "storeAs": "sacrificeAll_gathered"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "sacrificeAll_gathered",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Sacrifice"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "200",
+        "rarity": "RARE",
+        "artist": "Tuan Duong Chu",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0edb58bb-8ff3-4e34-b3d1-d83b5bd8c178.jpg?1783915073",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Except for the listed exceptions, the token copies exactly what was printed on the original creature and nothing else."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the copied creature has {X} in its mana cost, X is 0."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Any enters-the-battlefield abilities of the copied creature will trigger when the token enters the battlefield. Any as-enters or enters-with abilities will also work."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If something becomes a copy of the token, the copy is also a Reflection in addition to its other types, has haste, and isn't legendary."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
     ]
 }
 
