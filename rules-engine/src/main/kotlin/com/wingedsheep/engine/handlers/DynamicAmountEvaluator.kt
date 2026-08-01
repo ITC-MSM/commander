@@ -669,16 +669,18 @@ class DynamicAmountEvaluator(
 
             is DynamicAmount.SubtypeEnteredUnderControlThisTurn -> {
                 val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
-                val wanted = amount.subtype.value
+                val wanted = amount.subtypes.map { it.value }
                 val excludeId = if (amount.excludeTriggeringEntity) context.triggeringEntityId else null
                 playerIds.sumOf { playerId ->
                     val entries = state.getEntity(playerId)
                         ?.get<com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent>()
                         ?.entries
                         ?: emptyList()
+                    // Any-of over the wanted subtypes, counted per *entry* — an entry carrying two
+                    // of them ("Mounts and/or Vehicles") still contributes 1.
                     entries.count { rec ->
                         rec.entityId != excludeId &&
-                            rec.subtypes.any { it.equals(wanted, ignoreCase = true) }
+                            rec.subtypes.any { have -> wanted.any { have.equals(it, ignoreCase = true) } }
                     }
                 }
             }

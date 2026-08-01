@@ -1,8 +1,7 @@
 package com.wingedsheep.mtg.sets.definitions.dft.cards
 
-import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.dsl.maxSpeed
 import com.wingedsheep.sdk.dsl.startYourEngines
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.EventPattern
@@ -21,13 +20,11 @@ import com.wingedsheep.sdk.scripting.references.Player
  * You have no maximum hand size.
  * Max speed — If you would draw a card, draw two cards instead.
  *
- * The max-speed clause is a *replacement* effect, so it can't go through the `maxSpeed { }`
- * block — that gates static/activated/triggered abilities, and replacement effects are read
- * straight off `ReplacementEffectSourceComponent` at interception sites that don't evaluate a
- * gate. [ReplaceDrawWithEffect] carries its own `restrictions` slot, evaluated in the drawing
- * player's context, so the gate folds into the effect itself exactly the way `maxSpeed { }`
- * folds it into `ModifySpellCost.gating`. The display-only [Keyword.MAX_SPEED] badge is added
- * by hand for the same reason.
+ * The max-speed clause is a *replacement* effect, declared through `maxSpeed { replacementEffect(…) }`.
+ * That path folds the gate into [ReplaceDrawWithEffect]'s own `restrictions` slot — evaluated in the
+ * drawing player's context, which is this card's controller for a `Player.You` draw — because a
+ * conditional wrapper would be invisible to the interception sites that read
+ * `ReplacementEffectSourceComponent` directly.
  *
  * Modelled per card draw rather than as a [ModifyDrawAmount] on the announcement, because the
  * oracle text says "if you would draw a card" — it does not refer to the number of cards drawn,
@@ -52,19 +49,19 @@ val VnwxtVerboseHost = card("Vnwxt, Verbose Host") {
         "Max speed — If you would draw a card, draw two cards instead."
 
     startYourEngines()
-    keywords(Keyword.MAX_SPEED)
 
     staticAbility {
         ability = NoMaximumHandSize
     }
 
-    replacementEffect(
-        ReplaceDrawWithEffect(
-            replacementEffect = DrawCardsEffect(2),
-            restrictions = listOf(Conditions.YouHaveMaxSpeed),
-            appliesTo = EventPattern.DrawEvent(player = Player.You),
+    maxSpeed {
+        replacementEffect(
+            ReplaceDrawWithEffect(
+                replacementEffect = DrawCardsEffect(2),
+                appliesTo = EventPattern.DrawEvent(player = Player.You),
+            )
         )
-    )
+    }
 
     metadata {
         rarity = Rarity.RARE

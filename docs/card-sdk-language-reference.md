@@ -93,6 +93,12 @@ section; do not let SDK additions land without a corresponding doc update.
   `AttachedToComponent` (players are entities too), survives state-based actions while that player is in
   the game, and exposes the player through `Player.EnchantedPlayer` / `EventPattern.LifeGainEvent(EnchantedPlayer)`
   and a `takesDamage(binding = ATTACHED)` "whenever enchanted player is dealt damage" trigger. (Grievous Wound.)
+  The filter is **not** just a cast-time target check: per CR 303.4c it restricts what the Aura may stay
+  attached to, so the engine re-evaluates it against the projected host after every state change and sends
+  the Aura to its owner's graveyard once the host stops matching (CR 704.5m). Write the filter to cover
+  every type the Aura's *own* effects can turn its host into, exactly as the printed card does — Imprisoned
+  in the Moon makes its host a land and so enchants "creature, land, or planeswalker"; an Aura that turns a
+  creature into a land while enchanting only `Targets.Creature` would destroy itself on resolution.
 - `morph: String?` — morph mana cost (cast face-down).
 - `morphCost: PayCost?` — non-mana morph cost.
 - `morphFaceUpEffect: Effect?` — effect that fires when this morph turns face up.
@@ -631,7 +637,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   the life lost this way." (Exsanguinate). Prefer this over `LoseLife + GainLife` whenever the gain
   is worded "equal to the life lost this way".
 - `SetLifeTotal(amount, target)` — set target's life total to N.
-- `ExchangeLifeAndPower(target)` — swap target's power with controller's life total.
+- `ExchangeLifeAndStat(target, stat, player)` — swap a player's life total with a creature's power or
+  toughness (CR 701.12g). `stat` is `CreatureStat.POWER` (default, Evra, Halcyon Witness) or
+  `CreatureStat.TOUGHNESS` (Tree of Perdition); `player` defaults to the controller, pass a
+  `ContextTarget` for "target opponent's life total". The creature's *projected* stat is what the
+  player receives, while the creature's **base** stat is set at Layer 7b — so counters, Auras, and
+  Equipment apply on top of the new value. No-op if the creature has left the battlefield.
 - `ExchangeLifeTotals(target, drawEqualToLifeLost)` — swap the controller's life total with `target`
   player's (CR 701.12c): each player gains/loses the life needed to reach the other's former total,
   applied through the shared gain/lose-life primitives so gain prevention/replacements and loss
@@ -4432,6 +4443,12 @@ staticAbility {
   matching permanents. Honored in the control-change executors (`GainControl`, `GainControlByMost`,
   `ExchangeControl` — an exchange where either side can't be gained control of fails entirely); the
   controller keeping their own permanent is an unaffected no-op. (Guardian Beast)
+- `GrantKeyword(AbilityFlag.CANT_TRANSFORM.name, filter)` — matching permanents can't transform
+  (CR 701.27b — a permanent that can't transform simply doesn't). Honored in `flipDfcInPlace`, the one
+  shared transform-in-place implementation, so it covers *every* cause: a `TransformEffect` one-shot, an
+  activated/triggered transform ability, and the daybound/nightbound day-change flips. The prohibited
+  ability still activates/triggers and its other effects still happen — only the flip is skipped.
+  (Bound by Moonsilver)
 - `AssignDamageEqualToToughness(filter, onlyWhenToughnessGreaterThanPower)` — static: matching creatures
   assign combat damage equal to their toughness rather than their power (Doran the Siege Tower, Bark of
   Doran). `CombatDamageUtils.getAssignedCombatDamage` consults it. For the **turn-scoped, granted** form
@@ -7387,8 +7404,9 @@ this turn").
   damage, and reset to 0 at end of turn. Backs `Conditions.YouDealtRedNoncombatDamageThisTurn(atLeast)` —
   Temple of Power's transform gate (back of Ojer Axonil, Deepest Might).
 
-`SubtypeEnteredUnderControlThisTurn(player, subtype, excludeTriggeringEntity?)` /
-`DynamicAmounts.subtypeEnteredUnderControlThisTurn(subtype, player?, excludeTriggeringEntity?)` —
+`SubtypeEnteredUnderControlThisTurn(player, subtypes, excludeTriggeringEntity?)` /
+`DynamicAmounts.subtypeEnteredUnderControlThisTurn(subtype, player?, excludeTriggeringEntity?)` /
+`DynamicAmounts.subtypesEnteredUnderControlThisTurn(subtypes, player?, excludeTriggeringEntity?)` —
 "the number of [other] [subtype]s that entered the battlefield under [player]'s control this turn"
 (Geralf, the Fleshwright — "each other Zombie that entered the battlefield under your control this
 turn"). It's a **turn-history** count: backed by `PermanentsEnteredUnderControlThisTurnComponent`,
@@ -7396,6 +7414,10 @@ which records each entrant's subtypes (from projected state) at entry, so a perm
 left the battlefield or lost the type still counts. `excludeTriggeringEntity = true` drops the
 permanent whose entry triggered the ability (giving "each *other*"); because every simultaneous
 entrant is recorded before the triggers resolve, each one sees the others (2024-04-12 ruling).
+`subtypes` is a **set with any-of semantics**, so the printed "Mounts and/or Vehicles" wording
+(Cloudspire Coordinator, via the plural facade) counts each qualifying entry exactly once — summing
+two single-subtype amounts would double-count a permanent carrying both. The singular facade is the
+ordinary one-tribe case.
 
 ---
 
@@ -7686,7 +7708,8 @@ The priority groups are (CR 616.1a–f):
   SourceFilter.Matching(GameObjectFilter.Any.youControl()), damageType = DamageType.NonCombat))` — a
   delirium-gated "double all noncombat damage from sources you control". The doubled damage stays
   attributed to the original source (the engine scales the amount in place).
-- `ModifyDamageAmount(modifier = 0, dynamicModifier = null, appliesTo)` — add an amount to matching
+- `ModifyDamageAmount(modifier = 0, dynamicModifier = null, restrictions = emptyList(), appliesTo)` —
+  add an amount to matching
   damage. Pass a flat `modifier` (Valley Flamecaller: "deals that much damage plus 1") or a
   `dynamicModifier: DynamicAmount?` evaluated at damage time against the replacement's **source**
   permanent (so `DynamicAmount.EntityProperty(Source, …)` / `DynamicAmounts.countersOnSelf(…)` reads
@@ -7695,7 +7718,12 @@ The priority groups are (CR 616.1a–f):
   SourceFilter.YouControl, recipient = RecipientFilter.OpponentOrPermanentTheyControl)` — "a source you
   control deals that much damage plus the number of fire counters on this enchantment to an opponent or
   a permanent an opponent controls". Applied in `DamageUtils.applyStaticDamageAmplification` (both the
-  general and combat damage paths), once per damage event, after `DoubleDamage`.
+  general and combat damage paths), once per damage event, after `DoubleDamage`. `restrictions` (a
+  `List<Condition>`, ALL must hold) gates *when* the bonus applies; like the rest of the damage family
+  — and unlike the draw / life-total replacements, whose restrictions read the *affected* player — each
+  entry is evaluated against the **replacement source's controller**. That asymmetry is what lets Far
+  Fortune, End Boss's `maxSpeed { replacementEffect(ModifyDamageAmount(modifier = 1, …)) }` gate on
+  *your* speed while the damage lands on an opponent.
 - `RedirectDamage(redirectTo, appliesTo, condition = null)` — redirect matching damage to another
   recipient. Now wired as a continuous static replacement (each source applies at most once per damage
   event). `redirectTo` supports `EffectTarget.ControllerOfDamageSource` (the controller of the damaging
@@ -7952,8 +7980,8 @@ The priority groups are (CR 616.1a–f):
   Quantum Riddler plus Vnwxt is `(3 + 1)` announced and then each of the four draws doubled = 8.
   Modelling Vnwxt here instead would drop both into one CR 616.1e pool and let the player choose an
   order giving 7. Several applicable announcement effects are cumulative — two doublers quadruple
-  the draw. `restrictions` is also the seam for a "Max speed —" gate, which `maxSpeed { }` cannot
-  apply to a replacement effect.
+  the draw. `restrictions` is also the seam a "Max speed —" gate folds into — declare the replacement
+  inside `maxSpeed { replacementEffect(…) }` and the builder fills the slot.
 - `ModifyMillAmount(modifier, restrictions, appliesTo)` — modify the number of cards a *mill* announces
   by a fixed amount (the mill twin of `ModifyDrawAmount`): a player who would mill N instead mills
   `N + modifier`, clamped to ≥ 0. `appliesTo` is an `EventPattern.MillEvent` whose `player` filter
@@ -8385,11 +8413,17 @@ Card authors rarely reference these directly; they are created/updated by the ma
     holding the clamp and the CR 702.179c "no speed + N ⇒ N" rule.
   - Client: `ClientPlayer.speed` (public info, unmasked) plus `ClientEvent.SpeedChanged`; the UI renders
     a four-bar `SpeedGauge` that redlines at max speed.
-  - **Gap:** a max-speed-gated *replacement* effect (Vnwxt, Verbose Host; Far Fortune, End Boss) is not
-    supported. Replacement effects are read straight off `ReplacementEffectSourceComponent` at ~20
-    independent interception sites, none of which evaluates a condition, so gating one needs a shared
-    conditional-replacement seam that doesn't exist yet. `MaxSpeedBuilder` deliberately offers no
-    `replacementEffect` slot rather than approximating it per site.
+  - **Replacement effects** use a third seam, `maxSpeed { replacementEffect(…) }`, for the same reason
+    as the two static exceptions: they're read straight off `ReplacementEffectSourceComponent` at ~20
+    independent interception sites, so a `ConditionalStaticAbility`-style wrapper would be invisible to
+    every one of them. The builder folds the gate into the effect's own `restrictions` list, which only
+    some replacement types have — anything else throws rather than silently emitting an ungated effect.
+    Vnwxt, Verbose Host ("Max speed — If you would draw a card, draw two cards instead") is a
+    `ReplaceDrawWithEffect`; Far Fortune, End Boss's damage rider is a `ModifyDamageAmount`. Know which
+    player the restrictions read before reaching for it: the damage family evaluates them against the
+    *source's controller* (so Far Fortune taxes opponents while gating on your speed), while the draw /
+    life-total ones read the *affected* player — fine for a `Player.You` pattern like Vnwxt's own draws,
+    wrong for a `Player.EachOpponent` one.
 - **Siege (named-mode entry)** — `EntersWithChoice(ChoiceType.MODE, modeOptions = ...)` + `SourceChosenModeIs("id")`.
 - **Morph** — `morph = "{2}{U}"` (top-level) + `morphFaceUpEffect` for "as it turns face up".
 - **Warp** — `warp = "{1}{R}"`; alt-cost that exiles end of turn. Like morph and cycle, a warp card

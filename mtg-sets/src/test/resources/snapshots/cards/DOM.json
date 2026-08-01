@@ -3407,7 +3407,7 @@
                         "cost": "{4}"
                     }
                 },
-                "effect": "ExchangeLifeAndPower"
+                "effect": "ExchangeLifeAndStat"
             }
         ]
     },

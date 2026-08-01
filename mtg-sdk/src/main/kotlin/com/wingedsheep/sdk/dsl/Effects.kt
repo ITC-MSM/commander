@@ -103,7 +103,8 @@ import com.wingedsheep.sdk.scripting.effects.FightEffect
 import com.wingedsheep.sdk.scripting.effects.ForceSacrificeEffect
 import com.wingedsheep.sdk.scripting.effects.SacrificeTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ExchangeControlEffect
-import com.wingedsheep.sdk.scripting.effects.ExchangeLifeAndPowerEffect
+import com.wingedsheep.sdk.scripting.effects.CreatureStat
+import com.wingedsheep.sdk.scripting.effects.ExchangeLifeAndStatEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlByMostEffect
 import com.wingedsheep.sdk.scripting.effects.PlayerRankMetric
 import com.wingedsheep.sdk.scripting.effects.GiftGivenEffect
@@ -445,11 +446,16 @@ object Effects {
         SetLifeTotalEffect(amount, target)
 
     /**
-     * Exchange a player's life total with a creature's power.
-     * "{4}: Exchange your life total with this creature's power."
+     * Exchange a player's life total with a creature's power or toughness (CR 701.12g).
+     * "{4}: Exchange your life total with this creature's power." — Evra, Halcyon Witness.
+     * "{T}: Exchange target opponent's life total with this creature's toughness." — Tree of
+     * Perdition, via `stat = CreatureStat.TOUGHNESS, player = EffectTarget.ContextTarget(0)`.
      */
-    fun ExchangeLifeAndPower(target: EffectTarget = EffectTarget.Self): Effect =
-        ExchangeLifeAndPowerEffect(target)
+    fun ExchangeLifeAndStat(
+        target: EffectTarget = EffectTarget.Self,
+        stat: CreatureStat = CreatureStat.POWER,
+        player: EffectTarget = EffectTarget.Controller
+    ): Effect = ExchangeLifeAndStatEffect(target, stat, player)
 
     /**
      * Exchange the controller's life total with [target] player's (CR 701.12c). When

@@ -2844,6 +2844,74 @@
     ]
 }
 
+// Cloudspire Coordinator
+{
+    "name": "Cloudspire Coordinator",
+    "manaCost": "{R}{W}",
+    "typeLine": "Creature — Human Pilot",
+    "oracleText": "When this creature enters, scry 2.\n{T}: Create X 1/1 colorless Pilot creature tokens, where X is the number of Mounts and/or Vehicles that entered the battlefield under your control this turn. The tokens have \"This token saddles Mounts and crews Vehicles as though its power were 2 greater.\"",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 2
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "SubtypeEnteredUnderControlThisTurn",
+                        "player": "You",
+                        "subtypes": [
+                            "Mount",
+                            "Vehicle"
+                        ]
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Pilot"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/8/6/8672d795-04f9-4089-9c92-6d6ff628da12.jpg?1783907682",
+                    "staticAbilities": [
+                        {
+                            "type": "CrewSaddleContribution",
+                            "modifier": 2
+                        }
+                    ]
+                },
+                "descriptionOverride": "{T}: Create X 1/1 colorless Pilot creature tokens, where X is the number of Mounts and/or Vehicles that entered the battlefield under your control this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "196",
+        "rarity": "UNCOMMON",
+        "artist": "Eduardo Francisco",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/eef16cda-9150-4e7d-8490-d9f287b81b62.jpg?1783907860"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Cloudspire Skycycle
 {
     "name": "Cloudspire Skycycle",
@@ -4912,6 +4980,93 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Far Fortune, End Boss
+{
+    "name": "Far Fortune, End Boss",
+    "manaCost": "{2}{B}{R}",
+    "typeLine": "Legendary Creature — Human Mercenary",
+    "oracleText": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nWhenever you attack, Far Fortune deals 1 damage to each opponent.\nMax speed — If a source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 1 instead.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "START_YOUR_ENGINES",
+        "MAX_SPEED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                },
+                "descriptionOverride": "Whenever you attack, Far Fortune deals 1 damage to each opponent."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "ModifyDamageAmount",
+                "modifier": 1,
+                "restrictions": [
+                    {
+                        "type": "Compare",
+                        "left": "Speed",
+                        "operator": "EQ",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 4
+                        }
+                    }
+                ],
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "OpponentOrPermanentTheyControl",
+                    "source": "SourceYouControl"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "rarity": "RARE",
+        "artist": "Javier Charro",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f523e96d-9df1-4854-accb-9876aef787e5.jpg?1783907858",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "The additional 1 damage from Far Fortune's last ability is dealt by the same source as the original source of damage. The damage isn't dealt by Far Fortune unless Far Fortune is the original source of damage."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If another effect modifies how much damage your sources would deal, including preventing some of it, the player being dealt damage or the controller of the permanent being dealt damage chooses an order in which to apply those effects. If all of the damage is prevented, Far Fortune's last ability no longer applies."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If damage dealt by a source you control is being divided or assigned among multiple permanents an opponent controls or among an opponent and one or more permanents they control, divide the original amount before adding 1. For example, if you attack with a 5/5 creature with trample and your opponent blocks with a 2/2 creature, you can assign 2 damage to the blocker and 3 damage to the defending player. These amounts are then modified to 3 and 4, respectively."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "A player \"has max speed\" if their speed is 4."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -8226,6 +8381,61 @@
     "colorIdentityOverride": [
         "WHITE"
     ]
+}
+
+// Lifecraft Engine
+{
+    "name": "Lifecraft Engine",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "As this Vehicle enters, choose a creature type.\nVehicle creatures you control are the chosen creature type in addition to their other types.\nEach creature you control of the chosen type other than this Vehicle gets +1/+1.\nCrew 3",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 3
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantChosenSubtype",
+                "filter": {
+                    "baseFilter": "creature Vehicle ctrl:you"
+                }
+            },
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature ctrl:you",
+                    "excludeSelf": true,
+                    "chosenSubtypeKey": "chosenCreatureType"
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "CREATURE_TYPE"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "RARE",
+        "artist": "Mirko Failoni",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/40c92203-17df-4f10-92c6-ebcc79f01357.jpg?1783907849"
+    },
+    "colorIdentityOverride": []
 }
 
 // Lightshield Parry

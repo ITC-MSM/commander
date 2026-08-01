@@ -5,9 +5,19 @@ import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.CostGating
+import com.wingedsheep.sdk.scripting.DoubleDamage
 import com.wingedsheep.sdk.scripting.GrantKeyword
+import com.wingedsheep.sdk.scripting.LifeLossFloor
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
+import com.wingedsheep.sdk.scripting.ModifyDamageAmount
+import com.wingedsheep.sdk.scripting.ModifyDrawAmount
+import com.wingedsheep.sdk.scripting.ModifyLifeGain
+import com.wingedsheep.sdk.scripting.ModifyLifeLoss
+import com.wingedsheep.sdk.scripting.ModifyMillAmount
 import com.wingedsheep.sdk.scripting.ModifySpellCost
+import com.wingedsheep.sdk.scripting.PreventDamage
+import com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect
+import com.wingedsheep.sdk.scripting.ReplacementEffect
 import com.wingedsheep.sdk.scripting.StaticAbility
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.conditions.AllConditions
@@ -76,19 +86,36 @@ fun CardBuilder.startYourEngines() {
  * }
  * ```
  *
- * **Not covered:** a max-speed-gated *replacement* effect (Far Fortune, End Boss's damage rider).
- * Replacement effects are read straight off `ReplacementEffectSourceComponent` at ~20 independent
- * interception sites, none of which evaluates a condition, so gating one *in general* needs a shared
- * conditional-replacement seam that doesn't exist yet — deliberately left out rather than
- * approximated per site.
+ * **Replacement effects** go in the block too, via `replacementEffect(…)`, but only the ones that
+ * carry their own `restrictions` slot — the same fold-it-in trick used for [ModifySpellCost] and
+ * [MayCastSelfFromZones], and for the same reason: replacement effects are read straight off
+ * `ReplacementEffectSourceComponent` at ~20 independent interception sites, so a
+ * [ConditionalStaticAbility]-style wrapper would simply be invisible to all of them. A type without
+ * a `restrictions` slot is rejected loudly rather than silently ungated — gating one *in general*
+ * still needs a shared conditional-replacement seam that doesn't exist.
  *
- * The exception, and why it isn't in this block: a replacement type that already carries its own
- * condition slot can fold the gate in itself, the same trick this builder uses for
- * [ModifySpellCost] and [MayCastSelfFromZones]. Vnwxt, Verbose Host's "Max speed — If you would draw
- * a card, draw two cards instead" is a `ModifyDrawAmount` with
- * `restrictions = listOf(Conditions.YouHaveMaxSpeed)`, declared through the ordinary
- * `replacementEffect(…)` on [CardBuilder] plus a hand-written [Keyword.MAX_SPEED] badge. Route a
- * second such card through here only once there are two of them to share the path.
+ * One wrinkle worth knowing before reaching for it: `restrictions` are evaluated in the *affected
+ * player's* context for the draw / life-total replacements and in the *source controller's* context
+ * for the damage family. "Your speed is 4" means the source's controller either way for
+ * `Player.You`-scoped `appliesTo` patterns (Vnwxt's own draws), and the damage family gets it right
+ * by construction (Far Fortune's rider taxes opponents while reading your speed) — but a
+ * `Player.EachOpponent` draw/life replacement gated this way would read the wrong player's speed.
+ *
+ * Example (Far Fortune, End Boss — "Max speed — If a source you control would deal damage to an
+ * opponent or a permanent an opponent controls, it deals that much damage plus 1 instead"):
+ * ```kotlin
+ * maxSpeed {
+ *     replacementEffect(
+ *         ModifyDamageAmount(
+ *             modifier = 1,
+ *             appliesTo = EventPattern.DamageEvent(
+ *                 source = SourceFilter.YouControl,
+ *                 recipient = RecipientFilter.OpponentOrPermanentTheyControl,
+ *             ),
+ *         )
+ *     )
+ * }
+ * ```
  */
 fun CardBuilder.maxSpeed(init: MaxSpeedBuilder.() -> Unit) {
     val builder = MaxSpeedBuilder()
@@ -97,6 +124,7 @@ fun CardBuilder.maxSpeed(init: MaxSpeedBuilder.() -> Unit) {
     staticAbilities.addAll(builder.gatedStaticAbilities())
     activatedAbilities.addAll(builder.gatedActivatedAbilities())
     triggeredAbilities.addAll(builder.gatedTriggeredAbilities())
+    builder.gatedReplacementEffects().forEach { replacementEffect(it) }
 }
 
 /**
@@ -112,6 +140,7 @@ class MaxSpeedBuilder {
     private val statics: MutableList<StaticAbility> = mutableListOf()
     private val activated: MutableList<ActivatedAbility> = mutableListOf()
     private val triggered: MutableList<TriggeredAbility> = mutableListOf()
+    private val replacements: MutableList<ReplacementEffect> = mutableListOf()
 
     /**
      * "Max speed — This creature has [keywords]." Sugar for a [GrantKeyword] on the source per
@@ -141,6 +170,16 @@ class MaxSpeedBuilder {
         val builder = TriggeredAbilityBuilder()
         builder.init()
         triggered.add(builder.build())
+    }
+
+    /**
+     * A max-speed replacement effect, e.g. Far Fortune, End Boss's "Max speed — If a source you
+     * control would deal damage to an opponent …, it deals that much damage plus 1 instead."
+     * Declare it exactly as you would through [CardBuilder.replacementEffect]; the gate is folded
+     * into the effect's own `restrictions` slot by [gatedReplacementEffects].
+     */
+    fun replacementEffect(effect: ReplacementEffect) {
+        replacements.add(effect)
     }
 
     internal fun gatedStaticAbilities(): List<StaticAbility> = statics.map { ability ->
@@ -184,6 +223,31 @@ class MaxSpeedBuilder {
             restrictions = ability.restrictions + ActivationRestriction.OnlyIfCondition(MAX_SPEED_GATE),
             descriptionOverride = MAX_SPEED_PREFIX + (ability.descriptionOverride ?: ability.description)
         )
+    }
+
+    /**
+     * Folds the max-speed gate into each replacement effect's own `restrictions` list. Only the
+     * replacement types that *have* that slot can be gated — a wrapper would be invisible to the
+     * interception sites, which read `ReplacementEffectSourceComponent` directly — so anything else
+     * is refused rather than silently emitted ungated.
+     */
+    internal fun gatedReplacementEffects(): List<ReplacementEffect> = replacements.map { effect ->
+        when (effect) {
+            is PreventDamage -> effect.copy(restrictions = effect.restrictions + MAX_SPEED_GATE)
+            is DoubleDamage -> effect.copy(restrictions = effect.restrictions + MAX_SPEED_GATE)
+            is ModifyDamageAmount -> effect.copy(restrictions = effect.restrictions + MAX_SPEED_GATE)
+            is ModifyDrawAmount -> effect.copy(restrictions = effect.restrictions + MAX_SPEED_GATE)
+            is ModifyMillAmount -> effect.copy(restrictions = effect.restrictions + MAX_SPEED_GATE)
+            is ReplaceDrawWithEffect -> effect.copy(restrictions = effect.restrictions + MAX_SPEED_GATE)
+            is ModifyLifeGain -> effect.copy(restrictions = effect.restrictions + MAX_SPEED_GATE)
+            is ModifyLifeLoss -> effect.copy(restrictions = effect.restrictions + MAX_SPEED_GATE)
+            is LifeLossFloor -> effect.copy(restrictions = effect.restrictions + MAX_SPEED_GATE)
+            else -> throw IllegalArgumentException(
+                "Max speed cannot gate ${effect::class.simpleName}: it has no restrictions slot to " +
+                    "fold the gate into, and a conditional wrapper would be invisible to the " +
+                    "replacement interception sites. Add a restrictions slot to that type first."
+            )
+        }
     }
 
     internal fun gatedTriggeredAbilities(): List<TriggeredAbility> = triggered.map { ability ->

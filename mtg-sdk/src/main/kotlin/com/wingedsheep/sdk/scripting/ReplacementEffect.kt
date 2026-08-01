@@ -726,24 +726,43 @@ data class DoubleDamage(
  * When [dynamicModifier] is non-null it is evaluated with the replacement's source
  * permanent as the resolution source (so `DynamicAmount.EntityProperty(Source, …)` reads
  * the source's own characteristics/counters); otherwise the flat [modifier] is added.
+ *
+ * The optional [restrictions] list gates the bonus on further conditions, mirroring
+ * [PreventDamage.restrictions] / [DoubleDamage.restrictions]. Like the rest of the damage family —
+ * and unlike the draw/life-total replacements, whose restrictions read the *affected* player — each
+ * entry is evaluated against the **replacement source's controller**, so a `Player.You` condition
+ * reads as "the controller of the permanent with this ability". That's what lets Far Fortune, End
+ * Boss's "Max speed — …" rider gate on *your* speed while the damage lands on an opponent.
  */
 @SerialName("ModifyDamageAmount")
 @Serializable
 data class ModifyDamageAmount(
     val modifier: Int = 0,
     val dynamicModifier: DynamicAmount? = null,
+    override val restrictions: List<Condition> = emptyList(),
     override val appliesTo: EventPattern
 ) : ReplacementEffect {
     override val description: String = buildString {
         val bonus = dynamicModifier?.description ?: "$modifier"
-        append("If ${appliesTo.description}, it deals that much damage plus $bonus instead")
+        val restrictionDesc = restrictions.joinToString(" and ") { it.description.removePrefix("if ") }
+        if (restrictionDesc.isNotEmpty()) {
+            append(restrictionDesc.replaceFirstChar { it.uppercase() })
+            append(", if ")
+        } else {
+            append("If ")
+        }
+        append(appliesTo.description)
+        append(", it deals that much damage plus $bonus instead")
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
         val newAppliesTo = appliesTo.applyTextReplacement(replacer)
         val newDynamic = dynamicModifier?.applyTextReplacement(replacer)
-        return if (newAppliesTo !== appliesTo || newDynamic !== dynamicModifier)
-            copy(appliesTo = newAppliesTo, dynamicModifier = newDynamic)
+        val newRestrictions = restrictions.map { it.applyTextReplacement(replacer) }
+        val anyChanged = newAppliesTo !== appliesTo || newDynamic !== dynamicModifier ||
+            newRestrictions.zip(restrictions).any { (n, o) -> n !== o }
+        return if (anyChanged)
+            copy(appliesTo = newAppliesTo, dynamicModifier = newDynamic, restrictions = newRestrictions)
         else this
     }
 }

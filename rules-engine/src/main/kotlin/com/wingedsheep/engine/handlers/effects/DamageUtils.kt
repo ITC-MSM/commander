@@ -1534,6 +1534,18 @@ object DamageUtils {
                 val damageEvent = effect.appliesTo
                 if (damageEvent !is com.wingedsheep.sdk.scripting.EventPattern.DamageEvent) continue
 
+                // Additional gating conditions, evaluated against the *replacement source's*
+                // controller like the PreventDamage / DoubleDamage sites above — so Far Fortune,
+                // End Boss's "Max speed — …" rider reads Far Fortune's controller's speed, not the
+                // damaged opponent's.
+                if (effect.restrictions.isNotEmpty()) {
+                    val context = EffectContext(
+                        sourceId = entityId,
+                        controllerId = sourceControllerId,
+                    )
+                    if (effect.restrictions.any { !conditionEvaluator.evaluate(state, it, context) }) continue
+                }
+
                 // Check if the damage source matches the source filter
                 val sourceMatches = when (val sourceFilter = damageEvent.source) {
                     is SourceFilter.Any -> true

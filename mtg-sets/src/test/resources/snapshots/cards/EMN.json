@@ -2316,3 +2316,62 @@
         "RED"
     ]
 }
+
+// Tree of Perdition
+{
+    "name": "Tree of Perdition",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Plant",
+    "oracleText": "Defender\n{T}: Exchange target opponent's life total with this creature's toughness.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 13
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ExchangeLifeAndStat",
+                    "stat": "TOUGHNESS",
+                    "player": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    "TargetOpponent"
+                ],
+                "descriptionOverride": "Exchange target opponent's life total with this creature's toughness"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "rarity": "MYTHIC",
+        "artist": "Jung Park",
+        "flavorText": "There will be no absolution.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/305bd19a-ae5e-46ca-8ff7-27810c968315.jpg?1783937474",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "When the ability resolves, Tree of Perdition's toughness becomes the targeted opponent's former life total and that player gains or loses an amount of life necessary so that their life total equals Tree of Perdition's former toughness."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "Any toughness-modifying effects, counters, Auras, or Equipment will apply after its toughness is set to the player's former life total."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If Tree of Perdition isn't on the battlefield when the ability resolves, the exchange can't happen and the ability will have no effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
