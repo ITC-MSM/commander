@@ -295,7 +295,10 @@ export function LobbyScreen() {
                       className={`${styles.playerStatus} ${styles.playerDeckButton} ${statusClass(player.tone)}`}
                       title={player.tone === 'ready' ? 'View or change your submitted deck' : 'Choose and submit your deck'}
                     >
-                      {player.status} <span aria-hidden>✎</span>
+                      {/* Every other seat shows its state here, but on your own seat this is the only
+                          control that submits a deck — so it says what pressing it does instead. */}
+                      {player.tone === 'ready' ? '✓ Deck ready · Change' : 'Choose your deck'}{' '}
+                      <span aria-hidden>✎</span>
                     </button>
                 )}
                 {/* The AI's deck is the host's to pick only where the lobby deals it no pool; the

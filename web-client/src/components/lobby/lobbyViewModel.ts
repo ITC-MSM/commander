@@ -317,6 +317,10 @@ export function fromTournamentLobby(
   // else it builds from the cards it drafted or opened, which is the format working as intended.
   const aiDeckIsChosen = s.format === 'PREMADE_DECKS'
 
+  // Only a bring-a-deck lobby expects a deck *here*; a draft or sealed lobby deals the pool later,
+  // so "no deck yet" would read there as a problem rather than as nothing-to-do-yet.
+  const bringsDeck = axes.cards.kind === 'BRING_A_DECK'
+
   const players = lobbyState.players.map((p): LobbyViewPlayer => ({
     playerId: p.playerId,
     name: p.playerName,
@@ -324,7 +328,11 @@ export function fromTournamentLobby(
     isHost: p.isHost,
     isAi: p.isAi,
     isConnected: p.isConnected,
-    status: !p.isConnected ? 'Disconnected' : p.deckSubmitted ? 'Deck Ready' : 'In lobby',
+    status: !p.isConnected
+      ? 'Disconnected'
+      : p.deckSubmitted
+        ? 'Deck ready'
+        : bringsDeck ? 'No deck yet' : 'Joined',
     tone: !p.isConnected ? 'disconnected' : p.deckSubmitted ? 'ready' : 'joined',
     aiDeck: p.isAi && aiDeckIsChosen ? (p.aiDeck ?? { kind: 'auto' }) : null,
   }))
@@ -334,7 +342,7 @@ export function fromTournamentLobby(
     players,
     isHost: lobbyState.isHost,
     isWaiting,
-    bringsDeck: axes.cards.kind === 'BRING_A_DECK',
+    bringsDeck,
     blockReason: blockReason?.reason ?? null,
   })
 
