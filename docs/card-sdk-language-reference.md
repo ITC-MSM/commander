@@ -93,6 +93,12 @@ section; do not let SDK additions land without a corresponding doc update.
   `AttachedToComponent` (players are entities too), survives state-based actions while that player is in
   the game, and exposes the player through `Player.EnchantedPlayer` / `EventPattern.LifeGainEvent(EnchantedPlayer)`
   and a `takesDamage(binding = ATTACHED)` "whenever enchanted player is dealt damage" trigger. (Grievous Wound.)
+  The filter is **not** just a cast-time target check: per CR 303.4c it restricts what the Aura may stay
+  attached to, so the engine re-evaluates it against the projected host after every state change and sends
+  the Aura to its owner's graveyard once the host stops matching (CR 704.5m). Write the filter to cover
+  every type the Aura's *own* effects can turn its host into, exactly as the printed card does — Imprisoned
+  in the Moon makes its host a land and so enchants "creature, land, or planeswalker"; an Aura that turns a
+  creature into a land while enchanting only `Targets.Creature` would destroy itself on resolution.
 - `morph: String?` — morph mana cost (cast face-down).
 - `morphCost: PayCost?` — non-mana morph cost.
 - `morphFaceUpEffect: Effect?` — effect that fires when this morph turns face up.
