@@ -1793,6 +1793,121 @@
     ]
 }
 
+// Town Gossipmonger
+{
+    "name": "Town Gossipmonger",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human",
+    "oracleText": "{T}, Tap an untapped creature you control: Transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomTapPermanents",
+                                "filter": "creature",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": "Transform",
+                "descriptionOverride": "Transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Incited Rabble",
+        "manaCost": "",
+        "typeLine": "Creature — Human",
+        "oracleText": "This creature attacks each combat if able.\n{2}: This creature gets +1/+0 until end of turn.",
+        "creatureStats": {
+            "power": 2,
+            "toughness": 3
+        },
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{2}"
+                        }
+                    },
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "This creature gets +1/+0 until end of turn."
+                }
+            ],
+            "staticAbilities": [
+                "MustAttack"
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "46",
+            "rarity": "UNCOMMON",
+            "artist": "John Stanko",
+            "flavorText": "Rumors are sparks: gather enough of them and something's going to catch fire.",
+            "imageUri": "https://cards.scryfall.io/normal/back/d/2/d238d324-8c88-43ca-b203-133830d29447.jpg?1783937812"
+        },
+        "colorIdentityOverride": [
+            "WHITE",
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "rarity": "UNCOMMON",
+        "artist": "John Stanko",
+        "flavorText": "\"You'll never believe what I heard.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/2/d238d324-8c88-43ca-b203-133830d29447.jpg?1783937812",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "You can tap any untapped creature you control, including one you haven't controlled continuously since the beginning of your most recent turn, to pay the cost of Town Gossipmonger's activated ability. You must have controlled Town Gossipmonger continuously since the beginning of your most recent turn, however."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Incited Rabble's controller still chooses which player, planeswalker, or battle it attacks."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If, during its controller's declare attackers step, Incited Rabble is tapped or is affected by a spell or ability that says it can't attack, then it doesn't attack. If there's a cost associated with having Incited Rabble attack, its controller isn't forced to pay that cost, so it doesn't have to attack in that case either. Note that transforming Town Gossipmonger won't untap it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "RED"
+    ]
+}
+
 // Traverse the Ulvenwald
 {
     "name": "Traverse the Ulvenwald",

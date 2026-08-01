@@ -821,6 +821,93 @@
     ]
 }
 
+// Ecstatic Awakener
+{
+    "name": "Ecstatic Awakener",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{2}{B}, Sacrifice another creature: Draw a card, then transform this creature. Activate only once each turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        "Transform"
+                    ]
+                },
+                "restrictions": [
+                    "OncePerTurn"
+                ],
+                "descriptionOverride": "Draw a card, then transform this creature. Activate only once each turn."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Awoken Demon",
+        "manaCost": "",
+        "typeLine": "Creature — Demon",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "metadata": {
+            "collectorNumber": "100",
+            "artist": "Tuan Duong Chu",
+            "flavorText": "Bones cracked, flesh split apart, and the screams of euphoric agony gave way to unholy laughter.",
+            "imageUri": "https://cards.scryfall.io/normal/back/b/b/bbdad18e-e262-41f9-b252-1cbdcdd1b5f9.jpg?1783925625"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "artist": "Tuan Duong Chu",
+        "flavorText": "\"Great Ormendahl, I kneel before you, a fragment of your will, a servant of your tyranny. I beg you, release the strength within me!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/b/bbdad18e-e262-41f9-b252-1cbdcdd1b5f9.jpg?1783925625"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Fading Hope
 {
     "name": "Fading Hope",

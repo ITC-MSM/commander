@@ -442,6 +442,116 @@
     ]
 }
 
+// Conduit of Storms
+{
+    "name": "Conduit of Storms",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Werewolf Horror",
+    "oracleText": "Whenever this creature attacks, add {R} at the beginning of your next main phase this turn.\n{3}{R}{R}: Transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "POSTCOMBAT_MAIN",
+                    "effect": {
+                        "type": "AddMana",
+                        "color": "RED"
+                    },
+                    "fireOnPlayer": {
+                        "type": "PlayerRef",
+                        "player": "You"
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{R}{R}"
+                    }
+                },
+                "effect": "Transform",
+                "descriptionOverride": "Transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Conduit of Emrakul",
+        "manaCost": "",
+        "typeLine": "Creature — Eldrazi Werewolf",
+        "oracleText": "Whenever this creature attacks, add {C}{C} at the beginning of your next main phase this turn.",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 4
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "CreateDelayedTrigger",
+                        "step": "POSTCOMBAT_MAIN",
+                        "effect": {
+                            "type": "AddColorlessMana",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        "fireOnPlayer": {
+                            "type": "PlayerRef",
+                            "player": "You"
+                        }
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "124",
+            "rarity": "UNCOMMON",
+            "artist": "Raymond Swanland",
+            "flavorText": "As without, so within.",
+            "imageUri": "https://cards.scryfall.io/normal/back/7/f/7f95145a-41a1-478e-bf8a-ea8838d6f9b1.jpg?1783937474"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "124",
+        "rarity": "UNCOMMON",
+        "artist": "Raymond Swanland",
+        "flavorText": "It strikes with the fury of a tempest.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f95145a-41a1-478e-bf8a-ea8838d6f9b1.jpg?1783937474",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "You'll add mana at the beginning of the next main phase whether or not Conduit of Storms (or Conduit of Emrakul) is still on the battlefield."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If Conduit of Storms attacks and you transform it into Conduit of Emrakul in response, you'll add {R}, not {C}{C} and not {C}{C}{R}."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Drogskol Shieldmate
 {
     "name": "Drogskol Shieldmate",
