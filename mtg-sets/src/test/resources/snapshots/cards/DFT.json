@@ -4725,6 +4725,86 @@
     ]
 }
 
+// Fang-Druid Summoner
+{
+    "name": "Fang-Druid Summoner",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Ape Druid",
+    "oracleText": "Reach\nWhen this creature enters, you may search your library and/or graveyard for a creature card with no abilities, reveal it, and put it into your hand. If you search your library this way, shuffle.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromMultipleZones",
+                                "zones": [
+                                    "Library",
+                                    "Graveyard"
+                                ],
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsCreature",
+                                        "HasNoAbilities"
+                                    ]
+                                }
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "rarity": "UNCOMMON",
+        "artist": "Nino Is",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/496442f6-48c7-464e-bcf3-4c14f49fa065.jpg?1783907871"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Fearless Swashbuckler
 {
     "name": "Fearless Swashbuckler",
@@ -11857,6 +11937,106 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
+    ]
+}
+
+// Rise from the Wreck
+{
+    "name": "Rise from the Wreck",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return up to one target creature card, up to one target Mount card, up to one target Vehicle card, and up to one target creature card with no abilities from your graveyard to your hand.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature card"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "Mount card"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "Vehicle card"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature card with no abilities"
+                    },
+                    "destination": "Hand"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "creature card"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "Mount own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "Mount card"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "Vehicle own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "Vehicle card"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "HasNoAbilities"
+                        ],
+                        "controllerPredicate": "OwnedByYou"
+                    },
+                    "zone": "Graveyard"
+                },
+                "id": "creature card with no abilities"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "rarity": "UNCOMMON",
+        "artist": "Nino Is",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/43e6ac32-a7a4-4c15-81b0-8485d6a0e7ca.jpg?1783907866"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
