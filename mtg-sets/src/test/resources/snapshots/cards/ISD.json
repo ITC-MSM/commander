@@ -2306,6 +2306,50 @@
     ]
 }
 
+// Laboratory Maniac
+{
+    "name": "Laboratory Maniac",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "If you would draw a card while your library has no cards in it, you win the game instead.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceDrawWith",
+                "replacementEffect": "WinGame",
+                "restrictions": [
+                    {
+                        "type": "Exists",
+                        "player": "You",
+                        "zone": "Library",
+                        "negate": true
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "61",
+        "rarity": "RARE",
+        "artist": "Jason Felix",
+        "flavorText": "His mind whirled with grand plans, never thinking of what might happen if he were to succeed.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/809205f3-acf5-4244-b360-09ce4ba76795.jpg?1783940974",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "If for some reason you can't win the game, you won't lose for having tried to draw a card from a library with no cards in it. The draw was still replaced."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Lantern Spirit
 {
     "name": "Lantern Spirit",
