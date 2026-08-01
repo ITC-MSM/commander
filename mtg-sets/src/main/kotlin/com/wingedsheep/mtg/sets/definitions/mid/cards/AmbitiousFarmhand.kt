@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
@@ -44,15 +45,19 @@ private val AmbitiousFarmhandFront = card("Ambitious Farmhand") {
     activatedAbility {
         cost = Costs.Mana("{1}{W}{W}")
         effect = TransformEffect(EffectTarget.Self)
-        condition = Conditions.CompareAmounts(
-            left = DynamicAmount.AggregateBattlefield(
-                player = Player.You,
-                filter = GameObjectFilter.Creature,
-                aggregation = Aggregation.DISTINCT_VALUES,
-                property = CardNumericProperty.POWER,
+        restrictions = listOf(
+            ActivationRestriction.OnlyIfCondition(
+                Conditions.CompareAmounts(
+                    left = DynamicAmount.AggregateBattlefield(
+                        player = Player.You,
+                        filter = GameObjectFilter.Creature,
+                        aggregation = Aggregation.DISTINCT_VALUES,
+                        property = CardNumericProperty.POWER,
+                    ),
+                    operator = ComparisonOperator.GTE,
+                    right = DynamicAmount.Fixed(3),
+                ),
             ),
-            operator = ComparisonOperator.GTE,
-            right = DynamicAmount.Fixed(3),
         )
         timing = TimingRule.SorcerySpeed
         description = "Coven — {1}{W}{W}: Transform this creature. Activate only if you control " +
