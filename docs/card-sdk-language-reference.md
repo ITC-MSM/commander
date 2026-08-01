@@ -2670,6 +2670,8 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
 
 - `Filters.AnyCard` — any card.
 - `Filters.Creature` — any creature card.
+- `Filters.CreatureWithNoAbilities` — creature card whose Oracle rules-text box is empty
+  (`CardPredicate.HasNoAbilities`), for printed-characteristic searches and graveyard targets.
 - `Filters.Land` — any land card.
 - `Filters.BasicLand` — any basic land.
 - `Filters.PlainsCard` / `IslandCard` / `SwampCard` / `MountainCard` / `ForestCard` — specific basics.

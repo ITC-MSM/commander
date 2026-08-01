@@ -80,6 +80,13 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         override val description: String = "has an Adventure"
     }
 
+    /** Matches a card whose Oracle rules-text box is empty. */
+    @SerialName("HasNoAbilities")
+    @Serializable
+    data object HasNoAbilities : CardPredicate {
+        override val description: String = "has no abilities"
+    }
+
     @SerialName("IsBasicLand")
     @Serializable
     data object IsBasicLand : CardPredicate {
