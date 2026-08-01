@@ -99,6 +99,18 @@ data class MayPlayPermission(
      * before it offers a `PlayLand` action for an exiled land.
      */
     val nonLandOnly: Boolean = false,
+    /**
+     * When set, this permission authorizes casting the card's **alternative face** at this index
+     * (`CardDefinition.cardFaces[castFaceIndex]`) instead of its primary characteristics. The
+     * enumerator reads the face's cost, type line, timing, cast restrictions, and target
+     * requirements, and threads the index onto the emitted `CastSpell`; the cast handler rejects
+     * any other face for a permission-based cast.
+     *
+     * Mirrors [com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect.castFaceIndex] —
+     * "you may cast it from your graveyard as an Adventure" (Mosswood Dreadknight, CR 715.3), where
+     * only the Adventure face is castable and the creature face stays locked in the graveyard.
+     */
+    val castFaceIndex: Int? = null,
     val timestamp: Long
 ) {
     init {

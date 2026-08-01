@@ -64,6 +64,7 @@ import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.CountersRemovedEvent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
+import com.wingedsheep.engine.state.components.battlefield.PreparedSpellCopyComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.sdk.core.BendType
 import com.wingedsheep.sdk.core.Counters
@@ -293,6 +294,33 @@ class CastSpellHandler(
         }
 
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+
+        // A may-play permission authorizes exactly one set of characteristics. By default that is
+        // the card's primary face; a prepare-spell copy (Secrets of Strixhaven) or a permission
+        // carrying `castFaceIndex` ("cast it from your graveyard as an Adventure" — Mosswood
+        // Dreadknight, CR 715.3) authorizes an alternative face instead. `faceIndex` is
+        // client-supplied, so reject any face the permission doesn't cover — otherwise a
+        // hand-constructed action could cast the cheap Adventure half of a card that was only
+        // granted its creature half, or vice versa.
+        // Only permissions constrain faces. `mayPlayFromExile` is also true for a linked-exile
+        // static grant (Valgavoth, Maralen), which carries no permission and no face notion — an
+        // empty permission list means the authorization came from elsewhere, so leave it alone.
+        if (mayPlayFromExile) {
+            val permissions =
+                state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator, cardRegistry)
+            if (permissions.isNotEmpty()) {
+                val isPrepareCopy = container.has<PreparedSpellCopyComponent>() &&
+                    cardDef?.layout == com.wingedsheep.sdk.model.CardLayout.PREPARE
+                val authorizedFaces: Set<Int?> =
+                    if (isPrepareCopy) setOf(0) else permissions.map { it.castFaceIndex }.toSet()
+                if (action.faceIndex !in authorizedFaces) {
+                    val faceName = action.faceIndex
+                        ?.let { cardDef?.cardFaces?.getOrNull(it)?.name }
+                        ?: cardComponent.name
+                    return "You don't have permission to cast $faceName from there"
+                }
+            }
+        }
 
         // Handle face-down casting (morph)
         if (action.castFaceDown) {

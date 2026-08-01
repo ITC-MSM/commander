@@ -1250,6 +1250,10 @@ object Effects {
      * Set [landEntersTapped] for "each land played this way enters tapped" clauses
      * (Lightstall Inquisitor). Pair with [GrantPlayWithCostIncrease] to also tax
      * spells cast via the permission.
+     *
+     * The grant also covers cards left in a **graveyard** — set [castFaceIndex] for
+     * "you may cast it from your graveyard as an Adventure" (Mosswood Dreadknight), which
+     * authorizes only the card's alternative face at that index.
      */
     fun GrantMayPlayFromExile(
         from: String,
@@ -1260,7 +1264,8 @@ object Effects {
         landEntersTapped: Boolean = false,
         onPlayRider: Effect? = null,
         exileAfterResolve: Boolean = false,
-        nonLandOnly: Boolean = false
+        nonLandOnly: Boolean = false,
+        castFaceIndex: Int? = null
     ): Effect = GrantMayPlayFromExileEffect(
         from = from,
         expiry = expiry,
@@ -1269,7 +1274,8 @@ object Effects {
         landEntersTapped = landEntersTapped,
         onPlayRider = onPlayRider,
         exileAfterResolve = exileAfterResolve,
-        nonLandOnly = nonLandOnly
+        nonLandOnly = nonLandOnly,
+        castFaceIndex = castFaceIndex
     )
 
     /**
