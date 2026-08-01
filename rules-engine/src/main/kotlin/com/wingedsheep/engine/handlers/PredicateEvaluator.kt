@@ -250,6 +250,7 @@ class PredicateEvaluator {
             // Adventure-ness is a static characteristic of the whole card (not a projected type),
             // read straight off the CardComponent flag stamped at entity creation.
             CardPredicate.HasAdventure -> card.hasAdventure
+            CardPredicate.HasNoAbilities -> card.oracleText.isBlank()
             CardPredicate.IsBasicLand -> "LAND" in types && card.typeLine.supertypes.any { it.name == "BASIC" }
             CardPredicate.IsPermanent -> types.any { it in setOf("CREATURE", "LAND", "ARTIFACT", "ENCHANTMENT", "PLANESWALKER") }
             CardPredicate.IsNonland -> "LAND" !in types
@@ -1397,6 +1398,7 @@ class PredicateEvaluator {
             // so adventure-ness can't be recovered here. No in-scope card queries it against cast
             // history; fall through to the safe default.
             CardPredicate.HasAdventure -> false
+            CardPredicate.HasNoAbilities -> false
             CardPredicate.IsBasicLand -> typeLine.isBasicLand
             CardPredicate.IsPermanent -> typeLine.isPermanent
             CardPredicate.IsNonland -> !typeLine.isLand

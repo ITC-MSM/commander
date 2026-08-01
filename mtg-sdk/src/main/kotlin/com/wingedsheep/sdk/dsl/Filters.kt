@@ -40,6 +40,10 @@ object Filters {
      */
     val Creature: GameObjectFilter = GameObjectFilter.Creature
 
+    /** Creature card with an empty Oracle rules-text box. */
+    val CreatureWithNoAbilities: GameObjectFilter =
+        GameObjectFilter.Creature.withCardPredicate(CardPredicate.HasNoAbilities)
+
     /**
      * Land card.
      */
