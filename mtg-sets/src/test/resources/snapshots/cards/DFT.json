@@ -5039,6 +5039,88 @@
     ]
 }
 
+// Full Throttle
+{
+    "name": "Full Throttle",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "After this main phase, there are two additional combat phases.\nAt the beginning of each combat this turn, untap all creatures that attacked this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "IsInPhase",
+                            "phases": [
+                                "PRECOMBAT_MAIN",
+                                "POSTCOMBAT_MAIN"
+                            ],
+                            "yoursOnly": false
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            "AddCombatPhase",
+                            "AddCombatPhase"
+                        ]
+                    }
+                },
+                {
+                    "type": "CreateDelayedTrigger",
+                    "step": "BEGIN_COMBAT",
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "statePredicates": [
+                                        "AttackedThisTurn"
+                                    ]
+                                }
+                            }
+                        },
+                        "body": {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        }
+                    },
+                    "repeatAtEachMatchingStep": true
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "rarity": "RARE",
+        "artist": "Benjamin Ee",
+        "flavorText": "\"You wanted a fight. Now you've got two.\"\n—Chandra Nalaar",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d91f7cad-89e8-45cb-a78e-b35b0ee64783.jpg?1783907882",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "There is no main phase between the two additional combat phases. If you cast this during your second main phase, you will go directly to the end step after the two additional combat phases are complete."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If you somehow cast this spell when it's not a main phase, the second ability still takes effect, but there are no additional combat phases this turn. If you cast it during an opponent's main phase, there are two additional combat phases, but that opponent gets to attack during those combat phases, not you."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Gallant Strike
 {
     "name": "Gallant Strike",
