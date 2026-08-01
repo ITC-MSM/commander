@@ -7,10 +7,10 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.maxSpeed
 import com.wingedsheep.sdk.dsl.startYourEngines
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.EffectTarget
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.MayPayManaEffect
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /** Mendicant Core, Guidelight — Aetherdrift #213. */
