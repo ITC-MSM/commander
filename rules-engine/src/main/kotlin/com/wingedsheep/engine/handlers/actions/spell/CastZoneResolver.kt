@@ -759,6 +759,7 @@ class CastZoneResolver(
                 is CardPredicate.IsPermanent -> card.typeLine.isPermanent
                 is CardPredicate.IsBasicLand -> card.typeLine.isBasicLand
                 is CardPredicate.HasAdventure -> card.hasAdventure
+                is CardPredicate.HasNoAbilities -> card.oracleText.isBlank()
                 // --- Supertypes ---
                 is CardPredicate.IsLegendary -> card.typeLine.isLegendary
                 is CardPredicate.IsNonlegendary -> !card.typeLine.isLegendary
