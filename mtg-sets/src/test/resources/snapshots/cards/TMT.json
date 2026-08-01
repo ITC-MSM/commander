@@ -6975,7 +6975,10 @@
                 "filter": {
                     "baseFilter": "artifact token ctrl:you"
                 },
-                "amount": 1
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
             }
         ]
     },
