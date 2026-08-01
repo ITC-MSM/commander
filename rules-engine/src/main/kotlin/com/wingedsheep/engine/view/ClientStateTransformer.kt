@@ -28,7 +28,9 @@ import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComp
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.composite.asConditional
+import com.wingedsheep.sdk.scripting.events.DamageType
 import com.wingedsheep.engine.state.permissions.hasMayPlayFor
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -1946,6 +1948,43 @@ class ClientStateTransformer(
                     name = "Prevent from $sourceName",
                     description = "All damage that would be dealt to you by $sourceName this turn is prevented",
                     icon = "prevent-damage"
+                )
+            )
+        }
+
+        // Damage-doubling warnings — the mirror image of the prevention shields above, so a player
+        // about to take double damage can see it before they attack into it (Twinflame Tyrant,
+        // Gratuitous Violence). One badge per replacement: each applies once (CR 616.1), so two
+        // Tyrants show two badges and quadruple the damage.
+        for (doubler in DamageUtils.damageDoublersAffectingPlayer(state, playerId)) {
+            val scope = when (doubler.damageType) {
+                is DamageType.Combat -> "Combat damage"
+                is DamageType.NonCombat -> "Noncombat damage"
+                is DamageType.Any -> "Damage"
+            }
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "damage_doubled_${doubler.sourceId.value}",
+                    name = "Damage Doubled",
+                    description = "$scope dealt to you is doubled by ${doubler.sourceName}",
+                    icon = "double-damage"
+                )
+            )
+        }
+
+        // Player-scoped damage doubling from a floating effect (Lightning, Army of One's "Stagger").
+        // Same badge, but it outlives its source, so it's named for the effect rather than a card.
+        for (floatingEffect in state.floatingEffects) {
+            val modification = floatingEffect.effect.modification
+            if (modification !is SerializableModification.DoubleDamageToPlayer) continue
+            if (modification.playerId != playerId) continue
+            val attribution = floatingEffect.sourceName?.let { " ($it)" } ?: ""
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "damage_doubled_player_${floatingEffect.id.value}",
+                    name = "Damage Doubled",
+                    description = "Damage dealt to you and to permanents you control is doubled$attribution",
+                    icon = "double-damage"
                 )
             )
         }
