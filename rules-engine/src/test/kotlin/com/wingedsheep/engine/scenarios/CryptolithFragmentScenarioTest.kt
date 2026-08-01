@@ -22,7 +22,7 @@ class CryptolithFragmentScenarioTest : FunSpec({
         EachPlayerLifeAtMost(10),
         EffectContext(
             sourceId = null,
-            controllerId = activePlayer,
+            controllerId = activePlayer!!,
             targets = emptyList(),
             xValue = 0,
         ),
