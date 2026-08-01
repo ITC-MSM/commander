@@ -397,6 +397,145 @@
     ]
 }
 
+// Bloodline Keeper
+{
+    "name": "Bloodline Keeper",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "Flying\n{T}: Create a 2/2 black Vampire creature token with flying.\n{B}: Transform this creature. Activate only if you control five or more Vampires.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Vampire"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5cb4398-e180-472e-8662-2a5902bafb4f.jpg?1783907971"
+                },
+                "descriptionOverride": "Create a 2/2 black Vampire creature token with flying."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}"
+                    }
+                },
+                "effect": "Transform",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature Vampire"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Transform this creature. Activate only if you control five or more Vampires."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Lord of Lineage",
+        "manaCost": "",
+        "typeLine": "Creature — Vampire",
+        "oracleText": "Flying\nOther Vampire creatures you control get +2/+2.\n{T}: Create a 2/2 black Vampire creature token with flying.",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 5
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_3",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 2,
+                        "toughness": 2,
+                        "colors": [
+                            "BLACK"
+                        ],
+                        "creatureTypes": [
+                            "Vampire"
+                        ],
+                        "keywords": [
+                            "FLYING"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5cb4398-e180-472e-8662-2a5902bafb4f.jpg?1783907971"
+                    },
+                    "descriptionOverride": "Create a 2/2 black Vampire creature token with flying."
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 2,
+                    "toughnessBonus": 2,
+                    "filter": {
+                        "baseFilter": "creature Vampire ctrl:you",
+                        "excludeSelf": true
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "90",
+            "rarity": "RARE",
+            "artist": "Jason Chan",
+            "imageUri": "https://cards.scryfall.io/normal/back/1/3/13896468-e3d0-4bcb-b09e-b5c187aecb03.jpg?1783940965"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "RARE",
+        "artist": "Jason Chan",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13896468-e3d0-4bcb-b09e-b5c187aecb03.jpg?1783940965"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Bump in the Night
 {
     "name": "Bump in the Night",
