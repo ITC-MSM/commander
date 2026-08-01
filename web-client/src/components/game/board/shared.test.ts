@@ -181,16 +181,43 @@ describe('attachmentStackLayout', () => {
     expect(host.width).toBe(SIDEWAYS_BOX)
   })
 
-  // Each attachment shows one more `peek` of itself than the card in front of it,
-  // and that ladder must not shift when anything taps — otherwise a peeking
+  // Each upright attachment shows one more `peek` of itself than the card in front of
+  // it, and that ladder must not shift when the *host* taps — otherwise a peeking
   // Equipment would jump around as its host taps and untaps.
-  it('stacks the peek ladder by index regardless of tap state', () => {
-    const untapped = layout(false, [false, false])
+  it('stacks the upright peek ladder by index regardless of host tap state', () => {
+    const untappedHost = layout(false, [false, false])
     const tappedHost = layout(true, [false, false])
 
-    expect(untapped.attachments.map((a) => a.top)).toEqual([0, PEEK])
+    expect(untappedHost.attachments.map((a) => a.top)).toEqual([0, PEEK])
     expect(tappedHost.attachments.map((a) => a.top)).toEqual([0, PEEK])
     expect(tappedHost.host.top).toBe(2 * PEEK)
+  })
+
+  // A sideways attachment is already wider than its host, so it shows down both flanks
+  // without needing height above the card. Riding above the host just pushed it away
+  // from the permanent it belongs to; tuck it under instead.
+  it('bottom-aligns a sideways attachment level with the host', () => {
+    const { attachments, containerHeight } = layout(false, [true])
+    const box = attachments[0]!
+    // The visible band of a sideways card is `cardWidth` tall, centered in its box.
+    const bandBottom = box.top + (CARD_HEIGHT + CARD_WIDTH) / 2
+
+    expect(bandBottom).toBe(containerHeight)
+  })
+
+  it('gives a sideways attachment no peek height of its own', () => {
+    // One upright attachment earns a peek; adding a sideways one must not add another.
+    expect(layout(false, [true]).containerHeight).toBe(CARD_HEIGHT)
+    expect(layout(false, [false, true]).containerHeight).toBe(CARD_HEIGHT + PEEK)
+  })
+
+  // The upright ladder counts rungs, not raw indices, so a sideways attachment earlier in
+  // the list doesn't leave a gap in the peek ladder above the host.
+  it('does not let a sideways attachment consume an upright ladder rung', () => {
+    const { attachments } = layout(false, [true, false, false])
+
+    expect(attachments[1]?.top).toBe(0)
+    expect(attachments[2]?.top).toBe(PEEK)
   })
 
   // Rows are bottom-aligned (`alignItems: flex-end`), so the host's box must end flush

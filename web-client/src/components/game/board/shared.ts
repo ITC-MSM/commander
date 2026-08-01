@@ -339,6 +339,11 @@ export interface AttachmentStackLayout {
  * the same whichever way it faces. The host's box sits flush with the container
  * bottom; rows are bottom-aligned (`alignItems: flex-end`), which keeps the host on
  * the same baseline as an unattached permanent whether or not it's tapped.
+ *
+ * The two orientations peek from opposite ends. An *upright* attachment peeks above
+ * the host, where its title bar is what shows. A *sideways* one is already wider than
+ * the host, so it shows down both flanks on its own — it bottom-aligns instead, tucking
+ * under the host rather than riding above it, and claims no peek height of its own.
  */
 export function attachmentStackLayout(input: {
   cardWidth: number
@@ -355,20 +360,26 @@ export function attachmentStackLayout(input: {
   // A sideways card is as wide as an upright one is tall.
   const boxWidth = (tapped: boolean) => (tapped ? cardHeight + LANDSCAPE_CONTAINER_PAD : cardWidth)
 
-  const visiblePeek = attachmentsTapped.length * peek
+  // Only upright attachments claim peek height above the host; sideways ones tuck under it.
+  const visiblePeek = attachmentsTapped.filter((tapped) => !tapped).length * peek
   const anySideways = hostTapped || attachmentsTapped.some(Boolean)
   const containerWidth = (anySideways ? cardHeight + LANDSCAPE_CONTAINER_PAD : cardWidth) +
     (anySideways ? gutter : 0)
   const containerHeight = cardHeight + visiblePeek
   const centeredLeft = (tapped: boolean) => (containerWidth - boxWidth(tapped)) / 2
+  // A sideways card's visible band is its width, centered in a box that stays cardHeight
+  // tall (GameCard rotates in place). Offset the box so that band ends at the container
+  // bottom, level with the host's lower edge.
+  const bottomAlignedTop = containerHeight - (cardHeight + cardWidth) / 2
 
+  let uprightRung = 0
   return {
     containerWidth,
     containerHeight,
     columnLeft: (containerWidth - cardWidth) / 2,
-    attachments: attachmentsTapped.map((tapped, index) => ({
+    attachments: attachmentsTapped.map((tapped) => ({
       left: centeredLeft(tapped),
-      top: index * peek,
+      top: tapped ? bottomAlignedTop : uprightRung++ * peek,
       width: boxWidth(tapped),
     })),
     host: {
