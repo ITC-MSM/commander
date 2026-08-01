@@ -127,6 +127,12 @@ class BoosterGeneratorBasicLandArtTest : DescribeSpec({
                 .shouldContainExactly(mapOf("Plains" to 8))
         }
 
+        it("degrades to the bare name when the printing has no set code to address") {
+            val setless = mapOf("Plains" to regular262.copy(setCode = null))
+            BoosterGenerator.withBasicLandArt(mapOf("Plains" to 8), setless)
+                .shouldContainExactly(mapOf("Plains" to 8))
+        }
+
         it("keeps every copy when the deck already names the printing it gets stamped with") {
             // Premade tournament lists may carry Name#SET-CN entries; merging (not replacing) keeps
             // the 4 plain Plains from being swallowed by the 4 already-stamped ones.

@@ -208,7 +208,7 @@ private fun MtgSet.boosterCardPool(
     registry: CardRegistry,
     limitedCardNames: Set<String>?,
 ): List<CardDefinition> {
-    val eligibleOwnCards = cards
+    val eligibleOwnCards = cards.stamp(this)
         .asSequence()
         .filter { limitedCardNames == null || it.name in limitedCardNames }
         .map { card ->

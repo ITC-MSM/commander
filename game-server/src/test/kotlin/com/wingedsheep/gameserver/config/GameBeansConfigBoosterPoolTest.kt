@@ -40,6 +40,17 @@ class GameBeansConfigBoosterPoolTest : FunSpec({
         rarities shouldContain Rarity.RARE
     }
 
+    test("own cards are stamped with their Limited set printing identity") {
+        val por = boosterGenerator.availableSets["POR"].shouldNotBeNull()
+        val ragingGoblin = por.cards.first { it.name == "Raging Goblin" }
+
+        ragingGoblin.setCode shouldBe "POR"
+        ragingGoblin.metadata.collectorNumber shouldBe "145"
+        com.wingedsheep.engine.limited.BoosterGenerator.withCardArt(
+            mapOf("Raging Goblin" to 1), listOf(ragingGoblin),
+        ) shouldBe mapOf("Raging Goblin#POR-145" to 1)
+    }
+
     test("Foundations includes its own cards and its reprints in the booster pool") {
         val fdn = boosterGenerator.availableSets["FDN"].shouldNotBeNull()
         val names = fdn.cards.map { it.name }

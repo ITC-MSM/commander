@@ -150,15 +150,9 @@ class BoosterGenerator(
          * Counts are merged rather than replaced, so a deck list that already names the printing it
          * gets stamped with (premade lists may carry `Name#SET-CN` entries) keeps all its copies.
          *
-         * The identifiers are `Name#SetCode-CollectorNumber` strings that resolve via
-         * [com.wingedsheep.engine.registry.CardRegistry]'s secondary index — predating the
-         * multi-printing system. This works correctly under multi-printing because the resolved
-         * [CardDefinition.metadata.imageUri] is stamped onto each entity's
-         * [com.wingedsheep.engine.state.components.identity.CardComponent.imageUri] at game-init,
-         * which then beats the canonical metadata via the precedence flip in
-         * `ClientStateTransformer`. The rich `cardEntries` channel (Phase 4 of the multi-printing
-         * plan) is not used here — switching is part of the Phase 6.5 cleanup that retires the
-         * `Name#SET-CN` secondary index. See `backlog/multi-printing-system.md`.
+         * The identifiers are `Name#SetCode-CollectorNumber` strings. The server session converts them
+         * into rich `CardEntry` printing references at game start, so the printing registry can
+         * overlay the correct art without changing the card's canonical rules identity.
          *
          * @param deckList The submitted deck list, keyed by card name
          * @param basics Land name to the printing that deck building offered, from [getBasicLands]
@@ -184,12 +178,12 @@ class BoosterGenerator(
         }
 
         /**
-         * The `Name#SetCode-CollectorNumber` identifier for [land], degrading to `Name#Number` and
-         * then to the bare name as the printing loses the coordinates to address it by.
+         * The `Name#SetCode-CollectorNumber` identifier for [land]. Both coordinates are required:
+         * a collector number without a set code cannot address a unique printing.
          */
         private fun printingIdentifier(cardName: String, land: CardDefinition): String {
             val collectorNumber = land.metadata.collectorNumber ?: return cardName
-            val setCode = land.setCode ?: return "$cardName#$collectorNumber"
+            val setCode = land.setCode ?: return cardName
             return "$cardName#$setCode-$collectorNumber"
         }
     }
