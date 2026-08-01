@@ -895,6 +895,119 @@
     ]
 }
 
+// Delver of Secrets
+{
+    "name": "Delver of Secrets",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If an instant or sorcery card is revealed this way, transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "delverLooked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "delverLooked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "delverRevealed",
+                            "prompt": "You may reveal the top card of your library",
+                            "selectedLabel": "Reveal",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "delverRevealed",
+                            "revealToSelf": false
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "CollectionContainsMatch",
+                                    "collection": "delverRevealed",
+                                    "filter": "instant|sorcery"
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If an instant or sorcery card is revealed this way, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Insectile Aberration",
+        "manaCost": "",
+        "typeLine": "Creature — Human Insect",
+        "oracleText": "Flying",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 2
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "metadata": {
+            "collectorNumber": "51",
+            "artist": "Nils Hamm",
+            "flavorText": "\"Unfortunately, all my test animals have died or escaped, so I shall be the final subject. I feel no fear. This is a momentous night.\"\n—Laboratory notes, final entry",
+            "imageUri": "https://cards.scryfall.io/normal/back/1/1/11bf83bb-c95b-4b4f-9a56-ce7a1816307a.jpg?1783940984"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Nils Hamm",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/11bf83bb-c95b-4b4f-9a56-ce7a1816307a.jpg?1783940984",
+        "rulings": [
+            {
+                "date": "2011-09-22",
+                "text": "You may reveal the card even if it's not an instant or sorcery. Whether or not you reveal it, the card stays on top of your library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Demonmail Hauberk
 {
     "name": "Demonmail Hauberk",
