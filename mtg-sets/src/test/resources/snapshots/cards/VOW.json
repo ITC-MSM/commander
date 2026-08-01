@@ -1010,6 +1010,101 @@
     ]
 }
 
+// Biolume Egg
+{
+    "name": "Biolume Egg",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Serpent Egg",
+    "oracleText": "Defender\nWhen this creature enters, scry 2.\nWhen you sacrifice this creature, return it to the battlefield transformed under its owner's control at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 2
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": "PermanentsSacrificedEvent",
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "END",
+                    "effect": "ReturnSelfFromZoneTransformed"
+                },
+                "descriptionOverride": "Return Biolume Egg to the battlefield transformed under its owner's control at the beginning of the next end step."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Biolume Serpent",
+        "manaCost": "",
+        "typeLine": "Creature — Serpent",
+        "oracleText": "Sacrifice two Islands: This creature can't be blocked this turn.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_3",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomSacrifice",
+                            "filter": "land Island",
+                            "count": 2
+                        }
+                    },
+                    "effect": {
+                        "type": "GrantKeyword",
+                        "keyword": "CANT_BE_BLOCKED",
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "This creature can't be blocked this turn."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "49",
+            "rarity": "UNCOMMON",
+            "artist": "Filip Burburan",
+            "flavorText": "...knowing their hatchlings are more fearsome than anything else that might come along.",
+            "imageUri": "https://cards.scryfall.io/normal/back/5/7/57039230-bf5a-4489-9dc1-37e27b17bd84.jpg?1783924907"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "rarity": "UNCOMMON",
+        "artist": "Filip Burburan",
+        "flavorText": "Serpents leave their eggs in the cold and inky depths...",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/57039230-bf5a-4489-9dc1-37e27b17bd84.jpg?1783924907"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Bleed Dry
 {
     "name": "Bleed Dry",
