@@ -459,6 +459,15 @@ class ConditionEvaluator(
                 state.lifeTotal(playerId) <= condition.threshold
             }
 
+            // Existential over the controller's opponents. The controller's own low life total must
+            // not satisfy cards such as Bloodghast; team games use the shared team life total.
+            is com.wingedsheep.sdk.scripting.conditions.AnOpponentLifeAtMost ->
+                ctx.controllerId?.let { controllerId ->
+                    state.getOpponents(controllerId).any { opponentId ->
+                        state.lifeTotal(opponentId) <= condition.threshold
+                    }
+                } ?: false
+
             // Board-derived only — no targets/triggering/kicker — so it works identically in
             // resolution and projection (required for the djinn `ConditionalStaticAbility` gate).
             is ColorIsMostCommon ->
