@@ -12,11 +12,19 @@ import io.kotest.matchers.shouldBe
  * Aura is "attached to an illegal object" and is put into its owner's graveyard as a state-based
  * action.
  *
- * The case exercised here is the common one: an Aura that reads "Enchant creature you control"
- * (Cradle of Safety) stays on the battlefield only while its controller still controls the host.
- * An opponent's Act of Treason steals the host, so the Aura falls off — while an unrestricted
- * "Enchant creature" Aura (Holy Strength) on the same creature is untouched, because a creature an
- * opponent controls is still a legal host for it.
+ * For "Enchant creature you control", the Cartouche of Solidarity ruling (2017-04-18) states the
+ * consequence outright: "If another player gains control of either the Cartouche or the enchanted
+ * creature (but not both), then the Cartouche will be enchanting an illegal permanent and be put
+ * into its owner's graveyard as a state-based action." It is symmetric, and note the "but not both"
+ * — what matters is whether the Aura's controller controls the host, not whether control changed.
+ * Both directions are covered below: Act of Treason steals the host, Blatant Thievery steals the
+ * Aura. CR 303.4e is why the two come apart at all — changing control of an enchanted object
+ * doesn't change control of its Aura, or vice versa.
+ *
+ * The last test covers the type-change route instead, where the host stops being a creature at all.
+ * Every test also pins the negative half, because an over-eager check would be just as wrong: an
+ * unrestricted "Enchant creature" Aura survives the theft, and an Aura that lists the type it turns
+ * its own host into survives doing so.
  */
 class AuraEnchantRestrictionStateBasedActionTest : ScenarioTestBase() {
 
@@ -50,6 +58,40 @@ class AuraEnchantRestrictionStateBasedActionTest : ScenarioTestBase() {
                 }
                 withClue("Holy Strength just enchants 'creature' — a stolen creature is still a legal host") {
                     game.isOnBattlefield("Holy Strength") shouldBe true
+                }
+                withClue("The host itself is unharmed") {
+                    game.isOnBattlefield("Grizzly Bears") shouldBe true
+                }
+            }
+
+            test("stealing the aura instead of the host breaks the restriction just as well") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withCardAttachedTo(1, "Cradle of Safety", "Grizzly Bears")  // enchant creature you control
+                    .withCardInHand(2, "Blatant Thievery")
+                    .withLandsOnBattlefield(2, "Island", 7)
+                    .withActivePlayer(2)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val aura = game.findPermanent("Cradle of Safety")!!
+                val bears = game.findPermanent("Grizzly Bears")!!
+                val result = game.castSpell(2, "Blatant Thievery", aura)
+                withClue("Player2 should be able to steal the Aura itself: ${result.error}") {
+                    result.error shouldBe null
+                }
+                game.resolveStack()
+
+                withClue("The host stayed with Player1 — CR 303.4e keeps the two control changes separate") {
+                    game.state.projectedState.getController(bears) shouldBe game.player1Id
+                }
+                withClue("Player2 now controls an 'enchant creature you control' Aura on Player1's creature, so it falls off") {
+                    game.isOnBattlefield("Cradle of Safety") shouldBe false
+                }
+                withClue("704.5m sends it to its OWNER's graveyard (Player1), not its new controller's") {
+                    game.isInGraveyard(1, "Cradle of Safety") shouldBe true
+                    game.isInGraveyard(2, "Cradle of Safety") shouldBe false
                 }
                 withClue("The host itself is unharmed") {
                     game.isOnBattlefield("Grizzly Bears") shouldBe true

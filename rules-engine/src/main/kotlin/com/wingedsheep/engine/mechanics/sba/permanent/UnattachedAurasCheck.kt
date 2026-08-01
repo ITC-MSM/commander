@@ -38,10 +38,14 @@ import com.wingedsheep.sdk.scripting.targets.TargetRequirement
  * Enchant restrictions (CR 303.4c): an Aura's "Enchant …" ability restricts what it can *stay*
  * attached to, not just what its spell could target — the restriction is checked continuously, so
  * an Aura whose host stops matching it becomes an illegal attachment and is put into its owner's
- * graveyard by 704.5m. E.g. Cradle of Safety ("Enchant creature you control") falls off when an
- * opponent steals the creature, and Pacifism ("Enchant creature") falls off when its host stops
- * being a creature. The restriction is re-read from the card's `auraTarget` and evaluated against
- * the *projected* host so layer-4 type/control changes are seen.
+ * graveyard by 704.5m. The Cartouche of Solidarity ruling puts it plainly: "If another player gains
+ * control of either the Cartouche or the enchanted creature (but not both), then the Cartouche will
+ * be enchanting an illegal permanent and be put into its owner's graveyard as a state-based action."
+ * The "but not both" is why this compares the Aura's controller against the host's rather than
+ * watching for a control *change* — if one player ends up with both, the attachment is legal again.
+ * A host that stops being a creature at all (Pacifism on a permanent Imprisoned in the Moon turned
+ * into a land) is the same story via the type predicate. The restriction is re-read from the card's
+ * `auraTarget` and evaluated against the *projected* host so layer-4 type/control changes are seen.
  *
  * Protection (CR 702.16c/d): a permanent with protection from a quality can't be enchanted by
  * Auras (put into their owners' graveyards as a state-based action) or equipped by Equipment
