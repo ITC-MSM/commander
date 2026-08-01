@@ -84,6 +84,24 @@ data object CastFromLibraryComponent : Component
 data object EnteredFromGraveyardComponent : Component
 
 /**
+ * Marks a permanent as having been cast from exile — an impulse-draw permission, a plotted or
+ * foretold card, an adventurer's permanent half, a linked-exile grant. Added when a spell resolves
+ * with castFromZone == EXILE. The exile twin of [CastFromGraveyardComponent]; used by triggers that
+ * care whether an entering creature was cast from exile (Extraordinary Journey).
+ */
+@Serializable
+data object CastFromExileComponent : Component
+
+/**
+ * Marks a permanent that entered the battlefield directly from exile (not via casting) — a blink
+ * effect returning it, or any "put an exiled card onto the battlefield" effect. Added in the
+ * battlefield-entry path when the zone transition's fromZone is EXILE. The exile twin of
+ * [EnteredFromGraveyardComponent] (Extraordinary Journey).
+ */
+@Serializable
+data object EnteredFromExileComponent : Component
+
+/**
  * Marks a permanent as having been cast for its warp cost.
  * Added when a warped spell resolves from the stack.
  * At the beginning of the next end step, this permanent is exiled.

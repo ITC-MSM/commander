@@ -6313,6 +6313,21 @@ answer it and would silently return `false`.
   capture is vacuously true). Use as a resolution-time `ConditionalEffect` gate on the payoff — **Satoru,
   the Infiltrator**: `ConditionalEffect(Conditions.NoManaSpentToCastEntered, Effects.DrawCards(1))` under a
   `Triggers.OneOrMorePermanentsEnter(GameObjectFilter.Creature.nontoken())` trigger. Resolution-only.
+- `AnyEnteredOrWasCastFromExile` — the batch-enters *any*-of exile condition: "if one or more of them
+  entered from exile or was cast from exile." The exile twin of
+  `TriggeringEntityEnteredOrWasCastFromGraveyard`, evaluated over the same `trigger.captured` collection
+  as `NoManaSpentToCastEntered` — note the opposite quantifier (that one is "if **none** of them …", this
+  one is "if **one or more** of them …"; an empty capture is false here). Reads the two exile-provenance
+  markers the engine now stamps alongside their graveyard siblings: `CastFromExileComponent` (a spell
+  that resolved with `castFromZone == EXILE` — impulse draws, plot/foretell, an adventurer's permanent
+  half, linked-exile grants) and `EnteredFromExileComponent` (a direct exile → battlefield entry, e.g. a
+  blink). **Usable as a real intervening-"if" (`triggerCondition`), not just a resolution gate** — batch
+  captures are now seeded into the condition context at trigger-detection time as well as at resolution.
+  That distinction is load-bearing whenever the ability also carries `oncePerTurn`: CR 603.4 says an
+  ability whose intervening-"if" is false never triggers, so it must not consume the turn's single
+  firing. **Extraordinary Journey**: `Triggers.OneOrMorePermanentsEnter(Creature.nontoken().anyController())`
+  + `triggerCondition = Conditions.AnyEnteredOrWasCastFromExile` + `oncePerTurn = true`. The same
+  provenance marker also backs `WasCastFromZone(Zone.EXILE)` for a permanent already on the battlefield.
 - `TriggeringSpellCastWithoutPayingMana` — triggering-entity counterpart of `NoManaSpentToCast`: "if no
   mana was spent to cast it" about the *triggering* spell (reads its `CastRecordComponent`). Used as a
   triggered-ability intervening-if (Boromir, Warden of the Tower: "Whenever an opponent casts a spell,

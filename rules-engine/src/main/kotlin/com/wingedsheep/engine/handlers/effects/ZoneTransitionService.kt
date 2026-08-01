@@ -937,6 +937,14 @@ object ZoneTransitionService {
                 )
             }
 
+            // Same for a direct exile → battlefield entry (a blink returning it, or any "put an
+            // exiled card onto the battlefield" effect) — Extraordinary Journey.
+            if (fromZone == Zone.EXILE) {
+                updated = updated.with(
+                    com.wingedsheep.engine.state.components.battlefield.EnteredFromExileComponent
+                )
+            }
+
             // All permanents enter summoning sick (CR 302.6 / 508.1a — the control-continuity
             // check is about the permanent, not whether it was a creature the whole turn).
             // Downstream checks gate on isCreature/{T}-cost so this is a no-op for lands and

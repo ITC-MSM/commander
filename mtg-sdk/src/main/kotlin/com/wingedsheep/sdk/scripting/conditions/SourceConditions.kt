@@ -205,6 +205,29 @@ data object NoManaSpentToCastEntered : Condition {
 }
 
 /**
+ * Condition: "if one or more of them entered from exile or was cast from exile."
+ *
+ * The batch-enters, any-of counterpart of
+ * [com.wingedsheep.sdk.scripting.conditions.TriggeringEntityEnteredOrWasCastFromGraveyard]:
+ * evaluated over the permanents a batch-enters trigger captured (the
+ * `Triggers.OneOrMorePermanentsEnter` batch, exposed as the `trigger.captured` pipeline
+ * collection), it is true iff **at least one** captured permanent came from exile — either put
+ * onto the battlefield directly from exile or cast from exile. An empty capture is false.
+ *
+ * Note the quantifier: [NoManaSpentToCastEntered] is an *every* over the batch ("if **none** of
+ * them …"), this one is an *any* ("if **one or more** of them …").
+ *
+ * Used by **Extraordinary Journey** as a real intervening-"if" (CR 603.4) rather than a
+ * resolution-time gate, which matters because the ability also carries `oncePerTurn`: a batch with
+ * no exile arrivals must not trigger at all, or it would burn the turn's single firing.
+ */
+@SerialName("AnyEnteredOrWasCastFromExile")
+@Serializable
+data object AnyEnteredOrWasCastFromExile : Condition {
+    override val description: String = "one or more of them entered from exile or was cast from exile"
+}
+
+/**
  * Condition: "If this spell was cast from [zone]"
  * Used for flashback spells and other zone-dependent effects.
  * Checks whether the spell was cast from the specified zone.

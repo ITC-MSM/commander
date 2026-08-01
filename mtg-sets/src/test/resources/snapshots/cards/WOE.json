@@ -5033,6 +5033,95 @@
     ]
 }
 
+// Extraordinary Journey
+{
+    "name": "Extraordinary Journey",
+    "manaCost": "{X}{X}{U}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, exile up to X target creatures. For each of those cards, its owner may play it for as long as it remains exiled.\nWhenever one or more nontoken creatures enter, if one or more of them entered from exile or was cast from exile, you draw a card. This ability triggers only once each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "extraordinaryJourney_exiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "extraordinaryJourney_exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "extraordinaryJourney_exiled",
+                            "expiry": "Permanent",
+                            "ownerControls": true
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "dynamicMaxCount": "CastX"
+                },
+                "descriptionOverride": "When this enchantment enters, exile up to X target creatures. For each of those cards, its owner may play it for as long as it remains exiled."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsEnteredEvent",
+                    "filter": "creature nontoken ctrl:any"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "triggerCondition": "AnyEnteredOrWasCastFromExile",
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever one or more nontoken creatures enter, if one or more of them entered from exile or was cast from exile, you draw a card. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "rarity": "RARE",
+        "artist": "Volkan Baǵa",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a69fb480-a9fc-4f09-ac4e-3ce52c485ea9.jpg?1783915121",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Players must pay all costs and follow all normal timing rules for spells cast with Extraordinary Journey's first ability."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Extraordinary Journey's second ability applies to all creatures that enter the battlefield from exile or were cast from exile, not just creatures cast with Extraordinary Journey's first ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Faerie Dreamthief
 {
     "name": "Faerie Dreamthief",
