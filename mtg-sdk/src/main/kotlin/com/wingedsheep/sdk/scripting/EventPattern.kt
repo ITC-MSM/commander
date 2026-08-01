@@ -911,6 +911,8 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val damageType: DamageType = DamageType.Any,
         val recipient: RecipientFilter = RecipientFilter.Any,
         val sourceFilter: GameObjectFilter? = null,
+        /** Extensible, conjunctive facts about the damage event and its source. */
+        val requires: Set<com.wingedsheep.sdk.scripting.events.DamagePredicate> = emptySet(),
         /**
          * When true, the trigger fires only on damage that exceeded what was needed to be
          * lethal (CR 120.4a). Combined with the existing damageType / recipient / sourceFilter
@@ -965,6 +967,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
                     append(recipient.description)
                 }
             }
+            requires.forEach { append(" ").append(it.description) }
         }
 
         override fun applyTextReplacement(replacer: TextReplacer): EventPattern {

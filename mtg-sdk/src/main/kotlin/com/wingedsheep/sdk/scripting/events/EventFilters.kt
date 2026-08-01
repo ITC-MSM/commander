@@ -388,6 +388,26 @@ sealed interface ControllerFilter {
 }
 
 // =============================================================================
+// Damage Predicates - extensible facts about a damage event the trigger requires
+// =============================================================================
+
+/** Additional facts a damage trigger can require beyond source and recipient filters. */
+@Serializable
+sealed interface DamagePredicate {
+    val description: String
+
+    /**
+     * The damage source has exactly one chosen target, and that target is this damage recipient.
+     * Collateral damage to another permanent or player does not satisfy this relationship.
+     */
+    @SerialName("DamageSourceSoleTargetIsRecipient")
+    @Serializable
+    data object SourceSoleTargetIsRecipient : DamagePredicate {
+        override val description = "and its only target is the damage recipient"
+    }
+}
+
+// =============================================================================
 // Spell-Cast Predicates - extensible "facts about a cast" the trigger requires
 // =============================================================================
 
