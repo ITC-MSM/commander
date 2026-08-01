@@ -1951,6 +1951,230 @@
     ]
 }
 
+// Shrill Howler
+{
+    "name": "Shrill Howler",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Werewolf Horror",
+    "oracleText": "Creatures with power less than this creature's power can't block it.\n{5}{G}: Transform this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{G}"
+                    }
+                },
+                "effect": "Transform",
+                "descriptionOverride": "Transform this creature."
+            }
+        ],
+        "staticAbilities": [
+            "CantBeBlockedByCreaturesWithLessPower"
+        ]
+    },
+    "backFace": {
+        "name": "Howling Chorus",
+        "manaCost": "",
+        "typeLine": "Creature — Eldrazi Werewolf",
+        "oracleText": "Creatures with power less than this creature's power can't block it.\nWhenever this creature deals combat damage to a player, create a 3/2 colorless Eldrazi Horror creature token.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 5
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "DealsDamageEvent",
+                        "damageType": "DamageCombat",
+                        "recipient": "AnyPlayer"
+                    },
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 3,
+                        "toughness": 2,
+                        "colors": [],
+                        "creatureTypes": [
+                            "Eldrazi",
+                            "Horror"
+                        ]
+                    },
+                    "descriptionOverride": "Whenever this creature deals combat damage to a player, create a 3/2 colorless Eldrazi Horror creature token."
+                }
+            ],
+            "staticAbilities": [
+                "CantBeBlockedByCreaturesWithLessPower"
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "168",
+            "rarity": "UNCOMMON",
+            "artist": "Matt Stewart",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/6/a63c30c0-369a-4a75-b352-edab4d263d1b.jpg?1783937445"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Stewart",
+        "flavorText": "\"A werewolf's howl is terrifying, to be sure. But this . . . this was a chilling sound I somehow felt. I fear what will reply to it.\"\n—Alena, trapper of Kessig",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a63c30c0-369a-4a75-b352-edab4d263d1b.jpg?1783937445",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "The power of the blocking creature and that of Shrill Howler are compared only at the moment that blockers are chosen. Changing either creature's power later won't cause Shrill Howler to become unblocked."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "The power of the blocking creature and that of Howling Chorus are compared only at the moment that blockers are chosen. Changing either creature's power later won't cause Howling Chorus to become unblocked."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Smoldering Werewolf
+{
+    "name": "Smoldering Werewolf",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Werewolf Horror",
+    "oracleText": "When this creature enters, it deals 1 damage to each of up to two target creatures.\n{4}{R}{R}: Transform this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 2,
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to two target creatures"
+                },
+                "descriptionOverride": "When this creature enters, it deals 1 damage to each of up to two target creatures."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{R}{R}"
+                    }
+                },
+                "effect": "Transform",
+                "descriptionOverride": "Transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Erupting Dreadwolf",
+        "manaCost": "",
+        "typeLine": "Creature — Eldrazi Werewolf",
+        "oracleText": "Whenever this creature attacks, it deals 2 damage to any target.",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 4
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "any target"
+                        }
+                    },
+                    "targetRequirement": {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    },
+                    "descriptionOverride": "Whenever this creature attacks, it deals 2 damage to any target."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "142",
+            "rarity": "UNCOMMON",
+            "artist": "Zack Stella",
+            "flavorText": "\". . . heck, I'd settle for anything that even resembled a werewolf.\"\n—Raf Gyel of the Quiver of Kessig",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/b/0b0eab47-af62-4ee8-99cf-a864fadade2d.jpg?1783937460"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "142",
+        "rarity": "UNCOMMON",
+        "artist": "Zack Stella",
+        "flavorText": "\"Never thought I'd see the day I'd be wishing to see just a plain old werewolf.\"\n—Raf Gyel of the Quiver of Kessig",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0b0eab47-af62-4ee8-99cf-a864fadade2d.jpg?1783937460",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "Erupting Dreadwolf's triggered ability resolves before blockers are chosen. A creature dealt lethal damage this way won't be around to block."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If you transform Smoldering Werewolf into Erupting Dreadwolf after it has attacked, Erupting Dreadwolf's triggered ability won't trigger that combat."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Soul Separator
 {
     "name": "Soul Separator",

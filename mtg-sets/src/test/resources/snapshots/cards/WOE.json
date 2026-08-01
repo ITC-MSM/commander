@@ -5665,6 +5665,127 @@
     ]
 }
 
+// Feral Encounter
+{
+    "name": "Feral Encounter",
+    "manaCost": "{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Look at the top five cards of your library. You may exile a creature card from among them. Put the rest on the bottom of your library in a random order. You may cast the exiled card this turn.\nAt the beginning of the next combat phase this turn, target creature you control deals damage equal to its power to up to one target creature you don't control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 5
+                        }
+                    },
+                    "storeAs": "feralLooked"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "feralLooked",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "filter": "creature",
+                    "storeSelected": "feralExiled",
+                    "storeRemainder": "feralRest",
+                    "prompt": "You may exile a creature card. You may cast it this turn.",
+                    "selectedLabel": "Exile (you may cast it this turn)",
+                    "remainderLabel": "Put on the bottom of your library",
+                    "showAllCards": true
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "feralExiled",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "feralRest",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    },
+                    "order": "Random"
+                },
+                {
+                    "type": "GrantMayPlayFromExile",
+                    "from": "feralExiled"
+                },
+                {
+                    "type": "CreateDelayedTrigger",
+                    "step": "BEGIN_COMBAT",
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Target",
+                            "numericProperty": "Power"
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 1
+                        },
+                        "damageSource": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "timing": "ThisTurnOnly",
+                    "targetRequirement": {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "additionalTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "optional": true,
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "169",
+        "rarity": "RARE",
+        "artist": "Fajareka Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/de21251f-40bf-4f7e-9e85-9033207a788f.jpg?1783915082",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Casting Feral Encounter doesn't require any targets. As you put the delayed triggered ability on the stack at the beginning of the next combat phase this turn, you choose the target creature you control and up to one target creature you don't control."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If you cast Feral Encounter and no combat phases occur later in that turn, the delayed triggered ability won't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Ferocious Werefox
 {
     "name": "Ferocious Werefox",
@@ -19199,6 +19320,113 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Virtue of Courage
+{
+    "name": "Virtue of Courage",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a source you control deals noncombat damage to an opponent, you may exile that many cards from the top of your library. You may play those cards this turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageNonCombat",
+                    "recipient": "RecipientOpponent",
+                    "sourceFilter": "ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "ContextProperty",
+                                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                                    }
+                                },
+                                "storeAs": "impulseExiled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "impulseExiled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            },
+                            {
+                                "type": "GrantMayPlayFromExile",
+                                "from": "impulseExiled"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may exile that many cards from the top of your library. You may play those cards this turn."
+                },
+                "descriptionOverride": "Whenever a source you control deals noncombat damage to an opponent, you may exile that many cards from the top of your library. You may play those cards this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "rarity": "MYTHIC",
+        "artist": "Piotr Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b0e6daf-0dec-4718-af79-b7ce137c3135.jpg?1783915088",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Combat damage is the damage that's dealt automatically by attacking and blocking creatures. Any other damage is noncombat damage, even if it's dealt during a combat phase by an attacking or blocking creature."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You pay all costs and follow all normal timing rules for a card played this way. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a spell is cast as an Adventure, its controller exiles it instead of putting it into its owner's graveyard as it resolves. For as long as it remains exiled, that player may cast it as a permanent spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Embereth Blaze",
+            "manaCost": "{1}{R}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Embereth Blaze deals 2 damage to any target. (Then exile this card. You may cast the enchantment later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ]
+            }
+        }
     ]
 }
 
