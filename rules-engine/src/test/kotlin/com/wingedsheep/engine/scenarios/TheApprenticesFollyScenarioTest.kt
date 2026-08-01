@@ -41,7 +41,7 @@ class TheApprenticesFollyScenarioTest : FunSpec({
 
         val excludedBear = driver.putCreatureOnBattlefield(controller, "Grizzly Bears")
         driver.putCreatureOnBattlefield(controller, "Grizzly Bears").also { token ->
-            driver.state = driver.state.updateEntity(token) { it.with(TokenComponent) }
+            driver.replaceState(driver.state.updateEntity(token) { it.with(TokenComponent) })
         }
         val legalCreature = driver.putCreatureOnBattlefield(controller, "Hill Giant")
 
