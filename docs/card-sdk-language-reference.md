@@ -3623,6 +3623,10 @@ Named sugar for the common type-primitive cases; reach for `youCastSpell(...)` p
   with `Effects.DealDamage(n, EffectTarget.PlayerRef(Player.TriggeringPlayer))` to punish the activator (Flamescroll
   Celebrant). Backed by `EventPattern.AbilityActivatedEvent(player)`.
 - `YouActivateAbility` — you activate an ability that isn't a mana ability (the `Player.You` form of the above).
+- `YouActivateExhaustAbility` — you activate an ability marked `isExhaust`. Backed by
+  `EventPattern.AbilityActivatedEvent(player = Player.You, requireExhaust = true)` and the activation event's
+  `isExhaust` flag. The event is emitted as soon as the exhaust ability is put on the stack, so the triggered
+  ability is stacked above it and resolves first (Adrenaline Jockey, Rangers' Aetherhive).
 - `youActivateAbilityTargeting(targetMatch)` — you activate an ability whose **chosen targets** satisfy
   `targetMatch`. Backed by `EventPattern.AbilityActivatedEvent(player, targetMatch)`: when `targetMatch != null`, the
   activated ability on the stack must have at least one chosen target matching it, so a non-targeting ability (e.g.

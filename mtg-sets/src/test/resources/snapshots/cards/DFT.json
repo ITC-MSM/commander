@@ -91,6 +91,86 @@
     ]
 }
 
+// Adrenaline Jockey
+{
+    "name": "Adrenaline Jockey",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Minotaur Pilot",
+    "oracleText": "Whenever a player casts a spell, if it's not their turn, this creature deals 4 damage to them.\nWhenever you activate an exhaust ability, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "triggerCondition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "IsPlayersTurn",
+                        "player": "TriggeringPlayer"
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "AbilityActivatedEvent",
+                    "requireExhaust": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "rarity": "UNCOMMON",
+        "artist": "Alfonso Santano",
+        "flavorText": "\"Either I win or we both lose. Take your pick.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/8/c8655373-320d-440d-b700-d03413f743fd.jpg?1783907888",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Exhaust abilities can be activated any time you could normally activate an ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns, it becomes a new object, so its exhaust ability can be activated again."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "An ability that triggers when you activate an exhaust ability resolves before that exhaust ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Aether Syphon
 {
     "name": "Aether Syphon",
@@ -10981,6 +11061,65 @@
         "imageUri": "https://cards.scryfall.io/normal/front/5/0/50bae2ba-a6a0-4a6a-96e9-0e0372e55108.jpg?1783907847"
     },
     "colorIdentityOverride": []
+}
+
+// Rangers' Aetherhive
+{
+    "name": "Rangers' Aetherhive",
+    "manaCost": "{1}{G}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Vigilance\nWhenever you activate an exhaust ability, create a 1/1 colorless Thopter artifact creature token with flying.\nCrew 1",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AbilityActivatedEvent",
+                    "requireExhaust": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Thopter"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/d/3/d38fc294-ad86-441e-96fe-4ca286a11218.jpg?1783907677",
+                    "artifactToken": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "217",
+        "rarity": "UNCOMMON",
+        "artist": "Josiah \"Jo\" Cameron",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b238d2c-d10f-496d-aa34-5a1536e056b5.jpg?1783907854"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
 }
 
 // Reckless Velocitaur

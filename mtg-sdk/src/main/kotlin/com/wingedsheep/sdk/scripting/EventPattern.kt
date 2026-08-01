@@ -1742,7 +1742,8 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val player: Player = Player.You,
         val targetMatch: com.wingedsheep.sdk.scripting.events.AbilityTargetMatch? = null,
         val sourceFilter: GameObjectFilter? = null,
-        val requireNoTapInCost: Boolean = false
+        val requireNoTapInCost: Boolean = false,
+        val requireExhaust: Boolean = false,
     ) : EventPattern {
         override val description: String = buildString {
             append(player.description)
@@ -1759,6 +1760,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
                     append("targets a ")
                     append(targetMatch.description)
                 }
+                requireExhaust -> append("is an exhaust ability")
                 requireNoTapInCost -> append("doesn't have {T} in its activation cost")
                 else -> append("isn't a mana ability")
             }

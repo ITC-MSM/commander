@@ -649,6 +649,7 @@ class StackResolver(
         targetRequirements: List<TargetRequirement> = emptyList(),
         emitActivationEvent: Boolean = true,
         costsTap: Boolean = false,
+        isExhaust: Boolean = false,
         cantBeCopied: Boolean = false
     ): ExecutionResult {
         val (abilityId, stateWithId) = state.newEntity()
@@ -681,7 +682,8 @@ class StackResolver(
                     ability.controllerId,
                     abilityEntityId = abilityId,
                     costsTap = costsTap,
-                    isManaAbility = false
+                    isManaAbility = false,
+                    isExhaust = isExhaust,
                 )
             )
         }

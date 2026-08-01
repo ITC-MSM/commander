@@ -3133,6 +3133,18 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         return castTriggerDsl(scope, category)
     }
 
+    // "Whenever you activate an exhaust ability". Render only the exact You + ExhaustAbility
+    // shape; other activation filters decline rather than widening to every activated ability.
+    if (jsonContains(trig, "_Trigger", "WhenAPlayerActivatesAnAbility")) {
+        val argv = trig["args"].asArr
+        val scope = castScope(argv?.getOrNull(0) as? JsonObject)
+        val abilityFilter = argv?.getOrNull(1) as? JsonObject
+        if (scope == CastScope.YOU && abilityFilter?.strField("_ActivatedAbilities") == "ExhaustAbility") {
+            return "Triggers.YouActivateExhaustAbility"
+        }
+        return null
+    }
+
     // "Whenever you commit a crime" — WhenAPlayerCommitsACrime scoped to SinglePlayer(You). Only the
     // You scope maps to Triggers.YouCommitCrime; any other player scope (AnyPlayer / Opponent) has no
     // matching Triggers.* constant yet, so it declines -> SCAFFOLD. Pairs with the TriggerOnceEachTurn

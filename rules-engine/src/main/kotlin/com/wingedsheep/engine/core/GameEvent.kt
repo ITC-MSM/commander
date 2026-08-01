@@ -565,7 +565,8 @@ data class AbilityActivatedEvent(
     val controllerId: EntityId,
     val abilityEntityId: EntityId? = null,
     val costsTap: Boolean = false,
-    val isManaAbility: Boolean = false
+    val isManaAbility: Boolean = false,
+    val isExhaust: Boolean = false,
 ) : GameEvent
 
 /**
