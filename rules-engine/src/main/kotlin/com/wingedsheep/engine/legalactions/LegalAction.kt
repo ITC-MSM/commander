@@ -220,6 +220,8 @@ data class TargetInfo(
     val maxTargets: Int,
     val validTargets: List<EntityId>,
     val targetZone: String? = null,
+    /** A target in this slot must differ from every target chosen for an earlier slot. */
+    val mustDifferFromEarlier: Boolean = false,
     /**
      * True when this requirement's filter contains [CardPredicate.ManaValueAtMostX].
      * The client re-filters [validTargets] by the chosen X after X selection.

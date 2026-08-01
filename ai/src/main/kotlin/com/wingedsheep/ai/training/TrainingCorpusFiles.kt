@@ -15,7 +15,7 @@ data class TrainingCorpusEnvelope(
 
 /** Atomic whole-corpus persistence. A crash can leave a temporary file, never a half-accepted game. */
 object TrainingCorpusFiles {
-    private val json = Json { prettyPrint = true; encodeDefaults = true; classDiscriminator = "type" }
+    private val json = Json { encodeDefaults = true; classDiscriminator = "type" }
 
     fun writeAtomically(path: Path, corpus: TrainingCorpus, minimumGeneratorCount: Int = 2) {
         val validation = TrainingCorpusValidator.validate(corpus, minimumGeneratorCount)

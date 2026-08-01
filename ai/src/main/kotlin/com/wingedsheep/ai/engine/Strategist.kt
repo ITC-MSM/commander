@@ -127,10 +127,14 @@ class Strategist(
             leafStates += simulator.simulate(evaluationState, pass.action).state
         }
         for (action in affordable) {
-            leaves += action
-            leafStates += simulator.simulate(
-                evaluationState, chooseCommittedTargets(evaluationState, action, playerId, budget)
-            ).state
+            val materialized = chooseCommittedTargets(evaluationState, action, playerId, budget)
+            val simulation = simulator.simulate(evaluationState, materialized)
+            // LegalAction affordability is necessarily a preview for costs such as convoke and
+            // modal/additional payments. If materializing the concrete action cannot pass the
+            // authoritative processor, it is not a candidate the AI may submit.
+            if (simulation is SimulationResult.Illegal) continue
+            leaves += action.copy(action = materialized)
+            leafStates += simulation.state
             if (budget.expired()) break
         }
 
@@ -168,8 +172,7 @@ class Strategist(
             // Fill in targets on the returned action so the processor can execute it.
             // The committed target is chosen by simulation (not just the heuristic) so the
             // AI sees the real resolved board, including effects already on the stack.
-            val chosen = best.first
-            chosen.copy(action = chooseCommittedTargets(evaluationState, chosen, playerId, budget))
+            best.first
         } else {
             pass ?: legalActions.first()
         }
@@ -279,14 +282,28 @@ class Strategist(
             ?: return heuristicTargets(state, action, playerId)
 
         // Heuristic baseline for every requirement, then refine each one by simulation.
-        val chosenTargets = targetInfos
-            .map { TargetSelection.bestTarget(state, it, playerId, intents) }
-            .toMutableList()
+        val chosenTargets = mutableListOf<com.wingedsheep.engine.state.components.stack.ChosenTarget>()
+        val chosenIds = mutableSetOf<EntityId>()
+        val chosenTargetIds = mutableListOf<EntityId>()
+        for (info in targetInfos) {
+            val available = if (info.mustDifferFromEarlier) {
+                info.validTargets.filterNot(chosenIds::contains)
+            } else {
+                info.validTargets
+            }
+            val selectedId = available.maxByOrNull { TargetSelection.rank(state, it, playerId, intents) }
+                ?: return heuristicTargets(state, action, playerId)
+            chosenTargets += TargetSelection.toChosenTarget(state, info, selectedId, playerId)
+            chosenIds += selectedId
+            chosenTargetIds += selectedId
+        }
 
         for (i in targetInfos.indices) {
             if (budget.expired()) break
             val info = targetInfos[i]
+            val priorIds = chosenTargetIds.take(i).toSet()
             val candidates = info.validTargets
+                .filterNot { info.mustDifferFromEarlier && it in priorIds }
                 .sortedByDescending { TargetSelection.rank(state, it, playerId, intents) }
                 .take(budget.allowances.targetCandidates)
             if (candidates.size <= 1) continue
@@ -297,6 +314,7 @@ class Strategist(
                 evaluator.evaluate(result.state, result.state.projectedState, playerId)
             } ?: continue
             chosenTargets[i] = TargetSelection.toChosenTarget(state, info, best, playerId)
+            chosenTargetIds[i] = best
         }
         return TargetSelection.applyTargets(baseAction, chosenTargets)
     }
@@ -323,17 +341,26 @@ class Strategist(
     private fun withAutomaticPayments(action: LegalAction): GameAction {
         val gameAction = withAutomaticConvoke(action)
         val info = action.additionalCostInfo ?: return gameAction
-        if (info.costType != "Blight" || info.validBlightTargets.isEmpty()) return gameAction
-        val target = info.validBlightTargets.first()
+        val existing = when (gameAction) {
+            is CastSpell -> gameAction.additionalCostPayment
+            is ActivateAbility -> gameAction.costPayment
+            else -> null
+        } ?: AdditionalCostPayment()
+        val payment = when (info.costType) {
+            "Blight" -> existing.copy(blightTargets = info.validBlightTargets.take(1))
+            "Behold" -> existing.copy(beheldCards = info.validBeholdTargets.take(info.beholdCount))
+            "TapPermanents" -> existing.copy(tappedPermanents = info.validTapTargets.take(info.tapCount))
+            "DiscardCard" -> existing.copy(discardedCards = info.validDiscardTargets.take(info.discardCount))
+            "SacrificePermanent" -> existing.copy(
+                sacrificedPermanents = info.validSacrificeTargets.take(info.sacrificeCount)
+            )
+            "BouncePermanent" -> existing.copy(bouncedPermanents = info.validBounceTargets.take(info.bounceCount))
+            "ExileFromGraveyard" -> existing.copy(exiledCards = info.validExileTargets.take(info.exileMinCount))
+            else -> return gameAction
+        }
         return when (gameAction) {
-            is CastSpell -> gameAction.copy(
-                additionalCostPayment = (gameAction.additionalCostPayment ?: AdditionalCostPayment())
-                    .copy(blightTargets = listOf(target))
-            )
-            is ActivateAbility -> gameAction.copy(
-                costPayment = (gameAction.costPayment ?: AdditionalCostPayment())
-                    .copy(blightTargets = listOf(target))
-            )
+            is CastSpell -> gameAction.copy(additionalCostPayment = payment)
+            is ActivateAbility -> gameAction.copy(costPayment = payment)
             else -> gameAction
         }
     }

@@ -93,6 +93,9 @@ object TargetSelection {
         fillPartialRequirements: Boolean,
         intents: IntentCatalog = IntentCatalog.NONE,
     ): GameAction {
+        action.modalEnumeration?.let {
+            return fillModalHeuristically(state, action, playerId, intents)
+        }
         if (!action.requiresTargets) return action.action
         // Only CastSpell and ActivateAbility carry a `targets` list the AI fills in. A targeted
         // activated ability (e.g. "{4}{R}, Sacrifice: deal 3 damage to target") that isn't handled
@@ -102,10 +105,56 @@ object TargetSelection {
         if (targetsAlreadyFilled(baseAction) != false) return action.action
         val targetInfos = fillableRequirements(action, fillPartialRequirements) ?: return action.action
 
-        val chosenTargets = targetInfos.map { info ->
-            bestTarget(state, info, playerId, intents)
+        val chosenTargets = mutableListOf<ChosenTarget>()
+        val chosenIds = mutableSetOf<EntityId>()
+        targetInfos.forEach { info ->
+            val available = if (info.mustDifferFromEarlier) {
+                info.validTargets.filterNot(chosenIds::contains)
+            } else {
+                info.validTargets
+            }
+            val selectedId = available.maxByOrNull { rank(state, it, playerId, intents) }
+                ?: available.first()
+            chosenTargets += toChosenTarget(state, info, selectedId, playerId)
+            chosenIds += selectedId
         }
         return applyTargets(baseAction, chosenTargets)
+    }
+
+    private fun fillModalHeuristically(
+        state: GameState,
+        action: LegalAction,
+        playerId: EntityId,
+        intents: IntentCatalog,
+    ): GameAction {
+        val cast = action.action as? CastSpell ?: return action.action
+        val modal = action.modalEnumeration ?: return cast
+        val modes = modal.modes.filter { it.available }.take(modal.chooseCount)
+        if (modes.size < modal.minChooseCount) return cast
+
+        val orderedTargets = mutableListOf<List<ChosenTarget>>()
+        for (mode in modes) {
+            val chosen = mutableListOf<ChosenTarget>()
+            val chosenIds = mutableSetOf<EntityId>()
+            for (info in mode.targetRequirements) {
+                val available = if (info.mustDifferFromEarlier) {
+                    info.validTargets.filterNot(chosenIds::contains)
+                } else {
+                    info.validTargets
+                }
+                if (available.isEmpty() && info.minTargets == 0) continue
+                val selectedId = available.maxByOrNull { rank(state, it, playerId, intents) }
+                    ?: return cast
+                chosen += toChosenTarget(state, info, selectedId, playerId)
+                chosenIds += selectedId
+            }
+            orderedTargets += chosen
+        }
+        return cast.copy(
+            chosenModes = modes.map { it.index },
+            modeTargetsOrdered = orderedTargets,
+            targets = orderedTargets.flatten(),
+        )
     }
 
     /** The heuristically best [ChosenTarget] for one requirement. */

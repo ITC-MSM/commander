@@ -19,7 +19,7 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 
     // Increase heap size for Spring Boot integration tests with WebSocket connections
-    maxHeapSize = "2g"
+    maxHeapSize = if (System.getProperty("eclCollect") == "true") "4g" else "2g"
 
     // Forward benchmark flags so benchmark tests can check them
     systemProperty("benchmark", System.getProperty("benchmark") ?: "false")
@@ -41,7 +41,8 @@ tasks.withType<Test>().configureEach {
     for (prop in listOf(
         "arena", "arenaGauntlet", "arenaPod", "arenaBudgetScaling", "arenaTable", "arenaA", "arenaB",
         "argentum.ai.apprentice.dir",
-        "eclCollect", "eclCollectGames", "eclCollectSeed", "eclCollectOutput", "eclCollectRunId",
+        "eclCollect", "eclCollectGames", "eclCollectSeed", "eclCollectOutput", "eclCollectBaseDir",
+        "eclCollectRunId", "eclCollectStartIndex",
         "arenaGames", "arenaSeed", "arenaSet", "arenaMaxTurns", "arenaThreads",
     )) {
         System.getProperty(prop)?.let { systemProperty(prop, it) }

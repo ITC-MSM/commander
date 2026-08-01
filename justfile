@@ -111,7 +111,7 @@ train-ecl-apprentice EXAMPLES OUTPUT:
 collect-ecl-training OUTPUT GAMES="100" SEED="20260801" RUN_ID="ecl-{{SEED}}":
     scripts/gradle-locked :ai:test --tests "*.EclTrainingBenchmark" -Dbenchmark=true -DeclCollect=true \
         -DeclCollectGames={{GAMES}} -DeclCollectSeed={{SEED}} -DeclCollectOutput={{OUTPUT}} \
-        -DeclCollectRunId={{RUN_ID}}
+        -DeclCollectBaseDir={{justfile_directory()}} -DeclCollectRunId={{RUN_ID}}
 
 # Play the rollout evaluator against itself at 4 / 8 / 16 / 32 playouts per decision. Same claim as
 # arena-budget-scaling one level down: strength must never FALL with more playouts, or the search is

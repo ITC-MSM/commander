@@ -146,9 +146,23 @@ class TargetEnumerationUtils(
             if (projected.hasKeyword(entityId, Keyword.HEXPROOF) && entityController != playerId &&
                 !HexproofSuppression.isSuppressedForCaster(state, projected, entityId, playerId)
             ) return@filter false
+            if (entityController != playerId && sourceId != null &&
+                hasHexproofFromSource(state, entityId, sourceId)
+            ) return@filter false
             if (projected.hasKeyword(entityId, Keyword.SHROUD)) return@filter false
             predicateEvaluator.matches(state, projected, entityId, filter.baseFilter, context)
         }
+    }
+
+    private fun hasHexproofFromSource(state: GameState, targetId: EntityId, sourceId: EntityId): Boolean {
+        val projected = state.projectedState
+        val sourceColors = projected.getColors(sourceId).ifEmpty {
+            state.getEntity(sourceId)?.get<CardComponent>()?.colors?.map { it.name }?.toSet().orEmpty()
+        }
+        if (sourceColors.any { projected.hasKeyword(targetId, "HEXPROOF_FROM_$it") }) return true
+        if (sourceColors.size == 1 && projected.hasKeyword(targetId, "HEXPROOF_FROM_MONOCOLORED")) return true
+        val sourceTypes = state.getEntity(sourceId)?.get<CardComponent>()?.typeLine?.cardTypes.orEmpty()
+        return sourceTypes.any { projected.hasKeyword(targetId, "HEXPROOF_FROM_CARDTYPE_${it.name}") }
     }
 
     fun findValidGraveyardTargets(
@@ -289,6 +303,7 @@ class TargetEnumerationUtils(
                 },
                 validTargets = validTargets,
                 targetZone = getTargetZone(req),
+                mustDifferFromEarlier = req is TargetOther,
                 xConstrainsManaValue = requirementUsesManaValueAtMostX(req),
                 xConstrainsPower = requirementUsesPowerEqualsX(req),
                 xConstrainsCount = requirementXConstrainsCount(req)

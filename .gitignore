@@ -202,3 +202,7 @@ scripts/__pycache__/
 
 # Arena / benchmark run output (docs/ai/ carries the numbers worth keeping)
 /benchmarks/
+
+# Generated ECL training corpora and reports (large, reproducible benchmark output)
+/data/ecl-training*.json
+/ai/data/ecl-training*.json

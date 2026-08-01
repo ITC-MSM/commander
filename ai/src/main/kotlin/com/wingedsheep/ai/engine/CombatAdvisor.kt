@@ -240,7 +240,32 @@ class CombatAdvisor(
         // ── Menace fix: remove illegal single-blocker assignments for menace attackers ──
         fixMenaceAssignments(state, projected, bestMap, validBlockers, assignedBlockers)
 
-        return DeclareBlockers(playerId, bestMap)
+        return DeclareBlockers(
+            playerId,
+            legalizeBlockerPlan(state, playerId, bestMap, mandatoryBlockerIds)
+        )
+    }
+
+    /**
+     * Pairwise combat checks cannot see assignment-wide restrictions such as "can't be blocked by
+     * more than one creature". Validate the completed plan through the authoritative engine and
+     * peel off optional assignments until it is legal. Mandatory assignments are preserved.
+     */
+    private fun legalizeBlockerPlan(
+        state: GameState,
+        playerId: EntityId,
+        proposed: Map<EntityId, List<EntityId>>,
+        mandatoryBlockerIds: Set<EntityId>,
+    ): Map<EntityId, List<EntityId>> {
+        val candidate = proposed.toMutableMap()
+        while (simulator.simulate(state, DeclareBlockers(playerId, candidate)) is SimulationResult.Illegal) {
+            val removable = candidate.keys
+                .filterNot { it in mandatoryBlockerIds }
+                .minByOrNull { CombatMath.creatureValue(state, state.projectedState, it) }
+                ?: return candidate.filterKeys { it in mandatoryBlockerIds }
+            candidate.remove(removable)
+        }
+        return candidate
     }
 
     /**

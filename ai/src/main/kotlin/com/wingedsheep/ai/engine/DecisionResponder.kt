@@ -212,7 +212,7 @@ class DecisionResponder(
             isDiscard || isScryBottom -> {
                 // Pick cards we want LEAST (to discard / put on bottom)
                 val ranked = rankCardsContextual(state, options, playerId, wantToKeep = false)
-                CardsSelectedResponse(decision.id, ranked.take(min.coerceAtLeast(1).coerceAtMost(max)))
+                CardsSelectedResponse(decision.id, minimumLegalSelection(decision, ranked))
             }
             isSacrifice -> {
                 // Sacrifice least valuable permanents
@@ -237,6 +237,24 @@ class DecisionResponder(
                 CardsSelectedResponse(decision.id, ranked.take(min.coerceAtLeast(0)))
             }
         }
+    }
+
+    /** Prefer the smallest legal selection, honoring reductions such as “discard two unless one is a creature.” */
+    private fun minimumLegalSelection(
+        decision: SelectCardsDecision,
+        ranked: List<EntityId>,
+    ): List<EntityId> {
+        val ordinaryCount = decision.minSelections.coerceAtLeast(1).coerceAtMost(decision.maxSelections)
+        val reduced = decision.conditionalMinimums
+            .sortedBy { it.minimumSelections }
+            .firstNotNullOfOrNull { condition ->
+                val matches = ranked.filter { it in condition.matchingOptions }.take(condition.requiredMatches)
+                if (matches.size < condition.requiredMatches) return@firstNotNullOfOrNull null
+                val count = condition.minimumSelections.coerceAtLeast(matches.size)
+                if (count > decision.maxSelections) return@firstNotNullOfOrNull null
+                matches + ranked.filterNot(matches::contains).take(count - matches.size)
+            }
+        return reduced ?: ranked.take(ordinaryCount)
     }
 
     // ── Yes / No ─────────────────────────────────────────────────────────
