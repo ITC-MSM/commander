@@ -3412,10 +3412,9 @@ class StackResolver(
 
             ChoiceType.CREATURE_ON_BATTLEFIELD -> {
                 val battlefieldCreatures = state.getBattlefield().filter { entityId ->
-                    val container = state.getEntity(entityId) ?: return@filter false
-                    val card = container.get<CardComponent>() ?: return@filter false
-                    val controller = container.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId ?: return@filter false
-                    controller == controllerId && card.typeLine.isCreature && entityId != spellId
+                    entityId != spellId &&
+                        state.projectedState.getController(entityId) == controllerId &&
+                        state.projectedState.isCreature(entityId)
                 }
                 if (battlefieldCreatures.isEmpty()) return null // No creatures — enter without choice
                 val decisionId = "choose-creature-enters-${spellId.value}"
