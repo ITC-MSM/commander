@@ -56,6 +56,8 @@ data class DelayedTriggeredAbility(
      * every matching event until [expiry] removes it.
      */
     val fireOnce: Boolean = false,
+    /** Whether a step-based delayed trigger remains resident after each matching step. */
+    val repeatAtEachMatchingStep: Boolean = false,
     /** If set, this trigger won't fire before this turn number. Used for "your next end step" effects. */
     val notBeforeTurn: Int? = null,
     /**
