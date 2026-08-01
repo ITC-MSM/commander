@@ -61,6 +61,22 @@ enum class ExploreReveal { ANY, LAND, NONLAND }
 sealed interface EventPattern : TextReplaceable<EventPattern> {
     val description: String
 
+    /** Matches when any constituent event pattern matches. */
+    @SerialName("AnyOfEvents")
+    @Serializable
+    data class AnyOf(val events: List<EventPattern>) : EventPattern {
+        init {
+            require(events.size >= 2) { "AnyOf requires at least two event patterns" }
+        }
+
+        override val description: String = events.joinToString(" or ") { it.description }
+
+        override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
+            val replaced = events.map { it.applyTextReplacement(replacer) }
+            return if (replaced == events) this else copy(events = replaced)
+        }
+    }
+
     // =========================================================================
     // Damage Events (Replacement Effect)
     // =========================================================================
@@ -1835,16 +1851,18 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         }
     }
 
-    /**
-     * Whenever this creature saddles a Mount or crews a Vehicle.
-     *
-     * The source is the creature tapped as part of the Crew or Saddle activation cost. The
-     * permanent it helped crew or saddle is exposed as `EffectTarget.TriggeringEntity`.
-     */
-    @SerialName("CrewsOrSaddlesEvent")
+    /** Whenever this creature crews a Vehicle. */
+    @SerialName("CrewsEvent")
     @Serializable
-    data object CrewsOrSaddlesEvent : EventPattern {
-        override val description: String = "this creature saddles a Mount or crews a Vehicle"
+    data object CrewsEvent : EventPattern {
+        override val description: String = "this creature crews a Vehicle"
+    }
+
+    /** Whenever this creature saddles a Mount. */
+    @SerialName("SaddlesEvent")
+    @Serializable
+    data object SaddlesEvent : EventPattern {
+        override val description: String = "this creature saddles a Mount"
     }
 
     // =========================================================================

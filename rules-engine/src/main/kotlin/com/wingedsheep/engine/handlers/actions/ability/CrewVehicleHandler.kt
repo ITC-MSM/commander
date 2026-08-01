@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.actions.ability
 
 import com.wingedsheep.engine.core.CrewVehicle
 import com.wingedsheep.engine.core.CrewOrSaddleContributionEvent
+import com.wingedsheep.engine.core.CrewOrSaddleKind
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.tap
@@ -153,7 +154,8 @@ class CrewVehicleHandler(
                     CrewOrSaddleContributionEvent(
                         contributorId = creatureId,
                         permanentId = action.vehicleId,
-                        controllerId = action.playerId
+                        controllerId = action.playerId,
+                        kind = CrewOrSaddleKind.CREW
                     )
                 )
             }

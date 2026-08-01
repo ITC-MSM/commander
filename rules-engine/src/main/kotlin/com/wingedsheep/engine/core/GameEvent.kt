@@ -1624,8 +1624,12 @@ data class CardCycledEvent(
 data class CrewOrSaddleContributionEvent(
     val contributorId: EntityId,
     val permanentId: EntityId,
-    val controllerId: EntityId
+    val controllerId: EntityId,
+    val kind: CrewOrSaddleKind
 ) : GameEvent
+
+@Serializable
+enum class CrewOrSaddleKind { CREW, SADDLE }
 
 // =============================================================================
 // Plot Events

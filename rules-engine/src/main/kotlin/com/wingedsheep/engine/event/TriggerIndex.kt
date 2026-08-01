@@ -206,6 +206,9 @@ class TriggerIndex(
             ) return emptyList()
 
             return when (trigger) {
+                is SdkGameEvent.AnyOf -> trigger.events
+                    .flatMap { triggerToCategories(it, binding) }
+                    .distinct()
                 is SdkGameEvent.ZoneChangeEvent -> listOf(TriggerCategory.ZONE_CHANGE)
                 // "Whenever you create a token" matches token-creation ZoneChangeEvents (fromZone ==
                 // null), so it indexes under the same category as those events (TriggerMatcher.
@@ -275,7 +278,8 @@ class TriggerIndex(
                 is SdkGameEvent.ManifestedDreadEvent -> MANIFESTED_DREAD_LIST
                 is SdkGameEvent.SearchLibraryEvent -> SEARCH_LIBRARY_LIST
                 is SdkGameEvent.BecameSaddledEvent -> BECAME_SADDLED_LIST
-                is SdkGameEvent.CrewsOrSaddlesEvent -> CREW_OR_SADDLE_CONTRIBUTION_LIST
+                is SdkGameEvent.CrewsEvent,
+                is SdkGameEvent.SaddlesEvent -> CREW_OR_SADDLE_CONTRIBUTION_LIST
                 is SdkGameEvent.BecomesAttachedEvent -> BECOMES_ATTACHED_LIST
                 is SdkGameEvent.SagaChapterResolvedEvent -> SAGA_CHAPTER_RESOLVED_LIST
                 is SdkGameEvent.PlayerLostGameEvent -> PLAYER_LOST_LIST

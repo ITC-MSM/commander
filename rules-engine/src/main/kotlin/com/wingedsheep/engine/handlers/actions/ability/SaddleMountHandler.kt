@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.actions.ability
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.CrewOrSaddleContributionEvent
+import com.wingedsheep.engine.core.CrewOrSaddleKind
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.SaddleMount
 import com.wingedsheep.engine.core.tap
@@ -140,7 +141,8 @@ class SaddleMountHandler(
                     CrewOrSaddleContributionEvent(
                         contributorId = creatureId,
                         permanentId = action.mountId,
-                        controllerId = action.playerId
+                        controllerId = action.playerId,
+                        kind = CrewOrSaddleKind.SADDLE
                     )
                 )
             }

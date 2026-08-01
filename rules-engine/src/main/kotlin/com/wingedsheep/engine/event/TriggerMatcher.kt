@@ -60,6 +60,9 @@ class TriggerMatcher(
         ) return false
 
         return when (trigger) {
+            is EventPattern.AnyOf -> trigger.events.any {
+                matchesTrigger(it, binding, event, sourceId, controllerId, state)
+            }
             is EventPattern.ZoneChangeEvent -> matchesZoneChangeTrigger(trigger, binding, event, sourceId, controllerId, state)
             is EventPattern.DrawEvent -> {
                 event is CardsDrawnEvent && matchesPlayer(trigger.player, event.playerId, controllerId)
@@ -356,8 +359,14 @@ class TriggerMatcher(
                     )
                 } else true
             }
-            is EventPattern.CrewsOrSaddlesEvent ->
+            is EventPattern.CrewsEvent ->
                 event is com.wingedsheep.engine.core.CrewOrSaddleContributionEvent &&
+                    event.kind == com.wingedsheep.engine.core.CrewOrSaddleKind.CREW &&
+                    binding == TriggerBinding.SELF &&
+                    event.contributorId == sourceId
+            is EventPattern.SaddlesEvent ->
+                event is com.wingedsheep.engine.core.CrewOrSaddleContributionEvent &&
+                    event.kind == com.wingedsheep.engine.core.CrewOrSaddleKind.SADDLE &&
                     binding == TriggerBinding.SELF &&
                     event.contributorId == sourceId
             is EventPattern.BecomesAttachedEvent -> {

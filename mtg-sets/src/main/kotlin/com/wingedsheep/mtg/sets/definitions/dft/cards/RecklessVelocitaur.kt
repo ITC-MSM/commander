@@ -19,7 +19,7 @@ val RecklessVelocitaur = card("Reckless Velocitaur") {
         "phase, that Mount or Vehicle gets +2/+0 and gains trample until end of turn."
 
     triggeredAbility {
-        trigger = Triggers.CrewsOrSaddles
+        trigger = Triggers.or(Triggers.Saddles, Triggers.Crews)
         triggerCondition = Conditions.IsYourMainPhase
         effect = Effects.Composite(
             Effects.ModifyStats(2, 0, EffectTarget.TriggeringEntity),

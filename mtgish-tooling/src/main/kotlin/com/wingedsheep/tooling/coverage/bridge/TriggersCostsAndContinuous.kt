@@ -216,8 +216,8 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // permanent as EffectTarget.TriggeringEntity. Capability-only: mtgish drops Aetherdrift's
     // "during your main phase" rider from these trigger nodes, so the emitter must keep them at
     // SCAFFOLD rather than produce an over-broad AUTO draft.
-    supported("WhenACreatureSaddlesAMount", "trigger: this creature saddles a Mount (Triggers.CrewsOrSaddles)")
-    supported("WhenACreatureCrewsAVehicle", "trigger: this creature crews a Vehicle (Triggers.CrewsOrSaddles)")
+    supported("WhenACreatureSaddlesAMount", "trigger: this creature saddles a Mount (Triggers.Saddles)")
+    supported("WhenACreatureCrewsAVehicle", "trigger: this creature crews a Vehicle (Triggers.Crews)")
     // Graveyard-arrival filters, both backed by the one PutIntoGraveyardThisTurnComponent stamp:
     // "…that was put there this turn" (Abyssal Harvester) reads the stamp, the battlefield-only
     // variant (Samwise the Stouthearted, Lobelia Sackville-Baggins) also requires its

@@ -2309,7 +2309,13 @@
         "triggeredAbilities": [
             {
                 "id": "ability_1",
-                "trigger": "CrewsOrSaddlesEvent",
+                "trigger": {
+                    "type": "AnyOfEvents",
+                    "events": [
+                        "SaddlesEvent",
+                        "CrewsEvent"
+                    ]
+                },
                 "effect": {
                     "type": "GrantKeyword",
                     "keyword": "FLYING",
@@ -10991,7 +10997,13 @@
         "triggeredAbilities": [
             {
                 "id": "ability_1",
-                "trigger": "CrewsOrSaddlesEvent",
+                "trigger": {
+                    "type": "AnyOfEvents",
+                    "events": [
+                        "SaddlesEvent",
+                        "CrewsEvent"
+                    ]
+                },
                 "effect": {
                     "type": "Composite",
                     "effects": [
