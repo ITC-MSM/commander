@@ -10,7 +10,6 @@ val LaboratoryManiacReprint = Printing(
     setCode = "INR",
     collectorNumber = "71",
     artist = "Jason Felix",
-    flavorText = "His mind whirled with grand plans, never thinking of what might happen if he were to succeed.",
     imageUri = "https://cards.scryfall.io/normal/front/7/a/7a5be94c-08b8-4964-a79d-e22ea6e94be8.jpg?1783908162",
     releaseDate = "2025-01-24",
     rarity = Rarity.UNCOMMON,
