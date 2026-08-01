@@ -16633,6 +16633,119 @@
     ]
 }
 
+// Talion, the Kindly Lord
+{
+    "name": "Talion, the Kindly Lord",
+    "manaCost": "{2}{U}{B}",
+    "typeLine": "Legendary Creature — Faerie Noble",
+    "oracleText": "Flying\nAs Talion enters, choose a number between 1 and 10.\nWhenever an opponent casts a spell with mana value, power, or toughness equal to the chosen number, that player loses 2 life and you draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "ManaValueEqualsDynamic",
+                                        "amount": {
+                                            "type": "CastChoice",
+                                            "slot": "CHOSEN_NUMBER"
+                                        }
+                                    },
+                                    {
+                                        "type": "PowerEqualsDynamic",
+                                        "amount": {
+                                            "type": "CastChoice",
+                                            "slot": "CHOSEN_NUMBER"
+                                        }
+                                    },
+                                    {
+                                        "type": "ToughnessEqualsDynamic",
+                                        "amount": {
+                                            "type": "CastChoice",
+                                            "slot": "CHOSEN_NUMBER"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "TriggeringPlayer"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever an opponent casts a spell with mana value, power, or toughness equal to the chosen number, that player loses 2 life and you draw a card."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "NUMBER",
+                "minValue": 1,
+                "maxValue": 10
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "215",
+        "rarity": "MYTHIC",
+        "artist": "Justyna Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/62a6b452-c796-45c6-b4d1-0ae3d675e38e.jpg?1783915070",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The numbers you may choose include 1 and 10."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Effects that increase or reduce the cost to cast a spell don't affect that spell's mana value."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "For spells with {X} in their mana costs, use the value chosen for X to determine if the spell's mana value is the chosen number. For example, if the chosen number is 4, a spell with mana cost {X}{R}{R} cast with X equal to 2 would cause Talion's last ability to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Tangled Colony
 {
     "name": "Tangled Colony",

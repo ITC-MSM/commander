@@ -2924,6 +2924,18 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   fails closed (matches nothing) when there is no controller context to resolve a player-scoped amount,
   and is `false` in the layer-projection / cost-calculation / cast-record paths (no resolution context),
   matching the other entity-relative caps.
+- `CardPredicate.ManaValueEqualsDynamic(amount)` / `PowerEqualsDynamic(amount)` /
+  `ToughnessEqualsDynamic(amount)` — *exact* equality against a resolved `DynamicAmount`, the
+  open-ended siblings of the fixed `ManaValueEquals`/`PowerEquals`/`ToughnessEquals` and the cast-`{X}`
+  `ManaValueEqualsX`/`PowerEqualsX`. They resolve the amount the same way `.manaValueAtMostDynamic`
+  resolves its cap (controller/source from the predicate context, fails closed with no controller, and
+  `false` in the layer-projection / cost-calculation / cast-record paths). An object with **no** power
+  or toughness — a noncreature spell — never matches the two P/T forms rather than reading the missing
+  characteristic as 0. Combine them under `CardPredicate.Or` for a multi-characteristic clause:
+  **Talion, the Kindly Lord** ("Whenever an opponent casts a spell with mana value, power, or toughness
+  equal to the chosen number") pairs `Triggers.opponentCasts(...)` with an `Or` of all three, each
+  reading `DynamicAmount.CastChoice(ChoiceSlot.CHOSEN_NUMBER)` — the number recorded by its
+  `EntersWithChoice(ChoiceType.NUMBER, minValue = 1, maxValue = 10)` as-enters replacement.
 - `.manaValueIsOdd()` / `.manaValueIsEven()` — mana-value parity (zero is even). Pair with modal
   spells whose modes ask the caster to choose a parity (e.g. *Mutinous Massacre*).
 - `.hasXInManaCost()` — the card's **printed** mana cost contains an `{X}` symbol (inspects
