@@ -160,6 +160,24 @@ export const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
   },
+  // Applied on top of `deckPile` when the top library card is face up (Future Sight, Goblin Spy,
+  // "you may look at the top card of your library any time", or a fresh scry/surveil). The amber
+  // ring is the same accent the Library-order browser puts on position 0, so "top card" reads the
+  // same in both places.
+  deckPileTopRevealed: {
+    boxShadow: '0 0 0 2px #fde68a, 0 0 14px rgba(253, 230, 138, 0.45)',
+  },
+  deckTopRevealedBadge: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    backgroundColor: 'rgba(40, 32, 8, 0.9)',
+    border: '1px solid rgba(253, 230, 138, 0.7)',
+    borderRadius: 4,
+    padding: '0 3px',
+    fontSize: 9,
+    lineHeight: '13px',
+  },
   graveyardPile: {
     position: 'relative',
     overflow: 'hidden',
