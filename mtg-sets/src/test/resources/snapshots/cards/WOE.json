@@ -4929,6 +4929,120 @@
     ]
 }
 
+// Faunsbane Troll
+{
+    "name": "Faunsbane Troll",
+    "manaCost": "{2}{B}{G}",
+    "typeLine": "Creature — Troll",
+    "oracleText": "When this creature enters, create a Monster Role token attached to it. (Enchanted creature gets +1/+1 and has trample.)\n{1}, Sacrifice an Aura attached to this creature: This creature fights target creature you don't control. If that creature would die this turn, exile it instead. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateRoleToken",
+                    "roleName": "Monster Role",
+                    "target": "Self"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsEnchantment",
+                                        {
+                                            "type": "HasSubtype",
+                                            "subtype": "Aura"
+                                        }
+                                    ],
+                                    "statePredicates": [
+                                        "IsAttachedToSource"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Fight",
+                            "target1": "Self",
+                            "target2": {
+                                "type": "BoundVariable",
+                                "name": "target creature you don't control"
+                            }
+                        },
+                        {
+                            "type": "MarkExileOnDeath",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you don't control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        },
+                        "id": "target creature you don't control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "This creature fights target creature you don't control. If that creature would die this turn, exile it instead. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "rarity": "RARE",
+        "artist": "Artur Nakhodkin",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2d8bd585-c5ea-46f8-8e11-f33c067f2f8e.jpg?1783915072",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "If Faunsbane Troll's activated ability resolves, its effect causes the creature to be exiled any time it would die that turn, not just if it would die as a result of damage dealt by Faunsbane Troll."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If Faunsbane Troll is no longer on the battlefield or no longer a creature when its activated ability resolves, it doesn't fight the target creature, but the effect that causes the target creature to be exiled any time it would die that turn still applies."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Feed the Cauldron
 {
     "name": "Feed the Cauldron",
