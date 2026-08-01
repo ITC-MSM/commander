@@ -340,6 +340,11 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.NameNotSharedWithControlledRoom
     )
 
+    /** Match permanents whose name isn't shared with a token the evaluating player controls. */
+    fun nameNotSharedWithControlledToken() = copy(
+        cardPredicates = cardPredicates + CardPredicate.NameNotSharedWithControlledToken
+    )
+
     /**
      * Match cards whose name equals the name durably chosen by the *source permanent* as it
      * entered (its [com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent] under

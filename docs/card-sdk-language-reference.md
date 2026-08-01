@@ -2849,6 +2849,11 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   every Room card when the controller has no unlocked doors. Pair with `.withSubtype(Subtype.ROOM)` at a search
   site. Used by Central Elevator ("search your library for a Room card that doesn't have the same name as a
   Room you control").
+- `.nameNotSharedWithControlledToken()` — `CardPredicate.NameNotSharedWithControlledToken`: matches a
+  permanent whose name isn't shared with any token the evaluating player controls. This is a
+  state-dependent battlefield target filter; compose it with the printed type/control/token restrictions.
+  Used by The Apprentice's Folly
+  (`Creature.youControl().nontoken().nameNotSharedWithControlledToken()`).
 - `.power(n)` / `.minPower(n)` / `.maxPower(n)` — P/T comparator.
 - `.manaValue(n)` / `.manaValueAtMost(n)` / `.manaValueAtLeast(n)` — mana-value comparator.
 - `.manaValueAtMostX()` — mana value ≤ the X chosen for the source spell/ability.

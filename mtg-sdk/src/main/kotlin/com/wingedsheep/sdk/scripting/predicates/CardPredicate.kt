@@ -319,6 +319,17 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     }
 
     /**
+     * Matches a permanent whose name isn't shared with a token the evaluating player controls.
+     * The candidate itself need not be a token; callers compose the appropriate card/type predicates.
+     * Models The Apprentice's Folly's target restriction.
+     */
+    @SerialName("NameNotSharedWithControlledToken")
+    @Serializable
+    data object NameNotSharedWithControlledToken : CardPredicate {
+        override val description: String = "that doesn't have the same name as a token you control"
+    }
+
+    /**
      * Matches cards *originally printed* in the given set — i.e. whose canonical
      * [com.wingedsheep.sdk.model.CardDefinition.setCode] equals [setCode] (case-insensitive),
      * regardless of which printing is actually in play. This is the card's first/canonical set, so

@@ -334,6 +334,21 @@ class PredicateEvaluator {
                     card.name.split(" // ").map { it.trim() }.none { it in controlledDoorNames }
                 }
             }
+            is CardPredicate.NameNotSharedWithControlledToken -> {
+                val controllerId = context?.controllerId
+                if (controllerId == null) {
+                    true
+                } else {
+                    val candidateName = projectedValues?.name ?: card.name
+                    state.getBattlefield().none { id ->
+                        val tokenName = projected.getName(id)
+                            ?: state.getEntity(id)?.get<CardComponent>()?.name
+                        projected.getController(id) == controllerId &&
+                            state.getEntity(id)?.has<TokenComponent>() == true &&
+                            tokenName == candidateName
+                    }
+                }
+            }
 
             // Keyword predicates - use projected keywords
             is CardPredicate.HasKeyword -> predicate.keyword.name in keywords
@@ -1462,6 +1477,7 @@ class PredicateEvaluator {
             is CardPredicate.NameEquals -> record.name == predicate.name
             is CardPredicate.NameEqualsChosen -> false
             CardPredicate.NameNotSharedWithControlledRoom -> false
+            CardPredicate.NameNotSharedWithControlledToken -> false
             is CardPredicate.OriginallyPrintedInSet -> false
 
             // Keyword predicates — not stored in record
