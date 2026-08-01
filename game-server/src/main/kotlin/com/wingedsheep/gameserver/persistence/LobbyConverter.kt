@@ -62,6 +62,7 @@ fun TournamentLobby.toPersistent(): PersistentTournamentLobby {
         cubeDealerRemainingCardNames = cubeDealerRemainingCards().map { it.name },
         cubePoolPlay = cubePoolPlay,
         bannedCardNames = bannedCardNames,
+        includedSetProducts = includedSetProducts,
         currentPackNumber = currentPackNumber,
         currentPickNumber = currentPickNumber,
         playerOrder = getPlayerOrderForPersistence(),
@@ -132,6 +133,7 @@ fun restoreTournamentLobby(
         randomTeams = persistent.randomTeams
     )
     lobby.bannedCardNames = persistent.bannedCardNames
+    lobby.includedSetProducts = persistent.includedSetProducts
     if (persistent.cubeName != null &&
         persistent.cubeBasicLandSetCode != null &&
         persistent.cubePackSize != null

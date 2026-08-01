@@ -42,6 +42,9 @@ export interface SetPickerModalProps {
   onSelectRandom?: () => void
   /** Modal heading. Defaults to "Choose sets". */
   title?: string
+  /** Optional non-booster product ids selected per set code. */
+  selectedProducts?: Readonly<Record<string, readonly string[]>>
+  onToggleProduct?: (setCode: string, productId: string) => void
 }
 
 const MONTH_ABBREVS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -68,6 +71,12 @@ function byNewestFirst(a: string, b: string): number {
   return b.localeCompare(a) // later date first
 }
 
+export const setProductLabel = (id: string): string => ({
+  beginnerbox: 'Beginner Box',
+  startercollection: 'Starter Collection',
+  setextension: 'Set Extension',
+}[id] ?? id.replace(/[-_]/g, ' '))
+
 export function SetPickerModal({
   sets,
   selectedCodes,
@@ -76,6 +85,8 @@ export function SetPickerModal({
   mode = 'multi',
   onSelectRandom,
   title = 'Choose sets',
+  selectedProducts = {},
+  onToggleProduct,
 }: SetPickerModalProps) {
   const [search, setSearch] = useState('')
   // Partially-implemented sets are hidden by default; the user opts into them with this toggle.
@@ -126,9 +137,11 @@ export function SetPickerModal({
   const renderSetPickerRow = (set: AvailableSet) => {
     const selected = isSelected(set.code)
     const released = formatReleaseDate(set.releaseDate)
+    const products = set.products ?? []
+    const selectedProductIds = selectedProducts[set.code] ?? []
     return (
+      <div key={set.code}>
       <button
-        key={set.code}
         type="button"
         onClick={() => handlePick(set.code)}
         className={`${styles.setPickerRow} ${selected ? styles.setPickerRowActive : ''}`}
@@ -143,6 +156,29 @@ export function SetPickerModal({
           <span className={styles.setButtonCardCount}>{set.implementedCount} cards</span>
         )}
       </button>
+      {selected && !isSingle && onToggleProduct && products.length > 0 && (
+        <div aria-label={`${set.name} additions`}>
+          {products.map((product) => {
+            const checked = selectedProductIds.includes(product.id)
+            return (
+              <button
+                key={product.id}
+                type="button"
+                role="checkbox"
+                aria-checked={checked}
+                onClick={() => onToggleProduct(set.code, product.id)}
+                className={`${styles.setPickerRow} ${checked ? styles.setPickerRowActive : ''}`}
+                style={{ paddingLeft: 54 }}
+              >
+                <span className={styles.setPickerCheck} aria-hidden>{checked ? '✓' : ''}</span>
+                <span className={styles.setPickerName}>{setProductLabel(product.id)}</span>
+                <span className={styles.setButtonCardCount}>{product.cardCount} cards</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      </div>
     )
   }
 

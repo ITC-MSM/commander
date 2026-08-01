@@ -77,7 +77,10 @@ class ConnectionHandler(
             extensionSet = config.extensionSet,
             block = config.block,
             implementedCount = config.distinctCardCount,
-            releaseDate = config.releaseDate
+            releaseDate = config.releaseDate,
+            products = config.extraCardsByProduct.map { (id, cards) ->
+                ServerMessage.SetProduct(id, cards.size)
+            },
         )
     }
 

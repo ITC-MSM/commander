@@ -521,7 +521,8 @@ class GameSession(
                 name = session.playerName,
                 deck = Deck(
                     cards = deckLists[playerId]!!,
-                    sideboard = sideboards[playerId].orEmpty().map { CardEntry(it) },
+                    cardEntries = deckLists[playerId]!!.map(::cardEntryFromIdentifier),
+                    sideboard = sideboards[playerId].orEmpty().map(::cardEntryFromIdentifier),
                 ),
                 playerId = playerId,  // Pass existing player ID to the engine
                 commanderCardName = commanderCardNames[playerId],
@@ -566,6 +567,21 @@ class GameSession(
             seatRoster = seatInfos(),
         )
         return result.state
+    }
+
+    private fun cardEntryFromIdentifier(identifier: String): CardEntry {
+        val separator = identifier.lastIndexOf('#')
+        if (separator < 0) return CardEntry(identifier)
+        val coordinates = identifier.substring(separator + 1)
+        val dash = coordinates.indexOf('-')
+        if (dash <= 0 || dash == coordinates.lastIndex) return CardEntry(identifier)
+        return CardEntry(
+            name = identifier.substring(0, separator),
+            printing = com.wingedsheep.sdk.model.PrintingRef(
+                setCode = coordinates.substring(0, dash),
+                collectorNumber = coordinates.substring(dash + 1),
+            ),
+        )
     }
 
     /**

@@ -272,6 +272,7 @@ def fetch_from_scryfall(code: str) -> dict:
 
     draft_names: list[str] = []
     extra_names: list[str] = []
+    extra_products: dict[str, list[str]] = {}
     standard_legal_count = 0
     cards: dict[str, dict] = {}  # front-face name -> per-card Scryfall metadata (for codegen)
     for name, group in printings.items():
@@ -279,6 +280,8 @@ def fetch_from_scryfall(code: str) -> dict:
             draft_names.append(name)
         else:
             extra_names.append(name)
+            tags = sorted({tag for p in group for tag in p.get("promo_types", [])})
+            extra_products[name] = tags or ["other"]
         representative = min(group, key=printing_rank)
         # Format legality is a property of the card, not the printing — read it off the one.
         if representative.get("legalities", {}).get("standard") == "legal":
@@ -290,6 +293,7 @@ def fetch_from_scryfall(code: str) -> dict:
         "set_type": set_type,
         "draft_names": draft_names,
         "extra_names": extra_names,
+        "extra_products": extra_products,
         "standard_legal_count": standard_legal_count,
         "cards": cards,
     }

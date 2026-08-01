@@ -348,6 +348,11 @@ class TournamentLobby(
      */
     var chaosBoosters: Boolean = false,
     /**
+     * Include implemented cards from the selected set codes that were not present in the paper
+     * booster product (starter/beginner-box cards and promos). The default remains paper-accurate.
+     */
+    var includedSetProducts: Map<String, Set<String>> = emptyMap(),
+    /**
      * Host-settable ban list: oracle card names excluded from every booster pack this lobby
      * generates (sealed pool, draft pack, Winston/Grid deck). Matched case-insensitively by
      * [BoosterGenerator]. Has no effect on [TournamentFormat.PREMADE_DECKS] (those bring their
@@ -476,6 +481,7 @@ class TournamentLobby(
     private fun packsFor(count: Int): List<List<CardDefinition>> {
         cubeDealer?.let { return it.deal(count) }
 
+        val packGenerator = setPackGenerator()
         val strategy = strategyOverrideForFormat()
         val sequence = if (!chaosBoosters && boosterDistribution.isNotEmpty()) {
             boosterDistribution.flatMap { (code, packs) -> List(packs) { code } }
@@ -491,9 +497,9 @@ class TournamentLobby(
                 }
             val setCode = sequence.getOrNull(sequenceIndex)
             if (setCode != null) {
-                boosterGenerator.generateBooster(setCode, strategy, bannedCardNames)
+                packGenerator.generateBooster(setCode, strategy, bannedCardNames)
             } else {
-                boosterGenerator.generateBooster(
+                packGenerator.generateBooster(
                     setCodes,
                     strategy,
                     chaos = chaosBoosters,
@@ -501,6 +507,18 @@ class TournamentLobby(
                 )
             }
         }
+    }
+
+    /** Lobby-scoped view that opts selected catalogued sets into their non-booster extras. */
+    private fun setPackGenerator(): BoosterGenerator {
+        if (includedSetProducts.isEmpty() || isCube) return boosterGenerator
+        val expanded = setCodes.mapNotNull { code ->
+            val config = boosterGenerator.getSetConfig(code) ?: return@mapNotNull null
+            val selectedProducts = includedSetProducts[code].orEmpty()
+            val extras = selectedProducts.flatMap { config.extraCardsByProduct[it].orEmpty() }
+            code to config.copy(cards = (config.cards + extras).distinctBy { it.name })
+        }.toMap()
+        return boosterGenerator.withSets(expanded)
     }
 
     /**
@@ -940,7 +958,7 @@ class TournamentLobby(
 
         if (effectiveDistribution != null) {
             players.forEach { (playerId, playerState) ->
-                val pool = boosterGenerator.generateSealedPool(effectiveDistribution, strategy, chaos = chaosBoosters, bannedCardNames = bannedCardNames)
+                val pool = setPackGenerator().generateSealedPool(effectiveDistribution, strategy, chaos = chaosBoosters, bannedCardNames = bannedCardNames)
                 players[playerId] = playerState.copy(cardPool = pool)
             }
         } else {
@@ -948,7 +966,7 @@ class TournamentLobby(
             // set distribution (e.g., all get 3 Portal + 2 Onslaught boosters)
             val distributionSeed = System.currentTimeMillis()
             players.forEach { (playerId, playerState) ->
-                val pool = boosterGenerator.generateSealedPool(
+                val pool = setPackGenerator().generateSealedPool(
                     setCodes,
                     boosterCount,
                     distributionSeed,
@@ -1833,7 +1851,10 @@ class TournamentLobby(
                 extensionSet = config.extensionSet,
                 block = config.block,
                 implementedCount = config.distinctCardCount,
-                releaseDate = config.releaseDate
+                releaseDate = config.releaseDate,
+                products = config.extraCardsByProduct.map { (id, cards) ->
+                    ServerMessage.SetProduct(id, cards.size)
+                },
             )
         }
 
@@ -1859,6 +1880,7 @@ class TournamentLobby(
                 allowDuplicates = allowDuplicates,
                 commanderPreset = commanderPreset.name,
                 chaosBoosters = chaosBoosters,
+                includedSetProducts = includedSetProducts.mapValues { (_, ids) -> ids.sorted() },
                 bannedCardNames = bannedCardNames.sorted(),
                 cubeName = cube?.name,
                 cubeCardCount = cube?.cards?.size,

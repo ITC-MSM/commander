@@ -138,4 +138,17 @@ class BoosterGeneratorBasicLandArtTest : DescribeSpec({
             BoosterGenerator.withBasicLandArt(emptyMap(), basics) shouldBe emptyMap()
         }
     }
+
+    describe("withCardArt") {
+        it("pins a reprint to the printing opened in the Limited pool") {
+            val fdnPacifism = regular262.copy(
+                name = "Pacifism",
+                setCode = "FDN",
+                metadata = regular262.metadata.copy(collectorNumber = "501", imageUri = "fdn-501.jpg"),
+            )
+
+            BoosterGenerator.withCardArt(mapOf("Pacifism" to 2), listOf(fdnPacifism))
+                .shouldContainExactly(mapOf("Pacifism#FDN-501" to 2))
+        }
+    }
 })

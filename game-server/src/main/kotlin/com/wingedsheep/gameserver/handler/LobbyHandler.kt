@@ -2599,6 +2599,15 @@ class LobbyHandler(
         }
 
         if (!lobby.isCube) message.chaosBoosters?.let { lobby.chaosBoosters = it }
+        if (!lobby.isCube) message.includedSetProducts?.let { selections ->
+            lobby.includedSetProducts = selections
+                .filterKeys { it in lobby.setCodes }
+                .mapValues { (code, ids) ->
+                    val available = boosterGenerator.getSetConfig(code)?.extraCardsByProduct?.keys.orEmpty()
+                    ids.filterTo(linkedSetOf()) { it in available }
+                }
+                .filterValues { it.isNotEmpty() }
+        }
 
         // Host ban list — the full list is sent each time (not a delta). Trim, drop blanks and
         // duplicates; unknown names are kept as-is (they simply never match a card in the pool),

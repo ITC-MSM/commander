@@ -81,6 +81,13 @@ class SetCoverageServiceTest : FunSpec({
         detail.extra.map { it.name } shouldNotContain "Serra Angel"
     }
 
+    test("Foundations exposes selectable non-booster products from Scryfall promo types") {
+        val products = service.limitedProducts("FDN")
+        products["beginnerbox"].shouldNotBeNull() shouldContain "Ancestor Dragon"
+        products["startercollection"].shouldNotBeNull() shouldContain "Angelic Destiny"
+        products["setextension"].shouldNotBeNull().shouldNotBeEmpty()
+    }
+
     test("a set with no booster falls back to the whole set — Bloomburrow Commander has cards, not 0%") {
         // Commander / supplemental sets flag every card booster:false, so without the fallback
         // the draft-only headline would read a useless 0/0. The whole set is the main pool instead.
