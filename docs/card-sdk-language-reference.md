@@ -7728,7 +7728,12 @@ The priority groups are (CR 616.1a–f):
   Ride: `DoubleDamage(restrictions = listOf(Conditions.Delirium(4)), appliesTo = DamageEvent(source =
   SourceFilter.Matching(GameObjectFilter.Any.youControl()), damageType = DamageType.NonCombat))` — a
   delirium-gated "double all noncombat damage from sources you control". The doubled damage stays
-  attributed to the original source (the engine scales the amount in place).
+  attributed to the original source (the engine scales the amount in place). Source and recipient
+  filters are matched by the shared `DamageUtils` matchers, so every `SourceFilter` /
+  `RecipientFilter` the prevention and `ModifyDamageAmount` paths understand works here too —
+  including `RecipientFilter.OpponentOrPermanentTheyControl` (Twinflame Tyrant). Each hosting
+  permanent is its own replacement and applies once (CR 616.1): two Twinflame Tyrants quadruple.
+  A player who is a legal recipient sees a "Damage Doubled" badge on their life orb.
 - `ModifyDamageAmount(modifier = 0, dynamicModifier = null, restrictions = emptyList(), appliesTo)` —
   add an amount to matching
   damage. Pass a flat `modifier` (Valley Flamecaller: "deals that much damage plus 1") or a
