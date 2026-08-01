@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.mtg.sets.definitions.spm.cards.ArachnePsionicWeaver
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
@@ -64,6 +65,18 @@ class ArachnePsionicWeaverScenarioTest : FunSpec({
         val chosen = driver.state.getEntity(arachne)
             ?.get<CastChoicesComponent>()?.chosen?.get(ChoiceSlot.CARD_TYPE)
         (chosen as? ChoiceValue.TextChoice)?.text shouldBe "Instant"
+    }
+
+    test("the chosen card type is surfaced to the client view") {
+        val (driver, you, opponent) = newGame()
+        driver.putCardInHand(opponent, "Lightning Bolt")
+        val arachne = castArachneChoosing(driver, you, "Instant")
+
+        // The durable card-type choice is visible to the client (rendered as a badge), not just
+        // stored on the permanent's CastChoicesComponent.
+        val view = ClientStateTransformer(cardRegistry = driver.cardRegistry)
+            .transform(driver.state, viewingPlayerId = you)
+        view.cards[arachne]?.chosenCardType shouldBe "Instant"
     }
 
     test("spells of the chosen type cost {1} more; other types are untaxed") {

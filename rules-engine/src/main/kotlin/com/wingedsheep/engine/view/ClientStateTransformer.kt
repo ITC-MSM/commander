@@ -1086,6 +1086,9 @@ class ClientStateTransformer(
         // Get chosen card name for "as enters, choose a card name" permanents (e.g., Petrified Hamlet)
         val chosenCardName = container.chosenCardName()
 
+        // Get chosen card type for "choose a card type" permanents (e.g., Arachne, Psionic Weaver)
+        val chosenCardType = container.chosenCardType()
+
         // Get sacrificed creature types for spells with sacrifice-as-cost (e.g., Endemic Plague)
         val sacrificedCreatureTypes = spellOnStack?.sacrificedPermanents
             ?.flatMap { it.subtypes }?.toSet()
@@ -1301,6 +1304,7 @@ class ClientStateTransformer(
             chosenColor = chosenColor,
             chosenMode = chosenMode,
             chosenCardName = chosenCardName,
+            chosenCardType = chosenCardType,
             sacrificedCreatureTypes = sacrificedCreatureTypes,
             playableFromExile = playableFromExile,
             copyOf = container.get<com.wingedsheep.engine.state.components.identity.CopyOfComponent>()?.let { copyComp ->
