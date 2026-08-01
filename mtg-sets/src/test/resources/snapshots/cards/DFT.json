@@ -3772,6 +3772,121 @@
     ]
 }
 
+// Demonic Junker
+{
+    "name": "Demonic Junker",
+    "manaCost": "{6}{B}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nWhen this Vehicle enters, for each player, destroy up to one target creature that player controls. If a creature you controlled was destroyed this way, put two +1/+1 counters on this Vehicle.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "AFFINITY",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        },
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "gathered0",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "creature ctrl:you"
+                            },
+                            "storeMatching": "matching1",
+                            "storeNonMatching": "rest1"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "gathered0",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Destroy",
+                            "storeMovedAs": "moved2"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "moved2",
+                            "filter": {
+                                "type": "ExcludeOtherCollection",
+                                "otherCollectionName": "rest1"
+                            },
+                            "storeMatching": "matching3"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "matching3",
+                            "ifNotEmpty": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 2,
+                                "target": "Self"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "For each player, destroy up to one target creature that player controls. If a creature you controlled was destroyed this way, put two +1/+1 counters on this Vehicle."
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "up to one target creature you control"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        },
+                        "id": "up to one target creature an opponent controls"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "rarity": "RARE",
+        "artist": "Stephan Martiniere",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4aad569e-4acb-4416-9d4f-64e6991de3ed.jpg?1783907896"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Detention Chariot
 {
     "name": "Detention Chariot",
@@ -9988,6 +10103,69 @@
     "colorIdentityOverride": []
 }
 
+// Mu Yanling, Wind Rider
+{
+    "name": "Mu Yanling, Wind Rider",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Legendary Creature — Human Wizard Pilot",
+    "oracleText": "When Mu Yanling enters, create a 3/2 colorless Vehicle artifact token with crew 1.\nVehicles you control have flying.\nWhenever one or more creatures you control with flying deal combat damage to a player, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Vehicle"
+                },
+                "descriptionOverride": "When Mu Yanling enters, create a 3/2 colorless Vehicle artifact token with crew 1."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "OneOrMoreDealCombatDamageToPlayerEvent",
+                    "sourceFilter": "creature kw:flying"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever one or more creatures you control with flying deal combat damage to a player, draw a card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING",
+                "filter": {
+                    "baseFilter": "Vehicle ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "rarity": "MYTHIC",
+        "artist": "Justyna Dura",
+        "flavorText": "The search for her lost mentor continued.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/76423446-d62f-4cc5-a23a-3175be88bd73.jpg?1783907905"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Muraganda Raceway
 {
     "name": "Muraganda Raceway",
@@ -10613,6 +10791,123 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Oviya, Automech Artisan
+{
+    "name": "Oviya, Automech Artisan",
+    "manaCost": "{3}{G}",
+    "typeLine": "Legendary Creature — Human Artificer",
+    "oracleText": "Each creature that's attacking one of your opponents has trample.\n{G}, {T}: You may put a creature or Vehicle card from your hand onto the battlefield. If you put an artifact onto the battlefield this way, put two +1/+1 counters on it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "filter": "creature|Vehicle"
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected1",
+                            "prompt": "You may put a creature or Vehicle card from your hand onto the battlefield",
+                            "selectedLabel": "Put onto the battlefield"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "storeMovedAs": "moved2"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "moved2",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "artifact"
+                            },
+                            "storeMatching": "matching3"
+                        },
+                        {
+                            "type": "AddCountersToCollection",
+                            "collectionName": "matching3",
+                            "counterType": "+1/+1",
+                            "count": 2
+                        }
+                    ],
+                    "descriptionOverride": "You may put a creature or Vehicle card from your hand onto the battlefield. If you put an artifact onto the battlefield this way, put two +1/+1 counters on it."
+                },
+                "descriptionOverride": "{G}, {T}: You may put a creature or Vehicle card from your hand onto the battlefield. If you put an artifact onto the battlefield this way, put two +1/+1 counters on it."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "TRAMPLE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "IsAttackingAnOpponent"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "RARE",
+        "artist": "Julia Metzger",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee5f504c-33fc-4a91-b69b-8ef555987c79.jpg?1783907867",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "In some rare cases, a nonartifact card put onto the battlefield this way will get two +1/+1 counters because some other effect (like that of Mycosynth Lattice) makes it an artifact on the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

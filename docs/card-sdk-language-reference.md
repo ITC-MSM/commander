@@ -1340,6 +1340,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature."`, defined on the predefined `Mutagen`
   `CardDefinition` (so the ability is resolved automatically). The `DynamicAmount` overload serves X-count makers
   (Mutagen Man, Living Ooze — "create X Mutagen tokens").
+- `CreateVehicleToken(count?, controller?)` / `CreateVehicleToken(amount: DynamicAmount, controller?)` —
+  Aetherdrift's "3/2 colorless Vehicle artifact token with crew 1" (Mu Yanling, Wind Rider). A *noncreature*
+  artifact carrying printed P/T and the ordinary `crew 1` keyword, defined on the predefined `Vehicle`
+  `CardDefinition`, so it can't attack or block until something crews it and it crews through the normal path.
 - `CreatePermanentEmblem(name, abilities)` — planeswalker emblem with static abilities.
 
 ### Ability granting
@@ -3042,6 +3046,13 @@ work for abilities-on-stack (which carry no `CardComponent`).
   "was it attacking?" after the creature is already in the graveyard — Garna, Bloodfist of Keld:
   `Conditions.EntityMatches(EffectTarget.TriggeringEntity, GameObjectFilter.Any.attacking())`.
   Battlefield reads are unchanged; the fallback can only fire for an entity outside the battlefield.
+- `IsAttackingAnOpponent` (filter builder `attackingAnOpponent()`) — attacking one of *your* opponents,
+  where "you" is the controller of the ability applying the filter. Strictly narrower than `IsAttacking`:
+  the attacker's defender must be an opponent **player**, so an attacker aimed at a planeswalker or battle
+  drops out. Controller-relative rather than attacker-relative, so a creature someone else controls that's
+  attacking your opponent matches, and one attacking *you* doesn't. Fails closed without controller context,
+  and has no last-known fallback (the exit snapshot records *that* it was attacking, not whom). Oviya,
+  Automech Artisan: `GrantKeyword(Keyword.TRAMPLE, GroupFilter(GameObjectFilter.Creature.attackingAnOpponent()))`.
 - `IsBlocking` — declared as blocker this combat.
 - `HasLockedDoor` (filter builder `hasLockedDoor()`) — a Room permanent (CR 709.5) with at least one locked
   door, i.e. a half lacking its "unlocked" designation (CR 709.5c). Reads the engine's

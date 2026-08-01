@@ -2620,6 +2620,20 @@ object Effects {
         CreatePredefinedTokenEffect("Munitions", count)
 
     /**
+     * Create Aetherdrift's "3/2 colorless Vehicle artifact token with crew 1" — a *noncreature*
+     * artifact with power and toughness, so it does nothing until something crews it.
+     *
+     * @param count Number of tokens to create
+     * @param controller Who controls the tokens (null = the effect's controller)
+     */
+    fun CreateVehicleToken(count: Int = 1, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Vehicle", count, controller)
+
+    /** Dynamic-count variant of [CreateVehicleToken]. */
+    fun CreateVehicleToken(count: DynamicAmount, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Vehicle", controller = controller, dynamicCount = count)
+
+    /**
      * Create Mutagen artifact tokens (Teenage Mutant Ninja Turtles).
      * "{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature.
      *  Activate only as a sorcery."

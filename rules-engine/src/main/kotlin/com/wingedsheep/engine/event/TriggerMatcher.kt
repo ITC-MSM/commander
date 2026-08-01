@@ -1825,6 +1825,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsTapped,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsUntapped,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttacking,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingAnOpponent,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlocking,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlocked,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsUnblocked,

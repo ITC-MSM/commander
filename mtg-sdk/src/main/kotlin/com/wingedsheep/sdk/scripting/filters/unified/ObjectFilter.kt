@@ -647,6 +647,15 @@ data class GameObjectFilter(
     )
 
     /**
+     * Must be attacking one of *your* opponents — the player themselves, so an attacker pointed at
+     * an opponent's planeswalker or battle doesn't match. Narrower than [attacking]; "you" is the
+     * controller of whatever ability applies the filter.
+     */
+    fun attackingAnOpponent() = copy(
+        statePredicates = statePredicates + StatePredicate.IsAttackingAnOpponent
+    )
+
+    /**
      * Must have been declared as an attacker at least once during the current turn.
      * Survives leaving combat; cleared at end-of-turn cleanup.
      */
