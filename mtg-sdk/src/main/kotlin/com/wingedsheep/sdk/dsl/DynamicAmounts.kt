@@ -454,7 +454,19 @@ object DynamicAmounts {
         player: Player = Player.You,
         excludeTriggeringEntity: Boolean = false
     ): DynamicAmount =
-        DynamicAmount.SubtypeEnteredUnderControlThisTurn(player, subtype, excludeTriggeringEntity)
+        DynamicAmount.SubtypeEnteredUnderControlThisTurn(player, setOf(subtype), excludeTriggeringEntity)
+
+    /**
+     * "The number of As and/or Bs that entered the battlefield under [player]'s control this turn"
+     * (Cloudspire Coordinator — "Mounts and/or Vehicles"). Any-of over [subtypes], so a permanent
+     * carrying several of them still counts once; summing per-subtype amounts would not.
+     */
+    fun subtypesEnteredUnderControlThisTurn(
+        subtypes: Set<com.wingedsheep.sdk.core.Subtype>,
+        player: Player = Player.You,
+        excludeTriggeringEntity: Boolean = false
+    ): DynamicAmount =
+        DynamicAmount.SubtypeEnteredUnderControlThisTurn(player, subtypes, excludeTriggeringEntity)
 
     /**
      * "The number of times [player] descended this turn" (CR 700.11) — count of
