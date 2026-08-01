@@ -34,6 +34,21 @@ import com.wingedsheep.sdk.scripting.references.Player
  */
 object Triggers {
 
+    /** Combines trigger atoms that use the same binding into one disjunctive trigger. */
+    fun or(first: TriggerSpec, second: TriggerSpec, vararg others: TriggerSpec): TriggerSpec {
+        val triggers = listOf(first, second) + others
+        require(triggers.all { it.binding == first.binding }) {
+            "Triggers.or requires every trigger to use the same binding"
+        }
+        return TriggerSpec(
+            event = AnyOf(triggers.flatMap {
+                val event = it.event
+                if (event is AnyOf) event.events else listOf(event)
+            }),
+            binding = first.binding
+        )
+    }
+
     // =========================================================================
     // Zone Change Triggers
     // =========================================================================
@@ -1154,6 +1169,21 @@ object Triggers {
     val YouActivateAbility: TriggerSpec = TriggerSpec(
         event = AbilityActivatedEvent(player = Player.You),
         binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Whenever this creature crews a Vehicle. The Vehicle is available to the effect as
+     * `EffectTarget.TriggeringEntity`.
+     */
+    val Crews: TriggerSpec = TriggerSpec(
+        event = CrewsEvent,
+        binding = TriggerBinding.SELF
+    )
+
+    /** Whenever this creature saddles a Mount. */
+    val Saddles: TriggerSpec = TriggerSpec(
+        event = SaddlesEvent,
+        binding = TriggerBinding.SELF
     )
 
     /**

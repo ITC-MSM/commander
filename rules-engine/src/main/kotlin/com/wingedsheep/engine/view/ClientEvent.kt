@@ -1199,6 +1199,10 @@ is PermanentsSacrificedEvent -> {
                 isYours = event.playerId == viewingPlayerId
             )
 
+            // Internal trigger signal. The tap, activated ability, and resulting continuous effect
+            // already provide the player-visible narration and state change.
+            is CrewOrSaddleContributionEvent -> null
+
             is CardPlottedEvent -> ClientEvent.CardPlotted(
                 playerId = event.playerId,
                 cardName = event.cardName,

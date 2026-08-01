@@ -280,6 +280,10 @@ data class TriggerContext(
                     triggeringPlayerId = event.playerId
                 )
                 is CardCycledEvent -> TriggerContext(triggeringPlayerId = event.playerId)
+                is com.wingedsheep.engine.core.CrewOrSaddleContributionEvent -> TriggerContext(
+                    triggeringEntityId = event.permanentId,
+                    triggeringPlayerId = event.controllerId
+                )
                 is AttackersDeclaredEvent -> TriggerContext()
                 is BlockersDeclaredEvent -> TriggerContext()
                 is TappedEvent -> TriggerContext(triggeringEntityId = event.entityId)

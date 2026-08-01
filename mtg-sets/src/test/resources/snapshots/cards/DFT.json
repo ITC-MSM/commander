@@ -2295,6 +2295,54 @@
     "colorIdentityOverride": []
 }
 
+// Canyon Vaulter
+{
+    "name": "Canyon Vaulter",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Kor Pilot",
+    "oracleText": "Whenever this creature saddles a Mount or crews a Vehicle during your main phase, that Mount or Vehicle gains flying until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AnyOfEvents",
+                    "events": [
+                        "SaddlesEvent",
+                        "CrewsEvent"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": "TriggeringEntity"
+                },
+                "triggerCondition": {
+                    "type": "IsInPhase",
+                    "phases": [
+                        "PRECOMBAT_MAIN",
+                        "POSTCOMBAT_MAIN"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "rarity": "UNCOMMON",
+        "artist": "David Astruga",
+        "flavorText": "Some seek thrills in watching the show. Some seek thrills in being the show.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc0b15da-a45c-42f5-aafc-20ad9e38bf24.jpg?1783907921"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Caradora, Heart of Alacria
 {
     "name": "Caradora, Heart of Alacria",
@@ -10933,6 +10981,71 @@
         "imageUri": "https://cards.scryfall.io/normal/front/5/0/50bae2ba-a6a0-4a6a-96e9-0e0372e55108.jpg?1783907847"
     },
     "colorIdentityOverride": []
+}
+
+// Reckless Velocitaur
+{
+    "name": "Reckless Velocitaur",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Minotaur Pilot",
+    "oracleText": "Whenever this creature saddles a Mount or crews a Vehicle during your main phase, that Mount or Vehicle gets +2/+0 and gains trample until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AnyOfEvents",
+                    "events": [
+                        "SaddlesEvent",
+                        "CrewsEvent"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "TriggeringEntity"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "TRAMPLE",
+                            "target": "TriggeringEntity"
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "IsInPhase",
+                    "phases": [
+                        "PRECOMBAT_MAIN",
+                        "POSTCOMBAT_MAIN"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "rarity": "UNCOMMON",
+        "artist": "Inkognit",
+        "flavorText": "Repairs are tomorrow's problems.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8edd18be-3861-4510-ba6d-38ccba60bb5b.jpg?1783907877"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // Reef Roads
