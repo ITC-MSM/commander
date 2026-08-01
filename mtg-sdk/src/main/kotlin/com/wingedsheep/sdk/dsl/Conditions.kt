@@ -582,6 +582,10 @@ object Conditions {
     fun APlayerLifeAtMost(threshold: Int): ConditionInterface =
         com.wingedsheep.sdk.scripting.conditions.APlayerLifeAtMost(threshold)
 
+    /** If at least one opponent has [threshold] or less life. */
+    fun AnOpponentLifeAtMost(threshold: Int): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.AnOpponentLifeAtMost(threshold)
+
     /**
      * If your life total is N or more.
      */
