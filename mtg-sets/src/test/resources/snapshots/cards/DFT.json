@@ -2599,6 +2599,113 @@
     ]
 }
 
+// Captain Howler, Sea Scourge
+{
+    "name": "Captain Howler, Sea Scourge",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Legendary Creature — Shark Pirate",
+    "oracleText": "Ward—{2}, Pay 2 life.\nWhenever you discard one or more cards, target creature gets +2/+0 until end of turn for each card discarded this way. Whenever that creature deals combat damage to a player this turn, you draw a card.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Composite",
+                "parts": [
+                    {
+                        "type": "WardCost.Mana",
+                        "manaCost": "{2}"
+                    },
+                    {
+                        "type": "WardCost.Life",
+                        "amount": 2
+                    }
+                ]
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DiscardEvent",
+                    "batch": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Multiply",
+                                "amount": {
+                                    "type": "ContextProperty",
+                                    "key": "TRIGGER_DISCARD_COUNT"
+                                },
+                                "multiplier": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature"
+                            }
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "trigger": {
+                                "event": {
+                                    "type": "DealsDamageEvent",
+                                    "damageType": "DamageCombat",
+                                    "recipient": "AnyPlayer"
+                                }
+                            },
+                            "watchedTarget": {
+                                "type": "BoundVariable",
+                                "name": "creature"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "194",
+        "rarity": "RARE",
+        "artist": "Mirko Failoni",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/0957c90f-e10d-40f8-a4be-9e9ef623dd43.jpg?1783907861"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Caradora, Heart of Alacria
 {
     "name": "Caradora, Heart of Alacria",
@@ -2824,6 +2931,214 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Chandra, Spark Hunter
+{
+    "name": "Chandra, Spark Hunter",
+    "manaCost": "{3}{R}",
+    "typeLine": "Legendary Planeswalker — Chandra",
+    "oracleText": "At the beginning of combat on your turn, choose up to one target Vehicle you control. Until end of turn, it becomes an artifact creature and gains haste.\n+2: You may sacrifice an artifact or discard a card. If you do, draw a card.\n0: Create a 3/2 colorless Vehicle artifact token with crew 1.\n−7: You get an emblem with \"Whenever an artifact you control enters, this emblem deals 3 damage to any target.\"",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCardType",
+                            "cardType": "Creature",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target Vehicle you control"
+                            },
+                            "duration": "EndOfTurn"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target Vehicle you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "Vehicle ctrl:you"
+                    },
+                    "id": "up to one target Vehicle you control"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 2
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ChooseAction",
+                        "choices": [
+                            {
+                                "label": "Sacrifice an artifact",
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "ForceSacrifice",
+                                            "filter": "artifact",
+                                            "target": "Controller"
+                                        },
+                                        {
+                                            "type": "DrawCards",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        }
+                                    ]
+                                },
+                                "feasibilityCheck": {
+                                    "type": "ControlsPermanentMatching",
+                                    "filter": "artifact"
+                                }
+                            },
+                            {
+                                "label": "Discard a card",
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Hand"
+                                            },
+                                            "storeAs": "hand"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "hand",
+                                            "selection": {
+                                                "type": "ChooseExactly",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "discarded",
+                                            "prompt": "Choose 1 card to discard"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "discarded",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Discard"
+                                        },
+                                        {
+                                            "type": "DrawCards",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        }
+                                    ]
+                                },
+                                "feasibilityCheck": {
+                                    "type": "HasCardsInZone",
+                                    "zone": "Hand"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may sacrifice an artifact or discard a card. If you do, draw a card."
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 0
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Vehicle"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -7
+                },
+                "effect": {
+                    "type": "CreateGlobalTriggeredAbility",
+                    "ability": {
+                        "id": "ability_5",
+                        "trigger": {
+                            "type": "ZoneChangeEvent",
+                            "filter": "artifact ctrl:you",
+                            "to": "Battlefield"
+                        },
+                        "binding": "ANY",
+                        "effect": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        "targetRequirement": "AnyTarget",
+                        "descriptionOverride": "Whenever an artifact you control enters, this emblem deals 3 damage to any target."
+                    },
+                    "descriptionOverride": "Whenever an artifact you control enters, this emblem deals 3 damage to any target."
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "rarity": "MYTHIC",
+        "artist": "Devin Elle Kurtz",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/11f9b98e-48a1-491e-bdab-6e94e4ec747a.jpg?1783907885",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Emblems are colorless. This means that a permanent with protection from red can be the target of the emblem's triggered ability."
+            }
+        ]
+    },
+    "startingLoyalty": 4,
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
