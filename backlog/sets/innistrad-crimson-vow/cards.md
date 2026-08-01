@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 199 / 272
+**Implemented:** 199 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
