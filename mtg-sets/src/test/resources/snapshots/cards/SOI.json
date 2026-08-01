@@ -179,6 +179,67 @@
     ]
 }
 
+// Altered Ego
+{
+    "name": "Altered Ego",
+    "manaCost": "{X}{2}{G}{U}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "This spell can't be countered.\nYou may have this creature enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersAsCopy",
+                "additionalCounters": "XValue"
+            }
+        ],
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "241",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c05da08d-8fac-47bc-80d8-78a80d1463d2.jpg?1783937715",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "Altered Ego copies exactly what was printed on the original creature (unless that creature is copying something else or is a token; see below). It doesn't copy whether that creature is tapped or untapped, whether it has any counters on it or any Auras and Equipment attached to it, or any non-copy effects that have changed its power, toughness, types, color, or so on."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Any \"enters\" abilities of the copied creature will trigger when Altered Ego enters the battlefield. Any \"as [this creature] enters\" or \"[this creature] enters with\" abilities of the chosen creature will also work."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If the chosen creature is a token, Altered Ego copies the original characteristics of that token as stated by the effect that created that token. Altered Ego isn't a token."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If Altered Ego somehow enters at the same time as another creature, Altered Ego can't become a copy of that creature. You may choose only a creature that's already on the battlefield."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If the chosen creature has {X} in its mana cost, that X is considered to be 0. The value of X in Altered Ego's last ability will be whatever value was chosen for X while casting Altered Ego."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "You can choose not to copy anything. In that case, Altered Ego enters as a 0/0 creature and is probably put into the graveyard immediately. It won't have +1/+1 counters placed on it by its ability."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "X can be 0. Altered Ego won't enter with any additional +1/+1 counters, and it will just be a copy of the chosen creature."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Angelic Purge
 {
     "name": "Angelic Purge",
@@ -267,6 +328,179 @@
         "imageUri": "https://cards.scryfall.io/normal/front/3/7/37e2358c-211e-4d79-8120-88bb9e656cba.jpg"
     },
     "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Archangel Avacyn
+{
+    "name": "Archangel Avacyn",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Legendary Creature — Angel",
+    "oracleText": "Flash\nFlying, vigilance\nWhen Archangel Avacyn enters, creatures you control gain indestructible until end of turn.\nWhen a non-Angel creature you control dies, transform Archangel Avacyn at the beginning of the next upkeep.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "INDESTRUCTIBLE",
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Creatures you control gain indestructible until end of turn."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Angel"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    },
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "UPKEEP",
+                    "effect": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.WhenCondition",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": "name:Archangel Avacyn"
+                            }
+                        },
+                        "then": "Transform"
+                    }
+                },
+                "descriptionOverride": "Transform Archangel Avacyn at the beginning of the next upkeep."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Avacyn, the Purifier",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Angel",
+        "oracleText": "Flying\nWhen this creature transforms into Avacyn, the Purifier, it deals 3 damage to each other creature and each opponent.",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 5
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "TransformEvent",
+                        "intoBackFace": true
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature",
+                                        "excludeSelf": true
+                                    }
+                                },
+                                "body": {
+                                    "type": "DealDamage",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 3
+                                    },
+                                    "target": "Self"
+                                }
+                            },
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "EachOpponent"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Avacyn, the Purifier deals 3 damage to each other creature and each opponent."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "5",
+            "rarity": "MYTHIC",
+            "artist": "James Ryman",
+            "flavorText": "\"Wings that once bore hope are now stained with blood. She is our guardian no longer.\"\n—Grete, cathar apostate",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/e/ae155ee2-008f-4dc6-82bf-476be7baa224.jpg?1783937831"
+        },
+        "colorIdentityOverride": [
+            "RED",
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "5",
+        "rarity": "MYTHIC",
+        "artist": "James Ryman",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae155ee2-008f-4dc6-82bf-476be7baa224.jpg?1783937831",
+        "rulings": [
+            {
+                "date": "2016-04-08",
+                "text": "Archangel Avacyn's delayed triggered ability triggers at the beginning of the next upkeep regardless of whose turn it is."
+            },
+            {
+                "date": "2016-04-08",
+                "text": "Archangel Avacyn's delayed triggered ability won't cause it to transform back into Archangel Avacyn if it has already transformed into Avacyn, the Purifier, perhaps because several creatures died in one turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
         "WHITE"
     ]
 }
@@ -2878,6 +3112,150 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Westvale Abbey
+{
+    "name": "Westvale Abbey",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{5}, {T}, Pay 1 life: Create a 1/1 white and black Human Cleric creature token.\n{5}, {T}, Sacrifice five creatures: Transform this land, then untap it.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{5}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE",
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Human",
+                        "Cleric"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/9/4/94ed2eca-1579-411d-af6f-c7359c65de30.jpg?1783937680"
+                },
+                "descriptionOverride": "Create a 1/1 white and black Human Cleric creature token."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{5}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature",
+                                "count": 5
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        "Transform",
+                        {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        }
+                    ]
+                },
+                "descriptionOverride": "Transform this land, then untap it."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Ormendahl, Profane Prince",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Demon",
+        "oracleText": "Flying, lifelink, indestructible, haste",
+        "creatureStats": {
+            "power": 9,
+            "toughness": 7
+        },
+        "keywords": [
+            "FLYING",
+            "LIFELINK",
+            "INDESTRUCTIBLE",
+            "HASTE"
+        ],
+        "metadata": {
+            "collectorNumber": "281",
+            "rarity": "RARE",
+            "artist": "Min Yum",
+            "flavorText": "With Griselbrand gone, the Skirsdag eagerly awaited another demon to claim their devotion. Ormendahl did not make them wait long.",
+            "imageUri": "https://cards.scryfall.io/normal/back/c/1/c1f53d7a-9dad-46e8-b686-cd1362867445.jpg?1783937703"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "281",
+        "rarity": "RARE",
+        "artist": "Min Yum",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1f53d7a-9dad-46e8-b686-cd1362867445.jpg?1783937703",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "For more information on double-faced cards, see the Shadows over Innistrad mechanics article (http://magic.wizards.com/en/articles/archive/feature/shadows-over-innistrad-mechanics)."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

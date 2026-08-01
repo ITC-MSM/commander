@@ -115,22 +115,15 @@ object EntersWithReplacements {
                         )
                         if (!conditionEvaluator.evaluate(newState, effect.condition!!, condContext)) continue
                     }
-                    val counterType = resolveCounterType(effect.counterType)
-                    val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
-                        newState, entityId, counterType, effect.count, placerId = controllerId
+                    val (afterCounters, counterEvents) = placeEntryCounters(
+                        newState, entityId, effect.counterType, effect.count, controllerId, entityName
                     )
-                    val current = newState.getEntity(entityId)?.get<CountersComponent>() ?: CountersComponent()
-                    newState = newState.updateEntity(entityId) { c ->
-                        c.with(current.withAdded(counterType, modifiedCount))
-                    }
-                    val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(newState, entityId)
-                    newState = afterMark
-                    events.add(CountersAddedEvent(entityId, effect.counterType.description, modifiedCount, entityName, firstThisTurn, placedBy = controllerId))
+                    newState = afterCounters
+                    events.addAll(counterEvents)
                 }
                 is EntersWithDynamicCounters -> {
                     // Skip "other only" effects when applying to self (e.g., Gev)
                     if (effect.otherOnly) continue
-                    val counterType = resolveCounterType(effect.counterType)
                     val context = EffectContext(
                         sourceId = entityId,
                         controllerId = controllerId,
@@ -138,18 +131,11 @@ object EntersWithReplacements {
                         totalManaSpent = totalManaSpent
                     )
                     val count = dynamicAmountEvaluator.evaluate(newState, effect.count, context)
-                    if (count > 0) {
-                        val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
-                            newState, entityId, counterType, count, placerId = controllerId
-                        )
-                        val current = newState.getEntity(entityId)?.get<CountersComponent>() ?: CountersComponent()
-                        newState = newState.updateEntity(entityId) { c ->
-                            c.with(current.withAdded(counterType, modifiedCount))
-                        }
-                        val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(newState, entityId)
-                        newState = afterMark
-                        events.add(CountersAddedEvent(entityId, effect.counterType.description, modifiedCount, entityName, firstThisTurn, placedBy = controllerId))
-                    }
+                    val (afterCounters, counterEvents) = placeEntryCounters(
+                        newState, entityId, effect.counterType, count, controllerId, entityName
+                    )
+                    newState = afterCounters
+                    events.addAll(counterEvents)
                 }
                 is EntersWithKeywords -> {
                     val context = EffectContext(
@@ -167,6 +153,44 @@ object EntersWithReplacements {
             }
         }
         return newState to events
+    }
+
+    /**
+     * Place [count] counters of [counterType] on [entityId] as it enters (CR 614.1c), honouring
+     * counter-placement modifiers (Hardened Scales, Solemnity) and recording the placement for
+     * "put a counter on a permanent this turn" trackers.
+     *
+     * Shared by the enters-with replacement branches above and by the copy path
+     * ([com.wingedsheep.engine.handlers.continuations.ModalAndCloneContinuationResumer]), where
+     * `EntersAsCopy.additionalCounters` carries the "except it enters with N additional +1/+1
+     * counters on it" rider — the copy replaces the permanent's own text, so those counters can't
+     * come from a self-targeted [EntersWithCounters]. A non-positive [count] is a no-op.
+     */
+    fun placeEntryCounters(
+        state: GameState,
+        entityId: EntityId,
+        counterType: CounterTypeFilter,
+        count: Int,
+        controllerId: EntityId,
+        entityName: String,
+    ): Pair<GameState, List<GameEvent>> {
+        if (count <= 0) return state to emptyList()
+        val resolved = resolveCounterType(counterType)
+        val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
+            state, entityId, resolved, count, placerId = controllerId
+        )
+        val current = state.getEntity(entityId)?.get<CountersComponent>() ?: CountersComponent()
+        var newState = state.updateEntity(entityId) { c ->
+            c.with(current.withAdded(resolved, modifiedCount))
+        }
+        val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(newState, entityId)
+        newState = afterMark
+        return newState to listOf(
+            CountersAddedEvent(
+                entityId, counterType.description, modifiedCount, entityName, firstThisTurn,
+                placedBy = controllerId
+            )
+        )
     }
 
     /**

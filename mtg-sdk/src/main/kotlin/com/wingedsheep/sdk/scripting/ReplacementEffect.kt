@@ -1335,6 +1335,16 @@ data class LifeLossFloor(
  *                   copy — the "enter tapped as a copy" rider on the land-copy cycle (Vesuva,
  *                   Thespian's Stage, Echoing Deeps). If the copy is declined (or no candidate
  *                   exists) the permanent enters untapped as its printed self.
+ * @param additionalCounters When non-null, the permanent enters with this many **additional +1/+1
+ *                   counters** if (and only if) it enters as a copy — the "except it enters with N
+ *                   additional +1/+1 counters on it" rider (Altered Ego with
+ *                   [com.wingedsheep.sdk.scripting.values.DynamicAmount.XValue], Spark Double with
+ *                   `Fixed(1)`). It belongs to the *copy* effect, not to a separate
+ *                   [EntersWithCounters]: copying replaces the permanent's own copiable text, so a
+ *                   self-targeted enters-with-counters replacement would be gone by the time the
+ *                   copy applies. Declining the copy therefore also declines the counters, which is
+ *                   the printed ruling ("You can choose not to copy anything. … It won't have +1/+1
+ *                   counters placed on it by its ability.").
  */
 @SerialName("EntersAsCopy")
 @Serializable
@@ -1350,6 +1360,7 @@ data class EntersAsCopy(
     val toughnessOverride: Int? = null,
     val exileCopiedCard: Boolean = false,
     val tappedIfCopied: Boolean = false,
+    val additionalCounters: DynamicAmount? = null,
     override val appliesTo: EventPattern = EventPattern.ZoneChangeEvent(
         filter = GameObjectFilter.Any,
         to = Zone.BATTLEFIELD
@@ -1380,6 +1391,9 @@ data class EntersAsCopy(
                 }
                 if (additionalKeywords.isNotEmpty()) {
                     add("it has ${additionalKeywords.joinToString(", ") { it.name.lowercase() }}")
+                }
+                if (additionalCounters != null) {
+                    add("it enters with ${additionalCounters.description} additional +1/+1 counters on it")
                 }
             }
             if (exceptions.isNotEmpty()) append(", except ${exceptions.joinToString(" and ")}")

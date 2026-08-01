@@ -8026,7 +8026,7 @@ The priority groups are (CR 616.1a–f):
   trigger itself. Used by Worldwalker Helm (`TokenCreationEvent(You, Artifact)`, add `Map`, `inheritTapped = true`)
   and Peregrin Took (`additionalTokenType = "Food"`, "those tokens plus an additional Food token are created instead")
   and Quina, Qu Gourmet (`additionalTokenType = "Frog"`, default `appliesTo` = any token you create, adds a 1/1 green Frog).
-- `EntersAsCopy(optional, copyFilter, copyFromZone, filterByTotalManaSpent, additionalSubtypes, additionalKeywords, nameOverride, powerOverride, toughnessOverride, exileCopiedCard, tappedIfCopied)` —
+- `EntersAsCopy(optional, copyFilter, copyFromZone, filterByTotalManaSpent, additionalSubtypes, additionalKeywords, nameOverride, powerOverride, toughnessOverride, exileCopiedCard, tappedIfCopied, additionalCounters)` —
   "enter as a copy of …". As the permanent enters, the controller picks an object matching
   `copyFilter` and the permanent enters as a copy (Rule 707 copiable values), with any overrides
   applied. `copyFromZone` selects the candidate pool: `Zone.BATTLEFIELD` (default — Clone, Clever
@@ -8039,7 +8039,16 @@ The priority groups are (CR 616.1a–f):
   value ≤ total mana spent (Mockingbird). `tappedIfCopied` makes the permanent enter **tapped** only
   when it actually enters as a copy — the "enter tapped as a copy" rider on the land-copy cycle
   (Echoing Deeps; Vesuva / Thespian's Stage copying a land on the battlefield); declining the copy
-  enters it untapped as its printed self. The copy snapshots a `CopyOfComponent` so it reverts to its
+  enters it untapped as its printed self. `additionalCounters: DynamicAmount?` is the sibling rider
+  "except it enters with N additional +1/+1 counters on it" — `DynamicAmount.XValue` for Altered
+  Ego, `Fixed(1)` for a Spark Double shape. It lives on the copy effect rather than on a separate
+  `EntersWithCounters`, because copying replaces the permanent's own copiable text: a self-targeted
+  enters-with-counters replacement would be gone by the time the copy applies. It follows the same
+  "only if a copy was actually made" rule as `tappedIfCopied`, which is the printed ruling
+  ("You can choose not to copy anything. … It won't have +1/+1 counters placed on it by its
+  ability."), and routes through `EntersWithReplacements.placeEntryCounters` so Hardened Scales-style
+  placement modifiers apply exactly as for printed enters-with counters. The copy snapshots a
+  `CopyOfComponent` so it reverts to its
   printed identity when it leaves the battlefield (CR 400.7 / 707.2). Works both when the source is
   cast as a spell (resolved off the stack) **and** when it enters the battlefield directly — a land
   played (Echoing Deeps) pauses via `PermanentEntryReplacements.pauseForEntersAsCopy`, its resumer
