@@ -6837,7 +6837,9 @@
                     "amount": {
                         "type": "SubtypeEnteredUnderControlThisTurn",
                         "player": "You",
-                        "subtype": "Zombie",
+                        "subtypes": [
+                            "Zombie"
+                        ],
                         "excludeTriggeringEntity": true
                     },
                     "target": "TriggeringEntity"

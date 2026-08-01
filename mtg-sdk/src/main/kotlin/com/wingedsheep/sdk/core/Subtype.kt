@@ -131,6 +131,7 @@ value class Subtype(val value: String) {
         val MINION = Subtype("Minion")
         val MINOTAUR = Subtype("Minotaur")
         val MOONFOLK = Subtype("Moonfolk")
+        val MOUNT = Subtype("Mount")
         val MOUSE = Subtype("Mouse")
         val MUTANT = Subtype("Mutant")
         val MYR = Subtype("Myr")

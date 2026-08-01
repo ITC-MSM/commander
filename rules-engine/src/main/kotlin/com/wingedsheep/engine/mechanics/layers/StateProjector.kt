@@ -209,9 +209,32 @@ class StateProjector(
         // === Layers 3-4 (Text + Type) ===
         // Apply type-changing effects first so creature-dependent filters in layers 5-6
         // see permanents that became creatures (e.g., Opalescence making enchantments creatures).
+        //
+        // Layer 4 is not one flat pass, because CR 613.8a dependencies exist *inside* it: an effect
+        // whose affected set reads creature status ("Vehicle creatures you control" — Lifecraft
+        // Engine) depends on the Layer-4 effects that grant or remove the CREATURE type (crew's
+        // animation, Opalescence), since applying those changes which permanents it applies to. Such
+        // an effect therefore applies after them whatever its timestamp, with its filter re-resolved
+        // once they have landed — the same two-phase trick this method already uses between layer
+        // bands. Effects whose filters don't read creature status keep plain timestamp order among
+        // themselves, and a locked CR 613.6 group keeps its frozen set through the re-resolve.
         val typeLayerEffects = nonControlNonPTEffects.filter { it.layer == Layer.TEXT || it.layer == Layer.TYPE }
-        for (effect in typeLayerEffects) {
+        val (creatureDependentTypeEffects, plainTypeEffects) = typeLayerEffects.partition { effect ->
+            val filter = effect.affectsFilter
+            filter != null && filterResolver.isCreatureDependentFilter(filter)
+        }
+        for (effect in plainTypeEffects) {
             effectApplicator.applyEffect(effect, state, projectedValues)
+        }
+        for (effect in creatureDependentTypeEffects) {
+            val resolved = effect.affectsFilter
+                ?.let { filterResolver.resolveAffectedEntities(state, effect.sourceId, it, projectedValues) }
+                ?: effect.affectedEntities
+            effectApplicator.applyEffect(
+                effect.copy(affectedEntities = lockAffected(effect, resolved)),
+                state,
+                projectedValues
+            )
         }
 
         // CR 701.54c: a player's Ring-bearer is legendary (the Ring emblem's first ability).

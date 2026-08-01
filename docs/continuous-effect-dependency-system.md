@@ -236,6 +236,28 @@ class StateProjector(val state: GameState) {
 This effectively solves the hardest logic problem in the engine while keeping the core `GameAction` logic pure and
 simple.
 
+### Affects-filter dependencies inside Layer 4
+
+`EffectSorter.dependsOn` compares the two effects' **already-resolved** `affectedEntities` sets, which
+cannot see one class of Rule 613.8a dependency: an effect whose *affected set* is only populated **by**
+another effect in the same layer. Lifecraft Engine is the case that surfaced it — "Vehicle creatures you
+control are the chosen creature type" affects nothing until something animates a Vehicle, and crew's
+animation is itself a Layer 4 effect. At sort time the grant's set is empty, so no edge is found, and a
+flat single-pass Layer 4 would apply the grant before the animation and silently do nothing.
+
+`StateProjector` handles it with the same two-phase move it already uses *between* layer bands, applied
+*within* Layer 3–4:
+
+1. apply the effects whose filters don't read creature status, in dependency + timestamp order;
+2. then, for each effect whose filter *is* creature-dependent (`AffectsFilterResolver
+   .isCreatureDependentFilter`), re-resolve its affected set against the now-updated projection and
+   apply it.
+
+Phase 2 is the dependency: such an effect applies after every Layer 4 type change regardless of
+timestamp, which is what CR 613.8a requires. A CR 613.6 locked group keeps its frozen set through the
+re-resolve (`lockAffected` short-circuits), and the extra work is one filter re-resolution for the small
+subset of Layer 4 effects that read creature status.
+
 ## 6. Cross-Layer Grouping (Rule 613.6)
 
 Dependencies (613.8) order effects *within* a layer. Rule **613.6** governs a different problem: a *single* continuous
