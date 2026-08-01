@@ -5034,6 +5034,95 @@
     ]
 }
 
+// Extraordinary Journey
+{
+    "name": "Extraordinary Journey",
+    "manaCost": "{X}{X}{U}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, exile up to X target creatures. For each of those cards, its owner may play it for as long as it remains exiled.\nWhenever one or more nontoken creatures enter, if one or more of them entered from exile or was cast from exile, you draw a card. This ability triggers only once each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "extraordinaryJourney_exiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "extraordinaryJourney_exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "extraordinaryJourney_exiled",
+                            "expiry": "Permanent",
+                            "ownerControls": true
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "dynamicMaxCount": "CastX"
+                },
+                "descriptionOverride": "When this enchantment enters, exile up to X target creatures. For each of those cards, its owner may play it for as long as it remains exiled."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsEnteredEvent",
+                    "filter": "creature nontoken ctrl:any"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "triggerCondition": "AnyEnteredOrWasCastFromExile",
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever one or more nontoken creatures enter, if one or more of them entered from exile or was cast from exile, you draw a card. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "rarity": "RARE",
+        "artist": "Volkan Baǵa",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a69fb480-a9fc-4f09-ac4e-3ce52c485ea9.jpg?1783915121",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Players must pay all costs and follow all normal timing rules for spells cast with Extraordinary Journey's first ability."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Extraordinary Journey's second ability applies to all creatures that enter the battlefield from exile or were cast from exile, not just creatures cast with Extraordinary Journey's first ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Faerie Dreamthief
 {
     "name": "Faerie Dreamthief",
@@ -16545,6 +16634,119 @@
     ]
 }
 
+// Talion, the Kindly Lord
+{
+    "name": "Talion, the Kindly Lord",
+    "manaCost": "{2}{U}{B}",
+    "typeLine": "Legendary Creature — Faerie Noble",
+    "oracleText": "Flying\nAs Talion enters, choose a number between 1 and 10.\nWhenever an opponent casts a spell with mana value, power, or toughness equal to the chosen number, that player loses 2 life and you draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "ManaValueEqualsDynamic",
+                                        "amount": {
+                                            "type": "CastChoice",
+                                            "slot": "CHOSEN_NUMBER"
+                                        }
+                                    },
+                                    {
+                                        "type": "PowerEqualsDynamic",
+                                        "amount": {
+                                            "type": "CastChoice",
+                                            "slot": "CHOSEN_NUMBER"
+                                        }
+                                    },
+                                    {
+                                        "type": "ToughnessEqualsDynamic",
+                                        "amount": {
+                                            "type": "CastChoice",
+                                            "slot": "CHOSEN_NUMBER"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "TriggeringPlayer"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever an opponent casts a spell with mana value, power, or toughness equal to the chosen number, that player loses 2 life and you draw a card."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "NUMBER",
+                "minValue": 1,
+                "maxValue": 10
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "215",
+        "rarity": "MYTHIC",
+        "artist": "Justyna Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/62a6b452-c796-45c6-b4d1-0ae3d675e38e.jpg?1783915070",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The numbers you may choose include 1 and 10."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Effects that increase or reduce the cost to cast a spell don't affect that spell's mana value."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "For spells with {X} in their mana costs, use the value chosen for X to determine if the spell's mana value is the chosen number. For example, if the chosen number is 4, a spell with mana cost {X}{R}{R} cast with X equal to 2 would cause Talion's last ability to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Tangled Colony
 {
     "name": "Tangled Colony",
@@ -19721,6 +19923,83 @@
                             "baseFilter": "creature"
                         },
                         "id": "target creature"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+// Virtue of Strength
+{
+    "name": "Virtue of Strength",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "If you tap a basic land for mana, it produces three times as much of that mana instead.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "MultiplyManaOnSourceTap",
+                "sourceFilter": "basicland ctrl:you",
+                "multiplier": 3
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "197",
+        "rarity": "MYTHIC",
+        "artist": "Piotr Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff857d41-767d-4e99-83cc-444738341b92.jpg?1783915075",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "An object with the land card type and a basic land type has the intrinsic ability \"{T}: Add [mana symbol],\" even if the text box doesn't actually contain that text or the object has no text box. For example, a basic Forest will have the intrinsic ability \"{T}: Add {G}.\""
+            },
+            {
+                "date": "2023-09-01",
+                "text": "You're \"tapping a basic land for mana\" only if you're activating a mana ability of a basic land that includes the {T} symbol in its cost. A mana ability produces mana as part of its effect."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If an ability triggers \"whenever you tap\" a basic land for mana and produces mana, that triggered mana ability won't be affected by Virtue of Strength."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Virtue of Strength doesn't produce any mana itself. Rather, it causes basic lands you tap for mana to produce more mana."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "The effects of multiple copies of Virtue of Strength are cumulative. For example, if you have two Virtue of Strengths on the battlefield, you'll get nine times the original amount and type of mana."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Garenbrig Growth",
+            "manaCost": "{G}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Return target creature or land card from your graveyard to your hand. (Then exile this card. You may cast the enchantment later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or land card in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature|land own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target creature or land card in your graveyard"
                     }
                 ]
             }

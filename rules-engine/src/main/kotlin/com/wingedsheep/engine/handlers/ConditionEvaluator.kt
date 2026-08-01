@@ -119,6 +119,7 @@ import com.wingedsheep.sdk.scripting.conditions.IsFirstSpellPaidWithTreasureMana
 import com.wingedsheep.sdk.scripting.conditions.SourceAbilityResolvedNTimesThisTurn
 import com.wingedsheep.sdk.scripting.conditions.ManaSpentToCastIncludes
 import com.wingedsheep.sdk.scripting.conditions.NoManaSpentToCast
+import com.wingedsheep.sdk.scripting.conditions.AnyEnteredOrWasCastFromExile
 import com.wingedsheep.sdk.scripting.conditions.NoManaSpentToCastEntered
 import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid
@@ -501,6 +502,7 @@ class ConditionEvaluator(
             is ManaSpentToCastIncludes -> ifResolution { evaluateManaSpentToCastIncludes(state, condition, it) }
             is NoManaSpentToCast -> ifResolution { evaluateNoManaSpentToCast(state, it) }
             is NoManaSpentToCastEntered -> ifResolution { evaluateNoManaSpentToCastEntered(state, it) }
+            is AnyEnteredOrWasCastFromExile -> ifResolution { evaluateAnyEnteredOrWasCastFromExile(state, it) }
             is SourceChosenModeIs -> {
                 // Dual-mode: the chosen mode is stored in the durable cast-choices bag on the
                 // source permanent, readable both at resolution (gating triggered abilities) and
@@ -1123,6 +1125,9 @@ class ConditionEvaluator(
             Zone.HAND -> entity.has<CastFromHandComponent>()
             Zone.GRAVEYARD -> entity.has<CastFromGraveyardComponent>()
             Zone.LIBRARY -> entity.has<CastFromLibraryComponent>()
+            Zone.EXILE -> entity.has<
+                com.wingedsheep.engine.state.components.battlefield.CastFromExileComponent
+                >()
             else -> false
         }
     }
@@ -1156,6 +1161,21 @@ class ConditionEvaluator(
     private fun evaluateNoManaSpentToCastEntered(state: GameState, context: EffectContext): Boolean {
         val captured = context.pipeline.storedCollections[PipelineState.TRIGGER_CAPTURED_COLLECTION].orEmpty()
         return captured.all { noManaSpentToCast(state, it) }
+    }
+
+    /**
+     * "If one or more of them entered from exile or was cast from exile" — an *any* over the
+     * batch-enters capture, the exile twin of
+     * [evaluateTriggeringEntityEnteredOrWasCastFromGraveyard]. An empty capture is false: nothing
+     * entered from exile.
+     */
+    private fun evaluateAnyEnteredOrWasCastFromExile(state: GameState, context: EffectContext): Boolean {
+        val captured = context.pipeline.storedCollections[PipelineState.TRIGGER_CAPTURED_COLLECTION].orEmpty()
+        return captured.any { entityId ->
+            val entity = state.getEntity(entityId) ?: return@any false
+            entity.has<com.wingedsheep.engine.state.components.battlefield.CastFromExileComponent>() ||
+                entity.has<com.wingedsheep.engine.state.components.battlefield.EnteredFromExileComponent>()
+        }
     }
 
     /**

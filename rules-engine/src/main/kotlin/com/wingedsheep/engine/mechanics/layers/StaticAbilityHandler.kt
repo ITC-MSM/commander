@@ -150,6 +150,7 @@ import com.wingedsheep.sdk.scripting.SuppressEntersTriggers
 import com.wingedsheep.sdk.scripting.ConvertEmptyingManaToRed
 import com.wingedsheep.sdk.scripting.PreventManaPoolEmptying
 import com.wingedsheep.sdk.scripting.RetainUnspentColoredMana
+import com.wingedsheep.sdk.scripting.MultiplyManaOnSourceTap
 import com.wingedsheep.sdk.scripting.ReplaceLandManaColor
 import com.wingedsheep.sdk.scripting.RestrictSpellsCastPerTurn
 import com.wingedsheep.sdk.scripting.RevealFirstDrawEachTurn
@@ -818,6 +819,7 @@ class StaticAbilityHandler(
             is AdditionalManaOnSourceTap,
             is AdditionalManaOnTap,
             is DampLandManaProduction,
+            is MultiplyManaOnSourceTap,
             is OverrideEnchantedLandManaColor,
             is ReplaceLandManaColor,
 

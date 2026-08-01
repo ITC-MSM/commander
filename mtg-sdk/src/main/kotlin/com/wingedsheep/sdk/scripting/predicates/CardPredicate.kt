@@ -479,6 +479,58 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         }
     }
 
+    /**
+     * Mana value *exactly* equal to a [DynamicAmount] resolved when the predicate is checked — the
+     * equality sibling of [ManaValueAtMostDynamic], and the open-ended counterpart of the fixed
+     * [ManaValueEquals] / cast-{X} [ManaValueEqualsX].
+     *
+     * Used by **Talion, the Kindly Lord** with `DynamicAmount.CastChoice(ChoiceSlot.CHOSEN_NUMBER)`
+     * to read the number chosen as it entered ("a spell with mana value … equal to the chosen
+     * number"). Per the printed ruling, an `{X}` spell's mana value on the stack already folds in
+     * the X it was cast for, so no special handling is needed here.
+     */
+    @SerialName("ManaValueEqualsDynamic")
+    @Serializable
+    data class ManaValueEqualsDynamic(val amount: DynamicAmount) : CardPredicate {
+        override val description: String = "with mana value equal to ${amount.description}"
+
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate {
+            val newAmount = amount.applyTextReplacement(replacer)
+            return if (newAmount === amount) this else copy(amount = newAmount)
+        }
+    }
+
+    /**
+     * Power *exactly* equal to a [DynamicAmount] resolved when the predicate is checked — the
+     * dynamic counterpart of [PowerEquals] / [PowerEqualsX]. An object with no power (a noncreature
+     * spell) never matches, whatever the amount resolves to.
+     */
+    @SerialName("PowerEqualsDynamic")
+    @Serializable
+    data class PowerEqualsDynamic(val amount: DynamicAmount) : CardPredicate {
+        override val description: String = "with power equal to ${amount.description}"
+
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate {
+            val newAmount = amount.applyTextReplacement(replacer)
+            return if (newAmount === amount) this else copy(amount = newAmount)
+        }
+    }
+
+    /**
+     * Toughness *exactly* equal to a [DynamicAmount] resolved when the predicate is checked — the
+     * dynamic counterpart of [ToughnessEquals]. An object with no toughness never matches.
+     */
+    @SerialName("ToughnessEqualsDynamic")
+    @Serializable
+    data class ToughnessEqualsDynamic(val amount: DynamicAmount) : CardPredicate {
+        override val description: String = "with toughness equal to ${amount.description}"
+
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate {
+            val newAmount = amount.applyTextReplacement(replacer)
+            return if (newAmount === amount) this else copy(amount = newAmount)
+        }
+    }
+
     @SerialName("ManaValueIsEven")
     @Serializable
     data object ManaValueIsEven : CardPredicate {

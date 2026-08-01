@@ -407,6 +407,20 @@ class PredicateEvaluator {
                 val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
                 cmc <= cap
             }
+            is CardPredicate.ManaValueEqualsDynamic -> {
+                val want = evaluateDynamicCap(state, predicate.amount, context) ?: return false
+                val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
+                cmc == want
+            }
+            is CardPredicate.PowerEqualsDynamic -> {
+                val want = evaluateDynamicCap(state, predicate.amount, context) ?: return false
+                // No power at all (a noncreature spell) never matches — `null == want` is false.
+                (projectedValues?.power ?: card.baseStats?.basePower) == want
+            }
+            is CardPredicate.ToughnessEqualsDynamic -> {
+                val want = evaluateDynamicCap(state, predicate.amount, context) ?: return false
+                (projectedValues?.toughness ?: card.baseStats?.baseToughness) == want
+            }
             CardPredicate.ManaValueIsEven -> {
                 val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
                 cmc % 2 == 0
@@ -1461,6 +1475,9 @@ class PredicateEvaluator {
             is CardPredicate.ManaValueAtMostEntityManaSpent -> false
             is CardPredicate.ManaValueAtMostColorsSpent -> false
             is CardPredicate.ManaValueAtMostDynamic -> false
+            is CardPredicate.ManaValueEqualsDynamic -> false
+            is CardPredicate.PowerEqualsDynamic -> false
+            is CardPredicate.ToughnessEqualsDynamic -> false
             CardPredicate.ManaValueIsEven -> record.manaValue % 2 == 0
             CardPredicate.ManaValueIsOdd -> record.manaValue % 2 != 0
             // A cast-spell record stores the resolved mana value, not the printed cost, so we

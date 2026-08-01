@@ -405,6 +405,8 @@ val engineSerializersModule = SerializersModule {
         subclass(CastFromGraveyardComponent::class)
         subclass(CastFromLibraryComponent::class)
         subclass(EnteredFromGraveyardComponent::class)
+        subclass(CastFromExileComponent::class)
+        subclass(EnteredFromExileComponent::class)
         subclass(CountersComponent::class)
         subclass(DamageComponent::class)
         subclass(AttachedToComponent::class)

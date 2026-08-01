@@ -50,6 +50,7 @@ import com.wingedsheep.sdk.scripting.TappedForManaType
 import com.wingedsheep.sdk.scripting.AdditionalManaOnTap
 import com.wingedsheep.sdk.scripting.DampLandManaProduction
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.MultiplyManaOnSourceTap
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.references.Player
@@ -299,6 +300,9 @@ class ManaSolver(
 
     private val predicateEvaluator = PredicateEvaluator()
     private val conditionEvaluator = ConditionEvaluator()
+
+    /** The five subtypes that grant a land its intrinsic `{T}: Add …` mana ability (CR 305.6). */
+    private val basicLandSubtypeNames = setOf("Plains", "Island", "Swamp", "Mountain", "Forest")
 
     /**
      * Finds a valid set of mana sources to pay the cost.
@@ -1472,6 +1476,10 @@ class ManaSolver(
             )
         }.map { source -> augmentWithAuraBonusMana(state, source, playerId, manaStatics) }
             .map { source -> augmentWithSourceTapBonusMana(state, source, playerId, manaStatics) }
+            // After the bonus augmentations, and touching only `manaAmount`: a multiplier scales the
+            // source's *own* mana ability, never the separate triggered mana abilities that supply
+            // `bonusManaPerTap` (Virtue of Strength's rulings say so explicitly).
+            .map { source -> augmentWithSourceTapManaMultiplier(state, source, manaStatics) }
             .let { sources ->
                 if (hasDampLandManaProduction(state)) applyLandManaDampening(sources) else sources
             }
@@ -1802,6 +1810,72 @@ class ManaSolver(
         } else {
             source
         }
+    }
+
+    /**
+     * Scales a mana source's own per-tap output by every applicable [MultiplyManaOnSourceTap]
+     * (Virtue of Strength: "If you tap a basic land for mana, it produces three times as much of
+     * that mana instead").
+     *
+     * Three deliberate narrowings, all straight from the card's rulings:
+     *
+     * - Only [ManaSource.manaAmount] is scaled. `bonusManaPerTap` / `bonusManaColorlessPerTap` come
+     *   from *separate* triggered mana abilities (Fertile Ground, Lavaleaper), which the multiplier
+     *   does not touch.
+     * - The source must actually be tapped for its mana ([hasSelfTapManaAbility]); a mana ability
+     *   with no `{T}` in its cost is not "tapping a permanent for mana".
+     * - Several instances multiply together (two Virtues → nine times as much), so the multipliers
+     *   are folded with `*`, not `+`.
+     *
+     * The filter is evaluated from the static's own controller, exactly as
+     * [augmentWithSourceTapBonusMana] does, so `.youControl()` transfers across control changes.
+     */
+    private fun augmentWithSourceTapManaMultiplier(
+        state: GameState,
+        source: ManaSource,
+        manaStatics: ManaStaticsIndex
+    ): ManaSource {
+        if (manaStatics.sourceTapMultipliers.isEmpty()) return source
+        if (!hasSelfTapManaAbility(state, source.entityId)) return source
+
+        var multiplier = 1
+        for (entry in manaStatics.sourceTapMultipliers) {
+            if (entry.static.multiplier <= 1) continue
+            val filterContext = PredicateContext(
+                controllerId = entry.sourceControllerId,
+                sourceId = entry.sourceId
+            )
+            if (!predicateEvaluator.matches(
+                    state, state.projectedState, source.entityId, entry.static.sourceFilter, filterContext
+                )
+            ) continue
+            multiplier *= entry.static.multiplier
+        }
+
+        return if (multiplier > 1) source.copy(manaAmount = source.manaAmount * multiplier) else source
+    }
+
+    /**
+     * True when [entityId] produces mana through an ability that taps it — either an explicit
+     * activated mana ability with `{T}` in its cost, or the intrinsic `{T}: Add …` a land gets from
+     * its basic land subtypes (CR 305.6), which has no printed cost to inspect.
+     */
+    private fun hasSelfTapManaAbility(state: GameState, entityId: EntityId): Boolean {
+        val container = state.getEntity(entityId) ?: return false
+        val card = container.get<CardComponent>() ?: return false
+        val cardDef = cardRegistry.getCard(card.cardDefinitionId)
+        val manaAbilities = cardDef?.script?.activatedAbilities?.filter { it.isManaAbility }.orEmpty()
+        if (manaAbilities.any { abilityCostHasTap(it.cost) }) return true
+        // No printed mana ability: a land with a basic subtype still has the intrinsic tap ability.
+        return manaAbilities.isEmpty() &&
+            card.typeLine.isLand &&
+            state.projectedState.getSubtypes(entityId).any { it in basicLandSubtypeNames }
+    }
+
+    private fun abilityCostHasTap(cost: AbilityCost): Boolean = when (cost) {
+        is AbilityCost.Tap -> true
+        is AbilityCost.Composite -> cost.costs.any { abilityCostHasTap(it) }
+        else -> false
     }
 
     /**

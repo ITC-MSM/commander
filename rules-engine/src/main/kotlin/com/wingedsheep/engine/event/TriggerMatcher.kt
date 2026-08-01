@@ -3,6 +3,7 @@ package com.wingedsheep.engine.event
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString
@@ -1695,7 +1696,22 @@ class TriggerMatcher(
                 triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
                 triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
                 triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
-                triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell
+                triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
+                // A batch trigger's captured members, under the same pipeline collection name the
+                // resolving ability sees (StackResolver seeds it from the stack component). Without
+                // this, a batch-scoped condition — "if one or more of them entered from exile",
+                // "if none of them were cast" — reads an empty capture as an intervening-"if" and
+                // can only be used as a resolution-time gate. That distinction is load-bearing for
+                // a `oncePerTurn` ability: CR 603.4 says an ability whose intervening-"if" is false
+                // never triggers, so it must not consume the turn's single firing.
+                pipeline = trigger.triggerContext.capturedEntityIds
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let {
+                        PipelineState(
+                            storedCollections = mapOf(PipelineState.TRIGGER_CAPTURED_COLLECTION to it)
+                        )
+                    }
+                    ?: PipelineState.EMPTY
             )
             conditionEvaluator.evaluate(state, condition, context)
         }

@@ -778,6 +778,16 @@ object Conditions {
         NoManaSpentToCastEnteredCondition
 
     /**
+     * "If one or more of them entered from exile or was cast from exile" — the batch-enters,
+     * any-of exile counterpart of [TriggeringEntityEnteredOrWasCastFromGraveyard]. Evaluated over
+     * the permanents a `Triggers.OneOrMorePermanentsEnter` batch captured; works as a real
+     * intervening-"if" (`triggerCondition`) as well as a resolution-time gate. Extraordinary
+     * Journey.
+     */
+    val AnyEnteredOrWasCastFromExile: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.AnyEnteredOrWasCastFromExile
+
+    /**
      * If this permanent was cast from your hand.
      * Used for Phage the Untouchable.
      */

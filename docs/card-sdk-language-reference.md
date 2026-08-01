@@ -2932,6 +2932,18 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   fails closed (matches nothing) when there is no controller context to resolve a player-scoped amount,
   and is `false` in the layer-projection / cost-calculation / cast-record paths (no resolution context),
   matching the other entity-relative caps.
+- `CardPredicate.ManaValueEqualsDynamic(amount)` / `PowerEqualsDynamic(amount)` /
+  `ToughnessEqualsDynamic(amount)` — *exact* equality against a resolved `DynamicAmount`, the
+  open-ended siblings of the fixed `ManaValueEquals`/`PowerEquals`/`ToughnessEquals` and the cast-`{X}`
+  `ManaValueEqualsX`/`PowerEqualsX`. They resolve the amount the same way `.manaValueAtMostDynamic`
+  resolves its cap (controller/source from the predicate context, fails closed with no controller, and
+  `false` in the layer-projection / cost-calculation / cast-record paths). An object with **no** power
+  or toughness — a noncreature spell — never matches the two P/T forms rather than reading the missing
+  characteristic as 0. Combine them under `CardPredicate.Or` for a multi-characteristic clause:
+  **Talion, the Kindly Lord** ("Whenever an opponent casts a spell with mana value, power, or toughness
+  equal to the chosen number") pairs `Triggers.opponentCasts(...)` with an `Or` of all three, each
+  reading `DynamicAmount.CastChoice(ChoiceSlot.CHOSEN_NUMBER)` — the number recorded by its
+  `EntersWithChoice(ChoiceType.NUMBER, minValue = 1, maxValue = 10)` as-enters replacement.
 - `.manaValueIsOdd()` / `.manaValueIsEven()` — mana-value parity (zero is even). Pair with modal
   spells whose modes ask the caster to choose a parity (e.g. *Mutinous Massacre*).
 - `.hasXInManaCost()` — the card's **printed** mana cost contains an `{X}` symbol (inspects
@@ -4994,6 +5006,21 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   Oblivion** = `GameObjectFilter.Land.youControl()`, `color = null`, `whenProducing = COLORLESS`. Gated
   on all three mana paths (manual tap, color-choice-resume mirror, and the auto-pay `ManaSolver`, whose
   colorless bonus floats as a colorless `BonusManaEntry`).
+- `MultiplyManaOnSourceTap(sourceFilter, multiplier)` — global: "If you tap a `<sourceFilter>` for mana, it
+  produces `<multiplier>` times as much of that mana instead." The **multiplicative** sibling of
+  `AdditionalManaOnSourceTap`, sharing its filter convention (the filter is evaluated from the static's own
+  projected controller, so `.youControl()` is the printed "**If you** tap …" — only a permanent's controller
+  can activate its mana abilities). (**Virtue of Strength** = `GameObjectFilter.BasicLand.youControl()`,
+  `multiplier = 3`.) Three narrowings, all from the printed rulings: (1) **`{T}` is required** — you are
+  "tapping a permanent for mana" only when the mana ability's cost carries the tap symbol, so a tapless mana
+  ability (Ashnod's Altar) is untouched; (2) **only the ability's own output scales** — a bonus from a
+  *separate* triggered mana ability (`AdditionalManaOnTap` / `AdditionalManaOnSourceTap`: Fertile Ground,
+  Lavaleaper) is not multiplied; (3) **instances are cumulative and multiplicative** — two Virtues make a
+  basic land produce nine times as much, not six. Implemented by scaling the resolving mana effect's
+  `amount` (`DynamicAmount.Multiply`) rather than the pool afterwards, so restricted mana, spell riders and
+  per-source provenance survive and the `ManaAddedEvent` reports the real total. Wired on all three read
+  sites: `ActivateAbilityHandler` (manual tap), `ManaSolver` via `ManaStaticsIndex.sourceTapMultipliers`
+  (auto-pay budgeting), and `ManaAbilityEnumerator` (the button reads "{T}: Add {G}{G}{G}").
 - `ReplaceLandManaColor(filter)` — global: lands matching `filter` produce one mana of a color of their
   controller's choice instead of their normal mana. Implemented by swapping the land's base mana effect
   for "add one mana of any color", so the choice flows through the normal any-color machinery (manual tap
@@ -6328,6 +6355,21 @@ answer it and would silently return `false`.
   capture is vacuously true). Use as a resolution-time `ConditionalEffect` gate on the payoff — **Satoru,
   the Infiltrator**: `ConditionalEffect(Conditions.NoManaSpentToCastEntered, Effects.DrawCards(1))` under a
   `Triggers.OneOrMorePermanentsEnter(GameObjectFilter.Creature.nontoken())` trigger. Resolution-only.
+- `AnyEnteredOrWasCastFromExile` — the batch-enters *any*-of exile condition: "if one or more of them
+  entered from exile or was cast from exile." The exile twin of
+  `TriggeringEntityEnteredOrWasCastFromGraveyard`, evaluated over the same `trigger.captured` collection
+  as `NoManaSpentToCastEntered` — note the opposite quantifier (that one is "if **none** of them …", this
+  one is "if **one or more** of them …"; an empty capture is false here). Reads the two exile-provenance
+  markers the engine now stamps alongside their graveyard siblings: `CastFromExileComponent` (a spell
+  that resolved with `castFromZone == EXILE` — impulse draws, plot/foretell, an adventurer's permanent
+  half, linked-exile grants) and `EnteredFromExileComponent` (a direct exile → battlefield entry, e.g. a
+  blink). **Usable as a real intervening-"if" (`triggerCondition`), not just a resolution gate** — batch
+  captures are now seeded into the condition context at trigger-detection time as well as at resolution.
+  That distinction is load-bearing whenever the ability also carries `oncePerTurn`: CR 603.4 says an
+  ability whose intervening-"if" is false never triggers, so it must not consume the turn's single
+  firing. **Extraordinary Journey**: `Triggers.OneOrMorePermanentsEnter(Creature.nontoken().anyController())`
+  + `triggerCondition = Conditions.AnyEnteredOrWasCastFromExile` + `oncePerTurn = true`. The same
+  provenance marker also backs `WasCastFromZone(Zone.EXILE)` for a permanent already on the battlefield.
 - `TriggeringSpellCastWithoutPayingMana` — triggering-entity counterpart of `NoManaSpentToCast`: "if no
   mana was spent to cast it" about the *triggering* spell (reads its `CastRecordComponent`). Used as a
   triggered-ability intervening-if (Boromir, Warden of the Tower: "Whenever an opponent casts a spell,
