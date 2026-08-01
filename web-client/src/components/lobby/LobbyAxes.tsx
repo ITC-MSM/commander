@@ -22,7 +22,6 @@ import { useEffect } from 'react'
 import {
   cardsLabel,
   cardsSeatCap,
-  commanderAiBlock,
   isCommanderLimited,
   legalityOptionsForRules,
   rulesTableBlock,
@@ -320,12 +319,10 @@ function AxisButtons<V extends CardsKind | RulesAxis | TableAxis | EventAxis>({
 /**
  * Why a Cards sub-shape can't be picked here, or null.
  *
- * Three reasons, all facts shared with the landing wizard rather than numbers written at the call
- * site: the shape seats fewer players than this lobby is holding ({@link cardsSeatCap}); it would
+ * Two reasons, both facts shared with the landing wizard rather than numbers written at the call
+ * site: the shape seats fewer players than this lobby is holding ({@link cardsSeatCap}), or it would
  * default the Rules axis to Commander at a table that can't have it ({@link rulesTableBlock} — the
- * one statement of that rule, so this row can never offer what the Rules row refuses); or it would
- * default those rules on with an AI in the lobby, which no generator can deckbuild for
- * ({@link commanderAiBlock}).
+ * one statement of that rule, so this row can never offer what the Rules row refuses).
  */
 function shapeBlock(view: UnifiedLobbyView, cards: CardsAxis): string | null {
   const cap = cardsSeatCap(cards)
@@ -335,10 +332,7 @@ function shapeBlock(view: UnifiedLobbyView, cards: CardsAxis): string | null {
   // Picking a Commander pack shape defaults Rules to Commander, so it inherits both of the rules'
   // own blocks; a non-commander shape asks them of the rules the lobby already has.
   const wouldRun: RulesAxis = isCommanderLimited(cards) ? 'COMMANDER' : view.axes.rules
-  const conflict = rulesTableBlock(wouldRun, view.axes.table)
-  if (conflict !== null) return conflict
-  if (view.players.some((p) => p.isAi)) return commanderAiBlock(wouldRun, cards)
-  return null
+  return rulesTableBlock(wouldRun, view.axes.table)
 }
 
 function ShapeButton({

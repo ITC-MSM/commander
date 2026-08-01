@@ -179,7 +179,7 @@ export function cardsKindLabel(kind: CardsKind): string {
  * bracket of 1v1 Commander matches, which is exactly what has always been supported. The server
  * never had the restriction — `LobbyHandler.kt:605-616` caps Winston, Grid, 2HG, Teams and FFA and
  * puts everything else at 2–8, and its start guard only asks for two players. What genuinely is
- * missing is Commander at a Two-Headed Giant table and Commander with AI seats; both are stated where
+ * missing is Commander at a Two-Headed Giant table, stated where
  * they apply — see {@link COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL} and {@link COMMANDER_LIMITED_HAS_NO_AI}.
  */
 export function cardsSeatCap(cards: CardsAxis): number {
@@ -256,27 +256,6 @@ export function rulesTableBlock(rules: RulesAxis, table: TableAxis): string | nu
  */
 export const COMMANDER_NEEDS_ITS_OWN_LIFE_TOTAL =
   'Commander can’t be played as Two-Headed Giant — a 2HG team shares one life total, and Commander gives every player their own 40. Free-for-All and Team vs. Team pods work.'
-
-/**
- * AI seats in a Commander limited lobby.
- *
- * No generated AI deck picks a commander.
- * `LobbyHandler.buildAiSealedDeck` builds a 40-card deck out of a pool without one, and
- * `RandomDeckResolver` declines commander shapes outright rather than ship an illegal 100-card
- * approximation. Keyed on the **Rules** axis rather than on the Commander pack shape, because that
- * is the axis that decides whether the game wants a commander at all: a premade Commander pod asks
- * for one just as much as a Commander Draft does, and the pack-shape reading could not see it.
- */
-export const COMMANDER_HAS_NO_AI =
-  'The AI can’t build a Commander deck from a limited pool yet. Choose Bring a deck and pick a Commander deck for it.'
-
-/**
- * Why an AI can't use this rules/cards combination, or null. A brought deck is allowed because the
- * host can designate its commander; generated limited pools remain blocked.
- */
-export function commanderAiBlock(rules: RulesAxis, cards: CardsAxis): string | null {
-  return rules === 'COMMANDER' && cards.kind !== 'BRING_A_DECK' ? COMMANDER_HAS_NO_AI : null
-}
 
 /**
  * The Commander life / commander-damage presets, mirroring `CommanderPreset` in

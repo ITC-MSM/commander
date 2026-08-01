@@ -1,12 +1,10 @@
-package com.wingedsheep.gameserver.deck
+package com.wingedsheep.sdk.model
 
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Supertype
 import com.wingedsheep.sdk.core.TypeLine
-import com.wingedsheep.sdk.model.CardDefinition
-import com.wingedsheep.sdk.model.CreatureStats
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 

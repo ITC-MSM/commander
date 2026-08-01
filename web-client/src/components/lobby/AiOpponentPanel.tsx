@@ -28,8 +28,16 @@ import styles from '../ui/GameUI.module.css'
 
 type Source = 'auto' | 'sets' | 'deck'
 
-/** Commander-shape formats the AI builders can't construct for — see `RandomDeckResolver`. */
+/** Commander-shape formats — the AI builds a singleton deck and picks its own commander for these. */
 const COMMANDER_SHAPES = ['COMMANDER', 'BRAWL', 'STANDARD_BRAWL']
+
+/**
+ * Deck size for a commander shape, matching `DeckValidator`'s profiles. A lobby running Commander
+ * rules with no legality restriction builds to paper Commander, which is the same 100.
+ */
+function commanderDeckSize(format: string | null): number {
+  return format === 'STANDARD_BRAWL' ? 60 : 100
+}
 
 export type AiDeckSource = Source
 
@@ -41,6 +49,7 @@ export function initialAiSource(aiDeck: AiDeckSpecView | null | undefined): Sour
 export function AiOpponentRow({
   aiDeck,
   format,
+  commanderRules,
   disabled,
   source,
   onSourceChange,
@@ -49,6 +58,12 @@ export function AiOpponentRow({
   aiDeck: AiDeckSpecView | null
   /** The lobby's deck-format restriction, upper-case, or null. */
   format: string | null
+  /**
+   * Whether the lobby's Rules axis says Commander. Asked separately from {@link format} because a
+   * lobby can run Commander with no deck-legality restriction at all, and the AI still needs a
+   * commander there — the same split `RandomDeckResolver` makes server-side.
+   */
+  commanderRules: boolean
   /** True once the host has readied up — the choice is locked in at that point. */
   disabled: boolean
   /** Selected source. Lifted to `LobbyScreen` so it can place {@link AiDeckSection} outside. */
@@ -61,7 +76,8 @@ export function AiOpponentRow({
   const [setCodes, setSetCodes] = useState<readonly string[]>(aiDeck?.setCodes ?? [])
   const [showSetPicker, setShowSetPicker] = useState(false)
 
-  const isCommanderShape = format !== null && COMMANDER_SHAPES.includes(format)
+  const isCommanderShape = commanderRules || (format !== null && COMMANDER_SHAPES.includes(format))
+  const commanderSize = commanderDeckSize(format)
 
   const pick = (next: Source) => {
     onSourceChange(next)
@@ -109,7 +125,7 @@ export function AiOpponentRow({
         {source === 'auto' && (
           <div className={styles.variantCaption}>
             {isCommanderShape
-              ? `The AI can't build a ${format === 'COMMANDER' ? 'Commander' : 'Brawl'} deck yet. Use “Pick a deck” and choose one with a designated commander.`
+              ? `The server picks the AI a commander and builds it a ${commanderSize}-card singleton deck in that commander's colours.`
               : format
                 ? `The server builds the AI a 60-card ${format.replace('_', ' ').toLowerCase()}-legal deck.`
                 : 'The server opens eight boosters from your set and auto-builds the AI a 40-card deck.'}
@@ -151,7 +167,7 @@ export function AiOpponentRow({
               {setCodes.length === 0
                 ? 'Pick one or more sets — until you do, the AI falls back to Auto.'
                 : isCommanderShape
-                  ? 'Commander decks aren’t buildable from sets yet. Use “Pick a deck” and choose one with a designated commander.'
+                  ? `The AI's commander and its ${commanderSize}-card deck are drawn from these sets.`
                   : format
                     ? `Only ${format.replace('_', ' ').toLowerCase()}-legal cards from these sets are used.`
                     : 'Eight boosters are opened across these sets and auto-built into a deck.'}
@@ -253,6 +269,7 @@ export function QuickAiDeckModal({
   playerName,
   aiDeck,
   format,
+  commanderRules,
   disabled,
   source,
   onSourceChange,
@@ -261,6 +278,7 @@ export function QuickAiDeckModal({
   playerName: string
   aiDeck: AiDeckSpecView | null
   format: string | null
+  commanderRules: boolean
   disabled: boolean
   source: AiDeckSource
   onSourceChange: (source: AiDeckSource) => void
@@ -281,6 +299,7 @@ export function QuickAiDeckModal({
         <AiOpponentRow
           aiDeck={aiDeck}
           format={format}
+          commanderRules={commanderRules}
           disabled={disabled}
           source={source}
           onSourceChange={onSourceChange}

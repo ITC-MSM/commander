@@ -446,6 +446,7 @@ export function LobbyScreen() {
             playerName={ai.name}
             aiDeck={quickLobby.aiDeck ?? null}
             format={quickLobby.format ?? null}
+            commanderRules={view.axes.rules === 'COMMANDER'}
             disabled={view.you?.tone === 'ready'}
             source={aiSource}
             onSourceChange={setAiSource}

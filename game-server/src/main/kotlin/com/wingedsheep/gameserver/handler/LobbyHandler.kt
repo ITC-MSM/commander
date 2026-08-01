@@ -61,6 +61,7 @@ class LobbyHandler(
     private val freeForAllHandler: FreeForAllHandler,
     private val deckValidator: DeckValidator,
     private val randomDeckResolver: com.wingedsheep.gameserver.ai.RandomDeckResolver,
+    private val commanderDeckGenerator: com.wingedsheep.ai.engine.deck.CommanderDeckGenerator,
     private val tournamentResultSink: com.wingedsheep.gameserver.stats.TournamentResultSink
 ) {
     private val logger = LoggerFactory.getLogger(LobbyHandler::class.java)
@@ -1461,15 +1462,6 @@ class LobbyHandler(
             return
         }
 
-        if (lobby.usesCommanderRules && lobby.format != TournamentFormat.PREMADE_DECKS) {
-            sender.sendError(
-                session,
-                ErrorCode.INVALID_ACTION,
-                "The AI can't build a Commander deck from a limited pool yet — use Bring a deck to choose one for it"
-            )
-            return
-        }
-
         val aiIdentity = aiGameManager.createAiIdentity()
         lobby.addPlayer(aiIdentity)
         ensureAiPremadeDeck(lobby, aiIdentity.playerId)
@@ -1611,28 +1603,41 @@ class LobbyHandler(
         if (lobby.format != TournamentFormat.PREMADE_DECKS) return
         val playerState = lobby.players[aiPlayerId] ?: return
         if (playerState.hasSubmittedDeck) return
-        if (lobby.usesCommanderRules &&
-            (playerState.aiDeckSpec as? AiDeckSpec.Fixed)?.commander.isNullOrBlank()
-        ) {
-            return
-        }
 
-        val deck = runCatching {
-            randomDeckResolver.resolve(playerState.aiDeckSpec, lobby.deckFormat, lobby.setCodes)
+        val generated = runCatching {
+            randomDeckResolver.resolve(
+                playerState.aiDeckSpec,
+                lobby.deckFormat,
+                lobby.setCodes,
+                lobby.usesCommanderRules,
+            )
         }
             .onFailure { logger.error("Could not generate a deck for AI seat ${aiPlayerId.value}", it) }
             .getOrNull() ?: return
 
-        val commander = (playerState.aiDeckSpec as? AiDeckSpec.Fixed)
-            ?.commander
-            ?.takeIf { lobby.usesCommanderRules }
-        when (val result = lobby.submitDeck(aiPlayerId, deck, commander = commander)) {
+        val commander = generated.commander?.takeIf { lobby.usesCommanderRules }
+        // Under Commander rules a deck with no commander can't be seated at all, so leave the seat
+        // un-submitted rather than submit one: the lobby's own start gate then blocks on "not every
+        // seat has a deck", which is a state the host can fix by picking a deck for the AI.
+        if (lobby.usesCommanderRules && commander == null) {
+            logger.warn(
+                "No commander for AI seat {} in lobby {}; leaving the seat without a deck",
+                aiPlayerId.value,
+                lobby.lobbyId,
+            )
+            return
+        }
+        // Submitted in wire form — commander counted in, as `LobbyPlayerState.commander` documents
+        // and as the match handlers' strip-at-start expects.
+        val submitted = if (commander != null) generated.submissionList else generated.deckList
+        when (val result = lobby.submitDeck(aiPlayerId, submitted, commander = commander)) {
             is TournamentLobby.DeckSubmissionResult.Success ->
                 logger.info(
-                    "AI {} brought a generated {} deck ({} cards) to premade lobby {}",
+                    "AI {} brought a generated {} deck ({} cards{}) to premade lobby {}",
                     playerState.identity.playerName,
                     lobby.deckFormat?.displayName ?: "sealed",
-                    deck.values.sum(),
+                    generated.totalCards,
+                    commander?.let { ", led by $it" } ?: "",
                     lobby.lobbyId,
                 )
             is TournamentLobby.DeckSubmissionResult.Error ->
@@ -1689,11 +1694,17 @@ class LobbyHandler(
         ctx.draftScope.launch(Dispatchers.IO) {
             for ((playerId, playerState) in aiPlayers) {
                 try {
-                    val deck = buildAiSealedDeck(playerState.cardPool, heuristicDeckbuilding)
-                    val result = lobby.submitDeck(playerId, deck)
+                    val built = buildAiPoolDeck(lobby, playerState.cardPool, heuristicDeckbuilding)
+                    val submitted = built.submissionList
+                    val result = lobby.submitDeck(playerId, submitted, commander = built.commander)
                     when (result) {
                         is TournamentLobby.DeckSubmissionResult.Success -> {
-                            logger.info("AI ${playerState.identity.playerName} auto-submitted sealed deck (${deck.values.sum()} cards)")
+                            logger.info(
+                                "AI {} auto-submitted a {}-card deck{}",
+                                playerState.identity.playerName,
+                                submitted.values.sum(),
+                                built.commander?.let { " led by $it" } ?: "",
+                            )
                         }
                         is TournamentLobby.DeckSubmissionResult.Error -> {
                             logger.warn("AI deck submission failed: ${result.message}")
@@ -1813,6 +1824,35 @@ class LobbyHandler(
         if (ws != null) {
             gridDraftHandler.handleGridDraftPick(ws, ClientMessage.GridDraftPick(selection))
         }
+    }
+
+    /**
+     * The deck an AI seat builds from the pool it was dealt.
+     *
+     * Two shapes, chosen by the lobby's Rules axis rather than by its pool format: a commander game
+     * needs a designated commander, a singleton-ish deck inside its colour identity and the lobby's
+     * own deck size, none of which the 40-card sealed autobuilder models. A commander build that
+     * finds no legal commander in the pool falls back to the sealed one — the resulting deck can't
+     * be seated under Commander rules, but reporting *that* through the normal submission path is
+     * more useful than throwing out of a background coroutine.
+     */
+    private fun buildAiPoolDeck(
+        lobby: TournamentLobby,
+        pool: List<com.wingedsheep.sdk.model.CardDefinition>,
+        heuristic: Boolean,
+    ): com.wingedsheep.ai.engine.deck.GeneratedDeck {
+        if (lobby.usesCommanderRules) {
+            val built = runCatching { commanderDeckGenerator.generateFromPool(pool, lobby.deckSizeMin, lobby.allowDuplicates) }
+                .onFailure { logger.error("Commander deck build from pool failed in lobby ${lobby.lobbyId}", it) }
+                .getOrNull()
+            if (built != null) return built
+            logger.warn(
+                "No legal commander in the {}-card pool for lobby {}; falling back to a sealed build",
+                pool.size,
+                lobby.lobbyId,
+            )
+        }
+        return com.wingedsheep.ai.engine.deck.GeneratedDeck(buildAiSealedDeck(pool, heuristic))
     }
 
     /**
