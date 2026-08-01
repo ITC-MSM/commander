@@ -1116,6 +1116,34 @@ object Conditions {
         )
 
     /**
+     * While this permanent has at most [count] counters of [counterType] on it.
+     *
+     * The downward-facing twin of [SourceCounterCountAtLeast] — a countdown gate rather than a
+     * threshold. `count = 0` is the "if it has no [kind] counters on it" clause that follows a
+     * remove-a-counter step (Thing in the Ice: "remove an ice counter from this creature. Then if
+     * it has no ice counters on it, transform it"), which is why it reads the source live rather
+     * than off the entry state.
+     */
+    fun SourceCounterCountAtMost(counterType: String, count: Int): ConditionInterface =
+        SourceCounterCountAtMost(CounterTypeFilter.Named(counterType), count)
+
+    /**
+     * While this permanent has at most [count] counters matching [counterType] on it.
+     *
+     * The [CounterTypeFilter] form of [SourceCounterCountAtMost]; pass [CounterTypeFilter.Any] to
+     * total every kind.
+     */
+    fun SourceCounterCountAtMost(counterType: CounterTypeFilter, count: Int): ConditionInterface =
+        Compare(
+            DynamicAmount.EntityProperty(
+                EntityReference.Source,
+                EntityNumericProperty.CounterCount(counterType)
+            ),
+            ComparisonOperator.LTE,
+            DynamicAmount.Fixed(count)
+        )
+
+    /**
      * If a permanent with the given subtype was sacrificed as part of the cost.
      * Used for cards like Thallid Omnivore: "If a Saproling was sacrificed this way, you gain 2 life."
      */

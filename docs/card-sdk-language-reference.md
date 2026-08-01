@@ -3863,6 +3863,12 @@ Triggers.youCastSpell(
 - `Transforms` — source transforms (either direction).
 - `TransformsToFront` — to front face.
 - `TransformsToBack` — to back face.
+- `transforms(binding, intoBackFace?)` — the factory behind the three SELF constants; reach for it to bind
+  the trigger elsewhere. `binding = TriggerBinding.ATTACHED` is "**when equipped/enchanted creature
+  transforms**" (Neglected Heirloom: "When equipped creature transforms, transform this Equipment"),
+  detected by `AttachmentTriggerDetector` like every other ATTACHED trigger — a transform flips the
+  permanent in place, so the Aura/Equipment is still attached when the event fires. `intoBackFace` filters
+  direction (`null` = either).
 - `YouCycleThis` — you cycle source.
 - `AnyPlayerCycles` — anyone cycles.
 - `AnyPlayerTapsLandForMana` — whenever any player taps a land for mana. Use
@@ -6378,6 +6384,13 @@ that works in both resolution and static-ability (projection) contexts.
   `ActivationRestriction.OnlyIfCondition(...)`, with `Counters.CHARGE`. Generic over counter type, reads counters live.
   Takes either a counter-type name (`Counters.CHARGE`) or a `CounterTypeFilter`; pass `CounterTypeFilter.Any` for
   "N or more counters **of any kind**" gates (Warden of the Inner Sky), which sums every counter kind on the source.
+- `SourceCounterCountAtMost(counterType, count)` — the downward-facing twin: a countdown gate rather than a
+  threshold (an `LTE` `Compare` on the same `EntityProperty(Source, CounterCount(filter))`). `count = 0` is the
+  "**if it has no [kind] counters on it**" clause that follows a remove-a-counter step — Thing in the Ice's
+  "remove an ice counter from this creature. Then if it has no ice counters on it, transform it" is
+  `Composite(RemoveCounters(Counters.ICE, 1, Self), ConditionalEffect(SourceCounterCountAtMost(Counters.ICE, 0),
+  TransformEffect(Self)))`. Reads the source live, so it sees the counter the same resolution just removed. Same
+  two overloads (name / `CounterTypeFilter`) as its `AtLeast` sibling.
 
 ### Turn / phase
 
@@ -8140,6 +8153,13 @@ substitution.
   `AddCounters(Counters.SKEWER, 1, EffectTarget.Self)`, and the optional self-sacrifice cashes the tally in
   for an impulse-exile sized by `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.SKEWER))`).
   A pure tally counter with no inherent rule.
+  `ice` (`Counters.ICE`): SOI — Thing in the Ice (enters with four via an `EntersWithCounters(
+  CounterTypeFilter.Named(Counters.ICE), count = 4, selfOnly = true)` replacement; its
+  `Triggers.YouCastInstantOrSorcery` trigger removes one and then flips the permanent through a
+  `ConditionalEffect(Conditions.SourceCounterCountAtMost(Counters.ICE, 0), TransformEffect(Self))`).
+  A "countdown to zero" counter with no inherent rule — the inverse of the `wish`/`film` "uses left" shape:
+  read down rather than spent as a cost. Gating the flip on the live count *inside the ability's resolution*
+  is what makes the printed ruling hold — removing the last counter any other way never transforms it.
 - `stun` — CR 122.1d, a built-in replacement: "If a permanent with a stun counter on it would become untapped,
   instead remove a stun counter from it." Engine-wired through `untapOrConsumeStun` (`rules-engine/core/UntapHelpers.kt`),
   which is invoked from the untap step (`BeginningPhaseManager`), from `TapUntapExecutor`'s untap branch, and from the

@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.AbilityActivatedEvent
 import com.wingedsheep.engine.core.AttackersDeclaredEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.TransformedEvent
 import com.wingedsheep.engine.core.TurnFaceUpEvent
 import com.wingedsheep.engine.core.UntappedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
@@ -84,6 +85,9 @@ class AttachmentTriggerDetector(private val matcher: TriggerMatcher) {
             is TurnFaceUpEvent -> listOf(event.entityId)
             is TappedEvent -> listOf(event.entityId)
             is UntappedEvent -> listOf(event.entityId)
+            // "When equipped creature transforms" (Neglected Heirloom). A transform flips the
+            // permanent in place, so the Equipment is still attached when the event fires.
+            is TransformedEvent -> listOf(event.entityId)
             // "an ability of enchanted artifact … was activated" (Artifact Possession) — the
             // activated ability's source is the enchanted permanent.
             is AbilityActivatedEvent -> listOf(event.sourceId)
@@ -148,6 +152,13 @@ class AttachmentTriggerDetector(private val matcher: TriggerMatcher) {
             }
             is EventPattern.TurnFaceUpEvent -> {
                 event is TurnFaceUpEvent && event.entityId == attachedEntityId
+            }
+            // "When equipped creature transforms" (Neglected Heirloom). Identity with the attached
+            // permanent plus the pattern's direction filter is the whole match — the same two checks
+            // TriggerMatcher applies on the SELF path.
+            is EventPattern.TransformEvent -> {
+                if (event !is TransformedEvent || event.entityId != attachedEntityId) return false
+                trigger.intoBackFace == null || trigger.intoBackFace == event.intoBackFace
             }
             is EventPattern.ZoneChangeEvent -> {
                 if (event !is ZoneChangeEvent) return false
