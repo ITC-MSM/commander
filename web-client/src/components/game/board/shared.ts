@@ -302,6 +302,95 @@ export function useSlotSizedResponsive(
 }
 
 /**
+ * Extra width GameCard's own wrapper reserves for a card lying sideways on the
+ * battlefield (see the `needsLandscapeContainer` branch in GameCard.tsx). Kept in
+ * sync with that constant so the stack reserves the same footprint GameCard uses.
+ */
+const LANDSCAPE_CONTAINER_PAD = 8
+
+/** Placement of one card inside an attachment stack, in container-local pixels. */
+export interface AttachmentStackBox {
+  left: number
+  top: number
+  /** Footprint GameCard reserves at this card's current orientation. */
+  width: number
+}
+
+export interface AttachmentStackLayout {
+  containerWidth: number
+  containerHeight: number
+  /** Peeking attachments in render order; index 0 peeks furthest out from behind the host. */
+  attachments: AttachmentStackBox[]
+  host: AttachmentStackBox
+  /** Left edge of the upright card column — the folder tab and click-catcher align to it. */
+  columnLeft: number
+}
+
+/**
+ * Geometry for a permanent rendered with its attachments peeking out from behind it.
+ *
+ * Every card is placed in its own box and rotates *itself* when tapped, so a card's
+ * orientation depends only on its own tap state. That matters for rules clarity: an
+ * Equipment and its equipped creature are independent permanents (CR 301.5d), so
+ * tapping the creature must not make the still-untapped Equipment look tapped — and
+ * a tapped Equipment must read as tapped even while its host is untapped.
+ *
+ * Boxes are horizontally centered on a shared axis, so a card's *visual* center is
+ * the same whichever way it faces. The host's box sits flush with the container
+ * bottom; rows are bottom-aligned (`alignItems: flex-end`), which keeps the host on
+ * the same baseline as an unattached permanent whether or not it's tapped.
+ *
+ * The two orientations peek from opposite ends. An *upright* attachment peeks above
+ * the host, where its title bar is what shows. A *sideways* one is already wider than
+ * the host, so it shows down both flanks on its own — it bottom-aligns instead, tucking
+ * under the host rather than riding above it, and claims no peek height of its own.
+ */
+export function attachmentStackLayout(input: {
+  cardWidth: number
+  cardHeight: number
+  /** How much of each attachment shows above the card in front of it. */
+  peek: number
+  hostTapped: boolean
+  /** Tap state per peeking attachment, in render order. */
+  attachmentsTapped: readonly boolean[]
+  /** Breathing room reserved beside a sideways card so it doesn't sit flush against neighbours. */
+  gutter: number
+}): AttachmentStackLayout {
+  const { cardWidth, cardHeight, peek, hostTapped, attachmentsTapped, gutter } = input
+  // A sideways card is as wide as an upright one is tall.
+  const boxWidth = (tapped: boolean) => (tapped ? cardHeight + LANDSCAPE_CONTAINER_PAD : cardWidth)
+
+  // Only upright attachments claim peek height above the host; sideways ones tuck under it.
+  const visiblePeek = attachmentsTapped.filter((tapped) => !tapped).length * peek
+  const anySideways = hostTapped || attachmentsTapped.some(Boolean)
+  const containerWidth = (anySideways ? cardHeight + LANDSCAPE_CONTAINER_PAD : cardWidth) +
+    (anySideways ? gutter : 0)
+  const containerHeight = cardHeight + visiblePeek
+  const centeredLeft = (tapped: boolean) => (containerWidth - boxWidth(tapped)) / 2
+  // GameCard drops a sideways card's visible band onto the bottom of its own box, so a box
+  // flush with the container bottom puts the band level with the host's lower edge — the
+  // same placement the host itself gets.
+  const bottomAlignedTop = containerHeight - cardHeight
+
+  let uprightRung = 0
+  return {
+    containerWidth,
+    containerHeight,
+    columnLeft: (containerWidth - cardWidth) / 2,
+    attachments: attachmentsTapped.map((tapped) => ({
+      left: centeredLeft(tapped),
+      top: tapped ? bottomAlignedTop : uprightRung++ * peek,
+      width: boxWidth(tapped),
+    })),
+    host: {
+      left: centeredLeft(hostTapped),
+      top: visiblePeek,
+      width: boxWidth(hostTapped),
+    },
+  }
+}
+
+/**
  * Check if a card has multiple potential casting options.
  * Returns true if the card has more than one way to be used.
  * The server now sends all potential actions (including unaffordable ones),

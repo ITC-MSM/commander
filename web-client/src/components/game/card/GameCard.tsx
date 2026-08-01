@@ -1174,6 +1174,17 @@ function GameCardImpl({
   const containerWidth = needsLandscapeContainer && battlefield ? height + 8 : width
   const containerHeight = height
 
+  // A sideways card rotates about its center, so its visible band is only `width` tall and
+  // sits (height - width) / 2 inside the box top *and* bottom. Left there it floats: a tapped
+  // permanent shares no edge with its upright neighbours in a bottom-aligned row. Drop it so
+  // the band's lower edge rests on the container bottom — the line upright cards sit on — and
+  // tapping reads as the card lying down in place rather than shrinking toward its middle.
+  const landscapeDrop = needsLandscapeContainer && battlefield ? (height - width) / 2 : 0
+  // Top edge of the visible band relative to the container, after the drop. The commander
+  // crown and non-legendary chip hang off this rather than the box, so they keep hugging the
+  // card instead of drifting above it when it turns sideways.
+  const bandTop = landscapeDrop * 2
+
   const cardElement = (
     <div
       data-card-id={card.id}
@@ -1197,7 +1208,9 @@ function GameCardImpl({
         cursor,
         border: isBeheldPulsing ? '3px solid #eab308' : borderStyle,
         pointerEvents: 'auto',
-        transform: `${totalRotateDeg ? `rotate(${totalRotateDeg}deg)` : ''} ${isSelected && (!isInCombatMode || !isCombatRoleCard) ? 'translateY(-8px)' : ''}`,
+        // `translateY(landscapeDrop)` is listed first so it applies in screen space, outside
+        // the rotation; the selection lift stays after it, as before.
+        transform: `${landscapeDrop ? `translateY(${landscapeDrop}px)` : ''} ${totalRotateDeg ? `rotate(${totalRotateDeg}deg)` : ''} ${isSelected && (!isInCombatMode || !isCombatRoleCard) ? 'translateY(-8px)' : ''}`,
         transformOrigin: 'center',
         // Commander gold *glow* — soft halo, deliberately no hard 1–2px rim so it doesn't read
         // like the playable-action outline. Inner halo sits close to the card for readable
@@ -2678,7 +2691,7 @@ function GameCardImpl({
         title="Commander"
         style={{
           position: 'absolute',
-          top: -crownHeight - 3,
+          top: bandTop - crownHeight - 3,
           left: '50%',
           transform: 'translateX(-50%)',
           width: crownWidth,
@@ -2723,7 +2736,7 @@ function GameCardImpl({
         title={`Not legendary — copy effect stripped the Legendary supertype (${card.typeLine})`}
         style={{
           position: 'absolute',
-          top: -Math.round(chipHeight * 0.55),
+          top: bandTop - Math.round(chipHeight * 0.55),
           left: '50%',
           transform: 'translateX(-50%)',
           height: chipHeight,
