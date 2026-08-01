@@ -81,7 +81,7 @@ jobs:
           JSTACK="${JAVA_HOME}/bin/jstack"
           WATCHDOG_TIMEOUT=$((20 * 60))
 
-          ./gradlew ${{ matrix.tasks }} ${{ matrix.name == 'content' && '-DupdateSnapshots=true' || '' }} &
+          ./gradlew ${{ matrix.tasks }} &
           BUILD_PID=$!
 
           (
@@ -100,16 +100,6 @@ jobs:
           STATUS=$?
           kill "${WATCHDOG_PID}" 2>/dev/null || true
           exit "${STATUS}"
-
-      - name: Upload generated Innistrad snapshots
-        if: matrix.name == 'content'
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-innistrad-snapshots
-          path: |
-            mtg-sets/src/test/resources/snapshots/cards/EMN.json
-            mtg-sets/src/test/resources/snapshots/cards/MID.json
-            mtg-sets/src/test/resources/snapshots/cards/VOW.json
 
   # Aggregate gate so branch protection can keep requiring a single "backend" check. It passes only
   # if every test group passed; with fail-fast disabled, a failure in one group still surfaces all

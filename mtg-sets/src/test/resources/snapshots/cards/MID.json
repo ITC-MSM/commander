@@ -1,3 +1,141 @@
+// Ambitious Farmhand
+{
+    "name": "Ambitious Farmhand",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Peasant",
+    "oracleText": "When this creature enters, you may search your library for a basic Plains card, reveal it, put it into your hand, then shuffle.\nCoven — {1}{W}{W}: Transform this creature. Activate only if you control three or more creatures with different powers.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland Plains"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "optional": true
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{W}{W}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature",
+                                "aggregation": "DISTINCT_VALUES",
+                                "property": "POWER"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Coven — {1}{W}{W}: Transform this creature. Activate only if you control three or more creatures with different powers."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Seasoned Cathar",
+        "manaCost": "",
+        "typeLine": "Creature — Human Knight",
+        "oracleText": "Lifelink",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "keywords": [
+            "LIFELINK"
+        ],
+        "metadata": {
+            "collectorNumber": "2",
+            "rarity": "UNCOMMON",
+            "artist": "Bryan Sola",
+            "flavorText": "\"The cathars have taught me many things, but I will never forget the hard, honest work that first callused my hands.\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/5/4/54d4e7c3-294d-4900-8b70-faafda17cc33.jpg?1783925674"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "UNCOMMON",
+        "artist": "Bryan Sola",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/4/54d4e7c3-294d-4900-8b70-faafda17cc33.jpg?1783925674",
+        "rulings": [
+            {
+                "date": "2021-09-24",
+                "text": "For three creatures to have different powers from one another, each of their powers needs to be different."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Angelfire Ignition
 {
     "name": "Angelfire Ignition",
