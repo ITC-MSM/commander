@@ -350,6 +350,28 @@ class PredicateEvaluator {
                 }
             }
 
+            // "that doesn't have the same name as another permanent you control" (Yenna,
+            // Redtooth Regent). Compares against every *other* permanent the controller has on
+            // the battlefield — tokens and cards alike — so two same-named permanents disqualify
+            // each other. Names on both sides come from the projection, honoring Layer 3
+            // name-changing effects. Fails open with no controller in scope.
+            is CardPredicate.NameNotSharedWithAnotherControlledPermanent -> {
+                val controllerId = context?.controllerId
+                if (controllerId == null) {
+                    true
+                } else {
+                    val candidateName = projectedValues?.name ?: card.name
+                    state.getBattlefield().none { id ->
+                        id != entityId &&
+                            projected.getController(id) == controllerId &&
+                            (
+                                projected.getName(id)
+                                    ?: state.getEntity(id)?.get<CardComponent>()?.name
+                                ) == candidateName
+                    }
+                }
+            }
+
             // Keyword predicates - use projected keywords
             is CardPredicate.HasKeyword -> predicate.keyword.name in keywords
             is CardPredicate.NotKeyword -> predicate.keyword.name !in keywords
@@ -1504,6 +1526,7 @@ class PredicateEvaluator {
             is CardPredicate.NameEqualsChosen -> false
             CardPredicate.NameNotSharedWithControlledRoom -> false
             CardPredicate.NameNotSharedWithControlledToken -> false
+            CardPredicate.NameNotSharedWithAnotherControlledPermanent -> false
             is CardPredicate.OriginallyPrintedInSet -> false
 
             // Keyword predicates — not stored in record

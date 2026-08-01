@@ -346,6 +346,16 @@ data class GameObjectFilter(
     )
 
     /**
+     * Match permanents whose name isn't shared with *another* permanent the evaluating player
+     * controls — "that doesn't have the same name as another permanent you control" (Yenna,
+     * Redtooth Regent). The candidate itself is excluded from the comparison; see
+     * [CardPredicate.NameNotSharedWithAnotherControlledPermanent].
+     */
+    fun nameNotSharedWithAnotherControlledPermanent() = copy(
+        cardPredicates = cardPredicates + CardPredicate.NameNotSharedWithAnotherControlledPermanent
+    )
+
+    /**
      * Match cards whose name equals the name durably chosen by the *source permanent* as it
      * entered (its [com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent] under
      * [slot]). Static-projection / activation-legality safe — use this in static-ability filters

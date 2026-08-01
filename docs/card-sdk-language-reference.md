@@ -1226,6 +1226,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `null` defaults to the effect's controller. Set it for "**Target player** creates a token that's a copy of
   target creature you control" (Echocasting Symposium): the chosen creature is copied but the token enters
   under the named player's control. Mirrors `CreateTokenEffect.controller`.
+  **Aura copies (CR 303.4h)** need no extra parameter — the executor handles them. A token copy of an Aura
+  is created rather than cast, so it never targets; instead its controller *chooses* what it enchants as it
+  enters, restricted to what the copied Aura could legally enchant (its `auraTarget`, with targeting
+  restrictions such as hexproof/shroud ignored per CR 303.4f). The choice is raised **before** the token
+  exists, so it enters already attached and its enters-the-battlefield triggers see the attachment; a
+  `PermanentAttachedEvent` fires so "becomes attached" triggers (Eriette, the Beguiler) work. With no legal
+  object to enchant the token isn't created at all (CR 303.4g). An effect making several Aura copies asks
+  once per token. Because the choice is a mid-resolution pause, `CREATED_TOKENS` is **not** populated on the
+  Aura path — branch a following step on the copied target instead (Yenna, Redtooth Regent's "if the token
+  is an Aura, untap Yenna, then scry 2").
   Like `CreateToken`, both `CreateTokenCopyOfTarget` and `CreateTokenCopyOfSource` publish their created token
   entity IDs to the `CREATED_TOKENS` pipeline collection, so a sibling effect in a `CompositeEffect` can address
   the new copy — e.g. Applied Geometry's "Create a token that's a copy … Put six +1/+1 counters on it" composes
@@ -2879,6 +2889,16 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   state-dependent battlefield target filter; compose it with the printed type/control/token restrictions.
   Used by The Apprentice's Folly
   (`Creature.youControl().nontoken().nameNotSharedWithControlledToken()`).
+- `.nameNotSharedWithAnotherControlledPermanent()` —
+  `CardPredicate.NameNotSharedWithAnotherControlledPermanent`: matches a permanent whose name isn't shared
+  with **any other** permanent the evaluating player controls. Broader than
+  `.nameNotSharedWithControlledToken()` on both sides: the compared set is every permanent the controller
+  has out (tokens *and* cards), and the candidate itself is excluded, so two same-named permanents
+  disqualify **each other**. Names are read through the projection, honoring Layer 3 name-changing effects
+  (Witness Protection). Keyed off the predicate context's `controllerId`; fails **open** with no controller
+  in scope. Used by Yenna, Redtooth Regent
+  (`Enchantment.youControl().nameNotSharedWithAnotherControlledPermanent()`) — the restriction is
+  self-limiting, since copying an enchantment makes it an illegal target from then on.
 - `.power(n)` / `.minPower(n)` / `.maxPower(n)` — P/T comparator.
 - `.manaValue(n)` / `.manaValueAtMost(n)` / `.manaValueAtLeast(n)` — mana-value comparator.
 - `.manaValueAtMostX()` — mana value ≤ the X chosen for the source spell/ability.

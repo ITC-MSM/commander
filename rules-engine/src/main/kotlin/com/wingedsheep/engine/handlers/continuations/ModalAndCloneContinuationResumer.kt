@@ -40,6 +40,7 @@ class ModalAndCloneContinuationResumer(
         resumer(CastWithCreatureTypeContinuation::class, ::resumeCastWithCreatureType),
         resumer(BudgetModalContinuation::class, ::resumeBudgetModal),
         resumer(CreateTokenCopyOfChosenContinuation::class, ::resumeCreateTokenCopyOfChosen),
+        resumer(CreateTokenCopyAuraHostContinuation::class, ::resumeCreateTokenCopyAuraHost),
         resumer(ChooseActionContinuation::class, ::resumeChooseAction)
     )
 
@@ -1317,6 +1318,63 @@ class ModalAndCloneContinuationResumer(
         ).toExecutionResult()
         if (result.isPaused) return result
         return checkForMore(result.state, result.events.toList())
+    }
+
+    /**
+     * Resume after the controller chose what an Aura token copy enchants (CR 303.4h).
+     *
+     * Creates exactly one token, already attached to the chosen host, then asks again for the
+     * next one when the effect owes more than one Aura copy. An empty pick (or a host that left
+     * the battlefield while the decision was outstanding) means no legal attachment, so that
+     * token isn't created — CR 303.4g.
+     */
+    fun resumeCreateTokenCopyAuraHost(
+        state: GameState,
+        continuation: CreateTokenCopyAuraHostContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is TargetsResponse) {
+            return ExecutionResult.error(state, "Expected targets response for Aura token host selection")
+        }
+
+        val hostId = response.selectedTargets[0]?.firstOrNull()
+        if (hostId == null || hostId !in state.getBattlefield()) {
+            return checkForMore(state, emptyList())
+        }
+
+        val executor = com.wingedsheep.engine.handlers.effects.token.CreateTokenCopyOfTargetExecutor(
+            staticAbilityHandler = com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler(services.cardRegistry),
+            cardRegistry = services.cardRegistry,
+        )
+        val created = executor.createTokens(
+            state = state,
+            effect = continuation.effect,
+            context = continuation.context,
+            controllerId = continuation.controllerId,
+            count = 1,
+            auraHostId = hostId,
+        )
+
+        val remaining = continuation.remaining - 1
+        if (remaining <= 0) {
+            return checkForMore(created.state, created.events.toList())
+        }
+
+        // More Aura copies owed — each gets its own host choice.
+        val next = com.wingedsheep.engine.handlers.effects.token.AuraTokenHostChooser.pause(
+            state = created.state,
+            effect = continuation.effect,
+            context = continuation.context,
+            auraDefinitionId = continuation.auraDefinitionId,
+            auraName = continuation.auraName,
+            controllerId = continuation.controllerId,
+            remaining = remaining,
+            cardRegistry = services.cardRegistry,
+        )
+        val nextDecision = next.pendingDecision
+            ?: return checkForMore(next.state, created.events.toList() + next.events.toList())
+        return ExecutionResult.paused(next.state, nextDecision, created.events.toList())
     }
 
     /**

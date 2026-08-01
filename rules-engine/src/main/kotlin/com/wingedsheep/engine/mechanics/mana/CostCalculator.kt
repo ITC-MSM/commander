@@ -995,6 +995,9 @@ class CostCalculator(
             // Room-name distinctness is a resolution-time search filter, not a cost concern.
             CardPredicate.NameNotSharedWithControlledRoom -> false
             CardPredicate.NameNotSharedWithControlledToken -> false
+            // Same for "no other permanent you control shares this name" — a targeting
+            // restriction, never a cost-reduction condition.
+            CardPredicate.NameNotSharedWithAnotherControlledPermanent -> false
 
             is CardPredicate.OriginallyPrintedInSet ->
                 cardDef.setCode?.equals(predicate.setCode, ignoreCase = true) == true
