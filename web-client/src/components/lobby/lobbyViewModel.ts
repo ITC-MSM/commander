@@ -20,7 +20,6 @@ import type { DeckPickerTab } from '../ui/DeckPicker'
 import {
   axesFromLobbySettings,
   axesFromQuickGameLobby,
-  commanderAiBlock,
   effectiveCommanderPreset,
   rulesFromLobbySettings,
   rulesTableBlock,
@@ -147,8 +146,11 @@ export function fromQuickGameLobby(
   const youReady = you?.ready ?? false
   const needsDeck = !isMomir && (!opts.deckValid || !you?.deckSelected)
   const axes = axesFromQuickGameLobby(lobby, you, opts.deckTab)
+  // Only a host-*picked* deck can be missing a commander; the generated sources choose their own.
+  // Mirrors the server's ready-up gate in `QuickGameLobbyHandler.handleSetReady`.
   const needsAiCommander =
-    lobby.vsAi && axes.rules === 'COMMANDER' && !lobby.aiDeck?.commander
+    lobby.vsAi && axes.rules === 'COMMANDER'
+    && lobby.aiDeck?.kind === 'deck' && !lobby.aiDeck.commander
 
   const players = lobby.players.map((p): LobbyViewPlayer => ({
     playerId: p.playerId,
@@ -370,10 +372,9 @@ export function fromTournamentLobby(
     guidance,
     blockGroup: blockReason?.group ?? null,
     isPublic: s.isPublic,
-    // Commander AI is available when the host brings its deck and designates its commander.
-    // Generated limited pools remain blocked because their builders cannot make that choice.
-    canAddAi: isWaiting && lobbyState.isHost && opts.aiEnabled
-      && commanderAiBlock(axes.rules, axes.cards) === null && playerCount < maxPlayers,
+    // No Commander carve-out: an AI seat builds its own legal commander deck, whether the lobby
+    // brings decks or deals a pool.
+    canAddAi: isWaiting && lobbyState.isHost && opts.aiEnabled && playerCount < maxPlayers,
     // Ranked is a 1v1-bracket-only concept server-side (`TournamentLobby.rankedEligible`).
     ranked: { available: axes.table === 'ONE_V_ONE', on: s.ranked ?? false },
     teams: tournamentTeams(lobbyState),

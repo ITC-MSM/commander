@@ -1,17 +1,14 @@
 package com.wingedsheep.ai.engine.deck
 
 import com.wingedsheep.ai.draftsim.DraftsimCardOps
-import com.wingedsheep.ai.draftsim.DraftsimData
 import com.wingedsheep.ai.draftsim.DraftsimDeckBuilder
 import com.wingedsheep.ai.draftsim.DraftsimDeckShape
 import com.wingedsheep.ai.draftsim.DraftsimPoolCard
-import com.wingedsheep.ai.draftsim.DraftsimSetTables
 import com.wingedsheep.ai.draftsim.toScorerCard
 import com.wingedsheep.engine.limited.BoosterGenerator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.core.DeckFormat
 import com.wingedsheep.sdk.model.CardDefinition
-import kotlin.math.pow
 import kotlin.random.Random
 import org.slf4j.LoggerFactory
 
@@ -30,8 +27,8 @@ import org.slf4j.LoggerFactory
  * **Per-card legality is the whole of the pool filter.** [CardDefinition.legalFormats] is
  * Scryfall-sourced and already accounts for bans and set legality, so "is this card allowed in
  * Pauper" needs no rarity check here. Structural rules on top of that (singleton, 100 cards, a
- * commander in the command zone) are *not* modelled: commander-shape formats are rejected outright
- * rather than approximated — see [generate].
+ * commander in the command zone) are *not* modelled here: commander-shape formats are rejected
+ * outright and belong to [CommanderDeckGenerator], which builds that shape instead.
  */
 class ConstructedDeckGenerator(
     private val boosterGenerator: BoosterGenerator,
@@ -44,33 +41,30 @@ class ConstructedDeckGenerator(
      */
     private val random: Random = Random.Default,
 ) {
+    private val cardPool = FormatCardPool(boosterGenerator, cardRegistry)
+
     /**
      * Builds a format-legal deck from the cards printed in [setCodes].
      *
      * @param setCodes sets to draw from. Empty means "every set" — the full format-legal pool.
      * @param format the constructed format the deck must be legal in.
-     * @throws IllegalArgumentException if [format] is commander-shaped (see class doc), or if the
-     *         legal pool is too thin to build from.
+     * @throws IllegalArgumentException if [format] is commander-shaped (use [CommanderDeckGenerator]
+     *         for those), or if the legal pool is too thin to build from.
      */
     fun generate(setCodes: List<String>, format: DeckFormat): Map<String, Int> {
         require(!format.isCommanderShape) {
             "Commander-shape formats need a designated commander and singleton rules; " +
-                "ConstructedDeckGenerator only builds the 60-card constructed shape."
+                "ConstructedDeckGenerator only builds the 60-card constructed shape. " +
+                "Use CommanderDeckGenerator instead."
         }
 
-        val pool = legalPool(setCodes, format)
+        val pool = cardPool.legalPool(setCodes, format)
         require(pool.isNotEmpty()) {
             "No ${format.displayName}-legal cards available" +
                 if (setCodes.isEmpty()) "" else " in ${setCodes.joinToString(", ")}"
         }
 
-        // Basic lands come from the chosen sets so the deck's art matches the pool it was built
-        // from; an all-sets build falls back to whatever the generator has registered.
-        val basics = if (setCodes.isEmpty()) {
-            boosterGenerator.availableSets.values.firstOrNull()?.basicLands.orEmpty()
-        } else {
-            boosterGenerator.getBasicLands(setCodes).values.toList()
-        }
+        val basics = cardPool.basicLands(setCodes)
 
         logger.info(
             "Building a {} deck from {} legal cards ({})",
@@ -117,7 +111,7 @@ class ConstructedDeckGenerator(
      * is mostly narrow utility lands — a bad trade against a clean basics manabase.
      */
     private fun draftsimBuild(pool: List<CardDefinition>): Map<String, Int>? {
-        val tables = draftsimTables()
+        val tables = ConstructedRatings.tables()
         val shortlist = shortlist(pool.filterNot { it.isLand }, DraftsimCardOps(tables))
         if (shortlist.isEmpty()) return null
 
@@ -157,68 +151,18 @@ class ConstructedDeckGenerator(
     /**
      * Draw [SHORTLIST_SIZE] cards from [pool], biased hard towards the ones Draftsim rates highly.
      *
-     * Efraimidis–Spirakis weighted sampling without replacement: key each card with `u^(1/w)` and
-     * keep the highest keys. The weight is the rating *cubed*, so bombs almost always make the cut
-     * while the tail still turns over between games — a constructed lobby that seated the identical
-     * AI deck every time would be a worse experience than the unrated random build this replaces.
+     * The weight is the rating *cubed*, so bombs almost always make the cut while the tail still
+     * turns over between games — a constructed lobby that seated the identical AI deck every time
+     * would be a worse experience than the unrated random build this replaces.
      *
      * Unrated cards (a set Draftsim never covered, or our own content) fall back to the rarity
      * ladder rather than dropping out, so a pool with no ratings at all still shortlists sanely.
      */
-    private fun shortlist(pool: List<CardDefinition>, ops: DraftsimCardOps): List<CardDefinition> {
-        if (pool.size <= SHORTLIST_SIZE) return pool
-        return pool
-            .map { card ->
-                val weight = ops.ratingFallback(card.toScorerCard()).coerceAtLeast(MIN_WEIGHT)
-                card to random.nextDouble().pow(1.0 / (weight * weight * weight))
-            }
-            .sortedByDescending { it.second }
-            .take(SHORTLIST_SIZE)
-            .map { it.first }
-    }
-
-    /**
-     * The Draftsim tables a constructed build reads.
-     *
-     * Every rated set is merged in, regardless of which sets the pool was scoped to: ratings and the
-     * removal list are per-*card* judgements that transfer straight to constructed, and a constructed
-     * pool spans reprints from everywhere, so the widest name coverage is the most useful. The merge
-     * is cached inside [DraftsimData], so it is paid once per process.
-     *
-     * The archetype tables are deliberately dropped. They encode one limited environment's synergy
-     * pairs ("BLB Bats", "OTJ Outlaws"); merged across 40-odd sets they would have the builder rank a
-     * nonsense mix of them. Empty archetypes put the builder on its no-archetype path, which ranks
-     * the ten two-colour guilds instead — exactly the hypothesis space a 60-card two-colour deck
-     * wants.
-     */
-    private fun draftsimTables(): DraftsimSetTables =
-        DraftsimData.tablesFor(DraftsimData.ratedSetCodes()).copy(archetypes = emptyMap())
-
-    /**
-     * Every card legal in [format], scoped to [setCodes] when non-empty.
-     *
-     * Set scoping reads [BoosterGenerator.SetConfig.cards] *and* resolves the set's reprint
-     * [BoosterGenerator.SetConfig.printings] rows through the registry: a reprint's canonical
-     * `CardDefinition` lives in its earliest printing's set, so a set that is mostly reprints
-     * (a core set, a precon set) would otherwise look almost empty.
-     */
-    private fun legalPool(setCodes: List<String>, format: DeckFormat): List<CardDefinition> {
-        val candidates = if (setCodes.isEmpty()) {
-            cardRegistry.allCardNames().mapNotNull { cardRegistry.getCard(it) }
-        } else {
-            setCodes.flatMap { setCode ->
-                val config = boosterGenerator.availableSets[setCode]
-                    ?: throw IllegalArgumentException("Unknown set code: $setCode")
-                config.cards + config.printings.mapNotNull { cardRegistry.getCard(it.name) }
-            }
+    private fun shortlist(pool: List<CardDefinition>, ops: DraftsimCardOps): List<CardDefinition> =
+        pool.weightedSample(SHORTLIST_SIZE, random) { card ->
+            val rating = ops.ratingFallback(card.toScorerCard()).coerceAtLeast(ConstructedRatings.MIN_WEIGHT)
+            rating * rating * rating
         }
-        return candidates
-            .distinctBy { it.name }
-            // An empty `legalFormats` means we have no Scryfall legality data for the card at all
-            // (custom//unreleased content). Excluding it keeps the deck honestly format-legal
-            // rather than silently smuggling unknowns in.
-            .filter { format in it.legalFormats }
-    }
 
     private companion object {
         private val logger = LoggerFactory.getLogger(ConstructedDeckGenerator::class.java)
@@ -235,9 +179,6 @@ class ConstructedDeckGenerator(
 
         /** Instances per shortlisted card — Draftsim's own four-of cap, so it can build four-ofs. */
         private const val COPIES_PER_CARD = 4
-
-        /** Floor on the sampling weight; a zero would make `1/w` divide by zero. */
-        private const val MIN_WEIGHT = 0.1
 
         private val COLOR_TO_BASIC =
             mapOf("W" to "Plains", "U" to "Island", "B" to "Swamp", "R" to "Mountain", "G" to "Forest")

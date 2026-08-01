@@ -298,9 +298,23 @@ there. What was left was small, and it shipped:
   is the single statement of the 2HG conflict, and the client renders a **Rules** row between Cards and
   Table. The Commander pack formats and commander deck legality now only *default* the axis.
 
+- ✅ **Commander with AI seats** (issue #1453). `CommanderDeckGenerator` (`:ai`) picks a legal commander
+  (CR 903.3, via the SDK's shared `CommanderEligibility`) and builds a singleton deck inside its colour
+  identity to the format's exact size — CR 903.5a/b/c, with a basics-only manabase so CR 903.5d holds by
+  construction. `RandomDeckResolver` returns a `GeneratedDeck` (list *plus* commander) so the two halves
+  are decided together, and it asks for commander-ness on the **Rules** axis rather than reading it off
+  `DeckFormat`, which is what a premade Commander pod with no legality restriction needs. Every entry
+  point is un-gated: quick-lobby Auto / From sets, a human's Random pool, premade tournament seats, and
+  limited pools (`generateFromPool`, for a drafted or sealed Commander seat).
+
 Deliberately still open:
 
-- Commander with AI seats — auto-deckbuild never designates a commander (issue #1453).
+- Commander-aware *play* — commander tax when evaluating casts, commander damage as a win/loss axis, and
+  an intentional CR 903.9a command-zone choice. The AI plays legal Commander today (it answers the zone
+  choice by simulating both branches, and `CostCalculator` already charges it the tax), just not well.
+  See "AI advisor coverage" under Risks below.
+- Commander deck *synergy* — the generator picks on rating and curve, not on what the commander wants.
+  Partners / Backgrounds and colourless-identity commanders are out of its scope too (Phase 4).
 - AI politics (group dynamics, kingmaker avoidance) — separate research project.
 - **Out of scope permanently:** range of influence (CR 801) — `backlog/multiplayer.md` says so too — and
   the politics mechanics (monarch / initiative / voting).

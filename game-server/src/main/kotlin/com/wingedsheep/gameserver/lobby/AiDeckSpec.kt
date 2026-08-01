@@ -25,8 +25,9 @@ sealed interface AiDeckSpec {
 
     /**
      * The historical behaviour: the server picks for you. A generated deck mirroring the human's
-     * set for limited-shaped lobbies, or a format-legal constructed deck when the lobby carries a
-     * deck-format restriction.
+     * set for limited-shaped lobbies, a format-legal constructed deck when the lobby carries a
+     * deck-format restriction, or a singleton deck behind a commander the builder picks itself when
+     * the lobby runs Commander rules.
      */
     @Serializable
     @SerialName("auto")
@@ -48,6 +49,9 @@ sealed interface AiDeckSpec {
      *
      * [label] is what the lobby shows next to the AI seat ("Mono-Red Burn"); it is display-only and
      * never round-trips into the engine.
+     *
+     * The only source that can arrive at a Commander lobby *without* a commander — the generated
+     * ones choose their own — which is why the ready-up gate asks about this variant specifically.
      */
     @Serializable
     @SerialName("deck")

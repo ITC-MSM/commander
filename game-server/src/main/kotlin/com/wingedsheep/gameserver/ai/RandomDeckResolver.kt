@@ -1,7 +1,9 @@
 package com.wingedsheep.gameserver.ai
 
 import com.wingedsheep.ai.engine.SealedDeckGenerator
+import com.wingedsheep.ai.engine.deck.CommanderDeckGenerator
 import com.wingedsheep.ai.engine.deck.ConstructedDeckGenerator
+import com.wingedsheep.ai.engine.deck.GeneratedDeck
 import com.wingedsheep.gameserver.lobby.AiDeckSpec
 import com.wingedsheep.sdk.core.DeckFormat
 import org.slf4j.LoggerFactory
@@ -16,28 +18,33 @@ import org.springframework.stereotype.Component
  * honoured the lobby format while a human on Random always got a 40-card sealed pool, so a Pauper
  * lobby could seat a rare-filled sealed deck opposite a legal 60-card Pauper deck. The matrix:
  *
- * |                | no format / limited lobby   | constructed format (Standard, Pauper, …) |
- * |----------------|-----------------------------|------------------------------------------|
- * | AI [AiDeckSpec.Auto]  | sealed pool, human's set | 60-card legal deck, whole card base |
- * | AI [AiDeckSpec.Sets]  | sealed pool, chosen sets | 60-card legal deck, chosen sets     |
- * | AI [AiDeckSpec.Fixed] | the submitted list       | the submitted list (validated on submit) |
- * | human "Random"        | sealed pool, their set   | 60-card legal deck, whole card base |
+ * |                | no format / limited lobby   | constructed format | commander-shape format |
+ * |----------------|-----------------------------|--------------------|------------------------|
+ * | AI [AiDeckSpec.Auto]  | sealed pool, human's set | 60-card legal deck, whole card base | singleton deck + commander, whole card base |
+ * | AI [AiDeckSpec.Sets]  | sealed pool, chosen sets | 60-card legal deck, chosen sets | singleton deck + commander, chosen sets |
+ * | AI [AiDeckSpec.Fixed] | the submitted list       | the submitted list (validated on submit) | the submitted list and its commander |
+ * | human "Random"        | sealed pool, their set   | 60-card legal deck, whole card base | singleton deck + commander, whole card base |
  *
  * A seat's *set* choice is a limited-pool concept: it says which boosters to open. Under a
  * constructed format the format defines the pool instead, so the set choice drops out — for the
  * human exactly as it already did for the AI's Auto.
  *
- * **Commander-shape formats are a known gap.** Commander / Brawl / Standard Brawl need a designated
- * commander in the command zone, singleton construction and a colour-identity constraint over the
- * whole deck — none of which the builders model. Rather than ship an illegal 100-card approximation,
- * those lobbies fall through to the limited path and the client says so on the AI panel. A host who
- * wants a real Commander opponent can still pick [AiDeckSpec.Fixed] and hand the AI a real
- * Commander decklist.
+ * Every path returns a [GeneratedDeck] rather than a bare decklist, because a commander-shape lobby
+ * has *two* answers to "what does this seat play" and they have to be decided together. Before
+ * [CommanderDeckGenerator] existed there was only one, and commander shapes fell through to a
+ * limited deck with no commander that the engine then refused to start.
+ *
+ * **Commander-ness is its own parameter, not a reading of [DeckFormat].** A lobby says "this game
+ * has commanders" on its Rules axis; a commander-shaped deck *legality* only defaults that axis.
+ * A premade Commander pod with no legality restriction is the case that separates them, and
+ * inferring from the format alone would hand its AI seats a commander-less deck the engine refuses
+ * to start. Callers pass what their lobby's Rules axis says.
  */
 @Component
 class RandomDeckResolver(
     private val sealedDeckGenerator: SealedDeckGenerator,
     private val constructedDeckGenerator: ConstructedDeckGenerator,
+    private val commanderDeckGenerator: CommanderDeckGenerator,
 ) {
     private val logger = LoggerFactory.getLogger(RandomDeckResolver::class.java)
 
@@ -48,17 +55,26 @@ class RandomDeckResolver(
      * @param format the lobby's deck-format restriction, or null for none.
      * @param fallbackSetCode the set the lobby already resolved for its random pools — used by
      *        [AiDeckSpec.Auto] on the limited path so the AI and the human open the same set.
+     * @param commanderRules whether this lobby's games use commanders.
      */
-    fun resolve(spec: AiDeckSpec, format: DeckFormat?, fallbackSetCode: String): Map<String, Int> {
+    fun resolve(
+        spec: AiDeckSpec,
+        format: DeckFormat?,
+        fallbackSetCode: String,
+        commanderRules: Boolean,
+    ): GeneratedDeck {
         // A fixed list is the host's explicit answer and was validated against the format when it
-        // was submitted; nothing left to decide.
-        if (spec is AiDeckSpec.Fixed) return spec.deckList
+        // was submitted; nothing left to decide. Its commander rides along — under a non-commander
+        // format the caller drops it, exactly as it does for a human's saved deck.
+        if (spec is AiDeckSpec.Fixed) {
+            return GeneratedDeck(spec.deckList, spec.commander?.takeIf { it.isNotBlank() })
+        }
 
         // An empty set selection means the host cleared the picker rather than that they want an
         // empty pool — treat it as Auto instead of failing the game start.
         val setCodes = (spec as? AiDeckSpec.Sets)?.setCodes?.filter { it.isNotBlank() }.orEmpty()
 
-        return randomDeck(format, setCodes, fallbackSetCode)
+        return randomDeck(format, setCodes, fallbackSetCode, commanderRules)
     }
 
     /**
@@ -67,16 +83,20 @@ class RandomDeckResolver(
      * failure. Same three answers, same order of preference — the two lobby kinds differ only in
      * where the fallback set comes from.
      */
-    fun resolve(spec: AiDeckSpec, format: DeckFormat?, setCodes: List<String>): Map<String, Int> =
-        resolve(spec, format, fallbackSetFrom(setCodes))
+    fun resolve(
+        spec: AiDeckSpec,
+        format: DeckFormat?,
+        setCodes: List<String>,
+        commanderRules: Boolean,
+    ): GeneratedDeck = resolve(spec, format, fallbackSetFrom(setCodes), commanderRules)
 
     /**
      * A generated deck for a seat that pinned no set of its own — [resolve] without a spec, for the
      * seats that never had one to state.
      */
-    fun randomDeck(format: DeckFormat?, setCodes: List<String>): Map<String, Int> {
+    fun randomDeck(format: DeckFormat?, setCodes: List<String>, commanderRules: Boolean): GeneratedDeck {
         val pinned = setCodes.filter { it.isNotBlank() }
-        return randomDeck(format, pinned, fallbackSetFrom(pinned))
+        return randomDeck(format, pinned, fallbackSetFrom(pinned), commanderRules)
     }
 
     /** The set to open boosters from when nothing pinned one: the lobby's first, else any set. */
@@ -86,18 +106,59 @@ class RandomDeckResolver(
     /**
      * A generated deck for a seat with no submitted list, honouring the lobby's [format].
      *
+     * Each branch falls back to the one below it rather than failing the game start: a commander
+     * build that can't find a legal commander in a narrow set selection drops to the constructed
+     * path, and a constructed build with too thin a legal pool drops to a sealed one. A deck the
+     * seat can actually play beats an error message — with one exception, noted at the commander
+     * branch, where the fallback is itself unplayable.
+     *
      * @param format the lobby's deck-format restriction, or null for none.
      * @param setCodes sets the seat pinned its pool to; empty means "whatever the lobby resolved",
      *        i.e. [fallbackSetCode] on the limited path and the whole legal card base on the
      *        constructed one.
      * @param fallbackSetCode the single set to open boosters from when [setCodes] is empty.
+     * @param commanderRules whether this lobby's games use commanders — see the class doc for why
+     *        this is asked separately from [format].
      */
-    fun randomDeck(format: DeckFormat?, setCodes: List<String>, fallbackSetCode: String): Map<String, Int> {
-        if (format != null && !format.isCommanderShape) {
+    fun randomDeck(
+        format: DeckFormat?,
+        setCodes: List<String>,
+        fallbackSetCode: String,
+        commanderRules: Boolean,
+    ): GeneratedDeck {
+        // Which commander-shaped format to build to: the lobby's own when it set one, else paper
+        // Commander — the broadest commander-legal pool, and the right default for a lobby that
+        // asked for commanders without restricting legality.
+        val commanderFormat = when {
+            format != null && format.isCommanderShape -> format
+            commanderRules -> DeckFormat.COMMANDER
+            else -> null
+        }
+        if (commanderFormat != null) {
+            // Commander lobby: pick a commander and build a singleton deck inside its colour
+            // identity. Falling through to a commander-less deck is *not* a graceful degradation
+            // here — the engine refuses to start a commander game without one — so the caller has
+            // to notice a null commander and refuse the start rather than seat a broken deck.
+            val built = runCatching { commanderDeckGenerator.generate(setCodes, commanderFormat) }
+                .onFailure { error ->
+                    logger.warn(
+                        "Commander deck for {} ({}) failed",
+                        commanderFormat.displayName,
+                        if (setCodes.isEmpty()) "all sets" else setCodes.joinToString(", "),
+                        error,
+                    )
+                }
+                .getOrNull()
+            if (built != null) return built
+            logger.warn(
+                "No {} deck could be built from {}; falling back to a deck with no commander",
+                commanderFormat.displayName,
+                if (setCodes.isEmpty()) "all sets" else setCodes.joinToString(", "),
+            )
+        } else if (format != null) {
             // Constructed lobby: build to the format so both sides of the table play under the
             // same restriction. Falls back to the limited path if the legal pool is unusably thin
-            // (a narrow format crossed with a narrow set selection) — a limited deck the seat can
-            // actually play beats failing the game start.
+            // (a narrow format crossed with a narrow set selection).
             val built = runCatching { constructedDeckGenerator.generate(setCodes, format) }
                 .onFailure { error ->
                     logger.warn(
@@ -108,18 +169,14 @@ class RandomDeckResolver(
                     )
                 }
                 .getOrNull()
-            if (built != null) return built
-        } else if (format != null) {
-            logger.info(
-                "Lobby format {} is commander-shaped; the seat falls back to a limited deck",
-                format.displayName,
-            )
+            if (built != null) return GeneratedDeck(built)
         }
 
-        return if (setCodes.isEmpty()) {
+        val sealed = if (setCodes.isEmpty()) {
             sealedDeckGenerator.generate(fallbackSetCode)
         } else {
             sealedDeckGenerator.generate(setCodes)
         }
+        return GeneratedDeck(sealed)
     }
 }

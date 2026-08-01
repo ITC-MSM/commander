@@ -29,7 +29,6 @@ import {
   TABLE_VALUES,
   cardsFromTournamentFormat,
   cardsKindLabel,
-  commanderAiBlock,
   eventFromGameMode,
   eventLabel,
   gameModeForTable,
@@ -160,12 +159,8 @@ export function rulesChoices(view: UnifiedLobbyView): AxisChoice<RulesAxis>[] {
 function rulesAvailability(view: UnifiedLobbyView, rules: RulesAxis): ChoiceAvailability {
   const conflict = rulesTableBlock(rules, view.axes.table)
   if (conflict !== null) return blocked(conflict)
-  if (rules === view.axes.rules) return DIRECT
-  // A brought AI deck can designate its commander. Generated limited pools cannot yet do so.
-  if (view.players.some((p) => p.isAi)) {
-    const aiBlock = commanderAiBlock(rules, view.axes.cards)
-    if (aiBlock !== null) return blocked(aiBlock)
-  }
+  // An AI seat is no longer a reason to refuse Commander: it builds its own legal deck, and picks
+  // its own commander, from a brought-deck lobby or from the pool it is dealt.
   return DIRECT
 }
 

@@ -396,7 +396,7 @@ sealed, or premade), then one N-player game".
   (`ai/engine/Sides.kt`) and a 2HG team's pooled life as one total. `FreeForAllHandler` wires each AI
   seat to the pod's `GameSession` when the game starts and marks them ready between games, so only
   the humans are ever waited on. Where the AI's deck comes from follows the format: a generated pool
-  is built by `buildAiSealedDeck`, and `PREMADE_DECKS` — which generates no pool — has one rolled by
+  is built by `buildAiPoolDeck`, and `PREMADE_DECKS` — which generates no pool — has one rolled by
   `RandomDeckResolver` at the moment the AI sits down, the same component and the same rule the quick
   lobby's `vsAi` seat has always used. Changing the lobby's format or `deckFormat` afterwards
   re-rolls it, since both decide what may be in it.
@@ -409,10 +409,13 @@ sealed, or premade), then one N-player game".
   seat's deck is re-rolled immediately rather than at game start: the premade start gate wants every
   seat to have submitted, so the deck has to exist while the host is still looking at the lobby.
   Rejected outside `PREMADE_DECKS`, where the AI builds from the pool it was dealt.
-- **Commander AI requires a chosen deck.** The generated `auto` / `sets` paths still do not pick a
-  commander, so Commander limited pools remain unavailable to AI seats. In `PREMADE_DECKS`, the host
-  may seat an AI and choose a `deck` spec with a designated commander; the server validates the full
-  Commander deck and holds the lobby at its normal deck-submission gate until that choice exists.
+- **Commander AI.** Every source picks its own commander. `auto` / `sets` build a singleton deck to
+  the lobby's commander-shaped `deckFormat` — or to paper Commander when the Rules axis says Commander
+  and no legality was set — and a limited pool is built from with `CommanderDeckGenerator.generateFromPool`.
+  A `deck` spec is the one source that can be *missing* a commander, since the host chose the list; the
+  server validates the full Commander deck on arrival and the lobby holds at its normal deck-submission
+  gate until the choice exists. A seat whose pool holds no legal commander at all stays un-submitted
+  rather than seating a deck the engine would refuse at init.
 - **Attack rule.** The same two messages also carry an optional `attackMode` (default `MULTIPLE`),
   echoed by `LobbySettings.attackMode`, choosing which opponents creatures may attack in the FFA
   game (CR 802 / 803; CR 806.2b requires exactly one): `MULTIPLE` (any opponent), `LEFT`, or

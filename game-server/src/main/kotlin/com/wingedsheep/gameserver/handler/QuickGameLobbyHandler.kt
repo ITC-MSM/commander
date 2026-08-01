@@ -1,6 +1,7 @@
 package com.wingedsheep.gameserver.handler
 
 import com.wingedsheep.ai.engine.SealedDeckGenerator
+import com.wingedsheep.ai.engine.deck.GeneratedDeck
 import com.wingedsheep.gameserver.ai.AiGameManager
 import com.wingedsheep.gameserver.ai.RandomDeckResolver
 import com.wingedsheep.gameserver.config.GameProperties
@@ -536,16 +537,18 @@ class QuickGameLobbyHandler(
                 sender.sendError(session, ErrorCode.INVALID_ACTION, "Pick a deck before readying up")
                 return@withLock
             }
-            if (message.ready && current.vsAi && current.usesCommanderRules) {
-                val aiDeck = current.aiDeckSpec as? AiDeckSpec.Fixed
-                if (aiDeck?.commander.isNullOrBlank()) {
-                    sender.sendError(
-                        session,
-                        ErrorCode.INVALID_ACTION,
-                        "Pick a Commander deck for the AI before readying up",
-                    )
-                    return@withLock
-                }
+            // A host-supplied AI deck under Commander rules has to name its commander; the
+            // generated paths pick their own, so only a Fixed spec can be missing one.
+            val aiDeck = current.aiDeckSpec
+            if (message.ready && current.vsAi && current.usesCommanderRules &&
+                aiDeck is AiDeckSpec.Fixed && aiDeck.commander.isNullOrBlank()
+            ) {
+                sender.sendError(
+                    session,
+                    ErrorCode.INVALID_ACTION,
+                    "Pick a Commander deck for the AI before readying up",
+                )
+                return@withLock
             }
             player.ready = message.ready
             broadcastState(current)
@@ -563,22 +566,6 @@ class QuickGameLobbyHandler(
             broadcastClosed(lobby, conflict)
             lobbyRepository.remove(lobby.lobbyId)
             return
-        }
-
-        // A Commander lobby with a human player who never designated a commander would crash
-        // mid-init when GameInitializer requires `commanderCardName`. Surface the error early so
-        // the player can pick a different deck before everyone gets disconnected.
-        if (lobby.usesCommanderRules) {
-            val missing = lobby.players.firstOrNull { !it.isAi && it.deckList?.isNotEmpty() == true && it.commander.isNullOrBlank() }
-            if (missing != null) {
-                logger.warn("Lobby ${lobby.lobbyId}: human player ${missing.playerName} has no commander designated for ${lobby.format} game start")
-                broadcastClosed(
-                    lobby,
-                    "${missing.playerName}'s deck has no commander designated — pick a deck with a commander to play ${lobby.format?.displayName ?: "Commander"}",
-                )
-                lobbyRepository.remove(lobby.lobbyId)
-                return
-            }
         }
 
         // Ranked play only counts when every human seat is a signed-in account (no guests). A guest may
@@ -639,21 +626,63 @@ class QuickGameLobbyHandler(
         }
         gameSession.publicSpectate = lobby.isPublic && !lobby.vsAi
 
-        for (lobbyPlayer in humanPlayers) {
+        // Every seat's deck is resolved *before* anyone is seated. Under Commander rules a deck with
+        // no designated commander can't be seated at all — GameInitializer requires one — and
+        // discovering that halfway through the seating loop would leave the seats already wired
+        // pointing at a game that never starts.
+        //
+        // For Momir Basic every seat plays the same fixed 60 basics. Otherwise: a human's own
+        // submitted deck, or (for a Random pool, and for the AI seat's spec) whatever the resolver
+        // builds under the lobby's format — which for a commander shape now includes picking the
+        // commander.
+        val humanDecks = humanPlayers.associate { lobbyPlayer ->
+            // Momir Basic has no deckbuilding: the fixed 60 basics are substituted at seating time.
+            if (lobby.momirBasic) return@associate lobbyPlayer.playerId to GeneratedDeck(emptyMap())
             // In a vs-AI lobby, share the resolved set with the single human so a random pool draws
             // from the same set the AI got; multi-human lobbies keep each player's own set, rolling
             // an independent random when they didn't pick one.
-            // Momir Basic uses a fixed deck (resolved below), so skip the random sealed-pool roll.
-            val deckList = if (lobby.momirBasic) {
-                emptyMap()
-            } else {
-                val randomFallbackSet = if (lobby.vsAi) aiSetCode else deckGenerator.randomSetCode()
-                EasterEggDeckInjector.maybeInjectEasterEggs(
+            val randomFallbackSet = if (lobby.vsAi) aiSetCode else deckGenerator.randomSetCode()
+            val resolved = resolveDeck(lobbyPlayer, randomFallbackSet, lobby.format, lobby.usesCommanderRules)
+            lobbyPlayer.playerId to resolved.copy(
+                deckList = EasterEggDeckInjector.maybeInjectEasterEggs(
                     lobbyPlayer.playerName,
-                    resolveDeck(lobbyPlayer, randomFallbackSet, lobby.format),
+                    resolved.deckList,
                     gameProperties.easterEggs.enabled,
+                ),
+                // A submitted deck names its own commander on the lobby seat; a generated one names
+                // it on the resolved deck. Either way the seat needs exactly one.
+                commander = lobbyPlayer.commander ?: resolved.commander,
+            )
+        }
+        val aiDeck = when {
+            !lobby.vsAi -> null
+            lobby.momirBasic -> GeneratedDeck(MomirBasicSetup.fixedBasicDeck)
+            else -> randomDeckResolver.resolve(lobby.aiDeckSpec, lobby.format, aiSetCode, lobby.usesCommanderRules)
+        }
+
+        if (lobby.usesCommanderRules && !lobby.momirBasic) {
+            val seatWithoutCommander = humanPlayers.firstOrNull { humanDecks[it.playerId]?.commander == null }
+            if (seatWithoutCommander != null) {
+                logger.warn(
+                    "Lobby ${lobby.lobbyId}: no commander for ${seatWithoutCommander.playerName} at ${lobby.format} game start",
                 )
+                broadcastClosed(
+                    lobby,
+                    "${seatWithoutCommander.playerName}'s deck has no commander designated — pick a deck with a commander to play ${lobby.format?.displayName ?: "Commander"}",
+                )
+                lobbyRepository.remove(lobby.lobbyId)
+                return
             }
+            if (aiDeck != null && aiDeck.commander == null) {
+                logger.error("Lobby ${lobby.lobbyId}: could not build a ${lobby.format?.displayName ?: "Commander"} deck for the AI seat")
+                broadcastClosed(lobby, "Could not build a Commander deck for the AI — pick one for it and try again")
+                lobbyRepository.remove(lobby.lobbyId)
+                return
+            }
+        }
+
+        for (lobbyPlayer in humanPlayers) {
+            val deckList = humanDecks.getValue(lobbyPlayer.playerId).deckList
             val playerSession = sessionRegistry
                 .getAllIdentities()
                 .firstOrNull { it.playerId == lobbyPlayer.playerId }
@@ -671,7 +700,8 @@ class QuickGameLobbyHandler(
             // commander on a saved deck doesn't accidentally route into a Standard game. Strip
             // one copy of the commander out of the wire deck list so the engine sees `cards`
             // (= library) excluding the commander, matching `Deck.cards` convention.
-            val commander = if (lobby.usesCommanderRules) lobbyPlayer.commander else null
+            val commander = humanDecks.getValue(lobbyPlayer.playerId).commander
+                ?.takeIf { lobby.usesCommanderRules }
             // Momir Basic ignores any submitted deck: every seat plays the same fixed 60 basics.
             val engineDeckList = when {
                 lobby.momirBasic -> MomirBasicSetup.fixedBasicDeck
@@ -689,17 +719,9 @@ class QuickGameLobbyHandler(
 
         gameRepository.save(gameSession)
 
-        if (lobby.vsAi) {
-            // AI is added by AiGameManager. For Momir Basic it plays the same fixed 60-basic deck
-            // as the human; otherwise the host's AiDeckSpec decides — a hand-picked list, a build
-            // from chosen sets, or the Auto default that mirrors the human's set (and honours a
-            // constructed format restriction). Resolved here rather than inside AiGameManager so
-            // the deck-source policy lives next to the lobby state that configures it.
-            val aiDeck = if (lobby.momirBasic) {
-                MomirBasicSetup.fixedBasicDeck
-            } else {
-                randomDeckResolver.resolve(lobby.aiDeckSpec, lobby.format, aiSetCode)
-            }
+        if (aiDeck != null) {
+            // AI is added by AiGameManager, from the deck resolved above — the deck-source policy
+            // lives next to the lobby state that configures it, not inside AiGameManager.
             aiGameManager.createAiOpponent(
                 gameSession = gameSession,
                 setCode = aiSetCode,
@@ -707,10 +729,10 @@ class QuickGameLobbyHandler(
                 onMulliganKeep = { id -> gamePlayHandler.handleAiMulliganKeep(gameSession, id) },
                 onMulliganTake = { id -> gamePlayHandler.handleAiMulliganTake(gameSession, id) },
                 onBottomCards = { id, cardIds -> gamePlayHandler.handleAiBottomCards(gameSession, id, cardIds) },
-                deckOverride = aiDeck,
-                commanderCardName = (lobby.aiDeckSpec as? AiDeckSpec.Fixed)
-                    ?.commander
-                    ?.takeIf { lobby.usesCommanderRules },
+                deckOverride = aiDeck.deckList,
+                // Cleared outside Commander rules so a commander on a host-picked deck can't route
+                // into a Standard game.
+                commanderCardName = aiDeck.commander?.takeIf { lobby.usesCommanderRules },
             )
         }
 
@@ -774,17 +796,20 @@ class QuickGameLobbyHandler(
         player: QuickGameLobbyPlayer,
         randomFallbackSet: String,
         format: DeckFormat?,
-    ): Map<String, Int> {
+        commanderRules: Boolean,
+    ): GeneratedDeck {
         val submitted = player.deckList ?: emptyMap()
         if (submitted.isEmpty()) {
             // Player chose Random. Under a constructed format that means a legal 60-card deck built
             // from the format's pool — the same thing the AI seat's Auto gets — not a sealed pool
-            // that ignores the restriction their opponent's list was validated against. Without a
-            // format it stays a sealed pool from their own set choice, falling back to the caller's
-            // pre-resolved set (shared with the AI in a vs-AI lobby so both play the same set).
-            return randomDeckResolver.randomDeck(format, player.setCodes, randomFallbackSet)
+            // that ignores the restriction their opponent's list was validated against. Under a
+            // commander shape it means a generated deck *and* its commander, so "Random" is a legal
+            // Commander seat rather than one the engine refuses at init. Without a format it stays a
+            // sealed pool from their own set choice, falling back to the caller's pre-resolved set
+            // (shared with the AI in a vs-AI lobby so both play the same set).
+            return randomDeckResolver.randomDeck(format, player.setCodes, randomFallbackSet, commanderRules)
         }
-        return submitted
+        return GeneratedDeck(submitted)
     }
 
     private fun broadcastState(lobby: QuickGameLobby) {
@@ -871,14 +896,20 @@ class QuickGameLobbyHandler(
 
     /** Player-list label for the AI seat, describing what the host chose for it. */
     private fun aiDeckLabel(lobby: QuickGameLobby): String = when (val spec = lobby.aiDeckSpec) {
-        is AiDeckSpec.Auto -> if (lobby.format != null && !lobby.format!!.isCommanderShape) {
-            "Auto (${lobby.format!!.displayName})"
-        } else {
-            "Auto (sealed)"
-        }
+        is AiDeckSpec.Auto -> autoAiDeckLabel(lobby)
         is AiDeckSpec.Sets ->
-            if (spec.setCodes.isEmpty()) "Auto (sealed)" else "Built from ${spec.setCodes.joinToString(", ")}"
+            if (spec.setCodes.isEmpty()) autoAiDeckLabel(lobby) else "Built from ${spec.setCodes.joinToString(", ")}"
         is AiDeckSpec.Fixed -> "${spec.label} (${spec.deckList.values.sum() + if (spec.commander != null) 1 else 0})"
+    }
+
+    /**
+     * What "let the server decide" resolves to, named by the axis that decides it. A lobby can run
+     * Commander with no deck-legality restriction at all, and "sealed" would be a lie there.
+     */
+    private fun autoAiDeckLabel(lobby: QuickGameLobby): String = when {
+        lobby.format != null -> "Auto (${lobby.format!!.displayName})"
+        lobby.usesCommanderRules -> "Auto (Commander)"
+        else -> "Auto (sealed)"
     }
 
     private fun validateAiDeck(

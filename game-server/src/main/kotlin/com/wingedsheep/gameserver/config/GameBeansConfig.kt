@@ -1,6 +1,7 @@
 package com.wingedsheep.gameserver.config
 
 import com.wingedsheep.ai.engine.SealedDeckGenerator
+import com.wingedsheep.ai.engine.deck.CommanderDeckGenerator
 import com.wingedsheep.ai.engine.deck.ConstructedDeckGenerator
 import com.wingedsheep.ai.engine.deck.RandomDeckGenerator
 import com.wingedsheep.engine.limited.BoosterGenerator
@@ -125,6 +126,16 @@ class GameBeansConfig(
         boosterGenerator: BoosterGenerator,
         cardRegistry: CardRegistry,
     ): ConstructedDeckGenerator = ConstructedDeckGenerator(boosterGenerator, cardRegistry)
+
+    /**
+     * Builds legal Commander / Brawl decks for the AI seat — the singleton shape
+     * [constructedDeckGenerator] refuses, with a designated commander picked first.
+     */
+    @Bean
+    fun commanderDeckGenerator(
+        boosterGenerator: BoosterGenerator,
+        cardRegistry: CardRegistry,
+    ): CommanderDeckGenerator = CommanderDeckGenerator(boosterGenerator, cardRegistry)
 
     @Bean
     fun randomDeckGenerator(): RandomDeckGenerator {

@@ -410,7 +410,10 @@ class FreeForAllLobbyTest : FunSpec() {
             }
         }
 
-        test("a Commander premade lobby seats an AI once the host chooses its commander deck") {
+        test("a Commander premade lobby deals an AI its own commander deck, and the host can override it") {
+            // Adding the AI is enough: the server builds it a legal Commander deck and designates a
+            // commander, the same way a quick game rolls one. Before there was a builder for that
+            // shape the seat sat there deckless until the host picked a list for it.
             val host = createClient()
             host.connectAs("Commander Host")
             host.send(ClientMessage.CreateTournamentLobby(
@@ -429,7 +432,9 @@ class FreeForAllLobbyTest : FunSpec() {
                 host.latestLobbyUpdate()?.players?.size shouldBe 2
             }
             val ai = host.latestLobbyUpdate()!!.players.first { it.isAi }
-            ai.deckSubmitted shouldBe false
+            eventually(20.seconds) {
+                host.latestLobbyUpdate()?.players?.first { it.isAi }?.deckSubmitted shouldBe true
+            }
 
             host.send(ClientMessage.SetLobbyAiDeck(
                 playerId = ai.playerId,
@@ -439,14 +444,19 @@ class FreeForAllLobbyTest : FunSpec() {
                     commander = "Zetalpa, Primal Dawn",
                 ),
             ))
+            // The seat already had a deck, so `deckSubmitted` can't tell the override apart from the
+            // generated one — the commander on the spec is what changed.
             eventually(10.seconds) {
-                host.latestLobbyUpdate()?.players?.first { it.isAi }?.deckSubmitted shouldBe true
+                val seat = host.latestLobbyUpdate()?.players?.first { it.isAi }
+                seat?.deckSubmitted shouldBe true
+                seat?.aiDeck?.commander shouldBe "Zetalpa, Primal Dawn"
             }
-            host.latestLobbyUpdate()?.players?.first { it.isAi }?.aiDeck?.commander shouldBe
-                "Zetalpa, Primal Dawn"
         }
 
-        test("a premade lobby holding an AI can switch to Commander and waits for its commander deck") {
+        test("a premade lobby holding an AI re-rolls its deck when the host switches to Commander") {
+            // `resyncAiDecks` drops the AI's non-commander deck on the switch; what it builds instead
+            // has to be a legal commander deck, or the seat would sit there deckless and the lobby
+            // would never be startable.
             val host = createClient()
             host.connectAs("Rules Switch Host")
             host.send(ClientMessage.CreateTournamentLobby(
@@ -464,10 +474,10 @@ class FreeForAllLobbyTest : FunSpec() {
             }
 
             host.send(ClientMessage.UpdateLobbySettings(rules = "COMMANDER"))
-            eventually(5.seconds) {
+            eventually(20.seconds) {
                 host.latestLobbyUpdate()?.settings?.rules shouldBe "COMMANDER"
+                host.latestLobbyUpdate()?.players?.first { it.isAi }?.deckSubmitted shouldBe true
             }
-            host.latestLobbyUpdate()?.players?.first { it.isAi }?.deckSubmitted shouldBe false
         }
 
         test("a sealed FFA pod of one human and two AI builds its decks, starts, and the AI plays") {
