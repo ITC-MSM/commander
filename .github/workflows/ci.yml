@@ -101,6 +101,13 @@ jobs:
           kill "${WATCHDOG_PID}" 2>/dev/null || true
           exit "${STATUS}"
 
+      - name: Upload card snapshot actuals
+        if: always() && matrix.name == 'content'
+        uses: actions/upload-artifact@v4
+        with:
+          name: card-snapshot-actuals
+          path: mtg-sets/build/snapshots-actual/
+
   # Aggregate gate so branch protection can keep requiring a single "backend" check. It passes only
   # if every test group passed; with fail-fast disabled, a failure in one group still surfaces all
   # others before this job reports.
