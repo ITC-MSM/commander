@@ -670,12 +670,13 @@ internal class CombatDamageManager(
                     val manualAssignment = attackerContainer.get<DamageAssignmentComponent>()
                     when {
                         manualAssignment != null && manualAssignment.assignments.isNotEmpty() -> {
-                            // A DamageAssignmentComponent set during the first-strike damage step
-                            // persists into the regular damage step. If first-strike damage killed
-                            // a blocker, that blocker is no longer on the battlefield. Per CR 702.19c,
-                            // an attacker with trample whose blocker has been removed from combat
-                            // assigns the freed-up damage to the defending player/planeswalker.
-                            // Without trample, damage assigned to a removed blocker is lost.
+                            // A chosen assignment can still name a target that has since left the
+                            // battlefield. Per CR 702.19d, an attacker with trample whose blockers
+                            // have been removed from combat assigns the freed-up damage to the
+                            // defending player/planeswalker; without trample it is simply lost.
+                            // (Assignments never cross a combat damage step — CR 510.1 makes each
+                            // step a fresh division, and CombatManager
+                            // .clearDamageAssignmentsForNewDamageStep drops the first-strike one.)
                             val defenderId = attackingComponent.defenderId
                             val hasTrample = projected.hasKeyword(attackerId, Keyword.TRAMPLE)
                             var trampleRedirect = 0
@@ -705,7 +706,7 @@ internal class CombatDamageManager(
                                     }
                                 }
                             } else if (projected.hasKeyword(attackerId, Keyword.TRAMPLE)) {
-                                // CR 702.19c: Blocked attacker with trample and no remaining blockers
+                                // CR 702.19d: Blocked attacker with trample and no remaining blockers
                                 // assigns all damage to the defending player/planeswalker.
                                 assignments.add(CombatDamageAssignment(attackerId, attackingComponent.defenderId, power))
                             }
