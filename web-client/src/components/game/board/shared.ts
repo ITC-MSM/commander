@@ -367,10 +367,10 @@ export function attachmentStackLayout(input: {
     (anySideways ? gutter : 0)
   const containerHeight = cardHeight + visiblePeek
   const centeredLeft = (tapped: boolean) => (containerWidth - boxWidth(tapped)) / 2
-  // A sideways card's visible band is its width, centered in a box that stays cardHeight
-  // tall (GameCard rotates in place). Offset the box so that band ends at the container
-  // bottom, level with the host's lower edge.
-  const bottomAlignedTop = containerHeight - (cardHeight + cardWidth) / 2
+  // GameCard drops a sideways card's visible band onto the bottom of its own box, so a box
+  // flush with the container bottom puts the band level with the host's lower edge — the
+  // same placement the host itself gets.
+  const bottomAlignedTop = containerHeight - cardHeight
 
   let uprightRung = 0
   return {

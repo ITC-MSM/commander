@@ -196,13 +196,14 @@ describe('attachmentStackLayout', () => {
   // A sideways attachment is already wider than its host, so it shows down both flanks
   // without needing height above the card. Riding above the host just pushed it away
   // from the permanent it belongs to; tuck it under instead.
+  // GameCard bottom-aligns a sideways card's visible band inside its own box, so a box
+  // ending at the container bottom puts the band on the host's lower edge.
   it('bottom-aligns a sideways attachment level with the host', () => {
-    const { attachments, containerHeight } = layout(false, [true])
+    const { attachments, host, containerHeight } = layout(false, [true])
     const box = attachments[0]!
-    // The visible band of a sideways card is `cardWidth` tall, centered in its box.
-    const bandBottom = box.top + (CARD_HEIGHT + CARD_WIDTH) / 2
 
-    expect(bandBottom).toBe(containerHeight)
+    expect(box.top + CARD_HEIGHT).toBe(containerHeight)
+    expect(box.top).toBe(host.top)
   })
 
   it('gives a sideways attachment no peek height of its own', () => {
