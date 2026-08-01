@@ -1828,6 +1828,21 @@ object Effects {
      * "Distribute N counters among one or more target creatures."
      */
     fun DistributeCountersAmongTargets(totalCounters: Int, counterType: String = Counters.PLUS_ONE_PLUS_ONE, minPerTarget: Int = 1): Effect =
+        com.wingedsheep.sdk.scripting.effects.DistributeCountersAmongTargetsEffect(
+            DynamicAmount.Fixed(totalCounters), counterType, minPerTarget
+        )
+
+    /**
+     * Distribute a dynamically-sized pool of counters among targets from context.
+     * "Distribute X +1/+1 counters among any number of target creatures you control"
+     * (Grove's Bounty) — pass `DynamicAmount.XValue` and declare the targets with
+     * `TargetObject(unlimited = true, dynamicMaxCount = DynamicAmount.XValue)`.
+     */
+    fun DistributeCountersAmongTargets(
+        totalCounters: DynamicAmount,
+        counterType: String = Counters.PLUS_ONE_PLUS_ONE,
+        minPerTarget: Int = 1,
+    ): Effect =
         com.wingedsheep.sdk.scripting.effects.DistributeCountersAmongTargetsEffect(totalCounters, counterType, minPerTarget)
 
     /**
@@ -3427,6 +3442,19 @@ object Effects {
         spellFilter: GameObjectFilter = GameObjectFilter.Noncreature,
         forType: com.wingedsheep.sdk.core.CardType = com.wingedsheep.sdk.core.CardType.ARTIFACT
     ): Effect = com.wingedsheep.sdk.scripting.effects.GrantNextSpellAffinityEffect(spellFilter, forType)
+
+    /**
+     * "Spells you cast this turn that match [spellFilter] cost {X} less to cast, where X is
+     * [amount]" (Will, Scion of Peace / Rowan, Scion of War).
+     *
+     * [amount] is locked in when this effect resolves and applies to every matching spell for the
+     * rest of the turn; it reduces only generic mana. Unlike [GrantNextSpellAffinity] the discount
+     * is not consumed by the first matching spell.
+     */
+    fun ReduceSpellCostsThisTurn(
+        spellFilter: GameObjectFilter,
+        amount: DynamicAmount,
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ReduceSpellCostsThisTurnEffect(spellFilter, amount)
 
     // =========================================================================
     // Sacrifice Effects

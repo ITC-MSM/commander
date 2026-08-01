@@ -442,12 +442,19 @@ data object ProliferateEffect : Effect {
 }
 
 /**
- * Distribute a fixed number of counters among the targets from context.
+ * Distribute a number of counters among the targets from context.
  * "Distribute N counters among one or more target creatures you control."
  *
  * Distribution is deterministic when totalCounters equals number of targets * minPerTarget.
  * With 1 target, all counters go on it. With multiple targets, counters are divided evenly
  * (remainder goes to the first target).
+ *
+ * [totalCounters] is a [DynamicAmount] so the pool can come from the spell's X
+ * ("Distribute X +1/+1 counters among any number of target creatures you control" —
+ * Grove's Bounty) as well as from a literal (`DynamicAmount.Fixed(2)` — Armament Corps).
+ * It is evaluated once, when the effect resolves. Pair an X-scaled pool with
+ * `TargetObject(unlimited = true, dynamicMaxCount = DynamicAmount.XValue)` so the caster
+ * can't declare more targets than there are counters to go around (CR 601.2d).
  *
  * @property totalCounters Total number of counters to distribute
  * @property counterType The type of counter (e.g., "+1/+1")
@@ -456,12 +463,12 @@ data object ProliferateEffect : Effect {
 @SerialName("DistributeCountersAmongTargets")
 @Serializable
 data class DistributeCountersAmongTargetsEffect(
-    val totalCounters: Int,
+    val totalCounters: DynamicAmount,
     val counterType: String = Counters.PLUS_ONE_PLUS_ONE,
     val minPerTarget: Int = 1
 ) : Effect {
     override val description: String =
-        "Distribute $totalCounters $counterType counter${if (totalCounters != 1) "s" else ""} among targets"
+        "Distribute ${totalCounters.description} $counterType counters among targets"
 }
 
 /**

@@ -40,7 +40,7 @@ class PayLifeEffectExecutor : EffectExecutor<PayLifeEffect> {
             LifeChangedEvent(playerId, currentLife, newLife, LifeChangeReason.PAYMENT)
         )
 
-        val finalState = DamageUtils.markLifeLostThisTurn(newState, playerId)
+        val finalState = DamageUtils.markLifeLostThisTurn(newState, playerId, effect.amount)
         return EffectResult.success(finalState, events)
     }
 }

@@ -12385,7 +12385,10 @@
                     "effects": [
                         {
                             "type": "DistributeCountersAmongTargets",
-                            "totalCounters": 2
+                            "totalCounters": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
                         },
                         {
                             "type": "Gated",
@@ -12445,7 +12448,10 @@
                     "effects": [
                         {
                             "type": "DistributeCountersAmongTargets",
-                            "totalCounters": 2
+                            "totalCounters": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
                         },
                         {
                             "type": "Gated",

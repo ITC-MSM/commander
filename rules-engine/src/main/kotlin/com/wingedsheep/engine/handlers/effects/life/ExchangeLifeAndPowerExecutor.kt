@@ -84,7 +84,7 @@ class ExchangeLifeAndPowerExecutor : EffectExecutor<ExchangeLifeAndPowerEffect> 
                 newState = DamageUtils.markLifeGainedThisTurn(newState, controllerId, currentPower - currentLife)
             }
             if (currentPower < currentLife) {
-                newState = DamageUtils.markLifeLostThisTurn(newState, controllerId)
+                newState = DamageUtils.markLifeLostThisTurn(newState, controllerId, currentLife - currentPower)
             }
         }
 

@@ -1075,6 +1075,20 @@ data class LifeGainedAmountThisTurnComponent(val amount: Int = 0) : Component
 data object LifeLostThisTurnComponent : Component
 
 /**
+ * Tracks the total amount of life this player has lost during the current turn — damage taken,
+ * life-loss effects and life paid as a cost all accumulate here. Cleared at end of turn by
+ * CleanupPhaseManager.
+ *
+ * The amount-carrying sibling of [LifeLostThisTurnComponent], mirroring
+ * [LifeGainedAmountThisTurnComponent]. Read by
+ * `DynamicAmount.TurnTracking(player, TurnTracker.LIFE_LOST_AMOUNT)` — e.g. Rowan, Scion of War's
+ * "where X is the amount of life you lost this turn". Life *gained* is tracked separately and
+ * never nets against this total (Rowan's rulings: gaining 3 and losing 3 leaves X = 3).
+ */
+@Serializable
+data class LifeLostAmountThisTurnComponent(val amount: Int = 0) : Component
+
+/**
  * Tracks the number of cards that left this player's graveyard this turn.
  * Cleared at end of turn by CleanupPhaseManager.
  *

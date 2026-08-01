@@ -536,6 +536,7 @@ val engineSerializersModule = SerializersModule {
         subclass(GrantedSpellKeywordsComponent::class)
         subclass(LifeGainedAmountThisTurnComponent::class)
         subclass(LifeGainedThisTurnComponent::class)
+        subclass(LifeLostAmountThisTurnComponent::class)
         subclass(LifeLostThisTurnComponent::class)
         subclass(ManaSpentOnSpellsThisTurnComponent::class)
         subclass(MayCastCreaturesFromGraveyardWithForageComponent::class)

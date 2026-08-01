@@ -44,10 +44,17 @@ enum class TurnTracker {
     LIFE_GAINED,
     /**
      * Indicator (0 or 1) that the player has lost life at least once this turn. Backed by the
-     * `LifeLostThisTurnComponent` marker — there is no engine-side accumulator for the *amount*
-     * lost, so use `Compare(TurnTracking(player, LIFE_LOST), GTE, Fixed(1))` for boolean checks.
+     * `LifeLostThisTurnComponent` marker; use `Compare(TurnTracking(player, LIFE_LOST), GTE,
+     * Fixed(1))` for boolean checks and [LIFE_LOST_AMOUNT] when you need how much was lost.
      */
     LIFE_LOST,
+    /**
+     * Total amount of life the player has lost this turn — damage taken, life-loss effects and
+     * life paid as a cost all count. The amount-carrying counterpart of [LIFE_LOST] and the mirror
+     * of [LIFE_GAINED]; life gained never nets against it (Rowan, Scion of War: gaining 3 and
+     * losing 3 in a turn leaves the amount lost at 3).
+     */
+    LIFE_LOST_AMOUNT,
     /** Indicator (0 or 1) that the player declared at least one attacker this turn. */
     PLAYER_ATTACKED,
     /** Indicator (0 or 1) that the player was dealt combat damage this turn. */
@@ -162,6 +169,7 @@ enum class TurnTracker {
         DAMAGE_RECEIVED_FROM_ARTIFACTS -> "the damage dealt to ${player.description} so far this turn by artifacts"
         LIFE_GAINED -> "the amount of life ${player.possessive} gained this turn"
         LIFE_LOST -> "whether ${player.description} lost life this turn"
+        LIFE_LOST_AMOUNT -> "the amount of life ${player.possessive} lost this turn"
         PLAYER_ATTACKED -> "whether ${player.description} attacked this turn"
         DEALT_COMBAT_DAMAGE -> "whether ${player.description} were dealt combat damage this turn"
         DEALT_COMBAT_DAMAGE_BY_LEGENDARY_CREATURE ->
