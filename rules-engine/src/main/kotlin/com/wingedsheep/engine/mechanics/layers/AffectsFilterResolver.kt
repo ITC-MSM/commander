@@ -390,6 +390,14 @@ internal class AffectsFilterResolver {
         StatePredicate.IsTapped -> container.has<TappedComponent>()
         StatePredicate.IsUntapped -> !container.has<TappedComponent>()
         StatePredicate.IsAttacking -> container.has<AttackingComponent>()
+        // "Attacking one of your opponents" — the defender must be an opponent *player* of the
+        // static ability's controller, so an attacker aimed at a planeswalker or battle drops out.
+        // Fails closed without a controller to scope "your" against.
+        StatePredicate.IsAttackingAnOpponent -> {
+            val defenderId = container.get<AttackingComponent>()?.defenderId
+            sourceController != null && defenderId != null &&
+                defenderId in state.getOpponents(sourceController)
+        }
         StatePredicate.IsBlocking -> container.has<BlockingComponent>()
         StatePredicate.IsBlocked -> {
             container.has<AttackingComponent>() && state.getBattlefield().any { blockerId ->

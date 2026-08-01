@@ -489,6 +489,7 @@ class BeginningPhaseManager(
         StatePredicate.IsTapped,
         StatePredicate.IsUntapped,
         StatePredicate.IsAttacking,
+        StatePredicate.IsAttackingAnOpponent,
         StatePredicate.IsBlocking,
         StatePredicate.IsBlocked,
         StatePredicate.IsUnblocked,

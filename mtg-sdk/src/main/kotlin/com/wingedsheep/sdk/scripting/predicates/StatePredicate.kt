@@ -56,6 +56,23 @@ sealed interface StatePredicate {
         override val description: String = "attacking"
     }
 
+    /**
+     * Attacking one of *your* opponents — the player, not their planeswalkers or battles
+     * (Oviya, Automech Artisan: "Each creature that's attacking one of your opponents has
+     * trample"). "You" is the controller of the ability doing the asking, so this matches
+     * regardless of who controls the attacker: a creature an ally controls that's attacking your
+     * opponent qualifies, and a creature attacking *you* does not.
+     *
+     * Strictly narrower than [IsAttacking], which is also true of a creature attacking a
+     * planeswalker or battle. Fails closed when there's no controller context to scope "your"
+     * against.
+     */
+    @SerialName("IsAttackingAnOpponent")
+    @Serializable
+    data object IsAttackingAnOpponent : Entity {
+        override val description: String = "attacking one of your opponents"
+    }
+
     @SerialName("IsBlocking")
     @Serializable
     data object IsBlocking : Entity {

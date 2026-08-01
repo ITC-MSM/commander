@@ -956,6 +956,15 @@ class PredicateEvaluator {
             StatePredicate.IsAttacking ->
                 container.get<AttackingComponent>() != null ||
                     container.get<LastKnownPermanentComponent>()?.snapshot?.wasAttacking == true
+            // "Attacking one of your opponents": the defender has to be an opponent *player* of
+            // the asking ability's controller — `getOpponents` only ever yields players, so an
+            // attacker pointed at a planeswalker or battle never matches. No last-known fallback:
+            // the frozen snapshot records only *that* the permanent was attacking, not whom.
+            StatePredicate.IsAttackingAnOpponent -> {
+                val you = context?.controllerId
+                val defenderId = container.get<AttackingComponent>()?.defenderId
+                you != null && defenderId != null && defenderId in state.getOpponents(you)
+            }
             StatePredicate.IsBlocking -> container.has<BlockingComponent>()
             StatePredicate.IsBlocked -> {
                 // Check if this attacking creature has any blockers assigned
