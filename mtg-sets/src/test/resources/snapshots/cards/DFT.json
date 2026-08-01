@@ -1466,6 +1466,104 @@
     ]
 }
 
+// Boom Scholar
+{
+    "name": "Boom Scholar",
+    "manaCost": "{1}{R}{G}",
+    "typeLine": "Creature — Goblin Advisor",
+    "oracleText": "Exhaust abilities of other permanents you control cost {2} less to activate.\nExhaust — {4}{R}{G}: Creatures and Vehicles you control gain trample until end of turn. Put two +1/+1 counters on this creature. (Activate each exhaust ability only once.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{R}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature|Vehicle ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "GrantKeyword",
+                                "keyword": "TRAMPLE",
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 2,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Creatures and Vehicles you control gain trample until end of turn. Put two +1/+1 counters on this creature.",
+                "isExhaust": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ReduceActivatedAbilityCost",
+                "filter": {
+                    "baseFilter": "permanent ctrl:you",
+                    "excludeSelf": true
+                },
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "exhaustOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "189",
+        "rarity": "UNCOMMON",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f2b84684-10c9-4635-a922-620f04809bb1.jpg?1783907862",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Boom Scholar's first ability can cause the mana component of the cost to activate an ability to be {0}."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Exhaust abilities can be activated any time you could normally activate an ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an ability triggers whenever you activate an exhaust ability, that ability resolves before the exhaust ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Boommobile
 {
     "name": "Boommobile",

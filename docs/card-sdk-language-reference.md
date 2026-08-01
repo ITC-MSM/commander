@@ -5024,7 +5024,8 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   equip ability's source. Because it is typically granted to a token (via
   `CreateTokenCopyOfTargetEffect.addedStaticAbilities`), the equip-cost reader unions
   `grantedStaticAbilities` with printed statics.
-- `ReduceActivatedAbilityCost(filter, amount, manaFloor = 0)` — the activated abilities of permanents
+- `ReduceActivatedAbilityCost(filter, amount, manaFloor = 0, exhaustOnly = false)` — the activated
+  abilities of permanents
   matching `filter` cost the dynamic `amount` of generic mana less to activate, with the mana in each
   cost floored
   at `manaFloor` *total* mana (generic + colored). The activated-ability sibling of `ReduceEquipCost`,
@@ -5041,6 +5042,14 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   from both the enumerator (displayed cost) and `ActivateAbilityHandler` (paid cost), keyed on the
   ability's source permanent; non-mana costs (`{T}`, sacrifice) and abilities with no mana cost are
   unaffected. Backed by `ManaCost.reduceGenericWithManaFloor(amount, minTotalMana)`.
+  `exhaustOnly = true` narrows the reduction to abilities marked `isExhaust` (CR 702.177) — it gates
+  on the **ability**, not the permanent, so a matching permanent's ordinary activated abilities stay
+  at full price while its exhaust ability is discounted. Boom Scholar: "Exhaust abilities of other
+  permanents you control cost {2} less to activate" →
+  `ReduceActivatedAbilityCost(GroupFilter(GameObjectFilter.Permanent.youControl(), excludeSelf = true), DynamicAmount.Fixed(2), exhaustOnly = true)`.
+  Note that `GroupFilter.excludeSelf` (the printed "**other** permanents") is honored by this read
+  site directly — the projection layer never sees this static — so a lord never discounts its own
+  abilities.
 - `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null)`
   — cast spells matching `filter` from your graveyard following normal timing, optionally paying
   `lifeCost` life. Free for Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1,
