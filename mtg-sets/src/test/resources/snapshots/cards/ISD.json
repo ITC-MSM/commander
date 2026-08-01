@@ -2320,9 +2320,7 @@
         "replacementEffects": [
             {
                 "type": "ReplaceDrawWith",
-                "replacementEffect": {
-                    "type": "WinGame"
-                },
+                "replacementEffect": "WinGame",
                 "restrictions": [
                     {
                         "type": "Exists",
