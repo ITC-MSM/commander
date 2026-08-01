@@ -1,3 +1,120 @@
+// Aberrant Researcher
+{
+    "name": "Aberrant Researcher",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Human Insect",
+    "oracleText": "Flying\nAt the beginning of your upkeep, mill a card. If an instant or sorcery card was milled this way, transform this creature. (To mill a card, put the top card of your library into your graveyard.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        },
+                                        "isMill": true
+                                    },
+                                    "storeAs": "milled"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "milled",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "CollectionContainsMatch",
+                                    "collection": "milled",
+                                    "filter": "instant|sorcery"
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your upkeep, mill a card. If an instant or sorcery card was milled this way, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Perfected Form",
+        "manaCost": "",
+        "typeLine": "Creature — Insect Horror",
+        "oracleText": "Flying",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 4
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "metadata": {
+            "collectorNumber": "49",
+            "rarity": "UNCOMMON",
+            "artist": "Nils Hamm",
+            "flavorText": "The final pages of the experiment log were blank. Investigators found it abandoned on a desk in the researcher's lab, open, the pages flipping in the wind from a shattered window.",
+            "imageUri": "https://cards.scryfall.io/normal/back/b/5/b5c9649e-9ae5-4926-bf08-71ba23aa37f1.jpg?1783937809"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "rarity": "UNCOMMON",
+        "artist": "Nils Hamm",
+        "flavorText": "\"Metamorphosis is a process.\"\n—Laboratory notes",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/5/b5c9649e-9ae5-4926-bf08-71ba23aa37f1.jpg?1783937809",
+        "rulings": [
+            {
+                "date": "2016-04-08",
+                "text": "No player may take any action between the two steps of Aberrant Researcher's triggered ability. If the card put into your graveyard is an instant or sorcery card, Aberrant Researcher will have transformed before a player can take any action."
+            },
+            {
+                "date": "2016-04-08",
+                "text": "If a replacement effect causes the top card of your library to go to a zone other than your graveyard, Aberrant Researcher will still transform if that card was an instant or sorcery card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Aim High
 {
     "name": "Aim High",
