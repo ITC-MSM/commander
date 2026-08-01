@@ -106,7 +106,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: generated-dft-snapshot
-          path: mtg-sets/build/snapshots-actual/DFT.json
+          path: mtg-sets/build/snapshots-actual/snapshots/cards/DFT.json
 
   # Aggregate gate so branch protection can keep requiring a single "backend" check. It passes only
   # if every test group passed; with fail-fast disabled, a failure in one group still surfaces all
