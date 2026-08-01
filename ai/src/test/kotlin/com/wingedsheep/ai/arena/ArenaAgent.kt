@@ -49,6 +49,10 @@ object ArenaAgents {
         ArenaAgent("current", AiProfile.CURRENT),
         // What a player actually faces in a real game: BLB + ONS card advisors.
         ArenaAgent("production", AiProfile.PRODUCTION),
+        // Explicit ECL candidates. Their resource-backed weights fail closed to production's
+        // evaluator until a validated artifact is installed; automatic selection is set-gated.
+        ArenaAgent("ecl-apprentice", AiProfile.ECL_APPRENTICE),
+        ArenaAgent("ecl-overlay", AiProfile.ECL_OVERLAY),
         // V0 plus one advisor module each — this is the split `AdvisorBenchmark` measured, so
         // `just arena v0 blb-advisors` is directly comparable to its published number.
         ArenaAgent("blb-advisors", AiProfile.LEGACY_V0.copy(

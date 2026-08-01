@@ -2,8 +2,11 @@ package com.wingedsheep.ai.engine.evaluation
 
 import com.wingedsheep.ai.engine.AiProfile
 import com.wingedsheep.ai.engine.knowledge.IntentCatalog
+import com.wingedsheep.ai.training.ApprenticeArtifactLoader
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.nio.file.Files
+import java.nio.file.Path
 
 /**
  * The five-feature fallback evaluator's coefficients.
@@ -76,22 +79,37 @@ object EvalWeights {
         }.getOrDefault(emptyMap())
     }
 
+    /** Optional offline-installed artifacts, loaded once and shared. No artifact is required. */
+    private val apprenticeWeights: Map<String, RawEvaluationWeights> by lazy {
+        val directory = System.getProperty("argentum.ai.apprentice.dir")?.takeIf { it.isNotBlank() }
+            ?: return@lazy emptyMap()
+        listOf("shared-apprentice", "ecl-apprentice", "ecl-overlay").mapNotNull { id ->
+            val path = Path.of(directory, "$id.json")
+            if (!Files.isRegularFile(path)) return@mapNotNull null
+            val expectedSet = if (id.startsWith("ecl-")) "ECL" else null
+            ApprenticeArtifactLoader.decodeOrNull(Files.readString(path), expectedSet)?.let { artifact ->
+                id to artifact.toEvaluationWeights(applyOverlay = id == "ecl-overlay")
+            }
+        }.toMap()
+    }
+
     fun resolve(id: String): EvaluationWeights =
         resourceWeights[id]?.takeIf(::isFinite) ?: EvaluationWeights.DEFAULT
 
     fun resolveEvaluator(id: String, intents: IntentCatalog): BoardEvaluator =
-        rawResourceWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
+        apprenticeWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
+            ?: rawResourceWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
             ?: resolve(id).toEvaluator(intents)
 
     /** Whether [id] selects a complete, finite raw vector rather than the composite fallback. */
-    fun isRawProfile(id: String): Boolean = rawResourceWeights[id]?.isValid() == true
+    fun isRawProfile(id: String): Boolean = apprenticeWeights[id]?.isValid() == true || rawResourceWeights[id]?.isValid() == true
 
     fun winProbabilityScale(id: String): Double =
-        rawResourceWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.winProbabilityScale
+        (apprenticeWeights[id] ?: rawResourceWeights[id])?.takeIf(RawEvaluationWeights::isValid)?.winProbabilityScale
             ?: com.wingedsheep.ai.engine.rollout.WinProbability.SCALE
 
     /** Stable ids available to tooling such as the arena agent registry. */
-    val ids: Set<String> get() = resourceWeights.keys + rawResourceWeights.keys
+    val ids: Set<String> get() = resourceWeights.keys + rawResourceWeights.keys + apprenticeWeights.keys
 
     internal fun decode(text: String): Map<String, EvaluationWeights> =
         json.decodeFromString<Map<String, EvaluationWeights>>(text)

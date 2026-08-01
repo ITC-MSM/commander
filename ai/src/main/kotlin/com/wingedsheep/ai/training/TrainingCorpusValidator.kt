@@ -11,6 +11,12 @@ object TrainingCorpusValidator {
         val schemas = (corpus.games.map { it.schemaVersion } + corpus.records.map { it.schemaVersion }).toSet()
         if (schemas.size > 1) errors += "mixed schema versions: $schemas"
         corpus.games.filterNot { it.completedCleanly }.forEach { errors += "invalid game ${it.globallyUniqueId}" }
+        corpus.games.forEach { game ->
+            if (game.deckHashes.size != game.profilesBySeat.size) errors += "seat metadata differs: ${game.globallyUniqueId}"
+            if (game.actionPropensities.any { !it.isFinite() || it <= 0.0 || it > 1.0 }) {
+                errors += "invalid action propensity: ${game.globallyUniqueId}"
+            }
+        }
         val gameIds = ids.toSet()
         corpus.records.filter { "${it.identity.runId}/${it.identity.gameId}" !in gameIds }
             .forEach { errors += "record has no game metadata: ${it.identity}" }
@@ -18,6 +24,10 @@ object TrainingCorpusValidator {
         if (decisionIds.distinct().size != decisionIds.size) errors += "duplicate decision identity"
         if (corpus.games.map { it.generator }.toSet().size < minimumGeneratorCount) errors += "missing generator diversity"
         corpus.records.forEach { record ->
+            if (record.candidates.size < 2) errors += "non-meaningful decision at ${record.identity}"
+            if (record.candidates.any { it.descriptor.encodedAction.isBlank() }) {
+                errors += "candidate without structured action at ${record.identity}"
+            }
             finite(record.eventualResult, "eventual result", record.identity, errors)
             record.utilityBySeat.forEach { finite(it, "utility", record.identity, errors) }
             record.candidates.forEach { candidate ->

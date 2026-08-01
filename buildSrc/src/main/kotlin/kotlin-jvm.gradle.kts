@@ -40,6 +40,8 @@ tasks.withType<Test>().configureEach {
     // is what relaxes TestHangGuard for a run that legitimately takes half an hour.
     for (prop in listOf(
         "arena", "arenaGauntlet", "arenaPod", "arenaBudgetScaling", "arenaTable", "arenaA", "arenaB",
+        "argentum.ai.apprentice.dir",
+        "eclCollect", "eclCollectGames", "eclCollectSeed", "eclCollectOutput", "eclCollectRunId",
         "arenaGames", "arenaSeed", "arenaSet", "arenaMaxTurns", "arenaThreads",
     )) {
         System.getProperty(prop)?.let { systemProperty(prop, it) }

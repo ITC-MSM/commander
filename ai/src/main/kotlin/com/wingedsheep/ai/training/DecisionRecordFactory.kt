@@ -1,6 +1,7 @@
 package com.wingedsheep.ai.training
 
 import com.wingedsheep.ai.engine.GameSimulator
+import com.wingedsheep.ai.engine.SimulationResult
 import com.wingedsheep.engine.legalactions.EnumerationMode
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.registry.CardRegistry
@@ -25,13 +26,21 @@ class DecisionRecordFactory(registry: CardRegistry) {
         actionPrefixDigest: String,
         sampledWorldIds: List<String> = emptyList(),
         rolloutSeeds: List<Long> = emptyList(),
+        requireMeaningful: Boolean = false,
     ): DecisionTrainingRecord {
-        require(state.pendingDecision == null && state.stack.isEmpty()) { "Decision root must be quiet." }
+        require(state.pendingDecision == null) { "Pending decisions require structured response enumeration." }
         val root = TrainingRecordEncoding.observation(state, actingPlayer)
-        val legal = enumerator.enumerate(state, actingPlayer, EnumerationMode.ACTIONS_ONLY)
-        val candidates = legal.map { legalAction ->
+        val enumerated = enumerator.enumerate(state, actingPlayer, EnumerationMode.ACTIONS_ONLY)
+        val legal = MeaningfulDecisionRoots.classify(enumerated)
+        require(!requireMeaningful || legal.shouldCapture) { "Decision root is not meaningful: ${legal.skipReason}" }
+        val retained = if (requireMeaningful) legal.candidates else enumerated
+        val candidates = retained.map { legalAction ->
             val descriptor = TrainingRecordEncoding.action(legalAction.action)
-            val quiet = simulator.simulate(state, legalAction.action).state
+            val simulation = simulator.simulate(state, legalAction.action)
+            require(simulation is SimulationResult.Terminal) {
+                "Candidate is not fully specified or legal: ${descriptor.actionType} (${simulation::class.simpleName})"
+            }
+            val quiet = simulation.state
             val observation = TrainingRecordEncoding.observation(quiet, actingPlayer)
             CandidateTrainingRecord(descriptor, observation, TrainingRecordEncoding.digest(observation))
         }
@@ -50,6 +59,8 @@ class DecisionRecordFactory(registry: CardRegistry) {
                 actionPrefixDigest = actionPrefixDigest,
                 rootQuietStateDigest = TrainingRecordEncoding.digest(root),
             ),
+            actionFamily = candidates.map { it.descriptor.actionType }.distinct().sorted().joinToString("+"),
+            gamePhase = state.step.name,
         )
     }
 }

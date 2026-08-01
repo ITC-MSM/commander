@@ -86,9 +86,32 @@ benchmark-throughput GAMES="20" SET="BLB":
 # ons-advisors, v0-blind. 1000 games is the merge gate; 300 is directional; 100 is a smoke test.
 # Results land in benchmarks/arena/. How to read one: docs/ai/measurement.md.
 [group: 'ai']
-arena A B GAMES="300" SET="BLB" SEED="20260727":
+arena A B GAMES="300" SET="BLB" SEED="20260727" ARTIFACT_DIR="":
     scripts/gradle-locked :ai:test --tests "*.ArenaBenchmark" -Dbenchmark=true -Darena=true \
-        -DarenaA={{A}} -DarenaB={{B}} -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}}
+        -DarenaA={{A}} -DarenaB={{B}} -DarenaGames={{GAMES}} -DarenaSet={{SET}} -DarenaSeed={{SEED}} \
+        -Dargentum.ai.apprentice.dir={{ARTIFACT_DIR}}
+
+# ECL apprentice promotion ladder. Artifacts are installed outside the repository and selected with
+# -Dargentum.ai.apprentice.dir; missing or invalid files safely use the production evaluator.
+[group: 'ai']
+arena-ecl-smoke ARTIFACT_DIR GAMES="100" SEED="20260801":
+    just arena ecl-apprentice production {{GAMES}} ECL {{SEED}} {{ARTIFACT_DIR}}
+
+[group: 'ai']
+arena-ecl-directional ARTIFACT_DIR GAMES="300" SEED="20260801":
+    just arena ecl-apprentice production {{GAMES}} ECL {{SEED}} {{ARTIFACT_DIR}}
+
+# Fit the dependency-free linear apprentice from a pairwise-example JSON file.
+[group: 'ai']
+train-ecl-apprentice EXAMPLES OUTPUT:
+    python3 scripts/train_ecl_apprentice.py {{EXAMPLES}} {{OUTPUT}}
+
+# Collect clean ECL games. Failed/recovered games are quarantined and never appended.
+[group: 'ai']
+collect-ecl-training OUTPUT GAMES="100" SEED="20260801" RUN_ID="ecl-{{SEED}}":
+    scripts/gradle-locked :ai:test --tests "*.EclTrainingBenchmark" -Dbenchmark=true -DeclCollect=true \
+        -DeclCollectGames={{GAMES}} -DeclCollectSeed={{SEED}} -DeclCollectOutput={{OUTPUT}} \
+        -DeclCollectRunId={{RUN_ID}}
 
 # Play the rollout evaluator against itself at 4 / 8 / 16 / 32 playouts per decision. Same claim as
 # arena-budget-scaling one level down: strength must never FALL with more playouts, or the search is

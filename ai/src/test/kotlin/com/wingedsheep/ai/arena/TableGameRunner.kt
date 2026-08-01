@@ -6,6 +6,10 @@ import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.GameInitializer
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.core.SubmitDecision
+import com.wingedsheep.engine.core.DecisionResponse
+import com.wingedsheep.engine.core.GameAction
+import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -123,6 +127,14 @@ data class TableGameOutcome(
     fun seatWon(seat: Int): Boolean = winnerTeam != null && setup.teamOfSeat[seat] == winnerTeam
 }
 
+/** Optional offline observer. The production/ordinary arena path passes null and allocates nothing. */
+interface ArenaTrainingObserver {
+    fun gameStarted(state: GameState, seats: List<EntityId>) {}
+    fun quietRoot(state: GameState, actingPlayer: EntityId) {}
+    fun action(action: GameAction) {}
+    fun decision(playerId: EntityId, response: DecisionResponse) {}
+}
+
 /**
  * Plays one game at an arbitrary [TableSetup]: N agents, one deck each, one seed.
  *
@@ -177,6 +189,7 @@ object TableGameRunner {
          *  default: it costs a string per action, and only `FrozenBaselineTest` needs it. */
         recordActionStream: Boolean = false,
         featureCollector: ArenaFeatureCollector? = null,
+        trainingObserver: ArenaTrainingObserver? = null,
     ): TableGameOutcome {
         require(agents.size == setup.seats && decks.size == setup.seats) {
             "${setup.id} has ${setup.seats} seats but got ${agents.size} agents / ${decks.size} decks."
@@ -217,6 +230,7 @@ object TableGameRunner {
         fun aiFor(playerId: EntityId) = players[seatOf(playerId)]
 
         var state: GameState = init.state
+        trainingObserver?.gameStarted(state, seatIds)
         var actionCount = 0
         val illegalActions = mutableMapOf<String, Int>()
         var lastActivePlayer: EntityId? = null
@@ -252,6 +266,7 @@ object TableGameRunner {
                     if (decision != null) {
                         actionCount++
                         val response = aiFor(decision.playerId).respondToDecision(state, decision)
+                        trainingObserver?.decision(decision.playerId, response)
                         record("D$actionCount|${seatOf(decision.playerId)}|${decision::class.simpleName}|$response\n")
                         val r = processor.process(state, SubmitDecision(decision.playerId, response)).result
                         if (r.error != null) {
@@ -272,14 +287,22 @@ object TableGameRunner {
                     // this boundary avoids teaching the evaluator transient resolution states.
                     if (state.stack.isEmpty()) {
                         featureGame?.observe(state, priorityPlayer)
+                        trainingObserver?.quietRoot(state, priorityPlayer)
                     }
 
                     actionCount++
                     val action = aiFor(priorityPlayer).chooseAction(state)
+                    trainingObserver?.action(action)
                     record("A$actionCount|${seatOf(priorityPlayer)}|${state.step.name}|$action\n")
                     val r = processor.process(state, action).result
                     val next = if (r.error != null) {
-                        val key = "${action::class.simpleName}: ${r.error}"
+                        val subjectId = when (action) {
+                            is CastSpell -> action.cardId
+                            is ActivateAbility -> action.sourceId
+                            else -> null
+                        }
+                        val subject = subjectId?.let { state.getEntity(it)?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.name }
+                        val key = "${action::class.simpleName}${subject?.let { "[$it]" }.orEmpty()}: ${r.error}"
                         illegalActions[key] = (illegalActions[key] ?: 0) + 1
                         val fallback = processor
                             .process(state, safeFallbackAction(state, priorityPlayer, enumerator))

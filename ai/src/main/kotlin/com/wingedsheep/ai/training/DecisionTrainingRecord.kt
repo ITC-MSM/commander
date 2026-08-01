@@ -33,14 +33,30 @@ data class TrainingGameMetadata(
     val deckHashes: List<String>,
     val seed: Long,
     val profilesBySeat: List<String>,
+    val teamIdsBySeat: List<Int?> = List(profilesBySeat.size) { null },
     val schemaVersion: Int = DECISION_TRAINING_SCHEMA_VERSION,
     val completionReason: String,
     val recoveredIllegalAction: Boolean = false,
     val exception: String? = null,
     val generator: String,
+    /** Digest of the serialized initial state or another deterministic reconstruction payload. */
+    val initialStateDigest: String = "",
+    /** Ordered, polymorphic GameAction JSON. Empty only for legacy schema-v1 fixtures. */
+    val actionLog: List<String> = emptyList(),
+    /** Exploration probability of the chosen action, when the generator is stochastic. */
+    val actionPropensities: List<Double> = emptyList(),
 ) {
     val globallyUniqueId: String get() = "$runId/$gameId"
     val completedCleanly: Boolean get() = completionReason == "completed" && !recoveredIllegalAction && exception == null
+
+    init {
+        require(runId.isNotBlank() && gameId.isNotBlank())
+        require(setCode.isNotBlank() && format.isNotBlank() && generator.isNotBlank())
+        require(deckHashes.size == profilesBySeat.size)
+        require(teamIdsBySeat.size == profilesBySeat.size)
+        require(actionPropensities.all { it.isFinite() && it > 0.0 && it <= 1.0 })
+        require(actionPropensities.isEmpty() || actionPropensities.size == actionLog.size)
+    }
 }
 
 /** A viewer-safe observation. Opponent private zones contain counts, never identities. */
@@ -133,6 +149,9 @@ data class DecisionTrainingRecord(
     val terminalPlacementBySeat: List<Int?> = emptyList(),
     val utilityBySeat: List<Double> = emptyList(),
     val replay: ReplayCoordinates,
+    /** Why a nearby root was not retained is aggregated in the run report, never as fake training rows. */
+    val actionFamily: String = "unknown",
+    val gamePhase: String = "unknown",
 ) {
     init {
         require(playerCount in 2..4)

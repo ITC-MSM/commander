@@ -16,13 +16,19 @@ import com.wingedsheep.ai.engine.rollout.RolloutCandidateEvaluator
 import com.wingedsheep.ai.engine.rollout.StaticCandidateEvaluator
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.GameAction
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.MeaningfulActionFilter
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Format
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.ManaSymbol
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.AdditionalCostPayment
+import com.wingedsheep.sdk.scripting.AlternativePaymentChoice
+import com.wingedsheep.sdk.scripting.ConvokePayment
 
 /**
  * Chooses which [LegalAction] to take when the AI has priority.
@@ -95,7 +101,10 @@ class Strategist(
             return handleCombatDeclaration(evaluationState, combatAction, playerId, budget)
         }
 
-        if (legalActions.size == 1) return legalActions.first()
+        if (legalActions.size == 1) {
+            val only = legalActions.first()
+            return only.copy(action = chooseCommittedTargets(state, only, playerId))
+        }
 
         val pass = legalActions.find { it.actionType == "PassPriority" }
         val affordable = expandXCostAbilities(state, preferKickerVariants(candidatesFrom(legalActions)), playerId)
@@ -160,11 +169,7 @@ class Strategist(
             // The committed target is chosen by simulation (not just the heuristic) so the
             // AI sees the real resolved board, including effects already on the stack.
             val chosen = best.first
-            if (chosen.requiresTargets) {
-                chosen.copy(action = chooseCommittedTargets(evaluationState, chosen, playerId, budget))
-            } else {
-                chosen
-            }
+            chosen.copy(action = chooseCommittedTargets(evaluationState, chosen, playerId, budget))
         } else {
             pass ?: legalActions.first()
         }
@@ -265,7 +270,7 @@ class Strategist(
         playerId: EntityId,
         budget: DecisionBudget = DecisionBudget.legacy(),
     ): com.wingedsheep.engine.core.GameAction {
-        val baseAction = action.action
+        val baseAction = withAutomaticPayments(action)
         if (TargetSelection.targetsAlreadyFilled(baseAction) != false) return baseAction
         if (!budget.allowances.refineTargetsBySimulation) {
             return heuristicTargets(state, action, playerId)
@@ -302,8 +307,81 @@ class Strategist(
         action: LegalAction,
         playerId: EntityId,
     ): com.wingedsheep.engine.core.GameAction = TargetSelection.fillHeuristically(
-        state, action, playerId, fillPartialRequirements = useMeaningfulFilter, intents = intents
+        state, action.copy(action = withAutomaticPayments(action)), playerId,
+        fillPartialRequirements = useMeaningfulFilter, intents = intents
     )
+
+    /**
+     * Materialize deterministic payment choices carried by [LegalAction.additionalCostInfo].
+     *
+     * The enumerator exposes a Blight path as a distinct legal action, but the processor can only
+     * distinguish it from the alternative-mana path through `AdditionalCostPayment.blightTargets`.
+     * Keeping that choice only in UI metadata made the built-in AI submit the wrong branch for both
+     * spells and activated abilities. The first candidate is deterministic and already filtered by
+     * projected controller/type/counter legality.
+     */
+    private fun withAutomaticPayments(action: LegalAction): GameAction {
+        val gameAction = withAutomaticConvoke(action)
+        val info = action.additionalCostInfo ?: return gameAction
+        if (info.costType != "Blight" || info.validBlightTargets.isEmpty()) return gameAction
+        val target = info.validBlightTargets.first()
+        return when (gameAction) {
+            is CastSpell -> gameAction.copy(
+                additionalCostPayment = (gameAction.additionalCostPayment ?: AdditionalCostPayment())
+                    .copy(blightTargets = listOf(target))
+            )
+            is ActivateAbility -> gameAction.copy(
+                costPayment = (gameAction.costPayment ?: AdditionalCostPayment())
+                    .copy(blightTargets = listOf(target))
+            )
+            else -> gameAction
+        }
+    }
+
+    /**
+     * Turn the Convoke candidates advertised by the legal-action enumerator into the payment the
+     * cast handler consumes. Colored pips are satisfied first; remaining creatures pay only the
+     * generic part of the cost, so the AI never submits an invalid overpayment.
+     */
+    private fun withAutomaticConvoke(action: LegalAction): GameAction {
+        val cast = action.action as? CastSpell ?: return action.action
+        val creatures = action.convokeCreatures.orEmpty()
+        val costString = action.manaCostString
+        if (!action.hasConvoke || creatures.isEmpty() || costString == null) return cast
+
+        val cost = ManaCost.parse(costString)
+        val coloredNeeded = cost.symbols
+            .filterIsInstance<ManaSymbol.Colored>()
+            .groupingBy { it.color }
+            .eachCount()
+            .toMutableMap()
+        var genericNeeded = cost.genericAmount
+        val payments = linkedMapOf<EntityId, ConvokePayment>()
+        val unused = creatures.toMutableList()
+
+        for ((color, count) in coloredNeeded) {
+            repeat(count) {
+                val index = unused.indexOfFirst { color in it.colors }
+                if (index >= 0) {
+                    val creature = unused.removeAt(index)
+                    payments[creature.entityId] = ConvokePayment(color)
+                }
+            }
+        }
+        while (genericNeeded > 0 && unused.isNotEmpty()) {
+            val creature = unused.removeAt(0)
+            payments[creature.entityId] = ConvokePayment()
+            genericNeeded--
+        }
+        if (payments.isEmpty()) return cast
+
+        val existing = cast.alternativePayment ?: AlternativePaymentChoice.NONE
+        return cast.copy(
+            alternativePayment = existing.copy(
+                convokedCreatures = existing.convokedCreatures + payments
+            )
+        )
+    }
 
     /**
      * When both a normal cast and a kicker/offspring variant of the same card are

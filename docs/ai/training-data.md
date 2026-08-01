@@ -1,5 +1,23 @@
 # AI training-data boundary
 
+## Lorwyn Eclipsed apprentice workflow
+
+The ECL pipeline now has committed contracts for meaningful-root filtering, atomic whole-game corpus
+persistence, deterministic whole-game splits, a finite linear-artifact format, and set-scoped profile
+selection. Collect a smoke corpus with `just collect-ecl-training <corpus.json> 100`; incomplete,
+recovered, exceptional, or illegal-action games are quarantined rather than appended, and a
+machine-readable sibling report summarizes generator, set, action-family, phase, player-count, and
+candidate-count coverage. Fit an artifact with `just train-ecl-apprentice <examples.json> <artifact.json>`, install it
+as `ecl-apprentice.json` under a directory passed through
+`-Dargentum.ai.apprentice.dir=<directory>`, then run `just arena-ecl-smoke <directory>` followed by
+`just arena-ecl-directional <directory>`. Missing, malformed, wrong-set, wrong-feature, and non-finite artifacts
+fall back to the existing production evaluator. The ECL profile selector also falls back to production
+when asked to select an ECL-restricted artifact for another set.
+
+These commands implement the reproducible fitting and evaluation path; they do not claim promotion.
+Promotion still requires the clean 5,000-game corpus, untouched split, paired confidence interval,
+runtime envelope, puzzle gates, and safety checks in `backlog/ecl-ai-training-plan.md`.
+
 Phase 9 training records are offline artifacts. Nothing in the production `AIPlayer` constructs a
 record, runs a validator, or loads a training dependency. Collection code lives under `ai.training`
 and must be enabled explicitly by a collection harness.

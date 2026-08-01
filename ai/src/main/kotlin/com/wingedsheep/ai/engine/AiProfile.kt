@@ -78,6 +78,8 @@ data class AiProfile(
      * Off preserves the historical full-information agents used as arena controls.
      */
     val determinizeHiddenInformation: Boolean = false,
+    /** Non-null profiles may only be selected automatically for this set. Arena selection stays explicit. */
+    val restrictedToSet: String? = null,
 ) {
     companion object {
         /**
@@ -161,5 +163,26 @@ data class AiProfile(
             useCardIntent = true,
             rollouts = RolloutSettings.DEFAULT,
         )
+
+        val ECL_APPRENTICE = PRODUCTION.copy(
+            id = "ecl-apprentice",
+            evalWeightsId = "ecl-apprentice",
+            restrictedToSet = "ECL",
+        )
+
+        val ECL_OVERLAY = PRODUCTION.copy(
+            id = "ecl-overlay",
+            evalWeightsId = "ecl-overlay",
+            restrictedToSet = "ECL",
+        )
+    }
+}
+
+/** The only automatic promotion seam: a set-scoped profile cannot leak into another format. */
+object AiProfileSelector {
+    fun select(setCode: String?, requested: AiProfile?, fallback: AiProfile = AiProfile.PRODUCTION): AiProfile {
+        if (requested == null) return fallback
+        val restriction = requested.restrictedToSet ?: return requested
+        return if (setCode?.uppercase() == restriction.uppercase()) requested else fallback
     }
 }
