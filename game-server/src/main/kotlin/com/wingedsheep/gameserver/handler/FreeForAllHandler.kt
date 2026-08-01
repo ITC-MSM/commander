@@ -140,12 +140,16 @@ class FreeForAllHandler(
                 identity.playerName, baseDeck, gameProperties.easterEggs.enabled
             )
             val commander = if (usesCommanders) playerState.commander else null
-            val deck = if (commander != null) stripCommanderFromCards(deckWithEgg, commander) else deckWithEgg
+            val unpinnedDeck = if (commander != null) stripCommanderFromCards(deckWithEgg, commander) else deckWithEgg
+            val poolPrintings = playerState.cardPool + lobby.basicLands.values
+            val deck = BoosterGenerator.withCardArt(unpinnedDeck, poolPrintings)
 
             val playerSession = identity.toPlayerSession()
             gameSession.addPlayer(
                 playerSession, deck, commanderCardName = commander,
-                sideboard = lobby.getSubmittedSideboard(identity.playerId),
+                sideboard = BoosterGenerator.withCardArt(
+                    lobby.getSubmittedSideboard(identity.playerId), poolPrintings,
+                ),
             )
             gameSession.setPlayerPersistenceInfo(
                 playerSession.playerId, playerSession.playerName, identity.token,

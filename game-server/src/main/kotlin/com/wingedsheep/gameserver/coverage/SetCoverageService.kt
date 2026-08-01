@@ -192,6 +192,22 @@ class SetCoverageService {
             JSON.decodeFromString<List<CanonicalSet>>(it.readText())
         }
     private val byCode: Map<String, CanonicalSet> = canonical.associateBy { it.code }
+    private val limitedProducts: Map<String, Map<String, List<String>>> =
+        ClassPathResource(PRODUCTS_PATH).inputStream.bufferedReader().use {
+            JSON.decodeFromString(it.readText())
+        }
+
+    /**
+     * Distinct card names eligible for this set's limited pool according to Scryfall's
+     * printing-level `booster` flag. Supplemental products with no booster use their whole card
+     * list, matching the coverage fallback; null means the baked catalog has no row for the set.
+     */
+    fun limitedCardNames(setCode: String): Set<String>? =
+        byCode[setCode.uppercase()]?.mainCards?.mapTo(linkedSetOf()) { it.name }
+
+    /** Optional non-booster product buckets keyed by Scryfall `promo_types` id. */
+    fun limitedProducts(setCode: String): Map<String, Set<String>> =
+        limitedProducts[setCode.uppercase()].orEmpty().mapValues { (_, names) -> names.toSet() }
 
     private val progress: List<ProgressPointDTO> =
         ClassPathResource(PROGRESS_PATH).inputStream.bufferedReader().use {
@@ -359,6 +375,7 @@ class SetCoverageService {
 
     private companion object {
         const val RESOURCE_PATH = "coverage/set-totals.json"
+        const val PRODUCTS_PATH = "coverage/set-products.json"
         const val PROGRESS_PATH = "coverage/implementation-history.json"
         val JSON = Json { ignoreUnknownKeys = true }
 

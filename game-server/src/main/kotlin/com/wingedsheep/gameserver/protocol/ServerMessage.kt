@@ -429,6 +429,12 @@ sealed interface ServerMessage {
      * An available card set for selection in the lobby.
      */
     @Serializable
+    data class SetProduct(
+        val id: String,
+        val cardCount: Int,
+    )
+
+    @Serializable
     data class AvailableSet(
         val code: String,
         val name: String,
@@ -447,7 +453,8 @@ sealed interface ServerMessage {
         val extensionSet: Boolean = false,
         val block: String? = null,
         val implementedCount: Int? = null,
-        val releaseDate: String? = null
+        val releaseDate: String? = null,
+        val products: List<SetProduct> = emptyList(),
     )
 
     /**
@@ -482,6 +489,8 @@ sealed interface ServerMessage {
         val commanderPreset: String = "BRAWL",
         /** When true, each booster mixes cards from the union of all selected sets. */
         val chaosBoosters: Boolean = false,
+        /** Optional non-booster product ids selected per set code. */
+        val includedSetProducts: Map<String, List<String>> = emptyMap(),
         /**
          * Host ban list: oracle card names excluded from generated boosters. Sorted for a stable
          * UI order. Empty = no exclusions. Ignored by [TournamentFormat.PREMADE_DECKS].

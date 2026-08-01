@@ -1699,6 +1699,23 @@
   white-space: nowrap;
 }
 
+.setChipExtras {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  color: currentColor;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 50%;
+  cursor: help;
+}
+
 .setChipRemove {
   display: flex;
   align-items: center;

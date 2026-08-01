@@ -48,6 +48,12 @@ class BoosterGenerator(
         val setName: String,
         val cards: List<CardDefinition>,
         val basicLands: List<CardDefinition>,
+        /**
+         * Implemented cards carrying this set code that were not in its paper booster product.
+         * Normal generation ignores them; a lobby may opt in by deriving a scoped config whose
+         * [cards] is the union. Kept separate so paper-accurate limited remains the default.
+         */
+        val extraCardsByProduct: Map<String, List<CardDefinition>> = emptyMap(),
         val incomplete: Boolean = false,
         /**
          * Whether this set is curated/validated for sealed & draft play. Sets that aren't
@@ -161,10 +167,17 @@ class BoosterGenerator(
         fun withBasicLandArt(
             deckList: Map<String, Int>,
             basics: Map<String, CardDefinition>,
+        ): Map<String, Int> = withCardArt(deckList, basics.values)
+
+        /** Pin submitted cards to the exact set printing present in a Limited pool. */
+        fun withCardArt(
+            deckList: Map<String, Int>,
+            cards: Collection<CardDefinition>,
         ): Map<String, Int> {
+            val cardsByName = cards.associateBy { it.name }
             val result = mutableMapOf<String, Int>()
             for ((cardName, count) in deckList) {
-                val identifier = basics[cardName]?.let { printingIdentifier(cardName, it) } ?: cardName
+                val identifier = cardsByName[cardName]?.let { printingIdentifier(cardName, it) } ?: cardName
                 result.merge(identifier, count, Int::plus)
             }
             return result

@@ -17,7 +17,7 @@ import { teamColor } from '@/styles/seatColors'
 import { BanListEditor } from '../ui/BanListEditor'
 import { CubePanel } from './CubePanel'
 import { SetIcon } from '../ui/SetIcon'
-import { SetPickerModal } from '../ui/SetPickerModal'
+import { SetPickerModal, setProductLabel } from '../ui/SetPickerModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import { COMMANDER_PRESETS, effectiveCommanderPreset } from './axes'
 import type { UnifiedLobbyView } from './lobbyViewModel'
@@ -100,22 +100,54 @@ export function TournamentLobbySettings({
 
   const allSets = s.availableSets
   // A selected-set chip is either a concrete set or a deferred "Random Set" placeholder.
-  type SelectedSetChip = { code: string; name: string; partial: boolean; extensionSet: boolean; random: boolean }
+  type SelectedSetChip = {
+    code: string
+    name: string
+    partial: boolean
+    extensionSet: boolean
+    random: boolean
+    selectedProductLabels: string[]
+  }
   const selectedSets: SelectedSetChip[] = s.setCodes
     .map((code): SelectedSetChip | null => {
-      if (isRandomSetCode(code)) return { code, name: 'Random Set', partial: false, extensionSet: false, random: true }
+      if (isRandomSetCode(code)) return {
+        code,
+        name: 'Random Set',
+        partial: false,
+        extensionSet: false,
+        random: true,
+        selectedProductLabels: [],
+      }
       const set = allSets.find((x) => x.code === code)
       return set
-        ? { code, name: set.name, partial: set.partial ?? false, extensionSet: set.extensionSet ?? false, random: false }
+        ? {
+            code,
+            name: set.name,
+            partial: set.partial ?? false,
+            extensionSet: set.extensionSet ?? false,
+            random: false,
+            selectedProductLabels: (s.includedSetProducts[code] ?? []).map(setProductLabel),
+          }
         : null
     })
     .filter((x): x is SelectedSetChip => x != null)
 
   const toggleSet = (code: string) => {
-    const next = s.setCodes.includes(code)
-      ? s.setCodes.filter((c) => c !== code)
-      : [...s.setCodes, code]
-    updateLobbySettings({ setCodes: next })
+    const removing = s.setCodes.includes(code)
+    const next = removing ? s.setCodes.filter((c) => c !== code) : [...s.setCodes, code]
+    const includedSetProducts = { ...s.includedSetProducts }
+    if (removing) delete includedSetProducts[code]
+    updateLobbySettings({ setCodes: next, includedSetProducts })
+  }
+
+  const toggleSetProduct = (setCode: string, productId: string) => {
+    const current = s.includedSetProducts[setCode] ?? []
+    const next = current.includes(productId)
+      ? current.filter((id) => id !== productId)
+      : [...current, productId]
+    updateLobbySettings({
+      includedSetProducts: { ...s.includedSetProducts, [setCode]: next },
+    })
   }
 
   // "Random Set" in the picker: a deferred slot the server rolls to a complete, non-extension set
@@ -238,7 +270,9 @@ export function TournamentLobbySettings({
                       <span
                         key={set.code}
                         className={`${styles.setChip} ${isAnyDraft ? styles.setChipDraft : ''} ${set.partial ? styles.setChipPartial : ''}`}
-                        title={set.random
+                        title={set.selectedProductLabels.length > 0
+                          ? `${set.name} — additions: ${set.selectedProductLabels.join(', ')}`
+                          : set.random
                           ? 'Random Set — revealed when the game starts'
                           : set.partial
                             ? `${set.name} — partial (reduced card pool)`
@@ -250,6 +284,12 @@ export function TournamentLobbySettings({
                           ? <span className={styles.setChipIcon} aria-hidden>🎲</span>
                           : <SetIcon code={set.code} className={styles.setChipIcon} />}
                         <span className={styles.setChipName}>{set.name}</span>
+                        {set.selectedProductLabels.length > 0 && (
+                          <span
+                            className={styles.setChipExtras}
+                            aria-label={`Additions: ${set.selectedProductLabels.join(', ')}`}
+                          >+</span>
+                        )}
                         <button
                           type="button"
                           className={styles.setChipRemove}
@@ -553,6 +593,8 @@ export function TournamentLobbySettings({
           selectedCodes={s.setCodes}
           onToggleSet={toggleSet}
           onSelectRandom={addRandomSet}
+          selectedProducts={s.includedSetProducts}
+          onToggleProduct={toggleSetProduct}
           onClose={() => setShowSetPicker(false)}
         />
       )}

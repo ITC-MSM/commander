@@ -434,6 +434,8 @@ class TournamentMatchHandler(
             lobby.getSubmittedDeck(match.player2Id) ?: return false,
             lobby.basicLands
         )
+        val deckPrintings1 = player1State.cardPool + lobby.basicLands.values
+        val deckPrintings2 = player2State.cardPool + lobby.basicLands.values
         val deck1WithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(
             player1State.identity.playerName, baseDeck1, gameProperties.easterEggs.enabled
         )
@@ -459,8 +461,10 @@ class TournamentMatchHandler(
             logger.warn("Tournament ${lobby.lobbyId}: cannot start Commander match — missing commander for $missing")
             return false
         }
-        val deck1 = if (commander1 != null) stripCommanderFromCards(deck1WithEgg, commander1) else deck1WithEgg
-        val deck2 = if (commander2 != null) stripCommanderFromCards(deck2WithEgg, commander2) else deck2WithEgg
+        val unpinnedDeck1 = if (commander1 != null) stripCommanderFromCards(deck1WithEgg, commander1) else deck1WithEgg
+        val unpinnedDeck2 = if (commander2 != null) stripCommanderFromCards(deck2WithEgg, commander2) else deck2WithEgg
+        val deck1 = BoosterGenerator.withCardArt(unpinnedDeck1, deckPrintings1)
+        val deck2 = BoosterGenerator.withCardArt(unpinnedDeck2, deckPrintings2)
 
         val gameSession = GameSession(
             cardRegistry = cardRegistry,
@@ -495,11 +499,15 @@ class TournamentMatchHandler(
 
         gameSession.addPlayer(
             ps1, deck1, commanderCardName = commander1,
-            sideboard = lobby.getSubmittedSideboard(match.player1Id),
+            sideboard = BoosterGenerator.withCardArt(
+                lobby.getSubmittedSideboard(match.player1Id), deckPrintings1,
+            ),
         )
         gameSession.addPlayer(
             ps2, deck2, commanderCardName = commander2,
-            sideboard = lobby.getSubmittedSideboard(match.player2Id),
+            sideboard = BoosterGenerator.withCardArt(
+                lobby.getSubmittedSideboard(match.player2Id), deckPrintings2,
+            ),
         )
 
         // Carry isAi / aiModelOverride from each identity so a server restart can rehydrate and

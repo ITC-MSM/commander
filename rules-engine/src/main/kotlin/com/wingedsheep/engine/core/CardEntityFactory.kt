@@ -45,11 +45,12 @@ object CardEntityFactory {
         // cards with the same name but different art variants (basic lands across sets)
         // resolve back to the correct CardDefinition via CardRegistry.
         // SetCode is included to avoid collisions between sets that share collector numbers
-        // (e.g., Khans and Dominaria both use 250-269 for basic lands). Honour the chosen
-        // printing's set/CN when one was pinned — this keeps cardDefinitionId stable for
-        // copy/clone effects that round-trip through CardRegistry.
-        val effectiveSetCode = printing?.setCode ?: cardDef.setCode
-        val effectiveCollectorNumber = printing?.collectorNumber ?: cardDef.metadata.collectorNumber
+        // (e.g., Khans and Dominaria both use 250-269 for basic lands). Keep the oracle
+        // definition's registered identity: a PrintingRef changes presentation only. Using the
+        // chosen reprint's coordinates here would make ability lookups miss when its canonical
+        // CardDefinition lives in another set.
+        val effectiveSetCode = cardDef.setCode
+        val effectiveCollectorNumber = cardDef.metadata.collectorNumber
         val definitionId = effectiveCollectorNumber?.let { cn ->
             if (effectiveSetCode != null) "${cardDef.name}#$effectiveSetCode-$cn"
             else "${cardDef.name}#$cn"

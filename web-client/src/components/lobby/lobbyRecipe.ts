@@ -71,6 +71,7 @@ export interface RecipeSettings {
   readonly boosterCount?: number
   readonly boosterDistribution?: Readonly<Record<string, number>>
   readonly chaosBoosters?: boolean
+  readonly includedSetProducts?: Readonly<Record<string, readonly string[]>>
   readonly bannedCardNames?: readonly string[]
   readonly pickTimeSeconds?: number
   readonly picksPerRound?: number
@@ -218,6 +219,7 @@ export function recipeFromLobby(
         boosterCount: s.boosterCount,
         boosterDistribution: { ...s.boosterDistribution },
         chaosBoosters: s.chaosBoosters,
+        includedSetProducts: { ...s.includedSetProducts },
         bannedCardNames: [...s.bannedCardNames],
         pickTimeSeconds: s.pickTimeSeconds,
         picksPerRound: s.picksPerRound,
@@ -406,6 +408,13 @@ function trimSettings(
   if (raw.gamesPerMatch !== undefined) out.gamesPerMatch = clampInt(raw.gamesPerMatch, 1, 5, 1)
   if (raw.deckSizeMin !== undefined) out.deckSizeMin = clampInt(raw.deckSizeMin, 40, 100, 60)
   if (typeof raw.chaosBoosters === 'boolean') out.chaosBoosters = raw.chaosBoosters
+  if (raw.includedSetProducts && typeof raw.includedSetProducts === 'object') {
+    out.includedSetProducts = Object.fromEntries(
+      Object.entries(raw.includedSetProducts)
+        .filter(([, ids]) => Array.isArray(ids))
+        .map(([code, ids]) => [code, ids.filter((id): id is string => typeof id === 'string')]),
+    )
+  }
   if (typeof raw.allowDuplicates === 'boolean') out.allowDuplicates = raw.allowDuplicates
   if (typeof raw.randomTeams === 'boolean') out.randomTeams = raw.randomTeams
   if (typeof raw.aiAssistEnabled === 'boolean') out.aiAssistEnabled = raw.aiAssistEnabled

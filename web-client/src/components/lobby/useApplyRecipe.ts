@@ -180,6 +180,7 @@ function tournamentSettings(settings: RecipeSettings): PendingSettingsUpdate {
     ...(settings.boosterCount !== undefined ? { boosterCount: settings.boosterCount } : {}),
     ...(settings.boosterDistribution ? { boosterDistribution: { ...settings.boosterDistribution } } : {}),
     ...(settings.chaosBoosters !== undefined ? { chaosBoosters: settings.chaosBoosters } : {}),
+    ...(settings.includedSetProducts ? { includedSetProducts: settings.includedSetProducts } : {}),
     ...(settings.bannedCardNames ? { bannedCardNames: [...settings.bannedCardNames] } : {}),
     ...(settings.picksPerRound !== undefined ? { picksPerRound: settings.picksPerRound } : {}),
     ...(settings.gamesPerMatch !== undefined ? { gamesPerMatch: settings.gamesPerMatch } : {}),

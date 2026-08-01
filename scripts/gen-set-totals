@@ -59,6 +59,7 @@ from card_exclusions import load_exclusions, load_reasons
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFINITIONS_ROOT = REPO_ROOT / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
 OUTPUT = REPO_ROOT / "game-server/src/main/resources/coverage/set-totals.json"
+PRODUCTS_OUTPUT = REPO_ROOT / "game-server/src/main/resources/coverage/set-products.json"
 CACHE_ROOT = Path.home() / ".cache" / "scryfall"
 CACHE_SCHEMA_VERSION = 7
 REFRESH_WINDOW_DAYS = 30
@@ -156,6 +157,7 @@ def main() -> int:
     reasons = load_reasons()
 
     entries = []
+    product_entries: dict[str, dict[str, list[str]]] = {}
     skipped = []
     for code, name in sets:
         payload = load_cache(code)
@@ -164,11 +166,24 @@ def main() -> int:
             continue
         cards = payload.get("cards", {})
 
-        def card_entries(names: set[str]) -> list[dict]:
+        extra_products = payload.get("extra_products", {})
+        grouped_products: dict[str, list[str]] = {}
+        for card_name, product_ids in extra_products.items():
+            for product_id in product_ids:
+                grouped_products.setdefault(product_id, []).append(front_face(card_name))
+        if grouped_products:
+            product_entries[code] = {
+                product_id: sorted(set(names))
+                for product_id, names in sorted(grouped_products.items())
+            }
+
+        def card_entries(names: set[str], include_products: bool = False) -> list[dict]:
             out = []
             for n in sorted(names):
                 meta = cards.get(n) or {}
                 entry = {"name": n, "img": meta.get("image_uri")}
+                if include_products and n in extra_products:
+                    entry["products"] = extra_products[n]
                 kind = exclusions.get(n)
                 if kind:
                     # Exclusion is carried as its reason — a not-planned card without a "why"
@@ -186,13 +201,17 @@ def main() -> int:
             "setType": payload.get("set_type"),
             "standardLegal": is_standard_legal(payload),
             "draft": card_entries(draft),
-            "extra": card_entries(extra),
+            "extra": card_entries(extra, include_products=True),
         })
 
     entries.sort(key=lambda e: ((e["releaseDate"] or ""), e["code"]), reverse=True)
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(entries, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    PRODUCTS_OUTPUT.write_text(
+        json.dumps(product_entries, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
     total_cards = sum(len(e["draft"]) + len(e["extra"]) for e in entries)
     with_img = sum(1 for e in entries for c in (e["draft"] + e["extra"]) if c["img"])

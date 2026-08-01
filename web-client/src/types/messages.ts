@@ -1271,6 +1271,7 @@ export interface AvailableSet {
   readonly implementedCount?: number
   /** Set release date in ISO `YYYY-MM-DD` form, or undefined if unknown. */
   readonly releaseDate?: string
+  readonly products?: readonly { readonly id: string; readonly cardCount: number }[]
 }
 
 export interface LobbySettings {
@@ -1303,6 +1304,8 @@ export interface LobbySettings {
   readonly commanderPreset: CommanderPreset
   /** When true, each booster mixes cards from the union of all selected sets. */
   readonly chaosBoosters: boolean
+  /** Optional non-booster product ids selected per set code. */
+  readonly includedSetProducts: Readonly<Record<string, readonly string[]>>
   /** Host ban list — oracle card names excluded from generated boosters (sorted). */
   readonly bannedCardNames: readonly string[]
   /** Per-lobby cube summary. Undefined means catalogued sets are the pack source. */
@@ -2323,6 +2326,8 @@ export interface UpdateLobbySettingsMessage {
   readonly commanderPreset?: CommanderPreset
   /** Toggle Chaos boosters: each pack pulls from the union of selected sets. */
   readonly chaosBoosters?: boolean
+  /** Optional non-booster product ids selected per set code. */
+  readonly includedSetProducts?: Readonly<Record<string, readonly string[]>>
   /** Replace the host ban list (full list, not a delta). Omit to leave unchanged. */
   readonly bannedCardNames?: readonly string[]
   /** Full cube list; duplicate names represent duplicate physical cards. Empty clears cube mode. */
@@ -2575,6 +2580,7 @@ export function createUpdateLobbySettingsMessage(
     deckFormat?: DeckFormat | '' | null
     rules?: GameRules
     chaosBoosters?: boolean
+    includedSetProducts?: Readonly<Record<string, readonly string[]>>
     bannedCardNames?: readonly string[]
     cubeCards?: readonly string[]
     cubeName?: string

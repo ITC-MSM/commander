@@ -39,6 +39,7 @@ data class PersistentTournamentLobby(
     /** Cube Pool Play (no draft, whole cube as everyone's pool). Meaningless without a cube. */
     val cubePoolPlay: Boolean = false,
     val bannedCardNames: Set<String> = emptySet(),
+    val includedSetProducts: Map<String, Set<String>> = emptyMap(),
     // Draft-specific state
     val currentPackNumber: Int = 0,
     val currentPickNumber: Int = 0,
