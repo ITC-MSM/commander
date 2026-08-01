@@ -717,6 +717,79 @@
     ]
 }
 
+// Killing Wave
+{
+    "name": "Killing Wave",
+    "manaCost": "{X}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "For each creature, its controller sacrifices it unless they pay X life.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Players",
+                "players": "ActivePlayerFirst"
+            },
+            "body": {
+                "type": "ForEach",
+                "space": {
+                    "type": "IterationSpace.Group",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "body": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayDynamicLife",
+                            "amount": "XValue"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": []
+                    },
+                    "otherwise": {
+                        "type": "SacrificeTarget",
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "Pay life for this creature, or sacrifice it."
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "111",
+        "rarity": "RARE",
+        "artist": "Steve Argyle",
+        "flavorText": "\"I come looking for demons and I find a plane full of angels. I hate angels.\"\n—Liliana Vess",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33de2371-175e-4f8a-9636-35f996e3cf24.jpg?1783940697",
+        "rulings": [
+            {
+                "date": "2012-05-01",
+                "text": "First, the active player chooses whether to pay X life for each creature they control. Then each other player in turn order chooses for their creatures. Then each player pays life and sacrifices creatures at the same time. Players will know the decisions of players who chose before them."
+            },
+            {
+                "date": "2012-05-01",
+                "text": "A player may choose to pay life for some creatures and sacrifice the rest. It's not an all-or-nothing decision."
+            },
+            {
+                "date": "2012-05-01",
+                "text": "You can't pay more life than you have."
+            },
+            {
+                "date": "2012-05-01",
+                "text": "If you can't sacrifice a creature (perhaps because of Sigarda, Host of Herons), you can choose not to pay life and nothing will happen."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Maalfeld Twins
 {
     "name": "Maalfeld Twins",
@@ -1151,6 +1224,91 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Vexing Devil
+{
+    "name": "Vexing Devil",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Devil",
+    "oracleText": "When this creature enters, any opponent may have it deal 4 damage to them. If a player does, sacrifice this creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "DealDamage",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 4
+                                    },
+                                    "target": {
+                                        "type": "PlayerRef",
+                                        "player": "You"
+                                    },
+                                    "damageSource": "Self"
+                                },
+                                {
+                                    "type": "SacrificeTarget",
+                                    "target": "Self",
+                                    "sacrificedByItsController": true
+                                }
+                            ]
+                        },
+                        "decisionMaker": {
+                            "type": "PlayerRef",
+                            "player": "You"
+                        },
+                        "descriptionOverride": "Have Vexing Devil deal 4 damage to you? If you do, its controller sacrifices it."
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "RARE",
+        "artist": "Lucas Graciano",
+        "flavorText": "It's not any fun until someone loses an eye.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/dbbefd98-4b17-4cc2-9ef9-8807f594cb16.jpg?1783940672",
+        "rulings": [
+            {
+                "date": "2018-12-07",
+                "text": "As Vexing Devil's ability resolves, the next opponent in turn order (or, if it's an opponent's turn, that opponent) chooses whether to be dealt 4 damage, then each other opponent in turn order does the same. If any of them do, you sacrifice Vexing Devil."
+            },
+            {
+                "date": "2018-12-07",
+                "text": "No player may take actions between the time an opponent chooses to be dealt damage by Vexing Devil and the time you sacrifice Vexing Devil."
+            },
+            {
+                "date": "2012-05-01",
+                "text": "If a player chooses to have Vexing Devil deal 4 damage to them, but some or all of that damage is prevented or redirected, Vexing Devil will still be sacrificed."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
