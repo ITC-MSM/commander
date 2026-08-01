@@ -47,6 +47,7 @@ data class EvaluationWeights(
 object EvalWeights {
     const val DEFAULT_ID = "default"
     private const val RESOURCE = "ai/eval-weights.json"
+    private const val RAW_RESOURCE = "ai/raw-eval-weights.json"
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -64,17 +65,45 @@ object EvalWeights {
         }.getOrDefault(emptyMap())
     }
 
+    private val rawResourceWeights: Map<String, RawEvaluationWeights> by lazy {
+        runCatching {
+            val text = EvalWeights::class.java.classLoader
+                .getResourceAsStream(RAW_RESOURCE)
+                ?.bufferedReader()
+                ?.use { it.readText() }
+                ?: return@runCatching emptyMap()
+            decodeRawOrEmpty(text)
+        }.getOrDefault(emptyMap())
+    }
+
     fun resolve(id: String): EvaluationWeights =
         resourceWeights[id]?.takeIf(::isFinite) ?: EvaluationWeights.DEFAULT
 
+    fun resolveEvaluator(id: String, intents: IntentCatalog): BoardEvaluator =
+        rawResourceWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
+            ?: resolve(id).toEvaluator(intents)
+
+    /** Whether [id] selects a complete, finite raw vector rather than the composite fallback. */
+    fun isRawProfile(id: String): Boolean = rawResourceWeights[id]?.isValid() == true
+
+    fun winProbabilityScale(id: String): Double =
+        rawResourceWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.winProbabilityScale
+            ?: com.wingedsheep.ai.engine.rollout.WinProbability.SCALE
+
     /** Stable ids available to tooling such as the arena agent registry. */
-    val ids: Set<String> get() = resourceWeights.keys
+    val ids: Set<String> get() = resourceWeights.keys + rawResourceWeights.keys
 
     internal fun decode(text: String): Map<String, EvaluationWeights> =
         json.decodeFromString<Map<String, EvaluationWeights>>(text)
 
     internal fun decodeOrEmpty(text: String): Map<String, EvaluationWeights> =
         runCatching { decode(text) }.getOrDefault(emptyMap())
+
+    internal fun decodeRaw(text: String): Map<String, RawEvaluationWeights> =
+        json.decodeFromString<Map<String, RawEvaluationWeights>>(text)
+
+    internal fun decodeRawOrEmpty(text: String): Map<String, RawEvaluationWeights> =
+        runCatching { decodeRaw(text) }.getOrDefault(emptyMap())
 
     private fun isFinite(weights: EvaluationWeights): Boolean =
         weights.life.isFinite() &&

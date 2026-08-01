@@ -189,7 +189,16 @@ class AIPlayer(
             val intents = if (profile.useCardIntent) IntentCatalog.of(cardRegistry) else IntentCatalog.NONE
 
             val simulator = GameSimulator(cardRegistry)
-            val evaluator = EvalWeights.resolve(profile.evalWeightsId).toEvaluator(intents)
+            // Raw Phase 9 vectors contain CardIntent-derived facts even when the surrounding
+            // legacy-based arena profile deliberately keeps Phase 6 timing/targeting behavior off.
+            // Give only the evaluator the full catalog so the fitted training schema and runtime
+            // schema agree without smuggling other AI improvements into the A/B.
+            val evaluationIntents = if (EvalWeights.isRawProfile(profile.evalWeightsId)) {
+                IntentCatalog.of(cardRegistry)
+            } else {
+                intents
+            }
+            val evaluator = EvalWeights.resolveEvaluator(profile.evalWeightsId, evaluationIntents)
             val combatAdvisor = CombatAdvisor(simulator, evaluator, cardRegistry, advisorRegistry)
             val responder = DecisionResponder(
                 simulator, evaluator,
@@ -217,7 +226,8 @@ class AIPlayer(
                     budgetPolicy = profile.budgetPolicy,
                     intents = intents,
                     candidateEvaluator = candidateEvaluatorFor(
-                        cardRegistry, profile, evaluator, advisorRegistry, intents
+                        cardRegistry, profile, evaluator, advisorRegistry, intents,
+                        EvalWeights.winProbabilityScale(profile.evalWeightsId),
                     ),
                     stateSampler = if (profile.determinizeHiddenInformation) {
                         val determinizer = Determinizer(cardRegistry)
@@ -252,6 +262,7 @@ class AIPlayer(
             evaluator: BoardEvaluator,
             advisorRegistry: CardAdvisorRegistry,
             intents: IntentCatalog,
+            winProbabilityScale: Double,
         ): CandidateEvaluator {
             val settings = profile.rollouts ?: return StaticCandidateEvaluator(evaluator)
             val playoutCombat = CombatAdvisor(
@@ -263,11 +274,13 @@ class AIPlayer(
                 policy = PlayoutPolicy(playoutCombat, intents, settings),
                 decisions = FastDecisionResponder(intents),
                 settings = settings,
+                winProbabilityScale = winProbabilityScale,
             )
             return RolloutCandidateEvaluator(
                 playouts = engine,
                 staticEvaluator = evaluator,
                 settings = settings,
+                winProbabilityScale = winProbabilityScale,
             )
         }
 

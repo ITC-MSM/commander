@@ -58,14 +58,15 @@ object WinProbability {
     const val DRAW: Double = 0.5
 
     /** Logistic squash of a raw evaluator score into a win probability. */
-    fun squash(score: Double): Double {
+    fun squash(score: Double, scale: Double = SCALE): Double {
+        require(scale.isFinite() && scale > 0.0) { "Win-probability scale must be positive and finite" }
         if (score.isNaN()) return DRAW
         // The guard matters: the static evaluator's terminal sentinel is `Double.MAX_VALUE / 2`,
         // and `exp(-MAX_VALUE/12)` is a denormal-flush to 0 on the way to 1.0 anyway — but the
         // explicit branch documents the intent and skips the arithmetic.
         if (score >= TERMINAL_RAW) return WIN - EPSILON
         if (score <= -TERMINAL_RAW) return LOSS + EPSILON
-        return 1.0 / (1.0 + exp(-score / SCALE))
+        return 1.0 / (1.0 + exp(-score / scale))
     }
 
     /**
@@ -74,10 +75,11 @@ object WinProbability {
      * Clamped to [EPSILON] either side, so a proven win comes back as a large finite number rather
      * than an infinity that would break every comparison it touches.
      */
-    fun logit(p: Double): Double {
+    fun logit(p: Double, scale: Double = SCALE): Double {
+        require(scale.isFinite() && scale > 0.0) { "Win-probability scale must be positive and finite" }
         if (p.isNaN()) return 0.0
         val clamped = p.coerceIn(EPSILON, 1.0 - EPSILON)
-        return SCALE * ln(clamped / (1.0 - clamped))
+        return scale * ln(clamped / (1.0 - clamped))
     }
 
     /**

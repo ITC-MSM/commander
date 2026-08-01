@@ -229,7 +229,10 @@ object TableGameRunner {
         val maxPlayerTurns = maxTurns * setup.seats
         val stream = if (recordActionStream) MessageDigest.getInstance("SHA-256") else null
         fun record(entry: String) = stream?.update(entry.toByteArray(Charsets.UTF_8))
-        val featureGame = featureCollector?.newGame("$groupId-$rotation-$seed")
+        val featureGame = featureCollector?.newGame(
+            "$groupId-$rotation-$seed",
+            seatIds.mapIndexed { seat, id -> id to agents[seat].name }.toMap(),
+        )
 
         val duration = measureTime {
             try {

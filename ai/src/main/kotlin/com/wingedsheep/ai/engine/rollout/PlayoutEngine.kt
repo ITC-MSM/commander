@@ -60,6 +60,7 @@ class PlayoutEngine(
     private val policy: PlayoutPolicy,
     private val decisions: FastDecisionResponder,
     private val settings: RolloutSettings = RolloutSettings.DEFAULT,
+    private val winProbabilityScale: Double = WinProbability.SCALE,
 ) : Playouts {
     private val processor = ActionProcessor(EngineServices(cardRegistry), computeUndo = false)
     private val enumerator = LegalActionEnumerator.create(cardRegistry)
@@ -157,5 +158,8 @@ class PlayoutEngine(
      * be calibrated against score *differences* (single digits) rather than absolute scores.
      */
     private fun leafValue(state: GameState, playerId: EntityId, baseline: Double): Double =
-        WinProbability.squash(evaluator.evaluate(state, state.projectedState, playerId) - baseline)
+        WinProbability.squash(
+            evaluator.evaluate(state, state.projectedState, playerId) - baseline,
+            winProbabilityScale,
+        )
 }

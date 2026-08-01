@@ -50,7 +50,46 @@ data class RawBoardFeatures(
     val turnNumber: Int,
     val isMyTurn: Int,
 ) {
+    internal fun weightedSum(weights: Map<String, Double>): Double =
+        myLife * weights.getValue("myLife") +
+            opponentLife * weights.getValue("opponentLife") +
+            lifeDifference * weights.getValue("lifeDifference") +
+            myBurnRangeLife * weights.getValue("myBurnRangeLife") +
+            opponentBurnRangeLife * weights.getValue("opponentBurnRangeLife") +
+            creatureCountDifference * weights.getValue("creatureCountDifference") +
+            totalPowerDifference * weights.getValue("totalPowerDifference") +
+            totalToughnessDifference * weights.getValue("totalToughnessDifference") +
+            evasiveCreatureDifference * weights.getValue("evasiveCreatureDifference") +
+            untappedCreatureDifference * weights.getValue("untappedCreatureDifference") +
+            artifactCountDifference * weights.getValue("artifactCountDifference") +
+            enchantmentCountDifference * weights.getValue("enchantmentCountDifference") +
+            planeswalkerCountDifference * weights.getValue("planeswalkerCountDifference") +
+            landCountDifference * weights.getValue("landCountDifference") +
+            planeswalkerLoyaltyDifference * weights.getValue("planeswalkerLoyaltyDifference") +
+            handSizeDifference * weights.getValue("handSizeDifference") +
+            myHandSize * weights.getValue("myHandSize") +
+            opponentHandSize * weights.getValue("opponentHandSize") +
+            untappedLandDifference * weights.getValue("untappedLandDifference") +
+            graveyardSizeDifference * weights.getValue("graveyardSizeDifference") +
+            summoningSickCreatureDifference * weights.getValue("summoningSickCreatureDifference") +
+            librarySizeDifference * weights.getValue("librarySizeDifference") +
+            removalInHandDifference * weights.getValue("removalInHandDifference") +
+            threatsInPlayDifference * weights.getValue("threatsInPlayDifference") +
+            turnNumber * weights.getValue("turnNumber") +
+            isMyTurn * weights.getValue("isMyTurn")
+
     companion object {
+        val names: Set<String> = setOf(
+            "myLife", "opponentLife", "lifeDifference", "myBurnRangeLife", "opponentBurnRangeLife",
+            "creatureCountDifference", "totalPowerDifference", "totalToughnessDifference",
+            "evasiveCreatureDifference", "untappedCreatureDifference", "artifactCountDifference",
+            "enchantmentCountDifference", "planeswalkerCountDifference", "landCountDifference",
+            "planeswalkerLoyaltyDifference", "handSizeDifference", "myHandSize", "opponentHandSize",
+            "untappedLandDifference", "graveyardSizeDifference", "summoningSickCreatureDifference",
+            "librarySizeDifference", "removalInHandDifference", "threatsInPlayDifference", "turnNumber",
+            "isMyTurn",
+        )
+
         fun extract(
             state: GameState,
             projected: ProjectedState,

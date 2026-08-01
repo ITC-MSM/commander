@@ -2,6 +2,8 @@ package com.wingedsheep.ai.engine.evaluation
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.doubles.shouldBeExactly
+import kotlinx.serialization.encodeToString
 
 class EvalWeightsTest : StringSpec({
 
@@ -27,4 +29,40 @@ class EvalWeightsTest : StringSpec({
     "malformed tuning artifact is ignored" {
         EvalWeights.decodeOrEmpty("""{"candidate":""") shouldBe emptyMap()
     }
+
+    "raw profile decodes and scores the complete feature schema" {
+        val weights = RawBoardFeatures.names.associateWith { 0.0 }.toMutableMap().apply {
+            this["lifeDifference"] = 2.0
+            this["isMyTurn"] = -0.25
+        }
+        val encoded = """{"candidate":{"intercept":1.5,"weights":${
+            kotlinx.serialization.json.Json.encodeToString(weights)
+        },"winProbabilityScale":1.0}}"""
+        val profile = EvalWeights.decodeRaw(encoded).getValue("candidate")
+
+        profile.isValid() shouldBe true
+        profile.evaluate(zeroFeatures.copy(lifeDifference = 3, isMyTurn = 1)) shouldBeExactly 7.25
+    }
+
+    "raw profile rejects an incomplete or non-finite vector" {
+        RawEvaluationWeights(0.0, mapOf("lifeDifference" to 1.0)).isValid() shouldBe false
+        RawEvaluationWeights(
+            0.0,
+            RawBoardFeatures.names.associateWith { if (it == "myLife") Double.NaN else 0.0 },
+        ).isValid() shouldBe false
+    }
 })
+
+private val zeroFeatures = RawBoardFeatures(
+    myLife = 0, opponentLife = 0, lifeDifference = 0,
+    myBurnRangeLife = 0, opponentBurnRangeLife = 0,
+    creatureCountDifference = 0, totalPowerDifference = 0, totalToughnessDifference = 0,
+    evasiveCreatureDifference = 0, untappedCreatureDifference = 0,
+    artifactCountDifference = 0, enchantmentCountDifference = 0, planeswalkerCountDifference = 0,
+    landCountDifference = 0, planeswalkerLoyaltyDifference = 0,
+    handSizeDifference = 0, myHandSize = 0, opponentHandSize = 0,
+    untappedLandDifference = 0, graveyardSizeDifference = 0,
+    summoningSickCreatureDifference = 0, librarySizeDifference = 0,
+    removalInHandDifference = 0, threatsInPlayDifference = 0,
+    turnNumber = 0, isMyTurn = 0,
+)

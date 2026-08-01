@@ -18,6 +18,7 @@ import java.util.Locale
 import java.util.concurrent.ExecutorCompletionService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import java.lang.management.ManagementFactory
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlin.time.measureTime
@@ -114,6 +115,7 @@ class SimulationThroughputBenchmark : FunSpec({
         }
 
         println("Wall time:  ${wallTime.inWholeMilliseconds}ms ($numGames games on $cores threads)")
+        println("Concurrent measured throughput: ${fmt(numGames * 1000.0 / wallTime.inWholeMilliseconds, 2)} games/sec")
         println("NOTE: wall time includes ~2-3x measurement overhead; only the rates above are meaningful.")
         pool.shutdown()
     }
@@ -148,6 +150,9 @@ private data class ThroughputSample(
     val decisionCount: Int,
     val chooseActionCount: Int,
     val chooseActionNs: Long,
+    val chooseActionSamplesNs: List<Long>,
+    val chooseActionAllocatedBytes: Long,
+    val peakUsedHeapBytes: Long,
     val crashError: String? = null
 )
 
@@ -204,6 +209,11 @@ private fun measureGame(
     var decisionCount = 0
     var chooseActionCount = 0
     var chooseActionNs = 0L
+    val chooseActionSamplesNs = mutableListOf<Long>()
+    var chooseActionAllocatedBytes = 0L
+    var peakUsedHeapBytes = 0L
+    val allocationBean = (ManagementFactory.getThreadMXBean() as? com.sun.management.ThreadMXBean)
+        ?.takeIf { it.isThreadAllocatedMemorySupported }
     var crashError: String? = null
 
     var actionCount = 0
@@ -269,9 +279,18 @@ private fun measureGame(
 
             // ── Advance the game with the real AI ──
             val ai = aiFor(priorityPlayer)
+            val allocatedBefore = allocationBean?.getThreadAllocatedBytes(Thread.currentThread().threadId()) ?: -1L
             val chooseStart = System.nanoTime()
             val action = ai.chooseAction(state)
-            chooseActionNs += System.nanoTime() - chooseStart
+            val chooseElapsed = System.nanoTime() - chooseStart
+            chooseActionNs += chooseElapsed
+            chooseActionSamplesNs += chooseElapsed
+            val allocatedAfter = allocationBean?.getThreadAllocatedBytes(Thread.currentThread().threadId()) ?: -1L
+            if (allocatedBefore >= 0 && allocatedAfter >= allocatedBefore) {
+                chooseActionAllocatedBytes += allocatedAfter - allocatedBefore
+            }
+            val heap = ManagementFactory.getMemoryMXBean().heapMemoryUsage.used
+            if (heap > peakUsedHeapBytes) peakUsedHeapBytes = heap
             chooseActionCount++
 
             val playedStart = System.nanoTime()
@@ -311,6 +330,9 @@ private fun measureGame(
         decisionCount = decisionCount,
         chooseActionCount = chooseActionCount,
         chooseActionNs = chooseActionNs,
+        chooseActionSamplesNs = chooseActionSamplesNs,
+        chooseActionAllocatedBytes = chooseActionAllocatedBytes,
+        peakUsedHeapBytes = peakUsedHeapBytes,
         crashError = crashError
     )
 }
@@ -355,6 +377,10 @@ private fun printReport(samples: List<ThroughputSample>, numGames: Int) {
     val emptyWindows = samples.sumOf { it.emptyCandidateWindows }
     val chooseCount = samples.sumOf { it.chooseActionCount }
     val chooseNs = samples.sumOf { it.chooseActionNs }
+    val chooseSamples = samples.flatMap { it.chooseActionSamplesNs }.sorted()
+    fun percentile(p: Double): Double = if (chooseSamples.isEmpty()) 0.0 else
+        chooseSamples[((chooseSamples.size - 1) * p).roundToInt()] / 1_000_000.0
+    val allocatedBytes = samples.sumOf { it.chooseActionAllocatedBytes }
 
     val candidateProcessPerSec = ratePerSec(processCalls, processNs)
     val playedProcessPerSec = ratePerSec(playedCalls, playedNs)
@@ -413,6 +439,10 @@ private fun printReport(samples: List<ThroughputSample>, numGames: Int) {
     println()
     println("--- CURRENT AI DECISION COST ---")
     println("Strategist.chooseAction:  ${fmt(meanMs(chooseNs, chooseCount), 1)} ms mean (n=$chooseCount)")
+    println("Decision latency:         p50=${fmt(percentile(0.50), 3)} ms, p95=${fmt(percentile(0.95), 3)} ms")
+    println("Decision allocations:     ${fmt(allocatedBytes.toDouble() / chooseCount.coerceAtLeast(1) / 1024.0, 1)} KiB/decision, " +
+        "${fmt(if (chooseNs > 0) allocatedBytes * 1_000_000_000.0 / chooseNs / 1024.0 / 1024.0 else 0.0, 1)} MiB/s of AI thinking")
+    println("Peak used heap:           ${fmt(samples.maxOfOrNull { it.peakUsedHeapBytes }?.toDouble()?.div(1024.0 * 1024.0) ?: 0.0, 1)} MiB")
     println("Per game:                 ${fmt(chooseNs.toDouble() / samples.size / 1_000_000_000.0, 1)} s of AI thinking")
 
     // What a rollout budget buys at the measured rate. Phase 5's stated target is

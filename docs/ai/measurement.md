@@ -6,6 +6,27 @@ eighth quiet state and appends one JSON object per position after the game resul
 path (or remove an old artifact yourself) when you want a clean dataset; collection intentionally
 appends so interrupted runs remain usable.
 
+Each row includes `setCode` and the `agent` whose turn it was. These are required provenance for
+whole-set validation and for checking that a training corpus contains more than one generating
+policy. Files collected before these fields were added are deliberately rejected by the Phase 9
+fitting tool rather than being assigned guessed metadata.
+
+Validate and fit a collected corpus with:
+
+```bash
+python3 -m pip install -r scripts/requirements-ai-tuning.txt
+python3 scripts/tune_eval.py benchmarks/features/*.jsonl --validate-only
+python3 scripts/tune_eval.py benchmarks/features/*.jsonl --holdout-set ONS \
+  --profile-id texel-candidate --output-dir benchmarks/eval-tuning/texel-candidate
+```
+
+The fit groups cross-validation folds by `gameId`, reserves the requested set before model
+selection, and writes a runtime-loadable `raw-eval-weights.json`, `fit-report.json`, and
+`calibration.png`. Copy a reviewed candidate entry into
+`ai/src/main/resources/ai/raw-eval-weights.json`; it then becomes arena-addressable as
+`eval-<profile-id>` without recompiling Kotlin. Draw rows are reported and excluded from the binary
+fit. A candidate is not promoted on log-loss alone—the arena promotion rule below still decides.
+
 How to run the arena, how to read a report, and what does and does not count as evidence that the
 AI got better. Built in Phase 1 of [`backlog/engine-ai-improvement.md`](../../backlog/engine-ai-improvement.md).
 

@@ -1376,7 +1376,8 @@ graveyard sizes · summoning-sick count · turn number · is-my-turn · library 
 `CardIntent`-derived counts (removal in hand, threats in play). Keep the 5 composites as a fallback
 profile.
 
-**Fit in Python** — `scripts/tune_eval.py`, sklearn logistic regression with L2:
+**Fit in Python — initial fitter + runtime profile wiring landed 2026-08-01; corpus, uncertainty
+reporting, and candidate fit remain.** `scripts/tune_eval.py`, sklearn logistic regression with L2:
 `P(win | position) = σ(w·x)`, label = the game's final result for the player to move. Gives
 regularization paths, calibration curves and coefficient standard errors for free. Outputs
 `eval-weights.json`, a calibration plot, **and the fitted `SCALE`** that Phase 7's
@@ -1397,6 +1398,348 @@ regularization paths, calibration curves and coefficient standard errors for fre
 
 The puzzle suite is an independent third signal: if a tuned weight set improves log-loss *and* arena
 but tanks a puzzle category, look hard before shipping.
+
+> **Starter fit rejected 2026-08-01.** 12,548 decisive positions from 238 completed games
+> (`v0`/`production`, BLB + POR training, LCI holdout) produced superficially healthy positional
+> metrics—training log-loss 0.519 / accuracy 71.4%, held-out LCI 0.487 / 71.5%—but lost the BLB
+> smoke arena **0–100** to `v0`. The vector learned policy correlations rather than action value:
+> lands had negative coefficients while cards retained in hand were positive, so the agent declined
+> development. The candidate was not promoted. Next collection must include a genuinely exploratory
+> policy and the fit needs action-delta diagnostics before another arena run; held-out positional
+> log-loss alone passed while play was catastrophically bad, exactly why the arena is the gate.
+
+### Phase 9b–9g — Data-driven policy/value/search roadmap · research review 2026-08-01
+
+The rejected starter fit changes the objective, not just the dataset size. Predicting the winner of
+a position sampled from an existing policy is **not** the same problem as choosing the action that
+improves a position. The next system learns from comparisons between legal actions produced by the
+engine, uses search as its teacher, and keeps search at inference time.
+
+#### Research verdict
+
+There is no published method that is unconditionally best for Magic's combination of stochasticity,
+hidden information, long horizons, changing card pools, structured legal actions, and multiplayer.
+The strongest general results divide into four families:
+
+| Family | Evidence | Fit here |
+|---|---|---|
+| **Guided search + policy/value learning** | [Expert Iteration](https://papers.nips.cc/paper_files/paper/2017/hash/d8e1344e27a5b08cdfd5d027d9b8d6de-Abstract.html) separates slow tree-search improvement from fast policy generalization; [AlphaZero](https://arxiv.org/abs/1712.01815) closes the same self-play loop with policy/value-guided MCTS | **Best immediate fit.** We already own exact dynamics, legal actions, simulation, determinizations, rollout budgets, and arena promotion. Search can label decisions more directly than final outcomes, while a learned policy/value makes later search stronger and cheaper |
+| **Public-belief/game-theoretic search** | [ReBeL](https://arxiv.org/abs/2007.13544) combines self-play learning and search with convergence guarantees in two-player zero-sum imperfect-information games; [Student of Games](https://arxiv.org/abs/2112.03178) unifies guided search, learning, and game-theoretic reasoning across perfect- and imperfect-information games | **Best long-term duel architecture**, but not the first implementation. Exact public-belief enumeration over arbitrary Magic hands/libraries is prohibitive. Start with sampled viewer-consistent worlds, then add belief-aware recurrent state and continual re-solving once the learned policy/value works |
+| **Regret minimization / equilibrium learning without search** | [Deep CFR](https://arxiv.org/abs/1811.00164) replaces tabular CFR abstractions with neural approximation in large poker; [NFSP](https://arxiv.org/abs/1603.01121) learns approximate equilibria from fictitious self-play; [DeepNash](https://arxiv.org/abs/2206.15378) reaches expert Stratego without search using regularized Nash dynamics | **A real alternative, not the current choice.** These optimize low exploitability in two-player zero-sum imperfect-information games, but require enormous traversal/self-play budgets and a stable information-state/action representation we do not yet have. They also leave the engine's exact simulator and working search stack underused. Revisit if determinization search proves systematically exploitable |
+| **Offline RL / outcome-only fitting** | [Conservative Q-Learning](https://arxiv.org/abs/2006.04779) exists specifically because static logged data produces out-of-distribution value overestimation | **Rejected as the primary path.** We can interact with an exact simulator, so accepting offline RL's distribution-shift problem buys nothing. The 0–100 starter result is the local demonstration: good held-out outcome log-loss did not imply a usable policy |
+
+Two further variants are deliberately not selected:
+
+- **MuZero / learned dynamics.** [Sampled MuZero](https://arxiv.org/abs/2104.06303) is attractive for
+  complex action spaces, but its learned dynamics solve a problem we do not have: Argentum already
+  supplies exact, deterministic state transitions around explicitly modeled randomness. Learn policy
+  and value; do not replace a correct rules engine with an approximate world model.
+- **Pure policy-gradient self-play.** It can eventually work, as DeepNash demonstrates, but sparse
+  game outcomes throw away the dense counterfactual supervision our simulator can generate. Search
+  distillation is more sample-efficient for the resources and infrastructure available here.
+
+**Decision:** build a **duel-first, multiplayer-capable imperfect-information Expert Iteration** loop:
+exact legal-action generation + shared-determinization search produces policy/value targets; a fast
+learned apprentice generalizes them; the apprentice guides the next search. Spend most collection,
+tuning, and promotion compute on 1v1, where the objective and measurements are cleanest, but make every
+shared representation and artifact support a variable number of players from its first version.
+Evolve duel search toward Student-of-Games/ReBeL-style belief awareness only after the basic loop
+demonstrates arena strength. This is an inference from the papers and this repository's constraints,
+not a claim that one algorithm dominates every game.
+
+The boundary is: **one learning pipeline, multiple search objectives**. Observation encoding, legal
+candidate encoding, teacher-record format, replay buffer, policy/ranker, entity encoder, training
+service, artifact format, and inference runtime are shared. Duel and multiplayer adapters may differ
+in utility targets, opponent sampling, backup rule, exploration schedule, and promotion arena. Do not
+fork a `MultiplayerAi` model or dataset pipeline unless a measured incompatibility makes sharing worse.
+
+#### Deployment envelope — current-server class hardware
+
+The production opponent must remain in the same operational class as the current AI. Training and
+large-budget teacher search are offline jobs and must never be required by the game server. Runtime is
+an immutable, pre-fitted artifact plus bounded search; loading a champion must not start Python, a GPU
+runtime, a training service, or a separate model server.
+
+Set explicit budgets before implementation and record them beside arena strength:
+
+- profile the current production AI on the target server and use its p50/p95 decision latency, peak
+  heap, allocation rate, and concurrent-game throughput as the baseline;
+- the first learned champion must stay within **1.25x p95 latency**, **+128 MiB process memory**, and
+  **1.25x allocation rate** at the same concurrency; treat these as provisional until the real server
+  baseline is captured;
+- model artifacts should initially remain below **25 MiB** and load once per process, shared by all
+  games; per-game mutable model state is limited to small recurrent/belief summaries;
+- every decision has a hard wall-clock/node budget and returns the best completed candidate when it
+  expires; multiplayer may reduce per-candidate rollouts to preserve the same latency envelope;
+- expose `LIGHT`, `NORMAL`, and `STRONG` compute profiles using the same weights. The server default is
+  the strongest profile that passes concurrency soak, not the largest model available.
+
+Prefer computation in this order: cached linear/GAM scoring, candidate pruning, batched evaluation of
+the remaining legal actions, then a small number of guided rollouts. A learned prior is successful if
+it lets search examine **fewer** nodes for equal strength. Do not combine the full current rollout
+budget with additional expensive inference and call the result an upgrade.
+
+#### 9b — Repair the data boundary first
+
+Training data is invalid if the generating game was invalid. Before collecting another corpus:
+
+- Fix or reject games containing illegal AI actions. The starter runs found insufficient-mana casts
+  and unpayable additional-sacrifice costs; recovered games are useful bug reports, not labels.
+- Diagnose the repeatable ONS arena wedge. Never train on the completion-biased prefix of a wedged run.
+- Make `runId + gameId` globally unique; record set, format, deck hashes, seed, seat, profile, schema
+  version, completion reason, and whether any recovery occurred.
+- Record the acting player's **masked observation** plus the search's sampled worlds. Never serialize
+  exact unseen identities into model inputs or labels.
+- Represent participants as `self + unordered other players`, with stable per-player public features
+  and optional team identity. Never bake `player 1/player 2`, exactly-one-opponent, or two-seat tensor
+  shapes into the observation schema.
+- Add a corpus validator that rejects duplicate games, mixed schemas, incomplete games, illegal-action
+  recovery, non-finite features, and missing generator diversity.
+
+Exit: at least three supported sets can each complete a 300-game collection with zero illegal actions,
+zero exceptions, zero wedges, and deterministic row hashes across thread counts.
+
+#### 9c — Collect decisions and candidates, not periodic positions
+
+Add a `DecisionTrainingRecord` at every meaningful decision root:
+
+```
+run/game/decision identity
+format, player count, acting seat, team ids
+masked root observation
+legal candidate descriptors
+one-ply quiet state per candidate
+candidate-minus-root feature delta
+shared sampled-world ids and shared rollout seeds
+static score, rollout mean/variance, terminal result per candidate
+search allocation / visit count
+chosen action
+eventual game result
+terminal placement and per-seat/team utility vector
+```
+
+The engine remains authoritative: the learner ranks only candidates emitted by
+`LegalActionEnumerator`. Targets, modes, costs, and decisions are represented structurally; a model
+never invents an action string.
+
+The first training target is pairwise preference:
+
+```
+P(A better than B) = sigmoid(score(root, A) - score(root, B))
+```
+
+Use shared determinizations and common random numbers when comparing A and B. This labels the
+**effect of acting**, unlike final-result regression, and reduces variance between candidates.
+
+The record has one schema for duels and pods. In 1v1, the utility vector is constrained to zero-sum
+`[u, -u]`. In free-for-all games it stores every player's placement/utility rather than prematurely
+collapsing the result to `won = 0/1`. Candidate targets are always from the acting player's perspective;
+the raw vector remains available so later work can learn threat assessment, kingmaking risk, and
+opponent responses without recollecting games.
+
+Exit: replaying every record reproduces its legal candidates and quiet-state digest; swapping player
+perspective negates every antisymmetric feature delta; a free land-drop fixture is labeled above pass.
+
+#### 9d — Build the search teacher and exploratory corpus
+
+The teacher is the current rollout stack with a larger offline-only budget, not a new execution
+engine. At each decision it searches a bounded candidate subset and stores the full normalized score
+distribution, not only the argmax.
+
+Collect from a reproducible mixture:
+
+- current production/champion policy — realistic states;
+- rollout teacher — stronger states and targets;
+- temperature/epsilon exploratory policy — recovery and off-policy states;
+- frozen older champions — prevents the corpus collapsing onto one policy and exposes
+  non-transitive matchups.
+
+Start a small multiplayer shadow stream as soon as the record validator passes. A default compute
+allocation is **80% duel / 20% multiplayer**, adjustable from measured learning curves. Pod games use
+randomized seat order and opponents sampled independently from the champion/league population; never
+fill every opposing seat with the same latest policy exclusively. The shadow stream is not a pod
+promotion gate yet—it prevents the shared encoder and policy from silently specializing to exactly
+one opponent.
+
+Exploration samples only engine-legal, meaningful actions. Prefer softmax over teacher scores, with a
+small uniform tail; store the propensity so later training can reweight the sample. Iteratively run
+the apprentice in the environment and ask the teacher to label the states it actually reaches—the
+same distribution-correction principle as Expert Iteration, rather than one-shot behavior cloning.
+
+Exit: every action family with meaningful arena frequency appears in train and validation; no single
+generator supplies more than half the corpus; candidate score margins have enough near-ties to teach
+real ranking rather than only obvious wins.
+
+#### 9e — Apprentice v1: interpretable ranking and value
+
+Train shared heads over one observation/action representation:
+
+1. **Policy/ranker:** scores each engine-supplied legal candidate. Train on the teacher's normalized
+   search distribution plus pairwise candidate comparisons.
+2. **Value:** emits a variable-player utility/placement estimate from the viewer's masked observation.
+   The duel adapter reads the acting player's zero-sum value; the pod adapter reads the acting player's
+   expected utility and may also consume the per-opponent outputs for threat estimates. Train on a
+   mixture of terminal result and teacher search value; balance by game phase so nearly decided late
+   states do not dominate.
+
+Use permutation-equivariant aggregation for opponents: the prediction must not change when two
+opponent seat labels are swapped while their states are swapped with them. Keep player identity only
+where rules require it (turn order, teams, attack direction, choices already made). This lets the same
+weights run with two, three, or four players instead of padding a duel-specific network into a pod.
+
+Start with regularized linear or generalized-additive models over candidate deltas. They are fast,
+JSON-loadable, and auditable. Do not advance a model whose coefficient/invariance report fails:
+
+- free land development cannot be worse than retaining the same land;
+- gaining life with everything else fixed cannot hurt;
+- adding friendly power/toughness cannot hurt;
+- removing an opposing permanent cannot hurt;
+- player-perspective swap negates value;
+- permuting equivalent opponent seats permutes per-opponent outputs but leaves the acting player's
+  policy/value unchanged;
+- removing an already-eliminated opponent does not change remaining-player predictions beyond encoded
+  turn-order consequences;
+- terminal wins/losses dominate finitely;
+- every fitted coefficient and inference result is finite.
+
+Only after this baseline clears the arena should representation move to a small entity/set model:
+encode visible cards/permanents as an unordered collection, share card/entity encoders, aggregate by
+zone/controller, and score a structured action against the state embedding. Avoid card-name one-hots;
+use reusable card structure and `CardIntent` so held-out cards and sets have a path to generalize.
+
+The entity/set model is optional, not the assumed destination. Advance beyond the linear/GAM model
+only when an equal-latency arena shows a material strength gain. If needed, cap it to a small CPU-only
+network, export a dependency-light JVM representation, quantize weights when that measurably helps,
+and compute the root embedding once per decision rather than once per candidate or rollout node.
+
+Exit order: action-delta invariants → held-out games → held-out decks → held-out set → puzzle suite →
+100-game smoke → 300-game directional arena. Positional accuracy/log-loss cannot waive an earlier gate.
+
+#### 9f — Close the Expert Iteration loop
+
+Once apprentice v1 is not weaker in duels:
+
+1. use its policy head as a prior and candidate pre-ranker;
+2. use its value head at rollout/search horizons;
+3. search under a fixed simulation budget;
+4. store the improved search policy and value targets;
+5. retrain from a replay buffer containing new data plus stratified older data;
+6. challenge the champion; promote only through the standing arena gates.
+
+Measure policy-only, value-only, and combined agents separately. Search must remain anytime and
+deterministic under a fixed seed. The budget ladder must stay monotone: if more search makes the
+agent weaker, improve targets/leaf value rather than adding simulations.
+
+Use a champion/league buffer rather than latest-vs-latest self-play only. If the gauntlet shows
+cycling or rock-paper-scissors behavior, add a small opponent population inspired by policy-space
+response methods instead of selecting solely by Elo.
+
+Run the same loop on the multiplayer shadow stream with a format-specific search adapter:
+
+- duel search uses zero-sum backups;
+- team games use team utility and remain zero-sum when the format is two-team;
+- free-for-all search uses acting-player expected placement/match utility, preserves every player's
+  value estimate, and initially uses shallow opponent-policy rollouts rather than pretending the game
+  is minimax;
+- policy priors, leaf evaluator, candidate representation, sampled hidden worlds, and stored search
+  distributions remain shared.
+
+Multiplayer batches update the shared trunk and policy head, then use format/player-count conditioning
+in the value/output adapter. During early training, cap their gradient contribution so a noisier pod
+objective cannot erase duel strength; increase it only when joint-training ablations improve pods
+without breaching the duel regression budget.
+
+Keep pod inference within the duel latency envelope. Rank all legal actions cheaply, search only the
+top bounded set plus tactically mandatory actions, reuse one root/opponent encoding, and allocate a
+fixed total simulation budget across opponents rather than multiplying the duel budget by player
+count. A pod agent that is stronger only with 3x compute is not evidence that the shared pipeline met
+its goal.
+
+Exit: new champion's lower paired CI exceeds 50% against both the previous champion and `v0` over
+1,000 duel games each; no duel gauntlet matchup falls below 45%; multiplayer shadow metrics do not
+regress beyond their provisional tolerance; puzzles do not regress unexpectedly; illegal
+actions/exceptions are zero; inference fits the selected decision budget.
+
+#### 9g — Hidden-information upgrade and multiplayer specialization
+
+Do **not** claim equilibrium play from determinized MCTS. The first loop uses several shared
+viewer-consistent worlds because it is tractable, but strategy fusion and non-locality remain.
+
+For duels, incrementally approach the ReBeL/Student-of-Games shape:
+
+- recurrent public-history encoder;
+- explicit belief over opponent hand/deck hypotheses;
+- opponent-range sampling conditioned on public actions, not only deck priors;
+- belief-state value/policy targets;
+- continual re-solving at public decision points;
+- exploitability probes in small mechanically faithful subgames where an exact solver is possible.
+
+Gate each addition against equal-compute determinization search. Exact public-belief enumeration is
+out of scope unless profiling proves a bounded abstraction can support it.
+
+Apply the same belief machinery to each opponent independently at first, with a shared opponent-range
+encoder and permutation-equivariant aggregation. Later add joint hypotheses only if profiling shows
+that correlated hidden information materially improves play. This keeps the common case tractable and
+lets duel improvements transfer directly to pods.
+
+Multiplayer is a different **objective**, not a different AI stack: it is general-sum, may involve
+teams, and has no single duel-style Nash target. Once the duel champion is strong and shadow results
+are stable, tune the multiplayer search adapter and increase pod data without cloning the model.
+
+The target is controlled degradation rather than identical win percentages. Compare against the same
+fixed opponent league and normalize by the format baseline:
+
+- retain at least **90% of the shared model's duel-relative strength** when moving from duel-only to
+  joint training;
+- joint training must beat a duel-only checkpoint in pods at equal inference compute;
+- a multiplayer-specialized head is allowed only if it improves pod score materially while sharing the
+  trunk, policy/action encoder, artifact, and collection pipeline;
+- maintain 2-, 3-, and 4-player pod matrices across seat, deck, player count, and opponent mixture;
+- report placement distribution, match/pod win rate, survival, decision latency, and per-opponent
+  exploitability probes—never infer multiplayer strength from duel win rate or compare a pod result
+  naively against 50%.
+
+Promote one **universal champion artifact** when both the duel gate and the appropriate pod regression
+gate pass. Difficulty profiles and decision budgets may differ by format, but the model version should
+not. If the universal artifact repeatedly misses either gate, first try player-count conditioning,
+loss balancing, and a small format-specific value head; splitting the entire pipeline is the last
+resort and requires an arena-backed decision record.
+
+#### Data split and promotion protocol
+
+- Split by **game**, then hold out deck seeds and at least one entire set. Never split positions from
+  one game across folds.
+- Maintain an untouched final test corpus that model selection never reads.
+- Stratify every split by player count and format. Keep entire games/pods together, and reserve both
+  duel-only and multiplayer-only final corpora so shared-training gains cannot hide transfer regressions.
+- Report action top-1/top-k agreement, pairwise ranking loss, calibration, per-action-family metrics,
+  and invariance failures. Let paired duel arena win rate decide duel strength; use fixed-composition,
+  repeated-seat pod comparisons with bootstrap confidence intervals for multiplayer.
+- Run the puzzle suite as the localizing signal, budget ladder as the search-health signal, duel arena
+  as the strength gate, gauntlet as the non-transitivity guard, and pod arena for multiplayer only.
+- Version observation schema, action schema, teacher, weights, code commit, sets, and deck generator in
+  every artifact. A result without reproducible provenance is not a baseline.
+- Run a target-server concurrency soak before promotion. Report strength versus latency as a Pareto
+  curve; reject a candidate dominated by a cheaper checkpoint even when its unconstrained arena score
+  is higher.
+
+#### Recommended execution order
+
+```
+9b data integrity
+ → capture target-server latency/memory/concurrency baseline
+ → 9c variable-player decision/candidate-delta records
+ → 9d duel teacher + 20% multiplayer shadow collection
+ → 9e shared policy/trunk + variable-player value baseline
+ → 9f duel-primary Expert Iteration + multiplayer search adapter
+ → 9g shared belief encoder + multiplayer specialization
+ → one universal champion gated in duel and pod arenas
+```
+
+The next concrete unit is **9b + the record skeleton of 9c**. It directly prevents another
+high-accuracy/0–100 failure and produces data usable by both the cheap linear apprentice and the
+long-term policy/value model. Its acceptance test now includes replayable 2-, 3-, and 4-player records,
+even though the first strength-optimization milestone remains 1v1.
 
 ---
 

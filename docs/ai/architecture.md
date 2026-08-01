@@ -32,6 +32,13 @@ Plus `IntentCatalog` (Phase 6), which is card knowledge rather than a control-fl
 `BoardPresence.permanentValue`, `TargetSelection.rank`, `HoldPolicy` and the rollout policy's
 priors.
 
+Phase 9 adds a second leaf implementation behind the existing `BoardEvaluator` seam. Composite
+profiles load from `eval-weights.json`; fitted raw-feature profiles load from
+`raw-eval-weights.json`. `AiProfile.evalWeightsId` selects either kind, and malformed raw profiles
+fall back to the compiled composite default. The raw evaluator extracts projected battlefield facts
+once per evaluation and applies the fitted linear vector; it is internal AI behavior with no SDK,
+server, or client contract.
+
 ---
 
 ## A decision, end to end

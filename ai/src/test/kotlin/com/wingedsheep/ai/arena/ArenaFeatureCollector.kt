@@ -13,13 +13,21 @@ import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 
 /** Buffers sampled positions until the game result is known, then appends labelled JSONL rows. */
-class ArenaFeatureCollector(private val path: Path, registry: CardRegistry) {
+class ArenaFeatureCollector(
+    private val path: Path,
+    registry: CardRegistry,
+    private val setCode: String,
+) {
     private val intents = IntentCatalog.of(registry)
     private val json = Json { encodeDefaults = true }
 
-    fun newGame(gameId: String): Game = Game(gameId)
+    fun newGame(gameId: String, agentsByPlayer: Map<EntityId, String>): Game =
+        Game(gameId, agentsByPlayer)
 
-    inner class Game(private val gameId: String) {
+    inner class Game(
+        private val gameId: String,
+        private val agentsByPlayer: Map<EntityId, String>,
+    ) {
         private val rows = mutableListOf<BufferedRow>()
         private var quietStates = 0
 
@@ -40,6 +48,9 @@ class ArenaFeatureCollector(private val path: Path, registry: CardRegistry) {
                     toMove = row.toMove,
                     turn = row.turn,
                     gameId = gameId,
+                    setCode = setCode,
+                    agent = agentsByPlayer[EntityId(row.toMove)]
+                        ?: error("No arena agent recorded for player ${row.toMove}"),
                     result = when (winner?.value) {
                         null -> 0
                         row.toMove -> 1
@@ -75,6 +86,8 @@ class ArenaFeatureCollector(private val path: Path, registry: CardRegistry) {
         val toMove: String,
         val turn: Int,
         val gameId: String,
+        val setCode: String,
+        val agent: String,
         val result: Int,
     )
 

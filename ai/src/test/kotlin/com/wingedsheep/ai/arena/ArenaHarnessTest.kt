@@ -98,8 +98,12 @@ class ArenaHarnessTest : FunSpec({
             rows.size shouldBeGreaterThan 0
             rows.forEach { line ->
                 val row = Json.parseToJsonElement(line).jsonObject
-                row.keys shouldBe setOf("features", "toMove", "turn", "gameId", "result")
+                row.keys shouldBe setOf(
+                    "features", "toMove", "turn", "gameId", "setCode", "agent", "result"
+                )
                 row.getValue("features").jsonObject.containsKey("lifeDifference") shouldBe true
+                row.getValue("setCode").jsonPrimitive.content shouldBe "POR"
+                row.getValue("agent").jsonPrimitive.content shouldBe "v0"
                 (row.getValue("result").jsonPrimitive.content.toInt() in (-1..1)) shouldBe true
             }
         } finally {

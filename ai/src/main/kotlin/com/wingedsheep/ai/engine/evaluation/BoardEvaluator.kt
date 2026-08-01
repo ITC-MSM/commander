@@ -22,22 +22,7 @@ class CompositeBoardEvaluator(
 ) : BoardEvaluator {
 
     override fun evaluate(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
-        // Terminal states. `winnerId` records one *representative* of the winning team
-        // (GameEndCheck), so a Two-Headed Giant teammate who is not that representative has still
-        // won — comparing it to playerId directly would score half of every won team game as a loss.
-        if (state.gameOver) {
-            return when {
-                state.winnerId == null -> 0.0 // draw
-                state.winnerId in state.teamOf(playerId) -> Double.MAX_VALUE / 2
-                else -> -(Double.MAX_VALUE / 2)
-            }
-        }
-
-        // CR 104.3b — in a pod a player is eliminated while the game carries on, so "I lost" and
-        // "the game is over" are different questions. Without this a rollout that eliminates us
-        // scores off the surviving opponents' boards, which can read as *better* than surviving.
-        // A team is only out once every member is (CR 104.2c).
-        if (state.teamActivePlayers(playerId).isEmpty()) return -(Double.MAX_VALUE / 2)
+        terminalScore(state, playerId)?.let { return it }
 
         return features.sumOf { (weight, feature) -> weight * feature.score(state, projected, playerId) }
     }

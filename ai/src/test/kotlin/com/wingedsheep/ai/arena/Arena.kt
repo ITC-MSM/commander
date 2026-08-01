@@ -59,7 +59,9 @@ object Arena {
             register(set.cards)
             register(set.basicLands)
         }
-        val featureCollector = config.featureOutput?.let { ArenaFeatureCollector(it, registry) }
+        val featureCollector = config.featureOutput?.let {
+            ArenaFeatureCollector(it, registry, config.setCode)
+        }
 
         val pool = Executors.newFixedThreadPool(config.threads)
         try {

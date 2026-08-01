@@ -10,7 +10,7 @@ default:
 build:
     scripts/gradle-locked build
 
-# Run all tests
+# Run all tesats
 [group: 'build']
 test:
     scripts/gradle-locked test

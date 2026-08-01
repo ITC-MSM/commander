@@ -34,6 +34,14 @@ class WinProbabilityTest : FunSpec({
         }
     }
 
+    test("a fitted scale round-trips independently of the legacy default") {
+        val fittedScale = 1.75
+        val score = 3.25
+        WinProbability.logit(
+            WinProbability.squash(score, fittedScale), fittedScale
+        ) shouldBe (score plusOrMinus 1e-9)
+    }
+
     test("the static evaluator's terminal sentinel squashes without overflowing") {
         // `CompositeBoardEvaluator` returns ±Double.MAX_VALUE / 2 for a decided game. Averaging
         // that with anything is meaningless, which is the reason this file exists.

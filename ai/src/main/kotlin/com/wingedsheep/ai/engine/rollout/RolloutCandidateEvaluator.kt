@@ -54,6 +54,7 @@ class RolloutCandidateEvaluator(
     /** The leaf inside a playout, and the fallback for tiers that get no playouts at all. */
     private val staticEvaluator: BoardEvaluator,
     private val settings: RolloutSettings = RolloutSettings.DEFAULT,
+    private val winProbabilityScale: Double = WinProbability.SCALE,
 ) : CandidateEvaluator {
 
     /**
@@ -156,12 +157,15 @@ class RolloutCandidateEvaluator(
         // both. See [RolloutSettings.staticWeight] for why the mixture exists at all.
         val w = settings.staticWeight
         return afterActions.indices.map { index ->
-            val rolloutDelta = WinProbability.logit(samples[index].mean())
+            val rolloutDelta = WinProbability.logit(samples[index].mean(), winProbabilityScale)
             if (w <= 0.0) return@map baseline + rolloutDelta
             val staticLeaf = staticEvaluator.evaluate(
                 afterActions[index], afterActions[index].projectedState, playerId
             )
-            val staticDelta = WinProbability.logit(WinProbability.squash(staticLeaf - baseline))
+            val staticDelta = WinProbability.logit(
+                WinProbability.squash(staticLeaf - baseline, winProbabilityScale),
+                winProbabilityScale,
+            )
             baseline + w * staticDelta + (1.0 - w) * rolloutDelta
         }
     }
