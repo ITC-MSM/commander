@@ -16,6 +16,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
@@ -90,13 +91,18 @@ class TransformEffectExecutor(
  * daybound/nightbound transforms of CR 702.145c/f). Routing both through here guarantees a day/night
  * transform is byte-identical to any other transform and emits the same [TransformedEvent], so
  * "whenever this transforms" triggers (e.g. Wildsong Howler) fire identically however the flip was
- * caused.
+ * caused — and it makes this the one place a "can't transform" restriction has to be honored.
  */
 internal fun flipDfcInPlace(
     state: GameState,
     cardRegistry: CardRegistry,
     entityId: EntityId
 ): Pair<GameState, TransformedEvent>? {
+    // CR 701.27b — a permanent that can't transform simply doesn't (Bound by Moonsilver). Checked
+    // here rather than in the callers so it covers every cause of a transform, including the
+    // daybound/nightbound day-change flips that bypass TransformEffectExecutor entirely.
+    if (state.projectedState.hasKeyword(entityId, AbilityFlag.CANT_TRANSFORM)) return null
+
     val container = state.getEntity(entityId) ?: return null
     val dfc = container.get<DoubleFacedComponent>() ?: return null
     val currentCard = container.get<CardComponent>() ?: return null

@@ -637,7 +637,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   the life lost this way." (Exsanguinate). Prefer this over `LoseLife + GainLife` whenever the gain
   is worded "equal to the life lost this way".
 - `SetLifeTotal(amount, target)` — set target's life total to N.
-- `ExchangeLifeAndPower(target)` — swap target's power with controller's life total.
+- `ExchangeLifeAndStat(target, stat, player)` — swap a player's life total with a creature's power or
+  toughness (CR 701.12g). `stat` is `CreatureStat.POWER` (default, Evra, Halcyon Witness) or
+  `CreatureStat.TOUGHNESS` (Tree of Perdition); `player` defaults to the controller, pass a
+  `ContextTarget` for "target opponent's life total". The creature's *projected* stat is what the
+  player receives, while the creature's **base** stat is set at Layer 7b — so counters, Auras, and
+  Equipment apply on top of the new value. No-op if the creature has left the battlefield.
 - `ExchangeLifeTotals(target, drawEqualToLifeLost)` — swap the controller's life total with `target`
   player's (CR 701.12c): each player gains/loses the life needed to reach the other's former total,
   applied through the shared gain/lose-life primitives so gain prevention/replacements and loss
@@ -4432,6 +4437,12 @@ staticAbility {
   matching permanents. Honored in the control-change executors (`GainControl`, `GainControlByMost`,
   `ExchangeControl` — an exchange where either side can't be gained control of fails entirely); the
   controller keeping their own permanent is an unaffected no-op. (Guardian Beast)
+- `GrantKeyword(AbilityFlag.CANT_TRANSFORM.name, filter)` — matching permanents can't transform
+  (CR 701.27b — a permanent that can't transform simply doesn't). Honored in `flipDfcInPlace`, the one
+  shared transform-in-place implementation, so it covers *every* cause: a `TransformEffect` one-shot, an
+  activated/triggered transform ability, and the daybound/nightbound day-change flips. The prohibited
+  ability still activates/triggers and its other effects still happen — only the flip is skipped.
+  (Bound by Moonsilver)
 - `AssignDamageEqualToToughness(filter, onlyWhenToughnessGreaterThanPower)` — static: matching creatures
   assign combat damage equal to their toughness rather than their power (Doran the Siege Tower, Bark of
   Doran). `CombatDamageUtils.getAssignedCombatDamage` consults it. For the **turn-scoped, granted** form

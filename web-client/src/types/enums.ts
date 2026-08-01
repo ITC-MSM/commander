@@ -335,6 +335,7 @@ export enum AbilityFlag {
   CANT_BECOME_UNTAPPED = 'CANT_BECOME_UNTAPPED',
   MAY_NOT_UNTAP = 'MAY_NOT_UNTAP',
   CANT_RECEIVE_COUNTERS = 'CANT_RECEIVE_COUNTERS',
+  CANT_TRANSFORM = 'CANT_TRANSFORM',
   ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS = 'ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS',
 }
 
@@ -345,6 +346,7 @@ export const AbilityFlagDisplayNames: Record<AbilityFlag, string> = {
   [AbilityFlag.CANT_BECOME_UNTAPPED]: "Can't become untapped",
   [AbilityFlag.MAY_NOT_UNTAP]: 'You may choose not to untap',
   [AbilityFlag.CANT_RECEIVE_COUNTERS]: "Can't have counters put on it",
+  [AbilityFlag.CANT_TRANSFORM]: "Can't transform",
   [AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS]: 'Assigns combat damage equal to its toughness rather than its power',
 }
 
