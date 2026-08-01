@@ -20948,3 +20948,128 @@
         }
     ]
 }
+
+// Yenna, Redtooth Regent
+{
+    "name": "Yenna, Redtooth Regent",
+    "manaCost": "{2}{G}{W}",
+    "typeLine": "Legendary Creature — Elf Noble",
+    "oracleText": "{2}, {T}: Choose target enchantment you control that doesn't have the same name as another permanent you control. Create a token that's a copy of it, except it isn't legendary. If the token is an Aura, untap Yenna, then scry 2. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateTokenCopyOfTarget",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "enchantment you control that doesn't have the same name as another permanent you control"
+                            },
+                            "removedSupertypes": [
+                                "LEGENDARY"
+                            ]
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": "enchantment Aura"
+                                }
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "TapUntap",
+                                        "target": "Self",
+                                        "tap": false
+                                    },
+                                    {
+                                        "type": "Scry",
+                                        "count": 2
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsEnchantment",
+                                    "NameNotSharedWithAnotherControlledPermanent"
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            }
+                        },
+                        "id": "enchantment you control that doesn't have the same name as another permanent you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Choose target enchantment you control that doesn't have the same name as another permanent you control. Create a token that's a copy of it, except it isn't legendary. If the token is an Aura, untap Yenna, then scry 2."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "RARE",
+        "artist": "Justyna Dura",
+        "flavorText": "\"My people are both bloom and thorn.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e635d461-254a-434e-8e5d-dea61dd8ca4f.jpg?1783915066",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Except for the listed exceptions, the token copies exactly what was printed on the original enchantment and nothing else (unless that enchantment is itself copying something else). It doesn't copy whether that permanent is tapped or untapped, whether it has any counters on it or Auras attached to it, or any non-copy effects that have changed its power, toughness, types, color, and so on."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the copied enchantment is copying something else, then the token enters the battlefield as whatever that enchantment copied, with the stated exceptions."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the copied enchantment has {X} in its mana cost, X is 0."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Any enters-the-battlefield abilities of the copied enchantment will trigger when the token enters the battlefield. Any \"as [this enchantment] enters the battlefield\" or \"[this enchantment] enters the battlefield with\" abilities of the enchantment will also work."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If something becomes a copy of the token, the copy also isn't legendary."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}

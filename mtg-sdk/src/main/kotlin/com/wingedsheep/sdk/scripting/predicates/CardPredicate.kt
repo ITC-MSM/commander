@@ -330,6 +330,27 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     }
 
     /**
+     * Matches a permanent whose name isn't shared with **any other** permanent the evaluating
+     * player controls — "that doesn't have the same name as another permanent you control"
+     * (Yenna, Redtooth Regent).
+     *
+     * Broader than [NameNotSharedWithControlledToken] in two ways: the compared set is every
+     * permanent the controller has on the battlefield (tokens *and* cards), and the candidate
+     * itself is excluded so a permanent never disqualifies itself ("**another** permanent").
+     * Two permanents sharing a name therefore disqualify each other, not just one of them.
+     *
+     * Names are read through the projection ([ProjectedState.getName]) so a name-changing
+     * Layer 3 effect (Witness Protection, Honest Work) is respected on both sides of the
+     * comparison. Fails open (matches) when no controller is in scope.
+     */
+    @SerialName("NameNotSharedWithAnotherControlledPermanent")
+    @Serializable
+    data object NameNotSharedWithAnotherControlledPermanent : CardPredicate {
+        override val description: String =
+            "that doesn't have the same name as another permanent you control"
+    }
+
+    /**
      * Matches cards *originally printed* in the given set — i.e. whose canonical
      * [com.wingedsheep.sdk.model.CardDefinition.setCode] equals [setCode] (case-insensitive),
      * regardless of which printing is actually in play. This is the card's first/canonical set, so

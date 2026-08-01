@@ -475,6 +475,32 @@ data class CreateTokenCopyOfChosenContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after the controller chooses what an Aura token copy will enchant (CR 303.4h).
+ *
+ * A token copy of an Aura is created on the battlefield rather than cast, so its controller
+ * picks a host instead of targeting one. The pick is raised *before* the token exists so it can
+ * enter already attached — see
+ * [com.wingedsheep.engine.handlers.effects.token.AuraTokenHostChooser].
+ *
+ * @property effect The original create-token-copy effect, re-executed for one token per pick
+ * @property context The resolution context, so the effect's target still resolves on resume
+ * @property controllerId The player creating (and choosing for) the token
+ * @property auraDefinitionId Card definition of the copied Aura, for re-deriving legal hosts
+ * @property auraName The copied Aura's name, for the next prompt
+ * @property remaining How many Aura tokens are still owed, including the one this pick creates
+ */
+@Serializable
+data class CreateTokenCopyAuraHostContinuation(
+    override val decisionId: String,
+    val effect: com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect,
+    val context: com.wingedsheep.engine.handlers.EffectContext,
+    val controllerId: EntityId,
+    val auraDefinitionId: String,
+    val auraName: String,
+    val remaining: Int
+) : ContinuationFrame
+
+/**
  * Resume after a player chooses an action from a list of labeled options.
  *
  * Used by [ChooseActionEffect] — the player is presented with feasible options
