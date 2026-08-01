@@ -262,9 +262,8 @@ object PermanentEntryReplacements {
             ChoiceType.CREATURE_ON_BATTLEFIELD -> {
                 val creatures = state.getBattlefield().filter { eid ->
                     if (eid == entityId) return@filter false
-                    val container = state.getEntity(eid) ?: return@filter false
-                    val card = container.get<CardComponent>() ?: return@filter false
-                    state.projectedState.getController(eid) == controllerId && card.typeLine.isCreature
+                    state.projectedState.getController(eid) == controllerId &&
+                        state.projectedState.isCreature(eid)
                 }
                 if (creatures.isEmpty()) return null
                 val id = "choose-creature-enters-${entityId.value}"
