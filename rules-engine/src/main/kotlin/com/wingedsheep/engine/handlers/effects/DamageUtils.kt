@@ -29,6 +29,8 @@ import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTur
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
 import com.wingedsheep.engine.state.components.stack.SpellGrantedKeywordsComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.engine.state.components.player.RedNoncombatDamageDealtThisTurnComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.engine.mechanics.mana.GrantedKeywordResolver
@@ -379,7 +381,35 @@ object DamageUtils {
         // ORIGINAL state's projection, before this damage marked the creature / SBAs could move it.
         // Read by "damage equal to that creature's toughness" triggers (Taii Wakeen).
         val targetToughnessAtDamage = if (targetWasCreature) projected.getToughness(targetId) else null
-        events.add(DamageDealtEvent(sourceId, targetId, effectiveAmount, false, sourceName = sourceName, targetName = targetName, targetIsPlayer = targetIsPlayer, targetWasFaceDown = targetIsFaceDown, targetControllerId = targetControllerId, targetWasCreature = targetWasCreature, excessAmount = creatureExcessDamage, targetToughnessAtDamage = targetToughnessAtDamage))
+        val sourceTargetIds = sourceId
+            ?.let(newState::getEntity)
+            ?.get<TargetsComponent>()
+            ?.targets
+            ?.mapNotNull { chosenTarget ->
+                when (chosenTarget) {
+                    is ChosenTarget.Permanent -> chosenTarget.entityId
+                    is ChosenTarget.Player -> chosenTarget.playerId
+                    is ChosenTarget.Spell -> chosenTarget.spellEntityId
+                    is ChosenTarget.Card -> chosenTarget.cardId
+                }
+            }
+        events.add(
+            DamageDealtEvent(
+                sourceId,
+                targetId,
+                effectiveAmount,
+                false,
+                sourceName = sourceName,
+                targetName = targetName,
+                targetIsPlayer = targetIsPlayer,
+                targetWasFaceDown = targetIsFaceDown,
+                targetControllerId = targetControllerId,
+                targetWasCreature = targetWasCreature,
+                excessAmount = creatureExcessDamage,
+                targetToughnessAtDamage = targetToughnessAtDamage,
+                sourceTargetIdsAtDamage = sourceTargetIds,
+            )
+        )
 
         // Track noncombat damage dealt by red sources, keyed to the source's controller
         // (Temple of Power's transform gate — TurnTracker.RED_NONCOMBAT_DAMAGE_DEALT). A red

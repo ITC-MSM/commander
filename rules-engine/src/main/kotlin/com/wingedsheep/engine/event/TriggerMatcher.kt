@@ -1383,16 +1383,7 @@ class TriggerMatcher(
         val requirementsMatch = trigger.requires.all { requirement ->
             when (requirement) {
                 DamagePredicate.SourceSoleTargetIsRecipient -> {
-                    val targets = event.sourceId
-                        ?.let(state::getEntity)
-                        ?.get<TargetsComponent>()
-                        ?.targets
-                        ?: return@all false
-                    when (val target = targets.singleOrNull()) {
-                        is ChosenTarget.Permanent -> target.entityId == event.targetId
-                        is ChosenTarget.Player -> target.playerId == event.targetId
-                        else -> false
-                    }
+                    event.sourceTargetIdsAtDamage?.singleOrNull() == event.targetId
                 }
             }
         }
