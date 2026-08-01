@@ -472,7 +472,10 @@ object DamageUtils {
     /**
      * Track that [playerId] received [amount] damage this turn.
      * Updates the DamageReceivedThisTurnComponent on the player entity.
-     * Also marks the player as having lost life this turn (LifeLostThisTurnComponent).
+     * Also marks the player as having lost life this turn (LifeLostThisTurnComponent) and
+     * accumulates [amount] onto LifeLostAmountThisTurnComponent — damage dealt to a player causes
+     * that much life loss (CR 120.3c), so it counts toward "the amount of life you lost this turn"
+     * (Rowan, Scion of War).
      * Used for Final Punishment: "Target player loses life equal to the damage
      * already dealt to that player this turn."
      */
@@ -493,8 +496,15 @@ object DamageUtils {
         return state.updateEntity(playerId) { container ->
             val existing = container.get<com.wingedsheep.engine.state.components.player.DamageReceivedThisTurnComponent>()
                 ?: com.wingedsheep.engine.state.components.player.DamageReceivedThisTurnComponent()
+            val existingLifeLost = container.get<com.wingedsheep.engine.state.components.player.LifeLostAmountThisTurnComponent>()
+                ?: com.wingedsheep.engine.state.components.player.LifeLostAmountThisTurnComponent()
             var updated = container.with(com.wingedsheep.engine.state.components.player.DamageReceivedThisTurnComponent(existing.amount + amount))
                 .with(com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent)
+                .with(
+                    com.wingedsheep.engine.state.components.player.LifeLostAmountThisTurnComponent(
+                        existingLifeLost.amount + amount
+                    )
+                )
             if (sourceIsArtifact) {
                 val existingArtifact = container.get<com.wingedsheep.engine.state.components.player.DamageReceivedFromArtifactsThisTurnComponent>()
                     ?: com.wingedsheep.engine.state.components.player.DamageReceivedFromArtifactsThisTurnComponent()
@@ -527,12 +537,26 @@ object DamageUtils {
 
     /**
      * Mark that [playerId] lost life this turn (non-damage life loss, e.g., from LoseLife effects or payments).
-     * Sets the LifeLostThisTurnComponent on the player entity.
-     * Used for conditions like "if an opponent lost life this turn" (Hired Claw).
+     * Sets the LifeLostThisTurnComponent (existence flag) and accumulates [amount] onto the
+     * LifeLostAmountThisTurnComponent. The amount is used by
+     * `DynamicAmount.TurnTracking(player, TurnTracker.LIFE_LOST_AMOUNT)`.
+     * Used for conditions like "if an opponent lost life this turn" (Hired Claw) and for
+     * "amount of life you lost this turn" comparisons (Rowan, Scion of War).
+     *
+     * [amount] defaults to 0 so callers that only need the boolean marker stay correct; every
+     * quantitative path passes the life actually lost.
      */
-    fun markLifeLostThisTurn(state: GameState, playerId: EntityId): GameState {
+    fun markLifeLostThisTurn(state: GameState, playerId: EntityId, amount: Int = 0): GameState {
         return state.updateEntity(playerId) { container ->
-            container.with(com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent)
+            val existing = container.get<com.wingedsheep.engine.state.components.player.LifeLostAmountThisTurnComponent>()
+                ?: com.wingedsheep.engine.state.components.player.LifeLostAmountThisTurnComponent()
+            container
+                .with(com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent)
+                .with(
+                    com.wingedsheep.engine.state.components.player.LifeLostAmountThisTurnComponent(
+                        existing.amount + amount.coerceAtLeast(0)
+                    )
+                )
         }
     }
 
@@ -578,7 +602,7 @@ object DamageUtils {
         }
         val newLife = currentLife - lossAmount
         var newState = state.withLifeTotal(playerId, newLife)
-        newState = markLifeLostThisTurn(newState, playerId)
+        newState = markLifeLostThisTurn(newState, playerId, lossAmount)
         return newState to LifeChangedEvent(playerId, currentLife, newLife, reason)
     }
 

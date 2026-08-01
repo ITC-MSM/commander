@@ -21797,7 +21797,10 @@
                 },
                 "effect": {
                     "type": "DistributeCountersAmongTargets",
-                    "totalCounters": 2
+                    "totalCounters": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
                 },
                 "targetRequirements": [
                     {

@@ -811,7 +811,7 @@ class ModalAndCloneContinuationResumer(
             val newLife = currentLife - continuation.lifeCost
             newState = newState.withLifeTotal(continuation.controllerId, newLife)
             newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(
-                newState, continuation.controllerId
+                newState, continuation.controllerId, continuation.lifeCost
             )
             events.add(LifeChangedEvent(continuation.controllerId, currentLife, newLife, LifeChangeReason.PAYMENT))
         } else {
@@ -882,7 +882,7 @@ class ModalAndCloneContinuationResumer(
             val newLife = currentLife - continuation.lifeCost
             newState = newState.withLifeTotal(continuation.controllerId, newLife)
             newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(
-                newState, continuation.controllerId
+                newState, continuation.controllerId, continuation.lifeCost
             )
             events.add(LifeChangedEvent(continuation.controllerId, currentLife, newLife, LifeChangeReason.PAYMENT))
         }

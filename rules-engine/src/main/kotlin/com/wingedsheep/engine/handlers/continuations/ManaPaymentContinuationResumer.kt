@@ -204,7 +204,7 @@ class ManaPaymentContinuationResumer(
             val newLife = currentLife - continuation.lifeCost
             var newState = state.withLifeTotal(playerId, newLife)
             newState = com.wingedsheep.engine.handlers.effects.DamageUtils
-                .markLifeLostThisTurn(newState, playerId)
+                .markLifeLostThisTurn(newState, playerId, continuation.lifeCost)
 
             val events = listOf<GameEvent>(
                 LifeChangedEvent(playerId, currentLife, newLife, LifeChangeReason.PAYMENT)

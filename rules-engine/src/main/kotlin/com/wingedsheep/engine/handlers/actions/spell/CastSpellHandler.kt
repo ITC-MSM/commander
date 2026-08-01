@@ -2386,7 +2386,7 @@ class CastSpellHandler(
             val currentLife = currentState.lifeTotal(action.playerId) // CR 810.9a — team's shared total
             val newLife = currentLife - lifeToPay
             currentState = currentState.withLifeTotal(action.playerId, newLife)
-            currentState = DamageUtils.markLifeLostThisTurn(currentState, action.playerId)
+            currentState = DamageUtils.markLifeLostThisTurn(currentState, action.playerId, lifeToPay)
             events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.PAYMENT))
         }
         if (flattenedAllCosts.isNotEmpty() && action.additionalCostPayment != null) {
@@ -2960,7 +2960,9 @@ class CastSpellHandler(
             val newLife = currentLife - action.graveyardLifeCost
             currentState = currentState.withLifeTotal(action.playerId, newLife)
             events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.LIFE_LOSS))
-            currentState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(currentState, action.playerId)
+            currentState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(
+                currentState, action.playerId, action.graveyardLifeCost
+            )
         }
 
         // Pay any additional life cost from opponent permanents' ModifySpellCost abilities
@@ -2975,7 +2977,7 @@ class CastSpellHandler(
                 val newLife = currentLife - additionalLifeCost
                 currentState = currentState.withLifeTotal(action.playerId, newLife)
                 events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.PAYMENT))
-                currentState = DamageUtils.markLifeLostThisTurn(currentState, action.playerId)
+                currentState = DamageUtils.markLifeLostThisTurn(currentState, action.playerId, additionalLifeCost)
             }
         }
 

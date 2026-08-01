@@ -56,7 +56,7 @@ class PayDynamicLifeEffectExecutor(
             LifeChangedEvent(playerId, currentLife, newLife, LifeChangeReason.PAYMENT)
         )
 
-        val finalState = DamageUtils.markLifeLostThisTurn(newState, playerId)
+        val finalState = DamageUtils.markLifeLostThisTurn(newState, playerId, amount)
         return EffectResult.success(finalState, events)
     }
 }

@@ -4432,6 +4432,62 @@
     ]
 }
 
+// Elusive Otter
+{
+    "name": "Elusive Otter",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Otter",
+    "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nCreatures with power less than this creature's power can't block it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "PROWESS"
+    ],
+    "script": {
+        "staticAbilities": [
+            "CantBeBlockedByCreaturesWithLessPower"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "rarity": "RARE",
+        "artist": "Christina Kraus",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc9bdf96-3e3b-4dca-aae2-e81d4cbeafe8.jpg?1783915065"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "GREEN"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Grove's Bounty",
+            "manaCost": "{X}{G}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Distribute X +1/+1 counters among any number of target creatures you control. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "DistributeCountersAmongTargets",
+                    "totalCounters": "XValue"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "unlimited": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "any number of target creatures you control",
+                        "dynamicMaxCount": "XValue"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Elvish Archivist
 {
     "name": "Elvish Archivist",
@@ -11302,7 +11358,10 @@
             "script": {
                 "spellEffect": {
                     "type": "DistributeCountersAmongTargets",
-                    "totalCounters": 3
+                    "totalCounters": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
                 },
                 "targetRequirements": [
                     {
@@ -13559,6 +13618,85 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Rowan, Scion of War
+{
+    "name": "Rowan, Scion of War",
+    "manaCost": "{1}{B}{R}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "Menace\n{T}: Spells you cast this turn that are black and/or red cost {X} less to cast, where X is the amount of life you lost this turn. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ReduceSpellCostsThisTurn",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasColor",
+                                        "color": "BLACK"
+                                    },
+                                    {
+                                        "type": "HasColor",
+                                        "color": "RED"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "amount": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "LIFE_LOST_AMOUNT"
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{T}: Spells you cast this turn that are black and/or red cost {X} less to cast, where X is the amount of life you lost this turn. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "rarity": "MYTHIC",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"No more days withering at a negotiating table with my brother. I will rebuild Eldraine myself—the old way, with power.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/e/4ee179ab-a15b-4bd6-b7f8-1e1abeeb31b7.jpg?1783915070",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The value of X is determined only once, at the time Rowan, Scion of War's activated ability resolves."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Rowan's activated ability doesn't change the mana cost or mana value of any spell. It changes only the total cost you pay."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Rowan's activated ability can't reduce the amount of colored mana you pay for a spell. It reduces only the generic mana component of that cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Rowan's activated ability counts the total amount of life you lost without taking into account any life you gained during that turn. For example, if you gained 3 life and lost 3 life earlier in the turn, the cost of black and/or red spells you cast this turn will be reduced by {3}."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -19865,6 +20003,85 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Will, Scion of Peace
+{
+    "name": "Will, Scion of Peace",
+    "manaCost": "{1}{W}{U}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "Vigilance\n{T}: Spells you cast this turn that are white and/or blue cost {X} less to cast, where X is the amount of life you gained this turn. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ReduceSpellCostsThisTurn",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasColor",
+                                        "color": "WHITE"
+                                    },
+                                    {
+                                        "type": "HasColor",
+                                        "color": "BLUE"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "amount": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "LIFE_GAINED"
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{T}: Spells you cast this turn that are white and/or blue cost {X} less to cast, where X is the amount of life you gained this turn. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "218",
+        "rarity": "MYTHIC",
+        "artist": "Ryan Pancoast",
+        "flavorText": "\"It's easy to cry 'For glory!' and charge those who disagree with you. But it takes finesse to turn enemies into allies rather than corpses.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/6/162088ea-5f99-4244-9427-2fdfb2168fc3.jpg?1783915068",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The value of X is determined only once, at the time Will, Scion of Peace's activated ability resolves."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Will's activated ability doesn't change the mana cost or mana value of any spell. It changes only the total cost you pay."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Will's activated ability can't reduce the amount of colored mana you pay for a spell. It reduces only the generic mana component of that cost."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Will's activated ability counts the total amount of life you gained without taking into account any life you lost during that turn. For example, if you gained 3 life and lost 3 life earlier in the turn, the cost of white and/or blue spells you cast this turn will be reduced by {3}."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
     ]
 }
 

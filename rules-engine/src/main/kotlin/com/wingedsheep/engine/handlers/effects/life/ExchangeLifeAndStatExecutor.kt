@@ -95,7 +95,7 @@ class ExchangeLifeAndStatExecutor : EffectExecutor<ExchangeLifeAndStatEffect> {
                 newState = DamageUtils.markLifeGainedThisTurn(newState, playerId, currentStat - currentLife)
             }
             if (currentStat < currentLife) {
-                newState = DamageUtils.markLifeLostThisTurn(newState, playerId)
+                newState = DamageUtils.markLifeLostThisTurn(newState, playerId, currentLife - currentStat)
             }
         }
 

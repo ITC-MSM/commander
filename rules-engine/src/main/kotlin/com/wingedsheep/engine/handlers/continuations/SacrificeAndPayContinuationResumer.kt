@@ -405,7 +405,7 @@ class SacrificeAndPayContinuationResumer(
         val newLife = currentLife - lifeToPay
 
         var newState = state.withLifeTotal(playerId, newLife)
-        newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(newState, playerId)
+        newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(newState, playerId, lifeToPay)
 
         val events = listOf(
             LifeChangedEvent(
@@ -709,7 +709,7 @@ class SacrificeAndPayContinuationResumer(
                 val currentLife = state.lifeTotal(playerId)
                 val newLife = currentLife - lifeToPay
                 var newState = state.withLifeTotal(playerId, newLife)
-                newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(newState, playerId)
+                newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(newState, playerId, lifeToPay)
                 val events = mutableListOf<GameEvent>(
                     LifeChangedEvent(
                         playerId = playerId,

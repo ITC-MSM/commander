@@ -129,6 +129,9 @@ class TurnManager(
             // "Next spell this turn has affinity" riders are turn-scoped — an unused grant (you
             // attacked with Don & Raph but cast no matching spell) must not leak into a later turn.
             pendingNextSpellAffinities = emptyList(),
+            // "Spells you cast this turn cost {N} less" discounts (Will / Rowan, Scion of …) end
+            // with the turn that installed them.
+            turnSpellCostReductions = emptyList(),
             spellWarpedThisTurn = false,
             damageCantBePreventedThisTurn = false,
             nonlandPermanentLeftBattlefieldThisTurn = false,

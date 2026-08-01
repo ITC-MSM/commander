@@ -423,6 +423,13 @@ object DynamicAmounts {
         DynamicAmount.TurnTracking(player, TurnTracker.LIFE_GAINED)
 
     /**
+     * "The amount of life [player] lost this turn" (Rowan, Scion of War) — damage taken,
+     * life-loss effects and life paid as a cost. Life gained never nets against it.
+     */
+    fun lifeLostThisTurn(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.TurnTracking(player, TurnTracker.LIFE_LOST_AMOUNT)
+
+    /**
      * "The number of lands that entered the battlefield under [player]'s control this turn"
      * (Bioengineered Future). Counts every land ETB under the player — land drops, Lander
      * search, Cultivate-style "put a land onto the battlefield" effects — not just land

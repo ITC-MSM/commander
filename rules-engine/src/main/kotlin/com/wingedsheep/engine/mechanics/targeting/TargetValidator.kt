@@ -69,12 +69,18 @@ class TargetValidator {
         // board state here, mirroring TriggerProcessor.snapshotDynamicCount — so a cast-time
         // spell with e.g. `dynamicMaxCount = Count(...)` caps correctly instead of falling
         // back to the static placeholder.
+        // An explicit `dynamicMaxCount` outranks the `unlimited` flag. `unlimited` means "no
+        // *static* upper bound" — it is the count the author didn't write down — whereas a
+        // dynamic cap is a bound the author did write down and is simply not knowable until
+        // cast time. Grove's Bounty needs both: "any number of target creatures you control"
+        // with X counters to hand out, where CR 601.2d still forbids declaring more targets
+        // than there are counters. Checking `unlimited` first would drop that cap on the floor.
         fun effectiveMaxCount(req: TargetRequirement): Int {
-            if (req.unlimited) return Int.MAX_VALUE
+            val unboundedFallback = if (req.unlimited) Int.MAX_VALUE else req.count
             if (req is TargetObject) {
                 val dyn = req.dynamicMaxCount
                 if (dyn == DynamicAmount.XValue) {
-                    return xValue ?: req.count
+                    return xValue ?: unboundedFallback
                 }
                 if (dyn != null) {
                     return try {
@@ -85,11 +91,11 @@ class TargetValidator {
                         )
                         DynamicAmountEvaluator().evaluate(state, dyn, context).coerceAtLeast(0)
                     } catch (_: Exception) {
-                        req.count
+                        unboundedFallback
                     }
                 }
             }
-            return req.count
+            return unboundedFallback
         }
         for ((index, requirement) in requirements.withIndex()) {
             // Get targets for this requirement (handle multi-target requirements)
@@ -104,11 +110,12 @@ class TargetValidator {
                 endIdx
             )
 
-            // Reject if too many targets were declared. When any requirement is unlimited
-            // ("any number of target ...", Drafna's Restoration) there is no upper bound, so
-            // skip this check — summing Int.MAX_VALUE would overflow to a negative cap and
-            // spuriously reject a legal cast.
-            if (requirements.none { it.unlimited }) {
+            // Reject if too many targets were declared. When a requirement is *effectively*
+            // unbounded ("any number of target ...", Drafna's Restoration) there is no upper
+            // bound, so skip this check — summing Int.MAX_VALUE would overflow to a negative cap
+            // and spuriously reject a legal cast. An unlimited requirement that also carries a
+            // resolved `dynamicMaxCount` (Grove's Bounty) is bounded after all, so it is checked.
+            if (requirements.none { effectiveMaxCount(it) == Int.MAX_VALUE }) {
                 val totalMax = requirements.sumOf { effectiveMaxCount(it) }
                 if (targets.size > totalMax) {
                     return "Too many targets for ${requirement.description}"

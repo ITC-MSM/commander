@@ -29,6 +29,7 @@ class StackExecutors(
         CopyEachSpellCastExecutor(),
         MakeNextSpellUncounterableExecutor(),
         GrantNextSpellAffinityExecutor(),
+        ReduceSpellCostsThisTurnExecutor(amountEvaluator),
         ReselectTargetRandomlyExecutor(),
         ChangeTriggeringObjectTargetsExecutor(),
         GrantKeywordToSpellExecutor(),

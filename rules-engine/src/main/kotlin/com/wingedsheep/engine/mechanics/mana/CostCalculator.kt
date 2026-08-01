@@ -115,6 +115,16 @@ class CostCalculator(
             totalReduction += countPermanentsOfType(state, casterId, rider.forType)
         }
 
+        // Turn-scoped "spells you cast this turn that match … cost {N} less" discounts (Will /
+        // Rowan, Scion of …). The amount was fixed when the granting ability resolved, so unlike
+        // the affinity riders above nothing is recomputed here — and unlike them, a matching cast
+        // does not consume the entry.
+        for (reduction in state.turnSpellCostReductions) {
+            if (reduction.controllerId != casterId) continue
+            if (!matchesCardDefinition(cardDef, reduction.spellFilter, null, state, state.projectedState)) continue
+            totalReduction += reduction.amount
+        }
+
         // Battlefield-sourced ModifySpellCost abilities.
         for ((sourceId, ability) in scanBattlefieldModifySpellCost(state)) {
             if (!targetMatchesSpell(ability.target, cardDef, casterId, sourceId, state, chosenTargets, fromZone)) continue
