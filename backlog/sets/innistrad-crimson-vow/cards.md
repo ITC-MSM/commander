@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 199 / 273
+**Implemented:** 200 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -256,7 +256,7 @@
 - [x] Vilespawn Spider
 - [x] Voice of the Blessed
 - [x] Volatile Arsonist
-- [ ] Voldaren Bloodcaster
+- [x] Voldaren Bloodcaster
 - [x] Voldaren Epicure
 - [x] Voldaren Estate
 - [ ] Voltaic Visionary

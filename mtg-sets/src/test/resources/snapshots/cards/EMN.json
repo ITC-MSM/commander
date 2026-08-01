@@ -552,6 +552,116 @@
     ]
 }
 
+// Cryptolith Fragment
+{
+    "name": "Cryptolith Fragment",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "This artifact enters tapped.\n{T}: Add one mana of any color. Each player loses 1 life.\nAt the beginning of your upkeep, if each player has 10 or less life, transform this artifact.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "EachPlayerLifeAtMost",
+                    "threshold": 10
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        "AddManaOfChoice",
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "Each"
+                            }
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "backFace": {
+        "name": "Aurora of Emrakul",
+        "manaCost": "",
+        "typeLine": "Creature — Eldrazi Reflection",
+        "oracleText": "Flying, deathtouch\nWhenever this creature attacks, each opponent loses 3 life.",
+        "creatureStats": {
+            "power": 1,
+            "toughness": 4
+        },
+        "keywords": [
+            "FLYING",
+            "DEATHTOUCH"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        }
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "193",
+            "rarity": "UNCOMMON",
+            "artist": "John Avon",
+            "flavorText": "\"I felt compelled to take the twisted stone, and I abandoned my horse's burden to accommodate its weight. Now, its continued glow illuminates my home and warms my mind.\"\n—Garner Kroft, Moorland farmer",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/7/078b2103-15ce-456d-b092-352fa7222935.jpg?1783937432"
+        },
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "rarity": "UNCOMMON",
+        "artist": "John Avon",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/078b2103-15ce-456d-b092-352fa7222935.jpg?1783937432",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "Cryptolith Fragment's second ability is a mana ability. Players can't respond to it or to the loss of life it causes."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If any player has 11 or more life as your upkeep begins, Cryptolith Fragment's last ability doesn't trigger. If any player has 11 or more life as the ability resolves, the ability has no effect."
+            }
+        ]
+    }
+}
+
 // Drogskol Shieldmate
 {
     "name": "Drogskol Shieldmate",

@@ -12923,6 +12923,159 @@
     ]
 }
 
+// Voldaren Bloodcaster
+{
+    "name": "Voldaren Bloodcaster",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Vampire Wizard",
+    "oracleText": "Flying\nWhenever this creature or another nontoken creature you control dies, create a Blood token. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")\nWhenever you create a Blood token, if you control five or more Blood tokens, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature nontoken ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Blood"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact Blood token ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "artifact Blood"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 5
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Bloodbat Summoner",
+        "manaCost": "",
+        "typeLine": "Creature — Vampire Wizard",
+        "oracleText": "Flying\nAt the beginning of combat on your turn, up to one target Blood token you control becomes a 2/2 black Bat creature with flying and haste in addition to its other types.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "BEGIN_COMBAT"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "BecomeCreature",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "up to one target Blood token you control"
+                        },
+                        "power": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughness": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "keywords": [
+                            "FLYING",
+                            "HASTE"
+                        ],
+                        "creatureTypes": [
+                            "Bat"
+                        ],
+                        "addTypes": [
+                            "ARTIFACT"
+                        ],
+                        "colors": [
+                            "BLACK"
+                        ],
+                        "duration": "Permanent"
+                    },
+                    "targetRequirement": {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "artifact Blood ctrl:you"
+                        },
+                        "id": "up to one target Blood token you control"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "137",
+            "rarity": "RARE",
+            "artist": "Kim Sokol",
+            "flavorText": "\"Humans throw rice and release doves at their weddings? How quaint.\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/c/a/ca5297a5-bcaa-41fd-a397-e44dc4e00ba3.jpg?1783924857",
+            "rulings": [
+                {
+                    "date": "2025-01-24",
+                    "text": "Blood tokens that become Bats with Bloodbat Summoner's ability are still Blood artifact tokens and still have their activated ability."
+                }
+            ]
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "rarity": "RARE",
+        "artist": "Kim Sokol",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca5297a5-bcaa-41fd-a397-e44dc4e00ba3.jpg?1783924857",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "Voldaren Bloodcaster's last ability checks how many Blood tokens you have both as it triggers and as it resolves. If you don't control at least five Blood tokens at both of those times, it won't transform."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Voldaren Epicure
 {
     "name": "Voldaren Epicure",

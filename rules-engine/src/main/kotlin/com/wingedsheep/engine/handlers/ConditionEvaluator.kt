@@ -54,6 +54,7 @@ import com.wingedsheep.sdk.scripting.conditions.YouControlMostOfChosenType
 import com.wingedsheep.sdk.scripting.conditions.AllConditions
 import com.wingedsheep.sdk.scripting.conditions.AnyCondition
 import com.wingedsheep.sdk.scripting.conditions.APlayerLifeAtMost
+import com.wingedsheep.sdk.scripting.conditions.EachPlayerLifeAtMost
 import com.wingedsheep.sdk.scripting.conditions.AnyPlayerDealtCombatDamageThisTurnAtLeast
 import com.wingedsheep.sdk.scripting.conditions.Compare
 import com.wingedsheep.sdk.scripting.conditions.NumberMatches
@@ -456,6 +457,10 @@ class ConditionEvaluator(
             // Reads each player's LifeTotalComponent from state.turnOrder.
             is APlayerLifeAtMost -> state.turnOrder.any { playerId ->
                 // CR 810.9a — read the team's shared total; existential so teams don't double-count.
+                state.lifeTotal(playerId) <= condition.threshold
+            }
+
+            is EachPlayerLifeAtMost -> state.turnOrder.all { playerId ->
                 state.lifeTotal(playerId) <= condition.threshold
             }
 
