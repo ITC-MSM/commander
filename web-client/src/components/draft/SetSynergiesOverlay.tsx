@@ -1104,6 +1104,76 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       },
     ],
   },
+  LCI: {
+    setCode: 'LCI',
+    setName: 'The Lost Caverns of Ixalan',
+    archetypes: [
+      {
+        name: 'Crafted Artifacts',
+        colors: ['W', 'U'],
+        keyCard: "Master's Guide-Mural",
+        description: 'Build a controlling artifact engine, then craft expendable artifacts and creatures into powerful transformed threats. Flyers, lifelink, and efficient interaction buy time for the late game.',
+      },
+      {
+        name: 'Descend Control',
+        colors: ['U', 'B'],
+        keyCard: 'Uchbenbak, the Great Mistake',
+        description: 'Stock the graveyard with permanents to enable descend while removal and card selection slow the game down. Recursive threats and descend payoffs take over once the graveyard is full.',
+      },
+      {
+        name: 'Descend Aggro',
+        colors: ['B', 'R'],
+        keyCard: 'Zoyowa Lava-Tongue',
+        description: 'Put a permanent into your graveyard every turn to switch on aggressive descend payoffs. Sacrifice, mill, and disposable artifacts keep the pressure high and add reach.',
+      },
+      {
+        name: 'Dinosaurs',
+        colors: ['R', 'G'],
+        creatureTypes: ['Dinosaur'],
+        keyCard: 'Itzquinth, Firstborn of Gishath',
+        description: "Ramp into oversized Dinosaurs and use efficient removal to clear their path. Explore and discover smooth the curve until the format's biggest creatures can dominate combat.",
+      },
+      {
+        name: 'Modified Go-Wide',
+        colors: ['G', 'W'],
+        keyCard: 'Kutzil, Malamet Exemplar',
+        description: 'Develop a wide board, then make creatures larger than their base power with counters, Equipment, and combat boosts. Team payoffs turn incremental growth into overwhelming attacks.',
+      },
+      {
+        name: 'Vampire Sacrifice',
+        colors: ['W', 'B'],
+        creatureTypes: ['Vampire'],
+        keyCard: 'Bartolomé del Presidio',
+        description: 'Create expendable creatures and artifacts, sacrifice them for value, and drain the opponent through attrition. Vampire synergies and recursion make every trade work in your favor.',
+      },
+      {
+        name: 'Pirate Artifacts',
+        colors: ['U', 'R'],
+        creatureTypes: ['Pirate'],
+        keyCard: 'Captain Storm, Cosmium Raider',
+        description: 'Attack with Pirates while artifacts, Treasure, and Map tokens fuel tempo and power boosts. Cheap artifacts keep the engine moving and turn evasive attackers into a fast clock.',
+      },
+      {
+        name: 'Deep Descend',
+        colors: ['B', 'G'],
+        keyCard: 'Akawalli, the Seething Tower',
+        description: 'Mill permanent cards aggressively to reach descend four and descend eight, then cash in graveyard size for oversized threats and recursion. A patient midrange deck with a powerful late game.',
+      },
+      {
+        name: 'Tap Midrange',
+        colors: ['R', 'W'],
+        keyCard: 'Anim Pakal, Thousandth Moon',
+        description: 'Tap creatures and artifacts for value before sending them into combat. Token makers and tap payoffs build a broad board that can pivot from setup to a decisive attack.',
+      },
+      {
+        name: 'Merfolk Explore',
+        colors: ['G', 'U'],
+        creatureTypes: ['Merfolk'],
+        keyCard: 'Nicanzil, Current Conductor',
+        description: 'Explore repeatedly to improve draws and grow a board of Merfolk with +1/+1 counters. Card selection, tempo, and counter synergies make the deck increasingly difficult to contain.',
+      },
+    ],
+  },
 }
 
 /**

@@ -26,6 +26,34 @@ class SetArchetypesTest : StringSpec({
         woe?.archetypes?.map { it.colors.toSet() }?.toSet() shouldBe ALL_COLOR_PAIRS
     }
 
+    "The Lost Caverns of Ixalan exposes all ten limited color-pair archetypes" {
+        val synergies = requireNotNull(SetArchetypes.getForSet("lci"))
+
+        synergies.setName shouldBe "The Lost Caverns of Ixalan"
+        synergies.archetypes.map { it.name } shouldContainExactly listOf(
+            "Crafted Artifacts",
+            "Descend Control",
+            "Descend Aggro",
+            "Dinosaurs",
+            "Modified Go-Wide",
+            "Vampire Sacrifice",
+            "Pirate Artifacts",
+            "Deep Descend",
+            "Tap Midrange",
+            "Merfolk Explore",
+        )
+        synergies.archetypes.map { it.colors.toSet() }.toSet() shouldBe ALL_COLOR_PAIRS
+    }
+
+    "The Lost Caverns of Ixalan typal archetypes carry creature type hints" {
+        val archetypes = SetArchetypes.getForSet("LCI")!!.archetypes.associateBy { it.name }
+
+        archetypes.getValue("Dinosaurs").creatureTypes shouldContainExactly listOf("Dinosaur")
+        archetypes.getValue("Vampire Sacrifice").creatureTypes shouldContainExactly listOf("Vampire")
+        archetypes.getValue("Pirate Artifacts").creatureTypes shouldContainExactly listOf("Pirate")
+        archetypes.getValue("Merfolk Explore").creatureTypes shouldContainExactly listOf("Merfolk")
+    }
+
     "Aetherdrift exposes all ten two-color limited archetypes" {
         val synergies = requireNotNull(SetArchetypes.getForSet("dft"))
 

@@ -504,6 +504,36 @@ object SetArchetypes {
                     "Ramp into spells with mana value five or greater and collect bonuses for casting them. Adventure cards provide early interaction before their expensive permanent halves become late-game threats."),
             )
         ),
+        "LCI" to SetSynergies(
+            setCode = "LCI",
+            setName = "The Lost Caverns of Ixalan",
+            archetypes = listOf(
+                Archetype("Crafted Artifacts", listOf(Color.WHITE, Color.BLUE),
+                    "Build a controlling artifact engine, then craft expendable artifacts and creatures into powerful transformed threats. Flyers, lifelink, and efficient interaction buy time for the late game."),
+                Archetype("Descend Control", listOf(Color.BLUE, Color.BLACK),
+                    "Stock the graveyard with permanents to enable descend while removal and card selection slow the game down. Recursive threats and descend payoffs take over once the graveyard is full."),
+                Archetype("Descend Aggro", listOf(Color.BLACK, Color.RED),
+                    "Put a permanent into your graveyard every turn to switch on aggressive descend payoffs. Sacrifice, mill, and disposable artifacts keep the pressure high and add reach."),
+                Archetype("Dinosaurs", listOf(Color.RED, Color.GREEN),
+                    "Ramp into oversized Dinosaurs and use efficient removal to clear their path. Explore and discover smooth the curve until the format's biggest creatures can dominate combat.",
+                    creatureTypes = listOf("Dinosaur")),
+                Archetype("Modified Go-Wide", listOf(Color.GREEN, Color.WHITE),
+                    "Develop a wide board, then make creatures larger than their base power with counters, Equipment, and combat boosts. Team payoffs turn incremental growth into overwhelming attacks."),
+                Archetype("Vampire Sacrifice", listOf(Color.WHITE, Color.BLACK),
+                    "Create expendable creatures and artifacts, sacrifice them for value, and drain the opponent through attrition. Vampire synergies and recursion make every trade work in your favor.",
+                    creatureTypes = listOf("Vampire")),
+                Archetype("Pirate Artifacts", listOf(Color.BLUE, Color.RED),
+                    "Attack with Pirates while artifacts, Treasure, and Map tokens fuel tempo and power boosts. Cheap artifacts keep the engine moving and turn evasive attackers into a fast clock.",
+                    creatureTypes = listOf("Pirate")),
+                Archetype("Deep Descend", listOf(Color.BLACK, Color.GREEN),
+                    "Mill permanent cards aggressively to reach descend four and descend eight, then cash in graveyard size for oversized threats and recursion. A patient midrange deck with a powerful late game."),
+                Archetype("Tap Midrange", listOf(Color.RED, Color.WHITE),
+                    "Tap creatures and artifacts for value before sending them into combat. Token makers and tap payoffs build a broad board that can pivot from setup to a decisive attack."),
+                Archetype("Merfolk Explore", listOf(Color.GREEN, Color.BLUE),
+                    "Explore repeatedly to improve draws and grow a board of Merfolk with +1/+1 counters. Card selection, tempo, and counter synergies make the deck increasingly difficult to contain.",
+                    creatureTypes = listOf("Merfolk")),
+            )
+        ),
     )
 
     /** Get archetypes for a specific set code, or null if not found. */
