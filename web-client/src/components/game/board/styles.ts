@@ -2031,6 +2031,7 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   REVIVAL: { bg: 'rgba(22, 34, 30, 0.95)', border: 'rgba(120, 205, 165, 0.7)', color: '#9ee0c0', glow: 'rgba(120, 205, 165, 0.55)' },
   FILM: { bg: 'rgba(28, 28, 32, 0.95)', border: 'rgba(180, 185, 195, 0.7)', color: '#d0d4dc', glow: 'rgba(180, 185, 195, 0.5)' },
   ICE: { bg: 'rgba(18, 42, 58, 0.95)', border: 'rgba(140, 210, 240, 0.7)', color: '#b8e4f5', glow: 'rgba(140, 210, 240, 0.55)' },
+  HARNESS: { bg: 'rgba(48, 26, 12, 0.95)', border: 'rgba(240, 180, 80, 0.8)', color: '#ffc860', glow: 'rgba(240, 180, 80, 0.7)' },
   PLUS_ONE_PLUS_ZERO: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
   PLUS_ZERO_PLUS_ONE: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
   MINUS_ONE_MINUS_ZERO: { bg: 'rgba(60, 20, 20, 0.95)', border: 'rgba(220, 120, 120, 0.7)', color: '#e09c9c' },

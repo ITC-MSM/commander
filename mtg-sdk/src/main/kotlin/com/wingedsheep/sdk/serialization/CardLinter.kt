@@ -348,6 +348,7 @@ object CardLinter {
         "NotOfSourceChosenType" to "CREATURE_TYPE",
         "SneakCostWasPaid" to "SNEAK",
         "SourceChosenModeIs" to "MODE",
+        "CardTypeEqualsChosenComponent" to "CARD_TYPE",
     )
 
     /** Node types whose `slot` field names the slot they read. */
@@ -358,7 +359,7 @@ object CardLinter {
      * [com.wingedsheep.sdk.scripting.effects.ChooseNumberForSourceEffect] records a number under the
      * named slot (e.g. `CHOSEN_NUMBER` for Shapeshifter), which a `CastChoice` read then resolves.
      */
-    private val slotFieldDeclarers = setOf("ChooseNumberForSource")
+    private val slotFieldDeclarers = setOf("ChooseNumberForSource", "ChooseCardTypeForSource")
 
     private class SlotUsage {
         val declared = mutableSetOf<String>()

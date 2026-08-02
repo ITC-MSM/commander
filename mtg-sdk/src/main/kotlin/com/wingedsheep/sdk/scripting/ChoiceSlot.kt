@@ -42,6 +42,17 @@ enum class ChoiceSlot {
      */
     CARD_NAME,
 
+    /**
+     * A card type chosen as the object entered (e.g. Arachne, Psionic Weaver "choose a card type
+     * other than creature"). Stored as a
+     * [com.wingedsheep.engine.state.components.battlefield.ChoiceValue.TextChoice] holding the
+     * card-type name ("Artifact", "Instant", …). Read back at static-projection / cost-calculation
+     * time by [com.wingedsheep.sdk.scripting.predicates.CardPredicate.CardTypeEqualsChosenComponent],
+     * the card-type analogue of [CARD_NAME]'s
+     * [com.wingedsheep.sdk.scripting.predicates.CardPredicate.NameEqualsChosenComponent].
+     */
+    CARD_TYPE,
+
     /** Another creature chosen as the object entered (e.g. Dauntless Bodyguard). */
     CREATURE,
 

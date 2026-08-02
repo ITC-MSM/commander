@@ -778,6 +778,7 @@ internal class AffectsFilterResolver {
         // Resolved separately in resolveGenericFilter against the source's CastChoicesComponent
         // (no source in scope here) — fail closed if it ever reaches this generic path.
         is CardPredicate.NameEqualsChosenComponent,
+        is CardPredicate.CardTypeEqualsChosenComponent,
         is CardPredicate.HasSubtypeInEachStoredGroup -> false
         // Stack-only predicates — never match a battlefield entity being projected.
         CardPredicate.IsActivatedOrTriggeredAbility,

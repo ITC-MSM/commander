@@ -315,6 +315,79 @@
     ]
 }
 
+// Arachne, Psionic Weaver
+{
+    "name": "Arachne, Psionic Weaver",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "Web-slinging {W} (You may cast this spell for {W} if you also return a tapped creature you control to its owner's hand.)\nAs Arachne enters, look at an opponent's hand, then choose a card type other than creature.\nSpells of the chosen type cost {1} more to cast.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "WEB_SLINGING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "WebSlinging",
+            "cost": "{W}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ChooseCardTypeForSource",
+                    "allowedCardTypes": [
+                        "Artifact",
+                        "Battle",
+                        "Enchantment",
+                        "Instant",
+                        "Land",
+                        "Planeswalker",
+                        "Sorcery"
+                    ],
+                    "lookAtOpponentHand": true,
+                    "prompt": "Choose a card type other than creature"
+                },
+                "descriptionOverride": "As Arachne enters, look at an opponent's hand, then choose a card type other than creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "AnyCaster",
+                    "filter": {
+                        "cardPredicates": [
+                            "CardTypeEqualsChosenComponent"
+                        ]
+                    }
+                },
+                "modification": {
+                    "type": "IncreaseGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "RARE",
+        "artist": "Steve Argyle",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c1f871a-bd85-402e-b474-1deb64c18a52.jpg?1783905365"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Araña, Heart of the Spider
 {
     "name": "Araña, Heart of the Spider",
@@ -1171,6 +1244,92 @@
         "BLACK",
         "RED",
         "GREEN"
+    ]
+}
+
+// Costume Closet
+{
+    "name": "Costume Closet",
+    "manaCost": "{1}{W}",
+    "typeLine": "Artifact",
+    "oracleText": "This artifact enters with two +1/+1 counters on it.\n{T}: Move a +1/+1 counter from this artifact onto target creature you control. Activate only as a sorcery.\nWhenever a modified creature you control leaves the battlefield, put a +1/+1 counter on this artifact. (Equipment, Auras you control, and counters are modifications.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "IsModified"
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    },
+                    "from": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever a modified creature you control leaves the battlefield, put a +1/+1 counter on this artifact."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "MoveCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "source": "Self",
+                    "destination": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{T}: Move a +1/+1 counter from this artifact onto target creature you control. Activate only as a sorcery."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "+1/+1"
+                },
+                "count": 2,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "5",
+        "rarity": "UNCOMMON",
+        "artist": "Bastien Grivet",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc641f4a-ddbe-4f7d-bb55-eabf11f8b7fb.jpg?1783905363"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -11379,6 +11538,97 @@
     ]
 }
 
+// The Clone Saga
+{
+    "name": "The Clone Saga",
+    "manaCost": "{3}{U}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Surveil 3.\nII — When you next cast a creature spell this turn, copy it, except the copy isn't legendary.\nIII — Choose a card name. Whenever a creature with the chosen name deals combat damage to a player this turn, draw a card.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "Surveil",
+                    "count": 3
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "effect": {
+                        "type": "CopyTargetSpell",
+                        "target": "TriggeringEntity",
+                        "removeLegendary": true
+                    },
+                    "trigger": {
+                        "event": {
+                            "type": "SpellCastEvent",
+                            "spellFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ]
+                            }
+                        },
+                        "binding": "ANY"
+                    },
+                    "fireOnce": true
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ChooseOption",
+                            "optionType": "CARD_NAME",
+                            "storeAs": "clonedName"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "trigger": {
+                                "event": {
+                                    "type": "DealsDamageEvent",
+                                    "damageType": "DamageCombat",
+                                    "recipient": "AnyPlayer",
+                                    "sourceFilter": {
+                                        "cardPredicates": [
+                                            "IsCreature",
+                                            {
+                                                "type": "NameEqualsChosen",
+                                                "variableName": "clonedName"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "binding": "ANY"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "RARE",
+        "artist": "Bill Sienkiewicz",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/7/976432b3-bc17-4edb-86d6-00fd1baf9670.jpg?1783905356"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // The Death of Gwen Stacy
 {
     "name": "The Death of Gwen Stacy",
@@ -11514,6 +11764,109 @@
         "rarity": "RARE",
         "artist": "Bill Sienkiewicz",
         "imageUri": "https://cards.scryfall.io/normal/front/6/9/690f1f31-f8c5-4336-9ec9-72ff761e3adc.jpg?1783905346"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// The Soul Stone
+{
+    "name": "The Soul Stone",
+    "manaCost": "{1}{B}",
+    "typeLine": "Legendary Artifact — Infinity Stone",
+    "oracleText": "Indestructible\n{T}: Add {B}.\n{6}{B}, {T}, Exile a creature you control: Harness The Soul Stone. (Once harnessed, its ∞ ability is active.)\n∞ — At the beginning of your upkeep, return target creature card from your graveyard to the battlefield.",
+    "keywords": [
+        "INDESTRUCTIBLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card in your graveyard"
+                    },
+                    "destination": "Battlefield"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card in your graveyard"
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "HARNESS"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "∞ — At the beginning of your upkeep, return target creature card from your graveyard to the battlefield."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{6}{B}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomVariablePermanents",
+                                "filter": "creature ctrl:you",
+                                "excludeSelf": false
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "harness",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "{6}{B}, {T}, Exile a creature you control: Harness The Soul Stone."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "MYTHIC",
+        "artist": "Volkan Baǵa",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/1982f910-a9bd-4e94-a187-84381b22aacc.jpg?1783905342"
     },
     "colorIdentityOverride": [
         "BLACK"

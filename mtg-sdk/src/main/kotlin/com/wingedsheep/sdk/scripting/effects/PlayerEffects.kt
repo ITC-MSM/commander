@@ -977,3 +977,43 @@ data class ChooseOpponentForSourceEffect(
 ) : Effect {
     override val description: String = "choose an opponent"
 }
+
+/**
+ * The controller chooses a card type (CR 205.2a); the choice is written durably onto the source
+ * entity's cast-choices bag under [com.wingedsheep.sdk.scripting.ChoiceSlot.CARD_TYPE], where a
+ * static ability reads it back at cost-calculation / projection time through
+ * [com.wingedsheep.sdk.scripting.predicates.CardPredicate.CardTypeEqualsChosenComponent].
+ *
+ * The on-resolution, durable-slot analogue of an as-enters card-type choice — the same relationship
+ * [ChooseNumberForSourceEffect] has to the `NUMBER` [com.wingedsheep.sdk.scripting.ReplacementEffect
+ * .ChoiceType]. Modeled as a `When ~ enters` triggered ability rather than a replacement because the
+ * chosen type only feeds a continuous tax, so it need not be locked in strictly *during* entry.
+ *
+ * When [lookAtOpponentHand] is true the controller first sees an opponent's hand (a durable reveal,
+ * CR 402.3) before choosing — the "look at an opponent's hand, then choose a card type" clause of
+ * Arachne, Psionic Weaver. The look is purely informational.
+ *
+ * @property allowedCardTypes Restrict the offered set to these card types (values from CR 205.2a:
+ *   "Artifact", "Battle", "Creature", "Enchantment", "Instant", "Land", "Planeswalker", "Sorcery").
+ *   `null` offers all of them. Arachne passes the seven non-creature types ("other than creature").
+ * @property lookAtOpponentHand Reveal an opponent's hand to the controller before the choice.
+ * @property slot Durable cast-choices slot to write (default
+ *   [com.wingedsheep.sdk.scripting.ChoiceSlot.CARD_TYPE]).
+ * @property prompt Player-facing prompt text.
+ */
+@SerialName("ChooseCardTypeForSource")
+@Serializable
+data class ChooseCardTypeForSourceEffect(
+    val allowedCardTypes: List<String>? = null,
+    val lookAtOpponentHand: Boolean = false,
+    val slot: com.wingedsheep.sdk.scripting.ChoiceSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.CARD_TYPE,
+    val prompt: String = "Choose a card type"
+) : Effect {
+    override val description: String = buildString {
+        if (lookAtOpponentHand) append("look at an opponent's hand, then ")
+        append("choose a card type")
+        if (allowedCardTypes != null && !allowedCardTypes.contains("Creature")) {
+            append(" other than creature")
+        }
+    }
+}

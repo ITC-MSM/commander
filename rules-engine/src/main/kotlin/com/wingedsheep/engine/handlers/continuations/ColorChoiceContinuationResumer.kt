@@ -20,6 +20,7 @@ class ColorChoiceContinuationResumer(
         resumer(ChooseNumberThenContinuation::class, ::resumeChooseNumberThen),
         resumer(ChooseNumberForSourceContinuation::class, ::resumeChooseNumberForSource),
         resumer(ChooseOpponentForSourceContinuation::class, ::resumeChooseOpponentForSource),
+        resumer(ChooseCardTypeForSourceContinuation::class, ::resumeChooseCardTypeForSource),
         resumer(ChooseOpponentDeciderContinuation::class, ::resumeChooseOpponentDecider),
         resumer(ChooseManaColorContinuation::class, ::resumeChooseManaColor),
         resumer(ChooseColorForTargetContinuation::class, ::resumeChooseColorForTarget),
@@ -114,6 +115,28 @@ class ColorChoiceContinuationResumer(
         }
         val newState = state.updateEntity(continuation.sourceId) { container ->
             container.withCastChoice(ChoiceSlot.OPPONENT, ChoiceValue.EntityChoice(chosen))
+        }
+        return checkForMore(newState, emptyList())
+    }
+
+    fun resumeChooseCardTypeForSource(
+        state: GameState,
+        continuation: ChooseCardTypeForSourceContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is OptionChosenResponse) {
+            return ExecutionResult.error(state, "Expected option choice response for ChooseCardTypeForSource effect")
+        }
+        val chosen = continuation.cardTypes.getOrNull(response.optionIndex)
+            ?: return ExecutionResult.error(state, "Card type choice index ${response.optionIndex} out of range")
+        // Record the chosen card type durably on the source permanent so
+        // CardPredicate.CardTypeEqualsChosenComponent reads it at cost-calculation / projection time.
+        if (state.getEntity(continuation.sourceId) == null) {
+            return checkForMore(state, emptyList())
+        }
+        val newState = state.updateEntity(continuation.sourceId) { container ->
+            container.withCastChoice(continuation.slot, ChoiceValue.TextChoice(chosen))
         }
         return checkForMore(newState, emptyList())
     }

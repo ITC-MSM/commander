@@ -2142,8 +2142,8 @@ function GameCardImpl({
         </div>
       )}
 
-      {/* Chosen creature type / color / mode / card name badge (e.g., Doom Cannon, Riptide Replicator, Outpost Siege, Petrified Hamlet) */}
-      {!faceDown && (card.chosenCreatureType ?? card.chosenColor ?? card.chosenMode ?? card.chosenCardName) && (
+      {/* Chosen creature type / color / mode / card name / card type badge (e.g., Doom Cannon, Riptide Replicator, Outpost Siege, Petrified Hamlet, Arachne) */}
+      {!faceDown && (card.chosenCreatureType ?? card.chosenColor ?? card.chosenMode ?? card.chosenCardName ?? card.chosenCardType) && (
         <div style={{
           position: 'absolute',
           bottom: card.power != null ? 22 : 4,
@@ -2158,7 +2158,7 @@ function GameCardImpl({
           pointerEvents: 'none',
           zIndex: 5,
         }}>
-          {[card.chosenColor, card.chosenCreatureType, card.chosenMode, card.chosenCardName].filter(Boolean).join(' ')}
+          {[card.chosenColor, card.chosenCreatureType, card.chosenMode, card.chosenCardName, card.chosenCardType].filter(Boolean).join(' ')}
         </div>
       )}
 

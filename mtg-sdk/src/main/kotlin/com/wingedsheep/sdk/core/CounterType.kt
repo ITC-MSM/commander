@@ -81,7 +81,16 @@ enum class CounterType {
     SKEWER,
     ENERGY,
     ICE,
-    OMEN;
+    OMEN,
+
+    /**
+     * Harness counter (Marvel's Spider-Man Infinity Stones). A binary "harnessed" marker: the Stone's
+     * activated Harness ability places one, and its `∞` ability is gated on the Stone having a harness
+     * counter (CR-style "as long as this permanent has a harness counter"). Not a resource — exactly
+     * one is ever placed; it models the permanent "once harnessed" state that resets if the Stone
+     * leaves the battlefield.
+     */
+    HARNESS;
 
     companion object {
         /**
@@ -380,6 +389,9 @@ object Counters {
      * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val FILM = "film"
+
+    /** Harness marker counter — the Infinity Stones' "once harnessed" binary state. */
+    const val HARNESS = "harness"
 
     /**
      * Skewer counter (WOE — Rotisserie Elemental). A tally counter with no inherent rule: the

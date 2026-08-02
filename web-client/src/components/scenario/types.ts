@@ -15,6 +15,8 @@ export interface ScenarioBattlefieldCard {
   attachedTo?: string
   chosenCreatureType?: string
   chosenColor?: string
+  /** Durable chosen card type, e.g. Arachne, Psionic Weaver (CR 205.2a). */
+  chosenCardType?: string
 }
 
 export interface ScenarioPlayerConfig {

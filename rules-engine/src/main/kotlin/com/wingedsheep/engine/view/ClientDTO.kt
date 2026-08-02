@@ -417,6 +417,9 @@ data class ClientCard(
     /** Chosen card name for "as enters, choose a card name" permanents (e.g., Petrified Hamlet) */
     val chosenCardName: String? = null,
 
+    /** Chosen card type for "choose a card type" permanents (e.g., Arachne, Psionic Weaver) */
+    val chosenCardType: String? = null,
+
     /** Triggering entity ID for triggered abilities on the stack (for source arrows) */
     val triggeringEntityId: EntityId? = null,
 

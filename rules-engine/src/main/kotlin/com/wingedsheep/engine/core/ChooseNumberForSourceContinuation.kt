@@ -47,6 +47,30 @@ data class ChooseOpponentForSourceContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after a player picks the card type for a
+ * [com.wingedsheep.sdk.scripting.effects.ChooseCardTypeForSourceEffect]. The resumer writes the
+ * chosen type name as a [com.wingedsheep.engine.state.components.battlefield.ChoiceValue.TextChoice]
+ * into the source entity's
+ * [com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent] under [slot], where
+ * [com.wingedsheep.sdk.scripting.predicates.CardPredicate.CardTypeEqualsChosenComponent] reads it
+ * back at cost-calculation / projection time (Arachne, Psionic Weaver).
+ *
+ * @property sourceId The permanent whose cast-choices bag receives the card type.
+ * @property controllerId The player who made the choice.
+ * @property slot Which durable cast-choices slot to write.
+ * @property cardTypes The offered option list, positionally aligned with the
+ *   [com.wingedsheep.engine.core.ChooseOptionDecision]'s options.
+ */
+@Serializable
+data class ChooseCardTypeForSourceContinuation(
+    override val decisionId: String,
+    val sourceId: EntityId,
+    val controllerId: EntityId,
+    val slot: ChoiceSlot,
+    val cardTypes: List<String>
+) : ContinuationFrame
+
+/**
  * Resume after the controller picks *which* opponent makes a
  * [com.wingedsheep.sdk.scripting.effects.Chooser.Opponent] decision (CR 601.7a / 602.3a and
  * the matching resolution-time rulings — see

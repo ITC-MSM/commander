@@ -365,6 +365,16 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.NameEqualsChosenComponent(slot)
     )
 
+    /**
+     * Match cards whose *card type* equals the card type durably chosen by the *source permanent*
+     * as it entered (its [com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent]
+     * under [slot]). Static-projection / cost-calculation safe — use this in cost-static filters
+     * (Arachne, Psionic Weaver's "spells of the chosen type cost {1} more").
+     */
+    fun ofChosenCardTypeComponent(slot: com.wingedsheep.sdk.scripting.ChoiceSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.CARD_TYPE) = copy(
+        cardPredicates = cardPredicates + CardPredicate.CardTypeEqualsChosenComponent(slot)
+    )
+
     /** Mana value equals */
     fun manaValue(value: Int) = copy(
         cardPredicates = cardPredicates + CardPredicate.ManaValueEquals(value)

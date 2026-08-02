@@ -302,6 +302,25 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     }
 
     /**
+     * Matches cards whose **card type** equals a card type **durably chosen by the source
+     * permanent** as it entered — read from that permanent's
+     * [com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent] under [slot] (a
+     * [com.wingedsheep.engine.state.components.battlefield.ChoiceValue.TextChoice] holding one of the
+     * CR 205.2a card-type names). The card-type analogue of [NameEqualsChosenComponent].
+     *
+     * Like its name sibling, this is **static-projection / cost-calculation safe**: the source
+     * permanent's id is supplied as the predicate-context source wherever a static ability's filter
+     * is evaluated. Used by card-type-keyed taxes such as Arachne, Psionic Weaver ("Spells of the
+     * chosen type cost {1} more to cast"). Fails closed (no match) when the source has made no such
+     * choice.
+     */
+    @SerialName("CardTypeEqualsChosenComponent")
+    @Serializable
+    data class CardTypeEqualsChosenComponent(val slot: ChoiceSlot = ChoiceSlot.CARD_TYPE) : CardPredicate {
+        override val description: String = "of the chosen type"
+    }
+
+    /**
      * Matches a card whose name is **not** shared with any Room the evaluating player controls
      * (CR 709). Per the Central Elevator ruling, only the names of a Room's *unlocked* doors
      * count: a Room with no unlocked doors contributes neither of its names, and a split Room

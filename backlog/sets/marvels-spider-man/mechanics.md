@@ -41,7 +41,17 @@ Still blocked (not on web-slinging itself):
   keyword is now grantable in principle, but the "your legendary spells have web-slinging" grant is
   not yet wired — separate follow-up).
 
-## "Choose a card type" durable enters-choice + "spells of the chosen type cost {1} more" static
+## "Choose a card type" durable enters-choice + "spells of the chosen type cost {1} more" static — ✅ IMPLEMENTED
+
+**Done** (branch `spm-arachne`). New durable card-type choice dimension: `ChoiceSlot.CARD_TYPE`,
+`Effects.ChooseCardTypeForSource(allowedCardTypes, lookAtOpponentHand)` (on-resolution, writes the slot
+durably — the analogue of `ChooseNumberForSource`, run from a "when ~ enters" trigger), and
+`CardPredicate.CardTypeEqualsChosenComponent` / `GameObjectFilter.ofChosenCardTypeComponent()` read at
+cost-calculation time. The tax is a plain `ModifySpellCost(AnyCaster(ofChosenCardTypeComponent()),
+IncreaseGeneric(1))` (Thalia shape). Scenario test pins the durable write + the symmetric tax
+(chosen-type spell costs {1} more, other types untaxed).
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > As Arachne enters, look at an opponent's hand, then **choose a card type** other than creature.
 > **Spells of the chosen type cost {1} more to cast.**
@@ -57,7 +67,20 @@ stored choice feeding a cost-increase). "Look at an opponent's hand" is informat
 Blocked cards:
 - **Arachne, Psionic Weaver** [2] — web-slinging implemented; the choose-a-card-type tax is the blocker.
 
-## Harness / Infinity Stone ∞ ability
+</details>
+
+## Harness / Infinity Stone ∞ ability — ✅ IMPLEMENTED
+
+**Done** (branch `spm-soul-stone`). Modeled composition-first: "Harness" is a binary marker counter
+(`Counters.HARNESS`, a new `CounterType` enum value — the only new vocabulary). The Harness activated
+ability places one via `Effects.AddCounters`; the `∞` triggered ability is gated on the permanent
+having a harness counter (`Conditions.SourceHasCounter(CounterTypeFilter.Named(Counters.HARNESS))`),
+so it's dormant until harnessed and reactivates each qualifying trigger thereafter. A counter (not a
+durable component) matches the flavor — it resets if the permanent leaves, and re-placing is
+idempotent. No new engine executor/handler needed. Scenario test pins the gating (reanimates only
+while harnessed).
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > `{cost}, {T}, Exile a creature you control: Harness <this>. (Once harnessed, its ∞ ability
 > is active.)` — ∞ — <ongoing ability>
@@ -68,6 +91,8 @@ static/triggered ability). `add-feature` territory.
 
 Blocked cards:
 - **The Soul Stone** [66] — `{1}{B}` Legendary Artifact — Infinity Stone; harness → `∞` upkeep reanimation
+
+</details>
 
 ## Mayhem (new keyword — self graveyard-cast gated on "you discarded this card this turn") — ✅ IMPLEMENTED
 
@@ -123,7 +148,16 @@ which requires Riot to exist as a grantable keyword. `add-feature` scope.
 Blocked cards:
 - **Spider-Punk** [92] — `{1}{R}` Riot; "Other Spiders you control have riot"; also "Spells and abilities can't be countered" + "Damage can't be prevented" (verify those two independently)
 
-## "Modified" state on a leaves-the-battlefield (last-known-information) trigger
+## "Modified" state on a leaves-the-battlefield (last-known-information) trigger — ✅ IMPLEMENTED
+
+**Done** (branch `spm-modified-ltb`). `EntitySnapshot` now captures `wasEquipped` / `wasEnchanted`
+(populated in `ZoneTransitionService` before the exit cleanup strips attachments), and
+`TriggerMatcher.matchesStatePredicateForZoneChangeTrigger` evaluates `IsModified` / `IsEquipped` /
+`IsEnchanted` against the snapshot (counters + those flags) on a leaves-battlefield trigger instead
+of falling through fail-open. Costume Closet ships with a scenario test covering the counter,
+equipped, and unmodified (regression-guard) legs.
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Whenever a **modified** creature you control **leaves the battlefield**, …
 
@@ -141,6 +175,8 @@ battlefield-exit (or the predicate evaluated against pre-leave state). `add-feat
 
 Blocked cards:
 - **Costume Closet** [5] — `{1}{W}` Artifact; enters with two +1/+1 counters + sorcery-speed "{T}: move a counter to target creature you control" (both of those work today) + "Whenever a **modified** creature you control leaves the battlefield, put a +1/+1 counter on this artifact" (the blocked part)
+
+</details>
 
 ## "Deals damage to a [filtered] creature" trigger (RecipientFilter.Matching on a deals-damage trigger) — ✅ IMPLEMENTED
 
@@ -172,7 +208,18 @@ Blocked cards:
 - **Spider-Slayer, Hatred Honed** [175] — `{2}` Legendary Artifact Creature; "Whenever Spider-Slayer deals damage to a Spider, destroy that creature" (blocked). Its other ability — `{6}`, exile-from-graveyard → two tapped 1/1 flying Robot tokens — works fine.
 </details>
 
-## Chosen card name surviving into a later-firing delayed trigger
+## Chosen card name surviving into a later-firing delayed trigger — ✅ IMPLEMENTED
+
+**Done** (branch `spm-clone-saga`). `CreateDelayedTriggerExecutor.bakeChosenValuesIntoTrigger` now
+also rewrites `NameEqualsChosen(v)` → literal `NameEquals(chosen[v])` and handles a
+`DealsDamageEvent.sourceFilter` (not just `SpellCastEvent.spellFilter`), via a shared
+`bakeChosenValuesIntoFilter` helper. So chapter III models as `Composite(ChooseCardName("clonedName"),
+CreateDelayedTrigger(dealsDamage(Combat, AnyPlayer, Creature.namedFromVariable("clonedName")),
+DrawCards(1)))`. Chapters I (Surveil 3) and II (`CreateDelayedTrigger(YouCastCreature,
+CopyTargetSpell(TriggeringEntity, removeLegendary=true), fireOnce=true)`) needed no engine change.
+Scenario test pins the chapter-III chosen-name combat-damage draw.
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Choose a card name. Whenever a creature with the **chosen name** deals combat damage to a
 > player this turn, draw a card.
@@ -189,6 +236,8 @@ event filters (e.g. `DealsDamageEvent.sourceFilter`), + verify the delayed match
 
 Blocked cards:
 - **The Clone Saga** [28] — `{3}{U}` Enchantment — Saga; chapters I (Surveil 3) and II (copy your next creature spell, non-legendary — both expressible today) are fine, but chapter III ("choose a card name … whenever a creature with the chosen name deals combat damage, draw") is blocked
+
+</details>
 
 ## Exchange life totals with a player (CR 701.12c) + "life you lost this way" draw amount — ✅ IMPLEMENTED
 

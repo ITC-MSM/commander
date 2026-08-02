@@ -2,13 +2,13 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 179 / 188
+**Implemented:** 183 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
 - [x] Amazing Acrobatics
 - [x] Anti-Venom, Horrifying Healer
-- [ ] Arachne, Psionic Weaver
+- [x] Arachne, Psionic Weaver
 - [x] Araña, Heart of the Spider
 - [x] Aunt May
 - [x] Bagel and Schmear
@@ -22,7 +22,7 @@
 - [x] City Pigeon
 - [x] Common Crook
 - [x] Cosmic Spider-Man
-- [ ] Costume Closet
+- [x] Costume Closet
 - [x] Daily Bugle Building
 - [x] Daily Bugle Reporters
 - [x] Damage Control Crew
@@ -164,9 +164,9 @@
 - [x] Symbiote Spider-Man
 - [x] Taxi Driver
 - [x] Terrific Team-Up
-- [ ] The Clone Saga
+- [x] The Clone Saga
 - [x] The Death of Gwen Stacy
-- [ ] The Soul Stone
+- [x] The Soul Stone
 - [x] The Spot's Portal
 - [x] The Spot, Living Portal
 - [x] Thwip!

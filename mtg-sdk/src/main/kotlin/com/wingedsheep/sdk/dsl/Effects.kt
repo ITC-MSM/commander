@@ -2759,6 +2759,26 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.ChooseOpponentForSourceEffect(prompt)
 
     /**
+     * The controller chooses a card type (CR 205.2a), stored durably on the source entity under
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.CARD_TYPE] and read back at cost-calculation /
+     * projection time through
+     * [com.wingedsheep.sdk.scripting.predicates.CardPredicate.CardTypeEqualsChosenComponent] (build
+     * the filter with `GameObjectFilter.…ofChosenCardTypeComponent()`). [allowedCardTypes] restricts
+     * the offered set (default all); pass the non-creature list for "a card type other than
+     * creature". [lookAtOpponentHand] reveals an opponent's hand to the controller first. Powers
+     * Arachne, Psionic Weaver's "look at an opponent's hand, then choose a card type … Spells of the
+     * chosen type cost {1} more."
+     */
+    fun ChooseCardTypeForSource(
+        allowedCardTypes: List<String>? = null,
+        lookAtOpponentHand: Boolean = false,
+        slot: com.wingedsheep.sdk.scripting.ChoiceSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.CARD_TYPE,
+        prompt: String = "Choose a card type"
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ChooseCardTypeForSourceEffect(
+        allowedCardTypes, lookAtOpponentHand, slot, prompt
+    )
+
+    /**
      * Grant Toxic N to a target until end of turn.
      *
      * Composes [GrantKeywordEffect] with the `TOXIC_<n>` string keyword — the same projected
