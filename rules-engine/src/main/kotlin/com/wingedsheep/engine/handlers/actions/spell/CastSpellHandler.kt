@@ -398,7 +398,7 @@ class CastSpellHandler(
         val castingForWebSling = action.useAlternativeCost &&
             action.altAllows(AlternativeCostType.WEB_SLINGING) &&
             cardDef != null &&
-            WebSlinging.webSlingingAbility(cardDef) != null
+            WebSlinging.effectiveWebSlinging(state, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null
         if (castingForWebSling) {
             val bounced = action.additionalCostPayment?.bouncedPermanents ?: emptyList()
             if (bounced.size != 1) {
@@ -443,6 +443,15 @@ class CastSpellHandler(
         if (linkedExileAdditionalCost != null) {
             val linkedCostError = validateAdditionalCosts(state, listOf(linkedExileAdditionalCost), action)
             if (linkedCostError != null) return linkedCostError
+        }
+
+        // Gwenom: a spell cast from the top of the library under a PlayFromTopWithAlternativeCost
+        // permission pays the grant's additional cost (pay life equal to its mana value).
+        val topOfLibraryAdditionalCost = zoneResolver
+            .topOfLibraryAlternativeGrant(state, action.playerId, action.cardId)?.additionalCost
+        if (topOfLibraryAdditionalCost != null) {
+            val topCostError = validateAdditionalCosts(state, listOf(topOfLibraryAdditionalCost), action)
+            if (topCostError != null) return topCostError
         }
 
         // Validate a self-referential MayCastSelfFromZones grant's additional cost (e.g. Alien
@@ -856,11 +865,11 @@ class CastSpellHandler(
                 // applied afterward via alternativePayment.
                 costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, harmonizeAbility.cost, action.playerId)
             } else if (action.altAllows(AlternativeCostType.MAYHEM) &&
-                MayhemGrants.effectiveMayhem(state, action.cardId, cardDef) != null &&
+                MayhemGrants.effectiveMayhem(state, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null &&
                 zoneResolver.hasMayhemPermission(state, action.playerId, action.cardId)) {
                 // Mayhem cost (CR 702.187) — cast from graveyard for its mayhem cost.
                 costCalculator.calculateEffectiveCostWithAlternativeBase(
-                    state, cardDef, MayhemGrants.effectiveMayhem(state, action.cardId, cardDef)!!.cost, action.playerId
+                    state, cardDef, MayhemGrants.effectiveMayhem(state, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)!!.cost, action.playerId
                 )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
@@ -878,7 +887,7 @@ class CastSpellHandler(
                     val sneakCost = SneakWindow.effectiveSneakCost(state, cardDef, action.cardId, action.playerId, cardRegistry)
                     // Check web-slinging cost (CR 702.188 — an alternative cost bundling a
                     // return-a-tapped-creature payment, cast at the spell's normal timing).
-                    val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
+                    val webSlingingAbility = WebSlinging.effectiveWebSlinging(state, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     // Check dash cost (CR 702.109 — hand only, printed only for now).
@@ -2113,11 +2122,11 @@ class CastSpellHandler(
             } else if (action.altAllows(AlternativeCostType.HARMONIZE) && harmonizeAbility != null && zoneResolver.hasHarmonizePermission(currentState, action.playerId, action.cardId)) {
                 costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, harmonizeAbility.cost, action.playerId)
             } else if (action.altAllows(AlternativeCostType.MAYHEM) &&
-                MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef) != null &&
+                MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null &&
                 zoneResolver.hasMayhemPermission(currentState, action.playerId, action.cardId)) {
                 // Mayhem cost (CR 702.187) — cast from graveyard for its mayhem cost.
                 costCalculator.calculateEffectiveCostWithAlternativeBase(
-                    currentState, cardDef, MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef)!!.cost, action.playerId
+                    currentState, cardDef, MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)!!.cost, action.playerId
                 )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
@@ -2134,7 +2143,7 @@ class CastSpellHandler(
                     val sneakCost = SneakWindow.effectiveSneakCost(currentState, cardDef, action.cardId, action.playerId, cardRegistry)
                     // Check web-slinging cost (CR 702.188 — mana portion; the return-a-tapped-creature
                     // bounce is paid separately, alongside).
-                    val webSlingingAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.WebSlinging>().firstOrNull()
+                    val webSlingingAbility = WebSlinging.effectiveWebSlinging(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)
                     // Check evoke cost
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     // Check dash cost (CR 702.109 — hand only, printed only for now).
@@ -2395,6 +2404,10 @@ class CastSpellHandler(
             // Self-referential MayCastSelfFromZones grant's additional cost (e.g. Alien
             // Symbiosis' "by discarding a card")
             zoneResolver.findMayCastSelfFromZoneAbility(currentState, action.playerId, action.cardId)
+                ?.additionalCost?.let { add(it) }
+
+            // Gwenom: pay-life additional cost for a spell cast from the top of the library.
+            zoneResolver.topOfLibraryAlternativeGrant(currentState, action.playerId, action.cardId)
                 ?.additionalCost?.let { add(it) }
         }
 
@@ -3096,7 +3109,7 @@ class CastSpellHandler(
         // (CR 118.9c — its own mana value, needed by Scarlet Spider, Ben Reilly) before it leaves.
         val wasWebSlung = action.useAlternativeCost && cardDef != null &&
             action.altAllows(AlternativeCostType.WEB_SLINGING) &&
-            WebSlinging.webSlingingAbility(cardDef) != null
+            WebSlinging.effectiveWebSlinging(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null
         var webSlungReturnedManaValue = 0
         if (wasWebSlung) {
             val bounceId = action.additionalCostPayment?.bouncedPermanents?.firstOrNull()
@@ -3118,7 +3131,7 @@ class CastSpellHandler(
         // Drives Sandman's Quicksand's "if this spell's mayhem cost was paid" rider.
         val wasMayhem = action.useAlternativeCost && cardDef != null &&
             action.altAllows(AlternativeCostType.MAYHEM) &&
-            MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef) != null &&
+            MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null &&
             currentState.getEntity(action.playerId)
                 ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
                 ?.cardIds?.contains(action.cardId) == true

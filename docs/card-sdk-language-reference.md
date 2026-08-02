@@ -5255,6 +5255,14 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   in your graveyard has flashback … equal to that card's mana cost") and one for
   `InstantOrSorcery.withSubtype(Lesson)` with `cost = {1}` ("each Lesson card in your graveyard has
   flashback {1}"), both `duringYourTurnOnly = true`.
+- `GraveyardCardsHaveMayhem(filter, cost = null, duringYourTurnOnly = false)` — the Mayhem (CR 702.187)
+  analogue of `GraveyardCardsHaveFlashback`: a whole-graveyard group grant of the Mayhem keyword to
+  every graveyard card matching `filter`. `cost = null` means "mayhem cost equal to that card's mana
+  cost". Read through the shared `MayhemGrants.effectiveMayhem` resolver (enumerator, cast cost,
+  permission), which now scans the battlefield for this static; the mayhem discarded-this-turn gate
+  still applies, and (unlike flashback) the spell is not exiled on resolution. Used by Green Goblin's
+  "Goblin Formula — Each nonland card in your graveyard has mayhem. The mayhem cost is equal to its
+  mana cost" (`GraveyardCardsHaveMayhem(GameObjectFilter.Nonland)`).
 - `GrantMayCastFromLinkedExile(filter = Nonland, duringYourTurnOnly = false, additionalCost = null, ownedByYou = false, withoutPayingManaCost = false, oncePerTurn = false, maxManaValue = null, exiledThisTurnOnly = false, entersWithCounter = null)`
   — "you may cast cards exiled with this permanent" — reads the source's `LinkedExileComponent` (Rona,
   Disciple of Gix; Maralen, Fae Ascendant; Dawnhand Dissident). Casting spells from linked exile is
@@ -5403,6 +5411,14 @@ concerns — the `ClientStateTransformer` reveals the top card for `PlayFromTopO
   shown to all players, but can only be played once drawn. (**Goblin Spy**)
 - `PlayFromTopOfLibrary` — public reveal **and** "play lands and cast spells from the top of your
   library" (all card types). (Future Sight)
+- `PlayFromTopWithAlternativeCost(withoutPayingManaCost = false, additionalCost = null, filter = null)`
+  — "you may play cards from the top of your library; a spell cast this way pays an alternative cost"
+  (mana waived and/or an `AdditionalCost` substituted). Gwenom, Remorseless grants this until end of
+  turn (`GrantStaticAbility(..., Duration.EndOfTurn)`) with `withoutPayingManaCost = true` +
+  `Costs.additional.PayLifeEqualToManaValueOfSpell` — "play from the top; pay life equal to a spell's
+  mana value rather than its mana cost." Read through the top-of-library cast path, which scans
+  `grantedStaticAbilities` for it (so a durationally-granted permission works), waives the mana, and
+  charges the life. Pass `filter` to restrict which cards it covers (null = all).
 - `PlayLandsAndCastFilteredFromTopOfLibrary(spellFilter)` — like `PlayFromTopOfLibrary` but only
   spells matching `spellFilter` are castable (lands always playable), and **no public reveal** (pair
   with `LookAtTopOfLibrary` to let just the controller see). `spellFilter = GameObjectFilter.Any`
@@ -6064,6 +6080,12 @@ composite abilities).
   `ChoiceSlot.WEB_SLUNG` (read via `Conditions.WebSlungCostWasPaid`, e.g. *Spiders-Man, Heroic Horde*'s enters trigger) and
   the returned creature's mana value under `ChoiceSlot.WEB_SLUNG_RETURNED_MV` (read via `DynamicAmount.CastChoice`, e.g.
   *Scarlet Spider, Ben Reilly* enters with that many +1/+1 counters).
+- `GrantWebSlingingToSpells(cost, spellFilter)` — a static ability that **grants web-slinging `cost`** to spells the
+  controller casts matching `spellFilter` (web-slinging carries a `ManaCost`, which the generic `GrantKeywordToOwnSpells`
+  can't express). Read through `WebSlinging.effectiveWebSlinging` (printed → this battlefield grant), which the
+  `WebSlingingCastEnumerator` and `CastSpellHandler` consult, so a granted web-slinging behaves exactly like a printed
+  one. Amazing Spider-Man (back of Peter Parker): "Each legendary spell you cast that's one or more colors has web-slinging
+  {G}{W}{U}" → `GrantWebSlingingToSpells({G}{W}{U}, GameObjectFilter(cardPredicates = [IsLegendary, IsColored]))`.
 - `Mayhem(cost)` — `card { mayhem("{cost}") }` builder helper (CR 702.187, Marvel's Spider-Man). A **graveyard**
   alternative cost: *"As long as you discarded this card this turn, you may cast it from your graveyard by paying [cost]
   rather than paying its mana cost."* Grants **no timing permission** (normal timing — sorcery speed unless the card is an

@@ -883,6 +883,7 @@ class StaticAbilityHandler(
             is GrantMiracleToCardsInHand,
             is MayCastFromGraveyard,
             is GraveyardCardsHaveFlashback,
+            is com.wingedsheep.sdk.scripting.GraveyardCardsHaveMayhem,
             is com.wingedsheep.sdk.scripting.GraveyardCreaturesHaveSneak,
             is MayCastSelfFromZones,
             is MayCastWithoutPayingManaCost,
@@ -897,6 +898,7 @@ class StaticAbilityHandler(
             is ReduceActivatedAbilityCost,
             is com.wingedsheep.sdk.scripting.IncreaseActivatedAbilityCost,
             is PlayFromTopOfLibrary,
+            is com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost,
             is PlayLandsAndCastFilteredFromTopOfLibrary,
             is PlotFromTopOfLibrary,
             is PlayersCantCastSpells,
@@ -916,6 +918,7 @@ class StaticAbilityHandler(
             // Spells on the stack (StackResolver / GrantedKeywordResolver):
             is GrantCantBeCountered,
             is GrantKeywordToOwnSpells,
+            is com.wingedsheep.sdk.scripting.GrantWebSlingingToSpells,
 
             // Activated abilities (ActivateAbilityHandler / ActivatedAbilityEnumerator):
             is ExtraLoyaltyActivation,

@@ -1,8 +1,13 @@
 package com.wingedsheep.engine.mechanics
 
+import com.wingedsheep.engine.handlers.PredicateContext
+import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.GraveyardCardsHaveMayhem
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
 /**
@@ -26,14 +31,52 @@ object MayhemGrants {
     fun effectiveMayhem(
         state: GameState,
         cardId: EntityId,
-        cardDef: CardDefinition?
+        cardDef: CardDefinition?,
+        controllerId: EntityId? = null,
+        cardRegistry: CardRegistry? = null,
+        predicateEvaluator: PredicateEvaluator? = null,
     ): KeywordAbility.Mayhem? {
         cardDef?.keywordAbilities
             ?.firstOrNull { it is KeywordAbility.Mayhem }
             ?.let { return it as KeywordAbility.Mayhem }
 
-        return state.grantedKeywordAbilities
+        state.grantedKeywordAbilities
             .lastOrNull { it.entityId == cardId && it.ability is KeywordAbility.Mayhem }
-            ?.let { it.ability as KeywordAbility.Mayhem }
+            ?.let { return it.ability as KeywordAbility.Mayhem }
+
+        if (controllerId != null && cardRegistry != null && predicateEvaluator != null) {
+            groupGrantMayhem(state, cardId, controllerId, cardRegistry, predicateEvaluator)
+                ?.let { return it }
+        }
+        return null
+    }
+
+    /**
+     * Scan [controllerId]'s battlefield for a [GraveyardCardsHaveMayhem] static whose filter matches
+     * [cardId] (during their turn, if the grant requires it), synthesizing a [KeywordAbility.Mayhem]
+     * carrying the granted cost — the grant's fixed cost, or the card's own mana cost when the grant
+     * leaves it null ("equal to that card's mana cost"). Mirrors `FlashbackGrants.groupGrantFlashback`.
+     */
+    private fun groupGrantMayhem(
+        state: GameState,
+        cardId: EntityId,
+        controllerId: EntityId,
+        cardRegistry: CardRegistry,
+        predicateEvaluator: PredicateEvaluator,
+    ): KeywordAbility.Mayhem? {
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
+        val context = PredicateContext(controllerId = controllerId)
+        for (granterId in state.controlledBattlefield(controllerId)) {
+            val def = state.getEntity(granterId)?.get<CardComponent>()
+                ?.let { cardRegistry.getCard(it.cardDefinitionId) } ?: continue
+            for (ability in def.script.staticAbilities) {
+                if (ability !is GraveyardCardsHaveMayhem) continue
+                if (ability.duringYourTurnOnly && !state.isActiveTurnFor(controllerId)) continue
+                if (predicateEvaluator.matches(state, state.projectedState, cardId, ability.filter, context)) {
+                    return KeywordAbility.Mayhem(ability.cost ?: cardComponent.manaCost)
+                }
+            }
+        }
+        return null
     }
 }

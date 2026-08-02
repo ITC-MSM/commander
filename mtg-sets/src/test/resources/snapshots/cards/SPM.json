@@ -879,6 +879,111 @@
     ]
 }
 
+// Black Cat, Cunning Thief
+{
+    "name": "Black Cat, Cunning Thief",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Legendary Creature — Human Rogue Villain",
+    "oracleText": "When Black Cat enters, look at the top nine cards of target opponent's library, exile two of them face down, then put the rest on the bottom of their library in a random order. You may play the exiled cards for as long as they remain exiled. Mana of any type can be spent to cast spells this way.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 9
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "topNine"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "topNine",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeSelected": "exiled",
+                            "storeRemainder": "rest",
+                            "prompt": "Exile two of those cards face down.",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "exiled",
+                            "expiry": "Permanent",
+                            "withAnyManaType": true
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When Black Cat enters, look at the top nine cards of target opponent's library, exile two of them face down, then put the rest on the bottom of their library in a random order. You may play the exiled cards for as long as they remain exiled. Mana of any type can be spent to cast spells this way."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "rarity": "RARE",
+        "artist": "Alessandra Pisano",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0ed36ada-22c8-4e40-86c5-c116a0bee1c2.jpg?1783905347"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Carnage, Crimson Chaos
 {
     "name": "Carnage, Crimson Chaos",
@@ -3037,6 +3142,59 @@
         "RED",
         "BLUE",
         "WHITE"
+    ]
+}
+
+// Gwenom, Remorseless
+{
+    "name": "Gwenom, Remorseless",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Legendary Creature — Symbiote Spider Hero",
+    "oracleText": "Deathtouch, lifelink\nWhenever Gwenom attacks, until end of turn, you may look at the top card of your library any time and you may play cards from the top of your library. If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantStaticAbility",
+                            "ability": {
+                                "type": "PlayFromTopWithAlternativeCost",
+                                "withoutPayingManaCost": true,
+                                "additionalCost": "PayLifeEqualToManaValueOfSpell"
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantStaticAbility",
+                            "ability": "LookAtTopOfLibrary",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Gwenom attacks, until end of turn, you may look at the top card of your library any time and you may play cards from the top of your library. If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "rarity": "MYTHIC",
+        "artist": "Lordigan",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/46b6cc5d-7a37-4e8b-a1a5-9a573056610c.jpg?1783905344"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -5728,6 +5886,166 @@
     "colorIdentityOverride": []
 }
 
+// Norman Osborn
+{
+    "name": "Norman Osborn",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Human Scientist Villain",
+    "oracleText": "Norman Osborn can't be blocked.\nWhenever Norman Osborn deals combat damage to a player, he connives. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on this creature.)\n{1}{U}{B}{R}: Transform Norman Osborn. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "connive_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "connive_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "connive_discarded",
+                            "prompt": "Choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "connive_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "connive_discarded",
+                            "ifNotEmpty": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Connive"
+                },
+                "descriptionOverride": "Whenever Norman Osborn deals combat damage to a player, he connives."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{U}{B}{R}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Norman Osborn. Activate only as a sorcery."
+            }
+        ],
+        "staticAbilities": [
+            "CantBeBlocked"
+        ]
+    },
+    "backFace": {
+        "name": "Green Goblin",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Goblin Human Villain",
+        "oracleText": "Flying, menace\nSpells you cast from your graveyard cost {2} less to cast.\nGoblin Formula — Each nonland card in your graveyard has mayhem. The mayhem cost is equal to its mana cost. (You may cast a card from your graveyard for its mayhem cost if you discarded it this turn. Timing rules still apply.)",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "keywords": [
+            "FLYING",
+            "MENACE"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ModifySpellCost",
+                    "target": {
+                        "type": "YouCastFromZones",
+                        "zones": [
+                            "Graveyard"
+                        ]
+                    },
+                    "modification": {
+                        "type": "ReduceGeneric",
+                        "amount": 2
+                    }
+                },
+                {
+                    "type": "GraveyardCardsHaveMayhem",
+                    "filter": "nonland"
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "39",
+            "rarity": "MYTHIC",
+            "artist": "Scott M. Fischer",
+            "imageUri": "https://cards.scryfall.io/normal/back/d/5/d5c53af9-7150-4e78-8771-2de7980aa307.jpg?1783905356"
+        },
+        "colorIdentityOverride": [
+            "BLUE",
+            "BLACK",
+            "RED"
+        ],
+        "colorIndicator": [
+            "BLUE",
+            "BLACK",
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "rarity": "MYTHIC",
+        "artist": "Scott M. Fischer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d5c53af9-7150-4e78-8771-2de7980aa307.jpg?1783905356"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Ominous Asylum
 {
     "name": "Ominous Asylum",
@@ -6215,6 +6533,116 @@
         "imageUri": "https://cards.scryfall.io/normal/front/2/4/2495f477-b88c-4938-a86a-f72c3c861188.jpg?1783905304"
     },
     "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Peter Parker
+{
+    "name": "Peter Parker",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Human Scientist Hero",
+    "oracleText": "When Peter Parker enters, create a 2/1 green Spider creature token with reach.\n{1}{G}{W}{U}: Transform Peter Parker. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Spider"
+                    ],
+                    "keywords": [
+                        "REACH"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a40f6e1-3545-4503-af3e-f0acfb735e3a.jpg?1783905184"
+                },
+                "descriptionOverride": "When Peter Parker enters, create a 2/1 green Spider creature token with reach."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{G}{W}{U}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Peter Parker. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Amazing Spider-Man",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Spider Human Hero",
+        "oracleText": "Vigilance, reach\nEach legendary spell you cast that's one or more colors has web-slinging {G}{W}{U}. (You may cast a spell for its web-slinging cost if you also return a tapped creature you control to its owner's hand.)",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "keywords": [
+            "VIGILANCE",
+            "REACH"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantWebSlingingToSpells",
+                    "cost": "{G}{W}{U}",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsLegendary",
+                            "IsColored"
+                        ]
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "10",
+            "rarity": "MYTHIC",
+            "artist": "Thanh Tuấn",
+            "imageUri": "https://cards.scryfall.io/normal/back/3/c/3ce33422-5dba-4a42-8375-dd8ccc692a7b.jpg?1783905367"
+        },
+        "colorIdentityOverride": [
+            "GREEN",
+            "WHITE",
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "GREEN",
+            "WHITE",
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "rarity": "MYTHIC",
+        "artist": "Thanh Tuấn",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3ce33422-5dba-4a42-8375-dd8ccc692a7b.jpg?1783905367"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE",
         "BLUE"
     ]
 }

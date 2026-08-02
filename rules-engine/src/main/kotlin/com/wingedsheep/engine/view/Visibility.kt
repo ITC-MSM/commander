@@ -6,6 +6,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -85,6 +86,21 @@ class Visibility(
                     activeStaticAbility(state, ability, entityId, playerId)?.let(predicate) == true
                 }
             ) return true
+        }
+        // Also scan durationally granted statics (e.g. Gwenom, Remorseless grants LookAtTopOfLibrary
+        // to itself on attack until end of turn). These live in `grantedStaticAbilities` anchored to
+        // the granting permanent, never in `cardDef.script.staticAbilities`. Mirrors the printed-or-
+        // granted scan the cast-legality path already uses (CastPermissionUtils.playFromTopAlternativeCost),
+        // so visibility and castability stay in lockstep — otherwise the top card is castable but the
+        // controller never sees it, so there is nothing to play.
+        for (grant in state.grantedStaticAbilities) {
+            // Match the cast-legality scan in CastPermissionUtils.playFromTopAlternativeCost (base
+            // control) so visibility and castability stay in lockstep.
+            val anchor = state.getEntity(grant.entityId) ?: continue
+            if (anchor.get<ControllerComponent>()?.playerId != playerId) continue
+            if (activeStaticAbility(state, grant.ability, grant.entityId, playerId)?.let(predicate) == true) {
+                return true
+            }
         }
         return false
     }

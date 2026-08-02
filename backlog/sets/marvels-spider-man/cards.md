@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 183 / 188
+**Implemented:** 187 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -15,7 +15,7 @@
 - [x] Beetle, Legacy Criminal
 - [x] Behold the Sinister Six!
 - [x] Biorganic Carapace
-- [ ] Black Cat, Cunning Thief
+- [x] Black Cat, Cunning Thief
 - [x] Carnage, Crimson Chaos
 - [x] Chameleon, Master of Disguise
 - [x] Cheering Crowd
@@ -43,7 +43,7 @@
 - [x] Grow Extra Arms
 - [x] Guy in the Chair
 - [x] Gwen Stacy // Ghost-Spider
-- [ ] Gwenom, Remorseless
+- [x] Gwenom, Remorseless
 - [x] Heroes' Hangout
 - [x] Hide on the Ceiling
 - [x] Hobgoblin, Mantled Marauder
@@ -80,14 +80,14 @@
 - [x] Mysterio's Phantasm
 - [x] Mysterio, Master of Illusion
 - [x] News Helicopter
-- [ ] Norman Osborn // Green Goblin
+- [x] Norman Osborn // Green Goblin
 - [x] Ominous Asylum
 - [x] Origin of Spider-Man
 - [x] Oscorp Industries
 - [x] Oscorp Research Team
 - [x] Parker Luck
 - [x] Passenger Ferry
-- [ ] Peter Parker // Amazing Spider-Man
+- [x] Peter Parker // Amazing Spider-Man
 - [x] Peter Parker's Camera
 - [x] Pictures of Spider-Man
 - [x] Prison Break

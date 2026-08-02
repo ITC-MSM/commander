@@ -13,6 +13,7 @@ import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.permissions.activeMayPlayFor
 import com.wingedsheep.engine.state.permissions.hasMayPlayFor
 import com.wingedsheep.engine.state.permissions.removeMayPlayPermissionsForCard
@@ -143,6 +144,13 @@ class PlayLandHandler(
             ZoneKey(action.playerId, fromZone)
         }
         newState = newState.removeFromZone(sourceZoneKey, action.cardId)
+
+        // A land played from a face-down exile enters face up as the real land, never as a face-down
+        // 2/2. Black Cat, Cunning Thief exiles cards face down (HIDDEN) and lets you play them; lands
+        // bypass ZoneTransitionService/StackResolver — where every other play path reveals a
+        // hidden-in-exile card (StackResolver strips FaceDownComponent as a spell hits the stack) —
+        // so strip the marker here (CR 305.1: a land is always played face up). No-op when absent.
+        newState = newState.updateEntity(action.cardId) { c -> c.without<FaceDownComponent>() }
 
         // Record Muldrotha graveyard land permission usage
         if (fromZone == Zone.GRAVEYARD) {

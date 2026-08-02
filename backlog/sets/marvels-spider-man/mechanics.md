@@ -36,10 +36,13 @@ Still blocked (not on web-slinging itself):
   opponent's hand, then choose a card type other than creature; spells of the chosen type cost {1}
   more to cast" needs a **durable card-type enters-choice + a chosen-card-type spell-tax static**
   (see the new section below). Deferred rather than approximated.
-- **Peter Parker // Amazing Spider-Man** [10] — transform DFC whose *back face grants* web-slinging to
-  your legendary spells; blocked on transform + a **grant-web-slinging-to-your-spells** static (the
-  keyword is now grantable in principle, but the "your legendary spells have web-slinging" grant is
-  not yet wired — separate follow-up).
+- **Peter Parker // Amazing Spider-Man** [10] — ✅ DONE (branch `spm-peter-parker`). Transform DFC (front:
+  ETB 2/1 green Spider token + sorcery-speed transform, both pre-existing). Back's "each legendary spell
+  you cast that's one or more colors has web-slinging {G}{W}{U}" is the new `GrantWebSlingingToSpells(cost,
+  spellFilter)` static (parallel to `GraveyardCardsHaveMayhem`): `WebSlinging.effectiveWebSlinging` now also
+  scans the battlefield for it (printed → group grant), threaded through `WebSlingingCastEnumerator` +
+  `CastSpellHandler` (validate/cost×2/rider). Filter = `IsLegendary` + `IsColored`. Scenario test pins the
+  grant (legendary+colored → offered; nonlegendary → not; no granter → not).
 
 ## "Choose a card type" durable enters-choice + "spells of the chosen type cost {1} more" static — ✅ IMPLEMENTED
 
@@ -128,9 +131,12 @@ Still blocked (not on Mayhem itself):
   graveyard land-plays (lands bypass `ZoneTransitionService`).
 - **Ultimate Green Goblin** [157] — `{1}{B/R}{B/R}` Mayhem `{2}{B/R}`; the upkeep "discard a card, then create a
   Treasure" is expressible, but was not authored in this batch — a straightforward follow-up now that Mayhem exists.
-- **Norman Osborn // Green Goblin** [39] — transform DFC; back's "Goblin Formula" grants Mayhem (cost = mana cost) to
-  every nonland card in your graveyard — blocked on transform + a **group `GraveyardCardsHaveMayhem` grant**
-  (`MayhemGrants` already reads per-entity grants, so the group-grant static is the remaining piece).
+- **Norman Osborn // Green Goblin** [39] — ✅ DONE (branch `spm-norman-osborn`). Transform DFC (front: unblockable +
+  connive-on-combat-damage + sorcery-speed transform; all pre-existing). Back's "Goblin Formula" is the new
+  `GraveyardCardsHaveMayhem(filter, cost?)` static (mirrors `GraveyardCardsHaveFlashback`): `MayhemGrants.effectiveMayhem`
+  now also scans the battlefield for it (group grant → per-entity → printed), threaded through the four cast read sites,
+  still gated on discarded-this-turn. Back's gy-cast `{2}` reduction is a plain `ModifySpellCost(YouCastFromZones(GRAVEYARD))`.
+  Scenario test pins the group-granted mayhem (grant on, grant off, discard-gate).
 
 Also enabled by the **discarded-this-turn tracking** half (now implemented) but not yet authored:
 - **Green Goblin, Revenant** [130] — `{3}{B}{R}` Flying/deathtouch; "Whenever Green Goblin attacks, discard a card.
@@ -376,7 +382,20 @@ the land and spell turn-conditions.
 - **Spider-Man 2099** [150] — `{U}{R}` double strike/vigilance; the "From the Future" turn-number cast restriction (`ControllerTurnsTakenAtMost`) and "deal power to any target" are fine, but the end-step intervening-if "if you've played a land or cast a spell this turn from anywhere other than your hand" is the blocker.
 </details>
 
-## Temporary "play from top of library, paying life = mana value instead of mana cost"
+## Temporary "play from top of library, paying life = mana value instead of mana cost" — ✅ IMPLEMENTED
+
+**Done** (branch `spm-gwenom`). New `PlayFromTopWithAlternativeCost(withoutPayingManaCost, additionalCost,
+filter)` static (the top-of-library counterpart to `GrantMayCastFromLinkedExile`). `CastPermissionUtils`
+gained `playFromTopAlternativeCost(...)` which scans BOTH printed `staticAbilities` and
+`state.grantedStaticAbilities` (mirroring `MayCastFromGraveyard`), and every top-of-library read site
+(`CastPermissionUtils`, `CastZoneResolver` incl. `hasPlayWithoutPayingCost`, the enumerator cost branch,
+`CastSpellHandler` validate+execute) now honors it: mana is waived and `PayLifeEqualToManaValueOfSpell`
+is charged. Gwenom's attack trigger grants it (+ `LookAtTopOfLibrary`) to Self until end of turn.
+Scenario test pins it (not castable before the attack; after, casts for life = mana value, no mana).
+(The durationally-granted look's client-side top-card reveal remains printed-scan only — a UI/visibility
+gap with no rules impact.)
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Whenever Gwenom attacks, until end of turn, you may look at the top card of your library any
 > time and you may play cards from the top. If you cast a spell this way, **pay life equal to its
@@ -395,6 +414,8 @@ sites to consult granted statics (mirroring `MayCastFromGraveyard`).
 
 Blocked cards:
 - **Gwenom, Remorseless** [56] — `{3}{B}{B}` Deathtouch/lifelink; the attack-granted "play from top, pay life = mana value" is the blocker (deathtouch, lifelink, and the attack trigger itself are fine).
+
+</details>
 
 ## "Prevent damage to this creature, put that many +1/+1 counters on it" self-replacement — ✅ IMPLEMENTED
 
@@ -508,7 +529,19 @@ Blocked cards:
 - **Spider-Verse** [93] — `{3}{R}{R}` Enchantment; the legend-rule exemption for Spiders is the blocker (the copy-spell-from-non-hand clause is fine).
 </details>
 
-## Play cards exiled **face down** from an opponent's library (controller may look + cast)
+## Play cards exiled **face down** from an opponent's library (controller may look + cast) — ✅ IMPLEMENTED
+
+**Done** (branch `spm-black-cat`). Needed **no new code** — the enabling feature (`FaceDownMode.HIDDEN`
+controller-visible-in-exile masking + `GrantMayPlayFromExileEffect(withAnyManaType = true)` + the
+cast-from-face-down-exile legal-action path) has landed since this card was first drafted (used by
+Laughing Jasper Flint / Cruelclaw's Heist). Black Cat's prior draft (from branch `spm-no-engine`,
+removed pending the feature) was restored verbatim: ETB `Gather` top-9 of `Targets.Opponent`'s library
+→ `SelectFromCollection(ChooseExactly(2), showAllCards, storeRemainder)` → exile the two
+`FaceDownMode.HIDDEN` + bottom the rest `CardOrder.Random` → `GrantMayPlayFromExile(Permanent,
+withAnyManaType = true)`. Scenario test pins the face-down exile + casting a stolen off-color spell
+paying entirely with off-color mana. Full regression green.
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Look at the top nine cards of target opponent's library, **exile two of them face down**, then
 > put the rest on the bottom in a random order. **You may play the exiled cards** for as long as
@@ -530,6 +563,8 @@ CastSpellHandler).
 
 Blocked cards:
 - **Black Cat, Cunning Thief** [52] — `{3}{B}{B}` Legendary Creature — Human Rogue Villain, 2/3; the ETB look/exile-two-face-down/bottom-rest pipeline resolves, but "you may play the exiled cards" is uncastable because the face-down HIDDEN exiled cards never surface as playable to the controller. (Previously authored on branch `spm-no-engine`, then removed pending this feature.)
+
+</details>
 
 ---
 

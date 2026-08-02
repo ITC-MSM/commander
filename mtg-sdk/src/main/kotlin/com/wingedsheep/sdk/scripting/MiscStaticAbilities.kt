@@ -378,6 +378,47 @@ data object PlayFromTopOfLibrary : StaticAbility {
 }
 
 /**
+ * You may play cards from the top of your library, and a spell cast this way is cast with an
+ * alternative cost — its mana cost waived ([withoutPayingManaCost]) and/or an [additionalCost]
+ * substituted. Gwenom, Remorseless grants this until end of turn: "you may play cards from the top
+ * of your library. If you cast a spell this way, pay life equal to its mana value rather than pay
+ * its mana cost" (`withoutPayingManaCost = true`, `additionalCost = PayLifeEqualToManaValueOfSpell`).
+ *
+ * The alternative-cost analogue of [PlayFromTopOfLibrary] (which plays for normal costs) — kept a
+ * separate type so the plain data object stays identity-checked. When granted durationally (e.g.
+ * via [com.wingedsheep.sdk.scripting.effects.GrantStaticAbilityEffect]) the top-of-library read
+ * sites scan `grantedStaticAbilities` for it alongside printed statics.
+ *
+ * @property withoutPayingManaCost When true, the spell's mana cost is waived (paid as {0}).
+ * @property additionalCost An additional cost substituted for the mana cost (e.g. pay life equal to
+ *   the spell's mana value). Null for none.
+ * @property filter Restrict which cards this permission covers; null = all cards (lands + spells).
+ */
+@SerialName("PlayFromTopWithAlternativeCost")
+@Serializable
+data class PlayFromTopWithAlternativeCost(
+    val withoutPayingManaCost: Boolean = false,
+    val additionalCost: AdditionalCost? = null,
+    val filter: GameObjectFilter? = null,
+) : StaticAbility {
+    override val description: String = buildString {
+        append("You may play cards from the top of your library")
+        if (withoutPayingManaCost || additionalCost != null) {
+            append("; a spell cast this way")
+            if (withoutPayingManaCost) append(" doesn't pay its mana cost")
+            if (additionalCost != null) append(" and instead ${additionalCost.description}")
+        }
+    }
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter?.applyTextReplacement(replacer)
+        val newCost = additionalCost?.applyTextReplacement(replacer)
+        return if (newFilter !== filter || newCost !== additionalCost) {
+            copy(filter = newFilter, additionalCost = newCost)
+        } else this
+    }
+}
+
+/**
  * You may cast spells matching a filter from the top of your library.
  * Unlike PlayFromTopOfLibrary, this only allows specific spell types (not all spells/lands).
  * Used for Precognition Field (instant and sorcery only).

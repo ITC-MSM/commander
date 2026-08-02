@@ -216,6 +216,32 @@ data class GrantKeywordToOwnSpells(
 }
 
 /**
+ * Grants **web-slinging [cost]** (CR 702.188) to spells the controller casts that match
+ * [spellFilter]. Web-slinging carries a [ManaCost], which the generic [GrantKeywordToOwnSpells]
+ * (keyword + optional int) cannot express, so it gets its own static. Read by the web-slinging cast
+ * enumerator / handler via `WebSlinging.effectiveWebSlinging`, alongside printed web-slinging.
+ *
+ * Amazing Spider-Man: "Each legendary spell you cast that's one or more colors has web-slinging
+ * {G}{W}{U}" → `GrantWebSlingingToSpells({G}{W}{U}, GameObjectFilter.legendary + IsColored)`.
+ *
+ * @property cost The granted web-slinging cost.
+ * @property spellFilter Which spells you cast gain web-slinging (matched against the spell's card).
+ */
+@SerialName("GrantWebSlingingToSpells")
+@Serializable
+data class GrantWebSlingingToSpells(
+    val cost: ManaCost,
+    val spellFilter: GameObjectFilter
+) : StaticAbility {
+    override val description: String =
+        "${spellFilter.description.replaceFirstChar { it.uppercase() }} spells you cast have web-slinging $cost"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = spellFilter.applyTextReplacement(replacer)
+        return if (newFilter !== spellFilter) copy(spellFilter = newFilter) else this
+    }
+}
+
+/**
  * Grants warp (CR 702.185) to cards in the granter's controller's hand that match [filter].
  * Models oracle text like "Artifact cards and red creature cards in your hand have warp {2}{R}."
  *
@@ -383,6 +409,35 @@ data class GraveyardCardsHaveFlashback(
     override val description: String = buildString {
         if (duringYourTurnOnly) append("During your turn, e") else append("E")
         append("ach ${filter.description} card in your graveyard has flashback")
+        if (cost != null) append(" $cost")
+    }
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
+ * "Each [filter] card in your graveyard has mayhem [cost]." The Mayhem analogue of
+ * [GraveyardCardsHaveFlashback] — a whole-graveyard group grant of the Mayhem keyword ability
+ * (CR 702.187), read through `MayhemGrants.effectiveMayhem` alongside the discarded-this-turn gate.
+ * Green Goblin's "Goblin Formula — Each nonland card in your graveyard has mayhem. The mayhem cost
+ * is equal to its mana cost."
+ *
+ * @property filter Which graveyard cards gain mayhem (matched against the card's characteristics).
+ * @property cost The granted mayhem cost, or null for "equal to that card's mana cost".
+ * @property duringYourTurnOnly If true, the grant is active only during the controller's turn.
+ */
+@SerialName("GraveyardCardsHaveMayhem")
+@Serializable
+data class GraveyardCardsHaveMayhem(
+    val filter: GameObjectFilter,
+    val cost: ManaCost? = null,
+    val duringYourTurnOnly: Boolean = false
+) : StaticAbility {
+    override val description: String = buildString {
+        if (duringYourTurnOnly) append("During your turn, e") else append("E")
+        append("ach ${filter.description} card in your graveyard has mayhem")
         if (cost != null) append(" $cost")
     }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {

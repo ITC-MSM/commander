@@ -725,7 +725,19 @@ class ClientStateTransformer(
         // so only allow face-down status in zones where it makes sense (defense-in-depth).
         val spellOnStack = container.get<SpellOnStackComponent>()
         val isInFaceDownZone = zoneKey.zoneType == Zone.BATTLEFIELD || zoneKey.zoneType == Zone.STACK || zoneKey.zoneType == Zone.EXILE
-        val isFaceDown = isInFaceDownZone && (container.has<FaceDownComponent>() || spellOnStack?.castFaceDown == true)
+        // A card exiled face down that the viewer has been granted permission to PLAY
+        // ("look at and play the exiled cards" — Black Cat, Cunning Thief) must not be hidden from
+        // that viewer, or the client has no card data to act on the CastSpell the server offers.
+        // It stays face-down (masked) to everyone else. Keyed on the same may-play check that drives
+        // `playableFromExile` below, so visibility and playability stay in lockstep. Scoped to exile
+        // so battlefield/stack morph masking (a face-down 2/2 revealed via Spy Network stays a 2/2)
+        // is unchanged.
+        val viewerMayPlayThisExiledCard = !isSpectator &&
+            zoneKey.zoneType == Zone.EXILE &&
+            state.hasMayPlayFor(entityId, viewingPlayerId, conditionEvaluator, cardRegistry)
+        val isFaceDown = isInFaceDownZone &&
+            (container.has<FaceDownComponent>() || spellOnStack?.castFaceDown == true) &&
+            !viewerMayPlayThisExiledCard
         // Use projected P/T which correctly handles face-down base 2/2 + any modifications.
         // CR 208.3: a noncreature permanent has no power or toughness — even one with a printed P/T
         // (a Vehicle), and even a creature turned into an artifact/land by a type-changing effect

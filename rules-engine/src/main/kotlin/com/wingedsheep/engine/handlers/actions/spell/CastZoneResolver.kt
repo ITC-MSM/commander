@@ -390,7 +390,10 @@ class CastZoneResolver(
         // Lands use the no-cost "play from graveyard" form (CR 702.187c), not the cast path.
         if (cardComponent.typeLine.isLand) return false
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-        if (com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef) == null) return false
+        if (com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(
+                state, cardId, cardDef, playerId, cardRegistry, predicateEvaluator
+            ) == null
+        ) return false
         // The Mayhem gate: you must have discarded this card this turn.
         return state.getEntity(playerId)
             ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
@@ -403,7 +406,9 @@ class CastZoneResolver(
     fun getMayhemCost(cardId: EntityId, state: GameState): com.wingedsheep.sdk.core.ManaCost? {
         val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-        return com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef)?.cost
+        return com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(
+            state, cardId, cardDef, cardComponent.ownerId, cardRegistry, predicateEvaluator
+        )?.cost
     }
 
     /**
@@ -492,7 +497,13 @@ class CastZoneResolver(
         val component = state.getEntity(cardId)?.get<PlayWithoutPayingCostComponent>()
         if (component?.controllerId == playerId) return true
         val granter = findLinkedExileGranter(state, playerId, cardId)
-        return granter?.withoutPayingManaCost == true
+        if (granter?.withoutPayingManaCost == true) return true
+        // Gwenom: a spell cast from the top of the library under a PlayFromTopWithAlternativeCost
+        // permission whose withoutPayingManaCost is set pays no mana (it pays life instead).
+        if (state.getLibrary(playerId).firstOrNull() == cardId) {
+            return playFromTopAlternativeCost(state, playerId)?.withoutPayingManaCost == true
+        }
+        return false
     }
 
     /**
@@ -665,7 +676,49 @@ class CastZoneResolver(
                 return true
             }
         }
-        return false
+        return playFromTopAlternativeCost(state, playerId) != null
+    }
+
+    /**
+     * The effective [com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost] for [playerId]
+     * (Gwenom) — printed on a permanent they control or granted durationally — or null. Mirrors the
+     * printed-or-granted scan in `CastPermissionUtils.playFromTopAlternativeCost`.
+     */
+    private fun playFromTopAlternativeCost(
+        state: GameState,
+        playerId: EntityId
+    ): com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost? {
+        for (entityId in state.getBattlefield(playerId)) {
+            val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            cardDef.script.staticAbilities
+                .firstOrNull { it is com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost }
+                ?.let { return it as com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost }
+        }
+        for (grant in state.grantedStaticAbilities) {
+            val ability = grant.ability
+            if (ability !is com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost) continue
+            if (state.getEntity(grant.entityId)?.get<ControllerComponent>()?.playerId != playerId) continue
+            return ability
+        }
+        return null
+    }
+
+    /**
+     * The [com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost] covering [cardId] when it is
+     * the top card of [playerId]'s library and the grant's filter matches — else null. Used by
+     * `CastSpellHandler` to inject the grant's additional cost (Gwenom's pay-life) into a
+     * top-of-library cast.
+     */
+    fun topOfLibraryAlternativeGrant(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): com.wingedsheep.sdk.scripting.PlayFromTopWithAlternativeCost? {
+        if (state.getLibrary(playerId).firstOrNull() != cardId) return null
+        val grant = playFromTopAlternativeCost(state, playerId) ?: return null
+        val filter = grant.filter ?: return grant
+        return if (predicateEvaluator.matches(state, state.projectedState, cardId, filter, PredicateContext(controllerId = playerId))) grant else null
     }
 
     private fun hasLinkedExileCastPermission(

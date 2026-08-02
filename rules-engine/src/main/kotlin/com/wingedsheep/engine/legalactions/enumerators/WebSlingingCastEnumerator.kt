@@ -47,7 +47,9 @@ class WebSlingingCastEnumerator : ActionEnumerator {
             if (context.cantCastSpell(cardId)) continue
 
             val cardDef = context.cardRegistry.getCard(cardComponent.name) ?: continue
-            val webSlinging = WebSlinging.webSlingingAbility(cardDef) ?: continue
+            val webSlinging = WebSlinging.effectiveWebSlinging(
+                state, cardId, cardDef, playerId, context.cardRegistry, context.predicateEvaluator
+            ) ?: continue
 
             // Web-slinging carries no timing permission (CR 702.188) — respect the card's normal
             // timing exactly like the ordinary cast path: non-instants without flash need sorcery
