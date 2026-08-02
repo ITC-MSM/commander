@@ -266,6 +266,9 @@ class TriggerMatcher(
                 if (!matchesPlayer(trigger.player, event.controllerId, controllerId)) return false
                 if (trigger.requireExhaust) {
                     if (!event.isExhaust) return false
+                    // Plain "whenever you activate an exhaust ability" counts an exhaust mana
+                    // ability too; only Pit Automaton's updated wording re-adds the exclusion.
+                    if (trigger.excludeManaAbilities && event.isManaAbility) return false
                 } else if (trigger.requireNoTapInCost) {
                     // Antiquities "activates an ability without {T} in its activation cost"
                     // (Haunting Wind / Powerleech / Artifact Possession). Match any activated

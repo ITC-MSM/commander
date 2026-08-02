@@ -1738,6 +1738,12 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * include the {T} symbol — and mana abilities without {T} *do* count, unlike the default
      * semantic. The engine emits an `AbilityActivatedEvent` for every activated ability whose cost
      * lacks {T} (mana or not); this flag is what tells the matcher to accept the mana-ability ones.
+     *
+     * [requireExhaust] narrows to exhaust abilities (CR 702.177). On its own it is the plain
+     * Aetherdrift wording — "Whenever you activate an exhaust ability" (Adrenaline Jockey, Rangers'
+     * Refueler) — which counts an exhaust *mana* ability too. [excludeManaAbilities] adds back the
+     * "isn't a mana ability" clause for Pit Automaton, whose Oracle text was updated to
+     * "an exhaust ability that isn't a mana ability" so its copy payoff can't grab a mana ability.
      */
     @SerialName("AbilityActivatedEvent")
     @Serializable
@@ -1747,6 +1753,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val sourceFilter: GameObjectFilter? = null,
         val requireNoTapInCost: Boolean = false,
         val requireExhaust: Boolean = false,
+        val excludeManaAbilities: Boolean = false,
     ) : EventPattern {
         override val description: String = buildString {
             append(player.description)
@@ -1763,6 +1770,8 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
                     append("targets a ")
                     append(targetMatch.description)
                 }
+                requireExhaust && excludeManaAbilities ->
+                    append("is an exhaust ability that isn't a mana ability")
                 requireExhaust -> append("is an exhaust ability")
                 requireNoTapInCost -> append("doesn't have {T} in its activation cost")
                 else -> append("isn't a mana ability")

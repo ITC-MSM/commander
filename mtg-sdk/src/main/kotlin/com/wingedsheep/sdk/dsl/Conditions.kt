@@ -1269,6 +1269,20 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.PlayerDrewCardsThisTurn(Player.You, atLeast)
 
     /**
+     * As long as you've activated [atLeast] or more exhaust abilities this turn (CR 702.177),
+     * backed by the per-player `ExhaustAbilitiesActivatedThisTurnComponent`.
+     */
+    fun YouActivatedExhaustAbilitiesThisTurn(atLeast: Int = 1): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PlayerActivatedExhaustAbilitiesThisTurn(Player.You, atLeast)
+
+    /**
+     * As long as you haven't activated an exhaust ability this turn — Elvish Refueler's gate on its
+     * "activate exhaust abilities as though they haven't been activated" permission.
+     */
+    val YouHaventActivatedAnExhaustAbilityThisTurn: ConditionInterface =
+        Not(com.wingedsheep.sdk.scripting.conditions.PlayerActivatedExhaustAbilitiesThisTurn(Player.You, 1))
+
+    /**
      * If you've committed a crime this turn (CR Outlaws of Thunder Junction). A crime is committed
      * when you cast a spell, activate an ability, or put a triggered ability on the stack that
      * targets an opponent, anything an opponent controls, and/or a card in an opponent's graveyard.
