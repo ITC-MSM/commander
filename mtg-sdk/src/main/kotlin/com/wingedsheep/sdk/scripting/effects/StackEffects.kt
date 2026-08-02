@@ -236,13 +236,21 @@ data class CounterEffect(
  *   [com.wingedsheep.sdk.dsl.Triggers.YouBend], but only if the spell was actually exiled (a target
  *   that already left the stack exiles nothing → no bend). Set via [com.wingedsheep.sdk.dsl.Effects.AirbendSpell];
  *   left false for a plain non-airbend exile-spell (Aven Interrupter).
+ * @property linkToSource When true, the exiled card is appended to the effect source's
+ *   `LinkedExileComponent`, so a later ability of that same source can say "the exiled card" — the
+ *   stack-side counterpart of [ExileLinkedToSourceEffect] and of `MoveCollection(linkToSource = true)`.
+ *   Nothing returns automatically; the link is only a handle. **Spell Queller** pairs it with a
+ *   leaves-the-battlefield trigger that gathers `CardSource.FromLinkedExile()` and grants the card's
+ *   owner a free cast. The link survives the source's own zone change, so the leaves trigger still
+ *   finds it.
  */
 @SerialName("ExileTargetSpell")
 @Serializable
 data class ExileTargetSpellEffect(
     val makePlotted: Boolean = false,
     val fixedAlternativeManaCost: ManaCost? = null,
-    val emitAirbend: Boolean = false
+    val emitAirbend: Boolean = false,
+    val linkToSource: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         append("Exile target spell")

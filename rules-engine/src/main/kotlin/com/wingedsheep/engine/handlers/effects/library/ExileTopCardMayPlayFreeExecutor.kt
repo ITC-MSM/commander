@@ -146,6 +146,7 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
                     supersededBySameSource = supersedesSameSource,
                     nonLandOnly = effect.nonLandOnly,
                     castFaceIndex = effect.castFaceIndex,
+                    castColorRestriction = effect.castColorRestriction,
                     timestamp = state.timestamp,
                 )
             )

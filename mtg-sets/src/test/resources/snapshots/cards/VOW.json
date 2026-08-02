@@ -2121,6 +2121,207 @@
     ]
 }
 
+// Chandra, Dressed to Kill
+{
+    "name": "Chandra, Dressed to Kill",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Legendary Planeswalker — Chandra",
+    "oracleText": "+1: Add {R}. Chandra deals 1 damage to up to one target player or planeswalker.\n+1: Exile the top card of your library. If it's red, you may cast it this turn.\n−7: Exile the top five cards of your library. You may cast red spells from among them this turn. You get an emblem with \"Whenever you cast a red spell, this emblem deals X damage to any target, where X is the amount of mana spent to cast that spell.\"",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddMana",
+                            "color": "RED"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target player or planeswalker"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayerOrPlaneswalker",
+                        "optional": true,
+                        "id": "up to one target player or planeswalker"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "chandraExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "chandraExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "chandraExiled",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "red"
+                            },
+                            "storeMatching": "chandraExiledRed"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "chandraExiledRed",
+                            "nonLandOnly": true
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Exile the top card of your library. If it's red, you may cast it this turn."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -7
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            },
+                            "storeAs": "chandraExiledFive"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "chandraExiledFive",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "chandraExiledFive",
+                            "nonLandOnly": true,
+                            "castColorRestriction": "RED"
+                        },
+                        {
+                            "type": "CreateGlobalTriggeredAbility",
+                            "ability": {
+                                "id": "ability_4",
+                                "trigger": {
+                                    "type": "SpellCastEvent",
+                                    "spellFilter": {
+                                        "cardPredicates": [
+                                            {
+                                                "type": "HasColor",
+                                                "color": "RED"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "binding": "ANY",
+                                "effect": {
+                                    "type": "DealDamage",
+                                    "amount": {
+                                        "type": "EntityProperty",
+                                        "entity": "Triggering",
+                                        "numericProperty": "ManaSpent"
+                                    },
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                },
+                                "targetRequirement": "AnyTarget",
+                                "descriptionOverride": "Whenever you cast a red spell, this emblem deals X damage to any target, where X is the amount of mana spent to cast that spell."
+                            },
+                            "descriptionOverride": "Whenever you cast a red spell, this emblem deals X damage to any target, where X is the amount of mana spent to cast that spell."
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Exile the top five cards of your library. You may cast red spells from among them this turn. You get an emblem with \"Whenever you cast a red spell, this emblem deals X damage to any target, where X is the amount of mana spent to cast that spell.\""
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "149",
+        "rarity": "MYTHIC",
+        "artist": "Viktor Titov",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/681f7c73-92c6-47ba-af56-3ff032ac12da.jpg?1783924841",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "Chandra's first ability uses the stack and can be responded to, even if no targets were chosen. It isn't a mana ability."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Chandra's second ability checks the characteristics of the card you exiled to see if it's red. If the card is red, but the spell that card becomes somehow isn't red, you may still cast it. For example, Rowan, Scholar of Sparks, the front face of a modal double-faced card, is red. Will, Scholar of Frost, the back face of the same card, is blue. In exile, that card is red, so you may cast either face if you exile it with this ability."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Chandra's last ability, by contrast, only allows you to cast spells that are red when you cast them, no matter what the card in exile is. If Rowan, Scholar of Sparks (a modal double-faced card) is exiled by this ability, you won't be able to cast its back face, Will, Scholar of Frost, this way because it would be a blue spell."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "You must pay all costs for spells cast via Chandra's last two abilities. For the middle ability, you must also follow all timing restrictions."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "The emblem's triggered ability looks for the actual amount of mana spent to cast the spell. If an effect caused you to pay more or less mana for that spell as you cast it, that will be taken into account when determining the value of X. If an effect would counter that spell unless you pay some amount of mana, that mana doesn't count as mana spent to cast it."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Child of the Pack
 {
     "name": "Child of the Pack",
@@ -11213,6 +11414,254 @@
         "artist": "Steven Belledin",
         "flavorText": "\"If I wanted all the parts to match, I wouldn't have become a stitcher.\"\n—Barton, stitcher",
         "imageUri": "https://cards.scryfall.io/normal/front/7/3/73168804-3c22-4fcb-907a-2f08999c0cea.jpg?1782703137"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Soulcipher Board
+{
+    "name": "Soulcipher Board",
+    "manaCost": "{1}{U}",
+    "typeLine": "Artifact",
+    "oracleText": "This artifact enters with three omen counters on it.\n{1}{U}, {T}: Look at the top two cards of your library. Put one of them into your graveyard.\nWhenever a creature card is put into your graveyard from anywhere, remove an omen counter from this artifact. Then if it has no omen counters on it, transform it.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature own:you",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "RemoveCounters",
+                            "counterType": "omen",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": {
+                                            "type": "CounterCount",
+                                            "counterType": {
+                                                "type": "Named",
+                                                "name": "omen"
+                                            }
+                                        }
+                                    },
+                                    "operator": "EQ",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 0
+                                    }
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a creature card is put into your graveyard from anywhere, remove an omen counter from this artifact. Then if it has no omen counters on it, transform it."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in graveyard",
+                            "remainderLabel": "Put on top"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Look at the top two cards of your library. Put one of them into your graveyard."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "omen"
+                },
+                "count": 3,
+                "selfOnly": true
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Cipherbound Spirit",
+        "manaCost": "",
+        "typeLine": "Creature — Spirit",
+        "oracleText": "Flying\nThis creature can block only creatures with flying.\n{3}{U}: Draw two cards, then discard a card.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 2
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_3",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{3}{U}"
+                        }
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Draw two cards, then discard a card."
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "CanOnlyBlockCreaturesWith",
+                    "blockerFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "HasKeyword",
+                                "keyword": "FLYING"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "79",
+            "rarity": "UNCOMMON",
+            "artist": "Caio Monteiro",
+            "imageUri": "https://cards.scryfall.io/normal/back/3/c/3c0fae23-1278-499f-9df7-4a29691726b1.jpg?1783924889"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "79",
+        "rarity": "UNCOMMON",
+        "artist": "Caio Monteiro",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3c0fae23-1278-499f-9df7-4a29691726b1.jpg?1783924889"
     },
     "colorIdentityOverride": [
         "BLUE"

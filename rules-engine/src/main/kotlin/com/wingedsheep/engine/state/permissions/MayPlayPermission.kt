@@ -111,6 +111,17 @@ data class MayPlayPermission(
      * only the Adventure face is castable and the creature face stays locked in the graveyard.
      */
     val castFaceIndex: Int? = null,
+    /**
+     * When set, this permission authorizes casting only spells of this **color** — the color is
+     * checked against the characteristics of the face actually being cast, not the card sitting in
+     * exile. Mirrors
+     * [com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect.castColorRestriction]:
+     * "you may cast red spells from among them" (Chandra, Dressed to Kill's −7), whose ruling is
+     * explicit that a modal double-faced card's blue back face may **not** be cast this way even
+     * though the exiled card itself is red. Read by the from-exile enumerator and independently
+     * enforced by the cast handler.
+     */
+    val castColorRestriction: com.wingedsheep.sdk.core.Color? = null,
     val timestamp: Long
 ) {
     init {

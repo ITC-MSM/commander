@@ -320,6 +320,19 @@ class CastSpellHandler(
                         ?: cardComponent.name
                     return "You don't have permission to cast $faceName from there"
                 }
+                // "You may cast red spells from among them" (Chandra, Dressed to Kill −7). The
+                // colour restriction is on the *spell*, so it is checked against the face being
+                // cast — a red MDFC's blue back face is not castable through such a permission
+                // even though the exiled card is red. Authoritative: the enumerator applies the
+                // same rule, but the action is client-supplied.
+                val castColors = action.faceIndex
+                    ?.let { cardDef?.cardFaces?.getOrNull(it)?.manaCost?.colors }
+                    ?: cardDef?.colors
+                    ?: cardComponent.manaCost.colors
+                if (permissions.none { it.castColorRestriction == null || it.castColorRestriction in castColors }) {
+                    val required = permissions.firstNotNullOfOrNull { it.castColorRestriction }
+                    return "You may only cast ${required?.name?.lowercase()} spells from there"
+                }
             }
         }
 

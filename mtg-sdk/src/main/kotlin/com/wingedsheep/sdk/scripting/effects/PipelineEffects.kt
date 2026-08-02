@@ -1397,12 +1397,27 @@ data class GrantMayPlayFromExileEffect(
      * Read by the from-exile/graveyard cast enumerator and enforced by the authoritative cast
      * handler, which rejects a hand-constructed `faceIndex` no permission authorizes.
      */
-    val castFaceIndex: Int? = null
+    val castFaceIndex: Int? = null,
+    /**
+     * When set, the permission authorizes casting only spells of this **color**, checked against
+     * the face actually being cast rather than the card in exile. Models "You may cast red spells
+     * from among them this turn" (Chandra, Dressed to Kill's −7) as distinct from "if it's red,
+     * you may cast it" (her +1), which tests the *exiled card's* characteristics and is expressed
+     * upstream with a `FilterCollection(MatchesFilter(...withColor(RED)))` instead. Her ruling
+     * pins the difference: a modal double-faced card that is red in exile still can't have its
+     * blue back face cast through the −7.
+     */
+    val castColorRestriction: com.wingedsheep.sdk.core.Color? = null
 ) : Effect {
     override val description: String = buildString {
         val who = if (ownerControls) "its owner" else "you"
         val verb = if (nonLandOnly) "cast" else "play"
-        append("${expiry.description.replaceFirstChar { it.uppercase() }}, $who may $verb ${if (nonLandOnly) "that card" else "those cards"} from exile")
+        val what = when {
+            castColorRestriction != null -> "${castColorRestriction.name.lowercase()} spells among them"
+            nonLandOnly -> "that card"
+            else -> "those cards"
+        }
+        append("${expiry.description.replaceFirstChar { it.uppercase() }}, $who may $verb $what from exile")
         if (castFaceIndex != null) append(" as its alternative face")
         if (fixedAlternativeCostIsManaValue) {
             append(if (waterbend) " by waterbending {X} rather than paying their mana cost, where X is their mana value"
