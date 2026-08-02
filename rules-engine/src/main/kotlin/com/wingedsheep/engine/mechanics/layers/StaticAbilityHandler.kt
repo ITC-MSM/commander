@@ -1048,6 +1048,9 @@ class StaticAbilityHandler(
             is com.wingedsheep.sdk.scripting.ModifyLifeGain,
             is com.wingedsheep.sdk.scripting.ModifyLifeLoss,
             is com.wingedsheep.sdk.scripting.LifeLossFloor,
+            // Life payment (Ashiok, Wicked Manipulator) — consulted from the battlefield by
+            // LifePaymentService every time its controller would pay life.
+            is com.wingedsheep.sdk.scripting.ReplaceLifePaymentWithLibraryExile,
             // Draws:
             is com.wingedsheep.sdk.scripting.PreventDraw,
             is com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect,

@@ -10,8 +10,6 @@ import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.core.GameEvent
-import com.wingedsheep.engine.core.LifeChangeReason
-import com.wingedsheep.engine.core.LifeChangedEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
@@ -20,10 +18,10 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
-import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.library.MillAmountModifier
+import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -485,8 +483,9 @@ class CostPaymentService(private val services: EngineServices) {
     }
 
     private fun payLife(state: GameState, payerId: EntityId, amount: Int): CostPaymentExecution {
-        val (newState, event) = DamageUtils.loseLife(state, payerId, amount, LifeChangeReason.PAYMENT)
-        return CostPaymentExecution(newState, listOfNotNull(event), success = true)
+        val (newState, events) = LifePaymentService.pay(state, payerId, amount)
+            ?: return CostPaymentExecution(state, emptyList(), success = false)
+        return CostPaymentExecution(newState, events, success = true)
     }
 
     private fun discardSelected(state: GameState, payerId: EntityId, selected: List<EntityId>): CostPaymentExecution {

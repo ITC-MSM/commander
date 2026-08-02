@@ -615,6 +615,9 @@ class TriggerMatcher(
                     event.oldLife > event.newLife &&
                     matchesPlayer(trigger.player, event.playerId, controllerId)
             }
+            // Replacement-effect-only: a life payment reaches triggers as the LifeChangedEvent it
+            // produces (matched by LifeLossEvent above), never as a payment event of its own.
+            is EventPattern.LifePaymentEvent -> false
             is EventPattern.LifeGainOrLossEvent -> {
                 event is LifeChangedEvent &&
                     event.oldLife != event.newLife &&

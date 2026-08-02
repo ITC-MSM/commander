@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
@@ -860,17 +861,11 @@ class ModalAndCloneContinuationResumer(
 
         if (response.choice) {
             // Player chose to pay life
-            if (newState.getEntity(continuation.controllerId)
-                    ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>() == null
-            ) return ExecutionResult.error(state, "Player has no life total")
-            // CR 810.9a — life paid as a cost comes out of the team's shared total.
-            val currentLife = newState.lifeTotal(continuation.controllerId)
-            val newLife = currentLife - continuation.lifeCost
-            newState = newState.withLifeTotal(continuation.controllerId, newLife)
-            newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(
-                newState, continuation.controllerId, continuation.lifeCost
-            )
-            events.add(LifeChangedEvent(continuation.controllerId, currentLife, newLife, LifeChangeReason.PAYMENT))
+            val (afterPayment, paymentEvents) = LifePaymentService
+                .pay(newState, continuation.controllerId, continuation.lifeCost)
+                ?: return ExecutionResult.error(state, "Player has no life total")
+            newState = afterPayment
+            events.addAll(paymentEvents)
         } else {
             // Player chose not to pay — land enters tapped
             newState = newState.updateEntity(continuation.landId) { c ->
@@ -931,17 +926,11 @@ class ModalAndCloneContinuationResumer(
 
         if (response.choice) {
             // Player chose to pay life
-            if (newState.getEntity(continuation.controllerId)
-                    ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>() == null
-            ) return ExecutionResult.error(state, "Player has no life total")
-            // CR 810.9a — life paid as a cost comes out of the team's shared total.
-            val currentLife = newState.lifeTotal(continuation.controllerId)
-            val newLife = currentLife - continuation.lifeCost
-            newState = newState.withLifeTotal(continuation.controllerId, newLife)
-            newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(
-                newState, continuation.controllerId, continuation.lifeCost
-            )
-            events.add(LifeChangedEvent(continuation.controllerId, currentLife, newLife, LifeChangeReason.PAYMENT))
+            val (afterPayment, paymentEvents) = LifePaymentService
+                .pay(newState, continuation.controllerId, continuation.lifeCost)
+                ?: return ExecutionResult.error(state, "Player has no life total")
+            newState = afterPayment
+            events.addAll(paymentEvents)
         }
 
         // Complete the permanent entry

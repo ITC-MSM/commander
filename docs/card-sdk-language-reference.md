@@ -8207,6 +8207,17 @@ The priority groups are (CR 616.1a–f):
   and damage-dealt triggers see the full damage. Multiple instances pick the strictest floor. Used by
   Ali from Cairo (`LifeLossFloor(floor = 1, appliesTo = LifeLossEvent(Player.You))`); Worship adds a
   `restrictions = listOf(YouControlACreature)` gate.
+- `ReplaceLifePaymentWithLibraryExile(appliesTo)` — a life **payment** becomes an exile of that many cards
+  off the top of the payer's library, when the library is at least that deep (Ashiok, Wicked Manipulator).
+  `appliesTo` is a `LifePaymentEvent` whose `player` filter picks whose payments are replaced (default
+  `Player.You`). **Scope:** payments only (CR 118.8) — life *loss* from damage or a "you lose N life"
+  effect keeps its own path, which is exactly the printed reminder text "Damage and unpayable costs still
+  cause you to lose life". Mandatory and unsplittable, and a library shallower than the payment simply
+  falls through to paying life normally. It does not raise what you're allowed to pay: CR 118.5 still
+  requires a life total at least equal to the payment, so cost legality is unchanged.
+  Applied by `LifePaymentService`, the engine choke point every life payment funnels through — cost
+  atoms, additional casting costs, ward and Phyrexian-style payments, pain-cost mana abilities and the
+  `PayLife` / `PayDynamicLife` resolution effects alike.
 - `PreventLifeGain(appliesTo)` — life gain matching the event is fully prevented (Sulfuric Vortex, Erebos).
   The `LifeGainEvent.player` scope can be `You` / `EachOpponent` / `Each` (resolved relative to the
   source's controller) or `EnchantedPlayer` for an "enchant player" Aura whose locked player is its

@@ -387,6 +387,24 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     /**
+     * When a player would **pay** life — life spent to satisfy a cost (CR 118.8), as opposed to
+     * life lost to damage or to a "loses N life" effect. Distinct from [LifeLossEvent]: every life
+     * payment reduces a life total, but only a payment is a cost the player chose to pay, and only
+     * payments are replaceable by effects worded "if you would pay life" (Ashiok, Wicked
+     * Manipulator). Damage and unpayable costs are never this event.
+     *
+     * Replacement-effect only — a payment surfaces to triggered abilities as the `LifeChangedEvent`
+     * it produces, so this pattern never matches as a trigger.
+     */
+    @SerialName("LifePaymentEvent")
+    @Serializable
+    data class LifePaymentEvent(
+        val player: Player = Player.You
+    ) : EventPattern {
+        override val description: String = "${player.description} would pay life"
+    }
+
+    /**
      * When a player would gain or lose life.
      * Used for cards like Moonstone Harbinger: "Whenever you gain or lose life during your turn".
      */
