@@ -1,13 +1,13 @@
 package com.wingedsheep.ai.engine.deck
 
 import com.wingedsheep.sdk.core.Color
-import io.kotest.core.spec.style.FunSpec
+import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 
-class SetArchetypesTest : FunSpec({
+class SetArchetypesTest : StringSpec({
 
-    test("Wilds of Eldraine exposes all ten limited color-pair archetypes") {
+    "Wilds of Eldraine exposes all ten limited color-pair archetypes" {
         val woe = SetArchetypes.getForSet("woe")
 
         woe?.setName shouldBe "Wilds of Eldraine"
@@ -25,9 +25,31 @@ class SetArchetypesTest : FunSpec({
         )
         woe?.archetypes?.map { it.colors.toSet() }?.toSet() shouldBe ALL_COLOR_PAIRS
     }
+
+    "Innistrad Remastered exposes all ten two-color draft archetypes" {
+        val synergies = SetArchetypes.getForSet("inr")
+
+        synergies?.setName shouldBe "Innistrad Remastered"
+        synergies?.archetypes?.map { it.colors.toSet() } shouldContainExactly ALL_COLOR_PAIRS.toList()
+    }
+
+    "Innistrad Remastered tribal archetypes carry creature type hints" {
+        val archetypes = SetArchetypes.getForSet("INR")!!.archetypes.associateBy { it.name }
+
+        archetypes.getValue("Spirits Tempo").creatureTypes shouldContainExactly listOf("Spirit")
+        archetypes.getValue("Zombies").creatureTypes shouldContainExactly listOf("Zombie")
+        archetypes.getValue("Vampires / Madness").creatureTypes shouldContainExactly listOf("Vampire")
+        archetypes.getValue("Werewolves").creatureTypes shouldContainExactly listOf("Werewolf", "Wolf")
+        archetypes.getValue("Humans / Tokens").creatureTypes shouldContainExactly listOf("Human")
+    }
+
+    "Innistrad Remastered archetypes can be matched by deck colors" {
+        SetArchetypes.getMatchingArchetypes("INR", setOf(Color.WHITE, Color.BLUE))
+            .map { it.name } shouldContainExactly listOf("Spirits Tempo")
+    }
 })
 
-private val ALL_COLOR_PAIRS = setOf(
+private val ALL_COLOR_PAIRS = linkedSetOf(
     setOf(Color.WHITE, Color.BLUE),
     setOf(Color.BLUE, Color.BLACK),
     setOf(Color.BLACK, Color.RED),

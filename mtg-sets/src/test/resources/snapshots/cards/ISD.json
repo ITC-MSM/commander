@@ -2646,6 +2646,182 @@
     ]
 }
 
+// Liliana of the Veil
+{
+    "name": "Liliana of the Veil",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Legendary Planeswalker — Liliana",
+    "oracleText": "+1: Each player discards a card.\n−2: Target player sacrifices a creature.\n−6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "ActivePlayerFirst"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded",
+                                "prompt": "Choose a card to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -2
+                },
+                "effect": {
+                    "type": "ForceSacrifice",
+                    "filter": "creature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -6
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "ControlledPermanents",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "their_permanents"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "their_permanents",
+                            "selection": "ChooseAnyNumber",
+                            "storeSelected": "pileA",
+                            "storeRemainder": "pileB",
+                            "prompt": "Separate their permanents into two piles. The permanents you select form Pile 1; the rest form Pile 2.",
+                            "selectedLabel": "Pile 1",
+                            "remainderLabel": "Pile 2",
+                            "useTargetingUI": true,
+                            "alwaysPrompt": true
+                        },
+                        {
+                            "type": "ChoosePile",
+                            "pileA": "pileA",
+                            "pileB": "pileB",
+                            "chooser": "TargetPlayer",
+                            "storeChosenAs": "sacrificedPile",
+                            "storeOtherAs": "keptPile",
+                            "prompt": "Choose a pile. You sacrifice all permanents in the pile you choose."
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "sacrificedPile",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Sacrifice"
+                        }
+                    ],
+                    "descriptionOverride": "Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice."
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "rarity": "MYTHIC",
+        "artist": "Steve Argyle",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac506c17-adc8-49c6-9d8d-43db7cb1ec9d.jpg?1783940954",
+        "rulings": [
+            {
+                "date": "2022-09-09",
+                "text": "You can activate Liliana's first ability even if some or all players will be unable to discard a card."
+            },
+            {
+                "date": "2022-09-09",
+                "text": "When Liliana's first ability resolves, first the player whose turn it is chooses a card in hand without revealing it, then each other player in turn order does the same. Then all the chosen cards are discarded at the same time."
+            },
+            {
+                "date": "2022-09-09",
+                "text": "When Liliana's third ability resolves, you put each permanent the player controls into one of the two piles. For example, you could put a creature into one pile and an Aura enchanting that creature into the other pile."
+            },
+            {
+                "date": "2022-09-09",
+                "text": "A pile can be empty. If the player chooses an empty pile, no permanents will be sacrificed."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Lost in the Mist
 {
     "name": "Lost in the Mist",
