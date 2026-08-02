@@ -31,7 +31,8 @@ class TargetRecoveryTest : StringSpec({
                 """{"_Permanents":"IsCreatureType","args":"Soldier"}]}""",
         )
         ctx.creatureFilterDsl(orSubs) shouldBe
-            "TargetFilter(GameObjectFilter.Creature.withSubtype(\"Goblin\") or GameObjectFilter.Creature.withSubtype(\"Soldier\"))"
+            "TargetFilter(GameObjectFilter.Creature.withSubtype(${subtypeArg("Goblin")}) or " +
+            "GameObjectFilter.Creature.withSubtype(${subtypeArg("Soldier")}))"
     }
 
     "creatureFilterDsl renders power-or-toughness and suppresses the standalone power bound" {
@@ -229,7 +230,8 @@ class TargetRecoveryTest : StringSpec({
                 """{"_Permanents":"IsNonCreatureType","args":"Mount"},""" +
                 """{"_Permanents":"IsCardtype","args":"Creature"}]}""",
         )
-        ctx.creatureFilterDsl(nonMount) shouldBe "TargetFilter(GameObjectFilter.Creature.notSubtype(Subtype(\"Mount\")))"
+        ctx.creatureFilterDsl(nonMount) shouldBe
+            "TargetFilter(GameObjectFilter.Creature.notSubtype(${subtypeCtorArg("Mount")}))"
     }
 
     "creatureFilterDsl renders a 'with a stun counter on it' restriction (Floodpits Drowner)" {

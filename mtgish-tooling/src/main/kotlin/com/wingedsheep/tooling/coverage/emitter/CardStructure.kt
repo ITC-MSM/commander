@@ -3068,7 +3068,7 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         val bareSubtype = subtype != null && "ControlledByAPlayer" !in blob &&
             "_Color" !in blob && "_Comparison" !in blob && "\"Other\"" !in blob
         if (bareSubtype) return "TriggerSpec(EventPattern.DealsDamageEvent(damageType = DamageType.Combat, " +
-            "recipient = RecipientFilter.AnyPlayer, sourceFilter = GameObjectFilter.Creature.withSubtype(\"$subtype\")), " +
+            "recipient = RecipientFilter.AnyPlayer, sourceFilter = GameObjectFilter.Creature.withSubtype(${subtypeArg(subtype)})), " +
             "TriggerBinding.ANY)"
         // "Whenever a [filtered] creature you control deals combat damage to a player, …" — a
         // controller/supertype-scoped source filter beyond a bare subtype (Vraska Joins Up's
@@ -4020,7 +4020,7 @@ internal fun EmitCtx.abilityCostDsl(node: JsonElement?): String? {
             // "Tap N untapped X you control" — TapPermanents implies untapped + you-control, so only the
             // creature-subtype distinguishes it; bail if there's no recognisable creature-type filter.
             val ctype = creatureTypeIn(a.getOrNull(1)) ?: return null
-            "Costs.TapPermanents($n, GameObjectFilter.Creature.withSubtype(\"$ctype\"))"
+            "Costs.TapPermanents($n, GameObjectFilter.Creature.withSubtype(${subtypeArg(ctype)}))"
         }
         // "Remove N <type> counters from this permanent" as an activation cost (Bandit's Haul). IR args
         // are [<N Integer>, <CounterType>, <Permanent ThisPermanent>]. Only the self-subject and a
@@ -4078,8 +4078,8 @@ internal fun EmitCtx.abilityCostDsl(node: JsonElement?): String? {
 private fun EmitCtx.costFilterDsl(node: JsonElement?): String? {
     val obj = node as? JsonObject
     when (obj?.strField("_Permanents")) {
-        "IsCreatureType" -> return obj["args"].asStr()?.let { "GameObjectFilter.Creature.withSubtype(\"$it\")" }
-        "IsArtifactType" -> return obj["args"].asStr()?.let { "GameObjectFilter.Artifact.withSubtype(\"$it\")" }
+        "IsCreatureType" -> return obj["args"].asStr()?.let { "GameObjectFilter.Creature.withSubtype(${subtypeArg(it)})" }
+        "IsArtifactType" -> return obj["args"].asStr()?.let { "GameObjectFilter.Artifact.withSubtype(${subtypeArg(it)})" }
         "AnyPermanent" -> return "GameObjectFilter.Permanent"
         "IsToken" -> return "GameObjectFilter.Token"  // "Sacrifice a token" (Fountainport)
     }
@@ -4087,7 +4087,7 @@ private fun EmitCtx.costFilterDsl(node: JsonElement?): String? {
     // "Sacrifice a Goblin creature" = And[IsCreatureType X, IsCardtype Creature]: gameObjectFilterDsl
     // sees the Creature cardtype but skips the creature subtype, so re-apply it here.
     val ctype = creatureTypeIn(node)
-    return if (ctype != null && base == "GameObjectFilter.Creature") "GameObjectFilter.Creature.withSubtype(\"$ctype\")" else base
+    return if (ctype != null && base == "GameObjectFilter.Creature") "GameObjectFilter.Creature.withSubtype(${subtypeArg(ctype)})" else base
 }
 
 /** First `IsCreatureType` subtype anywhere in a (possibly `And`-nested) cost filter. */

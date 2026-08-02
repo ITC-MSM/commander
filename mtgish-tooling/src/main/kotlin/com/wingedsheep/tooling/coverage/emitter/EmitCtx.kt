@@ -654,7 +654,7 @@ internal fun EmitCtx.dynamicAmountExpr(node: JsonElement?): Dsl? {
         val bareLandCount = subtype == null && "\"Land\"" in countBlob &&
             "IsLandType" !in countBlob && "IsBasicLand" !in countBlob && "IsSupertype" !in countBlob
         var filter = when {
-            subtype != null -> Lit("GameObjectFilter.Creature").dot("withSubtype", arg("\"$subtype\""))
+            subtype != null -> Lit("GameObjectFilter.Creature").dot("withSubtype", arg(subtypeArg(subtype)))
             bareLandCount -> Lit("GameObjectFilter.Land")
             else -> landSearchFilterExpr(node)
         }

@@ -597,11 +597,12 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
                 "IsCreatureType" in blob && "_Color" !in blob &&
                 "PowerIs" !in blob && "\"Other\"" !in blob && "ControlledByAPlayer" !in blob
             if (!onlyCreatureSubtypeFilter) return@on null
-            val subtypeArgs = subtypes.joinToString(", ") { "\"$it\"" }
+            // `withAnySubtype` is `vararg String`, so the multi arm stays quoted; the single arm goes
+            // through the shared renderer and picks up the typed `Subtype.X` constant.
             val filterExpr = if (subtypes.size == 1)
-                "GameObjectFilter.Creature.withSubtype($subtypeArgs)"
+                "GameObjectFilter.Creature.withSubtype(${subtypeArg(subtypes[0])})"
             else
-                "GameObjectFilter.Creature.withAnySubtype($subtypeArgs)"
+                "GameObjectFilter.Creature.withAnySubtype(${subtypes.joinToString(", ") { "\"${ktStr(it)}\"" }})"
             return@on Call("Patterns.Hand.putFromHand", listOf(
                 arg("filter", filterExpr),
                 arg("entersAttacking", "true"),
@@ -803,8 +804,8 @@ internal fun EmitCtx.renderSearch(args: JsonElement?): Dsl? {
     val unionTypes = orCardTypes(blob)
     var filt = when {
         named != null -> "GameObjectFilter.Any.named(\"$named\")"
-        searchSubtype != null -> "GameObjectFilter.Any.withSubtype(\"$searchSubtype\")"  // "an Elf card"
-        enchSubtype != null -> "GameObjectFilter.Enchantment.withSubtype(\"$enchSubtype\")"  // "an Aura card"
+        searchSubtype != null -> "GameObjectFilter.Any.withSubtype(${subtypeArg(searchSubtype)})"  // "an Elf card"
+        enchSubtype != null -> "GameObjectFilter.Enchantment.withSubtype(${subtypeArg(enchSubtype)})"  // "an Aura card"
         unionTypes != null -> cardTypeUnionFilter(unionTypes) ?: return null
         // "search your library for a card" (Cynical Loner) — `FindAGenericCard` is the IR marker for an
         // unrestricted search with NO type/subtype filter. Render `GameObjectFilter.Any` directly rather
@@ -1154,11 +1155,7 @@ private fun cardsPredicateDsl(node: JsonElement?): String? {
         // Subtype filters all route through HasSubtype(Subtype("X")); use the named SDK constant when
         // one exists ("Plains" -> Subtype.PLAINS) so the output matches hand-authored convention.
         "IsCreatureType", "IsLandType", "IsArtifactType", "IsEnchantmentType" ->
-            obj.field("args").asStr()?.let { "CardPredicate.HasSubtype(${subtypeRef(it)})" }
+            obj.field("args").asStr()?.let { "CardPredicate.HasSubtype(${subtypeCtorArg(it)})" }
         else -> null
     }
 }
-
-/** `Subtype.PLAINS` when a named companion constant exists for the value, else `Subtype("Mount")`. */
-private fun subtypeRef(value: String): String =
-    Registry.subtypeConstant(value)?.let { "Subtype.$it" } ?: "Subtype(\"$value\")"
