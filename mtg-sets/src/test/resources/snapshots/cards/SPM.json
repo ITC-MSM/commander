@@ -6030,7 +6030,8 @@
             "BLUE",
             "BLACK",
             "RED"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "39",
@@ -6630,7 +6631,8 @@
             "GREEN",
             "WHITE",
             "BLUE"
-        ]
+        ],
+        "hasNoManaCost": true
     },
     "metadata": {
         "collectorNumber": "10",
