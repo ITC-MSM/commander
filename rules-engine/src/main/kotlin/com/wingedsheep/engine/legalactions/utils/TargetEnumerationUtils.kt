@@ -305,6 +305,7 @@ class TargetEnumerationUtils(
                 targetZone = getTargetZone(req),
                 mustDifferFromEarlier = req is TargetOther,
                 xConstrainsManaValue = requirementUsesManaValueAtMostX(req),
+                xConstrainsManaValueExactly = requirementUsesManaValueEqualsX(req),
                 xConstrainsPower = requirementUsesPowerEqualsX(req),
                 xConstrainsCount = requirementXConstrainsCount(req)
             )
@@ -365,6 +366,27 @@ class TargetEnumerationUtils(
         is CardPredicate.And -> predicate.predicates.any { containsManaValueAtMostX(it) }
         is CardPredicate.Or -> predicate.predicates.any { containsManaValueAtMostX(it) }
         is CardPredicate.Not -> containsManaValueAtMostX(predicate.predicate)
+        else -> false
+    }
+
+    /**
+     * True when [requirement] is a [TargetObject] whose filter contains
+     * [CardPredicate.ManaValueEqualsX] (anywhere in the predicate tree). The *equality* sibling of
+     * [requirementUsesManaValueAtMostX] — "target creature card in your graveyard with mana value
+     * X" (Likeness Looter, Rydia, Summoner of Mist) rather than "mana value X or less". Surfaced to
+     * the client so it narrows the permissive enumeration to cards whose mana value equals the
+     * chosen X once X is picked.
+     */
+    fun requirementUsesManaValueEqualsX(requirement: TargetRequirement): Boolean {
+        val filter = (requirement as? TargetObject)?.filter ?: return false
+        return filter.baseFilter.cardPredicates.any { containsManaValueEqualsX(it) }
+    }
+
+    private fun containsManaValueEqualsX(predicate: CardPredicate): Boolean = when (predicate) {
+        CardPredicate.ManaValueEqualsX -> true
+        is CardPredicate.And -> predicate.predicates.any { containsManaValueEqualsX(it) }
+        is CardPredicate.Or -> predicate.predicates.any { containsManaValueEqualsX(it) }
+        is CardPredicate.Not -> containsManaValueEqualsX(predicate.predicate)
         else -> false
     }
 

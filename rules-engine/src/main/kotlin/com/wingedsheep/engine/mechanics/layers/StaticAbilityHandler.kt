@@ -311,10 +311,23 @@ class StaticAbilityHandler(
         container: ComponentContainer,
         staticAbilities: List<StaticAbility>
     ): ComponentContainer {
-        val effectsData = staticAbilities.toGroupedEffectData()
+        val effectsData = lowerToContinuousEffectData(staticAbilities)
         return if (effectsData.isNotEmpty()) container.with(ContinuousEffectSourceComponent(effectsData))
         else container
     }
+
+    /**
+     * Lower a list of static abilities to the [ContinuousEffectData] the projector consumes,
+     * without touching any container. The pure half of
+     * [addContinuousEffectComponentFromAbilities], for callers that need to *append* to a
+     * permanent's existing [ContinuousEffectSourceComponent] rather than replace it — a resolved
+     * effect handing a permanent a new static ability it keeps for as long as it stays on the
+     * battlefield (`BecomeArtifactEffect.grantedStaticAbilities`: The Irencrag gaining "Equipped
+     * creature gets +3/+3"). Multi-layer abilities are group-tagged exactly as they are when baked
+     * from a card definition (CR 613.6 — see [toGroupedEffectData]).
+     */
+    fun lowerToContinuousEffectData(staticAbilities: List<StaticAbility>): List<ContinuousEffectData> =
+        staticAbilities.toGroupedEffectData()
 
     /**
      * Lower a list of static abilities to [ContinuousEffectData], stamping every effect that comes

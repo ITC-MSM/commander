@@ -857,11 +857,27 @@ export function enterPhase(
           return typeof power === 'number' && power === chosenX
         })
       }
+      // Likeness Looter / Rydia: "with mana value X" is an *equality* filter, not "X or less".
+      const filterByExactManaValueX = (
+        ids: readonly EntityId[],
+        constrained: boolean | undefined,
+      ): EntityId[] => {
+        if (!constrained || chosenX == null || gameState == null) return [...ids]
+        return ids.filter((id) => {
+          const mv = gameState.cards[id]?.manaValue
+          return typeof mv === 'number' && mv === chosenX
+        })
+      }
       const applyXFilters = (
         ids: readonly EntityId[],
         mvConstrained: boolean | undefined,
         powerConstrained: boolean | undefined,
-      ): EntityId[] => filterByPowerX(filterByX(ids, mvConstrained), powerConstrained)
+        exactMvConstrained?: boolean | undefined,
+      ): EntityId[] =>
+        filterByExactManaValueX(
+          filterByPowerX(filterByX(ids, mvConstrained), powerConstrained),
+          exactMvConstrained,
+        )
 
       // When a requirement's max-count is X-driven (TargetObject.dynamicMaxCount =
       // XValue server-side), the static `count` field is just a placeholder (often
@@ -878,7 +894,7 @@ export function enterPhase(
         const maxTargets = resolveMaxByX(firstReq.maxTargets, firstReq.xConstrainsCount)
         store.startTargeting({
           action,
-          validTargets: applyXFilters(firstReq.validTargets, firstReq.xConstrainsManaValue, firstReq.xConstrainsPower),
+          validTargets: applyXFilters(firstReq.validTargets, firstReq.xConstrainsManaValue, firstReq.xConstrainsPower, firstReq.xConstrainsManaValueExactly),
           selectedTargets: [],
           minTargets: Math.min(firstReq.minTargets, maxTargets),
           maxTargets,
@@ -896,7 +912,7 @@ export function enterPhase(
         const rawMin = actionInfo.minTargets ?? rawMax
         store.startTargeting({
           action,
-          validTargets: applyXFilters(actionInfo.validTargets ?? [], actionInfo.xConstrainsTargetManaValue, actionInfo.xConstrainsTargetPower),
+          validTargets: applyXFilters(actionInfo.validTargets ?? [], actionInfo.xConstrainsTargetManaValue, actionInfo.xConstrainsTargetPower, actionInfo.xConstrainsTargetManaValueExactly),
           selectedTargets: [],
           minTargets: Math.min(rawMin, maxTargets),
           maxTargets,

@@ -914,6 +914,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             targetDescription = firstReq.description,
                             targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                             xConstrainsTargetManaValue = targetReqInfos.size == 1 && firstReqInfo.xConstrainsManaValue,
+                            xConstrainsTargetManaValueExactly = targetReqInfos.size == 1 && firstReqInfo.xConstrainsManaValueExactly,
                             xConstrainsTargetPower = targetReqInfos.size == 1 && firstReqInfo.xConstrainsPower,
                             additionalCostInfo = costInfo,
                             hasXCost = abilityHasXCost,

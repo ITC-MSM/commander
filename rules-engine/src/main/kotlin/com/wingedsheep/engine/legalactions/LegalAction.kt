@@ -48,6 +48,15 @@ data class LegalAction(
      */
     val xConstrainsTargetManaValue: Boolean = false,
     /**
+     * True when the (single) target requirement filters by "mana value X" *exactly* (i.e. the
+     * requirement's filter contains [CardPredicate.ManaValueEqualsX] — Likeness Looter, Rydia,
+     * Summoner of Mist). The equality sibling of [xConstrainsTargetManaValue]: the enumerator is
+     * likewise permissive at X-unbound, and the client narrows [validTargets] to cards whose mana
+     * value *equals* the chosen X. For multi-requirement abilities, see
+     * [TargetInfo.xConstrainsManaValueExactly].
+     */
+    val xConstrainsTargetManaValueExactly: Boolean = false,
+    /**
      * True when the (single) target requirement filters by "power X" (i.e. the requirement's
      * filter contains [CardPredicate.PowerEqualsX] — Ent-Draught Basin). The enumerator builds
      * [validTargets] permissively because X is unbound at enumeration time; the client must
@@ -227,6 +236,12 @@ data class TargetInfo(
      * The client re-filters [validTargets] by the chosen X after X selection.
      */
     val xConstrainsManaValue: Boolean = false,
+    /**
+     * True when this requirement's filter contains [CardPredicate.ManaValueEqualsX].
+     * The client narrows [validTargets] to cards whose mana value *equals* the chosen X
+     * after X selection (Likeness Looter, Rydia, Summoner of Mist).
+     */
+    val xConstrainsManaValueExactly: Boolean = false,
     /**
      * True when this requirement's filter contains [CardPredicate.PowerEqualsX].
      * The client re-filters [validTargets] to creatures whose power equals the chosen X

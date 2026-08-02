@@ -9733,6 +9733,149 @@
     ]
 }
 
+// Likeness Looter
+{
+    "name": "Likeness Looter",
+    "manaCost": "{U}{B}",
+    "typeLine": "Creature — Faerie Shapeshifter",
+    "oracleText": "Flying\n{T}: Draw a card, then discard a card.\n{X}: This creature becomes a copy of target creature card in your graveyard with mana value X, except it has flying and this ability. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{X}"
+                    }
+                },
+                "effect": {
+                    "type": "EachPermanentBecomesCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card in your graveyard with mana value X"
+                    },
+                    "affected": "Self",
+                    "sourceFromAnyZone": true,
+                    "addedKeywords": [
+                        "FLYING"
+                    ],
+                    "retainActivatingAbility": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    "ManaValueEqualsX"
+                                ],
+                                "controllerPredicate": "OwnedByYou"
+                            },
+                            "zone": "Graveyard"
+                        },
+                        "id": "target creature card in your graveyard with mana value X"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{X}: This creature becomes a copy of target creature card in your graveyard with mana value X, except it has flying and this ability. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "RARE",
+        "artist": "Ben Hill",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/2957472a-825e-4904-b7e8-62bef1cb432d.jpg?1783915070",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "Likeness Looter copies exactly what was printed on the original card and nothing else, except the characteristics it specifically modifies. It doesn't copy any information about the object the card was before it was put into your graveyard."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Any effects that applied to Likeness Looter before it becomes a copy of another card will continue to apply after it becomes a copy. The same is true of any counters that are on Likeness Looter."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If a card in your graveyard has {X} in its mana cost, X is considered to be 0."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "Because Likeness Looter isn't entering the battlefield when it becomes a copy of a card, any \"When [this creature] enters the battlefield\" or \"[This creature] enters the battlefield with\" abilities of the copied card won't apply."
+            },
+            {
+                "date": "2023-09-01",
+                "text": "If the copied card has an ability that can be activated only once each turn, copying that card a second time will allow you to activate the new instance of that ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Living Lectern
 {
     "name": "Living Lectern",
@@ -17809,6 +17952,110 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// The Irencrag
+{
+    "name": "The Irencrag",
+    "manaCost": "{2}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "{T}: Add {C}.\nWhenever a legendary creature you control enters, you may have The Irencrag become a legendary Equipment artifact named Everflame, Heroes' Legacy. If you do, it gains equip {3} and \"Equipped creature gets +3/+3\" and loses all other abilities.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "IsLegendary"
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    },
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "BecomeArtifact",
+                        "target": "Self",
+                        "subtypes": [
+                            "Equipment"
+                        ],
+                        "colors": null,
+                        "name": "Everflame, Heroes' Legacy",
+                        "grantedAbility": {
+                            "id": "ability_2",
+                            "cost": {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomMana",
+                                    "cost": "{3}"
+                                }
+                            },
+                            "effect": {
+                                "type": "AttachEquipment",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "creature you control"
+                                }
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    },
+                                    "id": "creature you control"
+                                }
+                            ],
+                            "timing": "SorcerySpeed",
+                            "isEquipAbility": true,
+                            "descriptionOverride": "Equip {3}"
+                        },
+                        "grantedStaticAbilities": [
+                            {
+                                "type": "ModifyStats",
+                                "powerBonus": 3,
+                                "toughnessBonus": 3
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "248",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/8051c5ec-54a6-45a8-8945-fb93c5feaa39.jpg?1783915058",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The Irencrag's last ability lasts indefinitely."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // The Princess Takes Flight

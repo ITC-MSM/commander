@@ -39,6 +39,19 @@ import kotlinx.serialization.Serializable
  *   of that card" off a card just put into exile — Lazav, Familiar Stranger: "you may exile a card
  *   from a graveyard. If a creature card was exiled this way, you may have Lazav become a copy of
  *   that card until end of turn."
+ * @property addedKeywords Keywords the copy has *in addition* to the ones it copied — the
+ *   "except it has flying" half of a copy exception (CR 707.9: copy effects may specify
+ *   modifications). Unioned into the new `CardComponent`'s base keywords, so they persist exactly
+ *   as long as the copy does. Likeness Looter: "becomes a copy of target creature card in your
+ *   graveyard …, except it has flying and this ability."
+ * @property retainActivatingAbility The "and this ability" half of the same exception: the copy
+ *   keeps the very activated ability that created it. The copy replaces the permanent's
+ *   `CardComponent` wholesale, so the printed ability would otherwise be gone with the rest of the
+ *   original card — this re-grants it through the durable granted-activated-ability record
+ *   (`Duration.Permanent`), which is keyed by entity and therefore survives further copies. The
+ *   grant is idempotent: activating the ability again off a copy re-reads the already-granted
+ *   instance rather than stacking a second one. No-op when the effect isn't resolving from an
+ *   activated ability.
  */
 @SerialName("EachPermanentBecomesCopyOfTarget")
 @Serializable
@@ -51,6 +64,8 @@ data class EachPermanentBecomesCopyOfTargetEffect(
     val excludeTarget: Boolean = false,
     val affected: EffectTarget? = null,
     val sourceFromAnyZone: Boolean = false,
+    val addedKeywords: Set<com.wingedsheep.sdk.core.Keyword> = emptySet(),
+    val retainActivatingAbility: Boolean = false,
 ) : Effect {
     override val description: String = run {
         val durationSuffix = when (duration) {
@@ -58,10 +73,14 @@ data class EachPermanentBecomesCopyOfTargetEffect(
             Duration.UntilNextEndStep -> " until the next end step"
             else -> ""
         }
+        val exceptions = addedKeywords.map { it.name.lowercase() } +
+            (if (retainActivatingAbility) listOf("this ability") else emptyList())
+        val exceptSuffix =
+            if (exceptions.isEmpty()) "" else ", except it has ${exceptions.joinToString(" and ")}"
         if (affected != null) {
-            "${affected.description} becomes a copy of ${target.description}$durationSuffix"
+            "${affected.description} becomes a copy of ${target.description}$durationSuffix$exceptSuffix"
         } else {
-            "Each ${if (excludeTarget) "other " else ""}${filter.baseFilter.description} becomes a copy of ${target.description}$durationSuffix"
+            "Each ${if (excludeTarget) "other " else ""}${filter.baseFilter.description} becomes a copy of ${target.description}$durationSuffix$exceptSuffix"
         }
     }
 
