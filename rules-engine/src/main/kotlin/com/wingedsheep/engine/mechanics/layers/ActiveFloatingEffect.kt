@@ -370,6 +370,16 @@ sealed interface SerializableModification {
     data class SetBasicLandTypes(val subtypes: Set<String>) : SerializableModification
 
     /**
+     * Overwrite the object's name (Layer 3, TEXT). Per CR 612.8 the object "loses any names it
+     * had and has only the specified name". One-shot floating counterpart to the
+     * [com.wingedsheep.sdk.scripting.TransformPermanent] static ability's `setName` — used by
+     * resolved effects that permanently rename a permanent as part of a transform, e.g. The
+     * Irencrag becoming "Everflame, Heroes' Legacy".
+     */
+    @Serializable
+    data class SetName(val name: String) : SerializableModification
+
+    /**
      * Replace ALL card types with the given set, leaving supertypes and subtypes intact
      * (Layer 4). One-shot floating counterpart to the [com.wingedsheep.sdk.scripting.TransformPermanent]
      * static ability's `setCardTypes`. Used by "becomes a [type] and loses all other card
@@ -726,6 +736,7 @@ fun SerializableModification.toModification(): Modification = when (this) {
     is SerializableModification.PreventAllCombatDamage -> Modification.NoOp
     is SerializableModification.SetCreatureSubtypes -> Modification.SetCreatureSubtypes(subtypes)
     is SerializableModification.AddSubtype -> Modification.AddSubtype(subtype)
+    is SerializableModification.SetName -> Modification.SetName(name)
     is SerializableModification.SetCardTypes -> Modification.SetCardTypes(types)
     is SerializableModification.SetAllSubtypes -> Modification.SetAllSubtypes(subtypes)
     is SerializableModification.SetBasicLandTypes -> Modification.SetBasicLandTypes(subtypes)

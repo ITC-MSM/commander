@@ -17811,6 +17811,110 @@
     ]
 }
 
+// The Irencrag
+{
+    "name": "The Irencrag",
+    "manaCost": "{2}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "{T}: Add {C}.\nWhenever a legendary creature you control enters, you may have The Irencrag become a legendary Equipment artifact named Everflame, Heroes' Legacy. If you do, it gains equip {3} and \"Equipped creature gets +3/+3\" and loses all other abilities.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "IsLegendary"
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    },
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "BecomeArtifact",
+                        "target": "Self",
+                        "subtypes": [
+                            "Equipment"
+                        ],
+                        "colors": null,
+                        "name": "Everflame, Heroes' Legacy",
+                        "grantedAbility": {
+                            "id": "ability_2",
+                            "cost": {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomMana",
+                                    "cost": "{3}"
+                                }
+                            },
+                            "effect": {
+                                "type": "AttachEquipment",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "creature you control"
+                                }
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    },
+                                    "id": "creature you control"
+                                }
+                            ],
+                            "timing": "SorcerySpeed",
+                            "isEquipAbility": true,
+                            "descriptionOverride": "Equip {3}"
+                        },
+                        "grantedStaticAbilities": [
+                            {
+                                "type": "ModifyStats",
+                                "powerBonus": 3,
+                                "toughnessBonus": 3
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "248",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/8051c5ec-54a6-45a8-8945-fb93c5feaa39.jpg?1783915058",
+        "rulings": [
+            {
+                "date": "2023-09-01",
+                "text": "The Irencrag's last ability lasts indefinitely."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // The Princess Takes Flight
 {
     "name": "The Princess Takes Flight",

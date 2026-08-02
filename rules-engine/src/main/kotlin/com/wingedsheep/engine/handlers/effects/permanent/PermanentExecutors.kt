@@ -167,7 +167,7 @@ class PermanentExecutors(
         AddSubtypeExecutor(),
         SetLandTypeExecutor(),
         AnimateLandExecutor(),
-        BecomeArtifactExecutor(),
+        BecomeArtifactExecutor(staticAbilityHandler),
         BecomeChosenManaColorExecutor(),
         BecomeCreatureExecutor(),
         BecomeSaddledExecutor(),
