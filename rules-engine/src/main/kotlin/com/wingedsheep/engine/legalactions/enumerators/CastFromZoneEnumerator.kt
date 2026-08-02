@@ -11,6 +11,7 @@ import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
+import com.wingedsheep.engine.state.components.battlefield.MayCastFromGraveyardUsedThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
@@ -2088,7 +2089,15 @@ class CastFromZoneEnumerator : ActionEnumerator {
         val state = context.state
         val playerId = context.playerId
 
-        // Find permanents with MayCastFromGraveyard static ability
+        // Find permanents with MayCastFromGraveyard static ability.
+        //
+        // An `oncePerTurn` grant (Gisa and Geralf) stops offering casts once its own permanent has
+        // been used this turn, so the grant is only usable while the source is unmarked — the same
+        // gate `CastZoneResolver.mayCastFromGraveyardGrantApplies` applies on the handler side, and
+        // the two must stay in step or the client would offer an action the handler then rejects.
+        fun grantIsSpent(sourceId: EntityId, sa: MayCastFromGraveyard): Boolean =
+            sa.oncePerTurn && state.getEntity(sourceId)?.has<MayCastFromGraveyardUsedThisTurnComponent>() == true
+
         val permissions = mutableListOf<MayCastFromGraveyard>()
         for (permId in state.getBattlefield()) {
             val container = state.getEntity(permId) ?: continue
@@ -2097,7 +2106,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             val cardComp = container.get<CardComponent>() ?: continue
             val cardDef = context.cardRegistry.getCard(cardComp.cardDefinitionId) ?: continue
             for (sa in cardDef.script.staticAbilities) {
-                if (sa is MayCastFromGraveyard) {
+                if (sa is MayCastFromGraveyard && !grantIsSpent(permId, sa)) {
                     permissions.add(sa)
                 }
             }
@@ -2110,6 +2119,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             val anchor = state.getEntity(grant.entityId) ?: continue
             val controller = anchor.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
             if (controller != playerId) continue
+            if (grantIsSpent(grant.entityId, ability)) continue
             permissions.add(ability)
         }
 

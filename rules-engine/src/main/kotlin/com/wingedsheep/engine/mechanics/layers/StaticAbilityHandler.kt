@@ -9,6 +9,7 @@ import com.wingedsheep.engine.state.components.battlefield.GrantsCantLoseGameCom
 import com.wingedsheep.engine.state.components.battlefield.GrantsOpponentsCantWinGameComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsCantLoseGameFromLifeComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerHexproofComponent
+import com.wingedsheep.engine.state.components.battlefield.GrantsSacrificeImmunityComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerProtectionComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsStationUsingToughnessComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
@@ -249,6 +250,11 @@ class StaticAbilityHandler(
             .map { it.scope }
         if (controllerProtectionScopes.isNotEmpty()) {
             result = result.with(GrantsControllerProtectionComponent(controllerProtectionScopes))
+        }
+
+        // Add tag component for "opponents' spells and abilities can't make you sacrifice"
+        if (allStaticAbilities.any { it is com.wingedsheep.sdk.scripting.OpponentsCantMakeYouSacrifice }) {
+            result = result.with(GrantsSacrificeImmunityComponent)
         }
 
         // Add tag component for "you can't lose the game"
@@ -960,6 +966,7 @@ class StaticAbilityHandler(
             is GrantHexproofToController,
             is GrantProtectionToController,
             is GrantShroudToController,
+            is com.wingedsheep.sdk.scripting.OpponentsCantMakeYouSacrifice,
             is StationUsingToughness,
             is SuppressHexproofForGroup,
             is SuppressWardForGroup -> null

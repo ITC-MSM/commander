@@ -824,6 +824,18 @@ data class GrantsControllerProtectionComponent(
 ) : Component
 
 /**
+ * Marks a permanent as granting "spells and abilities your opponents control can't cause you to
+ * sacrifice permanents" to its controller (Sigarda, Host of Herons).
+ *
+ * Stamped from [com.wingedsheep.sdk.scripting.OpponentsCantMakeYouSacrifice] and read by
+ * [com.wingedsheep.engine.mechanics.SacrificeImmunity], which every sacrifice site consults
+ * before moving a permanent to the graveyard. When the permanent leaves the battlefield the
+ * component goes with it — no cleanup needed.
+ */
+@Serializable
+data object GrantsSacrificeImmunityComponent : Component
+
+/**
  * Marks a permanent as granting "can't lose the game" to its controller.
  * Used for Lich's Mastery: "You can't lose the game."
  * When the permanent leaves the battlefield, the component goes with it — no cleanup needed.
@@ -1048,6 +1060,17 @@ data object MayCastFromLinkedExileUsedThisTurnComponent : Component
  */
 @Serializable
 data object MayCastWithoutPayingCostUsedThisTurnComponent : Component
+
+/**
+ * Marks a permanent as having had its
+ * [com.wingedsheep.sdk.scripting.MayCastFromGraveyard] permission used this turn. Enforces the
+ * `oncePerTurn` flag on that static ability (Gisa and Geralf's "once during each of your turns,
+ * you may cast a Zombie creature spell from your graveyard"). Stored on the granting permanent, so
+ * a second copy of the granter carries its own allowance and a granter that leaves and returns
+ * comes back as a fresh object with an unused one. Cleared at end of turn by CleanupPhaseManager.
+ */
+@Serializable
+data object MayCastFromGraveyardUsedThisTurnComponent : Component
 
 /**
  * Counts uses of a permanent's limited [com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary]

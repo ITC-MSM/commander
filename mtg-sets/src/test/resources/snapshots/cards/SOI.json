@@ -1448,6 +1448,119 @@
     ]
 }
 
+// Jace, Unraveler of Secrets
+{
+    "name": "Jace, Unraveler of Secrets",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Legendary Planeswalker — Jace",
+    "oracleText": "+1: Scry 1, then draw a card.\n−2: Return target creature to its owner's hand.\n−8: You get an emblem with \"Whenever an opponent casts their first spell each turn, counter that spell.\"",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Scry",
+                            "count": 1
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -2
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "creature"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -8
+                },
+                "effect": {
+                    "type": "CreateGlobalTriggeredAbility",
+                    "ability": {
+                        "id": "ability_4",
+                        "trigger": {
+                            "type": "NthSpellCastEvent",
+                            "nthSpell": 1,
+                            "player": "EachOpponent"
+                        },
+                        "binding": "ANY",
+                        "effect": {
+                            "type": "Counter",
+                            "targetSource": "CounterTargetSource.TriggeringEntity"
+                        }
+                    },
+                    "descriptionOverride": "Whenever an opponent casts their first spell each turn, counter that spell."
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "rarity": "MYTHIC",
+        "artist": "Tyler Jacobson",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/20d5521d-e9f1-49e0-aa13-8e6de794cb12.jpg?1783937795",
+        "rulings": [
+            {
+                "date": "2016-04-08",
+                "text": "The emblem's triggered ability counters the first spell an opponent casts on each turn, not just that opponent's turn."
+            },
+            {
+                "date": "2016-04-08",
+                "text": "If Jace's emblem's triggered ability doesn't counter the first spell an opponent casts (perhaps because that spell can't be countered), it won't trigger again in the same turn to try to counter that player's second spell."
+            },
+            {
+                "date": "2016-04-08",
+                "text": "If you have multiple opponents, Jace's emblem can trigger once each turn for each opponent."
+            }
+        ]
+    },
+    "startingLoyalty": 5,
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Moonlight Hunt
 {
     "name": "Moonlight Hunt",

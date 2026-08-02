@@ -3403,6 +3403,19 @@ class CastSpellHandler(
             }
         }
 
+        // Record once-per-turn graveyard-cast permission usage (Gisa and Geralf). The card has
+        // already left the graveyard for the stack, so the grant lookup runs against the pre-cast
+        // `state`; a use is only burned when no unlimited grant could have authorized the cast.
+        if (castSourceZone(state, action.cardId) == Zone.GRAVEYARD) {
+            val graveyardOnceSource =
+                zoneResolver.oncePerTurnGraveyardCastSourceToConsume(state, action.playerId, action.cardId)
+            if (graveyardOnceSource != null) {
+                currentCastState = currentCastState.updateEntity(graveyardOnceSource) { c ->
+                    c.with(com.wingedsheep.engine.state.components.battlefield.MayCastFromGraveyardUsedThisTurnComponent)
+                }
+            }
+        }
+
         // Handle Storm keyword: build one PendingTrigger per instance of Storm.
         // Per CR 702.40b each instance of Storm triggers separately. Sources of Storm:
         //   1. The card's printed keyword (Keyword.STORM in keywords) — counts once.

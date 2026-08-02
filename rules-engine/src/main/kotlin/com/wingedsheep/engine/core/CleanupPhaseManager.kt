@@ -87,6 +87,7 @@ import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.PreventManaPoolEmptying
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.components.battlefield.ExileEntryTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.MayCastFromGraveyardUsedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.MayCastFromLinkedExileUsedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.MayCastWithoutPayingCostUsedThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackedPlayersThisTurnComponent
@@ -893,14 +894,18 @@ class CleanupPhaseManager(
             val removePlayFree = playFree != null && !playFree.permanent
             val removeLinkedExileUsed = container.get<MayCastFromLinkedExileUsedThisTurnComponent>() != null
             val removeFreeCastUsed = container.get<MayCastWithoutPayingCostUsedThisTurnComponent>() != null
+            val removeGraveyardCastUsed = container.get<MayCastFromGraveyardUsedThisTurnComponent>() != null
             val removeTopLibraryCastUses = container.get<CastFromTopOfLibraryUsesThisTurnComponent>() != null
             val removeExileEntryTurn = container.get<ExileEntryTurnComponent>() != null
-            if (removePlayFree || removeLinkedExileUsed || removeFreeCastUsed || removeTopLibraryCastUses || removeExileEntryTurn) {
+            if (removePlayFree || removeLinkedExileUsed || removeFreeCastUsed || removeGraveyardCastUsed ||
+                removeTopLibraryCastUses || removeExileEntryTurn
+            ) {
                 newState = newState.updateEntity(entityId) { c ->
                     var updated = c
                     if (removePlayFree) updated = updated.without<PlayWithoutPayingCostComponent>()
                     if (removeLinkedExileUsed) updated = updated.without<MayCastFromLinkedExileUsedThisTurnComponent>()
                     if (removeFreeCastUsed) updated = updated.without<MayCastWithoutPayingCostUsedThisTurnComponent>()
+                    if (removeGraveyardCastUsed) updated = updated.without<MayCastFromGraveyardUsedThisTurnComponent>()
                     if (removeTopLibraryCastUses) updated = updated.without<CastFromTopOfLibraryUsesThisTurnComponent>()
                     if (removeExileEntryTurn) updated = updated.without<ExileEntryTurnComponent>()
                     updated

@@ -19,6 +19,7 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.mechanics.SacrificeImmunity
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.legalactions.utils.CostEnumerationUtils
@@ -200,6 +201,13 @@ class WardCounterEffectExecutor(
             wardSourceId: EntityId?,
             controllerId: EntityId?
         ): EffectResult {
+            // Sigarda, Host of Herons: the ward trigger is an ability the warded permanent's
+            // controller controls, so a protected caster can't choose to pay a sacrifice cost it
+            // imposes. Unpayable, so the spell/ability is countered without a prompt.
+            if (SacrificeImmunity.appliesTo(state, payingPlayerId, controllerId)) {
+                return counterSpellOrAbility(state, cardRegistry, spellEntityId)
+            }
+
             val validPermanents = BattlefieldFilterUtils.findMatchingOnBattlefield(
                 state, filter.youControl(), PredicateContext(controllerId = payingPlayerId)
             )
