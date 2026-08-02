@@ -2800,7 +2800,8 @@ class StackResolver(
         state: GameState,
         spellId: EntityId,
         makePlotted: Boolean,
-        fixedAlternativeManaCost: com.wingedsheep.sdk.core.ManaCost? = null
+        fixedAlternativeManaCost: com.wingedsheep.sdk.core.ManaCost? = null,
+        linkToSourceId: EntityId? = null
     ): ExecutionResult {
         if (spellId !in state.stack) {
             return ExecutionResult.error(state, "Spell not on stack: $spellId")
@@ -2829,6 +2830,14 @@ class StackResolver(
             newState = applyPlottedToExiledCard(newState, spellId, ownerId, cardComponent?.name ?: "Unknown", events)
         } else if (fixedAlternativeManaCost != null) {
             newState = applyFixedAltCostToExiledCard(newState, spellId, ownerId, fixedAlternativeManaCost)
+        }
+
+        // "Exile it with this permanent" (Spell Queller): record the card in the source's
+        // linked-exile pile so a later ability of that source can say "the exiled card". Only a
+        // handle — nothing returns or becomes castable on its own.
+        if (linkToSourceId != null) {
+            newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                .linkExiledToSource(newState, spellId, linkToSourceId)
         }
 
         return ExecutionResult.success(newState, events)

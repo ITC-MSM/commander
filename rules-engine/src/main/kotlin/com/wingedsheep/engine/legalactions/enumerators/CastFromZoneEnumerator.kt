@@ -425,6 +425,15 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         else permissions.firstNotNullOfOrNull { it.castFaceIndex }
                             ?.takeIf { cardDef?.cardFaces?.getOrNull(it) != null }
                     val prepareFace = prepareCopyFaceIndex?.let { cardDef?.cardFaces?.getOrNull(it) }
+                    // "You may cast red spells from among them" (Chandra, Dressed to Kill −7): the
+                    // colour is checked against the face actually being cast, not the exiled card,
+                    // so a red MDFC's blue back face stays uncastable through this permission. A
+                    // permission with no restriction authorizes any colour, and only *one* of the
+                    // applicable permissions needs to authorize the cast.
+                    val castColors = prepareFace?.manaCost?.colors ?: cardDef?.colors ?: cardComponent.manaCost.colors
+                    if (permissions.none { it.castColorRestriction == null || it.castColorRestriction in castColors }) {
+                        continue
+                    }
                     val castName = prepareFace?.name ?: cardComponent.name
                     val effectiveScript = prepareFace?.script ?: cardDef?.script
                     val effectiveTypeLine = prepareFace?.typeLine ?: cardComponent.typeLine

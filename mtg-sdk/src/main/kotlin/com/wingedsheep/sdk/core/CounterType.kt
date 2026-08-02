@@ -80,7 +80,8 @@ enum class CounterType {
     FILM,
     SKEWER,
     ENERGY,
-    ICE;
+    ICE,
+    OMEN;
 
     companion object {
         /**
@@ -239,6 +240,13 @@ object Counters {
      * own static and activated abilities check for or remove it.
      */
     const val DIVINITY = "divinity"
+
+    /**
+     * Omen counter (VOW — Soulcipher Board). Passive countdown counter with no inherent rule; the
+     * artifact enters with three and its "whenever a creature card is put into your graveyard"
+     * trigger removes one, transforming the artifact once the last one is gone.
+     */
+    const val OMEN = "omen"
 
     /**
      * Doom counter (ATQ — Armageddon Clock). Passive counter accumulated one-per-upkeep; the card

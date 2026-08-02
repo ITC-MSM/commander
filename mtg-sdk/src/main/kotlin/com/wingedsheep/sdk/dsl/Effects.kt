@@ -1247,6 +1247,11 @@ object Effects {
      * Grant "may play from exile" permission to all cards in a named collection.
      * Does NOT waive mana cost — pair with [GrantPlayWithoutPayingCost] for free play.
      *
+     * Set [ownerControls] for "its owner may cast/play that card" (each card's owner is the
+     * grantee, and a turn-keyed [expiry] follows that owner's turns), and [castColorRestriction]
+     * for "you may cast red spells from among them" — a cast-time check on the face being cast,
+     * not a filter over the exiled cards.
+     *
      * Set [landEntersTapped] for "each land played this way enters tapped" clauses
      * (Lightstall Inquisitor). Pair with [GrantPlayWithCostIncrease] to also tax
      * spells cast via the permission.
@@ -1265,7 +1270,9 @@ object Effects {
         onPlayRider: Effect? = null,
         exileAfterResolve: Boolean = false,
         nonLandOnly: Boolean = false,
-        castFaceIndex: Int? = null
+        castFaceIndex: Int? = null,
+        ownerControls: Boolean = false,
+        castColorRestriction: Color? = null
     ): Effect = GrantMayPlayFromExileEffect(
         from = from,
         expiry = expiry,
@@ -1275,7 +1282,9 @@ object Effects {
         onPlayRider = onPlayRider,
         exileAfterResolve = exileAfterResolve,
         nonLandOnly = nonLandOnly,
-        castFaceIndex = castFaceIndex
+        castFaceIndex = castFaceIndex,
+        ownerControls = ownerControls,
+        castColorRestriction = castColorRestriction
     )
 
     /**
@@ -3183,12 +3192,22 @@ object Effects {
      * card's owner may cast it for free on a later turn), or [fixedAlternativeManaCost] for the
      * **Airbend** stack branch ("its owner may cast it for {2} rather than its mana cost" — Aang,
      * Swift Savior). Pair with `Targets.Spell`.
+     *
+     * [linkToSource] = true records the exiled card in the source's linked-exile pile so a later
+     * ability of the same source can refer to "the exiled card" — Spell Queller's leaves-the-
+     * battlefield trigger gathers `CardSource.FromLinkedExile()` and hands the card's owner a free
+     * cast. It grants no permission by itself.
      */
     fun ExileTargetSpell(
         makePlotted: Boolean = false,
-        fixedAlternativeManaCost: ManaCost? = null
+        fixedAlternativeManaCost: ManaCost? = null,
+        linkToSource: Boolean = false
     ): Effect =
-        ExileTargetSpellEffect(makePlotted = makePlotted, fixedAlternativeManaCost = fixedAlternativeManaCost)
+        ExileTargetSpellEffect(
+            makePlotted = makePlotted,
+            fixedAlternativeManaCost = fixedAlternativeManaCost,
+            linkToSource = linkToSource
+        )
 
     /**
      * Counter target spell unless its controller pays a mana cost.

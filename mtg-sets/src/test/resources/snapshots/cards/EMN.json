@@ -2685,6 +2685,120 @@
     "colorIdentityOverride": []
 }
 
+// Spell Queller
+{
+    "name": "Spell Queller",
+    "manaCost": "{1}{W}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flash\nFlying\nWhen this creature enters, exile target spell with mana value 4 or less.\nWhen this creature leaves the battlefield, the exiled card's owner may cast that card without paying its mana cost.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ExileTargetSpell",
+                    "linkToSource": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "mv<=4",
+                        "zone": "Stack"
+                    },
+                    "id": "target spell with mana value 4 or less"
+                },
+                "descriptionOverride": "When this creature enters, exile target spell with mana value 4 or less."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "OwnersOfLinkedExile"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": "FromLinkedExile",
+                                "storeAs": "quelledCard"
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": "Gate.MayDecide",
+                                "then": {
+                                    "type": "CastFromCollectionWithoutPayingCost",
+                                    "from": "quelledCard"
+                                },
+                                "descriptionOverride": "Cast the exiled card without paying its mana cost"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this creature leaves the battlefield, the exiled card's owner may cast that card without paying its mana cost."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "189",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b76bcd4-580a-4435-afe9-290940b1837f.jpg?1783937428",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "For spells with {X} in their mana costs, use the value chosen for X to determine if the spell's mana value is 4 or less."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Spells that can't be countered can be exiled by Spell Queller's ability. They won't resolve."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If the exiled card's owner casts it, the spell has no relation to the spell that player originally cast. Any choices made for the original spell or effects affecting the original spell aren't carried over to the new one."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If the player casts the exiled card, they do so as part of the resolution of Spell Queller's last ability. The player can't wait to cast it later in the turn. Timing permissions based on the card's type are ignored, but other restrictions (such as \"Cast [this card] only during combat\") are not."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If a player casts a card \"without paying its mana cost,\" they can't choose to cast it for any alternative costs, such as emerge costs. The player can, however, pay additional costs, such as escalate costs. If the card has any mandatory additional costs, those must be paid to cast the card."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If the card has {X} in its mana cost, the player must choose 0 as the value of X when casting it without paying its mana cost."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If Spell Queller leaves the battlefield before its \"enters\" ability resolves, its leaves-the-battlefield triggered ability triggers, resolves, and does nothing. Then its first triggered ability resolves and exiles the spell forever."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Spontaneous Mutation
 {
     "name": "Spontaneous Mutation",
