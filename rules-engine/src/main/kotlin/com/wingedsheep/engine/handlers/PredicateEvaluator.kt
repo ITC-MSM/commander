@@ -386,10 +386,18 @@ class PredicateEvaluator {
                 cmc <= predicate.max
             }
             is CardPredicate.ManaValueEqualsX -> {
-                // The chosen number is stamped onto the context as xValue. Unbound = no match.
-                val xValue = context?.xValue ?: return false
-                val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
-                cmc == xValue
+                // Null xValue means X is unbound (legal-action enumeration runs before the player
+                // chooses X). Match permissively so the ability is offered at all — failing closed
+                // here means an "{X}: … target card with mana value X" ability is never enumerated,
+                // because at X-unbound no card in the graveyard qualifies. Mirrors ManaValueAtMostX
+                // and PowerEqualsX; the chosen X is enforced at activation-time validation and the
+                // CR 608.2b resolution-time re-check. Likeness Looter, Rydia, Summoner of Mist.
+                val xValue = context?.xValue
+                if (xValue == null) true
+                else {
+                    val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
+                    cmc == xValue
+                }
             }
             is CardPredicate.ManaValueAtMostX -> {
                 // Null xValue means X is unbound (legal-action enumeration runs before the

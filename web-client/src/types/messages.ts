@@ -778,6 +778,12 @@ export interface LegalActionTargetInfo {
    */
   readonly xConstrainsManaValue?: boolean
   /**
+   * True when this requirement filters by "mana value X" *exactly* (Likeness Looter, Rydia,
+   * Summoner of Mist) — the client must intersect [validTargets] with `card.manaValue === chosenX`
+   * after X selection, since the server enumerates targets permissively before X is bound.
+   */
+  readonly xConstrainsManaValueExactly?: boolean
+  /**
    * True when this requirement filters by "power X" (Ent-Draught Basin) — the client must
    * intersect [validTargets] with `card.power === chosenX` after X selection, since the
    * server enumerates targets permissively before X is bound.
@@ -817,6 +823,13 @@ export interface LegalActionInfo {
    * [validTargets] by the chosen X after X selection.
    */
   readonly xConstrainsTargetManaValue?: boolean
+  /**
+   * True when the (single) target requirement filters by "mana value X" *exactly*
+   * (Likeness Looter). The client must narrow [validTargets] to cards whose mana value equals
+   * the chosen X. For multi-requirement abilities, see the per-requirement
+   * [LegalActionTargetInfo.xConstrainsManaValueExactly].
+   */
+  readonly xConstrainsTargetManaValueExactly?: boolean
   /**
    * True when the (single) target requirement filters by "power X" (Ent-Draught Basin).
    * The client must re-filter [validTargets] to creatures whose power equals the chosen X

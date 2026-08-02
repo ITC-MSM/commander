@@ -180,7 +180,7 @@ class PermanentExecutors(
         ChangeColorExecutor(),
         ChangeColorToChosenExecutor(),
         ChangeGroupColorExecutor(),
-        EachPermanentBecomesCopyOfTargetExecutor(),
+        EachPermanentBecomesCopyOfTargetExecutor(cardRegistry),
         BecomeCopyOfLinkedExileExecutor(),
         LoseAllCreatureTypesExecutor(),
         MassAnimateExecutor(),
