@@ -55,6 +55,8 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
+import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
+import com.wingedsheep.sdk.scripting.costs.VariableCostMeasure
 import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
@@ -435,15 +437,16 @@ class ActivateAbilityHandler(
         // yet at submission time (the opponent's pick is validated when it's made). See
         // [com.wingedsheep.sdk.scripting.targets.TargetChooser].
         val controllerTargetReqs = effectiveTargetReqs.filter { it.chooser == TargetChooser.Controller }
-        // For an "Exile one or more other permanents you control with total mana value X" cost
-        // (Fabrication Foundry), X is the total mana value of the exiled permanents (CR 601.2b), and
-        // the reanimation target's "mana value X or less" legality is measured against it. Derive X
-        // from the chosen exiled permanents so target validation sees the right cap; when the cost is
-        // paid via the two-step pause flow the exiled set already rides on the action's costPayment.
-        val exilePermanentsCost = extractExilePermanentsCost(effectiveCost)
-        val exiledForCost = action.costPayment?.exiledCards ?: emptyList()
-        val effectiveXValue = if (exilePermanentsCost != null && exiledForCost.isNotEmpty()) {
-            sumExiledManaValue(state, exiledForCost)
+        // For a variable-count "exile/sacrifice one or more permanents you control" cost, X is
+        // defined by the payer's cost choice (CR 601.2b) — the chosen set's total mana value
+        // (Fabrication Foundry, whose reanimation target's "mana value X or less" legality is
+        // measured against it) or simply how many were chosen (Radiant Lotus). Derive X here so
+        // target validation sees the right cap; when the cost is paid via the two-step pause flow
+        // the chosen set already rides on the action's costPayment.
+        val variablePermanentsCost = extractVariablePermanentsCost(effectiveCost)
+        val chosenForCost = action.costPayment?.variableCostPermanents ?: emptyList()
+        val effectiveXValue = if (variablePermanentsCost != null && chosenForCost.isNotEmpty()) {
+            variableCostX(state, variablePermanentsCost, chosenForCost)
         } else {
             action.xValue
         }
@@ -468,11 +471,11 @@ class ActivateAbilityHandler(
             // An empty target list is only illegal when at least one controller-chosen
             // requirement is mandatory. For an ability whose controller targets are all
             // optional ("up to one target …", e.g. Boom Box), choosing no targets is a
-            // legal activation, so don't reject it here. An ExilePermanents cost drives the
+            // legal activation, so don't reject it here. An VariablePermanents cost drives the
             // target choice *after* the exile selection (X isn't known until then), so the
             // bare initial submission legitimately arrives with no target — the engine pauses
             // for it during execute(); don't reject that here either.
-            if (exilePermanentsCost == null && controllerTargetReqs.any { it.effectiveMinCount > 0 }) {
+            if (variablePermanentsCost == null && controllerTargetReqs.any { it.effectiveMinCount > 0 }) {
                 return "This ability requires a target"
             }
         }
@@ -607,15 +610,17 @@ class ActivateAbilityHandler(
             )
         )
 
-        // "Exile one or more other permanents you control with total mana value X" cost (Fabrication
-        // Foundry): X is the total mana value of the exiled permanents (CR 601.2b — a variable
-        // defined by a cost choice is announced as the ability is activated). It bounds the X-limited
-        // reanimation target and is stored on the stack for 608.2b re-validation. When the cost is
-        // being paid, the exiled set already rides on the action's costPayment.
-        val exilePermanentsCost = extractExilePermanentsCost(effectiveCost)
-        val exiledForCost = action.costPayment?.exiledCards ?: emptyList()
+        // Variable-count "exile/sacrifice one or more permanents you control" cost: X is defined by
+        // the payer's cost choice (CR 601.2b — a variable defined by a cost choice is announced as
+        // the ability is activated), measured as the chosen set's total mana value (Fabrication
+        // Foundry) or its size (Radiant Lotus). It bounds any X-limited target and is stored on the
+        // stack for 608.2b re-validation and for `DynamicAmount.XValue` reads at resolution. When
+        // the cost is being paid, the chosen set already rides on the action's costPayment.
+        val variablePermanentsCost = extractVariablePermanentsCost(effectiveCost)
+        val chosenForCost = action.costPayment?.variableCostPermanents ?: emptyList()
         val effectiveXValue: Int? =
-            if (exilePermanentsCost != null && exiledForCost.isNotEmpty()) sumExiledManaValue(state, exiledForCost)
+            if (variablePermanentsCost != null && chosenForCost.isNotEmpty())
+                variableCostX(state, variablePermanentsCost, chosenForCost)
             else action.xValue
 
         // -------------------------------------------------------------------
@@ -936,26 +941,28 @@ class ActivateAbilityHandler(
         }
 
         // -------------------------------------------------------------------
-        // ExilePermanents cost-choice pause (legal-actions submission path).
+        // VariablePermanents cost-choice pause (legal-actions submission path).
         //
-        // "Exile one or more other [filter] you control with total mana value X" (Fabrication
-        // Foundry). The player picks which permanents to exile — a variable-count choice (at least
+        // "Exile/sacrifice one or more [filter] you control" (Fabrication Foundry, Radiant Lotus).
+        // The player picks which permanents to pay with — a variable-count choice (at least
         // minCount). The bare ActivateAbility arrives with no selection; pause and raise a
-        // SelectCardsDecision over the eligible permanents. The resumer computes X (their total mana
-        // value) and re-enters, which then pauses again for the X-bounded target (block below).
+        // SelectCardsDecision over the eligible permanents. The resumer fills the selection and
+        // re-enters, which computes X from it and — for an ability whose target wasn't gathered up
+        // front — pauses again for that target (block below).
         //
-        // Skipped when exiledCards is already filled (engine-direct path / resumed replay).
+        // Skipped when variableCostPermanents is already filled (engine-direct path / resumed replay).
         // -------------------------------------------------------------------
-        if (exilePermanentsCost != null && exiledForCost.isEmpty()) {
+        if (variablePermanentsCost != null && chosenForCost.isEmpty()) {
+            val verb = if (variablePermanentsCost.action == PermanentCostAction.SACRIFICE) "sacrifice" else "exile"
             val candidates = costHandler
-                .findMatchingCardsUnified(state, state.getBattlefield(action.playerId), exilePermanentsCost.filter, action.playerId)
-                .let { if (exilePermanentsCost.excludeSelf) it.filter { id -> id != action.sourceId } else it }
-            val minCount = exilePermanentsCost.minCount
+                .findMatchingCardsUnified(state, state.getBattlefield(action.playerId), variablePermanentsCost.filter, action.playerId)
+                .let { if (variablePermanentsCost.excludeSelf) it.filter { id -> id != action.sourceId } else it }
+            val minCount = variablePermanentsCost.minCount
             if (candidates.size < minCount) {
-                return ExecutionResult.error(state, "Not enough permanents to exile for ${cardComponent.name}")
+                return ExecutionResult.error(state, "Not enough permanents to $verb for ${cardComponent.name}")
             }
             val decisionId = java.util.UUID.randomUUID().toString()
-            val prompt = "Choose one or more ${exilePermanentsCost.filter.description}s to exile for ${cardComponent.name}"
+            val prompt = "Choose one or more ${variablePermanentsCost.filter.description}s to $verb for ${cardComponent.name}"
             val decision = com.wingedsheep.engine.core.SelectCardsDecision(
                 id = decisionId,
                 playerId = action.playerId,
@@ -969,10 +976,10 @@ class ActivateAbilityHandler(
                 minSelections = minCount,
                 maxSelections = candidates.size
             )
-            val continuation = com.wingedsheep.engine.core.ActivateAbilityExilePermanentsContinuation(
+            val continuation = com.wingedsheep.engine.core.ActivateAbilityVariablePermanentsContinuation(
                 decisionId = decisionId,
                 action = action,
-                exileCandidates = candidates,
+                candidates = candidates,
                 minCount = minCount
             )
             val pausedState = state.withPendingDecision(decision).pushContinuation(continuation)
@@ -986,15 +993,17 @@ class ActivateAbilityHandler(
         }
 
         // -------------------------------------------------------------------
-        // X-bounded target pause for an ExilePermanents ability (Fabrication Foundry).
+        // Target pause for a VariablePermanents ability (Fabrication Foundry, Radiant Lotus).
         //
-        // Once the exile selection is known (block above resumed → exiledCards filled → X computed),
-        // raise the controller's target choice with the "mana value X or less" cap resolved against
-        // X (threaded through the predicate context). The resumer fills action.targets and re-enters
-        // to pay + resolve. Skipped on the engine-direct path (targets already supplied) and for
-        // abilities with no controller target.
+        // The enumerator deliberately surfaces these abilities with no target gathered up front,
+        // because a target may be bounded by X ("mana value X or less") and X isn't known until the
+        // cost choice is made. Once that selection is known (block above resumed → X computed),
+        // raise the controller's target choice with X threaded through the predicate context, so an
+        // over-X target can't be picked and then fizzle. The resumer fills action.targets and
+        // re-enters to pay + resolve. Skipped on the engine-direct path (targets already supplied)
+        // and for abilities with no controller target.
         // -------------------------------------------------------------------
-        if (exilePermanentsCost != null && exiledForCost.isNotEmpty() && action.targets.isEmpty()) {
+        if (variablePermanentsCost != null && chosenForCost.isNotEmpty() && action.targets.isEmpty()) {
             val execTargetReqs = if (textReplacement != null) {
                 ability.targetRequirements.map { it.applyTextReplacement(textReplacement) }
             } else {
@@ -1081,7 +1090,7 @@ class ActivateAbilityHandler(
 
         // Pay mana costs before paying other costs
         var effectiveManaCost = extractManaCost(effectiveCost)
-        // For an ExilePermanents cost, X is the exiled permanents' total mana value (computed above);
+        // For an VariablePermanents cost, X is the exiled permanents' total mana value (computed above);
         // otherwise it's the action's chosen X. Identical to `action.xValue ?: 0` for every other card.
         val xValue = effectiveXValue ?: 0
 
@@ -1187,6 +1196,7 @@ class ActivateAbilityHandler(
             sacrificeChoices = action.costPayment?.sacrificedPermanents ?: emptyList(),
             discardChoices = action.costPayment?.discardedCards ?: emptyList(),
             exileChoices = action.costPayment?.exiledCards ?: emptyList(),
+            variablePermanentChoices = action.costPayment?.variableCostPermanents ?: emptyList(),
             tapChoices = firstTapSlice,
             bounceChoices = action.costPayment?.bouncedPermanents ?: emptyList(),
             xValue = xValue,
@@ -1196,8 +1206,10 @@ class ActivateAbilityHandler(
         )
 
         // Snapshot projected subtypes and P/T of sacrifice targets before zone change
-        // (Rule 112.7a / 608.2h — "as it last existed on the battlefield")
-        val sacrificeTargetIds = action.costPayment?.sacrificedPermanents ?: emptyList()
+        // (Rule 112.7a / 608.2h — "as it last existed on the battlefield"). Covers both the
+        // fixed-count sacrifice cost and a variable-count one, which moves permanents just the same.
+        val sacrificeTargetIds = (action.costPayment?.sacrificedPermanents ?: emptyList()) +
+            (action.costPayment?.variableCostPermanents ?: emptyList())
         val sacrificedSnapshots = captureEntitySnapshots(sacrificeTargetIds, currentState.projectedState)
 
         // Mirror sacrifice snapshots for tapped-as-cost permanents — they may leave the
@@ -1734,7 +1746,7 @@ class ActivateAbilityHandler(
             controllerId = action.playerId,
             effect = finalEffect,
             sacrificedPermanents = sacrificedSnapshots,
-            // ExilePermanents X (exiled total mana value) is stored so 608.2b re-validation of the
+            // VariablePermanents X (exiled total mana value) is stored so 608.2b re-validation of the
             // "mana value X or less" target and any XValue read resolve against it; else action.xValue.
             xValue = effectiveXValue,
             tappedPermanents = firstTapSlice,
@@ -3082,27 +3094,38 @@ class ActivateAbilityHandler(
     }
 
     /**
-     * Pull the [CostAtom.ExilePermanents] variable-count sub-cost out of an ability cost, or null if
+     * Pull the [CostAtom.VariablePermanents] variable-count sub-cost out of an ability cost, or null if
      * none. Drives the two-step activation flow for "Exile one or more other [filter] you control
      * with total mana value X" costs (Fabrication Foundry): the handler pauses to let the player pick
      * which permanents to exile, then — because the target's legality depends on the resulting X —
      * pauses again for the target choice.
      */
-    private fun extractExilePermanentsCost(cost: AbilityCost): CostAtom.ExilePermanents? = when (cost) {
-        is AbilityCost.Atom -> cost.atom as? CostAtom.ExilePermanents
+    private fun extractVariablePermanentsCost(cost: AbilityCost): CostAtom.VariablePermanents? = when (cost) {
+        is AbilityCost.Atom -> cost.atom as? CostAtom.VariablePermanents
         is AbilityCost.Composite -> cost.costs.firstNotNullOfOrNull {
-            (it as? AbilityCost.Atom)?.atom as? CostAtom.ExilePermanents
+            (it as? AbilityCost.Atom)?.atom as? CostAtom.VariablePermanents
         }
         else -> null
     }
 
     /**
-     * Total mana value (CR 202.3) of the permanents chosen to pay a [CostAtom.ExilePermanents] cost.
-     * This is the ability's X value (CR 601.2b — a variable defined by a cost choice is announced at
-     * activation), read at target validation and stored on the stack for resolution re-validation.
-     * Mana value is intrinsic, so it reads correctly whether the permanents are still on the
-     * battlefield (validation) or already exiled (resolution).
+     * The ability's X value for a [CostAtom.VariablePermanents] cost, measured from the permanents
+     * the payer chose (CR 601.2b — a variable defined by a cost choice is announced at activation).
+     * Read at target validation and stored on the stack for resolution re-validation and
+     * `DynamicAmount.XValue`.
+     *
+     * `TOTAL_MANA_VALUE` sums their mana values (CR 202.3); `COUNT` is simply how many were chosen.
+     * Both read correctly whether the permanents are still on the battlefield (validation) or
+     * already gone (resolution): mana value is intrinsic to the card, and the count is a property of
+     * the selection rather than of the game state.
      */
-    private fun sumExiledManaValue(state: GameState, exiledIds: List<EntityId>): Int =
-        exiledIds.sumOf { state.getEntity(it)?.get<CardComponent>()?.manaValue ?: 0 }
+    private fun variableCostX(
+        state: GameState,
+        atom: CostAtom.VariablePermanents,
+        chosenIds: List<EntityId>,
+    ): Int = when (atom.xMeasure) {
+        VariableCostMeasure.TOTAL_MANA_VALUE ->
+            chosenIds.sumOf { state.getEntity(it)?.get<CardComponent>()?.manaValue ?: 0 }
+        VariableCostMeasure.COUNT -> chosenIds.size
+    }
 }

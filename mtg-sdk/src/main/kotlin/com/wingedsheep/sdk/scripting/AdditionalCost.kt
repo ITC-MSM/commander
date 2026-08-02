@@ -601,6 +601,18 @@ data class AdditionalCostPayment(
     /** Cards that were exiled */
     val exiledCards: List<EntityId> = emptyList(),
 
+    /**
+     * Permanents chosen for a [com.wingedsheep.sdk.scripting.costs.CostAtom.VariablePermanents]
+     * variable-count cost — "exile/sacrifice **one or more** [filter] you control".
+     *
+     * Its own channel rather than [exiledCards] / [sacrificedPermanents] because the count is the
+     * payer's choice (CR 601.2b) and the same ability may also carry a fixed-count sacrifice or
+     * exile cost: mixing them into one list would make "which permanents paid which leg" ambiguous.
+     * The engine derives the ability's X from this list — its size, or the total mana value of its
+     * members, per the atom's `xMeasure`.
+     */
+    val variableCostPermanents: List<EntityId> = emptyList(),
+
     /** Cards chosen via Behold (from battlefield or hand) */
     val beheldCards: List<EntityId> = emptyList(),
 
@@ -639,6 +651,7 @@ data class AdditionalCostPayment(
                 discardedCards.isEmpty() &&
                 lifePaid == 0 &&
                 exiledCards.isEmpty() &&
+                variableCostPermanents.isEmpty() &&
                 beheldCards.isEmpty() &&
                 tappedPermanents.isEmpty() &&
                 bouncedPermanents.isEmpty() &&

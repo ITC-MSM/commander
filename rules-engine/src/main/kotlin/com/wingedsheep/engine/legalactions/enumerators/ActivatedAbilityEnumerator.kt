@@ -239,7 +239,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             )
                             if (sacrificeTargets.size < atom.count) continue
                         }
-                        is CostAtom.ExilePermanents -> {
+                        is CostAtom.VariablePermanents -> {
                             // "Exile one or more other [filter] you control …" (Fabrication Foundry).
                             // Affordable when at least minCount eligible permanents exist; the player
                             // picks which during activation (the handler pauses). Same candidate pool
@@ -388,7 +388,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                             break
                                         }
                                     }
-                                    is CostAtom.ExilePermanents -> {
+                                    is CostAtom.VariablePermanents -> {
                                         // "Exile one or more other [filter] you control …" as one leg
                                         // of a composite cost (Fabrication Foundry's {2}{W}, {T},
                                         // Exile …). Affordable when at least minCount eligible
@@ -840,7 +840,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     // fizzle. Surface a bare action; the handler pauses first for the exile selection,
                     // then for the X-bounded target, in order. (The satisfiability gate above still
                     // applies — no artifact card in the graveyard means no legal target at any X.)
-                    if (costContainsExilePermanents(effectiveCost)) {
+                    if (costContainsVariablePermanents(effectiveCost)) {
                         result.add(LegalAction(
                             actionType = "ActivateAbility",
                             description = displayDescription,
@@ -1256,10 +1256,10 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
      * "real" effect is hidden inside (e.g., Figure of Fable's `ConditionalEffect(... BecomeCreature)`) is
      * also excluded.
      */
-    /** True when [cost] contains a [CostAtom.ExilePermanents] atom (top-level or in a Composite). */
-    private fun costContainsExilePermanents(cost: AbilityCost): Boolean = when (cost) {
-        is AbilityCost.Atom -> cost.atom is CostAtom.ExilePermanents
-        is AbilityCost.Composite -> cost.costs.any { costContainsExilePermanents(it) }
+    /** True when [cost] contains a [CostAtom.VariablePermanents] atom (top-level or in a Composite). */
+    private fun costContainsVariablePermanents(cost: AbilityCost): Boolean = when (cost) {
+        is AbilityCost.Atom -> cost.atom is CostAtom.VariablePermanents
+        is AbilityCost.Composite -> cost.costs.any { costContainsVariablePermanents(it) }
         else -> false
     }
 

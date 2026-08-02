@@ -323,21 +323,34 @@ excluded.
   ("{X}, {T}, Exile X cards from your graveyard") pays X in mana too, so the mana-X picker fixes the
   count first and the selection is pinned to exactly that many. Selecting nothing is legal and
   settles as X = 0.
-- `Costs.ExilePermanents(filter = Any, minCount = 1, excludeSelf = true)` — **variable-count** "exile
-  one or more permanents you control matching `filter`" activated-ability cost (CR 601.2b — the
-  player chooses how many, at least `minCount`, as the ability is activated). With `excludeSelf` the
-  ability's own source is excluded ("one or more *other* …"). Unlike the fixed-count
-  `Sacrifice`/`ExileFromGraveyard` atoms, the **total mana value of the exiled permanents becomes the
-  ability's X value** — read it with `DynamicAmount.XValue` (or `GameObjectFilter.manaValueAtMostX()`
-  on a target) to bound "mana value X or less" reads. The value is fixed at activation and stored on
-  the stack, so an X-bounded target is re-validated against it at resolution (CR 608.2b). Backs
-  **Fabrication Foundry** ("{2}{W}, {T}, Exile one or more other artifacts you control with total
-  mana value X: Return target artifact card with mana value X or less from your graveyard to the
-  battlefield"). The engine drives the activation in order: it pauses for the on-battlefield exile
-  selection (min = `minCount`, max = all eligible), computes X, then pauses again for the X-bounded
-  target — so an over-MV target can never be chosen. Pair with `TimingRule.SorcerySpeed` where the
-  card says "Activate only as a sorcery." (permanents leave via the normal battlefield→exile
-  transition, so Auras fall off, tokens cease to exist, and leaves-the-battlefield triggers fire).
+- `Costs.ExilePermanents(filter = Any, minCount = 1, excludeSelf = true, xMeasure = TOTAL_MANA_VALUE)`
+  / `Costs.SacrificePermanents(filter = Any, minCount = 1, excludeSelf = false, xMeasure = COUNT)` —
+  **variable-count** "exile/sacrifice one or more permanents you control matching `filter`"
+  activated-ability cost (CR 601.2b — the player chooses how many, at least `minCount`, as the
+  ability is activated). One atom, `CostAtom.VariablePermanents`, with two orthogonal axes; the two
+  facades are the named entry points to it. With `excludeSelf` the ability's own source is excluded
+  ("one or more *other* …"); leave it false when the source may pay for itself.
+  - **`action`** (set by which facade you call) — `EXILE` moves the permanents via the normal
+    battlefield→exile transition; `SACRIFICE` puts them in their owners' graveyards through the same
+    path a fixed-count sacrifice cost uses, so "whenever you sacrifice" triggers and Food tracking
+    fire. Either way Auras fall off, tokens cease to exist, and leaves-the-battlefield triggers fire.
+  - **`xMeasure`** — how the choice becomes the ability's **X**, read with `DynamicAmount.XValue`.
+    `TOTAL_MANA_VALUE` sums the chosen permanents' mana values, for "…with total mana value X" cards
+    whose target is bounded by `GameObjectFilter.manaValueAtMostX()`; `COUNT` is simply how many were
+    chosen, for "…for each permanent sacrificed this way". Either value is fixed at activation and
+    stored on the stack, so an X-bounded target is re-validated against it at resolution (CR 608.2b)
+    and a resolution-time `XValue` read can't be changed by removal in response.
+
+  Backs **Fabrication Foundry** ("{2}{W}, {T}, Exile one or more other artifacts you control with
+  total mana value X: Return target artifact card with mana value X or less from your graveyard to
+  the battlefield") and **Radiant Lotus** ("{T}, Sacrifice one or more artifacts: Choose a color.
+  Target player adds three mana of the chosen color for each artifact sacrificed this way" —
+  `Costs.SacrificePermanents(Artifact, excludeSelf = false)` plus
+  `AddManaOfChoice(amount = Multiply(XValue, 3), recipient = <the target>)`). The engine drives the
+  activation in order: it pauses for the on-battlefield selection (min = `minCount`, max = all
+  eligible), computes X, then pauses again for the ability's target — so an over-X target can never
+  be chosen. Both pauses precede cost payment, so cancelling either is side-effect-free. Pair with
+  `TimingRule.SorcerySpeed` where the card says "Activate only as a sorcery."
 - `Costs.Forage()` (ability cost) / `Costs.additional.Forage` (additional cost) — Forage (CR
   701.61): "exile three cards from your graveyard **or** sacrifice a Food." A *choice* between two
   sub-costs that belongs to the player. All cost-shaped forage payment is unified in the engine's
@@ -1100,7 +1113,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   emptying (CR 500.5, `CleanupPhaseManager.emptyManaPools` → `ManaPoolComponent.emptyAtBoundary(...)`)
   the kept colours survive while everything else empties, until the marker clears at end-of-turn
   cleanup. The Last Agni Kai (`RetainUnspentMana(Color.RED)`).
-- `AddManaOfChoice(colorSet, amount?, restriction?, riders?)` — **unified primitive.** Add N mana of one color the controller picks from a resolved [ManaColorSet](#manacolorset). All "any-color from a constrained pool" cards (any color, commander identity, among permanents, lands could produce, source-chosen color) are expressed as this effect plus a different `ManaColorSet`. `riders` is a `Set<ManaSpellRider>` consumed when the mana pays for a spell (e.g. Path of Ancestry tags its mana with `ScryOnSharedTypeWithCommander`); when riders are set without a `restriction`, the engine stores the entries under `ManaRestriction.AnySpend` to preserve the rider through the pool.
+- `AddManaOfChoice(colorSet, amount?, restriction?, riders?, recipient?)` — **unified primitive.** Add N mana of one color the controller picks from a resolved [ManaColorSet](#manacolorset). All "any-color from a constrained pool" cards (any color, commander identity, among permanents, lands could produce, source-chosen color) are expressed as this effect plus a different `ManaColorSet`. `riders` is a `Set<ManaSpellRider>` consumed when the mana pays for a spell (e.g. Path of Ancestry tags its mana with `ScryOnSharedTypeWithCommander`); when riders are set without a `restriction`, the engine stores the entries under `ManaRestriction.AnySpend` to preserve the rider through the pool. `recipient` is an `EffectTarget` naming **whose pool** the mana lands in — it defaults to `EffectTarget.Controller` (the only shape a mana ability can have, CR 605.1a) and takes a chosen target for "**target player** adds …" (Radiant Lotus). Only the pool moves: the *colour* is still chosen by the ability's controller, because "Choose a color" names no other chooser. An ability with a non-default `recipient` targets, so by definition it isn't a mana ability — it uses the stack, can be responded to, and the mana arrives in the recipient's pool at resolution (and empties at end of step like any other mana, CR 500.4).
 - `AddAnyColorMana(amount?, restriction?)` — sugar for `AddManaOfChoice(ManaColorSet.AnyColor, amount)`. "Add N mana of any **one** color" (Gilded Lotus): one chosen color, N of it. For "any **combination** of colors" use `AddManaInAnyCombination`.
 - `AddManaOfChosenColor(amount?)` — sugar for `AddManaOfChoice(ManaColorSet.SourceChosenColor, amount)`.
 - `AddManaOfColorAmong(filter)` — sugar for `AddManaOfChoice(ManaColorSet.AmongPermanents(filter))`.

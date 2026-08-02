@@ -4,7 +4,7 @@ import com.wingedsheep.engine.core.ActivateAbilityChooseManaXContinuation
 import com.wingedsheep.engine.core.ActivateAbilityChooseXContinuation
 import com.wingedsheep.engine.core.ActivateAbilityControllerTargetContinuation
 import com.wingedsheep.engine.core.ActivateAbilityExileFromGraveyardContinuation
-import com.wingedsheep.engine.core.ActivateAbilityExilePermanentsContinuation
+import com.wingedsheep.engine.core.ActivateAbilityVariablePermanentsContinuation
 import com.wingedsheep.engine.core.ActivateAbilityExileXFromGraveyardContinuation
 import com.wingedsheep.engine.core.ActivateAbilitySacrificeContinuation
 import com.wingedsheep.engine.core.ActivateAbilityTapXTargetsContinuation
@@ -57,7 +57,7 @@ class ActivateAbilityXCostContinuationResumer(
         resumer(ActivateAbilityTapXTargetsContinuation::class, ::resumeTapXTargets),
         resumer(ActivateAbilityExileFromGraveyardContinuation::class, ::resumeExileFromGraveyard),
         resumer(ActivateAbilitySacrificeContinuation::class, ::resumeSacrifice),
-        resumer(ActivateAbilityExilePermanentsContinuation::class, ::resumeExilePermanents),
+        resumer(ActivateAbilityVariablePermanentsContinuation::class, ::resumeVariablePermanents),
         resumer(ActivateAbilityControllerTargetContinuation::class, ::resumeControllerTargets)
     )
 
@@ -257,48 +257,48 @@ class ActivateAbilityXCostContinuationResumer(
     }
 
     /**
-     * Resume after the controller picks which permanents to exile for a variable-count
-     * `CostAtom.ExilePermanents` cost — "Exile one or more other [filter] you control with total
-     * mana value X" (Fabrication Foundry). Fills the chosen permanents into
-     * `costPayment.exiledCards` and re-enters the handler, which computes X (their total mana value)
-     * and pauses again for the X-bounded target.
+     * Resume after the controller picks which permanents pay a variable-count
+     * `CostAtom.VariablePermanents` cost — "Exile one or more other [filter] you control with total
+     * mana value X" (Fabrication Foundry) or "Sacrifice one or more [filter]" (Radiant Lotus).
+     * Fills the chosen permanents into `costPayment.variableCostPermanents` and re-enters the
+     * handler, which computes X from them and pauses again for the ability's target.
      */
-    private fun resumeExilePermanents(
+    private fun resumeVariablePermanents(
         state: GameState,
-        continuation: ActivateAbilityExilePermanentsContinuation,
+        continuation: ActivateAbilityVariablePermanentsContinuation,
         response: DecisionResponse,
         checkForMore: CheckForMore
     ): ExecutionResult {
         if (response is CancelDecisionResponse) {
-            // The exile cost is paid after this pause, so bailing here is side-effect-free.
+            // The cost is paid after this pause, so bailing here is side-effect-free.
             return ExecutionResult.success(state.withPriority(continuation.action.playerId))
         }
         if (response !is CardsSelectedResponse) {
-            return ExecutionResult.error(state, "Expected card-selection response for ActivateAbility ExilePermanents")
+            return ExecutionResult.error(state, "Expected card-selection response for ActivateAbility VariablePermanents")
         }
         val selected = response.selectedCards
         if (selected.size < continuation.minCount) {
             return ExecutionResult.error(
                 state,
-                "Must exile at least ${continuation.minCount} permanent(s), got ${selected.size}"
+                "Must choose at least ${continuation.minCount} permanent(s), got ${selected.size}"
             )
         }
         if (selected.toSet().size != selected.size) {
-            return ExecutionResult.error(state, "Cannot exile the same permanent twice for one cost")
+            return ExecutionResult.error(state, "Cannot choose the same permanent twice for one cost")
         }
-        if (selected.any { it !in continuation.exileCandidates }) {
-            return ExecutionResult.error(state, "Selected permanent is not in the list of valid exile candidates")
+        if (selected.any { it !in continuation.candidates }) {
+            return ExecutionResult.error(state, "Selected permanent is not in the list of valid candidates")
         }
         val action = continuation.action
         val replay = action.copy(
             costPayment = (action.costPayment ?: AdditionalCostPayment())
-                .copy(exiledCards = selected)
+                .copy(variableCostPermanents = selected)
         )
         return reenter(handler.execute(state, replay), checkForMore)
     }
 
     /**
-     * Resume after the controller picks the X-bounded target of an `ExilePermanents` ability
+     * Resume after the controller picks the X-bounded target of an `VariablePermanents` ability
      * (Fabrication Foundry: "Return target artifact card with mana value X or less …"). The exile
      * selection — and thus X — is already on the action; convert the response into [ChosenTarget]s,
      * fill `action.targets`, and re-enter the handler to pay the cost and put the ability on the
