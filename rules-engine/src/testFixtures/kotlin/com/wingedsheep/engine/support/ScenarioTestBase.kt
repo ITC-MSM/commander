@@ -860,15 +860,19 @@ abstract class ScenarioTestBase : FunSpec() {
         /**
          * Cycle a card by name from a player's hand.
          * The player pays the cycling cost, discards the card, and draws a card.
+         *
+         * [xValue] announces X for an `{X}` cycling cost (Webstrike Elite's "Cycling {X}{G}{G}").
+         * Leaving it null on such a card exercises the client's path instead: the engine raises a
+         * ChooseNumberDecision for X and resumes once it's answered.
          */
-        fun cycleCard(playerNumber: Int, cardName: String): ExecutionResult {
+        fun cycleCard(playerNumber: Int, cardName: String, xValue: Int? = null): ExecutionResult {
             val playerId = if (playerNumber == 1) player1Id else player2Id
             val hand = state.getHand(playerId)
             val cardId = hand.find { entityId ->
                 state.getEntity(entityId)?.get<CardComponent>()?.name == cardName
             } ?: error("Card '$cardName' not found in player $playerNumber's hand")
 
-            return execute(CycleCard(playerId, cardId))
+            return execute(CycleCard(playerId, cardId, xValue = xValue))
         }
 
         /**

@@ -286,7 +286,8 @@ export function mergeResult(
       if (
         action.type === 'CastSpell' ||
         action.type === 'ActivateAbility' ||
-        action.type === 'TurnFaceUp'
+        action.type === 'TurnFaceUp' ||
+        action.type === 'CycleCard'
       ) {
         return { ...action, xValue: result.xValue }
       }

@@ -79,6 +79,15 @@ class CycleCardHandler(
             .firstOrNull { it.searchFilter == null }
             ?: return "This card doesn't have cycling"
 
+        // The action is client-supplied: a negative X would underflow the cost substitution.
+        if (action.xValue != null && action.xValue < 0) {
+            return "X can't be negative"
+        }
+
+        // Affordability is judged against X=0 when the player hasn't announced X yet — the
+        // handler raises the choice, and X=0 is always a legal announcement (CR 107.3a).
+        val effectiveCost = cyclingAbility.cost.withXAs(action.xValue ?: 0)
+
         if (action.paymentStrategy is PaymentStrategy.Explicit) {
             for (sourceId in action.paymentStrategy.manaAbilitiesToActivate) {
                 val sourceContainer = state.getEntity(sourceId)
@@ -87,7 +96,7 @@ class CycleCardHandler(
                     return "Mana source is already tapped: $sourceId"
                 }
             }
-        } else if (!manaSolver.canPay(state, action.playerId, cyclingAbility.cost)) {
+        } else if (!manaSolver.canPay(state, action.playerId, effectiveCost)) {
             return "Not enough mana to cycle this card"
         }
 
@@ -108,6 +117,54 @@ class CycleCardHandler(
             .firstOrNull { it.searchFilter == null }
             ?: return ExecutionResult.error(state, "This card doesn't have cycling")
 
+        // ---------------------------------------------------------------------
+        // {X} cycling cost — announce X (CR 107.3a).
+        //
+        // Cycling is an activated ability (CR 702.29a), so its `{X}` is chosen as the ability is
+        // activated. The legal-actions submission path sends a bare CycleCard with no xValue; pause
+        // for the choice and re-enter with it bound. The engine-direct path (xValue pre-filled,
+        // as scenario tests and the AI use) skips this. Mirrors the mana-X pause in
+        // ActivateAbilityHandler.
+        // ---------------------------------------------------------------------
+        if (cyclingAbility.cost.hasX && action.xValue == null) {
+            val fixedMana = cyclingAbility.cost.withXAs(0).cmc
+            val maxX = ((manaSolver.getAvailableManaCount(state, action.playerId) - fixedMana) /
+                cyclingAbility.cost.xCount.coerceAtLeast(1)).coerceAtLeast(0)
+            val decisionId = java.util.UUID.randomUUID().toString()
+            val decision = com.wingedsheep.engine.core.ChooseNumberDecision(
+                id = decisionId,
+                playerId = action.playerId,
+                prompt = "Choose X for cycling ${cardComponent.name} (0-$maxX)",
+                context = com.wingedsheep.engine.core.DecisionContext(
+                    sourceId = action.cardId,
+                    sourceName = cardComponent.name,
+                    phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
+                ),
+                minValue = 0,
+                maxValue = maxX
+            )
+            val pausedState = state
+                .withPendingDecision(decision)
+                .pushContinuation(
+                    com.wingedsheep.engine.core.CycleCardChooseXContinuation(
+                        decisionId = decisionId,
+                        action = action
+                    )
+                )
+            val event = com.wingedsheep.engine.core.DecisionRequestedEvent(
+                decisionId = decisionId,
+                playerId = action.playerId,
+                decisionType = "CHOOSE_NUMBER",
+                prompt = decision.prompt
+            )
+            return ExecutionResult.paused(pausedState, decision, listOf(event))
+        }
+
+        // X is settled from here on. Substituting it into the cost leaves an ordinary X-free cost,
+        // so every payment path below (pool, auto-tap, explicit taps) works unchanged.
+        val announcedX = action.xValue?.takeIf { cyclingAbility.cost.hasX }
+        val cyclingCost = cyclingAbility.cost.withXAs(announcedX ?: 0)
+
         var currentState = state
         val events = mutableListOf<GameEvent>()
         val ownerId = cardComponent.ownerId ?: action.playerId
@@ -124,7 +181,7 @@ class CycleCardHandler(
             colorless = poolComponent.colorless
         )
 
-        val partialResult = pool.payPartial(cyclingAbility.cost)
+        val partialResult = pool.payPartial(cyclingCost)
         val poolAfterPayment = partialResult.newPool
         val remainingCost = partialResult.remainingCost
         val manaSpentFromPool = partialResult.manaSpent
@@ -225,7 +282,7 @@ class CycleCardHandler(
         )
 
         // Emit cycling event (for cycling triggers like Astral Slide)
-        events.add(CardCycledEvent(action.playerId, action.cardId, cardComponent.name))
+        events.add(CardCycledEvent(action.playerId, action.cardId, cardComponent.name, announcedX))
 
         currentState = currentState.tick()
 
@@ -242,11 +299,15 @@ class CycleCardHandler(
             val triggerResult = triggerProcessor.processTriggers(stateWithDrawContinuation, preTriggers)
 
             if (triggerResult.isPaused) {
+                // triggersAlreadyProcessed: the cycling events above have been through
+                // detectTriggers here. Without the flag, SubmitDecisionHandler re-scans this
+                // result's events when the cycle was resumed from a decision (an {X} cycling
+                // cost's ChooseNumber) and queues the cycling trigger a second time.
                 return ExecutionResult.paused(
                     triggerResult.state,
                     triggerResult.pendingDecision!!,
                     events + triggerResult.events
-                )
+                ).copy(triggersAlreadyProcessed = true)
             }
 
             // Triggers resolved synchronously — pop the draw continuation and draw inline
@@ -269,13 +330,14 @@ class CycleCardHandler(
                 drawResult.state,
                 drawResult.pendingDecision!!,
                 events + drawResult.events
-            )
+            ).copy(triggersAlreadyProcessed = true)
         }
         currentState = drawResult.newState
         events.addAll(drawResult.events)
 
         // Cycling doesn't change priority
         return ExecutionResult.success(currentState, events)
+            .copy(triggersAlreadyProcessed = true)
     }
 
     private fun isCyclingPrevented(state: GameState): Boolean {

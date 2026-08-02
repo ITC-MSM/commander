@@ -95,6 +95,12 @@ data class TriggeredAbilityContinuation(
     /** Value chosen for {X} on the spell that fired this trigger (Geometer's Arthropod). Read via
      *  `ContextPropertyKey.X_VALUE_OF_TRIGGERING_SPELL`. Null for non-cast / no-{X} triggers. */
     val triggerXValueOfTriggeringSpell: Int? = null,
+    /** The trigger's own X — the value announced for an `{X}` cost on the *action that fired it*
+     *  (an `{X}` cycling cost, a megamorph turn-up), as opposed to
+     *  [triggerXValueOfTriggeringSpell], which is a *cast spell's* X. Read as
+     *  `DynamicAmount.XValue` and by X-relative target filters (`manaValueEqualsX()`), so it must
+     *  survive target selection or the ability fizzles its own legal target on resolution. */
+    val xValue: Int? = null,
     /** Pipeline state carried from a `ReflexiveTriggerEffect`'s action half, preserved across target
      *  selection so the stack object built on resume carries it (CR 603.12). Null otherwise. */
     val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null

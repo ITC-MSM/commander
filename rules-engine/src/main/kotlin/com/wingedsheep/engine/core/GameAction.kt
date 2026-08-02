@@ -349,13 +349,18 @@ data class ActivateAbility(
  *
  * @property playerId The player cycling the card
  * @property cardId The card being cycled
+ * @property xValue The announced value of X for a cycling cost containing `{X}` (Webstrike Elite's
+ *   "Cycling {X}{G}{G}"), chosen as the ability is activated (CR 107.3a). Null on the legal-actions
+ *   submission path — the handler then raises a ChooseNumberDecision and re-enters with it bound.
+ *   Ignored for cycling costs without `{X}`.
  */
 @Serializable
 @SerialName("CycleCard")
 data class CycleCard(
     override val playerId: EntityId,
     val cardId: EntityId,
-    val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay
+    val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay,
+    val xValue: Int? = null
 ) : GameAction
 
 /**

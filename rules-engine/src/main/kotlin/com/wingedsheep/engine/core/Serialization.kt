@@ -283,6 +283,7 @@ val engineSerializersModule = SerializersModule {
         subclass(GuessTopCardKindContinuation::class)
         subclass(SelectTargetPipelineContinuation::class)
         subclass(CycleDrawContinuation::class)
+        subclass(CycleCardChooseXContinuation::class)
         subclass(TypecycleSearchContinuation::class)
         subclass(DistributeCountersContinuation::class)
         subclass(RemoveAnyNumberOfCountersContinuation::class)

@@ -5945,7 +5945,15 @@ composite abilities).
   Boosters. Author the per-card equip cost and equipped-creature bonus alongside the `jobSelect()` call (e.g. Monk's
   Fist: `jobSelect()` + `ModifyStats(1, 0)` + `GrantSubtype("Monk", Filters.EquippedCreature)` + `equipAbility("{2}")`).
 - `Toxic(n)` — adds poison counters on combat damage.
-- `Cycling(cost)` — pay cost, discard, draw a card.
+- `Cycling(cost)` — pay cost, discard, draw a card. The cost may contain `{X}`
+  (`KeywordAbility.cycling("{X}{G}{G}")`, Webstrike Elite): cycling is an activated ability (CR 702.29a), so X is
+  announced as it's activated (CR 107.3a). The legal action carries `hasXCost` / `maxAffordableX` so the client's
+  xSelection phase asks for X and submits it on `CycleCard.xValue`; a bare submission instead pauses on an engine
+  `ChooseNumberDecision` (`CycleCardChooseXContinuation`) rather than silently defaulting X to 0. The announced X
+  rides `CardCycledEvent.xValue` into the cycling trigger's context, so a `Triggers.YouCycleThis` payoff reads it as
+  `DynamicAmount.XValue` (Valor's Flagship's "create X Pilot tokens") or via `manaValueEqualsX()` /
+  `manaValueAtMostX()` in a target filter (Webstrike Elite's "artifact or enchantment with mana value X").
+  X-cost **typecycling** is not wired — no such card is printed.
 - `BasicLandcycling(cost)` — cycling that fetches a basic land type.
 - `Typecycling(type, cost)` — cycling that fetches a card type.
 - `Plot(cost)` — `KeywordAbility.plot(cost)`. Special action available during your main phase while the stack is empty: pay [cost] and exile the card from your hand. It becomes plotted (stamped with a `PlottedComponent`). On a later turn you may cast it from exile without paying its mana cost, as a sorcery (CR 718). Cast permission is granted via the engine's standard `MayPlayPermission` + `PlayWithoutPayingCostComponent`, gated by `Conditions.SourcePlottedOnPriorTurn`. No card-side wiring needed — declare the keyword ability on the card and the engine handles the rest.
@@ -8486,6 +8494,9 @@ Card authors rarely reference these directly; they are created/updated by the ma
 
 - **Cycling / Typecycling / Basic landcycling** — `KeywordAbility.Cycling(cost)`, `Typecycling(type, cost)`,
   `BasicLandcycling(cost)`; unified via `TypecyclingVariant(cost, searchFilter, description)` in `TypecycleCardHandler`.
+  A plain cycling cost may contain `{X}`; `CycleCardHandler` announces it (CR 107.3a), resolves the cost via
+  `ManaCost.withXAs(x)` so the ordinary payment path sees no X, and stamps it on `CardCycledEvent.xValue` for the
+  cycling trigger. See the `Cycling(cost)` entry in §Keyword abilities for the full flow.
 - **Plot (CR 718)** — `KeywordAbility.plot(cost)`. Engine wires a sorcery-speed `PlotEnumerator` + `PlotCardHandler`
   that pays the plot cost, exiles the card face-up from hand, stamps `PlottedComponent(controllerId, turnPlotted)` +
   `PlayWithoutPayingCostComponent`, and adds a permanent `MayPlayPermission` gated by `SourcePlottedOnPriorTurn`.

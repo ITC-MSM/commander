@@ -183,6 +183,11 @@ class TriggerProcessor(
                 controllerId = trigger.controllerId,
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                // The X carried by the triggering event (an {X} cycling cost, a megamorph turn-up)
+                // so an X-relative target filter — `manaValueEqualsX()` on Webstrike Elite's
+                // "artifact or enchantment with mana value X" — finds targets at legality time.
+                // Without it those predicates read an unbound X and match nothing.
+                xValue = trigger.triggerContext.xValue,
                 storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
                 chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
                 storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
@@ -384,6 +389,11 @@ class TriggerProcessor(
                 controllerId = trigger.controllerId,
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                // The X carried by the triggering event (an {X} cycling cost, a megamorph turn-up)
+                // so an X-relative target filter — `manaValueEqualsX()` on Webstrike Elite's
+                // "artifact or enchantment with mana value X" — finds targets at legality time.
+                // Without it those predicates read an unbound X and match nothing.
+                xValue = trigger.triggerContext.xValue,
                 storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
                 chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
                 storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
@@ -494,6 +504,11 @@ class TriggerProcessor(
                 controllerId = trigger.controllerId,
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                // The X carried by the triggering event (an {X} cycling cost, a megamorph turn-up)
+                // so an X-relative target filter — `manaValueEqualsX()` on Webstrike Elite's
+                // "artifact or enchantment with mana value X" — finds targets at legality time.
+                // Without it those predicates read an unbound X and match nothing.
+                xValue = trigger.triggerContext.xValue,
                 storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
                 chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
                 storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
@@ -586,6 +601,9 @@ class TriggerProcessor(
                     controllerId = trigger.controllerId,
                     triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                     triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                    // See the note on the other findLegalTargets call sites: an X-relative target
+                    // filter needs the triggering event's X bound to match anything.
+                    xValue = trigger.triggerContext.xValue,
                     storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
                     chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
                     storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
@@ -738,6 +756,7 @@ class TriggerProcessor(
             triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
             triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
             triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
+            xValue = trigger.triggerContext.xValue,
             carriedPipeline = trigger.carriedPipeline
         )
 
@@ -1114,6 +1133,9 @@ class TriggerProcessor(
             controllerId = ability.controllerId,
             triggeringEntityId = ability.triggeringEntityId,
             triggeringPlayerId = ability.triggeringPlayerId,
+            // Same reason as the pending-trigger call sites: an X-relative target filter must see
+            // the X the ability went on the stack with, or it re-checks as having no legal targets.
+            xValue = ability.xValue,
             storedCollections = ability.carriedPipeline?.storedCollections ?: emptyMap(),
             chosenValues = ability.carriedPipeline?.chosenValues ?: emptyMap(),
             storedStringLists = ability.carriedPipeline?.storedStringLists ?: emptyMap(),
