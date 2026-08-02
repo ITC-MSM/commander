@@ -26,6 +26,25 @@ class SetArchetypesTest : StringSpec({
         woe?.archetypes?.map { it.colors.toSet() }?.toSet() shouldBe ALL_COLOR_PAIRS
     }
 
+    "Aetherdrift exposes all ten two-color limited archetypes" {
+        val synergies = requireNotNull(SetArchetypes.getForSet("dft"))
+
+        synergies.setName shouldBe "Aetherdrift"
+        synergies.archetypes.map { it.name } shouldContainExactly listOf(
+            "Artifact Value",
+            "Artifact Bleeder",
+            "Max Speed Aggro",
+            "Exhaust Midrange",
+            "Vehicles and Mounts Midrange",
+            "Max Speed Attrition",
+            "Discard Aggro",
+            "Graveyard",
+            "Vehicles and Mounts Aggro",
+            "Exhaust Ramp",
+        )
+        synergies.archetypes.map { it.colors.toSet() }.toSet() shouldBe ALL_COLOR_PAIRS
+    }
+
     "Innistrad Remastered exposes all ten two-color draft archetypes" {
         val synergies = SetArchetypes.getForSet("inr")
 

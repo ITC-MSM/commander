@@ -393,6 +393,32 @@ object SetArchetypes {
                     "Trigger landfall every time a land enters, turning even late-game land draws into damage with angry Chocobos and big beaters. A ramp-and-aggro deck that overwhelms with raw board presence."),
             )
         ),
+        "DFT" to SetSynergies(
+            setCode = "DFT",
+            setName = "Aetherdrift",
+            archetypes = listOf(
+                Archetype("Artifact Value", listOf(Color.WHITE, Color.BLUE),
+                    "Build a broad board of artifact creatures and Vehicles, then turn that artifact density into discounts and repeated value. A patient control deck that eventually overwhelms opponents with its assembled fleet."),
+                Archetype("Artifact Bleeder", listOf(Color.BLUE, Color.BLACK),
+                    "Gum up the battlefield with artifact creatures, Toys, and Thopters while artifact payoffs steadily drain the opponent. A controlling attrition deck that wins a life point at a time."),
+                Archetype("Max Speed Aggro", listOf(Color.BLACK, Color.RED),
+                    "Attack early and keep dealing damage to reach max speed, upgrading efficient attackers into dangerous finishers. The color pair's low curve and direct damage keep the pressure relentless."),
+                Archetype("Exhaust Midrange", listOf(Color.RED, Color.GREEN),
+                    "Use exhaust abilities for one decisive burst of value, with cost reducers helping activate the strongest abilities ahead of schedule. A creature-heavy midrange deck whose racers grow to dominating size."),
+                Archetype("Vehicles and Mounts Midrange", listOf(Color.GREEN, Color.WHITE),
+                    "Balance creatures with Vehicles and Mounts so every ride has someone ready to crew or saddle it. Combat bonuses reinforce the team after attacking, creating a sturdy go-tall midrange deck."),
+                Archetype("Max Speed Attrition", listOf(Color.WHITE, Color.BLACK),
+                    "Build speed through sacrifice, life drain, and evasive chip damage instead of all-out attacks. Removal and recursive value let this slower max-speed deck clear a path and grind opponents down."),
+                Archetype("Discard Aggro", listOf(Color.BLUE, Color.RED),
+                    "Cycle and discard cards to trigger aggressive payoffs while continuously improving the quality of your hand. Instant-speed cycling keeps options open before an explosive tempo turn."),
+                Archetype("Graveyard", listOf(Color.BLACK, Color.GREEN),
+                    "Mill or discard expensive creatures and Vehicles, then reanimate them ahead of schedule. Self-mill and recursion form a five-cylinder value engine that turns the graveyard into a second hand."),
+                Archetype("Vehicles and Mounts Aggro", listOf(Color.RED, Color.WHITE),
+                    "Deploy cheap creatures, Vehicles, and Mounts, then use token generation and combat payoffs to hit fast and hard. This is the format's most dedicated racing deck, built to stay on the attack."),
+                Archetype("Exhaust Ramp", listOf(Color.GREEN, Color.BLUE),
+                    "Ramp with lands and mana artifacts so you can activate multiple expensive exhaust abilities. Card advantage and oversized finishers reward taking the long route and going over the top."),
+            )
+        ),
         "INR" to SetSynergies(
             setCode = "INR",
             setName = "Innistrad Remastered",
