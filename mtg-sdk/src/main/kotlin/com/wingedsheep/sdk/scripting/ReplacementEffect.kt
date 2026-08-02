@@ -1300,6 +1300,44 @@ data class LifeLossFloor(
     }
 }
 
+/**
+ * A life *payment* becomes an exile of that many cards off the top of the payer's library, so long
+ * as the library is deep enough to cover it. Ashiok, Wicked Manipulator: "If you would pay life
+ * while your library has at least that many cards in it, exile that many cards from the top of your
+ * library instead."
+ *
+ * Applies only to [EventPattern.LifePaymentEvent] — life spent on a cost (CR 118.8). Damage and
+ * "you lose N life" effects are life *loss*, not payment, and are untouched; that is exactly the
+ * card's reminder text ("Damage and unpayable costs still cause you to lose life").
+ *
+ * Three consequences of it being a mandatory replacement, all per the printed rulings:
+ * - **Not optional, not splittable.** With the library deep enough, every point is exiled instead;
+ *   the payer cannot choose to pay some in life and some in cards.
+ * - **Shallow library falls through.** With fewer cards in the library than the payment, the
+ *   replacement simply doesn't apply and life is paid normally — this is a condition on the
+ *   replacement, not a choice.
+ * - **It doesn't raise what you can pay.** CR 118.5 still requires a life total at least equal to
+ *   the payment, so cost legality is unchanged; only how the payment is made changes.
+ *
+ * @param appliesTo Which player's life payments are replaced (default: the source's controller).
+ */
+@SerialName("ReplaceLifePaymentWithLibraryExile")
+@Serializable
+data class ReplaceLifePaymentWithLibraryExile(
+    override val appliesTo: EventPattern = EventPattern.LifePaymentEvent()
+) : ReplacementEffect {
+    override val description: String = "If ${appliesTo.description} while " +
+        "${(appliesTo as? EventPattern.LifePaymentEvent)?.player?.possessive ?: "their"} library " +
+        "has at least that many cards in it, exile that many cards from the top of " +
+        "${(appliesTo as? EventPattern.LifePaymentEvent)?.player?.possessive ?: "their"} " +
+        "library instead"
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+    }
+}
+
 // =============================================================================
 // Copy Replacement Effects
 // =============================================================================

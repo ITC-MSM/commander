@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.*
+import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.handlers.effects.zones.ForceExileMultiZoneExecutor
 import com.wingedsheep.engine.handlers.effects.zones.ForceSacrificeExecutor
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
@@ -398,23 +399,9 @@ class SacrificeAndPayContinuationResumer(
         }
 
         // Player chose to pay life
-        val playerId = continuation.playerId
-        val lifeToPay = continuation.requiredCount
-        // CR 810.9a — life paid as a cost comes out of the team's shared total.
-        val currentLife = state.lifeTotal(playerId)
-        val newLife = currentLife - lifeToPay
-
-        var newState = state.withLifeTotal(playerId, newLife)
-        newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(newState, playerId, lifeToPay)
-
-        val events = listOf(
-            LifeChangedEvent(
-                playerId = playerId,
-                oldLife = currentLife,
-                newLife = newLife,
-                reason = LifeChangeReason.PAYMENT
-            )
-        )
+        val (newState, events) = LifePaymentService
+            .pay(state, continuation.playerId, continuation.requiredCount)
+            ?: return ExecutionResult.error(state, "Player has no life total")
 
         return checkForMore(newState, events)
     }
@@ -704,20 +691,10 @@ class SacrificeAndPayContinuationResumer(
                     return askNextPlayerForAnyPlayerMayPay(state, continuation, checkForMore)
                 }
 
-                val lifeToPay = continuation.requiredCount
-                // CR 810.9a — life paid as a cost comes out of the team's shared total.
-                val currentLife = state.lifeTotal(playerId)
-                val newLife = currentLife - lifeToPay
-                var newState = state.withLifeTotal(playerId, newLife)
-                newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(newState, playerId, lifeToPay)
-                val events = mutableListOf<GameEvent>(
-                    LifeChangedEvent(
-                        playerId = playerId,
-                        oldLife = currentLife,
-                        newLife = newLife,
-                        reason = LifeChangeReason.PAYMENT
-                    )
-                )
+                val (newState, paymentEvents) = LifePaymentService
+                    .pay(state, playerId, continuation.requiredCount)
+                    ?: return ExecutionResult.error(state, "Player has no life total")
+                val events = paymentEvents.toMutableList()
                 return runAnyPlayerMayPayConsequence(newState, continuation, continuation.consequence, events, checkForMore)
             }
 

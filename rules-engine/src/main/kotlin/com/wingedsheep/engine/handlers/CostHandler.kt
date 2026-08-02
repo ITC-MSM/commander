@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.library.MillAmountModifier
+import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType
 import com.wingedsheep.engine.mechanics.cost.CostPaymentService
 import com.wingedsheep.engine.mechanics.mana.ManaPool
@@ -262,9 +263,9 @@ class CostHandler {
                 if (amount == 0) {
                     CostPaymentResult.success(state, manaPool)
                 } else {
-                    val (newState, event) = DamageUtils.loseLife(state, controllerId, amount, LifeChangeReason.PAYMENT)
-                    if (event == null) return CostPaymentResult.failure("Player has no life total")
-                    CostPaymentResult.success(newState, manaPool, events = listOf(event))
+                    val (newState, events) = LifePaymentService.pay(state, controllerId, amount)
+                        ?: return CostPaymentResult.failure("Player has no life total")
+                    CostPaymentResult.success(newState, manaPool, events = events)
                 }
             }
             is AbilityCost.SacrificeChosenCreatureType -> {
@@ -649,9 +650,9 @@ class CostHandler {
             CostPaymentResult.success(state, newPool)
         }
         is CostAtom.PayLife -> {
-            val (newState, event) = DamageUtils.loseLife(state, controllerId, atom.amount, LifeChangeReason.PAYMENT)
-            if (event == null) return CostPaymentResult.failure("Player has no life total")
-            CostPaymentResult.success(newState, manaPool, events = listOf(event))
+            val (newState, events) = LifePaymentService.pay(state, controllerId, atom.amount)
+                ?: return CostPaymentResult.failure("Player has no life total")
+            CostPaymentResult.success(newState, manaPool, events = events)
         }
         is CostAtom.Sacrifice -> paySacrificeList(
             state, choices.sacrificeChoices, atom.filter,

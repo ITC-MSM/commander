@@ -211,6 +211,18 @@ abstract class ScenarioTestBase : FunSpec() {
                 container = staticHandler.addContinuousEffectComponent(container, cardDef)
                 container = staticHandler.addReplacementEffectComponent(container, cardDef)
 
+                // A planeswalker enters with its starting loyalty as loyalty counters (CR 306.5b).
+                // Placing one directly on the battlefield skips the ETB path that normally does
+                // this, which leaves it at 0 loyalty — harmless for `+N` abilities but makes every
+                // minus ability unactivatable ("Not enough loyalty").
+                cardDef.startingLoyalty?.let { loyalty ->
+                    val counters = container.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
+                        ?: com.wingedsheep.engine.state.components.battlefield.CountersComponent()
+                    container = container.with(
+                        counters.withAdded(com.wingedsheep.sdk.core.CounterType.LOYALTY, loyalty)
+                    )
+                }
+
                 // Rule 712.8a: if placing a DFC back face directly on the battlefield, add
                 // DoubleFacedComponent with the saved front-face card so ZoneTransitionService
                 // can restore it when the entity leaves.
