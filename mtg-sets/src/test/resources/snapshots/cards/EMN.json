@@ -1157,6 +1157,96 @@
     ]
 }
 
+// Gisa and Geralf
+{
+    "name": "Gisa and Geralf",
+    "manaCost": "{2}{U}{B}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "When Gisa and Geralf enters, mill four cards.\nOnce during each of your turns, you may cast a Zombie creature spell from your graveyard.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Gisa and Geralf enters, mill four cards."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "MayCastFromGraveyard",
+                "filter": "creature Zombie",
+                "duringYourTurnOnly": true,
+                "oncePerTurn": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "rarity": "MYTHIC",
+        "artist": "Karla Ortiz",
+        "flavorText": "\"These fiends are slightly less tolerable than you.\"\n\"A sentiment that warms my heart, sister.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2e2c85d8-0bef-40d0-abaf-4555462c29c5.jpg?1783937433",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "You must follow the normal timing permissions and restrictions of the Zombie spell you cast from your graveyard."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "You must pay the costs to cast that Zombie spell. If it has an alternative cost, you may cast it for that cost instead."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Once you begin to cast the Zombie spell, losing control of Gisa and Geralf won't affect the spell."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If you cast one Zombie creature spell from your graveyard and then have a new Gisa and Geralf come under your control in the same turn, you may cast another Zombie creature spell from your graveyard that turn."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If multiple effects allow you to cast a Zombie creature spell from your graveyard, such as those of Gisa and Geralf and Karador, Ghost Chieftain, you must announce which permission you're using as you begin to cast the spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Gisela, the Broken Blade
 {
     "name": "Gisela, the Broken Blade",

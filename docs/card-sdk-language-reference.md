@@ -4505,6 +4505,19 @@ staticAbility {
   `AbilityFlag.CANT_BE_SACRIFICED` flag, honored by the sacrifice executor — a sacrifice that can't
   happen simply no-ops). Wrap in `ConditionalStaticAbility` for time-restricted forms, e.g. Zurgo,
   Thunder's Decree: `ConditionalStaticAbility(CantBeSacrificed(GroupFilter(Token.youControl().withSubtype("Warrior"))), IsInStep(listOf(Step.END)))`.
+- `OpponentsCantMakeYouSacrifice` — "Spells and abilities your opponents control can't cause you to
+  sacrifice permanents" (Sigarda, Host of Herons). The **player-scoped** counterpart of
+  `CantBeSacrificed`: it protects the controller rather than a set of permanents, so it also covers
+  permanents that arrive later and refuses an *optional* sacrifice an opponent's source offers, and a
+  sacrifice cost such a source imposes ("unless you sacrifice …", ward—sacrifice) becomes unpayable
+  rather than merely declinable. Stamped as `GrantsSacrificeImmunityComponent` and read by
+  `SacrificeImmunity.appliesTo(state, sacrificingPlayerId, effectControllerId)`, which every sacrifice
+  site consults: `ForceSacrificeExecutor` (edicts — a protected player is dropped before anyone is
+  prompted), `SacrificeExecutor`, `SacrificeTargetExecutor`, and `WardCounterEffectExecutor`'s
+  sacrifice cost. Pass the *overall* effect's controller (`context.effectControllerId ?: controllerId`),
+  not the player a per-player iteration is currently bound to, so a `ForEachPlayer` wrapper (Killing
+  Wave) still reports the caster. Only sacrifices are covered — lethal damage, 0 toughness, the legend
+  rule and destruction are untouched.
 - `GrantKeyword(AbilityFlag.CANT_BE_ENCHANTED.name, filter)` — matching permanents can't be enchanted
   (CR 303.4): an Aura can't legally target them. Honored in `TargetValidator` at Aura-cast/activation
   target legality (only the targeting step — effects that move/attach an Aura without targeting are not
@@ -5128,10 +5141,19 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   taxed by {2} becomes `{2}, {T}:` — and there is no `manaFloor`, since costs only grow. Skyseer's
   Chariot: "Activated abilities of sources with the chosen name cost {2} more to activate" →
   `IncreaseActivatedAbilityCost(GroupFilter(GameObjectFilter.Any.namedFromChosenComponent()), DynamicAmount.Fixed(2))`.
-- `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null)`
+- `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null, oncePerTurn = false)`
   — cast spells matching `filter` from your graveyard following normal timing, optionally paying
   `lifeCost` life. Free for Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1,
-  duringYourTurnOnly = true` for Festival of Embers. Pair with `MayPlayLandsFromGraveyard` for "play
+  duringYourTurnOnly = true` for Festival of Embers. **`oncePerTurn`** limits the grant to one cast
+  per turn, tracked on the *granting permanent* (`MayCastFromGraveyardUsedThisTurnComponent`, cleared
+  each cleanup step) rather than on the player — so a second copy of the granter brings a second use,
+  and a use is only consumed when no unlimited grant could have authorized the same cast. Pair with
+  `duringYourTurnOnly` for "once during each of your turns": Gisa and Geralf =
+  `MayCastFromGraveyard(Creature.withSubtype(Subtype.ZOMBIE), duringYourTurnOnly = true, oncePerTurn = true)`.
+  The spent-grant gate lives in two places that must stay in step — `CastFromZoneEnumerator`
+  (which offers the action) and `CastZoneResolver.mayCastFromGraveyardGrantApplies` (which authorizes
+  it) — with `CastSpellHandler` marking the source via
+  `CastZoneResolver.oncePerTurnGraveyardCastSourceToConsume` after the cast. Pair with `MayPlayLandsFromGraveyard` for "play
   lands and cast spells from your graveyard". Lands are *played*, not cast, so they need the lands
   permission separately. This grants permission over *other* cards in your graveyard from a
   battlefield permanent — for a card that grants permission to cast *itself* from a zone, use

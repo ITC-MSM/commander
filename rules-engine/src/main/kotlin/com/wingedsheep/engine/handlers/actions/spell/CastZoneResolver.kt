@@ -15,6 +15,7 @@ import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.ExileEntryTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.CastFromTopOfLibraryUsesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.GraveyardPlayPermissionUsedComponent
+import com.wingedsheep.engine.state.components.battlefield.MayCastFromGraveyardUsedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.battlefield.MayCastFromLinkedExileUsedThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -225,13 +226,27 @@ class CastZoneResolver(
         cardComponent: CardComponent
     ): List<MayCastFromGraveyard> {
         if (cardId !in state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))) return emptyList()
-        val matches = mutableListOf<MayCastFromGraveyard>()
+        return mayCastFromGraveyardGrantsWithSources(state, playerId, cardId).map { it.second }
+    }
+
+    /**
+     * Every applicable [MayCastFromGraveyard] grant paired with the permanent it hangs off — the
+     * source-aware form of [applicableMayCastFromGraveyardGrants]. The source id is what an
+     * `oncePerTurn` grant's per-turn allowance is tracked against, so both the applies-check and
+     * [oncePerTurnGraveyardCastSourceToConsume] read the grant through this one enumeration.
+     */
+    private fun mayCastFromGraveyardGrantsWithSources(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): List<Pair<EntityId, MayCastFromGraveyard>> {
+        val matches = mutableListOf<Pair<EntityId, MayCastFromGraveyard>>()
         for (permId in state.getBattlefield(playerId)) {
             val permCard = state.getEntity(permId)?.get<CardComponent>() ?: continue
             val permDef = cardRegistry.getCard(permCard.cardDefinitionId) ?: continue
             for (sa in permDef.script.staticAbilities) {
-                if (sa is MayCastFromGraveyard && mayCastFromGraveyardGrantApplies(state, playerId, cardId, sa)) {
-                    matches.add(sa)
+                if (sa is MayCastFromGraveyard && mayCastFromGraveyardGrantApplies(state, playerId, cardId, sa, permId)) {
+                    matches.add(permId to sa)
                 }
             }
         }
@@ -243,11 +258,33 @@ class CastZoneResolver(
             val controller = anchor.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
             if (controller != playerId) continue
             val sa = grant.ability
-            if (sa is MayCastFromGraveyard && mayCastFromGraveyardGrantApplies(state, playerId, cardId, sa)) {
-                matches.add(sa)
+            if (sa is MayCastFromGraveyard &&
+                mayCastFromGraveyardGrantApplies(state, playerId, cardId, sa, grant.entityId)
+            ) {
+                matches.add(grant.entityId to sa)
             }
         }
         return matches
+    }
+
+    /**
+     * After a graveyard cast authorized by a [MayCastFromGraveyard] grant, the permanent whose
+     * `oncePerTurn` allowance should be marked used — or null when an unlimited grant already
+     * authorized the same cast, so no per-turn use is burned. Mirrors
+     * [com.wingedsheep.engine.mechanics.mana.CostCalculator.oncePerTurnFreeCastSourceToConsume]:
+     * with several once-per-turn sources, the first eligible one pays.
+     */
+    fun oncePerTurnGraveyardCastSourceToConsume(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): EntityId? {
+        var candidate: EntityId? = null
+        for ((sourceId, sa) in mayCastFromGraveyardGrantsWithSources(state, playerId, cardId)) {
+            if (!sa.oncePerTurn) return null
+            if (candidate == null) candidate = sourceId
+        }
+        return candidate
     }
 
     /**
@@ -282,10 +319,18 @@ class CastZoneResolver(
         state: GameState,
         playerId: EntityId,
         cardId: EntityId,
-        sa: com.wingedsheep.sdk.scripting.StaticAbility
+        sa: com.wingedsheep.sdk.scripting.StaticAbility,
+        grantSourceId: EntityId
     ): Boolean {
         if (sa !is MayCastFromGraveyard) return false
         if (sa.duringYourTurnOnly && !state.isActiveTurnFor(playerId)) return false
+        // A `oncePerTurn` grant (Gisa and Geralf) stops authorizing casts once this specific
+        // granter has been used this turn; the marker is cleared at cleanup.
+        if (sa.oncePerTurn &&
+            state.getEntity(grantSourceId)?.has<MayCastFromGraveyardUsedThisTurnComponent>() == true
+        ) {
+            return false
+        }
         return predicateEvaluator.matches(
             state, state.projectedState, cardId, sa.filter,
             PredicateContext(controllerId = playerId)

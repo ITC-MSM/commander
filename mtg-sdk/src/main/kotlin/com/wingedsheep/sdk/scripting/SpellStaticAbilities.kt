@@ -289,6 +289,9 @@ data class GrantMiracleToCardsInHand(
  *  - The Tomb of Aclazotz (Tarrian's Journal back): `MayCastFromGraveyard(Creature,
  *    entersWithCounter = CounterType.FINALITY, addedSubtypeOnEntry = "Vampire")` — a permanent cast
  *    from the graveyard under this grant enters with a finality counter and gains the subtype.
+ *  - Gisa and Geralf: `MayCastFromGraveyard(Creature.withSubtype("Zombie"),
+ *    duringYourTurnOnly = true, oncePerTurn = true)` — "Once during each of your turns, you may
+ *    cast a Zombie creature spell from your graveyard."
  *
  * [entersWithCounter] and [addedSubtypeOnEntry] are the **cast-this-way entry rider** (CR 614-style):
  * they apply only to a permanent cast from the graveyard *under this grant* — when it resolves onto
@@ -296,11 +299,18 @@ data class GrantMiracleToCardsInHand(
  * other types" (a persistent characteristic, for as long as it remains on the battlefield). Both
  * default to null (no rider), so existing graveyard-cast cards are unaffected.
  *
+ * [oncePerTurn] limits the grant to a single use per turn, tracked on the *granting permanent*
+ * (`MayCastFromGraveyardUsedThisTurnComponent`, cleared each cleanup step) rather than on the
+ * player — so a second copy of the granter brings a second use, and a use is only consumed when
+ * no unlimited grant could have authorized the same cast. Pair with [duringYourTurnOnly] for
+ * "once during each of your turns".
+ *
  * @property filter The filter that spells must match (e.g., instant/sorcery, or any nonland card)
  * @property lifeCost The life cost to pay in addition to other costs (0 = free)
  * @property duringYourTurnOnly If true, only castable during your turn
  * @property entersWithCounter If set, a permanent cast this way enters with one such counter
  * @property addedSubtypeOnEntry If set, a permanent cast this way gains this subtype on entry
+ * @property oncePerTurn If true, this grant authorizes at most one graveyard cast per turn
  */
 @SerialName("MayCastFromGraveyard")
 @Serializable
@@ -309,13 +319,19 @@ data class MayCastFromGraveyard(
     val lifeCost: Int = 0,
     val duringYourTurnOnly: Boolean = false,
     val entersWithCounter: com.wingedsheep.sdk.core.CounterType? = null,
-    val addedSubtypeOnEntry: String? = null
+    val addedSubtypeOnEntry: String? = null,
+    val oncePerTurn: Boolean = false
 ) : StaticAbility {
     /** True when this grant carries a cast-this-way entry rider (finality counter / added subtype). */
     val hasEntryRider: Boolean get() = entersWithCounter != null || addedSubtypeOnEntry != null
 
     override val description: String = buildString {
-        if (duringYourTurnOnly) append("During your turn, y") else append("Y")
+        when {
+            oncePerTurn && duringYourTurnOnly -> append("Once during each of your turns, y")
+            oncePerTurn -> append("Once each turn, y")
+            duringYourTurnOnly -> append("During your turn, y")
+            else -> append("Y")
+        }
         append("ou may cast ${filter.description} spells from your graveyard")
         if (lifeCost > 0) append(" by paying $lifeCost life in addition to their other costs")
         if (entersWithCounter != null || addedSubtypeOnEntry != null) {
