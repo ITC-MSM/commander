@@ -11845,7 +11845,7 @@
                         {
                             "type": "CostAtomWrapper",
                             "atom": {
-                                "type": "AtomExilePermanents",
+                                "type": "AtomVariablePermanents",
                                 "filter": "creature ctrl:you",
                                 "excludeSelf": false
                             }
