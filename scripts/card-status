@@ -57,7 +57,7 @@ REQUEST_DELAY_SEC = 0.15  # Scryfall asks for 50–100ms between requests; pad f
 # the script for 1h44m on one set, so every request is bounded and a timeout is retried like a 429.
 REQUEST_TIMEOUT_SEC = 30
 REFRESH_WINDOW_DAYS = 30
-CACHE_SCHEMA_VERSION = 7  # v7: booster flag OR-ed across a name's printings (was one arbitrary printing)
+CACHE_SCHEMA_VERSION = 8  # v8: `extra_products` (Scryfall promo_types per extra) recorded for every set
 
 # A set is in current Standard if both:
 #   (a) its set_type is one of these (excludes commander, masters, alchemy, etc.), AND

@@ -31,6 +31,9 @@ import org.springframework.stereotype.Service
  * every card flagged `booster: false`, so there the whole set *is* the main pool and there
  * are no separate extras — otherwise the headline would read a useless 0/0.
  *
+ * The extras are broken out into Scryfall's own set-page sections — "Starter Decks", "Promos",
+ * "Beginner Box", … — see [ExtraGroupDTO].
+ *
  * A few cards are flagged [NotPlanned] in `coverage/card-exclusions.json` — they need mechanics
  * the engine will never carry (ante, subgames, physical dexterity). They stay in the card lists
  * so the detail view can show them, but they drop out of the denominator while unimplemented, so
@@ -57,6 +60,12 @@ class SetCoverageService {
     private data class CanonicalCard(
         val name: String,
         val img: String? = null,
+        /**
+         * Scryfall-style section heading for an extra — "Starter Decks", "Promos", … — derived by
+         * `scripts/gen-set-totals` from the printing's `promo_types`. Null on booster cards and on
+         * baked resources predating the split; both fall back to a single unnamed extras section.
+         */
+        val group: String? = null,
         /** Non-null when we've decided never to implement this card. */
         val notPlanned: NotPlanned? = null,
     )
@@ -123,7 +132,29 @@ class SetCoverageService {
         val notPlanned: NotPlanned?,
     )
 
-    /** A single set's full canonical card list, split into booster + extra, each marked. */
+    /**
+     * One section of a set's completionist extras, mirroring the way scryfall.com/sets/<code>
+     * breaks a set page up — "Starter Decks", "Promos", "Beginner Box", … — so the view can say
+     * *where* a non-booster card comes from rather than piling them all into one "Extras" list.
+     *
+     * Only the extras are sectioned. Scryfall's other headings are art-variant runs (Borderless,
+     * Showcase, Extended Art, Raised Foil); those are alternate *printings* of cards already in the
+     * draft pool, so against a card-name denominator they contain nothing new and never appear here.
+     */
+    data class ExtraGroupDTO(
+        /** Section heading, e.g. `Starter Decks`. */
+        val label: String,
+        /** Cards in this section we've authored. */
+        val implemented: Int,
+        /** Cards in this section we intend to build — count minus [notPlanned]. */
+        val total: Int,
+        /** Cards in this section flagged never-to-implement; excluded from [total], still in [cards]. */
+        val notPlanned: Int,
+        /** The section's cards, A→Z, each marked. */
+        val cards: List<CardCoverageDTO>,
+    )
+
+    /** A single set's full canonical card list, split into booster + sectioned extras, each marked. */
     data class SetDetailDTO(
         val code: String,
         val name: String,
@@ -140,8 +171,8 @@ class SetCoverageService {
         val percent: Double,
         /** Booster (draft) cards, A→Z — including the not-planned ones, each carrying its reason. */
         val draft: List<CardCoverageDTO>,
-        /** Completionist extras, A→Z. Empty if the set has none. */
-        val extra: List<CardCoverageDTO>,
+        /** Completionist extras in Scryfall's section order. Empty if the set has none. */
+        val extraGroups: List<ExtraGroupDTO>,
     )
 
     /** One day on the implementation-progress curve, as baked by `scripts/card-progress-graph`. */
@@ -323,9 +354,22 @@ class SetCoverageService {
                 CardCoverageDTO(card.name, implemented, card.img, card.notPlanned.takeIf { !implemented })
             }
         val draft = mark(c.mainCards)
-        val extra = mark(c.secondaryCards)
+        // The baked extras already arrive sorted into Scryfall's sections, so grouping by label in
+        // encounter order reproduces that page's layout without re-deriving any ordering here.
+        val extraGroups = c.secondaryCards
+            .groupBy { it.group ?: DEFAULT_EXTRA_GROUP }
+            .map { (label, cards) ->
+                val marked = mark(cards)
+                val countable = marked.count { it.notPlanned == null }
+                ExtraGroupDTO(
+                    label = label,
+                    implemented = marked.count { it.implemented },
+                    total = countable,
+                    notPlanned = marked.size - countable,
+                    cards = marked,
+                )
+            }
         val draftCountable = draft.count { it.notPlanned == null }
-        val extraCountable = extra.count { it.notPlanned == null }
         return SetDetailDTO(
             code = c.code,
             name = c.name,
@@ -333,13 +377,13 @@ class SetCoverageService {
             block = set?.block,
             implemented = draft.count { it.implemented },
             total = draftCountable,
-            extraImplemented = extra.count { it.implemented },
-            extraTotal = extraCountable,
+            extraImplemented = extraGroups.sumOf { it.implemented },
+            extraTotal = extraGroups.sumOf { it.total },
             notPlanned = draft.size - draftCountable,
-            extraNotPlanned = extra.size - extraCountable,
+            extraNotPlanned = extraGroups.sumOf { it.notPlanned },
             percent = percent(draft.count { it.implemented }, draftCountable),
             draft = draft,
-            extra = extra,
+            extraGroups = extraGroups,
         )
     }
 
@@ -374,6 +418,8 @@ class SetCoverageService {
         notPlanned == null || frontFace(name) in authored
 
     private companion object {
+        /** Section heading for extras the generator couldn't attribute to a product. */
+        const val DEFAULT_EXTRA_GROUP = "Extras"
         const val RESOURCE_PATH = "coverage/set-totals.json"
         const val PRODUCTS_PATH = "coverage/set-products.json"
         const val PROGRESS_PATH = "coverage/implementation-history.json"

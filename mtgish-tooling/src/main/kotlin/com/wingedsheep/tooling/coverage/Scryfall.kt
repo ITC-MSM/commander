@@ -29,7 +29,7 @@ object Scryfall {
     private const val CONNECT_TIMEOUT_MS = 10_000
     private const val READ_TIMEOUT_MS = 30_000
     private const val REFRESH_WINDOW_DAYS = 30L
-    private const val CACHE_SCHEMA_VERSION = 7
+    private const val CACHE_SCHEMA_VERSION = 8
     val STANDARD_SET_TYPES = setOf("core", "expansion", "draft_innovation")
 
     private val CACHE_ROOT = File(System.getProperty("user.home"), ".cache/scryfall")
@@ -241,10 +241,19 @@ object Scryfall {
 
         val draftNames = mutableListOf<String>()
         val extraNames = mutableListOf<String>()
+        // Which product an extra came from (Scryfall `promo_types`), so the Set Completion view can
+        // break the extras out into Scryfall-style groups (Starter Decks, Promos, …) instead of one lump.
+        val extraProducts = linkedMapOf<String, List<String>>()
         var standardLegalCount = 0
         val cards = linkedMapOf<String, JsonObject>()
         for ((name, group) in printings) {
-            if (group.any { it["booster"] == JsonPrimitive(true) }) draftNames.add(name) else extraNames.add(name)
+            if (group.any { it["booster"] == JsonPrimitive(true) }) {
+                draftNames.add(name)
+            } else {
+                extraNames.add(name)
+                val tags = group.flatMap { p -> (p["promo_types"].asArr ?: JsonArray(emptyList())).mapNotNull { it.asStr() } }
+                extraProducts[name] = tags.distinct().sorted().ifEmpty { listOf("other") }
+            }
             val representative = group.minWith(PRINTING_ORDER)
             // Format legality is a property of the card, not the printing — read it off the one.
             if (representative["legalities"].field("standard").asStr() == "legal") standardLegalCount++
@@ -256,6 +265,9 @@ object Scryfall {
             put("set_type", setMeta["set_type"].asStr())
             put("draft_names", buildJsonArray { draftNames.forEach { add(it) } })
             put("extra_names", buildJsonArray { extraNames.forEach { add(it) } })
+            put("extra_products", buildJsonObject {
+                extraProducts.forEach { (name, tags) -> put(name, buildJsonArray { tags.forEach { add(it) } }) }
+            })
             put("standard_legal_count", standardLegalCount)
             put("cards", JsonObject(cards))
         }

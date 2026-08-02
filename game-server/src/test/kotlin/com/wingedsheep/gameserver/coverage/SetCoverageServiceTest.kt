@@ -78,7 +78,7 @@ class SetCoverageServiceTest : FunSpec({
         val detail = service.detail("FDN").shouldNotBeNull()
         // Serra Angel is FDN #147 (booster) and #740 (Beginner Box); it belongs to the draft pool.
         detail.draft.map { it.name } shouldContain "Serra Angel"
-        detail.extra.map { it.name } shouldNotContain "Serra Angel"
+        detail.extraGroups.flatMap { it.cards }.map { it.name } shouldNotContain "Serra Angel"
     }
 
     test("Foundations exposes selectable non-booster products from Scryfall promo types") {
@@ -100,11 +100,23 @@ class SetCoverageServiceTest : FunSpec({
     test("detail lists every canonical card with an implemented flag, counts agreeing with the grid") {
         val grid = coverage.find { it.code == "BLB" }.shouldNotBeNull()
         val detail = service.detail("blb").shouldNotBeNull() // case-insensitive
+        val extras = detail.extraGroups.flatMap { it.cards }
         detail.draft.size shouldBe grid.total + grid.notPlanned
-        detail.extra.size shouldBe grid.extraTotal + grid.extraNotPlanned
+        extras.size shouldBe grid.extraTotal + grid.extraNotPlanned
         detail.draft.count { it.implemented } shouldBe grid.implemented
-        detail.extra.count { it.implemented } shouldBe grid.extraImplemented
+        extras.count { it.implemented } shouldBe grid.extraImplemented
         detail.percent shouldBe grid.percent
+    }
+
+    test("extras are split into Scryfall's set-page sections, not one undifferentiated pile") {
+        // Eldraine is the clean case: scryfall.com/sets/eld shows exactly these three groups of
+        // non-booster cards, and each is derived here from the printings' Scryfall `promo_types`.
+        val eld = service.detail("ELD").shouldNotBeNull()
+        eld.extraGroups.map { it.label } shouldBe listOf("Planeswalker Decks", "Brawl Decks", "Promos")
+        eld.extraGroups.map { it.cards.size } shouldBe listOf(10, 20, 1)
+        // Sectioning only partitions the extras — it never moves a card in or out of the totals.
+        eld.extraGroups.sumOf { it.total } shouldBe eld.extraTotal
+        eld.extraGroups.sumOf { it.implemented } shouldBe eld.extraImplemented
     }
 
     context("cards we've decided never to implement") {
