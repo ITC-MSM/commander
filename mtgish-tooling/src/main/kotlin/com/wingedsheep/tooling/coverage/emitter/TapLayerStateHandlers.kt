@@ -822,7 +822,7 @@ private fun EmitCtx.adjustForEachCount(gn: JsonElement?): Dsl? {
     val subtype = gnObj.firstArgWordTagged("IsCreatureType") ?: return null
     val blob = compact(gnObj)
     if ("IsAttacking" !in blob) return null
-    val filter = Lit("GameObjectFilter.Creature").dot("withSubtype", arg("\"$subtype\"")).dot("attacking")
+    val filter = Lit("GameObjectFilter.Creature").dot("withSubtype", arg(subtypeArg(subtype))).dot("attacking")
     var count: Dsl = call("DynamicAmount.AggregateBattlefield", arg("Player.You"), arg(filter))
     if ("\"Other\"" in blob) count = call("DynamicAmount.Subtract", arg(count), arg(call("DynamicAmount.Fixed", arg("1"))))
     return count

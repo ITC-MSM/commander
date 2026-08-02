@@ -291,7 +291,7 @@ private fun EmitCtx.selfDynamicStatsBlock(rule: JsonObject): List<Stmt>? {
         if (countNode.firstArgWordTagged("IsEnchantmentType") != null &&
             countNode.firstArgWordTagged("IsCreatureType") == null) return null
         val subtype = countNode.firstArgWordTagged("IsCreatureType")
-        val filter = if (subtype != null) Lit("GameObjectFilter.Creature").dot("withSubtype", arg("\"$subtype\""))
+        val filter = if (subtype != null) Lit("GameObjectFilter.Creature").dot("withSubtype", arg(subtypeArg(subtype)))
                      else landSearchFilterExpr(countNode)
         val count: Dsl = call("DynamicAmount.Count", arg("Player.You"), arg("Zone.BATTLEFIELD"), arg(filter))
         fun bonus(mult: Int): Dsl =

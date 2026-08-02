@@ -4588,6 +4588,7 @@ val KitsuneBlademaster = card("Kitsune Blademaster") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
@@ -4613,7 +4614,10 @@ val KitsuneDiviner = card("Kitsune Diviner") {
     toughness = 1
     activatedAbility {
         cost = Costs.Tap
-        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Spirit"))))
+        val t = target(
+            "target",
+            TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype(Subtype.SPIRIT)))
+        )
         effect = Effects.Tap(t)
     }
     metadata {
@@ -5458,9 +5462,9 @@ val MarrowGnawer = card("Marrow-Gnawer") {
         ability = GrantKeyword(Keyword.FEAR, GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.RAT)))
     }
     activatedAbility {
-        cost = Costs.Composite(Costs.Tap, Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Rat")))
+        cost = Costs.Composite(Costs.Tap, Costs.Sacrifice(GameObjectFilter.Creature.withSubtype(Subtype.RAT)))
         effect = Effects.CreateToken(
-            count = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withSubtype("Rat")),
+            count = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withSubtype(Subtype.RAT)),
             power = 1,
             toughness = 1,
             colors = setOf(Color.BLACK),
@@ -6333,6 +6337,7 @@ val NightOfSoulsBetrayal = card("Night of Souls' Betrayal") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
@@ -6357,7 +6362,10 @@ val NineRingedBo = card("Nine-Ringed Bo") {
     oracleText = "{T}: This artifact deals 1 damage to target Spirit creature. If that creature would die this turn, exile it instead."
     activatedAbility {
         cost = Costs.Tap
-        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Spirit"))))
+        val t = target(
+            "target",
+            TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype(Subtype.SPIRIT)))
+        )
         effect = Effects.Composite(
             DealDamageEffect(1, t),
             MarkExileOnDeathEffect(t)
@@ -7507,7 +7515,7 @@ val RendFlesh = card("Rend Flesh") {
     spell {
         val t = target(
             "target",
-            TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.notSubtype(Subtype("Spirit"))))
+            TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.notSubtype(Subtype.SPIRIT)))
         )
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)
     }
@@ -7527,6 +7535,7 @@ val RendFlesh = card("Rend Flesh") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
@@ -7548,7 +7557,10 @@ val RendSpirit = card("Rend Spirit") {
     typeLine = "Instant"
     oracleText = "Destroy target Spirit."
     spell {
-        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Spirit"))))
+        val t = target(
+            "target",
+            TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype(Subtype.SPIRIT)))
+        )
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)
     }
     metadata {

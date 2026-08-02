@@ -257,25 +257,42 @@ completionist extras are reported separately.
 ]
 ```
 
-**Set detail** — `GET /api/sets/{code}/coverage` → one set's full canonical card list, split into
-`draft` / `extra`, each card marked. 404 if the code isn't a catalogued set with baked totals. Drives
-the click-through detail view.
+**Set detail** — `GET /api/sets/{code}/coverage` → one set's full canonical card list: the `draft`
+pool plus the extras split into `extraGroups`, each card marked. 404 if the code isn't a catalogued
+set with baked totals. Drives the click-through detail view.
 
 ```json
-{ "code": "BLB", "name": "Bloomburrow", "releaseDate": "2024-08-02", "block": null,
-  "implemented": 261, "total": 261, "extraImplemented": 18, "extraTotal": 18,
+{ "code": "ELD", "name": "Throne of Eldraine", "releaseDate": "2019-10-04", "block": null,
+  "implemented": 254, "total": 254, "extraImplemented": 0, "extraTotal": 31,
   "notPlanned": 0, "extraNotPlanned": 0, "percent": 100.0,
-  "draft": [{ "name": "Agate Assault", "implemented": true,
+  "draft": [{ "name": "Acclaimed Contender", "implemented": true,
               "imageUri": "https://cards.scryfall.io/normal/front/…jpg", "notPlanned": null }, ...],
-  "extra": [{ "name": "...", "implemented": false, "imageUri": "…", "notPlanned": null }, ...] }
+  "extraGroups": [
+    { "label": "Planeswalker Decks", "implemented": 0, "total": 10, "notPlanned": 0,
+      "cards": [{ "name": "...", "implemented": false, "imageUri": "…", "notPlanned": null }, ...] },
+    { "label": "Brawl Decks", "implemented": 0, "total": 20, "notPlanned": 0, "cards": [...] },
+    { "label": "Promos", "implemented": 0, "total": 1, "notPlanned": 0, "cards": [...] }] }
 ```
+
+**Extras are sectioned like a Scryfall set page.** scryfall.com/sets/`<code>` splits a set into
+"Draft Cards" plus named runs of non-booster printings, and `extraGroups` mirrors the ones that
+matter here — "Starter Decks", "Planeswalker Decks", "Brawl Decks", "Starter Collection",
+"Beginner Box", "Set Extension", "Promos", "Special Art", and an "Other Cards" catch-all — so the
+view can say *which product* a completionist card comes from. `scripts/gen-set-totals` derives each
+label from the printings' Scryfall `promo_types` (see `EXTRA_GROUPS` there) and emits `extra`
+pre-sorted into those sections; the server groups by label in encounter order. Scryfall's remaining
+headings are art-variant runs (Borderless, Showcase, Extended Art, Raised Foil) — those are
+alternate *printings* of cards already in the draft pool, so against this card-name denominator they
+contain nothing new and never appear. Sectioning only partitions the extras: it never moves a card
+in or out of `extraTotal` / `extraImplemented`. Sets with no booster at all have no extras and so no
+sections.
 
 **Cards we won't implement.** A card needing a mechanic the engine will never carry (ante, subgames,
 physical dexterity) is listed in the repo-root `coverage/card-exclusions.json` manifest, keyed by name
 so one entry covers every set that prints it. `scripts/gen-set-totals` bakes the flag onto the card as
 `"notPlanned": { "kind": "ante", "why": "…" }` — exclusion is carried *as* its reason, so a not-planned
-card can never render as an unexplained gap. Those cards stay in `draft` / `extra` (the detail view
-lists them with a badge) but drop out of `total` / `extraTotal` while unimplemented and are counted in
+card can never render as an unexplained gap. Those cards stay in `draft` / `extraGroups` (the detail
+view lists them with a badge) but drop out of `total` / `extraTotal` while unimplemented and are counted in
 `notPlanned` / `extraNotPlanned` instead, so "complete" means *everything we intend to build is built*.
 Implementing one silently un-excludes it: the flag only ever moves a card out of the still-to-do
 bucket. `scripts/card-status` applies the same manifest in its `Skip` column.
@@ -290,7 +307,7 @@ runtime, so `scripts/card-progress-graph` bakes the series (alongside the root
 The denominator (canonical booster + extra front-face card names) isn't knowable at runtime — it
 lives only in the local Scryfall cache. `scripts/gen-set-totals` bakes those canonical cards, split
 into `draft` (some printing of the card in that set is Scryfall `booster: true`) and `extra`, each
-`{ name, img }` (direct CDN art URL), into
+`{ name, img }` (direct CDN art URL) plus `{ products, group }` on the extras, into
 the committed `game-server/.../resources/coverage/set-totals.json` resource (same partitioning as
 `scripts/card-status`, so the numbers match the mtgish coverage TUI). Baking the art URL lets the
 detail view render set-specific images for *missing* cards too, without hammering the rate-limited

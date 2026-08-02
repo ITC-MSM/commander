@@ -242,7 +242,7 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
         )
         if (otherPredicates.any { it in blob }) return null
         var g: Dsl = Lit("GameObjectFilter.Creature")
-        nonCreatureSubs.forEach { g = g.dot("notSubtype", arg("Subtype(\"$it\")")) }
+        nonCreatureSubs.forEach { g = g.dot("notSubtype", arg(subtypeCtorArg(it))) }
         when {
             "\"You\"" in blob -> g = g.dot("youControl")
             "\"Opponent\"" in blob -> g = g.dot("opponentControls")
@@ -380,7 +380,7 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
             "WasDealtDamageThisTurn",
         )
         if (statePredicates.any { it in blob }) return null
-        return Call("TargetFilter", listOf(arg(Infix("or", subs.map { Lit("GameObjectFilter.Creature").dot("withSubtype", arg("\"$it\"")) }))))
+        return Call("TargetFilter", listOf(arg(Infix("or", subs.map { Lit("GameObjectFilter.Creature").dot("withSubtype", arg(subtypeArg(it))) }))))
     }
     var node: Dsl = Lit("TargetFilter.Creature")
     if (nonlegendary) node = node.dot("nonlegendary")
@@ -668,7 +668,7 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
                     "\"Opponent\"" in blob -> Link("opponentControls")
                     else -> return null
                 }
-                var g: Dsl = Lit("GameObjectFilter.NonlandPermanent").dot("notSubtype", arg("Subtype(\"${negSubs[0]}\")"))
+                var g: Dsl = Lit("GameObjectFilter.NonlandPermanent").dot("notSubtype", arg(subtypeCtorArg(negSubs[0])))
                 controller?.let { g = g.dot(it) }
                 val parts = mutableListOf(arg("filter", Call("TargetFilter", listOf(arg(g)))))
                 if (ttype in setOf("NumberTargetPermanents", "UptoNumberTargetPermanents") && countInt is Int) parts.add(0, arg("count", "$countInt"))

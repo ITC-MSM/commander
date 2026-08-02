@@ -656,7 +656,7 @@ val AvacynianPriest = card("Avacynian Priest") {
         cost = Costs.Composite(Costs.Mana("{1}"), Costs.Tap)
         val t = target(
             "target",
-            TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.notSubtype(Subtype("Human"))))
+            TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.notSubtype(Subtype.HUMAN)))
         )
         effect = Effects.Tap(t)
     }
@@ -2800,6 +2800,7 @@ package com.wingedsheep.mtg.sets.generated.demo.cards
 
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
@@ -2836,7 +2837,10 @@ val DrunauCorpseTrawler = card("Drunau Corpse Trawler") {
     }
     activatedAbility {
         cost = Costs.Mana("{2}{B}")
-        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Zombie"))))
+        val t = target(
+            "target",
+            TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype(Subtype.ZOMBIE)))
+        )
         effect = Effects.GrantKeyword(Keyword.DEATHTOUCH, t)
     }
     metadata {
@@ -8041,6 +8045,7 @@ val SkirsdagHighPriest = card("Skirsdag High Priest") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
@@ -8073,8 +8078,8 @@ val SlayerOfTheWicked = card("Slayer of the Wicked") {
             TargetCreature(
                 filter = TargetFilter(
                     GameObjectFilter.Creature.withSubtype(
-                        "Vampire"
-                    ) or GameObjectFilter.Creature.withSubtype("Werewolf") or GameObjectFilter.Creature.withSubtype("Zombie")
+                        Subtype.VAMPIRE
+                    ) or GameObjectFilter.Creature.withSubtype(Subtype.WEREWOLF) or GameObjectFilter.Creature.withSubtype(Subtype.ZOMBIE)
                 )
             )
         )
