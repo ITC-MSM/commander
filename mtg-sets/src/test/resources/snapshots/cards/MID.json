@@ -2534,3 +2534,182 @@
         "RED"
     ]
 }
+
+// Wrenn and Seven
+{
+    "name": "Wrenn and Seven",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Legendary Planeswalker — Wrenn",
+    "oracleText": "+1: Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard.\n0: Put any number of land cards from your hand onto the battlefield tapped.\n−3: Create a green Treefolk creature token with reach and \"This token's power and toughness are each equal to the number of lands you control.\"\n−8: Return all permanent cards from your graveyard to your hand. You get an emblem with \"You have no maximum hand size.\"",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "revealed",
+                            "revealed": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "revealed",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "filter": "land"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "revealed",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard."
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 0
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "filter": "land"
+                            },
+                            "storeAs": "lands_in_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "lands_in_hand",
+                            "selection": "ChooseAnyNumber",
+                            "storeSelected": "chosen_lands",
+                            "prompt": "Choose any number of land cards to put onto the battlefield tapped."
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "chosen_lands",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Put any number of land cards from your hand onto the battlefield tapped."
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -3
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 0,
+                    "toughness": 0,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Treefolk"
+                    ],
+                    "keywords": [
+                        "REACH"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/9/4/94e4345b-61b1-4026-a01c-c9f2036c5c8a.jpg?1783925221",
+                    "staticAbilities": [
+                        {
+                            "type": "SetBasePowerToughnessDynamicStatic",
+                            "power": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "land"
+                            },
+                            "toughness": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "land"
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -8
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "permanent"
+                            },
+                            "storeAs": "permanents_in_graveyard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "permanents_in_graveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        "RemoveMaximumHandSize"
+                    ],
+                    "descriptionOverride": "Return all permanent cards from your graveyard to your hand. You get an emblem with \"You have no maximum hand size.\""
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "MYTHIC",
+        "artist": "Heonhwa",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7757e99-8d51-4b92-b346-6961845def24.jpg?1783925567"
+    },
+    "startingLoyalty": 5,
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}

@@ -368,6 +368,18 @@ class ConditionEvaluator(
                     drawn >= condition.atLeast
                 }
             }
+            is com.wingedsheep.sdk.scripting.conditions.PlayerActivatedExhaustAbilitiesThisTurn -> {
+                if (condition.atLeast <= 0) true
+                else {
+                    val playerId = resolvePlayer(state, condition.player, ctx)
+                    val activated = playerId?.let {
+                        state.getEntity(it)
+                            ?.get<com.wingedsheep.engine.state.components.player.ExhaustAbilitiesActivatedThisTurnComponent>()
+                            ?.count
+                    } ?: 0
+                    activated >= condition.atLeast
+                }
+            }
             is PlayerCommittedCrimeThisTurn -> {
                 val playerId = resolvePlayer(state, condition.player, ctx)
                 playerId != null && playerId in state.playersWhoCommittedCrimeThisTurn

@@ -5001,6 +5001,82 @@
     ]
 }
 
+// Elvish Refueler
+{
+    "name": "Elvish Refueler",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Elf Druid",
+    "oracleText": "During your turn, as long as you haven't activated an exhaust ability this turn, you may activate exhaust abilities as though they haven't been activated.\nExhaust — {1}{G}: Put a +1/+1 counter on this creature. (Activate each exhaust ability only once.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Exhaust — {1}{G}: Put a +1/+1 counter on this creature.",
+                "isExhaust": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "IgnoreExhaustActivationLimit",
+                "condition": {
+                    "type": "All",
+                    "conditions": [
+                        "IsYourTurn",
+                        {
+                            "type": "Not",
+                            "condition": "PlayerActivatedExhaustAbilitiesThisTurn"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "161",
+        "rarity": "UNCOMMON",
+        "artist": "Carly Milligan",
+        "flavorText": "\"Anyone running low?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/5/25dfbcb6-9b67-4151-b10f-dde70c5fd16d.jpg?1783907872",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Exhaust abilities can be activated any time you could normally activate an ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an ability triggers whenever you activate an exhaust ability, that ability resolves before the exhaust ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Embalmed Ascendant
 {
     "name": "Embalmed Ascendant",
@@ -11703,6 +11779,97 @@
     "colorIdentityOverride": [
         "WHITE"
     ]
+}
+
+// Pit Automaton
+{
+    "name": "Pit Automaton",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Defender\n{T}: Add {C}{C}. Spend this mana only to activate abilities.\n{2}, {T}: When you next activate an exhaust ability that isn't a mana ability this turn, copy it. You may choose new targets for the copy.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "restriction": "AbilityActivationOnly"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {C}{C}. Spend this mana only to activate abilities."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "effect": {
+                        "type": "CopyTargetSpellOrAbility",
+                        "target": "TriggeringEntity"
+                    },
+                    "trigger": {
+                        "event": {
+                            "type": "AbilityActivatedEvent",
+                            "requireExhaust": true,
+                            "excludeManaAbilities": true
+                        },
+                        "binding": "ANY"
+                    },
+                    "fireOnce": true
+                },
+                "descriptionOverride": "When you next activate an exhaust ability that isn't a mana ability this turn, copy it. You may choose new targets for the copy."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "rarity": "UNCOMMON",
+        "artist": "Villarrte",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c72527ef-ac05-44c8-8c76-10532ce3da6e.jpg?1783907847",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Pit Automaton has received an update to its Oracle text. Specifically, the delayed triggered ability doesn't trigger if you activate an exhaust ability that is also a mana ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Exhaust abilities can be activated any time you could normally activate an ability."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an exhaust ability of a permanent is activated, and then that permanent leaves the battlefield and returns to the battlefield, it becomes a new object so its exhaust ability can be activated again."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If an ability triggers whenever you activate an exhaust ability, that ability resolves before the exhaust ability resolves."
+            }
+        ]
+    }
 }
 
 // Plow Through

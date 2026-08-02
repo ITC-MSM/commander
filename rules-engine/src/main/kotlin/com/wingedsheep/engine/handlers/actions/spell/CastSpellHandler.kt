@@ -48,6 +48,7 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.bend.BendEvents
+import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
@@ -2411,11 +2412,10 @@ class CastSpellHandler(
                 else -> continue
             }
             if (lifeToPay == 0) continue
-            val currentLife = currentState.lifeTotal(action.playerId) // CR 810.9a — team's shared total
-            val newLife = currentLife - lifeToPay
-            currentState = currentState.withLifeTotal(action.playerId, newLife)
-            currentState = DamageUtils.markLifeLostThisTurn(currentState, action.playerId, lifeToPay)
-            events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.PAYMENT))
+            val (afterPayment, paymentEvents) =
+                LifePaymentService.pay(currentState, action.playerId, lifeToPay) ?: continue
+            currentState = afterPayment
+            events.addAll(paymentEvents)
         }
         if (flattenedAllCosts.isNotEmpty() && action.additionalCostPayment != null) {
             for (additionalCost in flattenedAllCosts) {
@@ -3001,11 +3001,11 @@ class CastSpellHandler(
                 currentState, action.playerId, action.targets
             )
             if (additionalLifeCost > 0) {
-                val currentLife = currentState.lifeTotal(action.playerId) // CR 810.9a — team's shared total
-                val newLife = currentLife - additionalLifeCost
-                currentState = currentState.withLifeTotal(action.playerId, newLife)
-                events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.PAYMENT))
-                currentState = DamageUtils.markLifeLostThisTurn(currentState, action.playerId, additionalLifeCost)
+                LifePaymentService.pay(currentState, action.playerId, additionalLifeCost)
+                    ?.let { (afterPayment, paymentEvents) ->
+                        currentState = afterPayment
+                        events.addAll(paymentEvents)
+                    }
             }
         }
 

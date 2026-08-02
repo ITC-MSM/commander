@@ -266,6 +266,9 @@ class TriggerMatcher(
                 if (!matchesPlayer(trigger.player, event.controllerId, controllerId)) return false
                 if (trigger.requireExhaust) {
                     if (!event.isExhaust) return false
+                    // Plain "whenever you activate an exhaust ability" counts an exhaust mana
+                    // ability too; only Pit Automaton's updated wording re-adds the exclusion.
+                    if (trigger.excludeManaAbilities && event.isManaAbility) return false
                 } else if (trigger.requireNoTapInCost) {
                     // Antiquities "activates an ability without {T} in its activation cost"
                     // (Haunting Wind / Powerleech / Artifact Possession). Match any activated
@@ -615,6 +618,9 @@ class TriggerMatcher(
                     event.oldLife > event.newLife &&
                     matchesPlayer(trigger.player, event.playerId, controllerId)
             }
+            // Replacement-effect-only: a life payment reaches triggers as the LifeChangedEvent it
+            // produces (matched by LifeLossEvent above), never as a payment event of its own.
+            is EventPattern.LifePaymentEvent -> false
             is EventPattern.LifeGainOrLossEvent -> {
                 event is LifeChangedEvent &&
                     event.oldLife != event.newLife &&

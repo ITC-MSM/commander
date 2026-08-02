@@ -939,6 +939,13 @@ class TriggerDetector(
             // spell-cast matcher so the spell filter and casting-player predicate are honored.
             is com.wingedsheep.sdk.scripting.EventPattern.SpellCastEvent ->
                 matcher.matchesTrigger(specEvent, spec.binding, event, sourceId, controllerId, state)
+            // Ability-activation delayed triggers ("when you next activate an exhaust ability that
+            // isn't a mana ability this turn, …", Pit Automaton) are player-scoped, not
+            // entity-scoped: there is no watched permanent, so delegate to the canonical matcher so
+            // the player scope and the exhaust / mana-ability clauses behave identically to a
+            // battlefield-resident "whenever you activate …" trigger.
+            is com.wingedsheep.sdk.scripting.EventPattern.AbilityActivatedEvent ->
+                matcher.matchesTrigger(specEvent, spec.binding, event, sourceId, controllerId, state)
             is com.wingedsheep.sdk.scripting.EventPattern.DealsDamageEvent -> {
                 if (event !is com.wingedsheep.engine.core.DamageDealtEvent) return false
                 if (watchedEntityId != null && event.sourceId != watchedEntityId) return false

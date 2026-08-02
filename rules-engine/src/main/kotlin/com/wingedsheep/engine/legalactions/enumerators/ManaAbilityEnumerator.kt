@@ -274,7 +274,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
                 // Check activation restrictions
                 var restrictionsMet = true
                 for (restriction in ability.restrictions) {
-                    if (!context.castPermissionUtils.checkActivationRestriction(state, playerId, restriction, entityId, ability.id)) {
+                    if (!context.castPermissionUtils.checkActivationRestriction(state, playerId, restriction, entityId, ability.id, ability.isExhaust)) {
                         restrictionsMet = false
                         break
                     }

@@ -672,3 +672,44 @@ data class PlayersCantActivateAbilities(
         else copy(permanentFilter = newFilter, condition = newCondition)
     }
 }
+
+/**
+ * The controller may activate exhaust abilities (CR 702.177) as though they hadn't been activated —
+ * i.e. the "activate only once" memory an exhaust ability carries
+ * ([com.wingedsheep.sdk.scripting.ActivationRestriction.Once]) is waived while this applies.
+ *
+ * The permission mirror of [PlayersCantActivateAbilities]: read at ability-activation-legality time
+ * on every battlefield permanent, scoped to the activating player being this permanent's controller
+ * (you can only activate abilities of permanents you control, so there is no separate "who" axis),
+ * and gated by [condition], evaluated in the controller's context — `null` = always.
+ *
+ * Elvish Refueler: "During your turn, as long as you haven't activated an exhaust ability this turn,
+ * you may activate exhaust abilities as though they haven't been activated." — the condition is
+ * `IsYourTurn AND NoExhaustAbilityActivatedThisTurn`, which makes the waiver evaporate the moment
+ * the first exhaust ability of the turn is activated. Non-exhaust abilities carrying a plain
+ * `Once`/`OncePerTurn` restriction are untouched.
+ *
+ * @property condition Optional timing/state gate, evaluated in the controller's context; null = always.
+ */
+@SerialName("IgnoreExhaustActivationLimit")
+@Serializable
+data class IgnoreExhaustActivationLimit(
+    val condition: Condition? = null
+) : StaticAbility {
+    override val description: String = buildString {
+        when (condition) {
+            is IsYourTurn -> append("During your turn, ")
+            is IsNotYourTurn -> append("During your opponents' turns, ")
+            else -> {}
+        }
+        append("you may activate exhaust abilities as though they haven't been activated")
+        when (condition) {
+            is IsYourTurn, is IsNotYourTurn, null -> {}
+            else -> append(" ${condition.description}")
+        }
+    }
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newCondition = condition?.applyTextReplacement(replacer)
+        return if (newCondition === condition) this else copy(condition = newCondition)
+    }
+}

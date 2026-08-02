@@ -3712,7 +3712,16 @@ Named sugar for the common type-primitive cases; reach for `youCastSpell(...)` p
 - `YouActivateExhaustAbility` — you activate an ability marked `isExhaust`. Backed by
   `EventPattern.AbilityActivatedEvent(player = Player.You, requireExhaust = true)` and the activation event's
   `isExhaust` flag. The event is emitted as soon as the exhaust ability is put on the stack, so the triggered
-  ability is stacked above it and resolves first (Adrenaline Jockey, Rangers' Aetherhive).
+  ability is stacked above it and resolves first (Adrenaline Jockey, Rangers' Aetherhive). This is the plain
+  Aetherdrift wording, which counts an exhaust *mana* ability too.
+- `YouActivateNonManaExhaustAbility` — the same, but with the "that isn't a mana ability" clause
+  (`EventPattern.AbilityActivatedEvent(requireExhaust = true, excludeManaAbilities = true)`). Pit Automaton's
+  Oracle text was updated on release to add that clause so its copy payoff can't latch onto a mana ability;
+  the activated ability is exposed as `EffectTarget.TriggeringEntity`, so
+  `Effects.CopyTargetSpellOrAbility(EffectTarget.TriggeringEntity)` copies it. Usable as a **delayed** trigger
+  too (`CreateDelayedTriggerEffect(trigger = …, fireOnce = true)` = "when you next activate an exhaust ability
+  that isn't a mana ability this turn, …") — `AbilityActivatedEvent` is one of the filter-scoped patterns the
+  delayed-trigger matcher dispatches to the canonical `TriggerMatcher`.
 - `youActivateAbilityTargeting(targetMatch)` — you activate an ability whose **chosen targets** satisfy
   `targetMatch`. Backed by `EventPattern.AbilityActivatedEvent(player, targetMatch)`: when `targetMatch != null`, the
   activated ability on the stack must have at least one chosen target matching it, so a non-targeting ability (e.g.
@@ -5029,6 +5038,18 @@ staticAbility {
   condition = IsYourTurn)` ("During your turn, your opponents can't activate abilities of artifacts,
   creatures, or enchantments."); loyalty abilities and land mana abilities are unaffected because the
   filter only matches those three permanent types.
+- `IgnoreExhaustActivationLimit(condition = null)` — the *permission* mirror of the above: the controller
+  may activate exhaust abilities (CR 702.177) as though they hadn't been activated, i.e. the
+  `ActivationRestriction.Once` memory `isExhaust = true` installs is waived. Scoped to the activating player
+  being this permanent's controller (there is no "who" axis — you can only activate abilities of permanents
+  you control) and gated by `condition`, evaluated in the controller's context; `null` = always. Resolved by
+  `ExhaustActivationWaiver`, which all three activation-legality paths consult (the enumerators and the
+  activate handler via `CastPermissionUtils`, plus `ManaSolver`'s inlined check for auto-tapping) so they
+  can't drift. It never reaches a plain `Once`/`OncePerTurn` restriction on a *non*-exhaust ability.
+  Elvish Refueler = `IgnoreExhaustActivationLimit(condition = Conditions.All(Conditions.IsYourTurn,
+  Conditions.YouHaventActivatedAnExhaustAbilityThisTurn))` — the gate re-evaluates every frame, so the
+  permission evaporates the instant the turn's first exhaust ability is activated. Net effect: once per turn,
+  on your turn, you may re-use one already-spent exhaust ability of any permanent you control.
 
 **Tapped-for-mana mana statics** (extra mana / replaced mana when a land is tapped for mana — resolve
 inline as triggered mana abilities, off the stack per CR 605). These fire on the *manual* mana-ability
@@ -6600,6 +6621,12 @@ default to "you" so card authors don't need to pass it explicitly.
   `CardsDrawnThisTurnComponent` (reset for all players at turn start). Works in resolution and
   cost-reduction (projection) contexts. Used by Gwaihir the Windlord ("costs {2} less … as long as
   you've drawn two or more cards this turn") via `ModifySpellCost(..., gating = CostGating.OnlyIf(...))`.
+- `YouActivatedExhaustAbilitiesThisTurn(atLeast = 1)` / `YouHaventActivatedAnExhaustAbilityThisTurn` —
+  "as long as you've activated N or more exhaust abilities this turn" and its negation. Backed by
+  `PlayerActivatedExhaustAbilitiesThisTurn(Player.You, atLeast)`, reading the per-player
+  `ExhaustAbilitiesActivatedThisTurnComponent` (bumped at activation time, so a countered exhaust ability
+  still counts; reset for all players at turn start). Gates Elvish Refueler's
+  `IgnoreExhaustActivationLimit`.
 - `TriggeringSpellMatches(filter)` — intervening-if guard: the spell that triggered this ability
   matches `filter`. Reads the triggering entity's static card characteristics (so it stays correct
   after the spell leaves the stack). General "whenever you cast a spell, if it's a/an X ..." gate.
@@ -8207,6 +8234,17 @@ The priority groups are (CR 616.1a–f):
   and damage-dealt triggers see the full damage. Multiple instances pick the strictest floor. Used by
   Ali from Cairo (`LifeLossFloor(floor = 1, appliesTo = LifeLossEvent(Player.You))`); Worship adds a
   `restrictions = listOf(YouControlACreature)` gate.
+- `ReplaceLifePaymentWithLibraryExile(appliesTo)` — a life **payment** becomes an exile of that many cards
+  off the top of the payer's library, when the library is at least that deep (Ashiok, Wicked Manipulator).
+  `appliesTo` is a `LifePaymentEvent` whose `player` filter picks whose payments are replaced (default
+  `Player.You`). **Scope:** payments only (CR 118.8) — life *loss* from damage or a "you lose N life"
+  effect keeps its own path, which is exactly the printed reminder text "Damage and unpayable costs still
+  cause you to lose life". Mandatory and unsplittable, and a library shallower than the payment simply
+  falls through to paying life normally. It does not raise what you're allowed to pay: CR 118.5 still
+  requires a life total at least equal to the payment, so cost legality is unchanged.
+  Applied by `LifePaymentService`, the engine choke point every life payment funnels through — cost
+  atoms, additional casting costs, ward and Phyrexian-style payments, pain-cost mana abilities and the
+  `PayLife` / `PayDynamicLife` resolution effects alike.
 - `PreventLifeGain(appliesTo)` — life gain matching the event is fully prevented (Sulfuric Vortex, Erebos).
   The `LifeGainEvent.player` scope can be `You` / `EachOpponent` / `Each` (resolved relative to the
   source's controller) or `EnchantedPlayer` for an "enchant player" Aura whose locked player is its

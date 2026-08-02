@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.state.GameState
@@ -201,14 +202,8 @@ class ManaPaymentContinuationResumer(
                 return checkForMore(counterResult.newState, counterResult.events)
             }
 
-            val newLife = currentLife - continuation.lifeCost
-            var newState = state.withLifeTotal(playerId, newLife)
-            newState = com.wingedsheep.engine.handlers.effects.DamageUtils
-                .markLifeLostThisTurn(newState, playerId, continuation.lifeCost)
-
-            val events = listOf<GameEvent>(
-                LifeChangedEvent(playerId, currentLife, newLife, LifeChangeReason.PAYMENT)
-            )
+            val (newState, events) = LifePaymentService.pay(state, playerId, continuation.lifeCost)
+                ?: return ExecutionResult.error(state, "Paying player has no life total")
             // If this life cost was one component of a composite ward cost, charge the next
             // component before the spell is allowed to resolve.
             chargeNextWardPartOrNull(
