@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.support.GameTestDriver
+import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.spm.cards.GwenomRemorseless
 import com.wingedsheep.sdk.core.ManaCost
@@ -87,5 +88,63 @@ class GwenomRemorselessScenarioTest : FunSpec({
 
         driver.getLifeTotal(you) shouldBe lifeBefore - 5           // paid life = mana value
         (driver.findPermanent(you, "Top Beast") != null) shouldBe true  // resolved onto the battlefield
+    }
+
+    // Regression: the attack also grants LookAtTopOfLibrary, so the controller must actually SEE the
+    // top card in their client view — otherwise it is castable but invisible, so there is nothing to
+    // play. The granted static lives in `grantedStaticAbilities` (not the card's printed statics), a
+    // path the visibility layer previously ignored.
+    test("after Gwenom attacks, the top card of the library is revealed to its controller in the client view") {
+        val (driver, you, opponent) = newGame()
+        val gwenom = driver.putCreatureOnBattlefield(you, "Gwenom, Remorseless")
+        driver.removeSummoningSickness(gwenom)
+        val beast = driver.putCardOnTopOfLibrary(you, "Top Beast")
+
+        // Before the attack there is no look permission, so the top card stays hidden.
+        val before = ClientStateTransformer(driver.cardRegistry).transform(driver.state, viewingPlayerId = you)
+        (beast in before.cards) shouldBe false
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(you, listOf(gwenom), opponent)
+        resolveStack(driver)
+
+        // The granted LookAtTopOfLibrary now reveals the top card to its controller.
+        val yourView = ClientStateTransformer(driver.cardRegistry).transform(driver.state, viewingPlayerId = you)
+        (beast in yourView.cards) shouldBe true
+        yourView.cards[beast]?.name shouldBe "Top Beast"
+
+        // It is a private look, not a public reveal — the opponent still cannot see it.
+        val oppView = ClientStateTransformer(driver.cardRegistry).transform(driver.state, viewingPlayerId = opponent)
+        (beast in oppView.cards) shouldBe false
+    }
+
+    // The grant is `Duration.EndOfTurn`: on a later turn the top card must be neither castable nor
+    // revealed again. Without this, a permanent grant would pass every "yes after the attack" check.
+    test("the play-from-top permission and top-card reveal expire at end of turn") {
+        val (driver, you, opponent) = newGame()
+        val gwenom = driver.putCreatureOnBattlefield(you, "Gwenom, Remorseless")
+        driver.removeSummoningSickness(gwenom)
+        val beast = driver.putCardOnTopOfLibrary(you, "Top Beast")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(you, listOf(gwenom), opponent)
+        resolveStack(driver)
+        driver.declareNoBlockers(opponent)
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+        resolveStack(driver)
+
+        // Active this turn: in the post-combat main the (sorcery-speed) top creature is castable, and
+        // the top card is revealed to the controller.
+        (beast in topOfLibraryCastCardIds(driver, you)) shouldBe true
+        val duringTurn = ClientStateTransformer(driver.cardRegistry).transform(driver.state, viewingPlayerId = you)
+        (beast in duringTurn.cards) shouldBe true
+
+        // Advance into the next turn; the EndOfTurn grant is dropped at cleanup. Stop in the
+        // opponent's precombat main so `you` hasn't drawn the beast off the top.
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        (beast in topOfLibraryCastCardIds(driver, you)) shouldBe false
+        val nextTurn = ClientStateTransformer(driver.cardRegistry).transform(driver.state, viewingPlayerId = you)
+        (beast in nextTurn.cards) shouldBe false
     }
 })
