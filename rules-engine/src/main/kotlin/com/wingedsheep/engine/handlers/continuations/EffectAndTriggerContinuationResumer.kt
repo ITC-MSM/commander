@@ -128,6 +128,7 @@ class EffectAndTriggerContinuationResumer(
                 triggerColorsSpentOnTriggeringSpell = continuation.triggerColorsSpentOnTriggeringSpell,
                 triggerManaValueOfTriggeringSpell = continuation.triggerManaValueOfTriggeringSpell,
                 triggerXValueOfTriggeringSpell = continuation.triggerXValueOfTriggeringSpell,
+                xValue = continuation.xValue,
                 carriedPipeline = continuation.carriedPipeline
             )
             val stackResult = services.stackResolver.putTriggeredAbility(state, elseComponent, emptyList())
@@ -184,6 +185,7 @@ class EffectAndTriggerContinuationResumer(
             triggerColorsSpentOnTriggeringSpell = continuation.triggerColorsSpentOnTriggeringSpell,
             triggerManaValueOfTriggeringSpell = continuation.triggerManaValueOfTriggeringSpell,
             triggerXValueOfTriggeringSpell = continuation.triggerXValueOfTriggeringSpell,
+            xValue = continuation.xValue,
             carriedPipeline = continuation.carriedPipeline
         )
 

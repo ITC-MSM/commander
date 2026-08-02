@@ -195,6 +195,12 @@ export interface CycleCardAction {
   readonly playerId: EntityId
   readonly cardId: EntityId
   readonly paymentStrategy?: PaymentStrategy
+  /**
+   * Chosen X for an `{X}` cycling cost (Webstrike Elite's "Cycling {X}{G}{G}"), set by the
+   * xSelection pipeline phase. Omitted for ordinary cycling — and if omitted on an X cost, the
+   * engine raises its own ChooseNumber decision rather than defaulting X to 0.
+   */
+  readonly xValue?: number
 }
 
 export interface TypecycleCardAction {

@@ -142,6 +142,24 @@ data class CycleDrawContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume a cycling action after the player announces X for an `{X}` cycling cost (CR 107.3a) —
+ * Webstrike Elite's "Cycling {X}{G}{G}".
+ *
+ * The legal-actions submission path sends a bare [CycleCard] with `xValue == null`; the handler
+ * raises a ChooseNumberDecision and stores this frame. On resume the handler is re-entered with
+ * `xValue` bound, and the cost is paid for that amount. Mirrors
+ * [ActivateAbilityChooseManaXContinuation] — paying the mana is automatic, so there is no follow-up
+ * decision.
+ *
+ * @property action The original [CycleCard] (its `xValue` is still null on the stored copy).
+ */
+@Serializable
+data class CycleCardChooseXContinuation(
+    override val decisionId: String,
+    val action: CycleCard
+) : ContinuationFrame
+
+/**
  * Resume the search step of a typecycling action after cycling triggers have resolved.
  *
  * Same issue as CycleDrawContinuation but for typecycling, which searches the library

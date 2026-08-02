@@ -279,7 +279,13 @@ data class TriggerContext(
                     triggeringEntityId = event.cardEntityId,
                     triggeringPlayerId = event.playerId
                 )
-                is CardCycledEvent -> TriggerContext(triggeringPlayerId = event.playerId)
+                // xValue carries the X announced for an `{X}` cycling cost (CR 107.3a) so a
+                // "when you cycle this card" trigger can read it as DynamicAmount.XValue —
+                // Webstrike Elite's "with mana value X", Valor's Flagship's "create X tokens".
+                is CardCycledEvent -> TriggerContext(
+                    triggeringPlayerId = event.playerId,
+                    xValue = event.xValue
+                )
                 is com.wingedsheep.engine.core.CrewOrSaddleContributionEvent -> TriggerContext(
                     triggeringEntityId = event.permanentId,
                     triggeringPlayerId = event.controllerId

@@ -17019,6 +17019,70 @@
     ]
 }
 
+// Valor's Flagship
+{
+    "name": "Valor's Flagship",
+    "manaCost": "{4}{W}{W}{W}",
+    "typeLine": "Legendary Artifact — Vehicle",
+    "oracleText": "Flying, first strike, lifelink\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)\nCycling {X}{2}{W} ({X}{2}{W}, Discard this card: Draw a card.)\nWhen you cycle this card, create X 1/1 colorless Pilot creature tokens with \"This token saddles Mounts and crews Vehicles as though its power were 2 greater.\"",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "keywords": [
+        "FLYING",
+        "FIRST_STRIKE",
+        "LIFELINK",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 3
+        },
+        {
+            "type": "Cycling",
+            "cost": "{X}{2}{W}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CycleEvent",
+                "effect": {
+                    "type": "CreateToken",
+                    "count": "XValue",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Pilot"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/8/6/8672d795-04f9-4089-9c92-6d6ff628da12.jpg?1783907682",
+                    "staticAbilities": [
+                        {
+                            "type": "CrewSaddleContribution",
+                            "modifier": 2
+                        }
+                    ]
+                },
+                "descriptionOverride": "When you cycle this card, create X 1/1 colorless Pilot creature tokens with \"This token saddles Mounts and crews Vehicles as though its power were 2 greater.\""
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "MYTHIC",
+        "artist": "Stephan Martiniere",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/a/8af1dddf-6c95-448b-acc8-df5a99202e9a.jpg?1783907911"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Veloheart Bike
 {
     "name": "Veloheart Bike",
@@ -17621,6 +17685,73 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Webstrike Elite
+{
+    "name": "Webstrike Elite",
+    "manaCost": "{G}{G}",
+    "typeLine": "Creature — Insect Archer",
+    "oracleText": "Reach\nCycling {X}{G}{G} ({X}{G}{G}, Discard this card: Draw a card.)\nWhen you cycle this card, destroy up to one target artifact or enchantment with mana value X.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{X}{G}{G}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CycleEvent",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target artifact or enchantment with mana value X"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        "IsArtifact",
+                                        "IsEnchantment"
+                                    ]
+                                },
+                                "ManaValueEqualsX"
+                            ]
+                        }
+                    },
+                    "id": "up to one target artifact or enchantment with mana value X"
+                },
+                "descriptionOverride": "When you cycle this card, destroy up to one target artifact or enchantment with mana value X."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "186",
+        "rarity": "RARE",
+        "artist": "Andrew Mar",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/064cc22d-d424-4bc9-b8f0-88b170fd6c28.jpg?1783907863"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

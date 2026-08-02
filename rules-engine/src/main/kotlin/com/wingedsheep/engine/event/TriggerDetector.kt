@@ -1681,7 +1681,10 @@ class TriggerDetector(
                         sourceId = entityId,
                         sourceName = cardComponent.name,
                         controllerId = event.playerId,
-                        triggerContext = TriggerContext(triggeringPlayerId = event.playerId)
+                        // fromEvent, not a hand-built context: it also carries the X announced for
+                        // an `{X}` cycling cost, which the payoff reads (Webstrike Elite's "mana
+                        // value X" target filter, Valor's Flagship's "create X tokens").
+                        triggerContext = TriggerContext.fromEvent(event)
                     )
                 )
             }

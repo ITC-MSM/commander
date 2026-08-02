@@ -1611,13 +1611,19 @@ data class BecomesTargetEvent(
 
 /**
  * A player cycled a card.
+ *
+ * @property xValue The value announced for `{X}` in the cycling cost, for cards with an X cycling
+ *   cost (Webstrike Elite's "Cycling {X}{G}{G}"). A "when you cycle this card" trigger reads it as
+ *   `DynamicAmount.XValue` via `TriggerContext.xValue`, so "destroy … with mana value X" and
+ *   "create X tokens" resolve against the X that was actually paid. Null for ordinary cycling.
  */
 @Serializable
 @SerialName("CardCycledEvent")
 data class CardCycledEvent(
     val playerId: EntityId,
     val cardId: EntityId,
-    val cardName: String
+    val cardName: String,
+    val xValue: Int? = null
 ) : GameEvent
 
 /**

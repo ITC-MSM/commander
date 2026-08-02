@@ -43,6 +43,27 @@ data class ManaCost(val symbols: List<ManaSymbol>) {
     fun isEmpty(): Boolean = symbols.isEmpty()
 
     /**
+     * Substitute an announced value of X into this cost (CR 107.3a), turning each `{X}` symbol into
+     * that much generic mana: `{X}{G}{G}` with X=2 becomes `{2}{G}{G}`, and `{X}{X}{R}` with X=3
+     * becomes `{6}{R}`. A cost with no `{X}` is returned unchanged.
+     *
+     * The point is to hand downstream payment code a cost with no X left in it, so the ordinary
+     * pool/solver path pays it without a separate X-spending pass.
+     */
+    fun withXAs(x: Int): ManaCost {
+        if (!hasX) return this
+        val xGeneric = x.coerceAtLeast(0) * xCount
+        val withoutX = symbols.filterNot { it is ManaSymbol.X }
+        val newGenericAmount = genericAmount + xGeneric
+        val nonGeneric = withoutX.filterNot { it is ManaSymbol.Generic }
+        return if (newGenericAmount > 0) {
+            ManaCost(listOf(ManaSymbol.Generic(newGenericAmount)) + nonGeneric)
+        } else {
+            ManaCost(nonGeneric)
+        }
+    }
+
+    /**
      * Reduce the generic mana portion of this cost by [amount].
      * Colored/hybrid/phyrexian symbols are unaffected.
      */
