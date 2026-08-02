@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.scripting.CostZone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
+import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
+import com.wingedsheep.sdk.scripting.costs.VariableCostMeasure
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -253,16 +255,39 @@ object Costs {
     /**
      * Exile one or more permanents matching [filter] you control (variable count, at least
      * [minCount]); with [excludeSelf] the ability's own source is excluded ("one or more *other*
-     * …"). The exiled set's **total mana value** becomes the ability's X value — read it with
-     * `DynamicAmount.XValue` (e.g. to bound a reanimation target "with mana value X or less").
+     * …"). By default the exiled set's **total mana value** becomes the ability's X value — read it
+     * with `DynamicAmount.XValue` (e.g. to bound a reanimation target "with mana value X or less");
+     * pass [xMeasure] `COUNT` for the "for each permanent exiled this way" shape instead.
      * Backs Fabrication Foundry's "Exile one or more other artifacts you control with total mana
      * value X" activation cost. Pair with a sorcery-speed timing rule where the card demands it.
      */
     fun ExilePermanents(
         filter: GameObjectFilter = GameObjectFilter.Any,
         minCount: Int = 1,
-        excludeSelf: Boolean = true
-    ): AbilityCost = AbilityCost.Atom(CostAtom.ExilePermanents(filter, minCount, excludeSelf))
+        excludeSelf: Boolean = true,
+        xMeasure: VariableCostMeasure = VariableCostMeasure.TOTAL_MANA_VALUE
+    ): AbilityCost = AbilityCost.Atom(
+        CostAtom.VariablePermanents(filter, minCount, excludeSelf, PermanentCostAction.EXILE, xMeasure)
+    )
+
+    /**
+     * Sacrifice one or more permanents matching [filter] you control (variable count, at least
+     * [minCount]) — the sacrificing twin of [ExilePermanents]. The number sacrificed becomes the
+     * ability's X value by default, so the resolving effect can scale with it via
+     * `DynamicAmount.XValue` ("for each artifact sacrificed this way" — Radiant Lotus).
+     *
+     * [excludeSelf] defaults to false: the ability's own source is usually a legal choice for its
+     * own cost (Radiant Lotus is an artifact and may sacrifice itself). Pass [xMeasure]
+     * `TOTAL_MANA_VALUE` for the "with total mana value X" shape.
+     */
+    fun SacrificePermanents(
+        filter: GameObjectFilter = GameObjectFilter.Any,
+        minCount: Int = 1,
+        excludeSelf: Boolean = false,
+        xMeasure: VariableCostMeasure = VariableCostMeasure.COUNT
+    ): AbilityCost = AbilityCost.Atom(
+        CostAtom.VariablePermanents(filter, minCount, excludeSelf, PermanentCostAction.SACRIFICE, xMeasure)
+    )
 
     // =========================================================================
     // Loyalty Costs

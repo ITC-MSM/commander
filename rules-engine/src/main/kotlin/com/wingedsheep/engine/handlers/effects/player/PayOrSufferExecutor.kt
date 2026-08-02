@@ -88,7 +88,7 @@ class PayOrSufferExecutor(
                 is CostAtom.RevealFromHand -> EffectResult.error(state, "RevealCard payment for PayOrSuffer not yet implemented")
                 is CostAtom.PutCountersOnSelf -> EffectResult.error(state, "PutCountersOnSelf is an activated-ability cost, not a PayOrSuffer cost")
                 is CostAtom.Mill -> EffectResult.error(state, "Mill payment for PayOrSuffer not yet implemented")
-                is CostAtom.ExilePermanents -> EffectResult.error(state, "ExilePermanents payment for PayOrSuffer not supported")
+                is CostAtom.VariablePermanents -> EffectResult.error(state, "VariablePermanents payment for PayOrSuffer not supported")
                 is CostAtom.RemoveCounters -> handleRemoveCountersCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
             }
         }
@@ -714,7 +714,7 @@ class PayOrSufferExecutor(
                 is CostAtom.ReturnToHand -> false
                 is CostAtom.RevealFromHand -> false
                 is CostAtom.PutCountersOnSelf -> false
-                is CostAtom.ExilePermanents -> false
+                is CostAtom.VariablePermanents -> false
                 // No printed PayOrSuffer cost mills, and the execute branch above has no handler,
                 // so report it unpayable rather than offering a prompt that would error out.
                 is CostAtom.Mill -> false

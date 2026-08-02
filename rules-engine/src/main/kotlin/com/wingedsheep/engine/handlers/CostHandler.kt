@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.DistributedCounterRemoval
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.costs.CostAtom
+import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -578,7 +579,7 @@ class CostHandler {
                 eligible.size >= atom.count
             }
         }
-        is CostAtom.ExilePermanents -> {
+        is CostAtom.VariablePermanents -> {
             val candidates = findMatchingPermanentsUnified(state, controllerId, atom.filter)
             val eligible = if (atom.excludeSelf) candidates.filter { it != sourceId } else candidates
             eligible.size >= atom.minCount
@@ -659,9 +660,8 @@ class CostHandler {
             requiredCount = atom.count, excludeSelf = atom.excludeSelf, sourceId, controllerId, manaPool,
             distinctNames = atom.distinctNames
         )
-        is CostAtom.ExilePermanents -> payExilePermanentsList(
-            state, choices.exileChoices, atom.filter,
-            minCount = atom.minCount, excludeSelf = atom.excludeSelf, sourceId, controllerId, manaPool
+        is CostAtom.VariablePermanents -> payVariablePermanentsList(
+            state, atom, choices.variablePermanentChoices, sourceId, controllerId, manaPool
         )
         is CostAtom.Discard -> {
             var workState = state
@@ -881,48 +881,62 @@ class CostHandler {
     }
 
     /**
-     * Pay a [CostAtom.ExilePermanents] variable-count cost: exile every permanent the player chose
-     * ([exileChoices]), re-validating that each matches [filter], is controlled by the activator,
-     * and — when [excludeSelf] — isn't the ability's own source. At least [minCount] must be chosen.
-     * Unlike the fixed-count sacrifice / exile-from-zone atoms this exiles *all* selected permanents
-     * (the count is the player's choice, CR 601.2b). Permanents move to exile via
-     * [ZoneTransitionService.moveToZone], so attached Auras fall off, tokens cease to exist, and
-     * leaves-the-battlefield triggers fire.
+     * Pay a [CostAtom.VariablePermanents] variable-count cost: exile or sacrifice *every* permanent
+     * the player chose, re-validating that each matches the atom's filter, is controlled by the
+     * activator, and — when `excludeSelf` — isn't the ability's own source. At least `minCount` must
+     * be chosen. Unlike the fixed-count sacrifice / exile-from-zone atoms this pays with all
+     * selected permanents (the count is the player's choice, CR 601.2b).
+     *
+     * A `SACRIFICE` atom delegates to the shared [paySacrificeList] so it fires "whenever you
+     * sacrifice" triggers and tracks Food/permanent sacrifices exactly like a fixed-count sacrifice
+     * cost; only the required count differs (all chosen, rather than a printed N). An `EXILE` atom
+     * moves the permanents via [ZoneTransitionService.moveToZone], so attached Auras fall off,
+     * tokens cease to exist, and leaves-the-battlefield triggers fire.
      */
-    private fun payExilePermanentsList(
+    private fun payVariablePermanentsList(
         state: GameState,
-        exileChoices: List<EntityId>,
-        filter: GameObjectFilter,
-        minCount: Int,
-        excludeSelf: Boolean,
+        atom: CostAtom.VariablePermanents,
+        choices: List<EntityId>,
         sourceId: EntityId,
         controllerId: EntityId,
         manaPool: ManaPool,
     ): CostPaymentResult {
+        val filter = atom.filter
+        val minCount = atom.minCount
+        val excludeSelf = atom.excludeSelf
+        val verb = if (atom.action == PermanentCostAction.SACRIFICE) "sacrifice" else "exile"
         // With no selection supplied, auto-pick ONLY when the choice is forced (exactly minCount
         // eligible). A real choice (more eligible than minCount) is paused for by
-        // ActivateAbilityHandler; never silently guess which permanents to exile.
-        val toExile: List<EntityId> = if (exileChoices.isEmpty()) {
+        // ActivateAbilityHandler; never silently guess which permanents to pay with.
+        val toPay: List<EntityId> = if (choices.isEmpty()) {
             val candidates = findMatchingCardsUnified(state, state.getBattlefield(controllerId), filter, controllerId)
                 .let { if (excludeSelf) it.filter { id -> id != sourceId } else it }
             if (candidates.size < minCount) {
-                return CostPaymentResult.failure("Not enough permanents to exile (need $minCount, got ${candidates.size})")
+                return CostPaymentResult.failure("Not enough permanents to $verb (need $minCount, got ${candidates.size})")
             }
             if (candidates.size > minCount) {
-                return CostPaymentResult.failure("No permanents chosen to exile (need at least $minCount)")
+                return CostPaymentResult.failure("No permanents chosen to $verb (need at least $minCount)")
             }
             candidates
         } else {
-            exileChoices
+            choices
         }
-        if (toExile.size < minCount) {
-            return CostPaymentResult.failure("Not enough permanents chosen to exile (need $minCount, got ${toExile.size})")
+        if (toPay.size < minCount) {
+            return CostPaymentResult.failure("Not enough permanents chosen to $verb (need $minCount, got ${toPay.size})")
+        }
+        if (atom.action == PermanentCostAction.SACRIFICE) {
+            // requiredCount = the whole chosen set: the count is the payer's choice, not a printed N.
+            return paySacrificeList(
+                state, toPay, filter,
+                requiredCount = toPay.size, excludeSelf = excludeSelf,
+                sourceId = sourceId, controllerId = controllerId, manaPool = manaPool,
+            )
         }
         val context = PredicateContext(controllerId = controllerId)
         val projected = state.projectedState
         var newState = state
         val events = mutableListOf<GameEvent>()
-        for (id in toExile) {
+        for (id in toPay) {
             val container = newState.getEntity(id)
                 ?: return CostPaymentResult.failure("Permanent to exile not found")
             val itsController = container.get<ControllerComponent>()?.playerId
@@ -1078,9 +1092,9 @@ class CostHandler {
                 // Mana / return-to-hand / reveal / put-counters-on-self / exile-permanents / mill
                 // are not produced as spell additional costs today (put-counters-on-self is
                 // inherently ability-scoped — a spell on the stack has no permanent to put the
-                // counters on; and ExilePermanents is an activated-ability cost only).
+                // counters on; and VariablePermanents is an activated-ability cost only).
                 is CostAtom.Mana, is CostAtom.ReturnToHand, is CostAtom.RevealFromHand,
-                is CostAtom.PutCountersOnSelf, is CostAtom.ExilePermanents, is CostAtom.Mill -> false
+                is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents, is CostAtom.Mill -> false
             }
             is AdditionalCost.PayLifePerTarget -> {
                 // Always payable: choosing zero targets pays zero life. Per-target life
@@ -1464,6 +1478,12 @@ data class CostPaymentChoices(
     val sacrificeChoices: List<EntityId> = emptyList(),
     val discardChoices: List<EntityId> = emptyList(),
     val exileChoices: List<EntityId> = emptyList(),
+    /**
+     * Permanents chosen for a [CostAtom.VariablePermanents] variable-count cost, kept apart from
+     * [exileChoices] / [sacrificeChoices] so an ability carrying both a fixed and a variable
+     * permanent cost stays unambiguous. Mirrors `AdditionalCostPayment.variableCostPermanents`.
+     */
+    val variablePermanentChoices: List<EntityId> = emptyList(),
     val tapChoices: List<EntityId> = emptyList(),
     val bounceChoices: List<EntityId> = emptyList(),
     val xValue: Int = 0,

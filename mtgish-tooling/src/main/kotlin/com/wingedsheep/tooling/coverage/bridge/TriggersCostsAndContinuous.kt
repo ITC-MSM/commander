@@ -243,6 +243,29 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     supported("Loyalty", "cost: planeswalker loyalty +N/-N (loyaltyAbility(change) { })")
     supported("SacrificeAPermanent", "cost: sacrifice")
     supported("SacrificeNumberPermanents", "cost: sacrifice N")
+    // Variable-count permanent costs — "exile/sacrifice **one or more** [filter] you control" as an
+    // activated-ability cost, where the payer chooses how many and that choice defines the ability's
+    // X (CR 601.2b). Both map to the single `CostAtom.VariablePermanents` atom, differing only in its
+    // `action` and `xMeasure` axes, surfaced as `Costs.ExilePermanents(...)` /
+    // `Costs.SacrificePermanents(...)`. The engine pauses for the on-battlefield selection, computes
+    // X from it (total mana value, or the count), then pauses for the ability's target so an
+    // X-bounded target can't be picked and then fizzle.
+    //
+    // Capability-only: both sit squarely in the extra-cost / chosen-value area the emitter declines
+    // to render exactly (creator's note), so their cards stay SCAFFOLD even though the capability is
+    // present. Note the near-miss neighbour `SacrificeAnyNumberOfPermanents` stays unregistered — it
+    // is a min-0 sacrifice used as a *spell* cost/effect, not an activated-ability cost, and this
+    // atom is activated-ability-only.
+    supported(
+        "ExileNumberOrMoreGroupPermanents",
+        "cost: exile one or more permanents you control, X = their total mana value " +
+            "(Costs.ExilePermanents(filter, minCount, excludeSelf)) — Fabrication Foundry"
+    )
+    supported(
+        "SacrificeOneOrMorePermanents",
+        "cost: sacrifice one or more permanents you control, X = how many " +
+            "(Costs.SacrificePermanents(filter, minCount, excludeSelf)) — Radiant Lotus"
+    )
     // "Pay N life" as an activation cost -> Costs.PayLife(n). The emitter renders fixed-integer amounts
     // (abilityCostDsl); non-integer amounts ({X}, life-total halves, …) are declined -> SCAFFOLD.
     supported("PayLife", "cost: pay life")

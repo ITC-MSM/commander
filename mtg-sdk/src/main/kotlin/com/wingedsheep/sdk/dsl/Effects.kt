@@ -2094,14 +2094,23 @@ object Effects {
         colorSet: ManaColorSet = ManaColorSet.AnyColor,
         amount: Int = 1,
         restriction: ManaRestriction? = null,
-    ): Effect = AddManaOfChoiceEffect(colorSet, DynamicAmount.Fixed(amount), restriction)
+        recipient: EffectTarget = EffectTarget.Controller,
+    ): Effect = AddManaOfChoiceEffect(
+        colorSet, DynamicAmount.Fixed(amount), restriction, recipient = recipient
+    )
 
-    /** Dynamic-amount variant of [AddManaOfChoice]. */
+    /**
+     * Dynamic-amount variant of [AddManaOfChoice].
+     *
+     * Pass [recipient] for "**target player** adds …" (Radiant Lotus). The colour is still chosen by
+     * the ability's controller; only the pool the mana lands in moves.
+     */
     fun AddManaOfChoice(
         colorSet: ManaColorSet,
         amount: DynamicAmount,
         restriction: ManaRestriction? = null,
-    ): Effect = AddManaOfChoiceEffect(colorSet, amount, restriction)
+        recipient: EffectTarget = EffectTarget.Controller,
+    ): Effect = AddManaOfChoiceEffect(colorSet, amount, restriction, recipient = recipient)
 
     /**
      * Add N mana of any *one* color ("Add three mana of any one color" — Gilded Lotus):

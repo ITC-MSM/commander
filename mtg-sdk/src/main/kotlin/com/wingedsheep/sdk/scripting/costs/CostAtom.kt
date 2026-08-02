@@ -112,31 +112,44 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
     }
 
     /**
-     * Exile one or more permanents matching [filter] you control — a *variable-count* cost: the
-     * payer chooses how many to exile (at least [minCount]). Unlike the fixed-count [Sacrifice] /
-     * [ExileFrom] atoms, the number exiled is a player choice made as the ability is activated (CR
-     * 601.2b — the value of a variable defined by a cost choice is announced at activation). The
-     * resolving ability reads the **total mana value** of the exiled permanents as its X value
-     * ([com.wingedsheep.sdk.scripting.values.DynamicAmount.XValue]), so a target/effect can be
-     * bounded "with mana value X or less".
+     * Put one or more permanents matching [filter] you control into another zone — a
+     * *variable-count* cost: the payer chooses how many (at least [minCount]). Unlike the
+     * fixed-count [Sacrifice] / [ExileFrom] atoms, the number is a player choice made as the ability
+     * is activated (CR 601.2b — the value of a variable defined by a cost choice is announced at
+     * activation), and the resolving ability reads it as its X value
+     * ([com.wingedsheep.sdk.scripting.values.DynamicAmount.XValue]).
      *
-     * @property filter which permanents you control may be exiled.
-     * @property minCount minimum number to exile (default 1 — "one or more").
+     * Two orthogonal axes cover the printed shapes:
+     *
+     *  - [action] — what happens to the chosen permanents. `EXILE` for "exile one or more …"
+     *    (Fabrication Foundry), `SACRIFICE` for "sacrifice one or more …" (Radiant Lotus). A
+     *    sacrifice fires "whenever you sacrifice" triggers; an exile does not.
+     *  - [xMeasure] — how the choice becomes X. `TOTAL_MANA_VALUE` for "… with total mana value X"
+     *    (bounds a "mana value X or less" target); `COUNT` for "… for each permanent chosen this
+     *    way", where X is simply how many were chosen.
+     *
+     * @property filter which permanents you control may be chosen.
+     * @property minCount minimum number to choose (default 1 — "one or more").
      * @property excludeSelf when true the cost's source permanent is excluded — "exile one or more
-     *   *other* [filter] you control" (Fabrication Foundry).
+     *   *other* [filter] you control" (Fabrication Foundry). Leave false when the source may pay for
+     *   itself (Radiant Lotus is an artifact and may sacrifice itself to its own cost).
+     * @property action what the cost does with the chosen permanents.
+     * @property xMeasure how the chosen set becomes the ability's X.
      */
-    @SerialName("AtomExilePermanents")
+    @SerialName("AtomVariablePermanents")
     @Serializable
-    data class ExilePermanents(
+    data class VariablePermanents(
         val filter: GameObjectFilter = GameObjectFilter.Any,
         val minCount: Int = 1,
-        val excludeSelf: Boolean = true
+        val excludeSelf: Boolean = true,
+        val action: PermanentCostAction = PermanentCostAction.EXILE,
+        val xMeasure: VariableCostMeasure = VariableCostMeasure.TOTAL_MANA_VALUE
     ) : CostAtom {
         // Variable count — the floor the payer must at least select. The picker's max is the number
         // of eligible permanents, resolved by the engine at activation time.
         override val selectionCount: Int get() = minCount
         override val description: String get() = buildString {
-            append("exile ")
+            append(if (action == PermanentCostAction.EXILE) "exile " else "sacrifice ")
             append(if (minCount <= 1) "one or more " else "$minCount or more ")
             if (excludeSelf) append("other ")
             append("${filter.description}s you control")
@@ -336,3 +349,37 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
     }
 }
 
+
+/**
+ * What a [CostAtom.VariablePermanents] cost does with the permanents the payer chose.
+ *
+ * The distinction is not cosmetic: a sacrifice puts the permanents into their owners' graveyards
+ * and fires "whenever you sacrifice a permanent" triggers (CR 701.17), while an exile moves them
+ * to exile and fires none of those.
+ */
+@Serializable
+enum class PermanentCostAction {
+    /** "Exile one or more artifacts you control …" (Fabrication Foundry). */
+    EXILE,
+
+    /** "Sacrifice one or more artifacts …" (Radiant Lotus). */
+    SACRIFICE
+}
+
+/**
+ * How a [CostAtom.VariablePermanents] choice becomes the ability's X (CR 601.2b).
+ */
+@Serializable
+enum class VariableCostMeasure {
+    /**
+     * X is the sum of the chosen permanents' mana values — "… with total mana value X"
+     * (Fabrication Foundry, whose reanimation target is then bounded "mana value X or less").
+     */
+    TOTAL_MANA_VALUE,
+
+    /**
+     * X is simply how many permanents were chosen — the "… for each permanent sacrificed this way"
+     * shape (Radiant Lotus adds three mana per artifact sacrificed).
+     */
+    COUNT
+}

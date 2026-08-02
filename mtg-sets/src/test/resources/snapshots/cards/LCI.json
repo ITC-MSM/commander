@@ -6627,7 +6627,7 @@
                         {
                             "type": "CostAtomWrapper",
                             "atom": {
-                                "type": "AtomExilePermanents",
+                                "type": "AtomVariablePermanents",
                                 "filter": "artifact"
                             }
                         }

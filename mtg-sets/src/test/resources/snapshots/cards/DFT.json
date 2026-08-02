@@ -12684,6 +12684,62 @@
     "colorIdentityOverride": []
 }
 
+// Radiant Lotus
+{
+    "name": "Radiant Lotus",
+    "manaCost": "{6}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomVariablePermanents",
+                                "filter": "artifact",
+                                "excludeSelf": false,
+                                "action": "SACRIFICE",
+                                "xMeasure": "COUNT"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Multiply",
+                        "amount": "XValue",
+                        "multiplier": 3
+                    },
+                    "recipient": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "MYTHIC",
+        "artist": "Bruce Brenneise",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/be6dac83-39c2-40dc-a322-76a3ea4e7aee.jpg?1783907846"
+    }
+}
+
 // Rangers' Aetherhive
 {
     "name": "Rangers' Aetherhive",

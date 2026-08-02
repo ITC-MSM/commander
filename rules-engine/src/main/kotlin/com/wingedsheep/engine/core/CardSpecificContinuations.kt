@@ -714,37 +714,38 @@ data class ActivateAbilitySacrificeContinuation(
 ) : ContinuationFrame
 
 /**
- * Resume after the controller picks which permanents to exile for a variable-count
- * [com.wingedsheep.sdk.scripting.costs.CostAtom.ExilePermanents] cost — "Exile one or more other
- * [filter] you control with total mana value X" (Fabrication Foundry).
+ * Resume after the controller picks which permanents pay a variable-count
+ * [com.wingedsheep.sdk.scripting.costs.CostAtom.VariablePermanents] cost — "Exile one or more other
+ * [filter] you control with total mana value X" (Fabrication Foundry) or "Sacrifice one or more
+ * [filter]" (Radiant Lotus).
  *
- * The bare [ActivateAbility] arrives with no exile selection; the handler raised a
- * [SelectCardsDecision] over the eligible permanents (min [minCount], max = all eligible) and pushed
- * this frame. The resumer validates the pick, fills it into `costPayment.exiledCards`, and re-enters
- * the handler — which then computes X (the exiled set's total mana value) and pauses again for the
- * X-bounded target ([ActivateAbilityControllerTargetContinuation]). The exile pause happens before
- * any cost is paid, so cancellation pops this frame with no side effects.
+ * The bare [ActivateAbility] arrives with no selection; the handler raised a [SelectCardsDecision]
+ * over the eligible permanents (min [minCount], max = all eligible) and pushed this frame. The
+ * resumer validates the pick, fills it into `costPayment.variableCostPermanents`, and re-enters the
+ * handler — which then computes X from it and pauses again for the target
+ * ([ActivateAbilityControllerTargetContinuation]). The selection pause happens before any cost is
+ * paid, so cancellation pops this frame with no side effects.
  *
- * @property action The original [ActivateAbility] (`costPayment.exiledCards` still empty).
- * @property exileCandidates The eligible permanents offered as options (used to validate the pick).
- * @property minCount Minimum number of permanents that must be exiled (the cost's floor).
+ * @property action The original [ActivateAbility] (`costPayment.variableCostPermanents` still empty).
+ * @property candidates The eligible permanents offered as options (used to validate the pick).
+ * @property minCount Minimum number of permanents that must be chosen (the cost's floor).
  */
 @Serializable
-data class ActivateAbilityExilePermanentsContinuation(
+data class ActivateAbilityVariablePermanentsContinuation(
     override val decisionId: String,
     val action: ActivateAbility,
-    val exileCandidates: List<EntityId>,
+    val candidates: List<EntityId>,
     val minCount: Int
 ) : ContinuationFrame
 
 /**
  * Resume after the controller picks the target for an activated ability whose target legality
  * depends on a value determined during activation — specifically the X-bounded reanimation target of
- * a [com.wingedsheep.sdk.scripting.costs.CostAtom.ExilePermanents] ability (Fabrication Foundry:
+ * a [com.wingedsheep.sdk.scripting.costs.CostAtom.VariablePermanents] ability (Fabrication Foundry:
  * "Return target artifact card with mana value X or less from your graveyard to the battlefield").
  *
  * Because X isn't known until the exile selection is made, the target is chosen *after* the exile
- * ([ActivateAbilityExilePermanentsContinuation]) rather than up front. The handler raised a
+ * ([ActivateAbilityVariablePermanentsContinuation]) rather than up front. The handler raised a
  * [ChooseTargetsDecision] whose legal targets were found with X threaded through the predicate
  * context, and pushed this frame. The resumer converts the response into [ChosenTarget]s, fills
  * `action.targets`, and re-enters the handler to pay the cost and put the ability on the stack.
