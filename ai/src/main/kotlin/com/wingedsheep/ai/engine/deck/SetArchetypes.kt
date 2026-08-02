@@ -419,6 +419,34 @@ object SetArchetypes {
                     "Ramp with extra lands and mana creatures while landfall-style triggers convert each land drop into cards and life. A value-ramp deck that buries opponents in resources."),
             )
         ),
+        "WOE" to SetSynergies(
+            setCode = "WOE",
+            setName = "Wilds of Eldraine",
+            archetypes = listOf(
+                Archetype("Tap Tempo", listOf(Color.WHITE, Color.BLUE),
+                    "Tap opposing creatures with spells and abilities, then collect bonuses for keeping them locked down. Flyers and tempo plays turn those openings into a fast clock."),
+                Archetype("Faeries", listOf(Color.BLUE, Color.BLACK),
+                    "Build an evasive Faerie army while disrupting the opponent at instant speed. Faerie payoffs reward playing a patient tempo game and attacking through the air.",
+                    creatureTypes = listOf("Faerie")),
+                Archetype("Rats", listOf(Color.BLACK, Color.RED),
+                    "Create Rat tokens, sacrifice disposable creatures for value, and keep attacking. Go-wide payoffs turn the swarm into an aggressive engine with reach.",
+                    creatureTypes = listOf("Rat")),
+                Archetype("Ferocious Stompy", listOf(Color.RED, Color.GREEN),
+                    "Accelerate into creatures with power four or greater and use them to unlock ferocious-style bonuses. The deck wins by curving efficient threats into overwhelming attacks."),
+                Archetype("Enchanted Creatures", listOf(Color.GREEN, Color.WHITE),
+                    "Use Roles, Auras, and other enchantments to upgrade creatures and trigger enchanted-creature payoffs. Build a board whose threats grow larger than ordinary combat can handle."),
+                Archetype("Bargain", listOf(Color.WHITE, Color.BLACK),
+                    "Generate Roles, Food, and other expendable permanents, then bargain them away for upgraded spells. Recursion and attrition payoffs help the deck win longer games."),
+                Archetype("Spells", listOf(Color.BLUE, Color.RED),
+                    "Chain instants, sorceries, and Adventure spells to trigger spell-count payoffs. Cheap interaction and card selection keep the deck moving while its creatures turn every spell into pressure."),
+                Archetype("Food", listOf(Color.BLACK, Color.GREEN),
+                    "Create Food tokens and convert them into cards, creatures, and drain effects. The deck can stabilize with life gain before grinding out the opponent with repeatable value."),
+                Archetype("Celebration Aggro", listOf(Color.RED, Color.WHITE),
+                    "Put two or more permanents onto the battlefield each turn to enable celebration. Cheap creatures, Roles, and tokens produce explosive combat steps before slower decks can stabilize."),
+                Archetype("Big Spells", listOf(Color.GREEN, Color.BLUE),
+                    "Ramp into spells with mana value five or greater and collect bonuses for casting them. Adventure cards provide early interaction before their expensive permanent halves become late-game threats."),
+            )
+        ),
     )
 
     /** Get archetypes for a specific set code, or null if not found. */
