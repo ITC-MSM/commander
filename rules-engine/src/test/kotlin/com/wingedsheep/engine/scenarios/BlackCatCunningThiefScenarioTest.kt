@@ -1,15 +1,19 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.PlayLand
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
@@ -103,6 +107,120 @@ class BlackCatCunningThiefScenarioTest : ScenarioTestBase() {
                 withClue("The exiled card resolved onto the Black Cat controller's battlefield") {
                     game.isOnBattlefield("Grizzly Bears") shouldBe true
                     game.state.getExile(game.player2Id).contains(grizzly) shouldBe false
+                }
+            }
+
+            // Regression: the two cards are exiled FACE DOWN, but the Black Cat controller "may play"
+            // them. The client view must reveal them (with a play-from-exile affordance) to that
+            // controller — otherwise the server offers a CastSpell the UI has no card data to act on,
+            // and the player is "unable to play" the exiled cards. Everyone else still sees only a
+            // face-down card. (Face-up impulse cards like Laughing Jasper Flint never hit this path.)
+            test("a face-down exiled card is revealed and playable to the controller, but masked to others") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Black Cat, Cunning Thief")
+                    .withLandsOnBattlefield(1, "Swamp", 7)
+                    .withCardInLibrary(2, "Grizzly Bears")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.castSpell(1, "Black Cat, Cunning Thief").error shouldBe null
+                game.resolveStack()
+                val decision = game.getPendingDecision().shouldBeInstanceOf<SelectCardsDecision>()
+                val grizzly = decision.options.first {
+                    game.state.getEntity(it)?.get<CardComponent>()?.name == "Grizzly Bears"
+                }
+                val aForest = decision.options.first {
+                    game.state.getEntity(it)?.get<CardComponent>()?.name == "Forest"
+                }
+                game.selectCards(listOf(grizzly, aForest))
+
+                // The Black Cat controller (Player1) holds the may-play permission, so their view must
+                // expose the real card and flag it playable from exile.
+                val asController = stateTransformer
+                    .transform(game.state, viewingPlayerId = game.player1Id)
+                    .cards[grizzly].shouldNotBeNull()
+                withClue("The permission-holder sees the real, playable card rather than a masked stub") {
+                    asController.name shouldBe "Grizzly Bears"
+                    asController.isFaceDown shouldBe false
+                    asController.manaCost shouldNotBe ""
+                    asController.playableFromExile shouldBe true
+                }
+
+                // A spectator (no play permission) still sees only a face-down card with no identity.
+                val asSpectator = stateTransformer
+                    .transform(game.state, viewingPlayerId = game.player2Id, isSpectator = true)
+                    .cards[grizzly].shouldNotBeNull()
+                withClue("A viewer without permission still sees a masked, unplayable face-down card") {
+                    asSpectator.name shouldBe "Face-down card"
+                    asSpectator.isFaceDown shouldBe true
+                    asSpectator.playableFromExile shouldBe false
+                }
+            }
+
+            // Regression: a LAND exiled face down must enter the battlefield face up as the real land,
+            // not as a face-down 2/2. Lands bypass the stack (where face-down spells are revealed), so
+            // PlayLandHandler must strip the face-down marker itself (CR 305.1 — a land is played face up).
+            test("a land exiled face down is played face up as the real land, not a face-down creature") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Black Cat, Cunning Thief")
+                    .withLandsOnBattlefield(1, "Swamp", 7)
+                    .withCardInLibrary(2, "Grizzly Bears")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.castSpell(1, "Black Cat, Cunning Thief").error shouldBe null
+                game.resolveStack()
+                val decision = game.getPendingDecision().shouldBeInstanceOf<SelectCardsDecision>()
+                val grizzly = decision.options.first {
+                    game.state.getEntity(it)?.get<CardComponent>()?.name == "Grizzly Bears"
+                }
+                val aForest = decision.options.first {
+                    game.state.getEntity(it)?.get<CardComponent>()?.name == "Forest"
+                }
+                game.selectCards(listOf(grizzly, aForest))
+
+                // Play the exiled Forest as a land (its may-play permission covers it).
+                val played = game.execute(PlayLand(game.player1Id, aForest))
+                withClue("Playing the exiled Forest as a land should succeed: ${played.error}") {
+                    played.error shouldBe null
+                }
+
+                withClue("The Forest entered face up as a real land, not a face-down 2/2 creature") {
+                    game.isOnBattlefield("Forest") shouldBe true
+                    // The face-down marker is stripped on the way in.
+                    game.state.getEntity(aForest)?.get<FaceDownComponent>() shouldBe null
+                }
+
+                // The client view confirms it renders as a Forest with no power/toughness — a
+                // face-down permanent would surface as a nameless 2/2.
+                val playedForest = stateTransformer
+                    .transform(game.state, viewingPlayerId = game.player1Id)
+                    .cards[aForest].shouldNotBeNull()
+                withClue("The played land shows as a Forest, not a face-down creature") {
+                    playedForest.name shouldBe "Forest"
+                    playedForest.isFaceDown shouldBe false
+                    playedForest.power shouldBe null
+                    playedForest.toughness shouldBe null
                 }
             }
         }
