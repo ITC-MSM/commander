@@ -58,9 +58,16 @@ class GrantWebSlingingToSpellsTest : FunSpec({
         toughness = 3
     }
 
+    // A colorless legendary spell — legendary but not colored, so it fails the IsColored half of the
+    // filter ("that's one or more colors"). Exercises the predicate the nonlegendary case leaves alone.
+    val colorlessLegend = card("Test Colorless Relic") {
+        manaCost = "{4}"
+        typeLine = "Legendary Artifact"
+    }
+
     fun newGame(): Pair<GameTestDriver, EntityId> {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + listOf(amazingGrant, legendCreature, plainCreature))
+        driver.registerCards(TestCards.all + listOf(amazingGrant, legendCreature, plainCreature, colorlessLegend))
         driver.initMirrorMatch(deck = Deck.of("Forest" to 40), skipMulligans = true, startingPlayer = 0)
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         return driver to driver.activePlayer!!
@@ -97,6 +104,14 @@ class GrantWebSlingingToSpellsTest : FunSpec({
         val plain = driver.putCardInHand(you, "Test Plain Spider")
 
         (plain in webSlingActionCardIds(driver, you)) shouldBe false
+    }
+
+    test("a colorless legendary spell does not get granted web-slinging") {
+        val (driver, you) = newGame()
+        setup(driver, you, withGranter = true)
+        val relic = driver.putCardInHand(you, "Test Colorless Relic")
+
+        (relic in webSlingActionCardIds(driver, you)) shouldBe false
     }
 
     test("no granter → no web-slinging for a legendary spell") {

@@ -78,6 +78,24 @@ class GraveyardCardsHaveMayhemTest : FunSpec({
         (bolt in mayhemActionCardIds(driver, you)) shouldBe false
     }
 
+    test("the Nonland filter excludes a discarded land") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40), skipMulligans = true, startingPlayer = 0)
+        val you = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putPermanentOnBattlefield(you, "Goblin Formula Test")
+        val bolt = driver.putCardInGraveyard(you, "Lightning Bolt")
+        markDiscarded(driver, you, bolt)
+        val land = driver.putCardInGraveyard(you, "Mountain")
+        markDiscarded(driver, you, land)
+        driver.giveMana(you, Color.RED, 1)
+
+        val ids = mayhemActionCardIds(driver, you)
+        ids shouldContain bolt        // nonland card gains mayhem
+        (land in ids) shouldBe false  // the land is excluded by GameObjectFilter.Nonland
+    }
+
     test("granted mayhem still requires the card to have been discarded this turn") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Mountain" to 40), skipMulligans = true, startingPlayer = 0)
