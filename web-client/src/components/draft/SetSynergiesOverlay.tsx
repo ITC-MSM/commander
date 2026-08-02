@@ -970,6 +970,74 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       },
     ],
   },
+  WOE: {
+    setCode: 'WOE',
+    setName: 'Wilds of Eldraine',
+    archetypes: [
+      {
+        name: 'Tap Tempo',
+        colors: ['W', 'U'],
+        keyCard: 'Sharae of Numbing Depths',
+        description: 'Tap opposing creatures with spells and abilities, then collect bonuses for keeping them locked down. Flyers and tempo plays turn those openings into a fast clock.',
+      },
+      {
+        name: 'Faeries',
+        colors: ['U', 'B'],
+        creatureTypes: ['Faerie'],
+        keyCard: 'Obyra, Dreaming Duelist',
+        description: 'Build an evasive Faerie army while disrupting the opponent at instant speed. Faerie payoffs reward playing a patient tempo game and attacking through the air.',
+      },
+      {
+        name: 'Rats',
+        colors: ['B', 'R'],
+        creatureTypes: ['Rat'],
+        keyCard: 'Totentanz, Swarm Piper',
+        description: 'Create Rat tokens, sacrifice disposable creatures for value, and keep attacking. Go-wide payoffs turn the swarm into an aggressive engine with reach.',
+      },
+      {
+        name: 'Ferocious Stompy',
+        colors: ['R', 'G'],
+        keyCard: 'Ruby, Daring Tracker',
+        description: 'Accelerate into creatures with power four or greater and use them to unlock ferocious-style bonuses. The deck wins by curving efficient threats into overwhelming attacks.',
+      },
+      {
+        name: 'Enchanted Creatures',
+        colors: ['G', 'W'],
+        keyCard: 'Syr Armont, the Redeemer',
+        description: 'Use Roles, Auras, and other enchantments to upgrade creatures and trigger enchanted-creature payoffs. Build a board whose threats grow larger than ordinary combat can handle.',
+      },
+      {
+        name: 'Bargain',
+        colors: ['W', 'B'],
+        keyCard: 'Neva, Stalked by Nightmares',
+        description: 'Generate Roles, Food, and other expendable permanents, then bargain them away for upgraded spells. Recursion and attrition payoffs help the deck win longer games.',
+      },
+      {
+        name: 'Spells',
+        colors: ['U', 'R'],
+        keyCard: 'Johann, Apprentice Sorcerer',
+        description: 'Chain instants, sorceries, and Adventure spells to trigger spell-count payoffs. Cheap interaction and card selection keep the deck moving while its creatures turn every spell into pressure.',
+      },
+      {
+        name: 'Food',
+        colors: ['B', 'G'],
+        keyCard: 'Greta, Sweettooth Scourge',
+        description: 'Create Food tokens and convert them into cards, creatures, and drain effects. The deck can stabilize with life gain before grinding out the opponent with repeatable value.',
+      },
+      {
+        name: 'Celebration Aggro',
+        colors: ['R', 'W'],
+        keyCard: 'Ash, Party Crasher',
+        description: 'Put two or more permanents onto the battlefield each turn to enable celebration. Cheap creatures, Roles, and tokens produce explosive combat steps before slower decks can stabilize.',
+      },
+      {
+        name: 'Big Spells',
+        colors: ['G', 'U'],
+        keyCard: 'Troyan, Gutsy Explorer',
+        description: 'Ramp into spells with mana value five or greater and collect bonuses for casting them. Adventure cards provide early interaction before their expensive permanent halves become late-game threats.',
+      },
+    ],
+  },
 }
 
 /**
