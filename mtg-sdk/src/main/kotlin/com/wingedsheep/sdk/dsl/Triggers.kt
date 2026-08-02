@@ -1194,9 +1194,30 @@ object Triggers {
         binding = TriggerBinding.ANY
     )
 
-    /** Whenever you activate an exhaust ability. */
+    /**
+     * Whenever you activate an exhaust ability (CR 702.177). The plain Aetherdrift wording —
+     * Adrenaline Jockey, Rangers' Refueler, Rangers' Aetherhive, Afterburner Expert — which counts
+     * an exhaust *mana* ability as well. For the "that isn't a mana ability" variant see
+     * [YouActivateNonManaExhaustAbility].
+     */
     val YouActivateExhaustAbility: TriggerSpec = TriggerSpec(
         event = AbilityActivatedEvent(player = Player.You, requireExhaust = true),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Whenever you activate an exhaust ability that isn't a mana ability — Pit Automaton, whose
+     * Oracle text was updated so its "copy it" payoff can never latch onto a mana ability. The
+     * activated ability is exposed as
+     * [com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity], so
+     * [com.wingedsheep.sdk.dsl.Effects.CopyTargetSpellOrAbility] can copy it.
+     */
+    val YouActivateNonManaExhaustAbility: TriggerSpec = TriggerSpec(
+        event = AbilityActivatedEvent(
+            player = Player.You,
+            requireExhaust = true,
+            excludeManaAbilities = true
+        ),
         binding = TriggerBinding.ANY
     )
 

@@ -1533,7 +1533,13 @@ class ManaSolver(
         }
         is ActivationRestriction.Once -> {
             val tracker = state.getEntity(sourceId)?.get<AbilityActivatedEverComponent>()
-            tracker == null || !tracker.hasActivated(ability.id)
+            tracker == null || !tracker.hasActivated(ability.id) ||
+                // An exhaust mana ability's once-only memory can be waived (Elvish Refueler), and
+                // auto-tap has to agree with the enumerator about whether it may be tapped again.
+                (
+                    ability.isExhaust && com.wingedsheep.engine.mechanics.ExhaustActivationWaiver
+                        .isWaivedFor(state, playerId, cardRegistry, conditionEvaluator)
+                    )
         }
         is ActivationRestriction.ControlledSinceYourMostRecentTurn ->
             state.getEntity(sourceId)

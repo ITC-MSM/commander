@@ -258,6 +258,26 @@ data class PlayerDrewCardsThisTurn(
 }
 
 /**
+ * Condition: "as long as [player] has activated [atLeast] or more exhaust abilities this turn"
+ * (CR 702.177).
+ *
+ * Backed by the per-player `ExhaustAbilitiesActivatedThisTurnComponent`, incremented as each exhaust
+ * ability is activated and cleared with the other per-turn trackers at cleanup. Elvish Refueler
+ * wants the *negation* — "as long as you haven't activated an exhaust ability this turn" — so it
+ * wraps this in `Conditions.Not`; the `Conditions.YouActivatedExhaustAbilitiesThisTurn` /
+ * `Conditions.YouHaventActivatedAnExhaustAbilityThisTurn` DSL helpers pass [Player.You].
+ */
+@SerialName("PlayerActivatedExhaustAbilitiesThisTurn")
+@Serializable
+data class PlayerActivatedExhaustAbilitiesThisTurn(
+    val player: Player = Player.You,
+    val atLeast: Int = 1
+) : Condition {
+    override val description: String =
+        "if ${player.description} activated $atLeast or more exhaust abilities this turn"
+}
+
+/**
  * Condition: "If [player] has committed a crime this turn" (CR Outlaws of Thunder Junction —
  * a player commits a crime as they cast a spell, activate an ability, or put a triggered ability
  * on the stack that targets one or more opponents, permanents/spells/abilities an opponent controls,

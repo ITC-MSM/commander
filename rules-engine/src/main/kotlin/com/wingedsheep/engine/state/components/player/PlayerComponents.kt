@@ -916,6 +916,21 @@ data class EquipActivationsThisTurnComponent(
 ) : Component
 
 /**
+ * Number of exhaust abilities (CR 702.177) this player has activated during the current turn. Reset
+ * to 0 at turn start by TurnManager, alongside the other per-turn player trackers.
+ *
+ * Read by [com.wingedsheep.sdk.scripting.conditions.PlayerActivatedExhaustAbilitiesThisTurn], whose
+ * negation gates Elvish Refueler's
+ * [com.wingedsheep.sdk.scripting.IgnoreExhaustActivationLimit] permission — "as long as you haven't
+ * activated an exhaust ability this turn". Counted at activation time (CR 602.2), so it includes an
+ * exhaust ability that was later countered or whose source has left the battlefield.
+ */
+@Serializable
+data class ExhaustAbilitiesActivatedThisTurnComponent(
+    val count: Int = 0
+) : Component
+
+/**
  * Tracks the total damage dealt to a player during the current turn.
  * Includes both combat and non-combat damage. Prevented damage is not counted.
  * Cleared at end of turn by TurnManager.

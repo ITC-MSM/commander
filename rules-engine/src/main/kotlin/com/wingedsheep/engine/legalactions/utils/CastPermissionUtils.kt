@@ -41,6 +41,8 @@ import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlotFromTopOfLibrary
+import com.wingedsheep.engine.mechanics.ExhaustActivationWaiver
+import com.wingedsheep.sdk.scripting.IgnoreExhaustActivationLimit
 import com.wingedsheep.sdk.scripting.PlayersCantActivateAbilities
 import com.wingedsheep.sdk.scripting.PlayersCantCastSpells
 import com.wingedsheep.sdk.scripting.PreventActivatedAbilities
@@ -59,12 +61,20 @@ class CastPermissionUtils(
     private val predicateEvaluator: PredicateEvaluator,
     private val conditionEvaluator: ConditionEvaluator
 ) {
+    /**
+     * @param isExhaustAbility whether the ability being checked is an exhaust ability (CR 702.177).
+     *   Only [ActivationRestriction.Once] reads it: an exhaust ability's once-only memory can be
+     *   waived by [IgnoreExhaustActivationLimit] (Elvish Refueler), while a plain `Once` restriction
+     *   on a non-exhaust ability never is. Defaults to false, which is the restrictive answer — a
+     *   call site that forgets to pass it withholds a permission rather than granting one.
+     */
     fun checkActivationRestriction(
         state: GameState,
         playerId: EntityId,
         restriction: ActivationRestriction,
         sourceId: EntityId? = null,
-        abilityId: AbilityId? = null
+        abilityId: AbilityId? = null,
+        isExhaustAbility: Boolean = false
     ): Boolean {
         return when (restriction) {
             is ActivationRestriction.AnyPlayerMay -> true
@@ -99,7 +109,8 @@ class CastPermissionUtils(
                 if (sourceId == null || abilityId == null) true
                 else {
                     val tracker = state.getEntity(sourceId)?.get<AbilityActivatedEverComponent>()
-                    tracker == null || !tracker.hasActivated(abilityId)
+                    tracker == null || !tracker.hasActivated(abilityId) ||
+                        (isExhaustAbility && isExhaustActivationLimitWaived(state, playerId))
                 }
             }
             is ActivationRestriction.ControlledSinceYourMostRecentTurn -> {
@@ -112,7 +123,7 @@ class CastPermissionUtils(
                     ?.has<com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent>() != true
             }
             is ActivationRestriction.All -> restriction.restrictions.all {
-                checkActivationRestriction(state, playerId, it, sourceId, abilityId)
+                checkActivationRestriction(state, playerId, it, sourceId, abilityId, isExhaustAbility)
             }
         }
     }
@@ -627,6 +638,22 @@ class CastPermissionUtils(
         }
         return false
     }
+
+    /**
+     * True when some permanent [playerId] controls waives the "activate only once" memory that an
+     * exhaust ability carries (CR 702.177a) — Elvish Refueler's "you may activate exhaust abilities
+     * as though they haven't been activated".
+     *
+     * Scans printed and granted [IgnoreExhaustActivationLimit] statics on [playerId]'s battlefield
+     * and evaluates each one's condition in the granting permanent's controller's context, so
+     * Elvish Refueler's "During your turn, as long as you haven't activated an exhaust ability this
+     * turn" gate is re-checked every frame — the waiver disappears the moment the turn's first
+     * exhaust ability is activated. Consulted by both this class's restriction check (the
+     * enumerators' offered actions) and [ActivateAbilityHandler]'s (the executed action), so the
+     * two can't drift.
+     */
+    fun isExhaustActivationLimitWaived(state: GameState, playerId: EntityId): Boolean =
+        ExhaustActivationWaiver.isWaivedFor(state, playerId, cardRegistry, conditionEvaluator)
 
     /**
      * Sum the [ReduceEquipCost] amounts across [playerId]'s battlefield, unwrapping a

@@ -926,6 +926,7 @@ class StaticAbilityHandler(
             is SpendAnyManaTypeForActivatedAbilities,
             is PreventActivatedAbilities,
             is PlayersCantActivateAbilities,
+            is com.wingedsheep.sdk.scripting.IgnoreExhaustActivationLimit,
             is PreventCycling,
 
             // Trigger detection (TriggerDetector.suppressEntersTriggers) — not a continuous

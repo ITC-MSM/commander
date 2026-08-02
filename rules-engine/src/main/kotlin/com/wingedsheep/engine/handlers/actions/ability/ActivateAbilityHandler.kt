@@ -423,7 +423,9 @@ class ActivateAbilityHandler(
 
         // Check activation restrictions
         for (restriction in ability.restrictions) {
-            val error = checkActivationRestriction(state, action.playerId, action.sourceId, action.abilityId, restriction)
+            val error = checkActivationRestriction(
+                state, action.playerId, action.sourceId, action.abilityId, restriction, ability.isExhaust
+            )
             if (error != null) return error
         }
 
@@ -1399,6 +1401,18 @@ class ActivateAbilityHandler(
             }
         }
 
+        // Track exhaust activations this turn (CR 702.177). Elvish Refueler's waiver of the
+        // once-only memory holds only "as long as you haven't activated an exhaust ability this
+        // turn", so the count has to advance for the very activation that used the waiver too —
+        // which is why this is unconditional on whether the waiver applied.
+        if (ability.isExhaust) {
+            currentState = currentState.updateEntity(action.playerId) { c ->
+                val tracker = c.get<com.wingedsheep.engine.state.components.player.ExhaustAbilitiesActivatedThisTurnComponent>()
+                    ?: com.wingedsheep.engine.state.components.player.ExhaustAbilitiesActivatedThisTurnComponent()
+                c.with(tracker.copy(count = tracker.count + 1))
+            }
+        }
+
         // Apply text replacement if the source has a TextReplacementComponent
         var finalEffect = if (textReplacement != null) {
             ability.effect.applyTextReplacement(textReplacement)
@@ -2297,7 +2311,8 @@ class ActivateAbilityHandler(
         playerId: com.wingedsheep.sdk.model.EntityId,
         sourceId: com.wingedsheep.sdk.model.EntityId,
         abilityId: com.wingedsheep.sdk.scripting.AbilityId,
-        restriction: ActivationRestriction
+        restriction: ActivationRestriction,
+        isExhaustAbility: Boolean = false
     ): String? {
         return when (restriction) {
             is ActivationRestriction.AnyPlayerMay -> null // Not a restriction; handled in validate()
@@ -2346,7 +2361,11 @@ class ActivateAbilityHandler(
             }
             is ActivationRestriction.Once -> {
                 val tracker = state.getEntity(sourceId)?.get<AbilityActivatedEverComponent>()
-                if (tracker != null && tracker.hasActivated(abilityId)) {
+                // An exhaust ability's once-only memory can be waived (Elvish Refueler); a plain
+                // Once restriction on a non-exhaust ability never is.
+                if (tracker != null && tracker.hasActivated(abilityId) &&
+                    !(isExhaustAbility && castPermissionUtils.isExhaustActivationLimitWaived(state, playerId))
+                ) {
                     "This ability can only be activated once"
                 } else null
             }
@@ -2358,7 +2377,7 @@ class ActivateAbilityHandler(
             }
             is ActivationRestriction.All -> {
                 restriction.restrictions.firstNotNullOfOrNull {
-                    checkActivationRestriction(state, playerId, sourceId, abilityId, it)
+                    checkActivationRestriction(state, playerId, sourceId, abilityId, it, isExhaustAbility)
                 }
             }
         }
