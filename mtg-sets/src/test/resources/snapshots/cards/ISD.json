@@ -2255,6 +2255,104 @@
     ]
 }
 
+// Hanweir Watchkeep
+{
+    "name": "Hanweir Watchkeep",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Human Warrior Werewolf",
+    "oracleText": "Defender\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 5
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Bane of Hanweir",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "This creature attacks each combat if able.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 5
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ],
+            "staticAbilities": [
+                "MustAttack"
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "145",
+            "rarity": "UNCOMMON",
+            "artist": "Wayne Reynolds",
+            "flavorText": "Technically he never left his post. He looks after the wolf wherever it goes.",
+            "imageUri": "https://cards.scryfall.io/normal/back/2/b/2b14ed17-1a35-4c49-ac46-3cad42d46c14.jpg?1783940944"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "flavorText": "He scans for wolves, knowing there's one he can never anticipate.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2b14ed17-1a35-4c49-ac46-3cad42d46c14.jpg?1783940944"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Heartless Summoning
 {
     "name": "Heartless Summoning",
@@ -2555,6 +2653,118 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Kruin Outlaw
+{
+    "name": "Kruin Outlaw",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Creature — Human Rogue Werewolf",
+    "oracleText": "First strike\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Terror of Kruin Pass",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Double strike\nWerewolves you control have menace. (A creature with menace can't be blocked except by two or more creatures.)\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "keywords": [
+            "DOUBLE_STRIKE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "MENACE",
+                    "filter": {
+                        "baseFilter": "creature Werewolf ctrl:you"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "152",
+            "rarity": "RARE",
+            "artist": "David Rapoza",
+            "imageUri": "https://cards.scryfall.io/normal/back/e/c/ec00d2d2-6597-474a-9353-345bbedfe57e.jpg?1783940938"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "rarity": "RARE",
+        "artist": "David Rapoza",
+        "flavorText": "\"Hold tight. I've got a surprise for them.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec00d2d2-6597-474a-9353-345bbedfe57e.jpg?1783940938",
+        "rulings": [
+            {
+                "date": "2011-09-22",
+                "text": "If Kruin Outlaw somehow transforms after blockers have been declared but before combat ends, any Werewolves you control that are blocked by a single creature will remain blocked."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
