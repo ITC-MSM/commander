@@ -799,6 +799,125 @@
     ]
 }
 
+// Scorned Villager
+{
+    "name": "Scorned Villager",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "{T}: Add {G}.\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "isManaAbility": true
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Moonscarred Werewolf",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Vigilance\n{T}: Add {G}{G}.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 2,
+            "toughness": 2
+        },
+        "keywords": [
+            "VIGILANCE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ],
+            "activatedAbilities": [
+                {
+                    "id": "ability_4",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "AddMana",
+                        "color": "GREEN",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "isManaAbility": true
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "125",
+            "artist": "Cynthia Sheppard",
+            "flavorText": "\". . . and I will bring the fury of the wild back to my village.\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "artist": "Cynthia Sheppard",
+        "flavorText": "\"My village's fear drove me into the wild . . .\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Thalia, Guardian of Thraben
 {
     "name": "Thalia, Guardian of Thraben",
