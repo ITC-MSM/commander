@@ -9,7 +9,6 @@ import com.wingedsheep.engine.core.LeylineDecisionContinuation
 import com.wingedsheep.engine.core.LeylinePhaseContinuation
 import com.wingedsheep.engine.core.YesNoResponse
 import com.wingedsheep.engine.core.ZoneChangeEvent
-import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
 import com.wingedsheep.engine.handlers.effects.ZoneEntryOptions
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
@@ -129,8 +128,9 @@ class LeylineContinuationResumer(
     ): ExecutionResult? {
         val cardComponent = state.getEntity(leylineCardId)?.get<CardComponent>() ?: return null
         val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: return null
-        val firstChoice = EntersWithReplacements
-            .entersWithChoicesFor(state, leylineCardId, cardDef)
+        val firstChoice = cardDef.script.replacementEffects
+            .filterIsInstance<EntersWithChoice>()
+            .sortedBy { it.choiceType.ordinal }
             .firstOrNull() ?: return null
 
         val parkedState = state.pushContinuation(

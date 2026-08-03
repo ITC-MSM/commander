@@ -147,12 +147,15 @@ Also enabled by the **discarded-this-turn tracking** half (now implemented) but 
 
 > Riot *(This creature enters with your choice of a +1/+1 counter or haste.)*
 
-**Done.** `Keyword.RIOT` is display-only; the behavior is composed by the `riot()` / `riotFor(filter)`
-DSL helpers out of the existing enters-with family — an `EntersWithChoice(ChoiceType.MODE)` plus a
-mode-gated `EntersWithCounters` and `EntersWithKeywords`. "Other Spiders you control have riot" rides
-a new `EntersWithChoice.otherOnly` flag: an `otherOnly` choice is stamped into the granter's
-battlefield replacement-source component and consulted as each matching permanent enters, the same
-global rail the counters/keywords siblings already used.
+**Done.** `Keyword.RIOT` is display-only; the behavior is the `EntersWithRiot` replacement, added by
+the `riot()` / `riotFor(filter)` DSL helpers. Each instance is answered separately (CR 702.136b) and
+applied immediately by the engine's `RiotEntry` walk, so a creature granted riot twice makes two
+choices and can end up with a counter *and* haste. "Other Spiders you control have riot" is an
+`otherOnly` instance stamped into the granter's battlefield replacement-source component and
+consulted as each matching permanent enters — the same global rail the enters-with counters/keywords
+siblings use. Wired on the cast path and on the direct-entry paths (reanimation, tutored
+put-onto-battlefield, token minting), and a creature that can't have +1/+1 counters put on it is
+given haste with no decision.
 
 Cards:
 - **Spider-Punk** [92] — `{1}{R}` ✅ riot, "Other Spiders you control have riot",

@@ -9,6 +9,7 @@ import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+import com.wingedsheep.engine.handlers.effects.RiotEntry
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.Component
@@ -366,6 +367,7 @@ object TokenCreationReplacementHelper {
 
         // Same structural cap as CreateTokenExecutor: copies are full entities too.
         val cappedCount = com.wingedsheep.engine.core.GameLimits.cappedTokenCount(count, "token copies")
+        val riotTokens = mutableListOf<EntityId>()
 
         repeat(cappedCount) {
             val (tokenId, stateWithId) = newState.newEntity()
@@ -407,15 +409,32 @@ object TokenCreationReplacementHelper {
                 events.addAll(counterEvents)
             }
 
-            events.add(
-                ZoneChangeEvent(
-                    entityId = tokenId,
-                    entityName = tokenCard.name,
-                    fromZone = null,
-                    toZone = Zone.BATTLEFIELD,
-                    ownerId = controllerId
+            // Riot (CR 702.136): a token copy can be granted riot by a battlefield permanent
+            // ("Other Spiders you control have riot"). Such a token's entry event is withheld and
+            // released by the riot walk below, once its counter has landed, so
+            // enters-the-battlefield triggers see the finished permanent.
+            val owesRiot = cardRegistry != null &&
+                RiotEntry.instanceCount(newState, tokenId, cardRegistry) > 0
+            if (owesRiot) {
+                riotTokens.add(tokenId)
+            } else {
+                events.add(
+                    ZoneChangeEvent(
+                        entityId = tokenId,
+                        entityName = tokenCard.name,
+                        fromZone = null,
+                        toZone = Zone.BATTLEFIELD,
+                        ownerId = controllerId
+                    )
                 )
-            )
+            }
+        }
+
+        if (riotTokens.isNotEmpty() && cardRegistry != null) {
+            val riot = RiotEntry.walkDirectEntries(newState, riotTokens, cardRegistry, null)
+            newState = riot.state
+            events.addAll(riot.events)
+            riot.decision?.let { return EffectResult.paused(newState, it, events) }
         }
 
         return EffectResult.success(newState, events)

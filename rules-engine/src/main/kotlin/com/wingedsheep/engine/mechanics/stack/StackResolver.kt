@@ -58,6 +58,7 @@ import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.permanent.types.returnDfcFace
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.sdk.scripting.EntersTapped
+import com.wingedsheep.engine.handlers.effects.RiotEntry
 import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.ChoiceType
@@ -955,11 +956,9 @@ class StackResolver(
             // Process in priority order: COLOR → CREATURE_TYPE → CREATURE_ON_BATTLEFIELD
             // When a card has multiple choices (e.g., Riptide Replicator: color + creature type),
             // the first one pauses; its continuation resumer chains to the next.
-            // Includes group-scoped choices granted from the battlefield ("Other Spiders you
-            // control have riot"), which apply to the resolving spell even though it's still on
-            // the stack — CR 614.12 considers the permanent it will become.
-            val firstChoice = com.wingedsheep.engine.handlers.effects.EntersWithReplacements
-                .entersWithChoicesFor(state, spellId, cardDef)
+            val entersWithChoices = cardDef.script.replacementEffects.filterIsInstance<EntersWithChoice>()
+            val firstChoice = entersWithChoices
+                .sortedBy { it.choiceType.ordinal }
                 .firstOrNull()
             if (firstChoice != null) {
                 val result = pauseForEntersWithChoice(state, spellId, controllerId, ownerId, cardComponent, firstChoice)
@@ -1139,14 +1138,43 @@ class StackResolver(
             }
         }
 
+        // Riot (CR 702.136) — one choice per instance (CR 702.136b), counting the card's own
+        // printed riot plus every instance granted from the battlefield ("Other Spiders you control
+        // have riot"). Answered while the spell is still on the stack, before the permanent exists,
+        // so the counter is already on it when enters-the-battlefield triggers see it; the resumer
+        // finishes the entry once the last instance is answered.
+        var entryState = state
+        val riotEvents = mutableListOf<GameEvent>()
+        if (cardDef != null && !spellComponent.castFaceDown) {
+            val riotInstances = RiotEntry.instanceCount(entryState, spellId, cardDef)
+            if (riotInstances > 0) {
+                val riot = RiotEntry.begin(
+                    entryState, spellId, controllerId, riotInstances
+                ) { decisionId, remaining ->
+                    RiotEntrySpellContinuation(
+                        decisionId = decisionId,
+                        spellId = spellId,
+                        controllerId = controllerId,
+                        ownerId = ownerId,
+                        remainingInstances = remaining,
+                    )
+                }
+                riot.decision?.let { return ExecutionResult.paused(riot.state, it, riot.events) }
+                // Resolved with no decision — the permanent can't have +1/+1 counters put on it, so
+                // riot's counter branch was never a legal choice and it just gained haste.
+                entryState = riot.state
+                riotEvents.addAll(riot.events)
+            }
+        }
+
         // Normal permanent entry
-        val (newState, enterEvents) = enterPermanentOnBattlefield(state, spellId, spellComponent, cardComponent, cardDef)
+        val (newState, enterEvents) = enterPermanentOnBattlefield(entryState, spellId, spellComponent, cardComponent, cardDef)
         val sagaEvents = if (cardDef != null && !spellComponent.castFaceDown && cardDef.isSaga) {
             listOf(CountersAddedEvent(spellId, "LORE", 1, cardDef.name))
         } else {
             emptyList()
         }
-        return ExecutionResult.success(newState, enterEvents + sagaEvents)
+        return ExecutionResult.success(newState, riotEvents + enterEvents + sagaEvents)
     }
 
     /**

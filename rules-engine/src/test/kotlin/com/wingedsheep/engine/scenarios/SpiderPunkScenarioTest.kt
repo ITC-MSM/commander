@@ -11,6 +11,12 @@ import com.wingedsheep.mtg.sets.definitions.ons.cards.BattlefieldMedic
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.dsl.riotFor
+import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.CantReceiveCounters
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 
@@ -23,19 +29,40 @@ import io.kotest.matchers.shouldBe
  *  Spells and abilities can't be countered.
  *  Damage can't be prevented."
  *
- * Riot's mode options are declared in option order by the `riot()` DSL helper:
- * index 0 = "A +1/+1 counter", index 1 = "Haste".
+ * Riot's decision offers the counter branch at index 0 and haste at index 1.
  */
 class SpiderPunkScenarioTest : ScenarioTestBase() {
 
     private val stateProjector = StateProjector()
 
+    /**
+     * A second, non-legendary riot granter, so a Spider can pick up **two** instances of riot at
+     * once (CR 702.136b) without running into the legend rule. Stands in for Rhythm of the Wild
+     * ("Nontoken creatures you control have riot"), which isn't implemented yet.
+     */
+    private val riotDrum = card("Riot Drum") {
+        manaCost = "{2}"
+        typeLine = "Artifact"
+        oracleText = "Creatures you control have riot."
+        riotFor(GameObjectFilter.Creature.youControl())
+    }
+
+    /** Stands in for Solemnity: nothing on the battlefield can have counters put on it. */
+    private val counterBan = card("Counter Ban") {
+        manaCost = "{2}"
+        typeLine = "Enchantment"
+        oracleText = "Creatures can't have counters put on them."
+        staticAbility { ability = CantReceiveCounters(GroupFilter.AllCreatures) }
+    }
+
     init {
+        cardRegistry.register(listOf(riotDrum, counterBan))
+
         val counterMode = 0
         val hasteMode = 1
 
         /** Cast [cardName] from P1's hand and answer riot's mode choice with [mode]. */
-        fun castAndRiot(game: TestGame, cardName: String, mode: Int): com.wingedsheep.sdk.model.EntityId {
+        fun castAndRiot(game: TestGame, cardName: String, mode: Int): EntityId {
             game.castSpell(1, cardName).error shouldBe null
             game.resolveStack()
 
@@ -68,8 +95,8 @@ class SpiderPunkScenarioTest : ScenarioTestBase() {
                 withClue("the counter branch grants no haste") {
                     projected.hasKeyword(punk, Keyword.HASTE) shouldBe false
                 }
-                withClue("riot resolves in exactly one choice — the 'other Spiders' grant must " +
-                    "not also fire for Spider-Punk itself") {
+                withClue("one instance, one choice — the 'other Spiders' grant must not also fire " +
+                    "for Spider-Punk itself") {
                     game.hasPendingDecision() shouldBe false
                 }
             }
@@ -172,6 +199,106 @@ class SpiderPunkScenarioTest : ScenarioTestBase() {
             }
         }
 
+        context("Spider-Punk — riot edge cases") {
+
+            test("two instances of riot make two separate choices (CR 702.136b)") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Spider-Punk")
+                    .withCardOnBattlefield(1, "Riot Drum")
+                    .withCardInHand(1, "Giant Spider")
+                    .withLandsOnBattlefield(1, "Forest", 4)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.castSpell(1, "Giant Spider").error shouldBe null
+                game.resolveStack()
+
+                val first = game.getPendingDecision()
+                withClue("first riot instance asks") { (first != null) shouldBe true }
+                game.submitDecision(OptionChosenResponse(first!!.id, counterMode))
+
+                val second = game.getPendingDecision()
+                withClue("the second instance asks separately") { (second != null) shouldBe true }
+                withClue("a distinct decision, not a resubmission of the first") {
+                    (second!!.id == first.id) shouldBe false
+                }
+                game.submitDecision(OptionChosenResponse(second!!.id, hasteMode))
+                game.resolveStack()
+
+                val spider = game.findPermanent("Giant Spider")!!
+                val projected = stateProjector.project(game.state)
+                withClue("one instance took the counter: 2/4 becomes 3/5") {
+                    projected.getPower(spider) shouldBe 3
+                    projected.getToughness(spider) shouldBe 5
+                }
+                withClue("the other instance took haste — both branches apply") {
+                    projected.hasKeyword(spider, Keyword.HASTE) shouldBe true
+                }
+                game.hasPendingDecision() shouldBe false
+            }
+
+            test("a creature that can't have counters put on it is given haste with no choice") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Spider-Punk")
+                    .withCardOnBattlefield(1, "Counter Ban")
+                    .withCardInHand(1, "Giant Spider")
+                    .withLandsOnBattlefield(1, "Forest", 4)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.castSpell(1, "Giant Spider").error shouldBe null
+                game.resolveStack()
+
+                withClue("the counter branch isn't a legal choice, so riot doesn't ask") {
+                    game.hasPendingDecision() shouldBe false
+                }
+                val spider = game.findPermanent("Giant Spider")!!
+                val projected = stateProjector.project(game.state)
+                withClue("no counter was placed") {
+                    projected.getPower(spider) shouldBe 2
+                    projected.getToughness(spider) shouldBe 4
+                }
+                withClue("it gains haste instead") {
+                    projected.hasKeyword(spider, Keyword.HASTE) shouldBe true
+                }
+            }
+
+            test("a Spider reanimated without being cast still gets riot's choice") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Spider-Punk")
+                    .withCardInGraveyard(1, "Giant Spider")
+                    .withCardInHand(1, "Zombify")
+                    .withLandsOnBattlefield(1, "Swamp", 4)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.castSpellTargetingGraveyardCard(
+                    1, "Zombify", game.findCardsInGraveyard(1, "Giant Spider")
+                ).error shouldBe null
+                game.resolveStack()
+
+                val decision = game.getPendingDecision()
+                withClue("a permanent put onto the battlefield still gets its as-enters riot") {
+                    (decision != null) shouldBe true
+                }
+                game.submitDecision(OptionChosenResponse(decision!!.id, counterMode))
+                game.resolveStack()
+
+                val spider = game.findPermanent("Giant Spider")!!
+                val projected = stateProjector.project(game.state)
+                withClue("2/4 plus a +1/+1 counter") {
+                    projected.getPower(spider) shouldBe 3
+                    projected.getToughness(spider) shouldBe 5
+                }
+            }
+        }
+
         context("Spider-Punk — spells and abilities can't be countered") {
 
             test("a Counterspell aimed at a spell resolves but counters nothing") {
@@ -192,7 +319,7 @@ class SpiderPunkScenarioTest : ScenarioTestBase() {
                     .error shouldBe null
                 game.resolveStack()
 
-                withClue("the countered-proof creature still resolved onto the battlefield") {
+                withClue("the counter-proof creature still resolved onto the battlefield") {
                     game.isOnBattlefield("Grizzly Bears") shouldBe true
                 }
                 withClue("Grizzly Bears never hit the graveyard") {

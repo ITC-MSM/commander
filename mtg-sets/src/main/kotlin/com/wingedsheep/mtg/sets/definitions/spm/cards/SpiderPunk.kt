@@ -22,25 +22,19 @@ import com.wingedsheep.sdk.scripting.GrantCantBeCountered
  * Damage can't be prevented.
  *
  * Modelling notes:
- * - **Riot** (CR 702.136) is composed from the enters-with replacement family by the `riot()` DSL
- *   helper — an `EntersWithChoice(ChoiceType.MODE)` for the choice plus a mode-gated
- *   `EntersWithCounters` and `EntersWithKeywords`. `riotFor(…)` builds the same trio on the
- *   `otherOnly` global-replacement rail so every *other* Spider you control gets the choice as it
- *   enters. Both are replacement effects: the choice can't be responded to, and the haste branch
- *   grants haste indefinitely rather than until end of turn.
+ * - **Riot** (CR 702.136) is the `EntersWithRiot` replacement, added by the `riot()` DSL helper;
+ *   `riotFor(…)` adds the `otherOnly` instance that reaches every *other* Spider you control as it
+ *   enters. Each instance is answered separately (CR 702.136b), so a Spider that picks up riot from
+ *   two sources makes two choices and can end up with a counter *and* haste. Both are replacement
+ *   effects: the choice can't be responded to, and the haste branch is indefinite rather than
+ *   until end of turn. A creature that can't have +1/+1 counters put on it isn't offered the
+ *   counter branch at all and simply gains haste.
  * - **"Spells and abilities can't be countered"** is one [GrantCantBeCountered] over
  *   [GameObjectFilter.Any] with `includesAbilities = true`. It protects *every* player's spells and
  *   abilities, not just this card's controller's. Per the printed ruling a counterspell may still
  *   target them — it just counters nothing when it resolves.
  * - **"Damage can't be prevented"** is the existing global [DamageCantBePrevented] replacement
  *   (Sunspine Lynx, Leyline of Punishment), consulted from the battlefield by every damage path.
- *
- * Known gap: an entering creature that *can't* have +1/+1 counters put on it (Solemnity) is still
- * offered riot's counter branch, and picking it places nothing instead of forcing the haste branch.
- * The prohibition lives in projected state, which doesn't yet cover a permanent that hasn't
- * finished entering. Likewise, a Spider put onto the battlefield without being cast (reanimation)
- * gets no riot choice — the non-stack entry path doesn't present as-enters choices at all, a
- * pre-existing limitation shared with every `EntersWithChoice` card.
  */
 val SpiderPunk = card("Spider-Punk") {
     manaCost = "{1}{R}"

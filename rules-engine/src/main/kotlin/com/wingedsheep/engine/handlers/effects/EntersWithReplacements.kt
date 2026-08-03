@@ -138,10 +138,6 @@ object EntersWithReplacements {
                     events.addAll(counterEvents)
                 }
                 is EntersWithKeywords -> {
-                    // Skip "other only" effects when applying to self, mirroring the counters
-                    // branches above — a group grant ("Other Spiders you control have riot") must
-                    // never grant to its own source as that source enters.
-                    if (effect.otherOnly) continue
                     val context = EffectContext(
                         sourceId = entityId,
                         controllerId = controllerId,
@@ -195,52 +191,6 @@ object EntersWithReplacements {
                 placedBy = controllerId
             )
         )
-    }
-
-    /**
-     * The [EntersWithChoice] replacements ("as this enters, choose …", CR 614.12) that apply to
-     * [enteringEntityId] as it enters the battlefield — its own, plus any group-scoped ones
-     * granted by permanents already on the battlefield ("Other Spiders you control have riot",
-     * Spider-Punk).
-     *
-     * Self-scoped choices come from the entering card's own [cardDef]; a battlefield source only
-     * contributes a choice it explicitly marked [EntersWithChoice.otherOnly] (every pre-existing
-     * `EntersWithChoice` defaults its `appliesTo` to *any* permanent entering, so consulting them
-     * globally would offer Riptide Replicator's colour choice to the whole table).
-     *
-     * Ordered by [com.wingedsheep.sdk.scripting.ChoiceType] ordinal so the entry paths and the
-     * continuation resumers agree on which choice comes next when a permanent has several — the
-     * resumers chain by "first choice whose ordinal is greater than the one just answered", so at
-     * most one choice per choice type is presented.
-     */
-    fun entersWithChoicesFor(
-        state: GameState,
-        enteringEntityId: EntityId,
-        cardDef: CardDefinition?,
-    ): List<com.wingedsheep.sdk.scripting.EntersWithChoice> {
-        val own = cardDef?.script?.replacementEffects
-            ?.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithChoice>()
-            ?.filter { !it.otherOnly }
-            ?: emptyList()
-
-        val granted = mutableListOf<com.wingedsheep.sdk.scripting.EntersWithChoice>()
-        for (sourceId in state.getBattlefield()) {
-            if (sourceId == enteringEntityId) continue
-            val container = state.getEntity(sourceId) ?: continue
-            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
-            val sourceControllerId = container.get<ControllerComponent>()?.playerId ?: continue
-            for (effect in replacementComponent.replacementEffects) {
-                if (effect !is com.wingedsheep.sdk.scripting.EntersWithChoice) continue
-                if (!effect.otherOnly) continue
-                if (!matchesEnterFilter(
-                        effect.appliesTo, enteringEntityId, sourceId, sourceControllerId, state
-                    )
-                ) continue
-                granted.add(effect)
-            }
-        }
-
-        return (own + granted).sortedBy { it.choiceType.ordinal }
     }
 
     /**
@@ -406,7 +356,7 @@ object EntersWithReplacements {
      * source". (Conditions are the opposite and keep `sourceId = enteringEntityId`, because an
      * "enters with counters" condition describes the entering permanent — see the call sites.)
      */
-    private fun matchesEnterFilter(
+    internal fun matchesEnterFilter(
         event: com.wingedsheep.sdk.scripting.EventPattern,
         enteringEntityId: EntityId,
         replacementSourceId: EntityId,

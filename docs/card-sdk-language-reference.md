@@ -5813,22 +5813,16 @@ composite abilities).
 - `Devour(multiplier, sacrificeFilter, variant)` — "As this enters, you may sacrifice any number of [sacrificeFilter]. It enters with [multiplier] × that many +1/+1 counters." Plain Devour uses `sacrificeFilter = Creature` and `variant = ""`; the Edge of Eternities variant "Devour land N" uses `KeywordAbility.devourLand(n)` (`sacrificeFilter = Land`, `variant = "land"`). The keyword surfaces the rules text; pair with [`EntersWithDevour`](#15-replacement-effects) for the mechanical behavior.
 - `Riot` — "Riot (This creature enters with your choice of a +1/+1 counter or haste.)" (CR 702.136,
   Ravnica Allegiance; also Marvel's Spider-Man). Display-only keyword; wire the behavior with the
-  `card { riot() }` builder helper, which adds the keyword plus three enters-with replacements: an
-  `EntersWithChoice(ChoiceType.MODE)` offering `riot-counter` / `riot-haste`, an
-  `EntersWithCounters(PlusOnePlusOne, 1, selfOnly = true, condition = SourceChosenModeIs("riot-counter"))`,
-  and an `EntersWithKeywords([HASTE], selfOnly = true, condition = SourceChosenModeIs("riot-haste"))`.
-  Riot is a **replacement effect**, not a trigger: the choice happens as the permanent enters, can't be
-  responded to, and the haste branch lasts indefinitely (it doesn't wear off at end of turn or on a
-  control change).
-  `card { riotFor(filter) }` builds the same trio on the `otherOnly` group rail for "Other [filter]
-  you control have riot" (Spider-Punk: `riot()` **plus**
-  `riotFor(GameObjectFilter.Creature.withSubtype(Subtype.SPIDER).youControl())`).
-  **Two gaps to know about**: a creature that can't have +1/+1 counters put on it is still offered the
-  counter branch (picking it places nothing rather than forcing haste — the prohibition lives in
-  projected state, which doesn't cover a permanent mid-entry), and a permanent put onto the
-  battlefield without being cast gets no as-enters choice at all (a limitation shared by every
-  `EntersWithChoice` card). Multiple instances of riot (CR 702.136b) collapse into one choice, since
-  the entry paths present at most one choice per `ChoiceType`.
+  `card { riot() }` builder helper, which adds the keyword plus a self-scoped
+  [`EntersWithRiot`](#15-replacement-effects) replacement. `card { riotFor(filter) }` adds the
+  `otherOnly` instance for "Other [filter] you control have riot" — Spider-Punk carries both
+  (`riot()` **plus** `riotFor(GameObjectFilter.Creature.withSubtype(Subtype.SPIDER).youControl())`),
+  and its `otherOnly` instance never reaches itself.
+  Riot is a **replacement effect**, not a trigger: the choice happens as the permanent enters, can't
+  be responded to, and the haste branch lasts indefinitely (it doesn't wear off at end of turn or on
+  a control change). Each instance is answered separately (CR 702.136b) — riot from two sources means
+  two decisions, and picking differently gives the creature a counter *and* haste. A creature that
+  can't have +1/+1 counters put on it is never offered the counter branch and simply gains haste.
 - `Annihilator(n)` — attacker forces sacrifices.
 - `Absorb(n)` — prevent N damage each time it would be dealt to this.
 - `Bushido(n)` — +N/+N when blocking or blocked.
@@ -7924,16 +7918,11 @@ EntersWithChoice(
 - Writes `ChosenModeComponent(modeId)` on the permanent.
 - Downstream triggers/conditions gate via `SourceChosenModeIs("khans")`.
 - Icons live in `web-client/src/assets/icons/options/`.
-- `otherOnly = true` (plus an `appliesTo` `ZoneChangeEvent`) turns the choice into a **group grant**:
-  the card carrying it never gets the choice itself, but every *other* permanent matching `appliesTo`
-  is offered it as it enters, consulted from the battlefield exactly like a group `EntersWithCounters`
-  / `EntersWithKeywords`. This is what "Other Spiders you control have riot" (Spider-Punk) rides —
-  see the `riot()` / `riotFor(filter)` helpers under §11 Keywords. Leave it `false` (the default) for
-  an ordinary self-scoped choice: `appliesTo` defaults to *any* permanent entering, so a
-  globally-consulted `EntersWithChoice` would otherwise offer Riptide Replicator's colour choice to
-  the whole table. At most one choice per `ChoiceType` is presented — the entry paths and the
-  continuation resumers chain by "first choice whose `ChoiceType` ordinal is greater than the one
-  just answered" — so a self choice and a granted choice of the *same* type collapse into one.
+- **One choice per `ChoiceType`.** The entry paths and the continuation resumers chain by "first
+  choice whose `ChoiceType` ordinal is greater than the one just answered", and the chosen value
+  lands in a single-valued `ChoiceSlot`. A mechanic whose instances must each be answered and
+  applied *separately* (riot, CR 702.136b) therefore can't ride this — see `EntersWithRiot` in
+  §15 Replacement effects.
 
 **Other `ChoiceType`s** — `ChoiceType.COLOR` writes `ChosenColorComponent` (read by
 `GrantChosenColor`), `ChoiceType.CREATURE_TYPE` writes `ChosenCreatureTypeComponent`,
@@ -8227,7 +8216,7 @@ The priority groups are (CR 616.1a–f):
     counters its own source as it enters. Source-relative predicates in `appliesTo` (notably
     `withChosenSubtype()`) resolve against the **replacement source**, so Metallic Mimic's filter reads
     the type chosen as the Mimic entered, not anything on the entering creature.
-- `EntersWithKeywords(keywords, condition?, selfOnly?, otherOnly?, appliesTo?)` — "[permanent] enters with
+- `EntersWithKeywords(keywords, condition?, selfOnly?, appliesTo?)` — "[permanent] enters with
   [keywords]" (CR 614.1c), the keyword counterpart of `EntersWithCounters`. The grant happens as the
   permanent enters — no trigger, no stack, no response window — as a permanent, entry-timestamped
   Layer-6 floating effect: a later "loses all abilities" removes it, it does not re-apply if stripped,
@@ -8239,9 +8228,25 @@ The priority groups are (CR 616.1a–f):
   (cast-choice conditions like `WasKicked` read the durable cast-choices bag, so a token copy or
   reanimated body — never kicked — correctly gets nothing). Like `EntersWithCounters`, a
   non-`selfOnly` instance stamped on a battlefield permanent applies to *other* permanents matching
-  `appliesTo` as they enter — and, mirroring `EntersWithCounters`, **set `otherOnly` on any "each
-  *other* …" wording** so the source's own entry path skips it (without the flag a group grant also
-  grants to its own source as it enters).
+  `appliesTo` as they enter.
+- `EntersWithRiot(selfOnly?, otherOnly?, appliesTo?)` — **Riot** (CR 702.136): "You may have this
+  permanent enter with an additional +1/+1 counter on it. If you don't, it gains haste." Authored
+  through the `riot()` / `riotFor(filter)` builder helpers (§11 Keywords), never by hand.
+  Deliberately *not* an `EntersWithChoice` plus mode-gated riders: each instance works separately
+  (CR 702.136b), so a creature that picks riot up from two sources makes **two** choices and can end
+  up with a counter *and* haste — which a single-valued chosen-mode slot can't express. Instead the
+  engine (`RiotEntry`) asks one decision per instance and applies each answer immediately: the
+  counter goes through the shared entry-counter path (so Hardened Scales / Doubling Season apply),
+  and haste is a permanent, entry-timestamped Layer-6 grant (CR 702.136a grants it indefinitely, not
+  until end of turn). Instances are counted from the entering card's own definition (`selfOnly`) plus
+  every `otherOnly` instance on the battlefield whose `appliesTo` matches the entering object
+  ("Other Spiders you control have riot" — Spider-Punk; "Nontoken creatures you control have riot" —
+  Rhythm of the Wild). If the entering permanent **can't have +1/+1 counters put on it** the counter
+  branch isn't a legal choice, so riot grants haste with no decision at all. Wired on both the
+  cast path (answered while the spell is still on the stack) and the direct-entry paths —
+  reanimation / put-onto-battlefield (`MoveToZoneEffectExecutor`, `MoveCollectionExecutor`) and
+  token minting — where the permanent's entry `ZoneChangeEvent` is withheld until riot resolves so
+  enters-the-battlefield triggers see the counter already on it.
 - `EntersWithDevour(multiplier, sacrificeFilter, counterType, variant)` — Devour (CR 702.82) and its
   printed variants. As the permanent resolves from the stack, the controller is prompted to pick any
   number of their own permanents matching `sacrificeFilter`. Those permanents are sacrificed and the

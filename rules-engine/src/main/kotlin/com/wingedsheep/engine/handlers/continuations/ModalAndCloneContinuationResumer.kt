@@ -667,9 +667,10 @@ class ModalAndCloneContinuationResumer(
             ?: return ExecutionResult.error(state, "Spell has no CardComponent")
         val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
 
-        val nextChoice = com.wingedsheep.engine.handlers.effects.EntersWithReplacements
-            .entersWithChoicesFor(newState, spellId, cardDef)
-            .firstOrNull { it.choiceType.ordinal > continuation.choiceType.ordinal }
+        val nextChoice = cardDef?.script?.replacementEffects
+            ?.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithChoice>()
+            ?.sortedBy { it.choiceType.ordinal }
+            ?.firstOrNull { it.choiceType.ordinal > continuation.choiceType.ordinal }
 
         if (nextChoice != null) {
             val result = services.stackResolver.pauseForEntersWithChoice(
@@ -799,11 +800,12 @@ class ModalAndCloneContinuationResumer(
         val cardComponent = entityContainer?.get<CardComponent>()
         val cardDef = cardComponent?.let { services.cardRegistry.getCard(it.cardDefinitionId) }
 
-        val nextChoice = com.wingedsheep.engine.handlers.effects.EntersWithReplacements
-            .entersWithChoicesFor(newState, entityId, cardDef)
-            .firstOrNull { it.choiceType.ordinal > continuation.choiceType.ordinal }
+        val nextChoice = cardDef?.script?.replacementEffects
+            ?.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithChoice>()
+            ?.sortedBy { it.choiceType.ordinal }
+            ?.firstOrNull { it.choiceType.ordinal > continuation.choiceType.ordinal }
 
-        if (nextChoice != null && cardComponent != null) {
+        if (nextChoice != null) {
             val result = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements.pauseForEntersWithChoice(
                 newState, entityId, continuation.controllerId, cardComponent, nextChoice, continuation.fromZone
             )

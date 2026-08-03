@@ -563,9 +563,6 @@ data class EntersWithDynamicCounters(
  *                  durable cast-choices bag).
  * @param selfOnly When true, only applies to the permanent carrying this effect as it enters,
  *                 never to other permanents matching [appliesTo] (mirrors [EntersWithCounters]).
- * @param otherOnly When true the source is excluded — "each **other** [appliesTo] enters with …".
- *                  The [selfOnly] mirror, matching [EntersWithCounters]: the source's own entry
- *                  path skips an `otherOnly` effect, so a group grant can never grant to itself.
  */
 @SerialName("EntersWithKeywords")
 @Serializable
@@ -573,7 +570,6 @@ data class EntersWithKeywords(
     val keywords: List<Keyword>,
     val condition: Condition? = null,
     val selfOnly: Boolean = false,
-    val otherOnly: Boolean = false,
     override val appliesTo: EventPattern = EventPattern.ZoneChangeEvent(
         filter = GameObjectFilter.Creature.youControl(),
         to = Zone.BATTLEFIELD
@@ -591,6 +587,48 @@ data class EntersWithKeywords(
         return if (newAppliesTo !== appliesTo || newCondition !== condition)
             copy(appliesTo = newAppliesTo, condition = newCondition)
         else this
+    }
+}
+
+/**
+ * Riot (CR 702.136). "You may have this permanent enter with an additional +1/+1 counter on it. If
+ * you don't, it gains haste" (CR 702.136a) — printed reminder text frames the same thing as "enters
+ * with your choice of a +1/+1 counter or haste".
+ *
+ * Modelled as its own enters-with replacement rather than an [EntersWithChoice] plus mode-gated
+ * riders because **each instance works separately** (CR 702.136b): a creature with two instances
+ * makes two independent choices and can end up with a counter *and* haste. A recorded-then-read-back
+ * choice can't express that — [ChoiceSlot.MODE] holds one value — so riot's choice is applied the
+ * moment it is answered, and the engine walks one decision per instance.
+ *
+ * Instances come from two places, mirroring the rest of the family:
+ *  - the entering card's own definition ([selfOnly], set by the `riot()` DSL helper), and
+ *  - [otherOnly] instances stamped on *other* battlefield permanents, matched against the entering
+ *    object through [appliesTo] ("Other Spiders you control have riot" — Spider-Punk's `riotFor`).
+ *
+ * If the entering permanent can't have +1/+1 counters put on it, the counter branch isn't a legal
+ * choice and it simply gains haste with no decision (CR 702.136a — you can't choose an impossible
+ * option; the printed riot rulings say so explicitly).
+ */
+@SerialName("EntersWithRiot")
+@Serializable
+data class EntersWithRiot(
+    val selfOnly: Boolean = false,
+    val otherOnly: Boolean = false,
+    override val appliesTo: EventPattern = EventPattern.ZoneChangeEvent(
+        filter = GameObjectFilter.Any,
+        to = Zone.BATTLEFIELD
+    )
+) : ReplacementEffect {
+    override val description: String = if (otherOnly) {
+        "Other ${appliesTo.description} have riot"
+    } else {
+        "Riot (This creature enters with your choice of a +1/+1 counter or haste.)"
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
     }
 }
 
@@ -1606,19 +1644,6 @@ data class EntersWithChoice(
      * Ignored for every other choice type.
      */
     val cardNamePool: CardNamePool = CardNamePool.LAND,
-    /**
-     * When true this choice is offered to *other* permanents entering the battlefield that match
-     * [appliesTo], never to the permanent carrying it — the group-scoped rail the rest of the
-     * enters-with family already rides ([EntersWithCounters.otherOnly] /
-     * [EntersWithKeywords.otherOnly]). Used by "Other Spiders you control have riot"
-     * (Spider-Punk): the granter carries one self-scoped choice for its own riot and one
-     * `otherOnly` choice consulted from the battlefield as each other Spider enters.
-     *
-     * Left false (the default) the choice stays purely self-scoped, so every existing
-     * `EntersWithChoice` — whose [appliesTo] defaults to *any* permanent entering — keeps applying
-     * only to the card that declares it.
-     */
-    val otherOnly: Boolean = false,
     /**
      * When true, the chooser first looks at an opponent's hand as the permanent enters, immediately
      * before making the choice. "Look at" is not a keyword action (a player normally can't see an

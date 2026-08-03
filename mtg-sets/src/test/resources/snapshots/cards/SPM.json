@@ -10296,94 +10296,11 @@
         ],
         "replacementEffects": [
             {
-                "type": "EntersWithChoice",
-                "choiceType": "MODE",
-                "modeOptions": [
-                    {
-                        "id": "riot-counter",
-                        "label": "A +1/+1 counter",
-                        "description": "It enters with an additional +1/+1 counter on it."
-                    },
-                    {
-                        "id": "riot-haste",
-                        "label": "Haste",
-                        "description": "It gains haste."
-                    }
-                ]
+                "type": "EntersWithRiot",
+                "selfOnly": true
             },
             {
-                "type": "EntersWithCounters",
-                "count": 1,
-                "selfOnly": true,
-                "condition": {
-                    "type": "SourceChosenModeIs",
-                    "modeId": "riot-counter"
-                },
-                "appliesTo": {
-                    "type": "ZoneChangeEvent",
-                    "to": "Battlefield"
-                }
-            },
-            {
-                "type": "EntersWithKeywords",
-                "keywords": [
-                    "HASTE"
-                ],
-                "condition": {
-                    "type": "SourceChosenModeIs",
-                    "modeId": "riot-haste"
-                },
-                "selfOnly": true,
-                "appliesTo": {
-                    "type": "ZoneChangeEvent",
-                    "to": "Battlefield"
-                }
-            },
-            {
-                "type": "EntersWithChoice",
-                "choiceType": "MODE",
-                "modeOptions": [
-                    {
-                        "id": "riot-counter",
-                        "label": "A +1/+1 counter",
-                        "description": "It enters with an additional +1/+1 counter on it."
-                    },
-                    {
-                        "id": "riot-haste",
-                        "label": "Haste",
-                        "description": "It gains haste."
-                    }
-                ],
-                "otherOnly": true,
-                "appliesTo": {
-                    "type": "ZoneChangeEvent",
-                    "filter": "creature Spider ctrl:you",
-                    "to": "Battlefield"
-                }
-            },
-            {
-                "type": "EntersWithCounters",
-                "count": 1,
-                "condition": {
-                    "type": "SourceChosenModeIs",
-                    "modeId": "riot-counter"
-                },
-                "otherOnly": true,
-                "appliesTo": {
-                    "type": "ZoneChangeEvent",
-                    "filter": "creature Spider ctrl:you",
-                    "to": "Battlefield"
-                }
-            },
-            {
-                "type": "EntersWithKeywords",
-                "keywords": [
-                    "HASTE"
-                ],
-                "condition": {
-                    "type": "SourceChosenModeIs",
-                    "modeId": "riot-haste"
-                },
+                "type": "EntersWithRiot",
                 "otherOnly": true,
                 "appliesTo": {
                     "type": "ZoneChangeEvent",
