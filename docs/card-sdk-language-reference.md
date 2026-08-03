@@ -4721,6 +4721,10 @@ staticAbility {
   which attackers are restricted (evaluated with the source permanent as predicate source, so
   chosen-color/subtype predicates resolve against it) — e.g. Teferi's Moat:
   `CantBeAttackedWithout(Keyword.FLYING, GameObjectFilter.Creature.sharingChosenColorWithSource())`.
+- `CantBeAttackedWhileAttached` — the source permanent can't be chosen as an attack defender while
+  it has an `AttachedToComponent`. The restriction is checked only as attackers are declared, so
+  attaching the source after it is already being attacked doesn't remove it from combat. Used by
+  The Aetherspark.
 - `CantAttackUnlessCoAttacker(coAttackerFilter, filter = source)` — "This creature can't attack
   unless [a creature matching coAttackerFilter] also attacks" (Scarred Puma). Unlike
   `CantAttackUnless` (which is defender-relative), this depends on the whole proposed attacker
