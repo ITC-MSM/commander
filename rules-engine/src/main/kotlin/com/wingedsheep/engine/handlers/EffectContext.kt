@@ -216,6 +216,13 @@ data class EffectContext(
     /** The spell or ability that targeted a permanent (for ward triggers) */
     val targetingSourceEntityId: EntityId? = null,
     /**
+     * The host an attachment came *off*, captured when a "becomes unattached" trigger fired. Backs
+     * [com.wingedsheep.sdk.scripting.targets.EffectTarget.AttachedToTriggeringPermanent] there,
+     * where the live `AttachedToComponent` is by resolution either gone or already re-pointed at a
+     * new host — Stitcher's Graft's "sacrifice that permanent". Null for every other trigger.
+     */
+    val triggerUnattachedFromEntityId: EntityId? = null,
+    /**
      * The defending player for a per-defender combat legality check (CR 508.1 attack
      * declaration). Bound by [com.wingedsheep.engine.mechanics.combat.rules.CantAttackUnlessDefenderRule]
      * so `Player.DefendingPlayer` conditions ("can't attack unless defending player controls

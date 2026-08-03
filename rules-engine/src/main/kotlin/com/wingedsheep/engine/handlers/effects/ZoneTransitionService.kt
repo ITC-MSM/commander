@@ -319,6 +319,23 @@ object ZoneTransitionService {
 
         // 4. EXIT CLEANUP if leaving battlefield
         if (leavingBattlefield) {
+            // An attached Aura/Equipment that leaves the battlefield becomes unattached from its
+            // host (CR 701.3d) — Stitcher's Graft's "sacrifice that permanent" fires off exactly
+            // this when the Equipment is destroyed. Reported here, before the link and the
+            // ControllerComponent are cleared, so the trigger has its last-known information
+            // (CR 603.6e). The three unattaches that leave the attachment on the battlefield run
+            // through ZoneMovementUtils.unattachEmittingEvent instead.
+            newState.getEntity(entityId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                ?.let { attached ->
+                    events += com.wingedsheep.engine.core.PermanentUnattachedEvent(
+                        attachmentId = entityId,
+                        attachmentName = cardComponent.name,
+                        attachedToId = attached.targetId,
+                        // `controllerId` above is already the projected last-known controller.
+                        controllerId = controllerId,
+                    )
+                }
             newState = cleanupReverseAttachmentLink(newState, entityId)
             newState = cleanupCombatReferences(newState, entityId)
             // Equipment/Auras attached *to* this permanent come off when their host leaves the

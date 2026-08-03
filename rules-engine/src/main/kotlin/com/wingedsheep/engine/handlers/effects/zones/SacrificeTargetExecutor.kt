@@ -34,7 +34,10 @@ class SacrificeTargetExecutor : EffectExecutor<SacrificeTargetEffect> {
         effect: SacrificeTargetEffect,
         context: EffectContext
     ): EffectResult {
-        val targetId = context.resolveTarget(effect.target)
+        // The state-taking overload — relational targets (the equipped creature, the host an
+        // attachment just came off) need the board to resolve at all; the no-state overload
+        // silently yields null for them and the sacrifice would quietly no-op.
+        val targetId = context.resolveTarget(effect.target, state)
             ?: return EffectResult.success(state)
 
         // Find the zone the permanent is in

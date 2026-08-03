@@ -3,7 +3,7 @@ package com.wingedsheep.engine.mechanics.sba.permanent
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
-import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.cleanupReverseAttachmentLink
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.unattachEmittingEvent
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.SbaZoneMovementHelper
@@ -100,10 +100,9 @@ class UnattachedAurasCheck(
                     // attachment in place; the legality checks below validate the new host instead.
                     val current = container.get<AttachedToComponent>()
                     if (current == null || current.targetId == hostLeft.lastKnownHostId) {
-                        newState = cleanupReverseAttachmentLink(newState, entityId)
-                        newState = newState.updateEntity(entityId) { c ->
-                            c.without<AttachedToComponent>()
-                        }
+                        val (detached, unattachEvents) = unattachEmittingEvent(newState, entityId)
+                        newState = detached
+                        events.addAll(unattachEvents)
                     }
                 }
                 continue
@@ -139,10 +138,9 @@ class UnattachedAurasCheck(
                         events.addAll(result.events)
                     } else {
                         // Equipment's target gone - just detach, stays on battlefield
-                        newState = cleanupReverseAttachmentLink(newState, entityId)
-                        newState = newState.updateEntity(entityId) { c ->
-                            c.without<AttachedToComponent>()
-                        }
+                        val (detached, unattachEvents) = unattachEmittingEvent(newState, entityId)
+                        newState = detached
+                        events.addAll(unattachEvents)
                     }
                 } else if (
                     isEquipment && (
@@ -158,10 +156,9 @@ class UnattachedAurasCheck(
                     )
                 ) {
                     // Illegal attachment: the Equipment unattaches but stays on the battlefield.
-                    newState = cleanupReverseAttachmentLink(newState, entityId)
-                    newState = newState.updateEntity(entityId) { c ->
-                        c.without<AttachedToComponent>()
-                    }
+                    val (detached, unattachEvents) = unattachEmittingEvent(newState, entityId)
+                    newState = detached
+                    events.addAll(unattachEvents)
                 } else if (
                     isAura && hostFailsEnchantRestriction(state, projected, entityId, cardComponent, attachedTo.targetId)
                 ) {
@@ -189,10 +186,9 @@ class UnattachedAurasCheck(
                         newState = result.newState
                         events.addAll(result.events)
                     } else {
-                        newState = cleanupReverseAttachmentLink(newState, entityId)
-                        newState = newState.updateEntity(entityId) { c ->
-                            c.without<AttachedToComponent>()
-                        }
+                        val (detached, unattachEvents) = unattachEmittingEvent(newState, entityId)
+                        newState = detached
+                        events.addAll(unattachEvents)
                     }
                 }
             }

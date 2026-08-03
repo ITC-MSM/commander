@@ -165,6 +165,13 @@ data class TriggeredAbilityOnStackComponent(
     /** Creatures blocking/blocked by the trigger's source on leave-battlefield (CR 509 LKI, Abu Ja'far). */
     val triggerLastKnownBlockingOrBlockedByIds: List<EntityId>? = null,
     val targetingSourceEntityId: EntityId? = null,  // The spell/ability that targeted this permanent (for ward)
+    /**
+     * The host an attachment came *off*, captured when a "becomes unattached" trigger fired.
+     * Resolves [com.wingedsheep.sdk.scripting.targets.EffectTarget.AttachedToTriggeringPermanent]
+     * there, where the live link is by resolution either gone or already re-pointed at a new host
+     * (Stitcher's Graft's "sacrifice that permanent"). Null for every other trigger.
+     */
+    val triggerUnattachedFromEntityId: EntityId? = null,
     val damageDistribution: Map<EntityId, Int>? = null,  // For DividedDamageEffect - pre-chosen damage allocation
     val copyIndex: Int? = null,    // Which copy number this is (1, 2, 3...) for storm/copy effects
     val copyTotal: Int? = null,    // Total number of copies being created

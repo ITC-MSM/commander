@@ -2493,11 +2493,17 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   `resolveTarget(state, target)` overload.
 - `EnchantedPermanent` — same `AttachedToComponent` resolution as `EnchantedCreature`, but type-agnostic; use for
   Auras that enchant non-creature permanents (e.g. Wellspring enchants a land: "gain control of enchanted land").
-- `AttachedToTriggeringPermanent` — inside a `Triggers.becomesAttached` trigger, the permanent the
-  triggering attachment (Aura/Equipment) became attached to. Resolved live from the triggering
-  object's `AttachedToComponent` (so a "for as long as attached" payoff does nothing if the
-  attachment already left — CR 611.2b). Used by Eriette ("gain control of that permanent") and
-  Assimilation Aegis ("that creature becomes a copy …").
+- `AttachedToTriggeringPermanent` — the permanent on the other end of an attachment trigger; requires
+  the state-aware `resolveTarget(target, state)` overload. Inside `Triggers.becomesAttached` it is the
+  host the triggering attachment became attached to, resolved **live** from the triggering object's
+  `AttachedToComponent` (so a "for as long as attached" payoff does nothing if the attachment already
+  left — CR 611.2b): Eriette ("gain control of that permanent"), Assimilation Aegis ("that creature
+  becomes a copy …"). Inside `Triggers.becomesUnattached` it is instead the host it came **off**,
+  read from the id recorded on the trigger (`TriggerContext.unattachedFromEntityId`) — a live read
+  would be wrong there, since by resolution the link is gone or, if the unattach was caused by
+  equipping the attachment elsewhere, already re-pointed at the new host. That recorded id is scoped
+  to the battlefield, so a former host that has itself left resolves to nothing and the payoff
+  no-ops: Stitcher's Graft ("sacrifice that permanent").
 
 ### Cast-time (`Targets.*` / `TargetRequirement`)
 
@@ -4002,6 +4008,20 @@ Triggers.youCastSpell(
   `EntityReference.Triggering`, so relative predicates like
   `manaValueAtMostEntity(EntityReference.Triggering)` ("MV ≤ that Aura's MV") resolve against it.
   Indexed under `TriggerCategory.BECOMES_ATTACHED`.
+- `becomesUnattached(attachmentFilter = Any, attachmentController = Any, unattachedFromFilter = Any, binding = SELF)`
+  — the mirror: "whenever an Aura/Equipment becomes **unattached** from a permanent" (CR 701.3d).
+  Fires from `PermanentUnattachedEvent`, which every unattach path emits — the explicit
+  `Effects.UnattachEquipment`, equipping the attachment onto a *different* host, the CR 704.5m/n
+  state-based unattach (host stops being a creature, the Equipment itself becomes a creature,
+  protection), the host leaving the battlefield, and the attachment leaving the battlefield. The
+  three battlefield-staying paths route through the single `ZoneMovementUtils.unattachEmittingEvent`
+  chokepoint so none can skip the event; the leave path emits from `ZoneTransitionService` before
+  the link is cleared. Because the unattach can be *caused* by the attachment leaving, detection has
+  a `TriggerDetector` pass for a source no longer on the battlefield, exactly like a
+  leaves-the-battlefield trigger (CR 603.6e). "That permanent" is
+  `EffectTarget.AttachedToTriggeringPermanent`. Indexed under `TriggerCategory.BECOMES_UNATTACHED`.
+  Backs **Stitcher's Graft** ("Whenever this Equipment becomes unattached from a permanent,
+  sacrifice that permanent").
 - `Valiant` — Bloomburrow Valiant trigger.
 - `RoomFullyUnlocked` — Rooms — both doors unlocked.
 - `OnDoorUnlocked` — single Room door unlocked.

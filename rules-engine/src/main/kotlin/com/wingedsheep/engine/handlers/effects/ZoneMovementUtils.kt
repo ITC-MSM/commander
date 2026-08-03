@@ -287,6 +287,46 @@ object ZoneMovementUtils {
     }
 
     /**
+     * Break an attachment: clear the attachment's [AttachedToComponent], drop it from the host's
+     * [AttachmentsComponent], and report the [PermanentUnattachedEvent] that drives "becomes
+     * unattached" triggers (CR 701.3d).
+     *
+     * The single chokepoint for *staying-on-the-battlefield* unattaches — the explicit unattach
+     * effect, the CR 704.5m/n state-based unattach, and re-equipping onto a different host all go
+     * through it, so none of them can silently skip the event. (The attachment leaving the
+     * battlefield is the fourth path; it lives in [ZoneTransitionService], which must emit the
+     * event *before* [stripBattlefieldComponents] erases the link.)
+     *
+     * A no-op returning no events when the attachment isn't attached to anything, so callers can
+     * invoke it unconditionally — an already-detached attachment emitted its event when it actually
+     * came off, and must not emit a second one.
+     */
+    fun unattachEmittingEvent(
+        state: GameState,
+        attachmentId: EntityId,
+    ): Pair<GameState, List<EngineGameEvent>> {
+        val container = state.getEntity(attachmentId) ?: return state to emptyList()
+        val formerHostId = container.get<AttachedToComponent>()?.targetId
+            ?: return state to emptyList()
+
+        var newState = cleanupReverseAttachmentLink(state, attachmentId)
+        newState = newState.updateEntity(attachmentId) { c -> c.without<AttachedToComponent>() }
+
+        return newState to listOf(
+            com.wingedsheep.engine.core.PermanentUnattachedEvent(
+                attachmentId = attachmentId,
+                attachmentName = container.get<CardComponent>()?.name ?: "",
+                attachedToId = formerHostId,
+                // Read before the detach so a control-changing effect on the attachment is honored;
+                // falls back to the owner for an attachment already off the battlefield.
+                controllerId = container.get<ControllerComponent>()?.playerId
+                    ?: container.get<CardComponent>()?.ownerId
+                    ?: formerHostId,
+            )
+        )
+    }
+
+    /**
      * Mark every Aura/Equipment attached to a permanent that is leaving the battlefield so the
      * unattached-permanents state-based action ([UnattachedAurasCheck]) detaches/graveyards it
      * afterwards (CR 400.7 new object; 704.5n unattaches Equipment, 704.5m graveyards Auras).
