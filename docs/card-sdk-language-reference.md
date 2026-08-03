@@ -4912,6 +4912,18 @@ staticAbility {
 **Global denial statics** (no `filter`/`duration` block — they're singleton-style)
 
 - `PreventCycling` — "Players can't cycle cards." (Stabilizer)
+- `GrantCantBeCountered(filter, includesAbilities = false)` — spells matching `filter` can't be
+  countered while this permanent is on the battlefield. `filter` is evaluated against the spell on
+  the stack with the **granter's controller** as the predicate context, so `youControl()` means "the
+  granter's controller's spells" (Chimil, the Inner Sun / Sphinx of the Final Word / Root Sliver's
+  `Sliver` filter); leave it `GameObjectFilter.Any` for a table-wide "spells can't be countered".
+  With `includesAbilities = true` activated and triggered abilities on the stack are protected too —
+  Spider-Punk's "Spells and abilities can't be countered". Abilities carry no filterable
+  characteristics, so that half is unconditional: any such permanent protects every ability, whoever
+  controls it. Countering is the only thing prevented — an effect that *exiles* a stack object
+  (`ExileTargetSpell`, `ExileSpellsOnStack`) still removes it, and a "counter unless you pay" (ward)
+  simply does nothing. Turn-scoped/player-scoped siblings: `GrantSpellsCantBeCountered` (Domri) and
+  `MakeNextSpellUncounterable` (Mistrise Village).
 - `PreventActivatedAbilities(filter, nonManaAbilitiesOnly = false)` — activated abilities of
   matching permanents can't be activated; loyalty abilities and animation costs that haven't yet
   produced a creature are unaffected. By default both mana and non-mana abilities are blocked
@@ -5799,6 +5811,24 @@ composite abilities).
 - `Affinity(filter)` — cost reduction per matching permanent.
 - `Amplify(n)` — ETB reveal-creatures-for-counters.
 - `Devour(multiplier, sacrificeFilter, variant)` — "As this enters, you may sacrifice any number of [sacrificeFilter]. It enters with [multiplier] × that many +1/+1 counters." Plain Devour uses `sacrificeFilter = Creature` and `variant = ""`; the Edge of Eternities variant "Devour land N" uses `KeywordAbility.devourLand(n)` (`sacrificeFilter = Land`, `variant = "land"`). The keyword surfaces the rules text; pair with [`EntersWithDevour`](#15-replacement-effects) for the mechanical behavior.
+- `Riot` — "Riot (This creature enters with your choice of a +1/+1 counter or haste.)" (CR 702.136,
+  Ravnica Allegiance; also Marvel's Spider-Man). Display-only keyword; wire the behavior with the
+  `card { riot() }` builder helper, which adds the keyword plus three enters-with replacements: an
+  `EntersWithChoice(ChoiceType.MODE)` offering `riot-counter` / `riot-haste`, an
+  `EntersWithCounters(PlusOnePlusOne, 1, selfOnly = true, condition = SourceChosenModeIs("riot-counter"))`,
+  and an `EntersWithKeywords([HASTE], selfOnly = true, condition = SourceChosenModeIs("riot-haste"))`.
+  Riot is a **replacement effect**, not a trigger: the choice happens as the permanent enters, can't be
+  responded to, and the haste branch lasts indefinitely (it doesn't wear off at end of turn or on a
+  control change).
+  `card { riotFor(filter) }` builds the same trio on the `otherOnly` group rail for "Other [filter]
+  you control have riot" (Spider-Punk: `riot()` **plus**
+  `riotFor(GameObjectFilter.Creature.withSubtype(Subtype.SPIDER).youControl())`).
+  **Two gaps to know about**: a creature that can't have +1/+1 counters put on it is still offered the
+  counter branch (picking it places nothing rather than forcing haste — the prohibition lives in
+  projected state, which doesn't cover a permanent mid-entry), and a permanent put onto the
+  battlefield without being cast gets no as-enters choice at all (a limitation shared by every
+  `EntersWithChoice` card). Multiple instances of riot (CR 702.136b) collapse into one choice, since
+  the entry paths present at most one choice per `ChoiceType`.
 - `Annihilator(n)` — attacker forces sacrifices.
 - `Absorb(n)` — prevent N damage each time it would be dealt to this.
 - `Bushido(n)` — +N/+N when blocking or blocked.
@@ -7894,6 +7924,16 @@ EntersWithChoice(
 - Writes `ChosenModeComponent(modeId)` on the permanent.
 - Downstream triggers/conditions gate via `SourceChosenModeIs("khans")`.
 - Icons live in `web-client/src/assets/icons/options/`.
+- `otherOnly = true` (plus an `appliesTo` `ZoneChangeEvent`) turns the choice into a **group grant**:
+  the card carrying it never gets the choice itself, but every *other* permanent matching `appliesTo`
+  is offered it as it enters, consulted from the battlefield exactly like a group `EntersWithCounters`
+  / `EntersWithKeywords`. This is what "Other Spiders you control have riot" (Spider-Punk) rides —
+  see the `riot()` / `riotFor(filter)` helpers under §11 Keywords. Leave it `false` (the default) for
+  an ordinary self-scoped choice: `appliesTo` defaults to *any* permanent entering, so a
+  globally-consulted `EntersWithChoice` would otherwise offer Riptide Replicator's colour choice to
+  the whole table. At most one choice per `ChoiceType` is presented — the entry paths and the
+  continuation resumers chain by "first choice whose `ChoiceType` ordinal is greater than the one
+  just answered" — so a self choice and a granted choice of the *same* type collapse into one.
 
 **Other `ChoiceType`s** — `ChoiceType.COLOR` writes `ChosenColorComponent` (read by
 `GrantChosenColor`), `ChoiceType.CREATURE_TYPE` writes `ChosenCreatureTypeComponent`,
@@ -8187,7 +8227,7 @@ The priority groups are (CR 616.1a–f):
     counters its own source as it enters. Source-relative predicates in `appliesTo` (notably
     `withChosenSubtype()`) resolve against the **replacement source**, so Metallic Mimic's filter reads
     the type chosen as the Mimic entered, not anything on the entering creature.
-- `EntersWithKeywords(keywords, condition?, selfOnly?, appliesTo?)` — "[permanent] enters with
+- `EntersWithKeywords(keywords, condition?, selfOnly?, otherOnly?, appliesTo?)` — "[permanent] enters with
   [keywords]" (CR 614.1c), the keyword counterpart of `EntersWithCounters`. The grant happens as the
   permanent enters — no trigger, no stack, no response window — as a permanent, entry-timestamped
   Layer-6 floating effect: a later "loses all abilities" removes it, it does not re-apply if stripped,
@@ -8199,7 +8239,9 @@ The priority groups are (CR 616.1a–f):
   (cast-choice conditions like `WasKicked` read the durable cast-choices bag, so a token copy or
   reanimated body — never kicked — correctly gets nothing). Like `EntersWithCounters`, a
   non-`selfOnly` instance stamped on a battlefield permanent applies to *other* permanents matching
-  `appliesTo` as they enter.
+  `appliesTo` as they enter — and, mirroring `EntersWithCounters`, **set `otherOnly` on any "each
+  *other* …" wording** so the source's own entry path skips it (without the flag a group grant also
+  grants to its own source as it enters).
 - `EntersWithDevour(multiplier, sacrificeFilter, counterType, variant)` — Devour (CR 702.82) and its
   printed variants. As the permanent resolves from the stack, the controller is prompted to pick any
   number of their own permanents matching `sacrificeFilter`. Those permanents are sacrificed and the

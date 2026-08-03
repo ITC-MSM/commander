@@ -29,7 +29,6 @@ import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.ChoiceType
-import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.OnEnterRunEffect
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.MayPlayLandsFromGraveyard
@@ -464,9 +463,8 @@ class PlayLandHandler(
         // Process first choice in priority order: COLOR → CREATURE_TYPE
         // Continuations handle chaining to subsequent choices.
         if (cardDef != null) {
-            val firstChoice = cardDef.script.replacementEffects
-                .filterIsInstance<EntersWithChoice>()
-                .sortedBy { it.choiceType.ordinal }
+            val firstChoice = com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+                .entersWithChoicesFor(newState, action.cardId, cardDef)
                 .firstOrNull()
             if (firstChoice != null) {
                 // Use up a land drop first

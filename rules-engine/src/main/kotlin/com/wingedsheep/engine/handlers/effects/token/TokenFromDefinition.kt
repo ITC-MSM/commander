@@ -131,9 +131,8 @@ object TokenFromDefinition {
         // ZoneChangeEvent — so we deliberately do NOT emit the entry ZoneChangeEvent here when we
         // pause (the resolution path would otherwise detect those triggers now AND again in the
         // resumer, firing them twice). Counters already added ride along as carryEvents.
-        val firstChoice = cardDef.script.replacementEffects
-            .filterIsInstance<EntersWithChoice>()
-            .sortedBy { it.choiceType.ordinal }
+        val firstChoice = EntersWithReplacements
+            .entersWithChoicesFor(newState, tokenId, cardDef)
             .firstOrNull()
         if (firstChoice != null) {
             val cardComponent = newState.getEntity(tokenId)?.get<CardComponent>()

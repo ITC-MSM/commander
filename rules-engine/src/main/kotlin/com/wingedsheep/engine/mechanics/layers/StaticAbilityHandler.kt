@@ -1069,6 +1069,11 @@ class StaticAbilityHandler(
             is com.wingedsheep.sdk.scripting.EntersWithCounters,
             is com.wingedsheep.sdk.scripting.EntersWithDynamicCounters,
             is com.wingedsheep.sdk.scripting.EntersWithKeywords,
+            // Self-scoped as-enters choices are read straight off the entering card's definition,
+            // but an `otherOnly` one ("Other Spiders you control have riot" — Spider-Punk) has to
+            // be consulted from the battlefield as some *other* permanent enters, exactly like the
+            // counters/keywords siblings above.
+            is com.wingedsheep.sdk.scripting.EntersWithChoice,
             // "Lands you control enter untapped" (The Wandering Minstrel): a static effect
             // consulted from the battlefield against OTHER permanents as they enter.
             is com.wingedsheep.sdk.scripting.EntersUntapped,
@@ -1091,7 +1096,6 @@ class StaticAbilityHandler(
             // (StackResolver / PlayLandHandler / ModalAndCloneContinuations):
             is com.wingedsheep.sdk.scripting.EntersAsCopy,
             is com.wingedsheep.sdk.scripting.EntersTapped,
-            is com.wingedsheep.sdk.scripting.EntersWithChoice,
             is com.wingedsheep.sdk.scripting.EntersWithDevour,
             is com.wingedsheep.sdk.scripting.EntersWithRevealCounters,
             is com.wingedsheep.sdk.scripting.EntersWithExileCounters,

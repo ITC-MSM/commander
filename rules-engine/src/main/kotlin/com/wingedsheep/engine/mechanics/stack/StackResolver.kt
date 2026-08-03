@@ -955,9 +955,11 @@ class StackResolver(
             // Process in priority order: COLOR → CREATURE_TYPE → CREATURE_ON_BATTLEFIELD
             // When a card has multiple choices (e.g., Riptide Replicator: color + creature type),
             // the first one pauses; its continuation resumer chains to the next.
-            val entersWithChoices = cardDef.script.replacementEffects.filterIsInstance<EntersWithChoice>()
-            val firstChoice = entersWithChoices
-                .sortedBy { it.choiceType.ordinal }
+            // Includes group-scoped choices granted from the battlefield ("Other Spiders you
+            // control have riot"), which apply to the resolving spell even though it's still on
+            // the stack — CR 614.12 considers the permanent it will become.
+            val firstChoice = com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+                .entersWithChoicesFor(state, spellId, cardDef)
                 .firstOrNull()
             if (firstChoice != null) {
                 val result = pauseForEntersWithChoice(state, spellId, controllerId, ownerId, cardComponent, firstChoice)
@@ -2974,6 +2976,12 @@ class StackResolver(
         val container = state.getEntity(abilityId)
             ?: return ExecutionResult.error(state, "Ability not found: $abilityId")
 
+        // "Spells and abilities can't be countered" (Spider-Punk) — the ability half of
+        // GrantCantBeCountered. Nothing happens; the ability stays on the stack and resolves.
+        if (abilitiesCantBeCountered(state)) {
+            return ExecutionResult.success(state)
+        }
+
         val description = container.get<TriggeredAbilityOnStackComponent>()?.description
             ?: container.get<ActivatedAbilityOnStackComponent>()?.let { "${it.sourceName}'s ability" }
             ?: "Unknown ability"
@@ -3336,6 +3344,28 @@ class StackResolver(
      * (e.g., Hexing Squelcher's "Spells you control can't be countered" should only protect
      * its own controller's spells, not every player's spells).
      */
+    /**
+     * Does any permanent on the battlefield make *abilities* uncounterable — a
+     * [GrantCantBeCountered] with [GrantCantBeCountered.includesAbilities] set (Spider-Punk:
+     * "Spells and abilities can't be countered")?
+     *
+     * Unlike the spell half there is no filter to evaluate: an activated or triggered ability on
+     * the stack isn't an object a [com.wingedsheep.sdk.scripting.GameObjectFilter] describes, and
+     * every printed card with this clause protects every ability regardless of who controls it.
+     */
+    private fun abilitiesCantBeCountered(state: GameState): Boolean {
+        for (playerId in state.turnOrder) {
+            for (entityId in state.getBattlefield(playerId)) {
+                val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+                val def = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+                if (def.staticAbilities.any { it is GrantCantBeCountered && it.includesAbilities }) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
     private fun isGrantedCantBeCountered(state: GameState, spellId: EntityId): Boolean {
         for (playerId in state.turnOrder) {
             for (entityId in state.getBattlefield(playerId)) {

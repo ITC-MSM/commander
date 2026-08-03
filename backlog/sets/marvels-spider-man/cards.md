@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 187 / 188
+**Implemented:** 188 / 188
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
@@ -139,7 +139,7 @@
 - [x] Spider-Man, Brooklyn Visionary
 - [x] Spider-Man, Web-Slinger
 - [x] Spider-Mobile
-- [ ] Spider-Punk
+- [x] Spider-Punk
 - [x] Spider-Rex, Daring Dino
 - [x] Spider-Sense
 - [x] Spider-Slayer, Hatred Honed
