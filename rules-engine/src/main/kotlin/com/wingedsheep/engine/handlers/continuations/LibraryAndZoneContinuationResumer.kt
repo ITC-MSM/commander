@@ -277,7 +277,7 @@ class LibraryAndZoneContinuationResumer(
             // When underOwnersControl, use the next aura's owner as its controller
             val nextControllerId = if (continuation.underOwnersControl) {
                 val e = newState.getEntity(nextAuraId)
-                e?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()?.playerId
+                e?.get<OwnerComponent>()?.playerId
                     ?: e?.get<CardComponent>()?.ownerId
                     ?: continuation.controllerId
             } else continuation.controllerId
