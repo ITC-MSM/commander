@@ -505,6 +505,244 @@
     ]
 }
 
+// Arlinn Kord
+{
+    "name": "Arlinn Kord",
+    "manaCost": "{2}{R}{G}",
+    "typeLine": "Legendary Planeswalker — Arlinn",
+    "oracleText": "+1: Until end of turn, up to one target creature gets +2/+2 and gains vigilance and haste.\n0: Create a 2/2 green Wolf creature token. Transform Arlinn Kord.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "VIGILANCE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "creature"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 0
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Wolf"
+                            ]
+                        },
+                        "Transform"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Arlinn, Embraced by the Moon",
+        "manaCost": "",
+        "typeLine": "Legendary Planeswalker — Arlinn",
+        "oracleText": "+1: Creatures you control get +1/+1 and gain trample until end of turn.\n−1: Arlinn deals 3 damage to any target. Transform Arlinn.\n−6: You get an emblem with \"Creatures you control have haste and '{T}: This creature deals damage equal to its power to any target.'\"",
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_3",
+                    "cost": {
+                        "type": "CostLoyalty",
+                        "change": 1
+                    },
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "target": "Self"
+                                },
+                                {
+                                    "type": "GrantKeyword",
+                                    "keyword": "TRAMPLE",
+                                    "target": "Self"
+                                }
+                            ]
+                        }
+                    },
+                    "timing": "SorcerySpeed",
+                    "isPlaneswalkerAbility": true
+                },
+                {
+                    "id": "ability_4",
+                    "cost": {
+                        "type": "CostLoyalty",
+                        "change": -1
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target"
+                                }
+                            },
+                            "Transform"
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "AnyTarget",
+                            "id": "target"
+                        }
+                    ],
+                    "timing": "SorcerySpeed",
+                    "isPlaneswalkerAbility": true
+                },
+                {
+                    "id": "ability_5",
+                    "cost": {
+                        "type": "CostLoyalty",
+                        "change": -6
+                    },
+                    "effect": {
+                        "type": "CreatePermanentEmblem",
+                        "groupFilter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "grantedKeywords": [
+                            "HASTE"
+                        ],
+                        "grantedActivatedAbilities": [
+                            {
+                                "id": "ability_6",
+                                "cost": "CostTap",
+                                "effect": {
+                                    "type": "DealDamage",
+                                    "amount": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": "Power"
+                                    },
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                },
+                                "targetRequirements": [
+                                    "AnyTarget"
+                                ],
+                                "descriptionOverride": "{T}: This creature deals damage equal to its power to any target."
+                            }
+                        ],
+                        "emblemDescription": "Creatures you control have haste and '{T}: This creature deals damage equal to its power to any target.'"
+                    },
+                    "timing": "SorcerySpeed",
+                    "isPlaneswalkerAbility": true
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "243",
+            "rarity": "MYTHIC",
+            "artist": "Winona Nelson",
+            "imageUri": "https://cards.scryfall.io/normal/back/b/3/b37aa12c-a6b3-4cf8-b5a4-0a999ff12d02.jpg?1783937719"
+        },
+        "colorIdentityOverride": [
+            "RED",
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "243",
+        "rarity": "MYTHIC",
+        "artist": "Winona Nelson",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b37aa12c-a6b3-4cf8-b5a4-0a999ff12d02.jpg?1783937719"
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Bound by Moonsilver
 {
     "name": "Bound by Moonsilver",
