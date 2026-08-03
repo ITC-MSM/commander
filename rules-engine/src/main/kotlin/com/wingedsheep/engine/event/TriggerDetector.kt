@@ -1495,7 +1495,61 @@ class TriggerDetector(
             detectExploitedSelfSacrificeTriggers(state, index.statics, event, triggers)
         }
 
+        // Handle a "becomes unattached" trigger borne by an attachment that unattached *because* it
+        // left the battlefield — it is in the graveyard/exile by now, so the battlefield index scan
+        // above can't see it.
+        if (event is com.wingedsheep.engine.core.PermanentUnattachedEvent) {
+            detectUnattachedAfterLeavingTriggers(state, index.statics, event, triggers)
+        }
+
         return triggers
+    }
+
+    /**
+     * Detect a [EventPattern.BecomesUnattachedEvent] trigger on an attachment that is no longer on
+     * the battlefield — it became unattached precisely *because* it left (destroyed, bounced,
+     * exiled), which is one of the paths the card asks for.
+     *
+     * CR 603.6e / 603.10: the ability triggers based on the game state before the event, so an
+     * Equipment destroyed while equipping something still sees its own unattach. Stitcher's Graft is
+     * the card that needs it — destroying the Graft is how the equipped creature dies.
+     *
+     * Guarded on the attachment having actually left, so this never double-fires with the index scan
+     * that covers the three unattaches where the attachment stays on the battlefield (an explicit
+     * unattach effect, re-equipping elsewhere, and the CR 704.5n state-based unattach).
+     */
+    private fun detectUnattachedAfterLeavingTriggers(
+        state: GameState,
+        statics: BattlefieldStaticsIndex,
+        event: com.wingedsheep.engine.core.PermanentUnattachedEvent,
+        triggers: MutableList<PendingTrigger>
+    ) {
+        val attachmentId = event.attachmentId
+        if (attachmentId in state.getBattlefield()) return
+
+        val container = state.getEntity(attachmentId) ?: return
+        val cardComponent = container.get<CardComponent>() ?: return
+
+        val abilities = abilityResolver.getTriggeredAbilities(attachmentId, cardComponent.cardDefinitionId, state, statics)
+        for (ability in abilities) {
+            if (ability.trigger !is EventPattern.BecomesUnattachedEvent) continue
+            // The ability functioned from the battlefield right up to the moment it left; a
+            // graveyard/exile-active ability is a different thing entirely.
+            if (ability.activeZone != Zone.BATTLEFIELD) continue
+            if (!matcher.matchesTrigger(
+                    ability.trigger, ability.binding, event, attachmentId, event.controllerId, state
+                )
+            ) continue
+            triggers.add(
+                PendingTrigger(
+                    ability = ability,
+                    sourceId = attachmentId,
+                    sourceName = cardComponent.name,
+                    controllerId = event.controllerId,
+                    triggerContext = TriggerContext.fromEvent(event)
+                )
+            )
+        }
     }
 
     /**

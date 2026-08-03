@@ -410,6 +410,38 @@ class TriggerMatcher(
                     )
                 } else true
             }
+            is EventPattern.BecomesUnattachedEvent -> {
+                if (event !is com.wingedsheep.engine.core.PermanentUnattachedEvent) return false
+                // SELF binding = "whenever THIS Equipment becomes unattached" (Stitcher's Graft).
+                if (binding == TriggerBinding.SELF && event.attachmentId != sourceId) return false
+                // The attachment's controller as of the unattach — carried on the event because the
+                // leave-the-battlefield path has already stripped ControllerComponent by now.
+                if (!matchesPlayer(trigger.attachmentController, event.controllerId, controllerId)) return false
+                val attachmentCtx = com.wingedsheep.engine.handlers.PredicateContext(
+                    controllerId = controllerId,
+                    sourceId = sourceId,
+                )
+                if (trigger.attachmentFilter != GameObjectFilter.Any &&
+                    !PredicateEvaluator().matches(
+                        state, state.projectedState, event.attachmentId, trigger.attachmentFilter, attachmentCtx
+                    )
+                ) return false
+                // The former host, with the attachment exposed as EntityReference.Triggering so
+                // relative predicates resolve against it (mirrors BecomesAttachedEvent). A host that
+                // left the battlefield can't satisfy a battlefield filter, so an unfiltered trigger
+                // (Stitcher's Graft) is the shape that still fires in that case — matching the
+                // ruling that the ability triggers but does nothing.
+                if (trigger.unattachedFromFilter != GameObjectFilter.Any) {
+                    val hostCtx = com.wingedsheep.engine.handlers.PredicateContext(
+                        controllerId = controllerId,
+                        sourceId = sourceId,
+                        triggeringEntityId = event.attachmentId,
+                    )
+                    PredicateEvaluator().matches(
+                        state, state.projectedState, event.attachedToId, trigger.unattachedFromFilter, hostCtx
+                    )
+                } else true
+            }
             is EventPattern.TargetsChosenEvent -> {
                 event is com.wingedsheep.engine.core.TargetsChosenEvent &&
                     matchesPlayer(trigger.player, event.chooserId, controllerId)

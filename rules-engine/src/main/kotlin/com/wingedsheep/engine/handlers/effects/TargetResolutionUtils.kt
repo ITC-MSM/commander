@@ -85,9 +85,18 @@ object TargetResolutionUtils {
             return entity.get<CardComponent>()?.ownerId
         }
         if (effectTarget is EffectTarget.AttachedToTriggeringPermanent) {
-            // The triggering entity is the attachment (Aura/Equipment) that became attached; the
-            // host is its current attachment target. Reading it live means a "for as long as
-            // attached" payoff does nothing if the attachment already left (CR 611.2b).
+            // "Becomes unattached": the host recorded when the trigger fired is the only right
+            // answer — the live link is by now either gone or, if the unattach was caused by
+            // equipping the attachment elsewhere, pointing at the *new* host. Scoped to the
+            // battlefield so a former host that has itself left resolves to nothing, which is
+            // Stitcher's Graft's "the triggered ability won't do anything in that case".
+            context.triggerUnattachedFromEntityId?.let {
+                return it.takeIf { id -> id in state.getBattlefield() }
+            }
+            // "Becomes attached": the triggering entity is the attachment, and the host is its
+            // current attachment target. Reading it live means a "for as long as attached" payoff
+            // does nothing if the attachment has already moved or left (CR 611.2b) — what Eriette
+            // and Assimilation Aegis want.
             val attachmentId = context.triggeringEntityId ?: return null
             return state.getEntity(attachmentId)?.get<AttachedToComponent>()?.targetId
         }

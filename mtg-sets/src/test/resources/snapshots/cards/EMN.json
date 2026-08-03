@@ -2848,6 +2848,98 @@
     ]
 }
 
+// Stitcher's Graft
+{
+    "name": "Stitcher's Graft",
+    "manaCost": "{1}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +3/+3.\nWhenever equipped creature attacks, it doesn't untap during its controller's next untap step.\nWhenever this Equipment becomes unattached from a permanent, sacrifice that permanent.\nEquip {2}",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOESNT_UNTAP",
+                    "target": "EquippedCreature",
+                    "duration": "UntilAfterAffectedControllersNextUntap"
+                },
+                "descriptionOverride": "Whenever equipped creature attacks, it doesn't untap during its controller's next untap step."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesUnattachedEvent",
+                "effect": {
+                    "type": "SacrificeTarget",
+                    "target": "AttachedToTriggeringPermanent"
+                },
+                "descriptionOverride": "Whenever this Equipment becomes unattached from a permanent, sacrifice that permanent."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 3,
+                "toughnessBonus": 3
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "200",
+        "rarity": "RARE",
+        "artist": "Josh Hass",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/b/eb6d700e-0514-41d7-9255-cedd859316fc.jpg?1783937422",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "If multiple effects say that a creature doesn't untap during your next untap step, those effects all apply during one untap step. For example, a creature that attacks while equipped with two Stitcher's Grafts will only spend one untap step without untapping."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "Stitcher's Graft becomes unattached from the creature it's equipping if you equip it to a new creature, if Stitcher's Graft leaves the battlefield, if the equipped creature ceases to be a creature, or if Stitcher's Graft ceases to be an Equipment. (It also becomes unattached if the equipped creature leaves the battlefield, but the triggered ability won't do anything in that case.)"
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If Stitcher's Graft's last triggered ability triggers, but you don't control the permanent it became unattached from at the time that ability resolves (perhaps because another player has somehow gained control of it), you won't be able to sacrifice it."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Subjugator Angel
 {
     "name": "Subjugator Angel",

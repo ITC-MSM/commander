@@ -2384,6 +2384,7 @@ class StackResolver(
             triggeringEntityId = abilityComponent.triggeringEntityId,
             triggeringPlayerId = abilityComponent.triggeringPlayerId,
             targetingSourceEntityId = abilityComponent.targetingSourceEntityId,
+            triggerUnattachedFromEntityId = abilityComponent.triggerUnattachedFromEntityId,
             triggerLastKnownPower = abilityComponent.lastKnownPower,
             triggerLastKnownToughness = abilityComponent.lastKnownToughness,
             triggerDiedBatchTotalPower = abilityComponent.diedBatchTotalPower,
