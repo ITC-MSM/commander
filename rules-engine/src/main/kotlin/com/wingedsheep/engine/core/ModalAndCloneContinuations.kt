@@ -413,6 +413,17 @@ data class RevealCountersContinuation(
     val countersPerReveal: Int
 ) : ContinuationFrame
 
+/** Resume an as-enters linked-exile selection before the permanent enters the battlefield. */
+@Serializable
+data class ExileCountersContinuation(
+    override val decisionId: String,
+    val spellId: EntityId,
+    val controllerId: EntityId,
+    val ownerId: EntityId,
+    val counterType: String,
+    val countersPerCard: Int
+) : ContinuationFrame
+
 /**
  * Resume after player selects permanents to sacrifice for Devour (CR 702.82).
  *

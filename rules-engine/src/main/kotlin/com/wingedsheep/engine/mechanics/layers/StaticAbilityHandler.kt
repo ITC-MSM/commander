@@ -1094,6 +1094,7 @@ class StaticAbilityHandler(
             is com.wingedsheep.sdk.scripting.EntersWithChoice,
             is com.wingedsheep.sdk.scripting.EntersWithDevour,
             is com.wingedsheep.sdk.scripting.EntersWithRevealCounters,
+            is com.wingedsheep.sdk.scripting.EntersWithExileCounters,
             is com.wingedsheep.sdk.scripting.OnEnterRunEffect -> false
         }
 

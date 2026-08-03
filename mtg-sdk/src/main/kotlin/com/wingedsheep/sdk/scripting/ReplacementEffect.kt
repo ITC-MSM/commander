@@ -1709,6 +1709,42 @@ data class EntersWithRevealCounters(
     }
 }
 
+/**
+ * As this permanent enters, its controller may exile up to [maxCards] matching cards from their
+ * [sourceZone]. The exiled cards are linked to the entering permanent, and it enters with
+ * [countersPerCard] [counterType] counters for each card actually exiled this way.
+ *
+ * This is the reusable linked-exile counterpart to [EntersWithRevealCounters]. The selection and
+ * zone changes happen as part of the entry replacement, before the permanent reaches the
+ * battlefield; no triggered ability is put on the stack.
+ */
+@SerialName("EntersWithExileCounters")
+@Serializable
+data class EntersWithExileCounters(
+    val filter: GameObjectFilter,
+    val sourceZone: Zone = Zone.GRAVEYARD,
+    val maxCards: DynamicAmount,
+    val counterType: CounterTypeFilter = CounterTypeFilter.PlusOnePlusOne,
+    val countersPerCard: Int = 1,
+    override val appliesTo: EventPattern = EventPattern.ZoneChangeEvent(
+        filter = GameObjectFilter.Any,
+        to = Zone.BATTLEFIELD
+    )
+) : ReplacementEffect {
+    override val description: String =
+        "As this permanent enters, exile up to ${maxCards.description} matching cards from your " +
+            "${sourceZone.name.lowercase()}. It enters with $countersPerCard ${counterType.description} " +
+            "counter${if (countersPerCard == 1) "" else "s"} for each card exiled this way."
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newFilter = filter.applyTextReplacement(replacer)
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newFilter !== filter || newAppliesTo !== appliesTo) {
+            copy(filter = newFilter, appliesTo = newAppliesTo)
+        } else this
+    }
+}
+
 // =============================================================================
 // Enters-With-Devour Replacement Effect
 // =============================================================================

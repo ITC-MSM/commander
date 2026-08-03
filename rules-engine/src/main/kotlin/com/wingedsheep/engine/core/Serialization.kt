@@ -252,6 +252,7 @@ val engineSerializersModule = SerializersModule {
         subclass(PayLifeOrEnterTappedLandContinuation::class)
         subclass(PayLifeOrEnterTappedSpellContinuation::class)
         subclass(RevealCountersContinuation::class)
+        subclass(ExileCountersContinuation::class)
         subclass(DevourEntersContinuation::class)
         subclass(CastWithCreatureTypeContinuation::class)
         subclass(CastModalModeSelectionContinuation::class)

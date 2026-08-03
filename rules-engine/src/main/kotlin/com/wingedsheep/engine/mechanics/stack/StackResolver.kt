@@ -1008,6 +1008,53 @@ class StackResolver(
                 // No valid cards — enter normally without counters
             }
 
+            val exileCountersEffect = cardDef.script.replacementEffects
+                .filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithExileCounters>()
+                .firstOrNull()
+            if (exileCountersEffect != null) {
+                val predicateContext = PredicateContext(controllerId = controllerId, sourceId = spellId)
+                val candidates = state.getZone(ZoneKey(controllerId, exileCountersEffect.sourceZone)).filter { cardId ->
+                    predicateEvaluator.matches(
+                        state, state.projectedState, cardId, exileCountersEffect.filter, predicateContext
+                    )
+                }
+                val maxCards = com.wingedsheep.engine.handlers.DynamicAmountEvaluator().evaluate(
+                    state,
+                    exileCountersEffect.maxCards,
+                    EffectContext(
+                        sourceId = spellId,
+                        controllerId = controllerId,
+                        xValue = spellComponent.xValue ?: 0
+                    )
+                ).coerceAtLeast(0).coerceAtMost(candidates.size)
+                if (candidates.isNotEmpty() && maxCards > 0) {
+                    val decisionId = "exile-counters-enters-${spellId.value}"
+                    val decision = SelectCardsDecision(
+                        id = decisionId,
+                        playerId = controllerId,
+                        prompt = "Exile up to $maxCards ${exileCountersEffect.filter.description} cards from your ${exileCountersEffect.sourceZone.name.lowercase()} for ${cardComponent.name}",
+                        context = DecisionContext(
+                            sourceId = spellId,
+                            sourceName = cardComponent.name,
+                            phase = DecisionPhase.RESOLUTION
+                        ),
+                        options = candidates,
+                        minSelections = 0,
+                        maxSelections = maxCards
+                    )
+                    val continuation = ExileCountersContinuation(
+                        decisionId = decisionId,
+                        spellId = spellId,
+                        controllerId = controllerId,
+                        ownerId = ownerId,
+                        counterType = exileCountersEffect.counterType.description,
+                        countersPerCard = exileCountersEffect.countersPerCard
+                    )
+                    val pausedState = state.pushContinuation(continuation).withPendingDecision(decision)
+                    return ExecutionResult.paused(pausedState, decision)
+                }
+            }
+
             // Check for EntersWithDevour replacement effect (CR 702.82, Devour variants).
             // Pauses for the controller to pick which permanents to sacrifice; the resumer
             // sacrifices them, places multiplier × count counters on the entering spell
