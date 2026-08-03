@@ -10517,6 +10517,81 @@
     ]
 }
 
+// Mimeoplasm, Revered One
+{
+    "name": "Mimeoplasm, Revered One",
+    "manaCost": "{X}{B}{G}{U}",
+    "typeLine": "Legendary Creature — Ooze",
+    "oracleText": "As Mimeoplasm enters, exile up to X creature cards from your graveyard. It enters with three +1/+1 counters on it for each creature card exiled this way.\n{2}: Mimeoplasm becomes a copy of target creature card exiled with it, except it's 0/0 and has this ability.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "EachPermanentBecomesCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card exiled with Mimeoplasm"
+                    },
+                    "affected": "Self",
+                    "sourceFromAnyZone": true,
+                    "retainActivatingAbility": true,
+                    "powerOverride": 0,
+                    "toughnessOverride": 0
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "ExiledWithSource"
+                                ]
+                            },
+                            "zone": "Exile"
+                        },
+                        "id": "target creature card exiled with Mimeoplasm"
+                    }
+                ],
+                "descriptionOverride": "{2}: Mimeoplasm becomes a copy of target creature card exiled with it, except it's 0/0 and has this ability."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithExileCounters",
+                "filter": "creature",
+                "maxCards": "XValue",
+                "countersPerCard": 3
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "214",
+        "rarity": "MYTHIC",
+        "artist": "Ron Spencer",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/4/34e4c342-dc22-4e9c-81fc-a691ae9e21c1.jpg?1783907855"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Mindspring Merfolk
 {
     "name": "Mindspring Merfolk",

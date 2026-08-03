@@ -3513,6 +3513,45 @@ internal fun EmitCtx.asEntersBlock(rule: JsonObject, condition: String? = null):
     // ("~ enters …"), where the counter/tap applies to THIS permanent (`selfOnly`); a group scope
     // ("creatures you control enter …") would need a different rendering, so it scaffolds.
     val onSelf = (rule["args"].asArr?.getOrNull(0) as? JsonObject)?.strField("_Permanent") == "ThisPermanent"
+    // Correlated linked-exile entry replacement:
+    // "exile up to X creature cards from your graveyard; enters with three +1/+1 counters for
+    // each creature card exiled this way". Both IR nodes must be present and have the exact shape;
+    // rendering either independently would lose the "this way" linkage.
+    if (onSelf && replacements.size == 2 &&
+        replacements[0].strField("_ReplacementActionWouldEnter") == "ExileUptoNumberGraveyardCards" &&
+        replacements[1].strField("_ReplacementActionWouldEnter") == "EntersWithNumberCountersForEach"
+    ) {
+        val exileArgs = replacements[0]["args"].asArr
+        val counterArgs = replacements[1]["args"].asArr
+        val max = exileArgs?.getOrNull(0) as? JsonObject
+        val graveyardFilter = exileArgs?.getOrNull(1) as? JsonObject
+        val multiplier = (counterArgs?.getOrNull(0) as? JsonObject)?.get("args").asInt()
+        val counter = counterArgs?.getOrNull(1) as? JsonObject
+        val pt = counter?.get("args").asArr
+        val counted = counterArgs?.getOrNull(2) as? JsonObject
+        val exactMimeoplasmShape =
+            max?.strField("_GameNumber") == "ValueX" &&
+                graveyardFilter?.strField("_CardsInGraveyards") == "And" &&
+                jsonContains(graveyardFilter, "_CardsInGraveyards", "IsCardtype") &&
+                jsonContains(graveyardFilter, "_CardsInGraveyards", "InAPlayersGraveyard") &&
+                multiplier == 3 &&
+                counter?.strField("_CounterType") == "PTCounter" &&
+                pt?.getOrNull(0).asInt() == 1 && pt?.getOrNull(1).asInt() == 1 &&
+                counted?.strField("_GameNumber") == "NumberOfCardsOfTypeExiledThisWay" &&
+                jsonContains(counted, "_Cards", "IsCardtype")
+        if (exactMimeoplasmShape) {
+            return listOf(Eval(call(
+                "replacementEffect",
+                arg(Call("EntersWithExileCounters", listOf(
+                    arg("filter", "GameObjectFilter.Creature"),
+                    arg("sourceZone", "Zone.GRAVEYARD"),
+                    arg("maxCards", "DynamicAmount.XValue"),
+                    arg("counterType", "CounterTypeFilter.PlusOnePlusOne"),
+                    arg("countersPerCard", "3"),
+                )))
+            )))
+        }
+    }
     val stmts = mutableListOf<Stmt>()
     for (rep in replacements) {
         val dsl: Dsl = when (rep.strField("_ReplacementActionWouldEnter")) {

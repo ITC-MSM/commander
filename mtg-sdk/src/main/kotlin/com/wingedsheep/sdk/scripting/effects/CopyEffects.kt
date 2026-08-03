@@ -52,6 +52,8 @@ import kotlinx.serialization.Serializable
  *   grant is idempotent: activating the ability again off a copy re-reads the already-granted
  *   instance rather than stacking a second one. No-op when the effect isn't resolving from an
  *   activated ability.
+ * @property powerOverride A copy-effect exception that replaces the copied base power.
+ * @property toughnessOverride A copy-effect exception that replaces the copied base toughness.
  */
 @SerialName("EachPermanentBecomesCopyOfTarget")
 @Serializable
@@ -66,6 +68,8 @@ data class EachPermanentBecomesCopyOfTargetEffect(
     val sourceFromAnyZone: Boolean = false,
     val addedKeywords: Set<com.wingedsheep.sdk.core.Keyword> = emptySet(),
     val retainActivatingAbility: Boolean = false,
+    val powerOverride: Int? = null,
+    val toughnessOverride: Int? = null,
 ) : Effect {
     override val description: String = run {
         val durationSuffix = when (duration) {
@@ -74,7 +78,10 @@ data class EachPermanentBecomesCopyOfTargetEffect(
             else -> ""
         }
         val exceptions = addedKeywords.map { it.name.lowercase() } +
-            (if (retainActivatingAbility) listOf("this ability") else emptyList())
+            (if (retainActivatingAbility) listOf("this ability") else emptyList()) +
+            (if (powerOverride != null || toughnessOverride != null) {
+                listOf("base power and toughness ${powerOverride ?: "*"}/${toughnessOverride ?: "*"}")
+            } else emptyList())
         val exceptSuffix =
             if (exceptions.isEmpty()) "" else ", except it has ${exceptions.joinToString(" and ")}"
         if (affected != null) {

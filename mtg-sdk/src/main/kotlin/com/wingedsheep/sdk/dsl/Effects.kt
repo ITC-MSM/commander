@@ -4573,8 +4573,13 @@ object Effects {
         excludeTarget: Boolean = false,
         affected: EffectTarget? = null,
         sourceFromAnyZone: Boolean = false,
+        addedKeywords: Set<com.wingedsheep.sdk.core.Keyword> = emptySet(),
+        retainActivatingAbility: Boolean = false,
+        powerOverride: Int? = null,
+        toughnessOverride: Int? = null,
     ): Effect = EachPermanentBecomesCopyOfTargetEffect(
-        target, filter, duration, excludeTarget, affected, sourceFromAnyZone
+        target, filter, duration, excludeTarget, affected, sourceFromAnyZone,
+        addedKeywords, retainActivatingAbility, powerOverride, toughnessOverride
     )
 
     // =========================================================================

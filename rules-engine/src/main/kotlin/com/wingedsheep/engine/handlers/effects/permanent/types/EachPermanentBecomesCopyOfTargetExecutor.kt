@@ -106,7 +106,17 @@ class EachPermanentBecomesCopyOfTargetExecutor(
             // exactly as long as the copy does.
             val copiedCard = targetCard.copy(
                 ownerId = currentCard.ownerId,
-                baseKeywords = targetCard.baseKeywords + effect.addedKeywords
+                baseKeywords = targetCard.baseKeywords + effect.addedKeywords,
+                baseStats = targetCard.baseStats?.let { stats ->
+                    stats.copy(
+                        power = effect.powerOverride?.let {
+                            com.wingedsheep.sdk.model.CharacteristicValue.Fixed(it)
+                        } ?: stats.power,
+                        toughness = effect.toughnessOverride?.let {
+                            com.wingedsheep.sdk.model.CharacteristicValue.Fixed(it)
+                        } ?: stats.toughness,
+                    )
+                }
             )
 
             // If this permanent is already a copy, keep the existing pre-copy snapshot

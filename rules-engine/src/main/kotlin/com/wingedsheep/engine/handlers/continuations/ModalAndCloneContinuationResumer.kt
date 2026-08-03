@@ -37,6 +37,7 @@ class ModalAndCloneContinuationResumer(
         resumer(PayLifeOrEnterTappedLandContinuation::class, ::resumePayLifeOrEnterTappedLand),
         resumer(PayLifeOrEnterTappedSpellContinuation::class, ::resumePayLifeOrEnterTappedSpell),
         resumer(RevealCountersContinuation::class, ::resumeRevealCounters),
+        resumer(ExileCountersContinuation::class, ::resumeExileCounters),
         resumer(DevourEntersContinuation::class, ::resumeDevourEnters),
         resumer(CastWithCreatureTypeContinuation::class, ::resumeCastWithCreatureType),
         resumer(BudgetModalContinuation::class, ::resumeBudgetModal),
@@ -1119,6 +1120,75 @@ class ModalAndCloneContinuationResumer(
         )
 
         return checkForMore(newState, events)
+    }
+
+    fun resumeExileCounters(
+        state: GameState,
+        continuation: ExileCountersContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(state, "Expected card selection response for exile counters")
+        }
+
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+        val actuallyExiled = mutableListOf<com.wingedsheep.sdk.model.EntityId>()
+        for (cardId in response.selectedCards) {
+            val transition = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                newState, cardId, Zone.EXILE
+            )
+            newState = transition.state
+            events.addAll(transition.events)
+            if (newState.getZone(com.wingedsheep.engine.state.ZoneKey(
+                    newState.getEntity(cardId)?.get<CardComponent>()?.ownerId ?: continuation.controllerId,
+                    Zone.EXILE
+                )).contains(cardId)
+            ) actuallyExiled.add(cardId)
+        }
+
+        if (actuallyExiled.isNotEmpty()) {
+            val linked = newState.getEntity(continuation.spellId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
+                ?.exiledIds.orEmpty()
+            newState = newState.updateEntity(continuation.spellId) { container ->
+                container.with(com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent(linked + actuallyExiled))
+            }
+            val counterCount = actuallyExiled.size * continuation.countersPerCard
+            val counterFilter = when (continuation.counterType) {
+                "+1/+1" -> CounterTypeFilter.PlusOnePlusOne
+                "-1/-1" -> CounterTypeFilter.MinusOneMinusOne
+                else -> CounterTypeFilter.Named(continuation.counterType)
+            }
+            val (counterState, counterEvents) = EntersWithReplacements.placeEntryCounters(
+                newState,
+                continuation.spellId,
+                counterFilter,
+                counterCount,
+                continuation.controllerId,
+                newState.getEntity(continuation.spellId)?.get<CardComponent>()?.name ?: "",
+            )
+            newState = counterState
+            events.addAll(counterEvents)
+        }
+
+        val spellContainer = newState.getEntity(continuation.spellId)
+            ?: return ExecutionResult.error(state, "Spell entity not found: ${continuation.spellId}")
+        val cardComponent = spellContainer.get<CardComponent>()
+            ?: return ExecutionResult.error(state, "Spell has no CardComponent")
+        val spellComponent = spellContainer.get<SpellOnStackComponent>()
+            ?: return ExecutionResult.error(state, "Spell has no SpellOnStackComponent")
+        val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
+        val (enteredState, enterEvents) = services.stackResolver.enterPermanentOnBattlefield(
+            newState, continuation.spellId, spellComponent, cardComponent, cardDef
+        )
+        events.addAll(enterEvents)
+        events.add(ResolvedEvent(continuation.spellId, cardComponent.name))
+        events.add(ZoneChangeEvent(
+            continuation.spellId, cardComponent.name, null, Zone.BATTLEFIELD, continuation.ownerId
+        ))
+        return checkForMore(enteredState, events)
     }
 
     /**
