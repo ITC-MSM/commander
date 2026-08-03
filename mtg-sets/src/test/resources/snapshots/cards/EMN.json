@@ -525,6 +525,141 @@
     ]
 }
 
+// Collective Defiance
+{
+    "name": "Collective Defiance",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Escalate {1} (Pay this cost for each mode chosen beyond the first.)\nChoose one or more —\n• Target player discards all the cards in their hand, then draws that many cards.\n• Collective Defiance deals 4 damage to target creature.\n• Collective Defiance deals 3 damage to target opponent or planeswalker.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand",
+                                            "player": {
+                                                "type": "ContextPlayer",
+                                                "index": 0
+                                            }
+                                        },
+                                        "storeAs": "discardedHand"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discardedHand",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard",
+                                            "player": {
+                                                "type": "ContextPlayer",
+                                                "index": 0
+                                            }
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "VariableReference",
+                                    "variableName": "discardedHand_count"
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "wheel player"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "wheel player"
+                        }
+                    ],
+                    "description": "Target player discards their hand, then draws that many cards."
+                },
+                {
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 4
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "damage creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "damage creature"
+                        }
+                    ],
+                    "description": "Collective Defiance deals 4 damage to target creature."
+                },
+                {
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "damage opponent or planeswalker"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetOpponentOrPlaneswalker",
+                            "id": "damage opponent or planeswalker"
+                        }
+                    ],
+                    "description": "Collective Defiance deals 3 damage to target opponent or planeswalker."
+                }
+            ],
+            "chooseCount": 3,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{1}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "rarity": "RARE",
+        "artist": "Kieran Yanner",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/8960883f-3813-412b-9a5b-f8cf8d566fac.jpg?1783937466",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "You choose all of your modes at once. You can't wait to perform one mode's actions and then decide to choose more modes."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If one target of an escalate spell becomes illegal, the other targets will still be affected. If all of the targets become illegal, the spell won't resolve."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Conduit of Storms
 {
     "name": "Conduit of Storms",
