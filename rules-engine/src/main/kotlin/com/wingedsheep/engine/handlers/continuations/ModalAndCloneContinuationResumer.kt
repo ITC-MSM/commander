@@ -1438,7 +1438,7 @@ class ModalAndCloneContinuationResumer(
         val staticAbilityHandler = com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler(services.cardRegistry)
         val result = com.wingedsheep.engine.handlers.effects.token.CreateTokenCopyOfChosenPermanentExecutor.createTokenCopy(
             state, chosenId, continuation.controllerId,
-            staticAbilityHandler
+            staticAbilityHandler, services.cardRegistry
         ).toExecutionResult()
         if (result.isPaused) return result
         return checkForMore(result.state, result.events.toList())

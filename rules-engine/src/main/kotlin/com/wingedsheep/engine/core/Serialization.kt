@@ -314,6 +314,7 @@ val engineSerializersModule = SerializersModule {
         subclass(WardTapPermanentsSubCostContinuation::class)
         subclass(CreateTokenCopyOfChosenContinuation::class)
         subclass(CreateTokenCopyAuraHostContinuation::class)
+        subclass(CreateTokenCopyRemainingContinuation::class)
         subclass(DistributeDamageContinuation::class)
         subclass(EachPlayerDiscardsOrLoseLifeContinuation::class)
         subclass(ManaSourceSelectionContinuation::class)

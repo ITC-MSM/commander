@@ -5,7 +5,6 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
-import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.BattlefieldEntry
 import com.wingedsheep.engine.handlers.effects.EnterTappedReplacements
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
@@ -23,7 +22,6 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EntersTapped
-import com.wingedsheep.sdk.scripting.EntersWithChoice
 
 /**
  * Mints a token that is a copy of a bare [CardDefinition] — one not instantiated in any zone —
@@ -65,7 +63,6 @@ import com.wingedsheep.sdk.scripting.EntersWithChoice
 object TokenFromDefinition {
 
     private val conditionEvaluator = ConditionEvaluator()
-    private val predicateEvaluator = PredicateEvaluator()
 
     fun mint(
         state: GameState,
@@ -133,18 +130,12 @@ object TokenFromDefinition {
         // ZoneChangeEvent — so we deliberately do NOT emit the entry ZoneChangeEvent here when we
         // pause (the resolution path would otherwise detect those triggers now AND again in the
         // resumer, firing them twice). Counters already added ride along as carryEvents.
-        val printedChoices = cardDef.script.replacementEffects.filterIsInstance<EntersWithChoice>()
-        // Granted Riot: a token that is a Spider entering while a lord grants "Other Spiders you
-        // control have riot" (Spider-Punk) gets a synthesized enters-with choice per grant (702.136b).
-        val grantedRiotCount = com.wingedsheep.engine.mechanics.RiotSynthesis
-            .grantedRiotInstanceCount(newState, tokenId, cardRegistry, predicateEvaluator)
-        val syntheticRiotChoice = if (grantedRiotCount > 0) {
-            com.wingedsheep.engine.mechanics.RiotSynthesis.RIOT_CHOICE
-        } else null
-        val firstChoice = (printedChoices + listOfNotNull(syntheticRiotChoice))
-            .sortedBy { it.choiceType.ordinal }
-            .firstOrNull()
-        if (firstChoice != null) {
+        // Printed EntersWithChoice + a synthesized granted-riot choice (Spider-Punk: "Other Spiders
+        // you control have riot" — CR 702.136b, each granted instance is a separate choice). Computed
+        // by the shared helper so a minted token and a token copy resolve as-enters choices the same
+        // way.
+        val choicePlan = TokenEntryReplacements.firstEntersWithChoice(newState, tokenId, cardRegistry)
+        if (choicePlan != null) {
             val cardComponent = newState.getEntity(tokenId)?.get<CardComponent>()
             if (cardComponent != null) {
                 val paused = PermanentEntryReplacements.pauseForEntersWithChoice(
@@ -152,11 +143,11 @@ object TokenFromDefinition {
                     entityId = tokenId,
                     controllerId = controllerId,
                     cardComponent = cardComponent,
-                    choice = firstChoice,
+                    choice = choicePlan.choice,
                     fromZone = null,
                     carryEvents = counterEvents,
-                    syntheticRiot = firstChoice === syntheticRiotChoice,
-                    syntheticRiotRemaining = if (firstChoice === syntheticRiotChoice) grantedRiotCount - 1 else 0
+                    syntheticRiot = choicePlan.syntheticRiot,
+                    syntheticRiotRemaining = choicePlan.syntheticRiotRemaining,
                 )
                 if (paused != null) return EffectResult.from(paused)
             }

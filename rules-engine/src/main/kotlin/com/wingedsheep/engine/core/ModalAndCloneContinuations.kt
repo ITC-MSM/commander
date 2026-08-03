@@ -535,6 +535,39 @@ data class CreateTokenCopyAuraHostContinuation(
 ) : ContinuationFrame
 
 /**
+ * Auto-resumed continuation that creates the **remaining** token copies of a multi-token
+ * create-token-copy effect after one token paused for an "as-enters" choice (a printed
+ * [com.wingedsheep.sdk.scripting.EntersWithChoice] or a synthesized granted-riot choice — CR 614.12 /
+ * 702.136).
+ *
+ * A create-token-copy effect makes N tokens in a loop; each token must resolve its own as-enters
+ * choice (CR 707.2 — the copy has the copied card's abilities). When a token pauses, this frame is
+ * pushed **below** the choice's
+ * [EntersWithChoiceOnBattlefieldContinuation] so that, once that token's choice (and every granted-riot
+ * instance / chained printed choice) has resolved and its ETB triggers fired, the batch resumes here
+ * and creates the next token — which may pause again, pushing a fresh frame with a smaller [remaining].
+ * The resolution-time twin of [ModalPreChosenContinuation] / [ModalChosenModeTailContinuation]'s
+ * "push a tail frame below the nested decision" pattern; the copy analogue of
+ * [CreateTokenCopyAuraHostContinuation]'s per-token re-entry.
+ *
+ * [effect] is the original create-token-copy effect (a
+ * [com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect] or
+ * [com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect]) and [context] the resolution
+ * context, both re-used so the copy's source/target still resolves on resume — mirroring
+ * [CreateTokenCopyAuraHostContinuation].
+ *
+ * @property remaining how many more token copies are owed (always > 0 while this frame is live).
+ */
+@Serializable
+data class CreateTokenCopyRemainingContinuation(
+    override val decisionId: String,
+    val effect: @Serializable Effect,
+    val context: com.wingedsheep.engine.handlers.EffectContext,
+    val controllerId: EntityId,
+    val remaining: Int,
+) : ContinuationFrame
+
+/**
  * Resume after a player chooses an action from a list of labeled options.
  *
  * Used by [ChooseActionEffect] — the player is presented with feasible options

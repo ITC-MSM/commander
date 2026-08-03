@@ -1257,6 +1257,19 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   entity IDs to the `CREATED_TOKENS` pipeline collection, so a sibling effect in a `CompositeEffect` can address
   the new copy — e.g. Applied Geometry's "Create a token that's a copy … Put six +1/+1 counters on it" composes
   `CreateTokenCopyOfTarget(...)` then `AddCountersToCollection(CREATED_TOKENS, "+1/+1", 6)`.
+  **Enters-with replacements (CR 707.2).** A copy has the copied card's abilities, so every token copy runs the
+  copied card's "as-enters" replacements as it enters — the same pipeline a minted token (`TokenFromDefinition`)
+  and a directly-entering permanent use. This spans all four copy effects (`CreateTokenCopyOfTarget` /
+  `-OfSource` / `-OfChosenPermanent` / `-OfEquippedCreature`): the copied card's own **and** global
+  `EntersWithCounters`/`EntersWithDynamicCounters` (a token copy of a creature that "enters with a +1/+1
+  counter", plus grants like Gev, Scaled Scorch — applied inline via `EntersWithReplacements.applyOnEntry`),
+  its printed `EntersWithChoice` (Alloy Golem color, the Siege `MODE`, printed Riot — CR 614.12), and any
+  **granted** Riot (Spider-Punk's "Other Spiders you control have riot" — one choice per lord, CR 702.136b).
+  The choice half pauses for a player decision; `TokenEntryReplacements.firstEntersWithChoice` selects the choice
+  and `PermanentEntryReplacements.pauseForEntersWithChoice` raises it, so the token's ETB triggers fire once
+  after the choice resolves. For a multi-token `CreateTokenCopyOfTarget`/`-OfSource` where a token needs a choice,
+  the batch resumes token-by-token through a `CreateTokenCopyRemainingContinuation` (each remaining token runs its
+  own as-enters pipeline). A token that pauses for a choice is not published to `CREATED_TOKENS`.
 - `CreateTokenCopyOfEquippedCreature(count?, tapped?)` — equipment-specific copy.
 - `CreateRandomCreatureTokenWithManaValue(manaValue)` — create a token that's a copy of a *randomly
   chosen* creature card whose mana value equals `manaValue` (the Momir Basic Vanguard avatar's payoff —

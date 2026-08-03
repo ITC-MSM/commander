@@ -186,6 +186,32 @@ class CoreAutoResumerModule(
             )
         },
 
+        // A multi-token create-token-copy effect paused mid-batch because one token owed an
+        // as-enters choice (printed EntersWithChoice or granted riot). That token's choice, every
+        // granted-riot instance, and its ETB triggers have now resolved — create the remaining
+        // token copies, each of which runs its own as-enters pipeline and may pause again.
+        autoResumer(CreateTokenCopyRemainingContinuation::class, canResume = { it.remaining > 0 }) { state, continuation, events, checkForMore ->
+            val staticAbilityHandler = com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler(services.cardRegistry)
+            val result = when (val e = continuation.effect) {
+                is com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect ->
+                    com.wingedsheep.engine.handlers.effects.token.CreateTokenCopyOfTargetExecutor(
+                        staticAbilityHandler = staticAbilityHandler,
+                        cardRegistry = services.cardRegistry,
+                    ).createTokens(
+                        state, e, continuation.context, continuation.controllerId,
+                        continuation.remaining, auraHostId = null,
+                    )
+                is com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect ->
+                    com.wingedsheep.engine.handlers.effects.token.CreateTokenCopyOfSourceExecutor(
+                        services.cardRegistry, staticAbilityHandler,
+                    ).createTokens(
+                        state, e, continuation.context, continuation.controllerId, continuation.remaining,
+                    )
+                else -> com.wingedsheep.engine.core.EffectResult.success(state)
+            }
+            mergeAndContinue(result.toExecutionResult(), events, checkForMore)
+        },
+
         // CR 605.3a — the player activated a mana ability while the engine was asking them for a
         // mana payment, and that ability needed a decision of its own. Now that it has resolved,
         // put the payment window back up (refreshed: the source they just tapped is gone from the
