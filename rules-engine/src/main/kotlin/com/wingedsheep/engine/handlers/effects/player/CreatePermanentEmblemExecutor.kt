@@ -14,6 +14,7 @@ import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 import com.wingedsheep.engine.state.components.battlefield.withCastChoice
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.EmblemSourceComponent
+import com.wingedsheep.engine.state.components.identity.EmblemActivatedAbilityComponent
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.CreatePermanentEmblemEffect
@@ -69,6 +70,11 @@ class CreatePermanentEmblemExecutor : EffectExecutor<CreatePermanentEmblemEffect
         if (chosenType != null) {
             emblemContainer = emblemContainer.withCastChoice(
                 ChoiceSlot.CREATURE_TYPE, ChoiceValue.TextChoice(chosenType)
+            )
+        }
+        if (effect.grantedActivatedAbilities.isNotEmpty()) {
+            emblemContainer = emblemContainer.with(
+                EmblemActivatedAbilityComponent(effect.groupFilter, effect.grantedActivatedAbilities)
             )
         }
 

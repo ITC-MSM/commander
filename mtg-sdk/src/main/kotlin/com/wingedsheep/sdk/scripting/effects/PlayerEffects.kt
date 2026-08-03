@@ -702,6 +702,7 @@ data class CreatePermanentEmblemEffect(
     val powerBonus: Int = 0,
     val toughnessBonus: Int = 0,
     val grantedKeywords: List<String> = emptyList(),
+    val grantedActivatedAbilities: List<com.wingedsheep.sdk.scripting.ActivatedAbility> = emptyList(),
     val emblemDescription: String
 ) : Effect {
     override val description: String = "You get an emblem with \"$emblemDescription\""

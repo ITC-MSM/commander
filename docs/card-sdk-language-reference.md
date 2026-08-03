@@ -1371,7 +1371,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   Aetherdrift's "3/2 colorless Vehicle artifact token with crew 1" (Mu Yanling, Wind Rider). A *noncreature*
   artifact carrying printed P/T and the ordinary `crew 1` keyword, defined on the predefined `Vehicle`
   `CardDefinition`, so it can't attack or block until something crews it and it crews through the normal path.
-- `CreatePermanentEmblem(name, abilities)` — planeswalker emblem with static abilities.
+- `CreatePermanentEmblem(groupFilter, powerBonus?, toughnessBonus?, grantedKeywords?, grantedActivatedAbilities?, emblemDescription)` — permanent planeswalker emblem whose dynamically evaluated group receives the listed stats, keywords, and activated abilities. Unlike a one-shot group grant, the emblem also affects matching permanents that enter later. The activated-ability form powers Arlinn Kord's emblem.
 
 ### Ability granting
 

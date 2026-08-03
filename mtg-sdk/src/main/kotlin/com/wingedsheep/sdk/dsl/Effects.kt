@@ -1066,12 +1066,14 @@ object Effects {
         powerBonus: Int = 0,
         toughnessBonus: Int = 0,
         grantedKeywords: List<String> = emptyList(),
+        grantedActivatedAbilities: List<com.wingedsheep.sdk.scripting.ActivatedAbility> = emptyList(),
         emblemDescription: String
     ): Effect = com.wingedsheep.sdk.scripting.effects.CreatePermanentEmblemEffect(
         groupFilter = groupFilter,
         powerBonus = powerBonus,
         toughnessBonus = toughnessBonus,
         grantedKeywords = grantedKeywords,
+        grantedActivatedAbilities = grantedActivatedAbilities,
         emblemDescription = emblemDescription
     )
 
