@@ -67,6 +67,17 @@ class SetCoverageServiceTest : FunSpec({
         blb.extraTotal shouldBe 13
     }
 
+    test("Aetherdrift basic lands count as implemented") {
+        val dft = coverage.find { it.code == "DFT" }.shouldNotBeNull()
+        dft.total shouldBe 276
+        dft.implemented shouldBe 276
+        dft.percent shouldBe 100.0
+
+        val detail = service.detail("DFT").shouldNotBeNull()
+        val basics = setOf("Plains", "Island", "Swamp", "Mountain", "Forest")
+        detail.draft.filter { it.name in basics }.all { it.implemented } shouldBe true
+    }
+
     test("a card counts as draft when *any* of its printings in the set is boosterable") {
         // Regression: the booster flag used to be read off a single arbitrary printing per name
         // (`unique=cards`), so a card Scryfall happened to serve as its non-booster printing was
