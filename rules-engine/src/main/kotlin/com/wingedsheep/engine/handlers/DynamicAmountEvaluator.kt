@@ -620,6 +620,9 @@ class DynamicAmountEvaluator(
                 }
             }
 
+            DynamicAmount.SpellsCastLastTurn ->
+                state.previousTurnActiveTeamSpellCounts.values.sum()
+
             is DynamicAmount.CraftedMaterialsTotalPower -> {
                 val sourceId = context.sourceId
                 if (sourceId == null) 0 else {
