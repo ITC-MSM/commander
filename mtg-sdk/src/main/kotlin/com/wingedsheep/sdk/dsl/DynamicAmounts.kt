@@ -536,6 +536,9 @@ object DynamicAmounts {
             player, filter, excludeSelf, fromZone, beforeTriggeringSpell = beforeTriggeringSpell
         )
 
+    /** The total number of spells cast during the immediately preceding turn. */
+    fun spellsCastLastTurn(): DynamicAmount = DynamicAmount.SpellsCastLastTurn
+
     /** The starting life total of a player (20 in standard, 40 in commander). */
     fun startingLifeTotal(player: Player = Player.You): DynamicAmount =
         DynamicAmount.StartingLifeTotal(player)

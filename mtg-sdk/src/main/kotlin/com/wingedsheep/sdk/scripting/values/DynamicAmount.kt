@@ -1366,6 +1366,20 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * The total number of spells cast during the immediately preceding turn.
+     *
+     * This reads the snapshot captured at the turn boundary before the current-turn spell
+     * counters are cleared. It deliberately totals the previous active player's shared-turn team,
+     * matching old Innistrad werewolf wording such as "if no spells were cast last turn" and
+     * "if a player cast two or more spells last turn."
+     */
+    @SerialName("SpellsCastLastTurn")
+    @Serializable
+    data object SpellsCastLastTurn : DynamicAmount {
+        override val description: String = "the number of spells cast last turn"
+    }
+
+    /**
      * Total printed power of the cards exiled to craft the source permanent (CR 702.167c).
      *
      * Reads the source's

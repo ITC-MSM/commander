@@ -5481,6 +5481,96 @@
     ]
 }
 
+// Villagers of Estwald
+{
+    "name": "Villagers of Estwald",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "At the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Howlpack of Estwald",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "At the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 6
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "209",
+            "artist": "Kev Walker",
+            "flavorText": "Estwald's citizens don't dislike outsiders—they taste just fine.",
+            "imageUri": "https://cards.scryfall.io/normal/back/e/4/e42a0a3d-a987-4b24-b9d4-27380a12e093.jpg?1783940912"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "artist": "Kev Walker",
+        "flavorText": "You can spot a werewolf-infested town by its lack of butcher shops.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e42a0a3d-a987-4b24-b9d4-27380a12e093.jpg?1783940912"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Voiceless Spirit
 {
     "name": "Voiceless Spirit",

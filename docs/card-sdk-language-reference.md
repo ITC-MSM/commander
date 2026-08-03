@@ -7133,6 +7133,12 @@ Numbers computed at resolution time.
     beforeTriggeringSpell = true)`.
   - Pairs with the `YouCastSpellsThisTurn` **condition** (§ conditions) — that gates a yes/no
     threshold, this yields the count.
+- `SpellsCastLastTurn` (facade `DynamicAmounts.spellsCastLastTurn()`) — total spells cast during the
+  immediately preceding turn. Reads the active-player/shared-team snapshot captured at the turn
+  boundary before current-turn counters reset. Compose with `Conditions.CompareAmounts`: `== 0`
+  models the original Innistrad werewolf front-face trigger, while `>= 2` models its back-face
+  trigger. It is deliberately turn-global rather than controller-scoped, matching "no spells were
+  cast last turn" and "a player cast two or more spells last turn."
 - `CraftedMaterialsTotalPower` — total printed power of the cards exiled to craft the source
   permanent (CR 702.167c). Reads the source's `CraftedFromExiledComponent`. Used for the
   `*`-power CDA on Mastercraft Raptor (Saheeli's Lattice back face). Evaluates to 0 when the

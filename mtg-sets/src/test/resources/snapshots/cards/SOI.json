@@ -1208,6 +1208,99 @@
     "colorIdentityOverride": []
 }
 
+// Hinterland Logger
+{
+    "name": "Hinterland Logger",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "At the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Timber Shredder",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Trample\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 2
+        },
+        "keywords": [
+            "TRAMPLE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "210",
+            "artist": "Karl Kopinski",
+            "flavorText": "\"She even had the audacity to criticize my wares as inferior.\"\n—Old Rutstein",
+            "imageUri": "https://cards.scryfall.io/normal/back/1/4/14529bed-9632-4d58-8edc-c5a1359f6604.jpg?1783937734"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "artist": "Karl Kopinski",
+        "flavorText": "\"There's a forester lives up in the highlands. Tried to sell her one of my finest axes at a bargain, but she wasn't interested.\"\n—Old Rutstein",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/14529bed-9632-4d58-8edc-c5a1359f6604.jpg?1783937734"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Howlpack Resurgence
 {
     "name": "Howlpack Resurgence",
@@ -3543,6 +3636,103 @@
         "artist": "Jason Kang",
         "flavorText": "\"It's right to fear those that you keep locked away.\"\n—Rahilda, Vildin-Pack alpha",
         "imageUri": "https://cards.scryfall.io/normal/front/4/0/40440487-5ff2-43da-aa06-c649bf972ef1.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Village Messenger
+{
+    "name": "Village Messenger",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "Haste\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Moonrise Intruder",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Menace\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 2,
+            "toughness": 2
+        },
+        "keywords": [
+            "MENACE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "190",
+            "rarity": "UNCOMMON",
+            "artist": "Daarken",
+            "imageUri": "https://cards.scryfall.io/normal/back/4/4/44deb8cf-b9d1-4a14-aeaf-e62cf3dc9ef2.jpg?1783937747"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "190",
+        "rarity": "UNCOMMON",
+        "artist": "Daarken",
+        "flavorText": "\"I'm afraid it's bad news.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44deb8cf-b9d1-4a14-aeaf-e62cf3dc9ef2.jpg?1783937747"
     },
     "colorIdentityOverride": [
         "RED"
