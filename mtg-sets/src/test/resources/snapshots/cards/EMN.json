@@ -140,6 +140,89 @@
     ]
 }
 
+// Borrowed Hostility
+{
+    "name": "Borrowed Hostility",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Escalate {3} (Pay this cost for each mode chosen beyond the first.)\nChoose one or both —\n• Target creature gets +3/+0 until end of turn.\n• Target creature gains first strike until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "power target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "power target"
+                        }
+                    ],
+                    "description": "Target creature gets +3/+0 until end of turn."
+                },
+                {
+                    "effect": {
+                        "type": "GrantKeyword",
+                        "keyword": "FIRST_STRIKE",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "first strike target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "first strike target"
+                        }
+                    ],
+                    "description": "Target creature gains first strike until end of turn."
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{3}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "artist": "Volkan Baǵa",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/dd91a194-6043-4c2d-afc8-427c38996ef4.jpg?1783937466",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "If two chosen modes target a creature, you may choose the same creature for both targets or different creatures."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If one target becomes illegal, the other target is still affected. If all targets become illegal, the spell doesn't resolve."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Brisela, Voice of Nightmares
 {
     "name": "Brisela, Voice of Nightmares",
@@ -2363,6 +2446,137 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Savage Alliance
+{
+    "name": "Savage Alliance",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Escalate {1} (Pay this cost for each mode chosen beyond the first.)\nChoose one or more —\n• Creatures target player controls gain trample until end of turn.\n• Savage Alliance deals 2 damage to target creature.\n• Savage Alliance deals 1 damage to each creature target opponent controls.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "controllerPredicate": {
+                                        "type": "ControlledByReferencedPlayer",
+                                        "target": {
+                                            "type": "BoundVariable",
+                                            "name": "trample player"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "body": {
+                            "type": "GrantKeyword",
+                            "keyword": "TRAMPLE",
+                            "target": "Self"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "trample player"
+                        }
+                    ],
+                    "description": "Creatures target player controls gain trample until end of turn."
+                },
+                {
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "damage creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "damage creature"
+                        }
+                    ],
+                    "description": "Savage Alliance deals 2 damage to target creature."
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "controllerPredicate": {
+                                        "type": "ControlledByReferencedPlayer",
+                                        "target": {
+                                            "type": "BoundVariable",
+                                            "name": "damage opponent"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "body": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": "Self"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetOpponent",
+                            "id": "damage opponent"
+                        }
+                    ],
+                    "description": "Savage Alliance deals 1 damage to each creature target opponent controls."
+                }
+            ],
+            "chooseCount": 3,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{1}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "140",
+        "rarity": "UNCOMMON",
+        "artist": "Johann Bodin",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/5/b5255da8-8511-48a7-98e5-ba43ca6e8681.jpg?1783937456",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "If the second and third modes affect the same creature, it is dealt 2 damage and 1 damage as separate events."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If one target becomes illegal, the other targets are still affected. If all targets become illegal, the spell doesn't resolve."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

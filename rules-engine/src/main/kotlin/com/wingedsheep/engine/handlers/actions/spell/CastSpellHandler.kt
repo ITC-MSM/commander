@@ -2237,6 +2237,12 @@ class CastSpellHandler(
                     val modeManaCost = modalEffect.modes.getOrNull(modeIndex)?.additionalManaCost ?: continue
                     effectiveCost = effectiveCost + ManaCost.parse(modeManaCost)
                 }
+                val perExtraMode = modalEffect.additionalManaCostPerExtraMode
+                if (perExtraMode != null) {
+                    repeat((action.chosenModes.size - 1).coerceAtLeast(0)) {
+                        effectiveCost = effectiveCost + ManaCost.parse(perExtraMode)
+                    }
+                }
             }
         }
 
@@ -3864,10 +3870,15 @@ class CastSpellHandler(
     private fun canPayModeSelection(
         state: GameState,
         action: CastSpell,
-        modes: List<com.wingedsheep.sdk.scripting.effects.Mode>,
+        modalEffect: ModalEffect,
         chosenIndices: List<Int>
     ): Boolean {
-        val extraCosts = chosenIndices.mapNotNull { modes.getOrNull(it)?.additionalManaCost }
+        val extraCosts = buildList {
+            addAll(chosenIndices.mapNotNull { modalEffect.modes.getOrNull(it)?.additionalManaCost })
+            modalEffect.additionalManaCostPerExtraMode?.let { perExtraMode ->
+                repeat((chosenIndices.size - 1).coerceAtLeast(0)) { add(perExtraMode) }
+            }
+        }
         // Nothing stacks — base-cost affordability was already validated on the cast action.
         if (extraCosts.isEmpty()) return true
         val cardComponent = state.getEntity(action.cardId)?.get<CardComponent>() ?: return true
@@ -3910,7 +3921,7 @@ class CastSpellHandler(
         // through mode + target selection and dead-ends at payment, where the pending
         // decision can never be answered legally (only cancelled).
         val offerIndices = candidateIndices.filter { candidate ->
-            canPayModeSelection(state, baseCastAction, modalEffect.modes, selectedModeIndices + candidate)
+            canPayModeSelection(state, baseCastAction, modalEffect, selectedModeIndices + candidate)
         }
         if (offerIndices.isEmpty() && selectedModeIndices.size < modalEffect.minChooseCount) {
             return ExecutionResult.error(

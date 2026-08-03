@@ -56,7 +56,7 @@ function ModalModePanel({ state }: { state: ModalModeSelectionState }) {
   const responsive = useResponsive()
 
   const { enumeration, cardName, baseManaCost } = state
-  const { modes, minChooseCount, chooseCount, allowRepeat } = enumeration
+  const { modes, minChooseCount, chooseCount, allowRepeat, additionalManaCostPerExtraMode } = enumeration
 
   const [counts, setCounts] = useState<number[]>(() => new Array(modes.length).fill(0) as number[])
   const [minimized, setMinimized] = useState(false)
@@ -77,9 +77,13 @@ function ModalModePanel({ state }: { state: ModalModeSelectionState }) {
   const toggle = (i: number) => { if ((counts[i] ?? 0) > 0) remove(i); else add(i) }
 
   // Live cost preview from the currently-selected modes.
-  const additionalCost = combineManaCosts(
-    counts.flatMap((c, i) => Array.from({ length: c }, () => modes[i]?.additionalManaCost ?? ''))
-  )
+  const additionalCost = combineManaCosts([
+    ...counts.flatMap((c, i) => Array.from({ length: c }, () => modes[i]?.additionalManaCost ?? '')),
+    ...Array.from(
+      { length: Math.max(0, totalChosen - 1) },
+      () => additionalManaCostPerExtraMode ?? ''
+    ),
+  ])
   const totalCost = combineManaCosts([baseManaCost, additionalCost])
 
   const withinRange = totalChosen >= minChooseCount && totalChosen <= chooseCount
@@ -115,7 +119,9 @@ function ModalModePanel({ state }: { state: ModalModeSelectionState }) {
       )}
 
       <h2 className={decisionStyles.title}>{cardName}</h2>
-      <p className={decisionStyles.sourceLabel}>{rangeLabel} — pay for each chosen mode</p>
+      <p className={decisionStyles.sourceLabel}>
+        {rangeLabel}{additionalManaCostPerExtraMode ? ' — escalate for each mode beyond the first' : ' — pay for each chosen mode'}
+      </p>
 
       {/* Mode list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 540 }}>

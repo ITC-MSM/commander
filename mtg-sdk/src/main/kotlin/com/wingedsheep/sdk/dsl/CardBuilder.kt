@@ -1185,11 +1185,19 @@ class SpellBuilder {
         chooseCount: Int = 1,
         minChooseCount: Int = chooseCount,
         allowRepeat: Boolean = false,
+        additionalManaCostPerExtraMode: String? = null,
         chooseAllIfBlightPaid: Boolean = false,
         dynamicChooseCount: com.wingedsheep.sdk.scripting.values.DynamicAmount? = null,
         init: ModalBuilder.() -> Unit
     ) {
-        val builder = ModalBuilder(chooseCount, minChooseCount, allowRepeat, chooseAllIfBlightPaid, dynamicChooseCount)
+        val builder = ModalBuilder(
+            chooseCount,
+            minChooseCount,
+            allowRepeat,
+            additionalManaCostPerExtraMode,
+            chooseAllIfBlightPaid,
+            dynamicChooseCount
+        )
         builder.init()
         effect = builder.build()
     }
@@ -1244,6 +1252,7 @@ class ModalBuilder(
     private val chooseCount: Int,
     private val minChooseCount: Int = chooseCount,
     private val allowRepeat: Boolean = false,
+    private val additionalManaCostPerExtraMode: String? = null,
     private val chooseAllIfBlightPaid: Boolean = false,
     private val dynamicChooseCount: com.wingedsheep.sdk.scripting.values.DynamicAmount? = null
 ) {
@@ -1271,6 +1280,7 @@ class ModalBuilder(
             chooseCount = chooseCount,
             minChooseCount = minChooseCount,
             allowRepeat = allowRepeat,
+            additionalManaCostPerExtraMode = additionalManaCostPerExtraMode,
             chooseAllIfBlightPaid = chooseAllIfBlightPaid,
             dynamicChooseCount = dynamicChooseCount
         )
