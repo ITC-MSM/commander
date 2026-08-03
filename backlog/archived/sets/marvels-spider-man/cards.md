@@ -3,6 +3,7 @@
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
 **Implemented:** 188 / 188
+**Status:** ✅ Complete — every card human-authored with a passing scenario test; archived.
 - [x] Agent Venom
 - [x] Alien Symbiosis
 - [x] Angry Rabble
