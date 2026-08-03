@@ -170,13 +170,24 @@ data class TriggerContext(
      */
     val capturedEntityIds: List<EntityId>? = null,
     /**
-     * For [com.wingedsheep.engine.core.PermanentAttachedEvent] triggers — the permanent the
-     * triggering attachment (Aura/Equipment) became attached to. Resolved by
+     * For [com.wingedsheep.engine.core.PermanentAttachedEvent] /
+     * [com.wingedsheep.engine.core.PermanentUnattachedEvent] triggers — the permanent the triggering
+     * attachment (Aura/Equipment) became attached to, or came off of. Resolved by
      * [com.wingedsheep.sdk.scripting.targets.EffectTarget.AttachedToTriggeringPermanent] so a
-     * "becomes attached" payoff can act on the host (Eriette gains control of it; Assimilation
-     * Aegis makes it a copy). `null` for non-attachment triggers.
+     * "becomes (un)attached" payoff can act on the host (Eriette gains control of it; Assimilation
+     * Aegis makes it a copy; Stitcher's Graft sacrifices it). `null` for non-attachment triggers.
      */
-    val attachedToEntityId: EntityId? = null
+    val attachedToEntityId: EntityId? = null,
+    /**
+     * For [com.wingedsheep.engine.core.PermanentUnattachedEvent] triggers only — the host the
+     * attachment came *off*. Deliberately separate from [attachedToEntityId]: an unattach payoff
+     * must not read the live `AttachedToComponent`, because by resolution it is either gone or
+     * already re-pointed at a different host (equipping the Graft away from a creature attaches it
+     * elsewhere in the same action). Resolves
+     * [com.wingedsheep.sdk.scripting.targets.EffectTarget.AttachedToTriggeringPermanent] in that
+     * case, and leaves the attach case on its live read (CR 611.2b). `null` otherwise.
+     */
+    val unattachedFromEntityId: EntityId? = null
 ) {
     companion object {
         fun fromEvent(event: com.wingedsheep.engine.core.GameEvent): TriggerContext {
@@ -325,6 +336,13 @@ data class TriggerContext(
                     triggeringEntityId = event.attachmentId,
                     triggeringPlayerId = event.controllerId,
                     attachedToEntityId = event.attachedToId
+                )
+                is com.wingedsheep.engine.core.PermanentUnattachedEvent -> TriggerContext(
+                    // Mirror of the attach case: the attachment triggers, and the host it came off
+                    // rides along as "that permanent" (Stitcher's Graft sacrifices it).
+                    triggeringEntityId = event.attachmentId,
+                    triggeringPlayerId = event.controllerId,
+                    unattachedFromEntityId = event.attachedToId
                 )
                 is BecomesTargetEvent -> TriggerContext(
                     triggeringEntityId = event.targetEntityId,

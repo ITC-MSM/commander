@@ -806,6 +806,7 @@ class TriggerProcessor(
             triggerLastKnownBlockingOrBlockedByIds =
                 trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
             targetingSourceEntityId = trigger.triggerContext.targetingSourceEntityId,
+            triggerUnattachedFromEntityId = trigger.triggerContext.unattachedFromEntityId,
             lastKnownPower = trigger.triggerContext.lastKnownPower,
             lastKnownToughness = trigger.triggerContext.lastKnownToughness,
             diedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,

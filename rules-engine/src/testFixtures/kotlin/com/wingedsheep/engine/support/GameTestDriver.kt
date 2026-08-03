@@ -13,6 +13,7 @@ import com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombat
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
+import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Phase
@@ -678,7 +679,7 @@ class GameTestDriver {
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
             cardComponent,
-            com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
+            OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
         // Every component derived from the printed definition (can't-be-countered/copied, morph,
@@ -727,7 +728,7 @@ class GameTestDriver {
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
             cardComponent,
-            com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
+            OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
         container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
@@ -774,7 +775,7 @@ class GameTestDriver {
 
         val container = com.wingedsheep.engine.state.ComponentContainer.of(
             cardComponent,
-            com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
+            OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
 
@@ -815,7 +816,7 @@ class GameTestDriver {
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
             cardComponent,
-            com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
+            OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
         container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
@@ -863,7 +864,7 @@ class GameTestDriver {
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
             cardComponent,
-            com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
+            OwnerComponent(playerId),
             ControllerComponent(playerId),
             com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
         )
@@ -927,7 +928,7 @@ class GameTestDriver {
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
             cardComponent,
-            com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
+            OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
         container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
@@ -991,7 +992,7 @@ class GameTestDriver {
      */
     fun moveToGraveyard(entityId: EntityId) {
         val ownerId = _state.getEntity(entityId)
-            ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()?.playerId
+            ?.get<OwnerComponent>()?.playerId
             ?: return
         // Remove from every zone the entity currently occupies rather than assuming battlefield;
         // otherwise discarding a hand card here is a no-op and any "while in hand" setup loop spins
@@ -1043,7 +1044,7 @@ class GameTestDriver {
 
         var container = com.wingedsheep.engine.state.ComponentContainer.of(
             cardComponent,
-            com.wingedsheep.engine.state.components.identity.OwnerComponent(playerId),
+            OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
         container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)

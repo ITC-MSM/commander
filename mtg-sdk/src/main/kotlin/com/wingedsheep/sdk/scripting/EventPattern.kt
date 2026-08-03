@@ -1314,6 +1314,65 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     /**
+     * When an Aura, Equipment, or Fortification becomes **unattached** from a permanent — the
+     * mirror of [BecomesAttachedEvent].
+     *
+     * Fires on every way an attachment stops being attached to its host while that attachment
+     * existed attached a moment earlier (CR 701.3d): an explicit "unattach it" effect, equipping it
+     * to a *different* permanent, the attachment leaving the battlefield, the host leaving the
+     * battlefield, and the CR 704.5n state-based unattach when the pairing becomes illegal (the
+     * host stops being a creature, the Equipment itself becomes a creature, protection). It does
+     * **not** fire for an attachment that was never attached.
+     *
+     * The triggering entity is the *attachment*; the permanent it came off is carried as the
+     * attached-to entity in the trigger context
+     * ([com.wingedsheep.sdk.scripting.targets.EffectTarget.AttachedToTriggeringPermanent]) —
+     * "that permanent" in the payoff.
+     *
+     * Because the unattach can be *caused* by the attachment leaving the battlefield, the ability
+     * fires from the attachment's last-known existence (CR 603.6e/603.10), exactly like a
+     * leaves-the-battlefield trigger. The former host may likewise be gone by resolution, in which
+     * case a payoff that acts on it simply does nothing — Stitcher's Graft's ruling spells this out:
+     * "It also becomes unattached if the equipped creature leaves the battlefield, but the triggered
+     * ability won't do anything in that case."
+     *
+     * Binding SELF = "whenever this Equipment becomes unattached from a permanent" (Stitcher's
+     * Graft). Binding ANY with [attachmentFilter] / [attachmentController] = "whenever an Aura you
+     * control becomes unattached …".
+     *
+     * @property attachmentFilter restricts which attachment qualifies (e.g. Aura, Equipment).
+     * @property attachmentController restricts who must control the attachment (e.g. [Player.You]).
+     * @property unattachedFromFilter restricts what it must have come off. Matched against the
+     *   former host with the triggering attachment exposed as the comparison reference, mirroring
+     *   [BecomesAttachedEvent.attachedToFilter]. Evaluated against the host's *current* state, so a
+     *   host that left the battlefield matches only [GameObjectFilter.Any].
+     */
+    @SerialName("BecomesUnattachedEvent")
+    @Serializable
+    data class BecomesUnattachedEvent(
+        val attachmentFilter: GameObjectFilter = GameObjectFilter.Any,
+        val attachmentController: Player = Player.Any,
+        val unattachedFromFilter: GameObjectFilter = GameObjectFilter.Any,
+    ) : EventPattern {
+        override val description: String = buildString {
+            append(describeObjectForEvent(attachmentFilter))
+            if (attachmentController == Player.You) append(" you control")
+            append(" becomes unattached")
+            if (unattachedFromFilter != GameObjectFilter.Any) {
+                append(" from ${describeObjectForEvent(unattachedFromFilter)}")
+            }
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
+            val newAttachment = attachmentFilter.applyTextReplacement(replacer)
+            val newUnattachedFrom = unattachedFromFilter.applyTextReplacement(replacer)
+            return if (newAttachment !== attachmentFilter || newUnattachedFrom !== unattachedFromFilter) {
+                copy(attachmentFilter = newAttachment, unattachedFromFilter = newUnattachedFrom)
+            } else this
+        }
+    }
+
+    /**
      * When a player chooses one or more targets.
      *
      * Fires when [player] casts a spell, activates an ability, or puts a triggered ability

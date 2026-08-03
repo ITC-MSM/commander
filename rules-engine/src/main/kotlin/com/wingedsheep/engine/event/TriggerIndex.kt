@@ -88,6 +88,7 @@ enum class TriggerCategory {
     BECAME_SADDLED,
     CREW_OR_SADDLE_CONTRIBUTION,
     BECOMES_ATTACHED,
+    BECOMES_UNATTACHED,
     SAGA_CHAPTER_RESOLVED,
     PLAYER_LOST,
 }
@@ -283,6 +284,7 @@ class TriggerIndex(
                 is SdkGameEvent.CrewsEvent,
                 is SdkGameEvent.SaddlesEvent -> CREW_OR_SADDLE_CONTRIBUTION_LIST
                 is SdkGameEvent.BecomesAttachedEvent -> BECOMES_ATTACHED_LIST
+                is SdkGameEvent.BecomesUnattachedEvent -> BECOMES_UNATTACHED_LIST
                 is SdkGameEvent.SagaChapterResolvedEvent -> SAGA_CHAPTER_RESOLVED_LIST
                 is SdkGameEvent.PlayerLostGameEvent -> PLAYER_LOST_LIST
                 // These are handled by specialized detect methods, not the main loop
@@ -333,6 +335,7 @@ class TriggerIndex(
             is com.wingedsheep.engine.core.BecameSaddledEvent -> BECAME_SADDLED_LIST
             is CrewOrSaddleContributionEvent -> CREW_OR_SADDLE_CONTRIBUTION_LIST
             is com.wingedsheep.engine.core.PermanentAttachedEvent -> BECOMES_ATTACHED_LIST
+            is com.wingedsheep.engine.core.PermanentUnattachedEvent -> BECOMES_UNATTACHED_LIST
             is com.wingedsheep.engine.core.SagaChapterResolvedEvent -> SAGA_CHAPTER_RESOLVED_LIST
             is com.wingedsheep.engine.core.PlayerLostEvent -> PLAYER_LOST_LIST
             else -> emptyList()
@@ -377,6 +380,7 @@ class TriggerIndex(
         private val CREW_OR_SADDLE_CONTRIBUTION_LIST =
             listOf(TriggerCategory.CREW_OR_SADDLE_CONTRIBUTION)
         private val BECOMES_ATTACHED_LIST = listOf(TriggerCategory.BECOMES_ATTACHED)
+        private val BECOMES_UNATTACHED_LIST = listOf(TriggerCategory.BECOMES_UNATTACHED)
         private val SAGA_CHAPTER_RESOLVED_LIST = listOf(TriggerCategory.SAGA_CHAPTER_RESOLVED)
         private val PLAYER_LOST_LIST = listOf(TriggerCategory.PLAYER_LOST)
     }

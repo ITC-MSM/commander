@@ -1025,12 +1025,27 @@ data class PermanentAttachedEvent(
 ) : GameEvent
 
 /**
- * An Aura/Equipment became unattached from its host without moving zones (CR 701.3d). Emitted by
- * [com.wingedsheep.engine.handlers.effects.permanent.attachments.UnattachEquipmentExecutor] so
- * "becomes unattached" reactions and animations can fire.
+ * An Aura/Equipment became unattached from its host (CR 701.3d) — the mirror of
+ * [PermanentAttachedEvent], driving the "becomes unattached" trigger family
+ * ([com.wingedsheep.sdk.scripting.EventPattern.BecomesUnattachedEvent]): Stitcher's Graft.
+ *
+ * Emitted from **every** path that breaks an attachment, because the card asks for all of them:
+ * the explicit unattach effect
+ * ([com.wingedsheep.engine.handlers.effects.permanent.attachments.UnattachEquipmentExecutor]),
+ * re-equipping onto a different host
+ * ([com.wingedsheep.engine.handlers.effects.permanent.attachments.AttachEquipmentExecutor]), the
+ * CR 704.5m/n state-based unattach
+ * ([com.wingedsheep.engine.mechanics.sba.permanent.UnattachedAurasCheck]), and the attachment
+ * itself leaving the battlefield while attached
+ * ([com.wingedsheep.engine.handlers.effects.ZoneTransitionService]).
  *
  * @property attachmentId the aura/equipment that became unattached.
- * @property attachedToId the permanent it was attached to (its former host).
+ * @property attachedToId the permanent it was attached to (its former host). May already have left
+ *   the battlefield — that is the case where Stitcher's Graft's trigger fires but does nothing.
+ * @property controllerId the attachment's controller at the moment it unattached. Captured here
+ *   rather than read back off the entity because the leave-the-battlefield path has already
+ *   stripped `ControllerComponent` by the time triggers are detected (CR 603.6e last-known
+ *   information).
  */
 @Serializable
 @SerialName("PermanentUnattachedEvent")
@@ -1038,6 +1053,7 @@ data class PermanentUnattachedEvent(
     val attachmentId: EntityId,
     val attachmentName: String,
     val attachedToId: EntityId,
+    val controllerId: EntityId,
 ) : GameEvent
 
 /**

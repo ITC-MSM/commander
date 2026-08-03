@@ -1655,6 +1655,39 @@ object Triggers {
         binding = binding
     )
 
+    /**
+     * Whenever an Aura/Equipment becomes **unattached** from a permanent (CR 701.3d) — the mirror
+     * of [becomesAttached].
+     *
+     * Fires on every unattach path: an explicit unattach effect, re-equipping to a different
+     * permanent, the attachment leaving the battlefield, the host leaving the battlefield, and the
+     * CR 704.5n state-based unattach when the pairing turns illegal.
+     *
+     * SELF binding (default) = "whenever this Equipment becomes unattached from a permanent"
+     * (Stitcher's Graft). The triggering entity is the attachment; the permanent it came off is
+     * reachable via [com.wingedsheep.sdk.scripting.targets.EffectTarget.AttachedToTriggeringPermanent]
+     * ("that permanent"). Both the attachment and its former host may already be gone by resolution —
+     * a payoff acting on either simply does nothing then.
+     *
+     * @param attachmentFilter which attachment qualifies (e.g. Aura, Equipment).
+     * @param attachmentController who must control the attachment.
+     * @param unattachedFromFilter what it must have come off (matched against the former host, with
+     *   the attachment as the comparison reference for relative predicates).
+     */
+    fun becomesUnattached(
+        attachmentFilter: GameObjectFilter = GameObjectFilter.Any,
+        attachmentController: Player = Player.Any,
+        unattachedFromFilter: GameObjectFilter = GameObjectFilter.Any,
+        binding: TriggerBinding = TriggerBinding.SELF,
+    ): TriggerSpec = TriggerSpec(
+        event = BecomesUnattachedEvent(
+            attachmentFilter = attachmentFilter,
+            attachmentController = attachmentController,
+            unattachedFromFilter = unattachedFromFilter,
+        ),
+        binding = binding
+    )
+
     // =========================================================================
     // Gift Triggers
     // =========================================================================
