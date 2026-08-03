@@ -143,16 +143,24 @@ Also enabled by the **discarded-this-turn tracking** half (now implemented) but 
   Then **draw a card for each card you've discarded this turn**" — now expressible via
   `DynamicAmounts.cardsDiscardedThisTurn()`; a follow-up card.
 
-## Riot (keyword — enters with your choice of a +1/+1 counter or haste)
+## Riot (keyword — enters with your choice of a +1/+1 counter or haste) — ✅ IMPLEMENTED
 
 > Riot *(This creature enters with your choice of a +1/+1 counter or haste.)*
 
-Not in the `Keyword` enum and no ETB "choose counter or haste" primitive that also grants a
-**projectable** Riot keyword. Spider-Punk further needs to **grant riot to other Spiders**,
-which requires Riot to exist as a grantable keyword. `add-feature` scope.
+**Done.** `Keyword.RIOT` is display-only; the behavior is the `EntersWithRiot` replacement, added by
+the `riot()` / `riotFor(filter)` DSL helpers. Each instance is answered separately (CR 702.136b) and
+applied immediately by the engine's `RiotEntry` walk, so a creature granted riot twice makes two
+choices and can end up with a counter *and* haste. "Other Spiders you control have riot" is an
+`otherOnly` instance stamped into the granter's battlefield replacement-source component and
+consulted as each matching permanent enters — the same global rail the enters-with counters/keywords
+siblings use. Wired on the cast path and on the direct-entry paths (reanimation, tutored
+put-onto-battlefield, token minting), and a creature that can't have +1/+1 counters put on it is
+given haste with no decision.
 
-Blocked cards:
-- **Spider-Punk** [92] — `{1}{R}` Riot; "Other Spiders you control have riot"; also "Spells and abilities can't be countered" + "Damage can't be prevented" (verify those two independently)
+Cards:
+- **Spider-Punk** [92] — `{1}{R}` ✅ riot, "Other Spiders you control have riot",
+  "Spells and abilities can't be countered" (`GrantCantBeCountered(includesAbilities = true)`),
+  "Damage can't be prevented" (the existing global `DamageCantBePrevented`)
 
 ## "Modified" state on a leaves-the-battlefield (last-known-information) trigger — ✅ IMPLEMENTED
 

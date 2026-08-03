@@ -58,6 +58,7 @@ import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.permanent.types.returnDfcFace
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.sdk.scripting.EntersTapped
+import com.wingedsheep.engine.handlers.effects.RiotEntry
 import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.ChoiceType
@@ -1137,14 +1138,43 @@ class StackResolver(
             }
         }
 
+        // Riot (CR 702.136) — one choice per instance (CR 702.136b), counting the card's own
+        // printed riot plus every instance granted from the battlefield ("Other Spiders you control
+        // have riot"). Answered while the spell is still on the stack, before the permanent exists,
+        // so the counter is already on it when enters-the-battlefield triggers see it; the resumer
+        // finishes the entry once the last instance is answered.
+        var entryState = state
+        val riotEvents = mutableListOf<GameEvent>()
+        if (cardDef != null && !spellComponent.castFaceDown) {
+            val riotInstances = RiotEntry.instanceCount(entryState, spellId, cardDef)
+            if (riotInstances > 0) {
+                val riot = RiotEntry.begin(
+                    entryState, spellId, controllerId, riotInstances
+                ) { decisionId, remaining ->
+                    RiotEntrySpellContinuation(
+                        decisionId = decisionId,
+                        spellId = spellId,
+                        controllerId = controllerId,
+                        ownerId = ownerId,
+                        remainingInstances = remaining,
+                    )
+                }
+                riot.decision?.let { return ExecutionResult.paused(riot.state, it, riot.events) }
+                // Resolved with no decision — the permanent can't have +1/+1 counters put on it, so
+                // riot's counter branch was never a legal choice and it just gained haste.
+                entryState = riot.state
+                riotEvents.addAll(riot.events)
+            }
+        }
+
         // Normal permanent entry
-        val (newState, enterEvents) = enterPermanentOnBattlefield(state, spellId, spellComponent, cardComponent, cardDef)
+        val (newState, enterEvents) = enterPermanentOnBattlefield(entryState, spellId, spellComponent, cardComponent, cardDef)
         val sagaEvents = if (cardDef != null && !spellComponent.castFaceDown && cardDef.isSaga) {
             listOf(CountersAddedEvent(spellId, "LORE", 1, cardDef.name))
         } else {
             emptyList()
         }
-        return ExecutionResult.success(newState, enterEvents + sagaEvents)
+        return ExecutionResult.success(newState, riotEvents + enterEvents + sagaEvents)
     }
 
     /**
@@ -2974,6 +3004,12 @@ class StackResolver(
         val container = state.getEntity(abilityId)
             ?: return ExecutionResult.error(state, "Ability not found: $abilityId")
 
+        // "Spells and abilities can't be countered" (Spider-Punk) — the ability half of
+        // GrantCantBeCountered. Nothing happens; the ability stays on the stack and resolves.
+        if (abilitiesCantBeCountered(state)) {
+            return ExecutionResult.success(state)
+        }
+
         val description = container.get<TriggeredAbilityOnStackComponent>()?.description
             ?: container.get<ActivatedAbilityOnStackComponent>()?.let { "${it.sourceName}'s ability" }
             ?: "Unknown ability"
@@ -3336,6 +3372,28 @@ class StackResolver(
      * (e.g., Hexing Squelcher's "Spells you control can't be countered" should only protect
      * its own controller's spells, not every player's spells).
      */
+    /**
+     * Does any permanent on the battlefield make *abilities* uncounterable — a
+     * [GrantCantBeCountered] with [GrantCantBeCountered.includesAbilities] set (Spider-Punk:
+     * "Spells and abilities can't be countered")?
+     *
+     * Unlike the spell half there is no filter to evaluate: an activated or triggered ability on
+     * the stack isn't an object a [com.wingedsheep.sdk.scripting.GameObjectFilter] describes, and
+     * every printed card with this clause protects every ability regardless of who controls it.
+     */
+    private fun abilitiesCantBeCountered(state: GameState): Boolean {
+        for (playerId in state.turnOrder) {
+            for (entityId in state.getBattlefield(playerId)) {
+                val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+                val def = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+                if (def.staticAbilities.any { it is GrantCantBeCountered && it.includesAbilities }) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
     private fun isGrantedCantBeCountered(state: GameState, spellId: EntityId): Boolean {
         for (playerId in state.turnOrder) {
             for (entityId in state.getBattlefield(playerId)) {

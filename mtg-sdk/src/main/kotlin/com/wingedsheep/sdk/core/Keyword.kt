@@ -82,6 +82,29 @@ enum class Keyword(val displayName: String) {
     AMPLIFY("Amplify"),
 
     /**
+     * Riot (CR 702.136, Ravnica Allegiance). A static ability that functions as the permanent
+     * enters: "You may have this permanent enter with an additional +1/+1 counter on it. If you
+     * don't, it gains haste" (CR 702.136a). Printed reminder text frames the same choice as
+     * "This creature enters with your choice of a +1/+1 counter or haste."
+     *
+     * Display-only on the keyword; the behavior is composed by the `riot()` DSL helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder] out of three existing enters-with replacements — an
+     * [com.wingedsheep.sdk.scripting.EntersWithChoice]`(ChoiceType.MODE)` for the choice itself
+     * plus an [com.wingedsheep.sdk.scripting.EntersWithCounters] and an
+     * [com.wingedsheep.sdk.scripting.EntersWithKeywords] each gated on the chosen mode by
+     * [com.wingedsheep.sdk.scripting.conditions.SourceChosenModeIs]. `riotFor(filter)` builds the
+     * same trio scoped to *other* permanents ("Other Spiders you control have riot" — Spider-Punk),
+     * riding the `otherOnly` + `appliesTo` global-replacement rail the enters-with family already
+     * uses.
+     *
+     * The choice is a replacement effect, not a trigger: it can't be responded to, and the haste
+     * branch grants haste indefinitely (it doesn't wear off at end of turn). If the permanent can't
+     * have +1/+1 counters put on it, choosing the counter branch simply places nothing — the
+     * printed card's second option is still the player's to pick.
+     */
+    RIOT("Riot"),
+
+    /**
      * Devour (CR 702.82). "Devour N" — "As this creature enters, you may sacrifice
      * any number of creatures. This creature enters with N times that many +1/+1
      * counters on it." Variants substitute the sacrificed permanent type: e.g.

@@ -163,6 +163,27 @@ class MoveToZoneEffectExecutor(
             state = resultState
         )
 
+        // Riot (CR 702.136) for a permanent put onto the battlefield without being cast —
+        // reanimation, "put target creature card onto the battlefield", and friends. The choice is
+        // made now, and this permanent's entry ZoneChangeEvent is withheld until it resolves so
+        // enters-the-battlefield triggers see the riot counter already on it (the same contract the
+        // as-enters choice paths use).
+        val riotEntities = com.wingedsheep.engine.handlers.effects.RiotEntry
+            .entriesOwingRiot(resultState, listOf(targetId), cardRegistry)
+        if (riotEntities.isNotEmpty()) {
+            val withheldEntry = transitionResult.events.filter {
+                it is com.wingedsheep.engine.core.ZoneChangeEvent && it.entityId == targetId &&
+                    it.toZone == Zone.BATTLEFIELD
+            }
+            val before = transitionResult.events - withheldEntry.toSet()
+            val riot = com.wingedsheep.engine.handlers.effects.RiotEntry.walkDirectEntries(
+                resultState, riotEntities, cardRegistry, currentZone.zoneType
+            )
+            val events = before + extraEvents + revealEvents + riot.events
+            riot.decision?.let { return EffectResult.paused(riot.state, it, events) }
+            return EffectResult.success(riot.state, events)
+        }
+
         return EffectResult.success(resultState, transitionResult.events + extraEvents + revealEvents)
     }
 

@@ -356,7 +356,7 @@ object EntersWithReplacements {
      * source". (Conditions are the opposite and keep `sourceId = enteringEntityId`, because an
      * "enters with counters" condition describes the entering permanent — see the call sites.)
      */
-    private fun matchesEnterFilter(
+    internal fun matchesEnterFilter(
         event: com.wingedsheep.sdk.scripting.EventPattern,
         enteringEntityId: EntityId,
         replacementSourceId: EntityId,

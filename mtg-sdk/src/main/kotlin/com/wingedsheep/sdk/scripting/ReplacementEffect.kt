@@ -590,6 +590,48 @@ data class EntersWithKeywords(
     }
 }
 
+/**
+ * Riot (CR 702.136). "You may have this permanent enter with an additional +1/+1 counter on it. If
+ * you don't, it gains haste" (CR 702.136a) — printed reminder text frames the same thing as "enters
+ * with your choice of a +1/+1 counter or haste".
+ *
+ * Modelled as its own enters-with replacement rather than an [EntersWithChoice] plus mode-gated
+ * riders because **each instance works separately** (CR 702.136b): a creature with two instances
+ * makes two independent choices and can end up with a counter *and* haste. A recorded-then-read-back
+ * choice can't express that — [ChoiceSlot.MODE] holds one value — so riot's choice is applied the
+ * moment it is answered, and the engine walks one decision per instance.
+ *
+ * Instances come from two places, mirroring the rest of the family:
+ *  - the entering card's own definition ([selfOnly], set by the `riot()` DSL helper), and
+ *  - [otherOnly] instances stamped on *other* battlefield permanents, matched against the entering
+ *    object through [appliesTo] ("Other Spiders you control have riot" — Spider-Punk's `riotFor`).
+ *
+ * If the entering permanent can't have +1/+1 counters put on it, the counter branch isn't a legal
+ * choice and it simply gains haste with no decision (CR 702.136a — you can't choose an impossible
+ * option; the printed riot rulings say so explicitly).
+ */
+@SerialName("EntersWithRiot")
+@Serializable
+data class EntersWithRiot(
+    val selfOnly: Boolean = false,
+    val otherOnly: Boolean = false,
+    override val appliesTo: EventPattern = EventPattern.ZoneChangeEvent(
+        filter = GameObjectFilter.Any,
+        to = Zone.BATTLEFIELD
+    )
+) : ReplacementEffect {
+    override val description: String = if (otherOnly) {
+        "Other ${appliesTo.description} have riot"
+    } else {
+        "Riot (This creature enters with your choice of a +1/+1 counter or haste.)"
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+    }
+}
+
 // =============================================================================
 // Damage Replacement Effects
 // =============================================================================

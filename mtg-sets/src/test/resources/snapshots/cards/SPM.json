@@ -10273,6 +10273,74 @@
     "colorIdentityOverride": []
 }
 
+// Spider-Punk
+{
+    "name": "Spider-Punk",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "Riot (This creature enters with your choice of a +1/+1 counter or haste.)\nOther Spiders you control have riot.\nSpells and abilities can't be countered.\nDamage can't be prevented.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "RIOT"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantCantBeCountered",
+                "filter": {},
+                "includesAbilities": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithRiot",
+                "selfOnly": true
+            },
+            {
+                "type": "EntersWithRiot",
+                "otherOnly": true,
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Spider ctrl:you",
+                    "to": "Battlefield"
+                }
+            },
+            "DamageCantBePrevented"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "RARE",
+        "artist": "Forrest Imel",
+        "flavorText": "\"Disrespect authority. Smash the system.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0bd41879-fcd4-4211-9b98-47e7cdba5399.jpg?1783905333",
+        "rulings": [
+            {
+                "date": "2025-09-19",
+                "text": "While Spider-Punk is on the battlefield, spells and abilities can still be the target of another spell or ability that would normally counter them, but they won't be countered as that spell or ability resolves."
+            },
+            {
+                "date": "2025-09-19",
+                "text": "Riot is a replacement effect. Players can't respond to your choice of a +1/+1 counter or haste."
+            },
+            {
+                "date": "2025-09-19",
+                "text": "If you choose for a creature with riot to gain haste, it gains haste indefinitely. It doesn't lose it as the turn ends or if another player gains control of it."
+            },
+            {
+                "date": "2025-09-19",
+                "text": "If a creature entering the battlefield has riot but can't have +1/+1 counters put on it, it gains haste."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Spider-Rex, Daring Dino
 {
     "name": "Spider-Rex, Daring Dino",
