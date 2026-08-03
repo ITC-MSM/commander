@@ -401,10 +401,12 @@ class CardSerializationRoundTripTest : DescribeSpec({
                     Mode.noTarget(DrawCardsEffect(DynamicAmount.Fixed(1), EffectTarget.Controller), "Draw a card"),
                     Mode.noTarget(GainLifeEffect(DynamicAmount.Fixed(2), EffectTarget.Controller), "Gain 2 life")
                 ),
-                chooseCount = 2
+                chooseCount = 2,
+                additionalManaCostPerExtraMode = "{3}"
             )
             directModal.minChooseCount shouldBe 2
             directModal.allowRepeat shouldBe false
+            directModal.additionalManaCostPerExtraMode shouldBe "{3}"
 
             // Produce a payload written by an older schema by round-tripping through
             // the current serializer and stripping the new fields.
@@ -415,6 +417,7 @@ class CardSerializationRoundTripTest : DescribeSpec({
             val legacyJson = fullJson
                 .replace(Regex(",\\s*\"minChooseCount\"\\s*:\\s*\\d+"), "")
                 .replace(Regex(",\\s*\"allowRepeat\"\\s*:\\s*(true|false)"), "")
+                .replace(Regex(",\\s*\"additionalManaCostPerExtraMode\"\\s*:\\s*\"[^\"]+\""), "")
             legacyJson shouldContain "\"chooseCount\""
             (legacyJson.contains("minChooseCount") || legacyJson.contains("allowRepeat")) shouldBe false
 
@@ -425,6 +428,7 @@ class CardSerializationRoundTripTest : DescribeSpec({
             parsed.chooseCount shouldBe 2
             parsed.minChooseCount shouldBe 2
             parsed.allowRepeat shouldBe false
+            parsed.additionalManaCostPerExtraMode shouldBe null
         }
 
         it("should round-trip a card built with the vividEtb DSL helper") {

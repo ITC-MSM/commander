@@ -951,6 +951,8 @@ export interface ModalLegalEnumerationInfo {
   readonly minChooseCount: number
   /** When true, the same mode may be chosen more than once (Escalate-style repeat). */
   readonly allowRepeat: boolean
+  /** Additional mana paid for every selected mode beyond the first (Escalate). */
+  readonly additionalManaCostPerExtraMode?: string
   /** One entry per declared mode, in printed order. */
   readonly modes: readonly ModalEnumerationModeInfo[]
   /** Mode indices that cannot currently be chosen (no legal target / unaffordable). */

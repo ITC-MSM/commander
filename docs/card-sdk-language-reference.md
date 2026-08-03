@@ -7758,6 +7758,22 @@ mode-selection pause; choose-1 modal spells remain client-local `CastSpellMode` 
 change is needed to author a Spree card — it is a plain `ModalEffect` with per-mode
 `additionalManaCost` (see Trash the Town).
 
+**Escalate (CR 702.120a).** Set `additionalManaCostPerExtraMode` on `ModalEffect`, or pass it to the `modal(...)`
+builder, for “Pay this cost for each mode chosen beyond the first.” Unlike Spree's per-mode
+`additionalManaCost`, no printed mode carries the cost: selecting one mode adds nothing, selecting two
+adds the cost once, and selecting three adds it twice. The server includes the field in the modal legal
+action so the existing single-panel selector previews the combined additional and total mana costs.
+
+```kotlin
+spell {
+    modal(chooseCount = 3, minChooseCount = 1, additionalManaCostPerExtraMode = "{1}") {
+        mode("First mode") { effect = firstEffect }
+        mode("Second mode") { effect = secondEffect }
+        mode("Third mode") { effect = thirdEffect }
+    }
+}
+```
+
 **Tiered (CR 702.183) — `spell { tiered { } }`.** *"Tiered (Choose one additional cost.)"* is a
 choose-**one** modal spell where each tier carries its own additional mana cost, paid as you cast
 the spell (702.183a: *"Choose one. As an additional cost to cast this spell, pay the cost associated

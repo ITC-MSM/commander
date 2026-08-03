@@ -1118,6 +1118,7 @@ class CastSpellEnumerator : ActionEnumerator {
                                 chooseCount = variantEffect.chooseCount,
                                 minChooseCount = variantEffect.minChooseCount,
                                 allowRepeat = variantEffect.allowRepeat,
+                                additionalManaCostPerExtraMode = variantEffect.additionalManaCostPerExtraMode,
                                 modes = enumerationModes,
                                 unavailableIndices = unavailableIndices
                             )

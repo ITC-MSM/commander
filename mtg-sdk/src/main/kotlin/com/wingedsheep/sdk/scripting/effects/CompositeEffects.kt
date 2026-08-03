@@ -127,6 +127,8 @@ data class Mode(
  *           (i.e. "choose exactly N"). Set lower for "choose one or both" / "choose one or more" (rules 700.2).
  * @property allowRepeat If true, the same mode index may be chosen more than once
  *           (rules 700.2d — Escalate/Spree-style).
+ * @property additionalManaCostPerExtraMode Additional cost paid for each chosen mode beyond the
+ *           first. Models escalate without assigning a cost to any particular printed mode.
  */
 @SerialName("Modal")
 @Serializable
@@ -135,6 +137,7 @@ data class ModalEffect(
     val chooseCount: Int = 1,
     val minChooseCount: Int = chooseCount,
     val allowRepeat: Boolean = false,
+    val additionalManaCostPerExtraMode: String? = null,
     /**
      * If true, when this spell's `AdditionalCost.BlightOrPay` cost was paid via the
      * blight path, the effective number of modes the player must choose becomes

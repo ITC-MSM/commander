@@ -193,6 +193,7 @@ data class ModalLegalEnumeration(
     val chooseCount: Int,
     val minChooseCount: Int,
     val allowRepeat: Boolean,
+    val additionalManaCostPerExtraMode: String? = null,
     val modes: List<ModalEnumerationMode>,
     val unavailableIndices: List<Int>
 )
