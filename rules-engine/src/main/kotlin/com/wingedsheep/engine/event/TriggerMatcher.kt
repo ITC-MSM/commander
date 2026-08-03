@@ -1679,11 +1679,20 @@ class TriggerMatcher(
                 ?.get<CardComponent>()?.hasAdventure == true
             hasAdventure && spellComponent?.faceIndex != null
         }
+        // "a spell they don't own" — owner vs. the player who *cast* it, not vs. the trigger's
+        // controller. The two coincide for the "whenever you cast a spell you don't own" wording
+        // (Nita, Vaan), where `matchesPlayer(Player.You, …)` has already pinned casterId ==
+        // controllerId; they diverge for "whenever *a player* casts a spell they don't own"
+        // (Gonti, Night Minister), which observes every seat.
         SpellCastPredicate.NotOwnedByController -> {
-            val ownerId = state.getEntity(event.spellEntityId)
-                ?.get<OwnerComponent>()
-                ?.playerId
-            ownerId != null && ownerId != controllerId
+            // Ownership lives on OwnerComponent for cards minted into a zone, but a card that has
+            // only ever been library/exile content carries it on CardComponent — read both, or a
+            // spell cast out of an opponent's exile reads as owner-less and never triggers.
+            val spellEntity = state.getEntity(event.spellEntityId)
+            val ownerId = spellEntity
+                ?.get<OwnerComponent>()?.playerId
+                ?: spellEntity?.get<CardComponent>()?.ownerId
+            ownerId != null && ownerId != event.casterId
         }
     }
 

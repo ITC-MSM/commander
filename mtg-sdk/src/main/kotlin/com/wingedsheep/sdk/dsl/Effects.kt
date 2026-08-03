@@ -55,6 +55,7 @@ import com.wingedsheep.sdk.scripting.ProtectionScope
 import com.wingedsheep.sdk.scripting.effects.ForEachColorOfEffect
 import com.wingedsheep.sdk.scripting.effects.GrantCantBeBlockedByChosenColorEffect
 import com.wingedsheep.sdk.scripting.effects.GrantCantBeBlockedExceptByEffect
+import com.wingedsheep.sdk.scripting.effects.GrantEmbalmEffect
 import com.wingedsheep.sdk.scripting.effects.GrantFlashbackEffect
 import com.wingedsheep.sdk.scripting.effects.GrantHarmonizeEffect
 import com.wingedsheep.sdk.scripting.effects.CantAttackGroupEffect
@@ -2819,6 +2820,20 @@ object Effects {
         cost: ManaCost? = null,
         duration: Duration = Duration.EndOfTurn
     ): Effect = GrantFlashbackEffect(target, cost, duration)
+
+    /**
+     * Grant Embalm (CR 702.128) to a target creature card in a graveyard.
+     * "Target creature card in your graveyard gains embalm until end of turn. The embalm cost is
+     * equal to its mana cost." — Cursecloth Wrappings.
+     *
+     * [cost] defaults to `null`, meaning the embalm cost equals the card's own mana cost; pass a
+     * [ManaCost] to grant a fixed embalm cost instead.
+     */
+    fun GrantEmbalm(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        cost: ManaCost? = null,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = GrantEmbalmEffect(target, cost, duration)
 
     /**
      * Grant "hexproof from the chosen color" to a target. Must run inside a

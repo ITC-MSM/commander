@@ -3832,6 +3832,77 @@
     ]
 }
 
+// Cursecloth Wrappings
+{
+    "name": "Cursecloth Wrappings",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Artifact",
+    "oracleText": "Zombies you control get +1/+1.\n{T}: Target creature card in your graveyard gains embalm until end of turn. The embalm cost is equal to its mana cost. (Exile that card and pay its embalm cost: Create a token that's a copy of it, except it's a white Zombie in addition to its other types and has no mana cost. Embalm only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "GrantEmbalm",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card in your graveyard"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target creature card in your graveyard"
+                    }
+                ],
+                "descriptionOverride": "{T}: Target creature card in your graveyard gains embalm until end of turn. The embalm cost is equal to its mana cost."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Zombie ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "81",
+        "rarity": "RARE",
+        "artist": "Dominik Mayer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d5803b32-4a81-46c2-9b10-3198a709611d.jpg?1783907896",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "Except for the listed exceptions, the token copies exactly what was printed on the original card and nothing else. It doesn't copy any information about the object the card was before it was put into your graveyard."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "The token is a Zombie in addition to its other types and is white instead of its other colors. It has no mana cost, and thus its mana value is 0. These are copiable values of the token that other effects may copy."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If the card copied by the token had any \"when [this permanent] enters\" abilities, then the token also has those abilities and they'll trigger when it enters. Similarly, any \"as [this permanent] enters\" or \"[this permanent] enters with\" abilities that the token has copied will also work."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "Once you've activated an embalm ability, the card is immediately exiled. Opponents can't try to stop the ability by exiling the card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Daretti, Rocketeer Engineer
 {
     "name": "Daretti, Rocketeer Engineer",
@@ -6888,6 +6959,97 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Gonti, Night Minister
+{
+    "name": "Gonti, Night Minister",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Legendary Creature — Aetherborn Rogue",
+    "oracleText": "Whenever a player casts a spell they don't own, that player creates a Treasure token.\nWhenever a creature deals combat damage to one of your opponents, its controller looks at the top card of that opponent's library and exiles it face down. They may play that card for as long as it remains exiled. Mana of any type can be spent to cast a spell this way.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "Each",
+                    "requires": [
+                        "SpellNotOwnedByController"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure",
+                    "controller": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever a player casts a spell they don't own, that player creates a Treasure token."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "RecipientOpponent",
+                    "sourceFilter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": "TriggeringPlayer"
+                            },
+                            "storeAs": "stolenCard",
+                            "lookAudience": "None"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "stolenCard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": "TriggeringPlayer"
+                            },
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "stolenCard",
+                            "expiry": "Permanent",
+                            "withAnyManaType": true,
+                            "recipient": "ControllerOfTriggeringEntity"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a creature deals combat damage to one of your opponents, its controller looks at the top card of that opponent's library and exiles it face down. They may play that card for as long as it remains exiled. Mana of any type can be spent to cast a spell this way."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "rarity": "RARE",
+        "artist": "Scott M. Fischer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d79ca40a-e5c0-4956-8df0-ecbd2a25656f.jpg?1783907895"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

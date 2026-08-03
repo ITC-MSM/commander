@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.effects.GrantPlayWithCostIncreaseEffect
 import com.wingedsheep.sdk.scripting.effects.GrantPlayWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.MakePlottedEffect
 import com.wingedsheep.sdk.scripting.effects.MayPlayExpiry
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import kotlin.reflect.KClass
 
 /**
@@ -87,13 +88,21 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
         // ownerControls (Suspend Aggression): each exiled card's *owner* — not the effect's
         // controller — may play it, and any turn-keyed expiry ("until the end of their next turn")
         // is measured against that owner's own turns. Group cards by owner and grant one permission
-        // per owner, keyed to that owner; otherwise grant a single permission to the controller.
+        // per owner, keyed to that owner; otherwise grant a single permission to the recipient —
+        // the controller unless the effect names another player (Gonti, Night Minister grants to
+        // the damaging creature's controller). An unresolvable recipient falls back to the
+        // controller rather than dropping the grant silently.
+        val recipientId = if (effect.recipient == EffectTarget.Controller) {
+            controllerId
+        } else {
+            context.resolvePlayerTarget(effect.recipient, newState) ?: controllerId
+        }
         val groups: Map<EntityId, List<EntityId>> = if (effect.ownerControls) {
             collection.groupBy { cardId ->
                 newState.getEntity(cardId)?.get<CardComponent>()?.ownerId ?: controllerId
             }
         } else {
-            mapOf(controllerId to collection)
+            mapOf(recipientId to collection)
         }
 
         for ((grantee, cardIds) in groups) {

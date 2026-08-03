@@ -361,6 +361,25 @@ enum class Keyword(val displayName: String) {
     RENEW("Renew"),
 
     /**
+     * Embalm [cost] (CR 702.128, Amonkhet).
+     * "[Cost], Exile this card from your graveyard: Create a token that's a copy of it, except
+     * it's a white Zombie with no mana cost. Activate only as a sorcery."
+     *
+     * Like [RENEW], a graveyard-activated ability composed of existing primitives — the mana cost
+     * plus [com.wingedsheep.sdk.scripting.AbilityCost.ExileSelf], `activateFromZone = GRAVEYARD`,
+     * `timing = SorcerySpeed` — whose effect is a
+     * [com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect] of the card itself with
+     * the three printed exceptions (white, +Zombie, no mana cost). Wired in one call via the
+     * `embalm(cost)` helper on [com.wingedsheep.sdk.dsl.CardBuilder]; the keyword itself is
+     * display-only.
+     *
+     * The same ability is what [com.wingedsheep.sdk.scripting.effects.GrantEmbalmEffect] hands to a
+     * graveyard card at runtime ("target creature card in your graveyard gains embalm until end of
+     * turn" — Cursecloth Wrappings), so printed and granted embalm are the same object.
+     */
+    EMBALM("Embalm"),
+
+    /**
      * Ascend (Ixalan, CR 702.131). On a permanent spell, means "When this permanent
      * enters, if you control ten or more permanents, you get the city's blessing
      * for the rest of the game." Engine wires the trigger explicitly per card; the

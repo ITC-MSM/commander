@@ -268,6 +268,14 @@ object TargetResolutionUtils {
             return controllerOf(state, targetEntity)
         }
 
+        // "Its controller" as a *player* reference — the controller of the entity that fired the
+        // trigger (Gonti, Night Minister: the creature that dealt the combat damage). The entity
+        // resolver already walks projected controller → base controller → ability source →
+        // last-known controller → owner, so this delegates rather than duplicating that ladder.
+        if (effectTarget is EffectTarget.ControllerOfTriggeringEntity) {
+            return resolveTarget(effectTarget, context, state)
+        }
+
         // Handle ControllerOfPipelineTarget: look up controller of the pipeline-stored entity
         if (effectTarget is EffectTarget.ControllerOfPipelineTarget) {
             val targetEntityId = context.pipeline.storedCollections[effectTarget.collectionName]?.getOrNull(effectTarget.index) ?: return null
