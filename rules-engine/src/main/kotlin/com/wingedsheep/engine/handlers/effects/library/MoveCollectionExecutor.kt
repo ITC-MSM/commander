@@ -612,9 +612,6 @@ class MoveCollectionExecutor(
         }
 
         val movedIds = mutableListOf<EntityId>()
-        // Where each card came from, so a withheld entry event (riot) can be re-synthesized with
-        // the right `fromZone` after the choice resolves.
-        val movedFromZones = mutableMapOf<EntityId, Zone?>()
         // Track every library that received at least one card so per-card owner routing
         // (e.g., a permanent owned by another player going to its owner's library) shuffles
         // and reveal-marks every affected library, not just the destination's nominal owner.
@@ -706,32 +703,9 @@ class MoveCollectionExecutor(
             }
 
             movedIds.add(cardId)
-            movedFromZones[cardId] = fromZone
             if (destZone == Zone.LIBRARY) {
                 librariesReceivingCards.add(actualDestPlayerId)
             }
-        }
-
-        // Riot (CR 702.136) for permanents this collection put onto the battlefield without being
-        // cast. Withhold their entry ZoneChangeEvents and let the riot walk release each one after
-        // its counter has landed, so enters-the-battlefield triggers see the finished permanent —
-        // the same shape as the "choose what this Aura enchants" pass below.
-        val riotEntities = if (destZone == Zone.BATTLEFIELD) {
-            com.wingedsheep.engine.handlers.effects.RiotEntry
-                .entriesOwingRiot(newState, movedIds.toList(), cardRegistry)
-        } else emptyList()
-        if (riotEntities.isNotEmpty()) {
-            val withheld = events.filter {
-                it is ZoneChangeEvent && it.entityId in riotEntities && it.toZone == Zone.BATTLEFIELD
-            }
-            events.removeAll(withheld.toSet())
-            val riot = com.wingedsheep.engine.handlers.effects.RiotEntry.walkDirectEntries(
-                newState, riotEntities, cardRegistry,
-                riotEntities.map { movedFromZones[it] }.distinct().singleOrNull()
-            )
-            newState = riot.state
-            events.addAll(riot.events)
-            riot.decision?.let { return EffectResult.paused(newState, it, events) }
         }
 
         // Handle shuffled placement — shuffle every affected library once after all cards are placed.

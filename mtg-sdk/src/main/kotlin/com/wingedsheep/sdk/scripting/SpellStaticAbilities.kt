@@ -48,25 +48,13 @@ data class GrantFlashToSpellType(
  * attempt fails.
  *
  * @property filter The filter that spells must match to be uncounterable
- * @property includesAbilities When true, activated and triggered abilities on the stack can't be
- *   countered either — "Spells and abilities can't be countered" (Spider-Punk). Abilities aren't
- *   objects a [GameObjectFilter] can meaningfully describe, so the protection they get is
- *   unconditional: any card setting this flag protects every ability on the stack, whoever
- *   controls it. Countering is still the only thing prevented — an ability can be *removed* from
- *   the stack by an effect that doesn't counter it, and "counter unless you pay" (ward) simply
- *   does nothing.
  */
 @SerialName("GrantCantBeCountered")
 @Serializable
 data class GrantCantBeCountered(
-    val filter: GameObjectFilter,
-    val includesAbilities: Boolean = false
+    val filter: GameObjectFilter
 ) : StaticAbility {
-    override val description: String = if (includesAbilities) {
-        "${filter.description} spells and abilities can't be countered"
-    } else {
-        "${filter.description} spells can't be countered"
-    }
+    override val description: String = "${filter.description} spells can't be countered"
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
         return if (newFilter !== filter) copy(filter = newFilter) else this

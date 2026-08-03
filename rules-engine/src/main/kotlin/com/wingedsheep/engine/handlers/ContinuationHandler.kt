@@ -46,7 +46,6 @@ class ContinuationHandler(
         registerModule(LibraryAndZoneContinuationResumer(services))
         registerModule(GuessContinuationResumer(services))
         registerModule(ModalAndCloneContinuationResumer(services))
-        registerModule(RiotContinuationResumer(services))
         registerModule(RoomDoorContinuationResumer(services))
         registerModule(CastModalContinuationResumer(services))
         registerModule(ModalTriggerContinuationResumer(services))

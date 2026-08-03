@@ -1069,11 +1069,6 @@ class StaticAbilityHandler(
             is com.wingedsheep.sdk.scripting.EntersWithCounters,
             is com.wingedsheep.sdk.scripting.EntersWithDynamicCounters,
             is com.wingedsheep.sdk.scripting.EntersWithKeywords,
-            // Riot: an `otherOnly` instance ("Other Spiders you control have riot" — Spider-Punk)
-            // has to be consulted from the battlefield as some *other* permanent enters, exactly
-            // like the counters/keywords siblings above. A `selfOnly` one is read off the entering
-            // card's own definition and is inert here.
-            is com.wingedsheep.sdk.scripting.EntersWithRiot,
             // "Lands you control enter untapped" (The Wandering Minstrel): a static effect
             // consulted from the battlefield against OTHER permanents as they enter.
             is com.wingedsheep.sdk.scripting.EntersUntapped,

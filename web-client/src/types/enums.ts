@@ -182,7 +182,6 @@ export enum Keyword {
   BANDING = 'BANDING',
   // ETB modification
   AMPLIFY = 'AMPLIFY',
-  RIOT = 'RIOT',
   // Defense
   DEFENDER = 'DEFENDER',
   INDESTRUCTIBLE = 'INDESTRUCTIBLE',
@@ -275,7 +274,6 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.FLANKING]: 'Flanking',
   [Keyword.BANDING]: 'Banding',
   [Keyword.AMPLIFY]: 'Amplify',
-  [Keyword.RIOT]: 'Riot',
   [Keyword.DEFENDER]: 'Defender',
   [Keyword.INDESTRUCTIBLE]: 'Indestructible',
   [Keyword.HEXPROOF]: 'Hexproof',

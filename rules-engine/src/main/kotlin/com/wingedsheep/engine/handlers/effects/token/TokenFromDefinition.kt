@@ -9,7 +9,6 @@ import com.wingedsheep.engine.handlers.effects.BattlefieldEntry
 import com.wingedsheep.engine.handlers.effects.EnterTappedReplacements
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
-import com.wingedsheep.engine.handlers.effects.RiotEntry
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
@@ -157,17 +156,6 @@ object TokenFromDefinition {
         // helper here — the same one the standard moveToZone pipeline uses. No-op for non-Sagas.
         val (sagaState, sagaEvents) = ZoneMovementUtils.applySagaEntryIfNeeded(newState, tokenId)
         newState = sagaState
-
-        // Riot (CR 702.136) — a minted token can be granted riot by a battlefield permanent
-        // ("Other Spiders you control have riot"). The riot walk emits the token's entry event
-        // itself once the choice resolves, so enters-the-battlefield triggers see its counter.
-        val riotEntities = RiotEntry.entriesOwingRiot(newState, listOf(tokenId), cardRegistry)
-        if (riotEntities.isNotEmpty()) {
-            val riot = RiotEntry.walkDirectEntries(newState, riotEntities, cardRegistry, null)
-            val events = counterEvents + sagaEvents + riot.events
-            riot.decision?.let { return EffectResult.paused(riot.state, it, events) }
-            return EffectResult.success(riot.state, events)
-        }
 
         val event = ZoneChangeEvent(
             entityId = tokenId,
