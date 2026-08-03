@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.LastKnownPermanentComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
@@ -182,7 +183,7 @@ object TargetResolutionUtils {
             }
             .mapNotNull { id ->
                 val container = state.getEntity(id)
-                container?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()?.playerId
+                container?.get<OwnerComponent>()?.playerId
                     ?: container?.get<CardComponent>()?.ownerId
             }
             .distinct()

@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenOpponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent
 import com.wingedsheep.engine.state.components.player.ManaSpentOnSpellsThisTurnComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -1648,7 +1649,7 @@ class TriggerMatcher(
         }
         SpellCastPredicate.NotOwnedByController -> {
             val ownerId = state.getEntity(event.spellEntityId)
-                ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()
+                ?.get<OwnerComponent>()
                 ?.playerId
             ownerId != null && ownerId != controllerId
         }
