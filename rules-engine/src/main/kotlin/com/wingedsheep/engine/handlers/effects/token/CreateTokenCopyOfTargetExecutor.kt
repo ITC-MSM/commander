@@ -25,6 +25,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.sdk.core.CardType
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.EntityId
@@ -161,7 +162,10 @@ class CreateTokenCopyOfTargetExecutor(
                 baseKeywords = targetCard.baseKeywords + effect.addedKeywords,
                 // overrideColors replaces outright; addedColors unions onto the copied colors
                 // ("red ... in addition to its other colors"). overrideColors wins if both set.
-                colors = effect.overrideColors ?: (targetCard.colors + effect.addedColors)
+                colors = effect.overrideColors ?: (targetCard.colors + effect.addedColors),
+                // "…and it has no mana cost" (Embalm / Eternalize, CR 702.128a): the token's mana
+                // value is 0, and that is itself a copiable value.
+                manaCost = if (effect.noManaCost) ManaCost.ZERO else targetCard.manaCost
             )
 
             val components = mutableListOf<Component>(

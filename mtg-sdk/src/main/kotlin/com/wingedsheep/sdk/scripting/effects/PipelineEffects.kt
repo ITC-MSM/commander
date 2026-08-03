@@ -1321,8 +1321,24 @@ data class GrantMayPlayFromExileEffect(
      * "Exile target nonland permanent and the top card of your library. For each of those cards,
      * its owner may play it until the end of their next turn."). Defaults to controller-controls,
      * matching impulse-draw effects where you exile and play cards you own.
+     *
+     * Per-*card* routing, so it can't be expressed as a single [recipient]; when set it wins over
+     * [recipient].
      */
     val ownerControls: Boolean = false,
+    /**
+     * Which player gets the play permission, when it isn't the effect's controller. Resolved
+     * against the resolving context, so a trigger can hand the permission to a player named by
+     * the trigger rather than by the source — Gonti, Night Minister ("Whenever a creature deals
+     * combat damage to one of your opponents, **its controller** … may play that card") grants to
+     * [EffectTarget.ControllerOfTriggeringEntity], the controller of the damaging creature, which
+     * is a player Gonti's controller has no other handle on.
+     *
+     * Turn-keyed [expiry] windows still follow the *activating* player, matching the existing
+     * Memory Vessel rebinding: the grant's duration is a property of the effect, not of who may
+     * use it. For per-card owner routing use [ownerControls] instead — it takes precedence here.
+     */
+    val recipient: EffectTarget = EffectTarget.Controller,
     /**
      * When true, each granted card is stamped so that, if a spell cast from this permission would
      * be put into a graveyard (on resolution, when countered, or when it fizzles), it is exiled
@@ -1410,7 +1426,11 @@ data class GrantMayPlayFromExileEffect(
     val castColorRestriction: com.wingedsheep.sdk.core.Color? = null
 ) : Effect {
     override val description: String = buildString {
-        val who = if (ownerControls) "its owner" else "you"
+        val who = when {
+            ownerControls -> "its owner"
+            recipient != EffectTarget.Controller -> recipient.description
+            else -> "you"
+        }
         val verb = if (nonLandOnly) "cast" else "play"
         val what = when {
             castColorRestriction != null -> "${castColorRestriction.name.lowercase()} spells among them"

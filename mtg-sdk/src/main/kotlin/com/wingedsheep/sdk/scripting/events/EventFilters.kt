@@ -531,12 +531,18 @@ sealed interface SpellCastPredicate {
     }
 
     /**
-     * The just-cast spell is **owned by a player other than the trigger's controller** — the
-     * card's owner (CR 108.3, fixed at game start) differs from who cast it. This is true when
-     * you cast a spell that isn't yours: a card exiled from an opponent's graveyard/hand that you
+     * The just-cast spell is **owned by a player other than the one who cast it** — the card's
+     * owner (CR 108.3, fixed at game start) differs from its caster. This is true when a player
+     * casts a spell that isn't theirs: a card exiled from an opponent's graveyard/hand that they
      * may cast (Nita, Forum Conciliator; Gonti, Lord of Luxury), a spell stolen with control of
-     * the stack object, etc. A spell you cast from your own zones (owner == controller) does not
-     * satisfy it. Resolved against the spell entity's owner record vs. the trigger controller.
+     * the stack object, etc. A spell cast from the caster's own zones (owner == caster) does not
+     * satisfy it.
+     *
+     * Resolved against the spell entity's owner record vs. the *caster*, not the trigger's
+     * controller, so it reads the same under both wordings: "whenever **you** cast a spell you
+     * don't own" (where the [EventPattern.SpellCastEvent.player] gate has already pinned the
+     * caster to the trigger's controller) and "whenever **a player** casts a spell they don't
+     * own" (Gonti, Night Minister), which observes every seat.
      */
     @SerialName("SpellNotOwnedByController")
     @Serializable

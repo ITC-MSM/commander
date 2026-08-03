@@ -474,7 +474,14 @@ data class CreateTokenCopyOfTargetEffect(
      * token is put onto the battlefield under the named player's control. Mirrors
      * [CreateTokenEffect.controller].
      */
-    val controller: EffectTarget? = null
+    val controller: EffectTarget? = null,
+    /**
+     * When true the token copy has **no mana cost** (and so mana value 0) rather than the copied
+     * card's — the "except it … has no mana cost" copy clause on Embalm (CR 702.128a) and
+     * Eternalize. A copiable value in its own right per the Cursecloth Wrappings ruling, so
+     * anything that later copies the token also sees mana value 0.
+     */
+    val noManaCost: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         append("Create ${count.description} token copies of target permanent")

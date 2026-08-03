@@ -44,10 +44,19 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
             val container = state.getEntity(entityId) ?: continue
             val cardComponent = container.get<CardComponent>() ?: continue
 
-            val cardDef = context.cardRegistry.getCard(cardComponent.name) ?: continue
-            val zoneAbilities = cardDef.script.activatedAbilities.filter {
-                it.activateFromZone == zone
-            }
+            // Granted abilities count alongside printed ones: a card can be *given* a
+            // graveyard-activated ability at runtime (Cursecloth Wrappings granting embalm), and
+            // that grant is keyed to the card entity, not to its definition — so a card whose
+            // definition has no zone ability at all must still be considered.
+            val grantedZoneAbilities = state.grantedActivatedAbilities
+                .filter { it.entityId == entityId && it.ability.activateFromZone == zone }
+                .map { it.ability }
+            val printedZoneAbilities = context.cardRegistry.getCard(cardComponent.name)
+                ?.script?.activatedAbilities
+                ?.filter { it.activateFromZone == zone }
+                .orEmpty()
+            val zoneAbilities = printedZoneAbilities + grantedZoneAbilities
+            if (zoneAbilities.isEmpty()) continue
 
             for (ability in zoneAbilities) {
                 // "Activate only as a sorcery" — Renew and similar zone-activated abilities are
