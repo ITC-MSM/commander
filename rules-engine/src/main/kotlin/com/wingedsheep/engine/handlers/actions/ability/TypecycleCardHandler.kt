@@ -188,36 +188,15 @@ class TypecycleCardHandler(
             )
         )
 
-        // Discard the card (move from hand to graveyard)
-        val handZone = ZoneKey(action.playerId, Zone.HAND)
-        val graveyardZone = ZoneKey(ownerId, Zone.GRAVEYARD)
-        currentState = currentState.removeFromZone(handZone, action.cardId)
-        currentState = currentState.addToZone(graveyardZone, action.cardId)
-
-        // The card is discarded to pay the cycling cost (CR 702.29a: "Cycling [cost]" means
-        // "[Cost], Discard this card: Draw a card."), so "whenever you discard" payoffs see it —
-        // Magmakin Artillerist. Emitted alongside the zone change, before CardCycledEvent, so a
-        // card that triggers on both (CR 702.29d) sees them in the order they happened.
-        events.add(
-            CardsDiscardedEvent(
-                playerId = action.playerId,
-                cardIds = listOf(action.cardId),
-                cardNames = listOf(cardComponent.name),
-                asCyclingCost = true,
-            )
-        )
-        currentState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-            .trackDiscard(currentState, action.playerId, listOf(action.cardId))
-
-        events.add(
-            ZoneChangeEvent(
-                entityId = action.cardId,
-                entityName = cardComponent.name,
-                fromZone = Zone.HAND,
-                toZone = Zone.GRAVEYARD,
-                ownerId = ownerId
-            )
-        )
+        // Discard the card to pay the typecycling cost (CR 702.29a), through the shared discard
+        // path so "whenever you discard" payoffs see it (Magmakin Artillerist) *and* a
+        // card-intrinsic discard replacement applies (madness, CR 702.35a). Both events land
+        // before CardCycledEvent, so a card that triggers on both (CR 702.29d) sees them in the
+        // order they happened.
+        val discardResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+            .discardCards(currentState, action.playerId, listOf(action.cardId), asCyclingCost = true)
+        currentState = discardResult.state
+        events.addAll(discardResult.events)
 
         // Emit cycling event (typecycling triggers cycling abilities per MTG rules)
         events.add(CardCycledEvent(action.playerId, action.cardId, cardComponent.name))

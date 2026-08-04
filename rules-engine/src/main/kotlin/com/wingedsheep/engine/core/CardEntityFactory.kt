@@ -116,6 +116,12 @@ object CardEntityFactory {
             result = result.with(HasMorphAbilityComponent)
         }
 
+        // Madness (CR 702.35a). The static half functions while the card is in a player's *hand*,
+        // so the cost has to ride the card entity in every zone rather than be looked up from the
+        // battlefield — see [MadnessComponent].
+        (cardDef.keywordAbilities.firstOrNull { it is KeywordAbility.Madness } as? KeywordAbility.Madness)
+            ?.let { result = result.with(MadnessComponent(it.cost)) }
+
         val protections = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Protection>()
         val protectionColors = protections.flatMap { p ->
             when (val s = p.scope) {

@@ -1680,6 +1680,27 @@ data class CardPlottedEvent(
 ) : GameEvent
 
 // =============================================================================
+// Madness Events
+// =============================================================================
+
+/**
+ * A card with madness (CR 702.35) was discarded into exile instead of into its owner's graveyard.
+ *
+ * Fires from the discard path immediately after the redirected move, alongside the ordinary
+ * [CardsDiscardedEvent] and [ZoneChangeEvent] — the card really was discarded, so discard payoffs
+ * still see it. This event is what the trigger detector turns into the CR 702.35a triggered
+ * ability ("when this card is exiled this way, its owner may cast it for its madness cost"), which
+ * is why it carries the owner rather than whoever caused the discard.
+ */
+@Serializable
+@SerialName("CardExiledWithMadnessEvent")
+data class CardExiledWithMadnessEvent(
+    val ownerId: EntityId,
+    val cardId: EntityId,
+    val cardName: String
+) : GameEvent
+
+// =============================================================================
 // Gift Events
 // =============================================================================
 

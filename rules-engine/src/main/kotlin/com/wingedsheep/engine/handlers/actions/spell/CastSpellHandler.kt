@@ -2304,27 +2304,13 @@ class CastSpellHandler(
                         is CostAtom.Discard -> {
                             val discardedCards = action.additionalCostPayment.discardedCards
                             discardedAsCostCards.addAll(discardedCards)
-                            for (cardId in discardedCards) {
-                                val cardContainer = currentState.getEntity(cardId) ?: continue
-                                val card = cardContainer.get<CardComponent>() ?: continue
-                                val handZone = ZoneKey(action.playerId, Zone.HAND)
-                                val graveyardZone = ZoneKey(action.playerId, Zone.GRAVEYARD)
-
-                                currentState = currentState.removeFromZone(handZone, cardId)
-                                currentState = currentState.addToZone(graveyardZone, cardId)
-
-                                events.add(ZoneChangeEvent(
-                                    entityId = cardId,
-                                    entityName = card.name,
-                                    fromZone = Zone.HAND,
-                                    toZone = Zone.GRAVEYARD,
-                                    ownerId = action.playerId
-                                ))
-                            }
-                            val discardNames = discardedCards.map { currentState.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
-                            events.add(CardsDiscardedEvent(action.playerId, discardedCards, discardNames))
-                            currentState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                                .trackDiscard(currentState, action.playerId, discardedCards)
+                            // Through the shared discard path so a card-intrinsic discard
+                            // replacement (madness, CR 702.35a) applies to a card discarded as an
+                            // additional cost of casting a spell.
+                            val discardResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                                .discardCards(currentState, action.playerId, discardedCards)
+                            currentState = discardResult.state
+                            events.addAll(discardResult.events)
                         }
                         is CostAtom.ExileFrom -> {
                             val exiledCards = action.additionalCostPayment.exiledCards

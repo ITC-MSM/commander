@@ -968,7 +968,6 @@ class PayOrSufferExecutor(
             count: Int
         ): EffectResult {
             val handZone = ZoneKey(playerId, Zone.HAND)
-            val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
             val hand = state.getZone(handZone)
             val context = PredicateContext(controllerId = playerId)
 
@@ -984,30 +983,13 @@ class PayOrSufferExecutor(
             // Randomly select cards to discard
             val (shuffledValid, stateAfterShuffle) = state.nextRandom { shuffle(validCards) }
             val cardsToDiscard = shuffledValid.take(count)
-            var newState = stateAfterShuffle
-            val events = mutableListOf<GameEvent>()
 
-            for (cardId in cardsToDiscard) {
-                val cardName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown"
-                newState = newState.removeFromZone(handZone, cardId)
-                newState = newState.addToZone(graveyardZone, cardId)
-                events.add(
-                    ZoneChangeEvent(
-                        entityId = cardId,
-                        entityName = cardName,
-                        fromZone = Zone.HAND,
-                        toZone = Zone.GRAVEYARD,
-                        ownerId = playerId
-                    )
-                )
-            }
+            // Shared discard path so a card-intrinsic discard replacement (madness, CR 702.35a)
+            // applies to a randomly discarded card too.
+            val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                .discardCards(stateAfterShuffle, playerId, cardsToDiscard)
 
-            val discardNames = cardsToDiscard.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
-            events.add(0, CardsDiscardedEvent(playerId, cardsToDiscard, discardNames))
-            newState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                .trackDiscard(newState, playerId, cardsToDiscard)
-
-            return EffectResult.success(newState, events)
+            return EffectResult.success(result.state, result.events)
         }
     }
 }

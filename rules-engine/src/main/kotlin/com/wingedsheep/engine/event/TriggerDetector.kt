@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.ClassLevelChangedEvent
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.AttackersDeclaredEvent
 import com.wingedsheep.engine.core.CardCycledEvent
+import com.wingedsheep.engine.core.CardExiledWithMadnessEvent
 import com.wingedsheep.engine.core.CardPlottedEvent
 import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.CardsDrawnEvent
@@ -34,6 +35,8 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.EmblemSourceComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.MadnessComponent
+import com.wingedsheep.engine.state.components.identity.MadnessExiledComponent
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.SuppressEntersTriggers
 import com.wingedsheep.engine.state.components.identity.RoomComponent
@@ -1436,6 +1439,11 @@ class TriggerDetector(
             detectPlottedCardTriggers(state, index.statics, event, triggers)
         }
 
+        // Handle the madness cast offer (CR 702.35a) on a card just discarded into exile.
+        if (event is CardExiledWithMadnessEvent) {
+            detectMadnessCastTriggers(state, event, triggers)
+        }
+
         // Handle damage-received triggers for creatures no longer on the battlefield
         // (e.g., Broodhatch Nantuko dies from combat damage but trigger still fires)
         if (event is DamageDealtEvent && event.targetId !in state.getBattlefield()) {
@@ -1784,6 +1792,41 @@ class TriggerDetector(
                 )
             }
         }
+    }
+
+    /**
+     * The CR 702.35a madness trigger — "when this card is exiled this way, its owner may cast it by
+     * paying [cost] rather than paying its mana cost. If that player doesn't, they put this card
+     * into their graveyard."
+     *
+     * Synthesized rather than resolved off the card's script, because madness is a keyword the
+     * engine drives (like Suspend and Paradigm) and because an exiled card's non-step triggers have
+     * no generic detection pass — only graveyard cards do. Controlled by the card's *owner*, who is
+     * whom CR 702.35a offers the cast to, not whoever caused the discard.
+     */
+    private fun detectMadnessCastTriggers(
+        state: GameState,
+        event: CardExiledWithMadnessEvent,
+        triggers: MutableList<PendingTrigger>
+    ) {
+        // The card must still be the discarded-into-exile object; anything that moved it out of
+        // exile in the same event batch has already stripped the marker.
+        val container = state.getEntity(event.cardId) ?: return
+        if (!container.has<MadnessExiledComponent>()) return
+        val cost = container.get<MadnessComponent>()?.cost ?: return
+
+        triggers.add(
+            PendingTrigger(
+                ability = Madness.castAbility(cost),
+                sourceId = event.cardId,
+                sourceName = event.cardName,
+                controllerId = event.ownerId,
+                triggerContext = TriggerContext(
+                    triggeringEntityId = event.cardId,
+                    triggeringPlayerId = event.ownerId
+                )
+            )
+        )
     }
 
     /**

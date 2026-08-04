@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.effects
 
+import com.wingedsheep.engine.core.CardExiledWithMadnessEvent
 import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
@@ -20,7 +21,9 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.MadnessExiledComponent
 import com.wingedsheep.engine.state.components.identity.ManifestedComponent
+import com.wingedsheep.engine.state.components.identity.PlayWithFixedAlternativeManaCostComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
@@ -374,6 +377,16 @@ object ZoneTransitionService {
                     c.without<com.wingedsheep.engine.state.components.battlefield.ParadigmComponent>()
                 }
             }
+            // A madness card leaving exile — cast, put into the graveyard by its own trigger, or
+            // moved by anything else — is done with madness (CR 702.35a offers the cast once). Drop
+            // the marker *and* the fixed madness cost it published: a lingering fixed alternative
+            // cost would silently re-price a later flashback-style cast from the graveyard.
+            if (entityContainer != null && entityContainer.has<MadnessExiledComponent>()) {
+                newState = newState.updateEntity(entityId) { c ->
+                    c.without<MadnessExiledComponent>()
+                        .without<PlayWithFixedAlternativeManaCostComponent>()
+                }
+            }
         }
 
         // 6. Remove from current zone
@@ -717,6 +730,23 @@ object ZoneTransitionService {
             }
         }
 
+        // 8e. Madness (CR 702.35a) — this move was a discard that the madness replacement diverted
+        // into exile. Mark the card so only a *discarded-into-exile* card gets the CR 702.35a cast
+        // offer, and publish the madness cost as a fixed alternative mana cost so the ordinary
+        // cast-from-exile machinery charges it instead of the printed cost (CR 702.35b). The event
+        // is what the trigger detector turns into the cast offer; it is emitted after the
+        // ZoneChangeEvent so the exile is already history by the time the trigger is built.
+        if (!options.skipZoneChangeRedirect && actualDestZone == Zone.EXILE) {
+            val madness = ZoneMovementUtils.madnessDiscardExile(container, fromZone, destinationZone)
+            if (madness != null) {
+                newState = newState.updateEntity(entityId) { c ->
+                    c.with(MadnessExiledComponent(ownerId))
+                        .with(PlayWithFixedAlternativeManaCostComponent(ownerId, madness.cost))
+                }
+                events.add(CardExiledWithMadnessEvent(ownerId, entityId, cardComponent.name))
+            }
+        }
+
         // 9. Apply redirect additional effects if any
         if (redirectResult.additionalEffect != null) {
             val (updatedState, extraEvents) = ZoneMovementUtils.applyReplacementAdditionalEffect(
@@ -825,17 +855,25 @@ object ZoneTransitionService {
      * as a single log entry) plus one `ZoneChangeEvent` per card from `moveToZone`.
      *
      * The discard event fires whichever zone the cards actually end up in: a card whose own
-     * replacement diverts it (Wilt-Leaf Liege onto the battlefield) has still been discarded, and
-     * discard triggers still see it.
+     * replacement diverts it (Wilt-Leaf Liege onto the battlefield, madness into exile) has still
+     * been discarded, and discard triggers still see it.
+     *
+     * **This is the only discard path.** Routing every site here — costs, cycling, cleanup,
+     * effects — is what makes a card-intrinsic discard replacement (CR 702.35a madness, CR 614.12
+     * Wilt-Leaf Liege) hold everywhere rather than only where someone remembered to check. Sites
+     * that hand-rolled `removeFromZone(hand) + addToZone(graveyard)` silently bypassed both.
      *
      * @param causedByControllerId Controller of the spell or ability causing the discard, via
      *   [markDiscardCause]. Null for the cleanup-step hand-size discard and for cost payments.
+     * @param asCyclingCost Marks the emitted [CardsDiscardedEvent] as a cycling cost payment
+     *   (CR 702.29a) so the client can suppress the duplicate log line. Triggers ignore it.
      */
     fun discardCards(
         state: GameState,
         playerId: EntityId,
         cardIds: List<EntityId>,
-        causedByControllerId: EntityId? = null
+        causedByControllerId: EntityId? = null,
+        asCyclingCost: Boolean = false
     ): ZoneTransitionResult {
         if (cardIds.isEmpty()) return ZoneTransitionResult(state, emptyList())
         val cardNames = cardIds.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
@@ -852,7 +890,7 @@ object ZoneTransitionService {
             moveEvents.addAll(result.events)
         }
         newState = trackDiscard(newState, playerId, cardIds)
-        val discardEvent = CardsDiscardedEvent(playerId, cardIds, cardNames)
+        val discardEvent = CardsDiscardedEvent(playerId, cardIds, cardNames, asCyclingCost = asCyclingCost)
         return ZoneTransitionResult(newState, listOf(discardEvent) + moveEvents)
     }
 

@@ -465,6 +465,35 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Madness
+    // =========================================================================
+
+    /**
+     * Madness [cost] (CR 702.35). "If you discard this card, discard it into exile. When you do,
+     * cast it for its madness cost or put it into your graveyard."
+     *
+     * Per CR 702.35a this single keyword is two abilities: a static ability functioning in hand
+     * ("if a player would discard this card, that player discards it, but exiles it instead of
+     * putting it into their graveyard") and a triggered ability functioning on that exile ("when
+     * this card is exiled this way, its owner may cast it by paying [cost] rather than paying its
+     * mana cost. If that player doesn't, they put this card into their graveyard").
+     *
+     * Both halves are engine-driven off this entry rather than off printed script: the discard
+     * redirect lives in the zone-change replacement check, and the cast offer is the synthesized
+     * [com.wingedsheep.sdk.scripting.Madness.castAbility]. The cast follows the alternative-cost
+     * rules (CR 702.35b / 601.2b / 601.2f–h), so [cost] replaces the printed mana cost while
+     * additional costs and cost increases still apply.
+     */
+    @SerialName("Madness")
+    @Serializable
+    data class Madness(
+        val cost: ManaCost
+    ) : KeywordAbility {
+        override val keyword: Keyword = Keyword.MADNESS
+        override val description: String = "Madness $cost"
+    }
+
+    // =========================================================================
     // Warp
     // =========================================================================
 
@@ -1083,6 +1112,11 @@ sealed interface KeywordAbility {
          * 702.187c "Mayhem" (no cost) land form (Oscorp Industries).
          */
         fun mayhem(cost: String): KeywordAbility = Mayhem(ManaCost.parse(cost))
+
+        /**
+         * Create Madness with mana cost from string (e.g., "Madness {R}").
+         */
+        fun madness(cost: String): KeywordAbility = Madness(ManaCost.parse(cost))
 
         /**
          * Create Kicker with a mana cost.

@@ -309,6 +309,15 @@ object Emitter {
                 rname == "Plot" -> block = manaKeywordCost(rule)?.let {
                     listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.plot", arg("\"$it\""))))))
                 }
+                // Madness [cost] (CR 702.35) carries a `_Cost: PayMana` arg -> the `madness("{cost}")`
+                // CardBuilder helper. Like Ward this must never fall through to the bare-keyword case:
+                // `Keyword.MADNESS` exists, so PascalCase auto-resolve would happily stamp
+                // `keywords(Keyword.MADNESS)`, printing the word while dropping the cost that the
+                // discard-into-exile replacement and its cast trigger both key off. Every printed
+                // madness cost is mana; anything else declines -> scaffold.
+                rname == "Madness" -> block = manaKeywordCost(rule)?.let {
+                    listOf(Eval(call("madness", arg("\"$it\""))))
+                }
                 // Affinity for <group> (cost-reduction keyword, CR 702.41) — "this spell costs {1} less
                 // to cast for each <filter> you control." The engine has no Keyword.AFFINITY card-keyword
                 // path for arbitrary group affinity, so render a self-cast ModifySpellCost whose

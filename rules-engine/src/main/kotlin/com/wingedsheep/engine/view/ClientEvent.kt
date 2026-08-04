@@ -1203,6 +1203,12 @@ is PermanentsSacrificedEvent -> {
             // already provide the player-visible narration and state change.
             is CrewOrSaddleContributionEvent -> null
 
+            // Internal signal that drives the CR 702.35a madness trigger. The player-visible
+            // narration is already complete without it: the CardsDiscardedEvent says the card was
+            // discarded, the redirected ZoneChangeEvent shows it landing in exile, and the madness
+            // trigger itself appears on the stack with its own description.
+            is CardExiledWithMadnessEvent -> null
+
             is CardPlottedEvent -> ClientEvent.CardPlotted(
                 playerId = event.playerId,
                 cardName = event.cardName,

@@ -113,6 +113,14 @@ internal fun BridgeBuilder.keywords() {
     // can express ("Ward—Pay life equal to ~'s power", Raubahn, renders the dynamic form); richer/compound
     // costs decline -> SCAFFOLD. This entry only marks the capability covered (never blocking).
     supported("Ward", "keyword ability: Ward—<cost> (CR 702.21) -> keywordAbility(KeywordAbility.ward(...)/wardDiscard()/wardLife(N)/wardSacrifice(filter))")
+    // Madness [cost] (CR 702.35) — a PARAMETERIZED keyword whose whole mechanic (the discard →
+    // exile replacement plus the "may cast it for [cost]" trigger the engine synthesizes on that
+    // exile) hangs off the cost. `supported`, not `keyword`: `Keyword.MADNESS` exists, so the
+    // PascalCase→enum auto-resolve would stamp a bare `keywords(Keyword.MADNESS)` and drop the
+    // cost — the same trap as Ward/Saddle. The emitter's `rname == "Madness"` branch renders the
+    // `madness("{cost}")` builder call for the pure-mana shape (all of them, in practice); anything
+    // else declines -> SCAFFOLD. This entry only marks the capability covered (never blocking).
+    supported("Madness", "keyword ability: Madness [cost] -> madness(\"{cost}\") builder (CR 702.35)")
 
     composed("Landwalk", "specific *WALK keywords (SWAMPWALK, FORESTWALK, ...)")
     // Equip is a keyword ability, but the engine has no `Keyword.EQUIP` enum member: `equipAbility(cost)`

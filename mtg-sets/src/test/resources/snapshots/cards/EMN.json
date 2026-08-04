@@ -1,3 +1,50 @@
+// Alchemist's Greeting
+{
+    "name": "Alchemist's Greeting",
+    "manaCost": "{4}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Alchemist's Greeting deals 4 damage to target creature.\nMadness {1}{R} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+    "keywords": [
+        "MADNESS"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Madness",
+            "cost": "{1}{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "artist": "Jakub Kasper",
+        "flavorText": "\"Impressive.\"\n—Chandra Nalaar",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f33aaa1-cbaa-40a9-889e-3eca26b3a549.jpg?1783937468"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Bedlam Reveler
 {
     "name": "Bedlam Reveler",
