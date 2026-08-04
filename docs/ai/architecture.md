@@ -51,6 +51,8 @@ AIPlayer.chooseAction(state)
      ├─ candidates           ← MeaningfulActionFilter.filterMeaningful                    (Phase 4a)
      ├─ budget               ← BudgetPolicy.budgetFor(state, player, candidates)          (Phase 4b)
      ├─ pass 1: simulate each candidate (and the pass) to its quiet state
+     │           └─ drop leaves that repeat a position we already acted from  ← StateProgress
+     │               (re-aiming an inert one by simulation first  ← Strategist.materialize)
      ├─ pass 2: CandidateEvaluator.scoreAll(root, leaves, player, budget)                 (Phase 7)
      ├─ pass 3: HoldPolicy timing delta + CardAdvisor override, in raw evaluator units    (Phase 6)
      └─ best > pass ? commit targets (refined by simulation) : pass
@@ -60,6 +62,37 @@ The three passes are the shape Phase 7 needed. The evaluator sees **every** cand
 is what lets it *allocate* effort rather than spend a fixed amount per candidate — sequential
 halving is impossible with a one-candidate-at-a-time API. For `StaticCandidateEvaluator` the batch
 is `map(::score)`, so `LEGACY_V0` is bit-identical; `FrozenBaselineTest` is what proves it.
+
+---
+
+## Going in circles (`StateProgress`)
+
+A leaf score cannot tell that it is being handed the same position over and over, and the comparison
+it makes is not even between comparable positions: passing carries the game forward into whatever
+was about to happen, while a free ability that resolves back onto the same board stops right where
+it is. When what is about to happen is bad, *doing nothing* can outscore passing — and then it does
+so again from the identical position it just produced. That is how the AI came to activate Aphetto
+Alchemist ({T}: untap target artifact or creature, aimed at itself) eleven times in a row.
+
+`StateProgress.digest` reduces a `GameState` to the position a player could point at — zone
+contents, everything true of the objects and players in them, turn and step — and is deliberately
+blind to "it happened" memories such as activation counts, which change on every activation whether
+or not anything else did. It names what it *excludes* rather than what it reads, so a `GameState`
+field added later counts by default: a field missed by a read-list would make a real action look
+inert, and an action that looks inert is refused forever.
+
+`Strategist` drops any candidate whose leaf digest matches the position it is acting from, or one of
+the last 32 positions it has acted from. Target refinement ranks an inert targeting below every real
+one, so an ability is only dropped when *no* target does anything — and because that refinement is
+the first thing a sub-`NORMAL` budget gives up, `Strategist.materialize` buys it back for exactly
+the candidates the cheap pick made inert. Without that, the quiet opponent's-turn windows this guard
+exists for would be the ones where it fires on an ability that had a productive target. All of it
+follows CR 732.3: a player whose actions have reached the same game state again must make a
+different choice.
+
+The guard is **not** behind an `AiProfile` flag, which is the one thing this codebase normally
+insists on — see `StateProgress`'s KDoc for why an abandoned game has no strength worth freezing,
+and why `FrozenBaselineTest` staying green is not evidence either way.
 
 ---
 
