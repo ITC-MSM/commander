@@ -30,6 +30,8 @@ interface ZoneSelectionUIProps {
   minSelections: number
   /** Maximum number of cards to select */
   maxSelections: number
+  /** Cards to pre-select on mount (e.g. picks restored by stepping Back into a target requirement) */
+  initialSelection?: readonly EntityId[]
   /** Responsive sizing info */
   responsive: ResponsiveSizes
   /** Called when selection is confirmed */
@@ -73,6 +75,7 @@ export function ZoneSelectionUI({
   cards,
   minSelections,
   maxSelections,
+  initialSelection = [],
   responsive,
   onConfirm,
   filterDescription,
@@ -85,7 +88,7 @@ export function ZoneSelectionUI({
   onCancel,
   cancelText = 'Cancel',
 }: ZoneSelectionUIProps) {
-  const [selectedCards, setSelectedCards] = useState<EntityId[]>([])
+  const [selectedCards, setSelectedCards] = useState<EntityId[]>(() => [...initialSelection])
   const [hoveredCardId, setHoveredCardId] = useState<EntityId | null>(null)
   const [minimized, setMinimized] = useState(false)
   const hoverCard = useGameStore((s) => s.hoverCard)

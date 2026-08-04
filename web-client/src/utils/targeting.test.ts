@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getPileTargetCards, isLoneTargetRequirement } from './targeting'
+import { derivePileAction, getPileTargetCards, isLoneTargetRequirement } from './targeting'
 import type { ChooseTargetsDecision, ClientCard, EntityId, TargetRequirementInfo } from '@/types'
 import { ZoneType } from '@/types'
 import { entityId } from '@/types/entities.ts'
@@ -107,8 +107,59 @@ describe('getPileTargetCards', () => {
     )
     const legalTargets = spot.legalTargets
 
-    expect(spot.targetRequirements).toHaveLength(2)
     expect(getPileTargetCards(legalTargets[0] ?? [], cards)).toBeNull()
     expect(getPileTargetCards(legalTargets[1] ?? [], cards)).toEqual([courser])
+  })
+})
+
+describe('derivePileAction', () => {
+  it('labels an exile effect', () => {
+    expect(derivePileAction('Exile target card from a graveyard')).toEqual({
+      confirmText: 'Exile',
+      verb: 'exile',
+    })
+  })
+
+  it('labels a reanimation effect', () => {
+    expect(derivePileAction('Put target creature card from a graveyard onto the battlefield')).toEqual({
+      confirmText: 'Put onto Battlefield',
+      verb: 'put onto the battlefield',
+    })
+  })
+
+  it('labels a shuffle-into-library effect', () => {
+    expect(derivePileAction('Shuffle target card from a graveyard into its owner\'s library')).toEqual({
+      confirmText: 'Shuffle into Library',
+      verb: 'shuffle into your library',
+    })
+  })
+
+  it('falls back to return-to-hand', () => {
+    expect(derivePileAction('Return target creature card from your graveyard to your hand')).toEqual({
+      confirmText: 'Return to Hand',
+      verb: 'return to your hand',
+    })
+  })
+
+  it('falls back to return-to-hand for a missing hint', () => {
+    expect(derivePileAction(undefined).confirmText).toBe('Return to Hand')
+  })
+
+  it('reads The Spot, Living Portal as exile, not reanimation', () => {
+    // ExileUntilLeavesEffect renders "…until this permanent leaves the battlefield", and The Spot
+    // composes two of them (CompositeEffect joins with ". "). A bare "battlefield" test would
+    // offer "Put onto Battlefield" for a card the effect exiles.
+    const hint =
+      'Exile up to one target nonland permanent until this permanent leaves the battlefield. ' +
+      'Exile up to one target nonland permanent card from a graveyard until this permanent ' +
+      'leaves the battlefield'
+
+    expect(derivePileAction(hint)).toEqual({ confirmText: 'Exile', verb: 'exile' })
+  })
+
+  it('still reads a blink as reanimation despite the leaves-the-battlefield clause', () => {
+    const hint = 'Exile target creature, then return it to the battlefield when this leaves the battlefield'
+
+    expect(derivePileAction(hint).confirmText).toBe('Put onto Battlefield')
   })
 })

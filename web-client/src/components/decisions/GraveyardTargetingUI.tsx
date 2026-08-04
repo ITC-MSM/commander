@@ -5,6 +5,7 @@ import type { EntityId, ChooseTargetsDecision, ClientCard } from '@/types'
 import { calculateFittingCardWidth, type ResponsiveSizes } from '@/hooks/useResponsive.ts'
 import { ZoneSelectionUI, type ZoneCardInfo } from './ZoneSelectionUI'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
+import { derivePileAction } from '@/utils/targeting.ts'
 import styles from './DecisionUI.module.css'
 
 /**
@@ -23,6 +24,7 @@ export function GraveyardTargetingUI({
   responsive,
   requirementIndex,
   totalRequirements,
+  initialSelection,
   onComplete,
   onBack,
 }: {
@@ -31,6 +33,8 @@ export function GraveyardTargetingUI({
   responsive: ResponsiveSizes
   requirementIndex: number
   totalRequirements: number
+  /** Picks to pre-select — non-empty when the player stepped Back into this requirement. */
+  initialSelection: readonly EntityId[]
   onComplete: (targets: readonly EntityId[]) => void
   /** Present when an earlier requirement can be revised. */
   onBack?: () => void
@@ -114,31 +118,15 @@ export function GraveyardTargetingUI({
     ? `${baseTitle} (${requirementIndex + 1}/${totalRequirements})`
     : baseTitle
 
-  // Derive the action verb from effectHint so the button/text matches the actual effect
-  // (e.g., "Exile card in a graveyard" → "Exile"; "Shuffle … into its owner's library" → "Shuffle
-  // into Library"; "Put … onto the battlefield" → "Put onto Battlefield"; "Return … to its owner's
-  // hand" → "Return to Hand"). Effects can be wrapped (ForEachTargetEffect, CompositeEffect, etc.)
-  // so the keyword may not be at the start — match anywhere in the hint. "Return to Hand" is only
-  // the fallback, so reanimation effects (Shark Shredder) must be detected explicitly or they'd
-  // mislabel as returning the opponent's card to hand.
-  const effectHint = decision.context.effectHint?.toLowerCase() ?? ''
-  const isExile = effectHint.includes('exile')
-  const isReanimate = effectHint.includes('battlefield')
-  const isShuffleIntoLibrary = effectHint.includes('shuffle') && effectHint.includes('library')
-  const optionalConfirmText = isReanimate
-    ? 'Put onto Battlefield'
-    : isShuffleIntoLibrary
-      ? 'Shuffle into Library'
-      : isExile
-        ? 'Exile'
-        : 'Return to Hand'
-  const actionVerb = isReanimate
-    ? 'put onto the battlefield'
-    : isShuffleIntoLibrary
-      ? 'shuffle into your library'
-      : isExile
-        ? 'exile'
-        : 'return to your hand'
+  // Derive the action wording from effectHint so the button/text matches the actual effect.
+  //
+  // TODO(per-requirement action hints): effectHint describes the effect as a whole, while this UI
+  // now collects one requirement of it. Both of The Spot's slots exile, so a single verb still
+  // fits; a composite whose slots take different verbs ("destroy target creature and return target
+  // card from a graveyard to your hand") would mislabel this slot. The durable fix is an action
+  // hint on TargetRequirementInfo instead of sniffing prose — a server-side change.
+  const { confirmText: optionalConfirmText, verb: actionVerb } =
+    derivePileAction(decision.context.effectHint)
 
   const numWord = (n: number): string =>
     ({ 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five' } as Record<number, string>)[n] ?? String(n)
@@ -158,8 +146,10 @@ export function GraveyardTargetingUI({
     ? `Optional: choose ${countPhrase} to ${actionVerb}, or decline.`
     : `Choose ${countPhrase} to ${actionVerb}.`
 
-  // Lift selection state to persist across tab switches
-  const [selectedCards, setSelectedCards] = useState<EntityId[]>([])
+  // Lift selection state to persist across tab switches. Seeded from initialSelection so stepping
+  // Back into this requirement keeps its confirmed picks — the parent remounts on requirement
+  // change (key={currentReqIndex}), so the initializer re-runs per slot.
+  const [selectedCards, setSelectedCards] = useState<EntityId[]>(() => [...initialSelection])
   const [minimized, setMinimized] = useState(false)
 
   // If only one graveyard, use simple UI
@@ -172,6 +162,7 @@ export function GraveyardTargetingUI({
         cards={cards}
         minSelections={minTargets}
         maxSelections={maxTargets}
+        initialSelection={initialSelection}
         responsive={responsive}
         onConfirm={handleConfirm}
         confirmText={isOptionalTarget ? optionalConfirmText : 'Confirm Target'}

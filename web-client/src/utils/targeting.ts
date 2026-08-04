@@ -49,3 +49,45 @@ export function getPileTargetCards(
   }
   return pileCards
 }
+
+/**
+ * Boilerplate that hangs off the *exile* verb in O-Ring style effects — `ExileUntilLeavesEffect`
+ * renders "Exile … until this permanent leaves the battlefield". It names the battlefield without
+ * the effect ever putting anything there, so it must not read as reanimation (The Spot, Living
+ * Portal composes two of them and would otherwise offer "Put onto Battlefield" for a card it exiles).
+ */
+const LEAVES_BATTLEFIELD_BOILERPLATE = 'leaves the battlefield'
+
+/** What a pile-targeting requirement will do to the picked cards, in button and sentence form. */
+export interface PileAction {
+  /** Label for the confirm button on an optional pile target. */
+  confirmText: string
+  /** Verb phrase for the helper sentence: "Choose a card to <verb>." */
+  verb: string
+}
+
+/**
+ * Derive the action wording for a pile-targeting requirement from the decision's effect hint:
+ * "Exile card in a graveyard" → Exile; "Shuffle … into its owner's library" → Shuffle into Library;
+ * "Put … onto the battlefield" → Put onto Battlefield.
+ *
+ * Effects can be wrapped (ForEachTargetEffect, CompositeEffect, …) so the keyword may not be at the
+ * start — match anywhere in the hint. "Return to Hand" is only the fallback, so reanimation effects
+ * (Shark Shredder) must be detected explicitly or they'd mislabel as returning the opponent's card
+ * to hand. [LEAVES_BATTLEFIELD_BOILERPLATE] is discounted first; every other mention of the
+ * battlefield is a destination.
+ */
+export function derivePileAction(effectHint: string | null | undefined): PileAction {
+  const hint = (effectHint?.toLowerCase() ?? '').replaceAll(LEAVES_BATTLEFIELD_BOILERPLATE, '')
+
+  if (hint.includes('battlefield')) {
+    return { confirmText: 'Put onto Battlefield', verb: 'put onto the battlefield' }
+  }
+  if (hint.includes('shuffle') && hint.includes('library')) {
+    return { confirmText: 'Shuffle into Library', verb: 'shuffle into your library' }
+  }
+  if (hint.includes('exile')) {
+    return { confirmText: 'Exile', verb: 'exile' }
+  }
+  return { confirmText: 'Return to Hand', verb: 'return to your hand' }
+}

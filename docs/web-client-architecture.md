@@ -455,7 +455,15 @@ isn't clickable card-by-card on the board), everything else to `BattlefieldTarge
 highlights board objects through `decisionSelectionState`. The two can mix inside one decision —
 The Spot, Living Portal exiles "up to one target nonland permanent **and** up to one target
 nonland permanent card from a graveyard" — so the choice must not be made once for the whole
-decision. The cast-time equivalent is `TargetingOverlay`'s `ZoneCardTargetingOverlay` routing.
+decision. Both collectors take the restored picks as `initialSelection`, so Back keeps its
+confirmed selection whichever UI owns the slot. The cast-time equivalent is `TargetingOverlay`'s
+`ZoneCardTargetingOverlay` routing.
+
+The wording on a pile slot ("Exile" vs "Put onto Battlefield" vs "Shuffle into Library") comes
+from `derivePileAction` in `utils/targeting.ts`, which sniffs the decision's `effectHint` prose.
+That hint describes the effect as a whole rather than the individual requirement, so a composite
+whose slots take different verbs would mislabel one of them; the durable fix is a per-requirement
+action hint on `TargetRequirementInfo`.
 
 ## Type Mapping
 

@@ -75,6 +75,7 @@ export function ChooseTargetsUI({ decision }: { decision: ChooseTargetsDecision 
         responsive={responsive}
         requirementIndex={currentReqIndex}
         totalRequirements={totalRequirements}
+        initialSelection={restoredSelection}
         onComplete={handleComplete}
         {...backProps}
       />
