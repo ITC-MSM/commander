@@ -2330,8 +2330,11 @@
         ],
         "additionalCosts": [
             {
-                "type": "BeholdOrPay",
-                "filter": "Dragon",
+                "type": "OrPay",
+                "cost": {
+                    "type": "Behold",
+                    "filter": "Dragon"
+                },
                 "alternativeManaCost": "{1}"
             }
         ]

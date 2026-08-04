@@ -4,6 +4,7 @@ import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
 import com.wingedsheep.sdk.model.Printing
+import com.wingedsheep.sdk.model.TokenPrinting
 
 /**
  * The Hobbit (2026)
@@ -29,6 +30,18 @@ object TheHobbitSet : MtgSet {
     override val printings: List<Printing> by lazy {
         CardDiscovery.findPrintingsIn(CARDS_PACKAGE)
     }
+
+    /**
+     * The set is too new to appear in the bulk `tokens.json` sync, so the tokens its cards actually
+     * mint are hand-authored here. Drop a row once `just token-art-sync` picks the same art up.
+     */
+    override val tokenArt: List<TokenPrinting> = listOf(
+        // thob #12 — the Treasure minted by Long-Bodied Grey Dog and Dori, Bearer of Friends.
+        TokenPrinting(
+            name = "Treasure",
+            imageUri = "https://cards.scryfall.io/art_crop/front/c/6/c6e096bb-ad9e-4a8b-8b42-26852fa32c1d.jpg?1783902770",
+        ),
+    )
 
     private const val CARDS_PACKAGE = "com.wingedsheep.mtg.sets.definitions.hob.cards"
 }
