@@ -86,6 +86,14 @@ class Strategist(
 ) {
     private val holdPolicy = HoldPolicy(intents)
 
+    /**
+     * Positions this player has already taken a non-pass action from, oldest first.
+     *
+     * The AI's only memory across decisions, and it exists for one reason: a leaf score cannot see
+     * that it is being handed the same position over and over. See [StateProgress] and [remember].
+     */
+    private val positionsActedFrom = ArrayDeque<Long>()
+
     fun chooseAction(
         state: GameState,
         legalActions: List<LegalAction>,
@@ -112,6 +120,7 @@ class Strategist(
         if (affordable.isEmpty()) return pass ?: legalActions.first()
 
         val budget = budgetPolicy.budgetFor(state, playerId, affordable)
+        val here = StateProgress.digest(evaluationState)
 
         // ── Pass 1: one simulation per candidate, to the quiet state it leads to ──
         // The anytime contract: candidates are simulated in order and the budget only cuts the
@@ -133,6 +142,15 @@ class Strategist(
             // modal/additional payments. If materializing the concrete action cannot pass the
             // authoritative processor, it is not a candidate the AI may submit.
             if (simulation is SimulationResult.Illegal) continue
+            // A line that walks back into a position we have already acted from has accomplished
+            // nothing, whatever the leaf score says — and it is not a one-off mistake, because it
+            // hands us back the very position that made it look good. Aphetto Alchemist untapping
+            // itself is the degenerate case (`here`); two of them untapping each other is the same
+            // thing one step longer. See [StateProgress].
+            if (simulation !is SimulationResult.NeedsDecision) {
+                val leaf = StateProgress.digest(simulation.state)
+                if (leaf == here || leaf in positionsActedFrom) continue
+            }
             leaves += action.copy(action = materialized)
             leafStates += simulation.state
             if (budget.expired()) break
@@ -172,10 +190,27 @@ class Strategist(
             // Fill in targets on the returned action so the processor can execute it.
             // The committed target is chosen by simulation (not just the heuristic) so the
             // AI sees the real resolved board, including effects already on the stack.
+            remember(here)
             best.first
         } else {
             pass ?: legalActions.first()
         }
+    }
+
+    /**
+     * Record a position we are about to act from, so a later candidate that leads back to it is
+     * recognised as the circle it is.
+     *
+     * Only positions we *act* from go in: passing may repeat as often as it likes, and recording it
+     * would fill the memory with the windows where the AI does nothing. Bounded because a loop is
+     * always short — the two-Alchemist cycle is length two — while a game is thousands of positions,
+     * and because a digest carries its turn and step, so an entry can only ever match inside the
+     * window where matching means going in circles.
+     */
+    private fun remember(digest: Long) {
+        if (digest in positionsActedFrom) return
+        positionsActedFrom.addLast(digest)
+        if (positionsActedFrom.size > POSITION_MEMORY) positionsActedFrom.removeFirst()
     }
 
     /**
@@ -298,6 +333,7 @@ class Strategist(
             chosenTargetIds += selectedId
         }
 
+        val here = StateProgress.digest(state)
         for (i in targetInfos.indices) {
             if (budget.expired()) break
             val info = targetInfos[i]
@@ -311,7 +347,15 @@ class Strategist(
                 val trial = chosenTargets.toMutableList()
                 trial[i] = TargetSelection.toChosenTarget(state, info, candidate, playerId)
                 val result = simulator.simulate(state, TargetSelection.applyTargets(baseAction, trial))
-                evaluator.evaluate(result.state, result.state.projectedState, playerId)
+                // A target that resolves back into the position we are standing in is not a target
+                // choice, it is a no-op wearing one — Aphetto Alchemist untapping itself. Rank it
+                // below every real option, so `chooseAction` only ever drops the whole ability as
+                // inert when *no* target does anything.
+                if (StateProgress.digest(result.state) == here) {
+                    Double.NEGATIVE_INFINITY
+                } else {
+                    evaluator.evaluate(result.state, result.state.projectedState, playerId)
+                }
             } ?: continue
             chosenTargets[i] = TargetSelection.toChosenTarget(state, info, best, playerId)
             chosenTargetIds[i] = best
@@ -536,6 +580,9 @@ class Strategist(
     private companion object {
         /** Cap on the number of X values an X-cost ability is expanded into (keeps the highest). */
         const val MAX_X_CANDIDATES = 5
+
+        /** How many acted-from positions [remember] keeps. See it for why a short memory suffices. */
+        const val POSITION_MEMORY = 32
 
         const val MOMIR_TARGET_X = 8
 
