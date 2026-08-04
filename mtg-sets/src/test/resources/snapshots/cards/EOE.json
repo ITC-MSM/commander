@@ -6897,17 +6897,18 @@
             }
         }
     },
-    "script": {
-        "staticAbilities": [
-            {
-                "type": "GrantWard",
-                "cost": {
-                    "type": "WardCost.Mana",
-                    "manaCost": "{2}"
-                }
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
             }
-        ]
-    },
+        }
+    ],
     "metadata": {
         "collectorNumber": "189",
         "rarity": "UNCOMMON",

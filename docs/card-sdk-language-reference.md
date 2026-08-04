@@ -5746,7 +5746,13 @@ composite abilities).
 
 **Parameterized `KeywordAbility.*`**
 
-- `Ward(amount)` — opponent pays a mana cost to target this (CR 702.21). Non-mana costs use
+- `Ward(amount)` — opponent pays a mana cost to target this (CR 702.21). This is the shape for a card's
+  **own printed** ward. Granting ward to *other* permanents — a lord ("Other creatures you control have
+  ward {1}"), or an Aura/Equipment's "enchanted/equipped permanent has ward {N}" — is the `GrantWard(cost,
+  filter)` static ability instead, whose `filter` defaults to attached-scope
+  (`GroupFilter.attachedCreature()`, i.e. `Scope.AttachedTo`). Don't reach for `GrantWard` for a creature's
+  own ward: with nothing attached, the default filter matches no permanent and the creature ends up with
+  no ward at all. Non-mana costs use
   `KeywordAbility.Ward(WardCost.X)`: `WardCost.Mana`, `WardCost.Life(n)`, `WardCost.DynamicLife(amount)`,
   `WardCost.Discard(n, random, filter)`,
   and `WardCost.Sacrifice(filter, count = 1)` ("Ward—Sacrifice a Food", Ygra; "Ward—Sacrifice three
