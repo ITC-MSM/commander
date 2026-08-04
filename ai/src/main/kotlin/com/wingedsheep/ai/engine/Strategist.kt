@@ -136,23 +136,28 @@ class Strategist(
             leafStates += simulator.simulate(evaluationState, pass.action).state
         }
         for (action in affordable) {
-            val materialized = chooseCommittedTargets(evaluationState, action, playerId, budget)
-            val simulation = simulator.simulate(evaluationState, materialized)
-            // LegalAction affordability is necessarily a preview for costs such as convoke and
-            // modal/additional payments. If materializing the concrete action cannot pass the
-            // authoritative processor, it is not a candidate the AI may submit.
-            if (simulation is SimulationResult.Illegal) continue
-            // A line that walks back into a position we have already acted from has accomplished
-            // nothing, whatever the leaf score says — and it is not a one-off mistake, because it
-            // hands us back the very position that made it look good. Aphetto Alchemist untapping
-            // itself is the degenerate case (`here`); two of them untapping each other is the same
-            // thing one step longer. See [StateProgress].
-            if (simulation !is SimulationResult.NeedsDecision) {
-                val leaf = StateProgress.digest(simulation.state)
-                if (leaf == here || leaf in positionsActedFrom) continue
+            val (materialized, simulation) = materialize(evaluationState, action, playerId, budget, here)
+            val usable = when {
+                // LegalAction affordability is necessarily a preview for costs such as convoke and
+                // modal/additional payments. If materializing the concrete action cannot pass the
+                // authoritative processor, it is not a candidate the AI may submit.
+                simulation is SimulationResult.Illegal -> false
+                simulation is SimulationResult.NeedsDecision -> true
+                // A line that walks back into a position we have already acted from has accomplished
+                // nothing, whatever the leaf score says — and it is not a one-off mistake, because it
+                // hands us back the very position that made it look good. Aphetto Alchemist untapping
+                // itself is the degenerate case (`here`); two of them untapping each other is the same
+                // thing one step longer. See [StateProgress].
+                else -> StateProgress.digest(simulation.state)
+                    .let { leaf -> leaf != here && leaf !in positionsActedFrom }
             }
-            leaves += action.copy(action = materialized)
-            leafStates += simulation.state
+            if (usable) {
+                leaves += action.copy(action = materialized)
+                leafStates += simulation.state
+            }
+            // Every candidate cost a simulation whether or not it survived those filters, so the
+            // anytime cut is taken on all of them. Checking only after a survivor was recorded
+            // would let a board full of inert candidates run straight past the budget.
             if (budget.expired()) break
         }
 
@@ -187,14 +192,51 @@ class Strategist(
 
         val best = scored.maxByOrNull { it.second }
         return if (best != null && best.second > adjustedPassScore) {
+            remember(here)
             // Fill in targets on the returned action so the processor can execute it.
             // The committed target is chosen by simulation (not just the heuristic) so the
             // AI sees the real resolved board, including effects already on the stack.
-            remember(here)
             best.first
         } else {
             pass ?: legalActions.first()
         }
+    }
+
+    /**
+     * The concrete action the AI would submit for [action], and the position it leads to.
+     *
+     * Targets come from [chooseCommittedTargets], and are re-committed **with** simulation when the
+     * cheap pick turns out to be inert. That second attempt is the whole point of this function.
+     * Below [com.wingedsheep.ai.engine.budget.BudgetTier.NORMAL] the committed targets are
+     * [TargetSelection.rank]'s, which scores a target's board value and has no notion of whether the
+     * ability does anything *to* it — so on the quiet opponent's-turn window this guard exists for,
+     * it can hand back Aphetto Alchemist untapping itself while a tapped creature sits right there.
+     * Writing the ability off on that pick would trade a loop for a missed play.
+     *
+     * Only the inert path pays: the extra simulations are bounded by
+     * [RESCUE_TARGET_CANDIDATES] per requirement and are never reached by a candidate that already
+     * does something.
+     */
+    private fun materialize(
+        state: GameState,
+        action: LegalAction,
+        playerId: EntityId,
+        budget: DecisionBudget,
+        here: Long,
+    ): Pair<GameAction, SimulationResult> {
+        val materialized = chooseCommittedTargets(state, action, playerId, budget)
+        val simulation = simulator.simulate(state, materialized)
+        // Ordered so the budget that already refines pays nothing at all here — no digest, no
+        // second simulation. `chooseAction` digests the leaf it keeps either way.
+        if (budget.allowances.refineTargetsBySimulation) return materialized to simulation
+        if (simulation is SimulationResult.Illegal || simulation is SimulationResult.NeedsDecision) {
+            return materialized to simulation
+        }
+        if (StateProgress.digest(simulation.state) != here) return materialized to simulation
+
+        val refined = chooseCommittedTargets(state, action, playerId, budget, forceTargetRefinement = true)
+        if (refined == materialized) return materialized to simulation
+        return refined to simulator.simulate(state, refined)
     }
 
     /**
@@ -295,9 +337,10 @@ class Strategist(
      * gains nothing over neutralizing a second, still-able blocker (which [BoardPresence] now prices
      * lower). Requirements are resolved greedily — others held at their heuristic best — and only
      * the top `budget.allowances.targetCandidates` per requirement are simulated to bound cost. A
-     * budget below [com.wingedsheep.ai.engine.budget.BudgetTier.NORMAL] skips the refinement
-     * entirely and keeps the heuristic pick: this loop is the most expensive thing a routine
-     * priority window can pay for.
+     * budget below [com.wingedsheep.ai.engine.budget.BudgetTier.NORMAL] skips the refinement and
+     * keeps the heuristic pick: this loop is the most expensive thing a routine priority window can
+     * pay for. [materialize] buys it back for the one case where the heuristic pick is not merely
+     * worse but useless — see [forceTargetRefinement].
      *
      * Deliberately **not** used inside a rollout playout — see [PlayoutPolicy]. Simulating to pick
      * targets inside a simulation is what would make a playout quadratic.
@@ -307,10 +350,17 @@ class Strategist(
         action: LegalAction,
         playerId: EntityId,
         budget: DecisionBudget = DecisionBudget.legacy(),
+        /**
+         * Refine by simulation whatever the budget says, and raise the per-requirement cap to
+         * [RESCUE_TARGET_CANDIDATES]. Set only by [materialize], and only for an action the cheap
+         * pick already made inert — a tier that skips refinement can also cap candidates at 1,
+         * which would leave the rescue with nothing to choose between.
+         */
+        forceTargetRefinement: Boolean = false,
     ): com.wingedsheep.engine.core.GameAction {
         val baseAction = withAutomaticPayments(action)
         if (TargetSelection.targetsAlreadyFilled(baseAction) != false) return baseAction
-        if (!budget.allowances.refineTargetsBySimulation) {
+        if (!budget.allowances.refineTargetsBySimulation && !forceTargetRefinement) {
             return heuristicTargets(state, action, playerId)
         }
         val targetInfos = TargetSelection.fillableRequirements(action, useMeaningfulFilter)
@@ -333,15 +383,23 @@ class Strategist(
             chosenTargetIds += selectedId
         }
 
-        val here = StateProgress.digest(state)
+        // Only paid for once a requirement actually has rival targets to simulate — every
+        // requirement having at most one candidate is the common case, and digesting the whole
+        // position for each affordable candidate to find that out is waste.
+        val here by lazy(LazyThreadSafetyMode.NONE) { StateProgress.digest(state) }
+        val targetCandidates =
+            if (forceTargetRefinement) maxOf(budget.allowances.targetCandidates, RESCUE_TARGET_CANDIDATES)
+            else budget.allowances.targetCandidates
         for (i in targetInfos.indices) {
-            if (budget.expired()) break
+            // A forced refinement ignores the clock: it runs only on the inert path, where the
+            // alternative is dropping an ability that may well have had a productive target.
+            if (budget.expired() && !forceTargetRefinement) break
             val info = targetInfos[i]
             val priorIds = chosenTargetIds.take(i).toSet()
             val candidates = info.validTargets
                 .filterNot { info.mustDifferFromEarlier && it in priorIds }
                 .sortedByDescending { TargetSelection.rank(state, it, playerId, intents) }
-                .take(budget.allowances.targetCandidates)
+                .take(targetCandidates)
             if (candidates.size <= 1) continue
             val best = candidates.maxByOrNull { candidate ->
                 val trial = chosenTargets.toMutableList()
@@ -583,6 +641,13 @@ class Strategist(
 
         /** How many acted-from positions [remember] keeps. See it for why a short memory suffices. */
         const val POSITION_MEMORY = 32
+
+        /**
+         * Targets simulated per requirement when rescuing a candidate the cheap pick made inert.
+         * A tier below [com.wingedsheep.ai.engine.budget.BudgetTier.NORMAL] can cap candidates at
+         * 1, so the rescue needs its own floor; this is the legacy cap.
+         */
+        const val RESCUE_TARGET_CANDIDATES = 8
 
         const val MOMIR_TARGET_X = 8
 

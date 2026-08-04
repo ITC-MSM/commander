@@ -1,8 +1,14 @@
 package com.wingedsheep.ai.engine
 
+import com.wingedsheep.ai.engine.budget.BudgetPolicy
+import com.wingedsheep.ai.engine.budget.BudgetTier
+import com.wingedsheep.ai.engine.budget.DecisionBudget
+import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
+import com.wingedsheep.ai.engine.budget.SearchAllowances
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.PassPriority
+import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -11,9 +17,11 @@ import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Regression: the AI must never spend a priority window going in circles.
@@ -48,9 +56,13 @@ class LoopingActionAiTest : FunSpec({
         driver.submitSuccess(PassPriority(activePlayer))
     }
 
-    fun strategistFor(registry: CardRegistry, step: Step): Strategist {
+    fun strategistFor(
+        registry: CardRegistry,
+        step: Step,
+        budgetPolicy: BudgetPolicy = LegacyBudgetPolicy,
+    ): Strategist {
         val simulator = GameSimulator(registry)
-        return Strategist(simulator, stepPreferring(step))
+        return Strategist(simulator, stepPreferring(step), budgetPolicy = budgetPolicy)
     }
 
     fun chooseFor(strategist: Strategist, registry: CardRegistry, state: GameState, playerId: EntityId) =
@@ -78,11 +90,47 @@ class LoopingActionAiTest : FunSpec({
             targets = listOf(ChosenTarget.Permanent(target)),
         )
 
+        val here = StateProgress.digest(driver.state)
+
         val self = simulator.simulate(driver.state, untap(alchemist))
-        StateProgress.isInert(driver.state, self.state) shouldBe true
+        withClue("untapping itself pays its own cost back") {
+            StateProgress.digest(self.state) shouldBe here
+        }
 
         val other = simulator.simulate(driver.state, untap(partner))
-        StateProgress.isInert(driver.state, other.state) shouldBe false
+        withClue("untapping the tapped partner is a real change") {
+            StateProgress.digest(other.state) shouldNotBe here
+        }
+    }
+
+    test("an ability with one inert target and one productive one is aimed, not dropped") {
+        // Every tier, because the guard's whole failure mode is tier-dependent: below NORMAL the
+        // committed targets are `TargetSelection.rank`'s heuristic pick, which ranks board value
+        // and cannot see that untapping an untapped creature does nothing.
+        for (tier in BudgetTier.entries) {
+            val registry = registry()
+            val driver = GameTestDriver()
+            val (ai, human) = openWindow(driver)
+            val alchemist = driver.putCreatureOnBattlefield(ai, "Aphetto Alchemist")
+            driver.removeSummoningSickness(alchemist)
+            val partner = driver.putCreatureOnBattlefield(ai, "Grizzly Bears")
+            driver.removeSummoningSickness(partner)
+            driver.tapPermanent(partner)
+            handPriorityToNonActivePlayer(driver, human)
+
+            // Untapping itself does nothing; untapping the tapped Bears does. Dropping the whole
+            // ability because the *heuristic* target pick happened to be the inert one would trade
+            // the loop for a missed play — and below NORMAL that pick is all there is unless
+            // `materialize` buys the simulated one back.
+            val strategist = strategistFor(registry, Step.END_COMBAT, FixedTierBudgetPolicy(tier))
+            val chosen = chooseFor(strategist, registry, driver.state, ai)
+
+            withClue("tier $tier") {
+                val activation = chosen.action.shouldBeInstanceOf<ActivateAbility>()
+                activation.sourceId shouldBe alchemist
+                activation.targets shouldBe listOf(ChosenTarget.Permanent(partner))
+            }
+        }
     }
 
     test("the AI passes rather than activate an ability that changes nothing") {
@@ -124,3 +172,21 @@ class LoopingActionAiTest : FunSpec({
         reply.actionType shouldBe "PassPriority"
     }
 })
+
+/**
+ * Pins every decision to one [BudgetTier], so a test can say which allowances it is exercising
+ * instead of hoping `TieredBudgetPolicy` picks the tier it had in mind from the board.
+ */
+private class FixedTierBudgetPolicy(private val tier: BudgetTier) : BudgetPolicy {
+    private fun budget() = DecisionBudget(tier, SearchAllowances.forMillis(tier.millis), tier.millis)
+
+    override fun budgetFor(
+        state: GameState,
+        playerId: EntityId,
+        meaningfulActions: List<LegalAction>,
+    ): DecisionBudget = budget()
+
+    override fun budgetForDecision(state: GameState, playerId: EntityId): DecisionBudget = budget()
+
+    override fun toString(): String = "fixed-$tier"
+}

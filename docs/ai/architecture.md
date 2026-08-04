@@ -52,6 +52,7 @@ AIPlayer.chooseAction(state)
      ├─ budget               ← BudgetPolicy.budgetFor(state, player, candidates)          (Phase 4b)
      ├─ pass 1: simulate each candidate (and the pass) to its quiet state
      │           └─ drop leaves that repeat a position we already acted from  ← StateProgress
+     │               (re-aiming an inert one by simulation first  ← Strategist.materialize)
      ├─ pass 2: CandidateEvaluator.scoreAll(root, leaves, player, budget)                 (Phase 7)
      ├─ pass 3: HoldPolicy timing delta + CardAdvisor override, in raw evaluator units    (Phase 6)
      └─ best > pass ? commit targets (refined by simulation) : pass
@@ -76,11 +77,22 @@ Alchemist ({T}: untap target artifact or creature, aimed at itself) eleven times
 `StateProgress.digest` reduces a `GameState` to the position a player could point at — zone
 contents, everything true of the objects and players in them, turn and step — and is deliberately
 blind to "it happened" memories such as activation counts, which change on every activation whether
-or not anything else did. `Strategist` drops any candidate whose leaf digest matches the position it
-is acting from, or one of the last 32 positions it has acted from; target refinement ranks an inert
-targeting below every real one, so an ability is only dropped when *no* target does anything. Both
-follow CR 732.3: a player whose actions have reached the same game state again must make a different
-choice.
+or not anything else did. It names what it *excludes* rather than what it reads, so a `GameState`
+field added later counts by default: a field missed by a read-list would make a real action look
+inert, and an action that looks inert is refused forever.
+
+`Strategist` drops any candidate whose leaf digest matches the position it is acting from, or one of
+the last 32 positions it has acted from. Target refinement ranks an inert targeting below every real
+one, so an ability is only dropped when *no* target does anything — and because that refinement is
+the first thing a sub-`NORMAL` budget gives up, `Strategist.materialize` buys it back for exactly
+the candidates the cheap pick made inert. Without that, the quiet opponent's-turn windows this guard
+exists for would be the ones where it fires on an ability that had a productive target. All of it
+follows CR 732.3: a player whose actions have reached the same game state again must make a
+different choice.
+
+The guard is **not** behind an `AiProfile` flag, which is the one thing this codebase normally
+insists on — see `StateProgress`'s KDoc for why an abandoned game has no strength worth freezing,
+and why `FrozenBaselineTest` staying green is not evidence either way.
 
 ---
 

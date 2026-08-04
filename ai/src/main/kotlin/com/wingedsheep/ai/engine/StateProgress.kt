@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.components.battlefield.TargetedByControllerT
 import com.wingedsheep.engine.state.components.battlefield.TimestampComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.model.GameRng
 
 /**
  * "Is this position one I have already been in?" — how the AI tells progress from a treadmill.
@@ -34,88 +35,106 @@ import com.wingedsheep.sdk.model.EntityId
  *
  * [Strategist] is the consumer: it drops any candidate whose leaf repeats a position it has already
  * acted from.
+ *
+ * **This is deliberately not behind an [AiProfile] flag**, which is the one place this codebase
+ * normally insists on one — `FrozenBaselineTest` exists to stop `AiProfile.LEGACY_V0` drifting, and
+ * Phase 4's `fillPartial` is gated for no other reason. The rule is about *strength*: a change that
+ * makes V0 play better silently rebases every published arena number. A game that has to be
+ * abandoned has no strength to compare, so there is nothing here worth freezing. `FrozenBaselineTest`
+ * stays green because its baseline deck is all-vanilla — no activated abilities, so nothing this
+ * guard can fire on — which means it is not evidence either way and shouldn't be read as any.
  */
 object StateProgress {
 
     /**
-     * Whether [after] is the same game position as [before], so the action between them
-     * accomplished nothing at all.
-     *
-     * Compares a digest rather than the states themselves. `GameState` equality is unusable here —
-     * a resolved ability leaves behind an orphaned stack entity, a bumped `nextEntityId` and an
-     * advanced `rng`, none of which is a game fact — so [digest] reads the position the way a
-     * player would: zone contents, and everything true of the objects and players in them.
-     */
-    fun isInert(before: GameState, after: GameState): Boolean = digest(before) == digest(after)
-
-    /**
      * A 64-bit summary of everything about [state] that a player could point at.
      *
-     * Deliberately blind to bookkeeping that changes on *every* activation regardless of what the
-     * ability did — see [IGNORED_COMPONENTS] — and to whose priority it is, which is what makes an
-     * action's own resolution comparable with the position it started from.
+     * `GameState` equality is unusable for this. A resolved ability leaves behind an orphaned stack
+     * entity, a bumped `nextEntityId` and an advanced `rng`, none of which is a game fact — so this
+     * reads the position the way a player would: everything `GameState` itself records, minus the
+     * bookkeeping [normalized] strips, plus everything true of the objects and players in the zones.
      *
      * Turn number and step *are* part of it, which is what keeps the repetition memory honest: the
      * same board in a later step is a different position, so a digest can only recur inside the
      * window where recurring means going in circles.
      *
-     * Per-collection hashes are summed rather than folded, so a `Map` that rehashed between the two
-     * states can't read as a change; order *within* a zone still counts, because library and stack
-     * order are game facts.
+     * Per-object hashes are summed rather than folded, so iteration order can't read as a change;
+     * order *within* a zone still counts, because library and stack order are game facts, and it is
+     * `zones` inside [normalized] that carries it.
      */
     fun digest(state: GameState): Long {
-        var h = SEED
-
-        h = h.mix(state.turnNumber)
-        h = h.mix(state.phase.hashCode())
-        h = h.mix(state.step.hashCode())
-        h = h.mix(state.activePlayerId.hashCode())
-        h = h.mix(state.gameOver.hashCode())
-        h = h.mix(state.winnerId.hashCode())
-        h = h.mix(state.stack.hashCode())
+        var h = SEED.mix(normalized(state).hashCode())
+        // Continuation frames are counted, not read. A frame holds mid-resolution bookkeeping —
+        // the stack entity being resolved, indices into it — that a re-resolution mints afresh, so
+        // hashing their contents would make an inert action look like progress. Depth alone is
+        // enough here because the states this is asked to compare are quiet ones: a leaf that
+        // paused mid-resolution comes back as `SimulationResult.NeedsDecision`, which [Strategist]
+        // never digests.
         h = h.mix(state.continuationStack.size)
-        h = h.mix(state.floatingEffects.hashCode())
-        h = h.mix(state.delayedTriggers.hashCode())
-        h = h.mix(state.grantedTriggeredAbilities.hashCode())
-        h = h.mix(state.grantedActivatedAbilities.hashCode())
-        h = h.mix(state.grantedStaticAbilities.hashCode())
-        h = h.mix(state.grantedReplacementEffects.hashCode())
-        h = h.mix(state.grantedKeywordAbilities.hashCode())
-        h = h.mix(state.globalGrantedTriggeredAbilities.hashCode())
-        h = h.mix(state.mayPlayPermissions.hashCode())
-        h = h.mix(state.commanderDamage.hashCode())
-        h = h.mix(state.spellsCastThisTurn)
-        h = h.mix(state.permanentsSacrificedThisTurn)
-
-        var zones = 0L
-        for ((key, contents) in state.zones) {
-            var zone = key.hashCode().toLong()
-            for (entityId in contents) {
-                zone = zone.mix(entityId.hashCode())
-                // A library is hashed by its order alone: 60 cards whose components no game action
-                // touches without also moving them somewhere this digest reads in full.
-                if (key.zoneType != Zone.LIBRARY) zone = zone.mix(objectHash(state, entityId))
-            }
-            zones += zone
-        }
-        h = h.mix(zones)
 
         var objects = 0L
+        for ((key, contents) in state.zones) {
+            // A library is hashed by its order alone — carried by `zones` in [normalized]. Its 60
+            // cards have no components a game action touches without also moving them somewhere
+            // this digest reads in full.
+            if (key.zoneType == Zone.LIBRARY) continue
+            for (entityId in contents) objects += objectHash(state, entityId)
+        }
         for (entityId in state.stack) objects += objectHash(state, entityId)
         for (playerId in state.turnOrder) objects += objectHash(state, playerId)
         return h.mix(objects)
     }
 
-    /** Everything the ECS records about one object, minus the ignored bookkeeping. */
+    /**
+     * [state] with everything that is not a game fact zeroed out, so the data class's own
+     * `hashCode` can supply the rest.
+     *
+     * A hand-written list of the fields to *read* was the first shape of this, and it had the
+     * failure direction backwards. `GameState` carries ~50 fields and gains more; several are
+     * turn-level riders an ability can set without touching a permanent — `turnSpellCostReductions`,
+     * `activeCounterPlacementModifiers`, `pendingUncounterableSpells`,
+     * `damageCantBePreventedThisTurn`. A field missing from a read-list makes a real action look
+     * inert, and [Strategist] then refuses it *forever*. Naming the exclusions instead means a field
+     * added tomorrow counts by default, and the worst a wrong entry here can do is cost one wasted
+     * activation.
+     *
+     * What is stripped, and why none of it is a game fact:
+     * - `entities` — read separately by [objectHash], which drops [IGNORED_COMPONENTS].
+     * - `rng`, `nextEntityId`, `timestamp` — advanced by resolving anything at all.
+     * - `priorityPlayerId`, `priorityPassedBy` — whose turn it is to speak, not what is true. This
+     *   is what makes an action's own resolution comparable with the position it started from.
+     * - `continuationStack` — counted instead; see [digest].
+     * - `pendingDecision` — the same mid-resolution bookkeeping, and never set on a quiet state.
+     *
+     * `projectedState` is a body property rather than a constructor parameter, so it is already out
+     * of `hashCode` — and would be redundant anyway, being a pure function of what is left.
+     */
+    private fun normalized(state: GameState): GameState = state.copy(
+        entities = emptyMap(),
+        rng = GameRng(0L),
+        nextEntityId = 0L,
+        timestamp = 0L,
+        priorityPlayerId = null,
+        priorityPassedBy = emptySet(),
+        continuationStack = emptyList(),
+        pendingDecision = null,
+    )
+
+    /**
+     * Everything the ECS records about one object, minus the ignored bookkeeping.
+     *
+     * The entity id is mixed with the component hash rather than added alongside it, so two objects
+     * in the same zone trading component sets is a change rather than the same sum.
+     */
     private fun objectHash(state: GameState, entityId: EntityId): Long {
         val container = state.getEntity(entityId) ?: return 0L
-        var h = 0L
+        var components = 0L
         for (component in container.all()) {
             val type = component::class.java
             if (type in IGNORED_COMPONENTS) continue
-            h += type.name.hashCode().toLong().mix(component.hashCode())
+            components += type.name.hashCode().toLong().mix(component.hashCode())
         }
-        return h
+        return entityId.hashCode().toLong().mix(components)
     }
 
     private fun Long.mix(value: Int): Long = this * 0x100000001B3L xor value.toLong()
