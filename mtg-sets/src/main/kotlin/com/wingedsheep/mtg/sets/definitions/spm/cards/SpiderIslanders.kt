@@ -25,8 +25,7 @@ val SpiderIslanders = card("Spider-Islanders") {
         rarity = Rarity.COMMON
         collectorNumber = "91"
         artist = "Helge C. Balzer"
-        flavorText = "\"We've done it, Professor Warren. The glorious metamorphosis of Manhattan " +
-            "has begun!\" —Spider-Queen, Adriana Soria"
+        flavorText = "\"We've done it, Professor Warren. The glorious metamorphosis of Manhattan has begun!\"\n—Spider-Queen, Adriana Soria"
         imageUri = "https://cards.scryfall.io/normal/front/c/9/c9132e45-4ddb-4565-ac45-86f1ecc6230d.jpg?1783905332"
     }
 }

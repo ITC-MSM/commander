@@ -105,6 +105,7 @@ val BlackCatCunningThief = card("Black Cat, Cunning Thief") {
         rarity = Rarity.RARE
         collectorNumber = "52"
         artist = "Alessandra Pisano"
+        flavorText = "\"Spider-Man, I'm truly sorry for all the bad luck you've been having.\""
         imageUri = "https://cards.scryfall.io/normal/front/0/e/0ed36ada-22c8-4e40-86c5-c116a0bee1c2.jpg?1783905347"
     }
 }

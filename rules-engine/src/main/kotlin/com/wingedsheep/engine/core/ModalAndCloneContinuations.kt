@@ -305,7 +305,18 @@ data class EntersWithChoiceSpellContinuation(
      * this list to recover the name stored under
      * [com.wingedsheep.sdk.scripting.ChoiceSlot.CARD_NAME].
      */
-    val cardNames: List<String> = emptyList()
+    val cardNames: List<String> = emptyList(),
+    /**
+     * True when this MODE choice is a **synthesized Riot** choice granted to the entity (not printed
+     * on its card). The resumer then applies the chosen branch (a +1/+1 counter or a haste grant)
+     * directly, because a granted permanent has no printed `EntersWithCounters`/haste static.
+     */
+    val syntheticRiot: Boolean = false,
+    /**
+     * The number of *further* synthesized Riot choices to present after this one (CR 702.136b — each
+     * granted riot instance is a separate choice). The resumer re-pauses that many more times.
+     */
+    val syntheticRiotRemaining: Int = 0
 ) : ContinuationFrame
 
 /**
@@ -346,7 +357,11 @@ data class EntersWithChoiceOnBattlefieldContinuation(
     /** For [com.wingedsheep.sdk.scripting.ChoiceType.CARD_NAME] choices, the land card names
      *  presented (the resumer stores the chosen name by index). */
     val cardNames: List<String> = emptyList(),
-    val fromZone: Zone? = null
+    val fromZone: Zone? = null,
+    /** See [EntersWithChoiceSpellContinuation.syntheticRiot]. */
+    val syntheticRiot: Boolean = false,
+    /** See [EntersWithChoiceSpellContinuation.syntheticRiotRemaining]. */
+    val syntheticRiotRemaining: Int = 0
 ) : ContinuationFrame
 
 /**
@@ -517,6 +532,39 @@ data class CreateTokenCopyAuraHostContinuation(
     val auraDefinitionId: String,
     val auraName: String,
     val remaining: Int
+) : ContinuationFrame
+
+/**
+ * Auto-resumed continuation that creates the **remaining** token copies of a multi-token
+ * create-token-copy effect after one token paused for an "as-enters" choice (a printed
+ * [com.wingedsheep.sdk.scripting.EntersWithChoice] or a synthesized granted-riot choice — CR 614.12 /
+ * 702.136).
+ *
+ * A create-token-copy effect makes N tokens in a loop; each token must resolve its own as-enters
+ * choice (CR 707.2 — the copy has the copied card's abilities). When a token pauses, this frame is
+ * pushed **below** the choice's
+ * [EntersWithChoiceOnBattlefieldContinuation] so that, once that token's choice (and every granted-riot
+ * instance / chained printed choice) has resolved and its ETB triggers fired, the batch resumes here
+ * and creates the next token — which may pause again, pushing a fresh frame with a smaller [remaining].
+ * The resolution-time twin of [ModalPreChosenContinuation] / [ModalChosenModeTailContinuation]'s
+ * "push a tail frame below the nested decision" pattern; the copy analogue of
+ * [CreateTokenCopyAuraHostContinuation]'s per-token re-entry.
+ *
+ * [effect] is the original create-token-copy effect (a
+ * [com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect] or
+ * [com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect]) and [context] the resolution
+ * context, both re-used so the copy's source/target still resolves on resume — mirroring
+ * [CreateTokenCopyAuraHostContinuation].
+ *
+ * @property remaining how many more token copies are owed (always > 0 while this frame is live).
+ */
+@Serializable
+data class CreateTokenCopyRemainingContinuation(
+    override val decisionId: String,
+    val effect: @Serializable Effect,
+    val context: com.wingedsheep.engine.handlers.EffectContext,
+    val controllerId: EntityId,
+    val remaining: Int,
 ) : ContinuationFrame
 
 /**

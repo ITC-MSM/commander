@@ -58,6 +58,8 @@ class PlayLandHandler(
 ) : ActionHandler<PlayLand> {
     override val actionType: KClass<PlayLand> = PlayLand::class
 
+    private val predicateEvaluator = com.wingedsheep.engine.handlers.PredicateEvaluator()
+
     override fun validate(state: GameState, action: PlayLand): String? {
         if (!state.isActiveTurnFor(action.playerId)) {
             // CR 805.4c — each player on the active team may play a land on the team's turn.
@@ -464,8 +466,15 @@ class PlayLandHandler(
         // Process first choice in priority order: COLOR → CREATURE_TYPE
         // Continuations handle chaining to subsequent choices.
         if (cardDef != null) {
-            val firstChoice = cardDef.script.replacementEffects
-                .filterIsInstance<EntersWithChoice>()
+            val printedChoices = cardDef.script.replacementEffects.filterIsInstance<EntersWithChoice>()
+            // Granted Riot (a land that is a Spider with riot granted — vanishingly rare, but wired
+            // for consistency with the token/spell entry seams; one choice per grant, CR 702.136b).
+            val grantedRiotCount = com.wingedsheep.engine.mechanics.RiotSynthesis
+                .grantedRiotInstanceCount(newState, action.cardId, cardRegistry, predicateEvaluator)
+            val syntheticRiotChoice = if (grantedRiotCount > 0) {
+                com.wingedsheep.engine.mechanics.RiotSynthesis.RIOT_CHOICE
+            } else null
+            val firstChoice = (printedChoices + listOfNotNull(syntheticRiotChoice))
                 .sortedBy { it.choiceType.ordinal }
                 .firstOrNull()
             if (firstChoice != null) {
@@ -500,6 +509,8 @@ class PlayLandHandler(
                         cardNameOptions = if (firstChoice.choiceType == ChoiceType.CARD_NAME) {
                             cardRegistry.cardNamesIn(firstChoice.cardNamePool).toList()
                         } else emptyList(),
+                        syntheticRiot = firstChoice === syntheticRiotChoice,
+                        syntheticRiotRemaining = if (firstChoice === syntheticRiotChoice) grantedRiotCount - 1 else 0,
                     )
                 if (result != null) return result
             }

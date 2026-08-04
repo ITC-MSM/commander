@@ -34,9 +34,7 @@ val SpiderManNoir = card("Spider-Man Noir") {
     typeLine = "Legendary Creature — Spider Human Hero"
     power = 4
     toughness = 4
-    oracleText = "Menace\n" +
-        "Whenever a creature you control attacks alone, put a +1/+1 counter on it. Then surveil X, " +
-        "where X is the number of counters on it."
+    oracleText = "Menace\nWhenever a creature you control attacks alone, put a +1/+1 counter on it. Then surveil X, where X is the number of counters on it. (Look at the top X cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)"
 
     keywords(Keyword.MENACE)
 

@@ -1257,6 +1257,19 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   entity IDs to the `CREATED_TOKENS` pipeline collection, so a sibling effect in a `CompositeEffect` can address
   the new copy — e.g. Applied Geometry's "Create a token that's a copy … Put six +1/+1 counters on it" composes
   `CreateTokenCopyOfTarget(...)` then `AddCountersToCollection(CREATED_TOKENS, "+1/+1", 6)`.
+  **Enters-with replacements (CR 707.2).** A copy has the copied card's abilities, so every token copy runs the
+  copied card's "as-enters" replacements as it enters — the same pipeline a minted token (`TokenFromDefinition`)
+  and a directly-entering permanent use. This spans all four copy effects (`CreateTokenCopyOfTarget` /
+  `-OfSource` / `-OfChosenPermanent` / `-OfEquippedCreature`): the copied card's own **and** global
+  `EntersWithCounters`/`EntersWithDynamicCounters` (a token copy of a creature that "enters with a +1/+1
+  counter", plus grants like Gev, Scaled Scorch — applied inline via `EntersWithReplacements.applyOnEntry`),
+  its printed `EntersWithChoice` (Alloy Golem color, the Siege `MODE`, printed Riot — CR 614.12), and any
+  **granted** Riot (Spider-Punk's "Other Spiders you control have riot" — one choice per lord, CR 702.136b).
+  The choice half pauses for a player decision; `TokenEntryReplacements.firstEntersWithChoice` selects the choice
+  and `PermanentEntryReplacements.pauseForEntersWithChoice` raises it, so the token's ETB triggers fire once
+  after the choice resolves. For a multi-token `CreateTokenCopyOfTarget`/`-OfSource` where a token needs a choice,
+  the batch resumes token-by-token through a `CreateTokenCopyRemainingContinuation` (each remaining token runs its
+  own as-enters pipeline). A token that pauses for a choice is not published to `CREATED_TOKENS`.
 - `CreateTokenCopyOfEquippedCreature(count?, tapped?)` — equipment-specific copy.
 - `CreateRandomCreatureTokenWithManaValue(manaValue)` — create a token that's a copy of a *randomly
   chosen* creature card whose mana value equals `manaValue` (the Momir Basic Vanguard avatar's payoff —
@@ -5987,6 +6000,20 @@ composite abilities).
   counter directly: `StateProjector` projects the `DECAYED` keyword + `cantBlock = true`, and `TriggerDetector`
   schedules the end-of-combat self-sacrifice when a decayed-countered creature is declared as an attacker — no
   per-card static/trigger needed for the counter form.
+- `Riot` — "Riot (This creature enters with your choice of a +1/+1 counter or haste.)" (CR 702.136). Display-only
+  keyword; wire it with the `card { riot() }` builder helper, which composes the Khans-Siege
+  `EntersWithChoice(ChoiceType.MODE, [counter, haste])` + a mode-gated `EntersWithCounters(count = 1, selfOnly = true,
+  condition = SourceChosenModeIs("counter"))` + a mode-gated `ConditionalStaticAbility(GrantKeyword(HASTE,
+  GroupFilter.source()), SourceChosenModeIs("haste"))`. **Grant-aware:** when Riot is *granted* to other permanents
+  (`GrantKeyword(Keyword.RIOT, <group>)`, e.g. Spider-Punk's "Other Spiders you control have riot"), the engine
+  synthesizes one enters-with choice per granting lord (`RiotSynthesis.grantedRiotInstanceCount`, honoring each lord's
+  `excludeSelf` and its *projected* controller — one instance per grant, CR 702.136b), wired into the spell-resolution
+  + token/land entry seams; the choice resumer applies each chosen counter/haste branch directly and re-pauses for the
+  next instance (a granted permanent has none of the printed replacement/static abilities to fall back on).
+  `GrantCantBeCountered` gained an `includesAbilities` flag (default false) so "spells **and abilities** can't be
+  countered" (Spider-Punk) also makes matching abilities uncounterable (e.g. Stifle fizzles); `DamageCantBePrevented`
+  is a global replacement — while one is on the battlefield (or the "damage can't be prevented this turn" one-shot is
+  active) `DamageUtils.applyDamagePreventionShields` applies no prevention shields (CR 615.12).
 - `Exploit` — "Exploit (When this creature enters, you may sacrifice a creature.)" (CR 702.110, Dragons of Tarkir;
   reprinted MH1/MH2/VOW/PIP/MH3). Display-only keyword; wire the behavior with the `card { exploit(onExploit, onExploitTargets) }`
   builder helper. It adds the keyword plus one `EntersBattlefield` triggered ability whose effect is a

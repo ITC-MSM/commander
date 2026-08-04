@@ -204,6 +204,8 @@ object PermanentEntryReplacements {
         fromZone: Zone?,
         carryEvents: List<GameEvent> = emptyList(),
         cardNameOptions: List<String> = emptyList(),
+        syntheticRiot: Boolean = false,
+        syntheticRiotRemaining: Int = 0,
     ): ExecutionResult? {
         val chooserId = when (choice.chooser) {
             Player.AnOpponent -> state.getOpponents(controllerId).firstOrNull() ?: controllerId
@@ -291,7 +293,10 @@ object PermanentEntryReplacements {
 
             ChoiceType.MODE -> {
                 if (choice.modeOptions.isEmpty()) return null
-                val id = "choose-mode-enters-${entityId.value}"
+                // A permanent granted multiple riot instances re-pauses on the same entity; suffix
+                // the id with the remaining count so each instance's decision is distinct (702.136b).
+                val id = "choose-mode-enters-${entityId.value}" +
+                    if (syntheticRiot) "-riot$syntheticRiotRemaining" else ""
                 pause(
                     ChooseOptionDecision(
                         id = id,
@@ -309,7 +314,9 @@ object PermanentEntryReplacements {
                         controllerId = controllerId,
                         choiceType = ChoiceType.MODE,
                         modeOptionIds = choice.modeOptions.map { it.id },
-                        fromZone = fromZone
+                        fromZone = fromZone,
+                        syntheticRiot = syntheticRiot,
+                        syntheticRiotRemaining = syntheticRiotRemaining
                     )
                 )
             }

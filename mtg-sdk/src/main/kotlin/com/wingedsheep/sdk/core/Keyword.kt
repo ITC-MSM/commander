@@ -82,6 +82,19 @@ enum class Keyword(val displayName: String) {
     AMPLIFY("Amplify"),
 
     /**
+     * Riot (CR 702.136). "This permanent enters the battlefield with your choice of a +1/+1 counter
+     * or haste." A display tag; the mechanic is composed in the DSL via
+     * [com.wingedsheep.sdk.dsl.riot], which pairs an
+     * [com.wingedsheep.sdk.scripting.EntersWithChoice] (ChoiceType.MODE, counter|haste) with a
+     * mode-gated [com.wingedsheep.sdk.scripting.EntersWithCounters] (counter branch) and a mode-gated
+     * haste grant. Unlike most composed keywords, RIOT is **grant-aware**: when a lord effect grants
+     * riot to other permanents ("Other Spiders you control have riot" — Spider-Punk), the engine
+     * synthesizes the same enters-with choice for any permanent that enters carrying the projected
+     * RIOT keyword.
+     */
+    RIOT("Riot"),
+
+    /**
      * Devour (CR 702.82). "Devour N" — "As this creature enters, you may sacrifice
      * any number of creatures. This creature enters with N times that many +1/+1
      * counters on it." Variants substitute the sacrificed permanent type: e.g.

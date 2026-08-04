@@ -59,6 +59,7 @@ val ShadowOfTheGoblin = card("Shadow of the Goblin") {
         rarity = Rarity.RARE
         collectorNumber = "87"
         artist = "Pavel Kolomeyets"
+        flavorText = "\"It's time, Harry. Take the mask and avenge me.\""
         imageUri = "https://cards.scryfall.io/normal/front/8/5/854b6898-c480-435b-8952-a077c7977cec.jpg?1783905334"
     }
 }

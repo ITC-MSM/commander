@@ -43,6 +43,7 @@ val SpiderManIndia = card("Spider-Man India") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "151"
         artist = "Lie Setiawan"
+        flavorText = "\"That's why I do what I do. For my people.\""
         imageUri = "https://cards.scryfall.io/normal/front/6/5/65b8af30-559b-43a9-8526-62c28c378339.jpg?1783905310"
     }
 }

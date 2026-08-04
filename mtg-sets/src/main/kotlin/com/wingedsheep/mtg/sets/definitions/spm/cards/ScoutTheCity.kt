@@ -30,9 +30,7 @@ val ScoutTheCity = card("Scout the City") {
     manaCost = "{1}{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
-    oracleText = "Choose one —\n" +
-        "• Look Around — Mill three cards. You may put a permanent card from among them into your hand. You gain 3 life.\n" +
-        "• Bring Down — Destroy target creature with flying."
+    oracleText = "Choose one —\n• Look Around — Mill three cards. You may put a permanent card from among them into your hand. You gain 3 life. (To mill three cards, put the top three cards of your library into your graveyard.)\n• Bring Down — Destroy target creature with flying."
 
     spell {
         modal(chooseCount = 1) {

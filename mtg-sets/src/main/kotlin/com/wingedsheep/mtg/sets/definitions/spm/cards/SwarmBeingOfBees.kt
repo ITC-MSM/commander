@@ -30,7 +30,7 @@ val SwarmBeingOfBees = card("Swarm, Being of Bees") {
         rarity = Rarity.COMMON
         collectorNumber = "69"
         artist = "Alex Horley-Orlandelli"
-        flavorText = "\"Evil never dies. It just becomes bees.\" —Swarm, Fritz von Meyer"
+        flavorText = "\"Evil never dies. It just becomes bees.\"\n—Swarm, Fritz von Meyer"
         imageUri = "https://cards.scryfall.io/normal/front/c/b/cb83d54e-6641-4929-99ad-c0ba5b610902.jpg?1783905340"
     }
 }

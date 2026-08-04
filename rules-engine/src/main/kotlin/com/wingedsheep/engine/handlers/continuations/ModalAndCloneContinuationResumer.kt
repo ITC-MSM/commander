@@ -660,6 +660,38 @@ class ModalAndCloneContinuationResumer(
             }
         }
 
+        // Granted-Riot synthesis: apply the chosen +1/+1-counter / haste branch now — a granted
+        // permanent has no printed EntersWithCounters/haste static — before it enters the battlefield.
+        val syntheticRiotEvents = mutableListOf<GameEvent>()
+        if (continuation.syntheticRiot && response is OptionChosenResponse) {
+            val modeId = continuation.modeOptionIds.getOrNull(response.optionIndex)
+            if (modeId != null) {
+                val nm = newState.getEntity(spellId)?.get<CardComponent>()?.name ?: "Unknown"
+                val (rs, re) = com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+                    .applyGrantedRiotBranch(newState, spellId, controllerId, modeId, nm)
+                newState = rs
+                syntheticRiotEvents.addAll(re)
+            }
+            // CR 702.136b — each granted riot instance is a separate choice; re-pause for the next
+            // one (a permanent granted riot by two lords chooses counter/haste twice).
+            if (continuation.syntheticRiotRemaining > 0) {
+                val cc = newState.getEntity(spellId)?.get<CardComponent>()
+                if (cc != null) {
+                    val repause = services.stackResolver.pauseForEntersWithChoice(
+                        newState, spellId, controllerId, ownerId, cc,
+                        com.wingedsheep.engine.mechanics.RiotSynthesis.RIOT_CHOICE,
+                        syntheticRiot = true,
+                        syntheticRiotRemaining = continuation.syntheticRiotRemaining - 1
+                    )
+                    if (repause != null && repause.isPaused) {
+                        return ExecutionResult.paused(
+                            repause.state, repause.pendingDecision!!, syntheticRiotEvents + repause.events
+                        )
+                    }
+                }
+            }
+        }
+
         // Check if the card has remaining choices to chain to
         val spellContainer = newState.getEntity(spellId)
             ?: return ExecutionResult.error(state, "Spell entity not found: $spellId")
@@ -689,6 +721,7 @@ class ModalAndCloneContinuationResumer(
         newState = enterState
 
         val events = mutableListOf<GameEvent>()
+        events.addAll(syntheticRiotEvents)
         events.addAll(enterEvents)
         events.add(ResolvedEvent(spellId, cardComponent.name))
         events.add(
@@ -795,6 +828,38 @@ class ModalAndCloneContinuationResumer(
             }
         }
 
+        // Granted-Riot synthesis: apply the chosen +1/+1-counter / haste branch to the (already
+        // on-battlefield) permanent — it has no printed EntersWithCounters/haste static — before ETB
+        // triggers fire.
+        val syntheticRiotEvents = mutableListOf<GameEvent>()
+        if (continuation.syntheticRiot && response is OptionChosenResponse) {
+            val modeId = continuation.modeOptionIds.getOrNull(response.optionIndex)
+            if (modeId != null) {
+                val nm = newState.getEntity(entityId)?.get<CardComponent>()?.name ?: "Unknown"
+                val (rs, re) = com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+                    .applyGrantedRiotBranch(newState, entityId, continuation.controllerId, modeId, nm)
+                newState = rs
+                syntheticRiotEvents.addAll(re)
+            }
+            // CR 702.136b — each granted riot instance is a separate choice; re-pause for the next
+            // one, carrying the events already applied so they aren't lost across the pause.
+            if (continuation.syntheticRiotRemaining > 0) {
+                val cc = newState.getEntity(entityId)?.get<CardComponent>()
+                if (cc != null) {
+                    val repause = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
+                        .pauseForEntersWithChoice(
+                            newState, entityId, continuation.controllerId, cc,
+                            com.wingedsheep.engine.mechanics.RiotSynthesis.RIOT_CHOICE,
+                            continuation.fromZone,
+                            carryEvents = syntheticRiotEvents,
+                            syntheticRiot = true,
+                            syntheticRiotRemaining = continuation.syntheticRiotRemaining - 1
+                        )
+                    if (repause != null) return repause
+                }
+            }
+        }
+
         // Check if the permanent has remaining choices to chain to (e.g. color + creature type).
         val entityContainer = newState.getEntity(entityId)
         val cardComponent = entityContainer?.get<CardComponent>()
@@ -832,13 +897,13 @@ class ModalAndCloneContinuationResumer(
                 return ExecutionResult.paused(
                     triggerResult.state,
                     triggerResult.pendingDecision!!,
-                    triggerResult.events
+                    syntheticRiotEvents + triggerResult.events
                 )
             }
-            return checkForMore(triggerResult.newState, triggerResult.events)
+            return checkForMore(triggerResult.newState, syntheticRiotEvents + triggerResult.events)
         }
 
-        return checkForMore(newState, emptyList())
+        return checkForMore(newState, syntheticRiotEvents)
     }
 
     /**
@@ -1373,7 +1438,7 @@ class ModalAndCloneContinuationResumer(
         val staticAbilityHandler = com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler(services.cardRegistry)
         val result = com.wingedsheep.engine.handlers.effects.token.CreateTokenCopyOfChosenPermanentExecutor.createTokenCopy(
             state, chosenId, continuation.controllerId,
-            staticAbilityHandler
+            staticAbilityHandler, services.cardRegistry
         ).toExecutionResult()
         if (result.isPaused) return result
         return checkForMore(result.state, result.events.toList())

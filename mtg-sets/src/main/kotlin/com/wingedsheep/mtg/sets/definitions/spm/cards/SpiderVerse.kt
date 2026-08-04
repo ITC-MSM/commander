@@ -56,6 +56,7 @@ val SpiderVerse = card("Spider-Verse") {
         rarity = Rarity.MYTHIC
         collectorNumber = "93"
         artist = "Alexander Gering"
+        flavorText = "Every Spider ever...and then some!"
         imageUri = "https://cards.scryfall.io/normal/front/f/8/f8779eb2-1210-430d-8d42-3077053441ee.jpg?1783905331"
     }
 }

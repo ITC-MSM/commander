@@ -34,7 +34,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  */
 val EerieGravestone = card("Eerie Gravestone") {
     manaCost = "{2}"
-    colorIdentity = ""
+    colorIdentity = "B"
     typeLine = "Artifact"
     oracleText = "When this artifact enters, draw a card.\n" +
         "{1}{B}, Sacrifice this artifact: Mill four cards. You may put a creature card from " +

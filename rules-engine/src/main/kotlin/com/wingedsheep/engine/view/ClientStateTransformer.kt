@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.RIOT_MODE_COUNTER
+import com.wingedsheep.sdk.dsl.RIOT_MODE_HASTE
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GrantChosenColor
@@ -1084,8 +1086,11 @@ class ClientStateTransformer(
         // Get chosen mode label for "as enters, choose X or Y" permanents (e.g., Outpost Siege).
         // Resolve the stored mode id back to the display label declared in the card's
         // EntersWithChoice(modeOptions = [...]) so the UI can show the human-friendly name.
+        // Riot's counter/haste mode is a one-time enters-with choice, not an ongoing mode — its
+        // effect is already visible as a +1/+1 counter or the haste keyword — so it gets no badge.
         val chosenMode = container
             .chosenModeId()
+            ?.takeUnless { it == RIOT_MODE_COUNTER || it == RIOT_MODE_HASTE }
             ?.let { modeId ->
                 val modeOptions = cardDef?.script?.replacementEffects
                     ?.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithChoice>()

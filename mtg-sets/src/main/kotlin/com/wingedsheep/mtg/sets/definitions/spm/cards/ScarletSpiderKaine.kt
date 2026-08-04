@@ -26,10 +26,7 @@ val ScarletSpiderKaine = card("Scarlet Spider, Kaine") {
     typeLine = "Legendary Creature — Spider Human Hero"
     power = 2
     toughness = 1
-    oracleText = "Menace\n" +
-        "When Scarlet Spider enters, you may discard a card. If you do, put a +1/+1 counter on him.\n" +
-        "Mayhem {B/R} (You may cast this card from your graveyard for {B/R} if you discarded it " +
-        "this turn. Timing rules still apply.)"
+    oracleText = "Menace (This creature can't be blocked except by two or more creatures.)\nWhen Scarlet Spider enters, you may discard a card. If you do, put a +1/+1 counter on him.\nMayhem {B/R} (You may cast this card from your graveyard for {B/R} if you discarded it this turn. Timing rules still apply.)"
 
     keywords(Keyword.MENACE)
 

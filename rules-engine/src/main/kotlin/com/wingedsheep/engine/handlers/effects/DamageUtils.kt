@@ -903,6 +903,11 @@ object DamageUtils {
         isCombatDamage: Boolean = false,
         sourceId: EntityId? = null
     ): Pair<GameState, Int> {
+        // CR 615.12 — when damage can't be prevented, prevention shields aren't reduced and prevent
+        // nothing. When any battlefield "damage can't be prevented" (Spider-Punk) or the "this turn"
+        // one-shot (Fear, Fire, Foes!) is active, no shield applies and the damage passes through in full.
+        if (isDamagePreventionDisabled(state)) return state to amount
+
         var remainingDamage = amount
         val updatedEffects = state.floatingEffects.toMutableList()
         val toRemove = mutableListOf<Int>()

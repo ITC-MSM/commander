@@ -955,12 +955,26 @@ class StackResolver(
             // Process in priority order: COLOR → CREATURE_TYPE → CREATURE_ON_BATTLEFIELD
             // When a card has multiple choices (e.g., Riptide Replicator: color + creature type),
             // the first one pauses; its continuation resumer chains to the next.
-            val entersWithChoices = cardDef.script.replacementEffects.filterIsInstance<EntersWithChoice>()
+            val printedChoices = cardDef.script.replacementEffects.filterIsInstance<EntersWithChoice>()
+            // Granted Riot ("Other Spiders you control have riot") is not printed on the entering
+            // spell, so synthesize its enters-with choice — one per granting lord (CR 702.136b) —
+            // when a battlefield lord grants RIOT to it.
+            val grantedRiotCount = com.wingedsheep.engine.mechanics.RiotSynthesis
+                .grantedRiotInstanceCount(state, spellId, cardRegistry, predicateEvaluator)
+            val syntheticRiotChoice = if (grantedRiotCount > 0) {
+                com.wingedsheep.engine.mechanics.RiotSynthesis.RIOT_CHOICE
+            } else null
+            val entersWithChoices = printedChoices + listOfNotNull(syntheticRiotChoice)
             val firstChoice = entersWithChoices
                 .sortedBy { it.choiceType.ordinal }
                 .firstOrNull()
             if (firstChoice != null) {
-                val result = pauseForEntersWithChoice(state, spellId, controllerId, ownerId, cardComponent, firstChoice)
+                val isSynthetic = firstChoice === syntheticRiotChoice
+                val result = pauseForEntersWithChoice(
+                    state, spellId, controllerId, ownerId, cardComponent, firstChoice,
+                    syntheticRiot = isSynthetic,
+                    syntheticRiotRemaining = if (isSynthetic) grantedRiotCount - 1 else 0
+                )
                 if (result != null) return result
                 // null means choice couldn't be presented (e.g., no creatures on battlefield) — fall through
             }
@@ -2978,6 +2992,13 @@ class StackResolver(
             ?: container.get<ActivatedAbilityOnStackComponent>()?.let { "${it.sourceName}'s ability" }
             ?: "Unknown ability"
 
+        // "Abilities can't be countered" (Spider-Punk): a battlefield GrantCantBeCountered with
+        // includesAbilities = true whose filter matches this ability makes the counter fizzle — the
+        // ability stays on the stack and resolves normally.
+        if (isAbilityGrantedCantBeCountered(state, abilityId)) {
+            return ExecutionResult.success(state)
+        }
+
         // Remove from stack — abilities don't go to any zone
         val newState = state.removeFromStack(abilityId)
 
@@ -3376,6 +3397,32 @@ class StackResolver(
         return false
     }
 
+    /**
+     * Whether an activated/triggered ability on the stack ([abilityId]) can't be countered because a
+     * battlefield [GrantCantBeCountered] with `includesAbilities = true` covers it (its filter matches
+     * the ability — an unrestricted `GameObjectFilter.Any` matches every ability). Spider-Punk's
+     * "Spells and abilities can't be countered."
+     */
+    private fun isAbilityGrantedCantBeCountered(state: GameState, abilityId: EntityId): Boolean {
+        for (playerId in state.turnOrder) {
+            for (entityId in state.getBattlefield(playerId)) {
+                val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+                val def = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+                val sourceControllerId =
+                    state.getEntity(entityId)?.get<ControllerComponent>()?.playerId ?: playerId
+                val context = PredicateContext(controllerId = sourceControllerId, sourceId = entityId)
+                for (ability in def.staticAbilities) {
+                    if (ability is GrantCantBeCountered && ability.includesAbilities) {
+                        if (predicateEvaluator.matches(state, state.projectedState, abilityId, ability.filter, context)) {
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+        return false
+    }
+
     // =========================================================================
     // Valiant / "first time targeted" tracking
     // =========================================================================
@@ -3410,7 +3457,9 @@ class StackResolver(
         controllerId: EntityId,
         ownerId: EntityId,
         cardComponent: CardComponent,
-        choice: EntersWithChoice
+        choice: EntersWithChoice,
+        syntheticRiot: Boolean = false,
+        syntheticRiotRemaining: Int = 0
     ): ExecutionResult? {
         val chooserId = when (choice.chooser) {
             com.wingedsheep.sdk.scripting.references.Player.AnOpponent ->
@@ -3513,7 +3562,10 @@ class StackResolver(
                 if (choice.modeOptions.isEmpty()) {
                     return null
                 }
-                val decisionId = "choose-mode-enters-${spellId.value}"
+                // A permanent granted multiple riot instances re-pauses on the same spell; suffix the
+                // id with the remaining count so each instance's decision is distinct (CR 702.136b).
+                val decisionId = "choose-mode-enters-${spellId.value}" +
+                    if (syntheticRiot) "-riot$syntheticRiotRemaining" else ""
                 val decision = ChooseOptionDecision(
                     id = decisionId,
                     playerId = chooserId,
@@ -3534,7 +3586,9 @@ class StackResolver(
                     controllerId = controllerId,
                     ownerId = ownerId,
                     choiceType = ChoiceType.MODE,
-                    modeOptionIds = choice.modeOptions.map { it.id }
+                    modeOptionIds = choice.modeOptions.map { it.id },
+                    syntheticRiot = syntheticRiot,
+                    syntheticRiotRemaining = syntheticRiotRemaining
                 )
                 val pausedState = state
                     .pushContinuation(continuation)

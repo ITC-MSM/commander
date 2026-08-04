@@ -139,7 +139,8 @@ class CreateTokenCopyOfTargetExecutor(
         val events = mutableListOf<com.wingedsheep.engine.core.GameEvent>()
         val createdTokens = mutableListOf<EntityId>()
 
-        repeat(com.wingedsheep.engine.core.GameLimits.cappedTokenCount(count, "target-copy tokens")) {
+        val cappedCount = com.wingedsheep.engine.core.GameLimits.cappedTokenCount(count, "target-copy tokens")
+        for (index in 0 until cappedCount) {
             val (tokenId, stateWithId) = newState.newEntity()
             newState = stateWithId
             val op = effect.overridePower
@@ -246,7 +247,20 @@ class CreateTokenCopyOfTargetExecutor(
                     )
                 )
             }
-            createdTokens.add(tokenId)
+
+            // As-enters "enters with counters" (CR 614.1c): the copied card's own
+            // EntersWithCounters (a copy of a creature that "enters with a +1/+1 counter"), plus
+            // global grants from other permanents (Gev, Scaled Scorch). BattlefieldEntry.place skips
+            // this setup, so apply it here the way the standard entry pipeline does. Non-pausing.
+            val (afterCounters, counterEvents) = if (cardRegistry != null) {
+                com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+                    .applyOnEntry(newState, tokenId, controllerId, cardRegistry)
+            } else {
+                com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+                    .applyGlobal(newState, tokenId, controllerId)
+            }
+            newState = afterCounters
+            events.addAll(counterEvents)
 
             for (ability in effect.triggeredAbilities) {
                 val grant = GrantedTriggeredAbility(
@@ -289,6 +303,48 @@ class CreateTokenCopyOfTargetExecutor(
                 )
             }
 
+            // As-enters "choose X as this enters" (CR 614.12) + granted riot (CR 702.136/702.136b).
+            // A token copy of a creature that "enters with your choice of …" — or a Spider entering
+            // while Spider-Punk grants it riot — pauses for a player decision. We deliberately do NOT
+            // emit this token's entry ZoneChangeEvent when we pause: the choice resumer synthesizes it
+            // after the choice resolves, so ETB triggers fire exactly once (mirroring
+            // TokenFromDefinition). Counters already added ride along as carryEvents.
+            val choicePlan = if (cardRegistry != null) {
+                TokenEntryReplacements.firstEntersWithChoice(newState, tokenId, cardRegistry)
+            } else null
+            if (choicePlan != null) {
+                val remaining = cappedCount - (index + 1)
+                var pausedState = newState
+                if (remaining > 0) {
+                    // The rest of the batch resumes below the choice's continuation once this token's
+                    // choice (and every granted-riot instance) has fully resolved.
+                    pausedState = pausedState.pushContinuation(
+                        com.wingedsheep.engine.core.CreateTokenCopyRemainingContinuation(
+                            decisionId = "create-token-copy-remaining-${UUID.randomUUID()}",
+                            effect = effect,
+                            context = context,
+                            controllerId = controllerId,
+                            remaining = remaining,
+                        )
+                    )
+                }
+                val paused = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
+                    .pauseForEntersWithChoice(
+                        state = pausedState,
+                        entityId = tokenId,
+                        controllerId = controllerId,
+                        cardComponent = tokenCard,
+                        choice = choicePlan.choice,
+                        fromZone = null,
+                        carryEvents = events,
+                        syntheticRiot = choicePlan.syntheticRiot,
+                        syntheticRiotRemaining = choicePlan.syntheticRiotRemaining,
+                    )
+                if (paused != null) return EffectResult.from(paused)
+                // A null pause means the choice couldn't actually be presented (e.g. no legal object) —
+                // fall through and complete this token's entry normally.
+            }
+
             events.add(
                 ZoneChangeEvent(
                     entityId = tokenId,
@@ -307,6 +363,7 @@ class CreateTokenCopyOfTargetExecutor(
                 .applySagaEntryIfNeeded(newState, tokenId)
             newState = sagaState
             events.addAll(sagaEvents)
+            createdTokens.add(tokenId)
         }
 
         // If sacrificeAtStep is set, create a delayed trigger to sacrifice each created token

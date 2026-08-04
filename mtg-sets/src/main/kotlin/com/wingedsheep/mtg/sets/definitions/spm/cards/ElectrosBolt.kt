@@ -32,7 +32,7 @@ val ElectrosBolt = card("Electro's Bolt") {
         rarity = Rarity.COMMON
         collectorNumber = "77"
         artist = "JB Casacop"
-        flavorText = "\"Hey Max, while you're at it, do you mind charging my phone?\" —Spider-Man"
+        flavorText = "\"Hey Max, while you're at it, do you mind charging my phone?\"\n—Spider-Man"
         imageUri = "https://cards.scryfall.io/normal/front/2/5/25fe063f-35e4-4fca-9889-06834a8ef9b9.jpg?1783905337"
     }
 }

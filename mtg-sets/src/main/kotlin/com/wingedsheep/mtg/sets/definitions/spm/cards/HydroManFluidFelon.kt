@@ -68,6 +68,7 @@ val HydroManFluidFelon = card("Hydro-Man, Fluid Felon") {
         rarity = Rarity.RARE
         collectorNumber = "33"
         artist = "Borja Pindado"
+        flavorText = "\"Well, I always wanted a waterfront view.\"\n—Spider-Man"
         imageUri = "https://cards.scryfall.io/normal/front/e/5/e53115a4-8959-40fa-b763-931504a1c5a2.jpg?1783905353"
     }
 }

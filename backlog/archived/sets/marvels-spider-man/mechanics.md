@@ -1,13 +1,15 @@
-# Marvel's Spider-Man (SPM) — Missing Mechanics
+# Marvel's Spider-Man (SPM) — Mechanics
 
-Cards from SPM that **cannot** be implemented with the current engine/SDK, grouped by the
-missing mechanic they need. Each mechanic is `add-feature` territory (a new SDK primitive,
-keyword, or engine capability) — not pure card authoring.
+**Set complete — 188 / 188 booster cards implemented.** This file is the archived record of the
+engine/SDK gaps SPM originally surfaced: each section began as an `add-feature` blocker (a new SDK
+primitive, keyword, or engine capability — not pure card authoring) and every one has since been
+built. All sections below are marked ✅ IMPLEMENTED, and every card once listed as blocked is now
+authored with a passing scenario test.
 
 Supported today (confirmed against the `Keyword` enum + SDK): connive, saga, convoke, kicker,
 vehicles/crew, surveil, fight, copy-spell, copy-ability, play-from-top-of-library, impulse
 exile-and-play, max-hand-size modification, transform DFCs, Food/Treasure, **web-slinging**
-(CR 702.188 — implemented). This file is updated as the loop discovers new blockers.
+(CR 702.188), **mayhem** (CR 702.187), **riot**.
 
 ---
 
@@ -31,11 +33,11 @@ Brooklyn Visionary** [115] · **Spiders-Man, Heroic Horde** [117] · **Scarlet S
 end-step clause drove a small reusable addition — the `CREATURES_ENTERED_UNDER_CONTROL` turn tracker
 + `Conditions.CreaturesEnteredThisTurn`; Spider-Sense drove `Targets.InstantSorceryOrTriggeredAbility`.)
 
-Still blocked (not on web-slinging itself):
-- **Arachne, Psionic Weaver** [2] — `{2}{W}`, Web-slinging `{W}` implemented, but the ETB "look at an
-  opponent's hand, then choose a card type other than creature; spells of the chosen type cost {1}
-  more to cast" needs a **durable card-type enters-choice + a chosen-card-type spell-tax static**
-  (see the new section below). Deferred rather than approximated.
+Related cards (all now implemented):
+- **Arachne, Psionic Weaver** [2] — ✅ DONE (branch `spm-arachne`). `{2}{W}`, Web-slinging `{W}` plus the
+  ETB "look at an opponent's hand, then choose a card type other than creature; spells of the chosen type
+  cost {1} more to cast" — modeled by the **durable card-type enters-choice + a chosen-card-type spell-tax
+  static** (see the next section).
 - **Peter Parker // Amazing Spider-Man** [10] — ✅ DONE (branch `spm-peter-parker`). Transform DFC (front:
   ETB 2/1 green Spider token + sorcery-speed transform, both pre-existing). Back's "each legendary spell
   you cast that's one or more colors has web-slinging {G}{W}{U}" is the new `GrantWebSlingingToSpells(cost,
@@ -119,7 +121,7 @@ Implemented cards (9): **Swarm, Being of Bees** [69] · **Spider-Islanders** [91
 **Scarlet Spider, Kaine** [143] · **Chameleon, Master of Disguise** [27] (enter-as-copy) ·
 **Rocket-Powered Goblin Glider** [172] (ETB attach gated on `WasCastFromGraveyard`).
 
-Still blocked (not on Mayhem itself):
+Related cards (all now implemented):
 - **Carnage, Crimson Chaos** [125] — ✅ **IMPLEMENTED** on branch `spm-grant-reanimate`. The persistent
   grant-abilities-to-a-reanimated-target was expressible after all: `GrantStaticAbilityEffect(MustAttack())`
   + `GrantTriggeredAbilityEffect(TriggeredAbility.create(DealsCombatDamageToPlayer → SacrificeSelfEffect))`,
@@ -129,8 +131,8 @@ Still blocked (not on Mayhem itself):
   action and `PlayLandHandler` allows it (both gated on `MayhemGrants.effectiveMayhem`, via `mayhem("")`). Its
   "enters from a graveyard → lose 2 life" uses the `EnteredFromGraveyardComponent` the handler now stamps on
   graveyard land-plays (lands bypass `ZoneTransitionService`).
-- **Ultimate Green Goblin** [157] — `{1}{B/R}{B/R}` Mayhem `{2}{B/R}`; the upkeep "discard a card, then create a
-  Treasure" is expressible, but was not authored in this batch — a straightforward follow-up now that Mayhem exists.
+- **Ultimate Green Goblin** [157] — ✅ **IMPLEMENTED**. `{1}{B/R}{B/R}` Mayhem `{2}{B/R}`; the upkeep
+  "discard a card, then create a Treasure" over the existing Mayhem primitive.
 - **Norman Osborn // Green Goblin** [39] — ✅ DONE (branch `spm-norman-osborn`). Transform DFC (front: unblockable +
   connive-on-combat-damage + sorcery-speed transform; all pre-existing). Back's "Goblin Formula" is the new
   `GraveyardCardsHaveMayhem(filter, cost?)` static (mirrors `GraveyardCardsHaveFlashback`): `MayhemGrants.effectiveMayhem`
@@ -138,12 +140,30 @@ Still blocked (not on Mayhem itself):
   still gated on discarded-this-turn. Back's gy-cast `{2}` reduction is a plain `ModifySpellCost(YouCastFromZones(GRAVEYARD))`.
   Scenario test pins the group-granted mayhem (grant on, grant off, discard-gate).
 
-Also enabled by the **discarded-this-turn tracking** half (now implemented) but not yet authored:
-- **Green Goblin, Revenant** [130] — `{3}{B}{R}` Flying/deathtouch; "Whenever Green Goblin attacks, discard a card.
-  Then **draw a card for each card you've discarded this turn**" — now expressible via
-  `DynamicAmounts.cardsDiscardedThisTurn()`; a follow-up card.
+Also enabled by the **discarded-this-turn tracking** half:
+- **Green Goblin, Revenant** [130] — ✅ **IMPLEMENTED**. `{3}{B}{R}` Flying/deathtouch; "Whenever Green
+  Goblin attacks, discard a card. Then **draw a card for each card you've discarded this turn**" — via
+  `DynamicAmounts.cardsDiscardedThisTurn()`.
 
-## Riot (keyword — enters with your choice of a +1/+1 counter or haste)
+## Riot (keyword — enters with your choice of a +1/+1 counter or haste) — ✅ IMPLEMENTED
+
+**Done** (branch `spm-spider-punk`). New `Keyword.RIOT` + a `CardBuilder.riot()` DSL helper modeling
+printed Riot via the Khans-Siege `EntersWithChoice(ChoiceType.MODE, [counter, haste])` pattern +
+mode-gated `EntersWithCounters(condition = SourceChosenModeIs("counter"))` + mode-gated
+`ConditionalStaticAbility(GrantKeyword(HASTE), SourceChosenModeIs("haste"))`. **Granted riot** ("Other
+Spiders you control have riot") is handled by a new `RiotSynthesis` helper: for a Spider cast as a
+spell it scans battlefield `GrantKeyword(RIOT)` lords (excludeSelf, deduped vs printed) and ORs a
+synthesized `EntersWithChoice` into the entry; for token/land entries it detects granted RIOT via
+projected `hasKeyword`; the resumers apply the chosen +1/+1-counter or Duration.Permanent-floating-haste
+branch directly (a granted creature has no printed statics). Wired into StackResolver /
+PermanentEntryReplacements / TokenFromDefinition / PlayLandHandler + both continuation resumers.
+"Spells and abilities can't be countered" = `GrantCantBeCountered(Any, includesAbilities = true)` (the
+new `includesAbilities` flag fizzles Stifle-type ability counters). "Damage can't be prevented" =
+`DamageCantBePrevented`. Scenario tests cover printed Riot (counter/haste), granted riot (a cast Spider
+gets the choice), and can't-be-countered. Full regression green. (Granted-riot synthesis for
+blink/reanimation entry paths is not wired — a rare edge, flagged.)
+
+<details><summary>Original analysis (kept for reference)</summary>
 
 > Riot *(This creature enters with your choice of a +1/+1 counter or haste.)*
 
@@ -153,6 +173,8 @@ which requires Riot to exist as a grantable keyword. `add-feature` scope.
 
 Blocked cards:
 - **Spider-Punk** [92] — `{1}{R}` Riot; "Other Spiders you control have riot"; also "Spells and abilities can't be countered" + "Damage can't be prevented" (verify those two independently)
+
+</details>
 
 ## "Modified" state on a leaves-the-battlefield (last-known-information) trigger — ✅ IMPLEMENTED
 
