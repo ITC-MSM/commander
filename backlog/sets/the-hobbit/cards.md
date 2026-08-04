@@ -2,10 +2,10 @@
 
 **Set Size:** 193 cards revealed as of 2026-08-04
 **Release Date:** August 14, 2026
-**Implemented:** 43 / 193
+**Implemented:** 48 / 193
 Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. This list covers only cards revealed as of that date.
 
-- [ ] 1. Long-Bodied Grey Dog
+- [x] 1. Long-Bodied Grey Dog
 - [x] 2. Old Thrush
 - [ ] 3. Troop of Ponies
 - [ ] 4. Belladonna Took
@@ -56,7 +56,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 49. Most Decrepit Old Bird
 - [ ] 50. Old Fat Spider Can't See Me
 - [ ] 51. Plunder the Trollshaws
-- [ ] 52. Ravenhill Flock
+- [x] 52. Ravenhill Flock
 - [ ] 53. Riddles in the Dark
 - [ ] 54. Roll-Roll-Roll-Roll
 - [ ] 55. Sound the Trumpets
@@ -77,7 +77,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 70. Gollum, Riddle Master
 - [ ] 71. Gollum, Silent Slinker
 - [ ] 72. Gollum the Abandoned
-- [ ] 73. Great Fierce Bee
+- [x] 73. Great Fierce Bee
 - [ ] 74. Great Ugly-Looking Goblin
 - [ ] 75. Head of the Hunt
 - [ ] 76. Inside Information
@@ -98,7 +98,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 91. Dáin Ironfoot
 - [ ] 92. Desert Were-Worm
 - [ ] 93. Desolation of Smaug
-- [ ] 94. Dori, Bearer of Friends
+- [x] 94. Dori, Bearer of Friends
 - [ ] 95. Dwarven Mauler
 - [ ] 96. Gandalf, Goblins' Bane
 - [ ] 97. Gandalf, Spark Starter
@@ -132,7 +132,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 125. Galion, Elvenking's Butler
 - [ ] 126. Gigantic Big Bear
 - [x] 127. Guardian of the Halls
-- [ ] 128. Little Bear
+- [x] 128. Little Bear
 - [x] 129. Mirkwood Pathmaker
 - [x] 130. Nasty Little Rabbit
 - [ ] 131. The Notary Hobbits
