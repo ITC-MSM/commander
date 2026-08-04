@@ -107,14 +107,31 @@ object TargetSelection {
 
         val chosenTargets = mutableListOf<ChosenTarget>()
         val chosenIds = mutableSetOf<EntityId>()
-        targetInfos.forEach { info ->
+        for ((index, info) in targetInfos.withIndex()) {
             val available = if (info.mustDifferFromEarlier) {
                 info.validTargets.filterNot(chosenIds::contains)
             } else {
                 info.validTargets
             }
+            // Nothing left for this slot. [fillableRequirements] guarantees `validTargets` is not
+            // empty, so the only way here is an "other target" requirement (CR 601.2c) whose every
+            // legal target was already spent on an earlier slot: Mabel's Mettle's "up to one *other*
+            // target creature" with a single creature on the board. The enumerator cannot know which
+            // target the earlier slot will take, so it offers that creature for both.
+            //
+            // Targets are submitted as one flat list sliced back by max counts, so only *trailing*
+            // slots may be left empty — filling around a hole would silently re-attribute every
+            // later target. When the rest is optional the prefix is a legal list; otherwise there is
+            // no legal list at all and the action goes back unfilled, for the caller's simulation
+            // (or the engine) to reject. Either beats `first()` on an empty list, which is what this
+            // used to do — an `?: available.first()` that could only ever run when `available` was
+            // empty, and so could only ever throw.
             val selectedId = available.maxByOrNull { rank(state, it, playerId, intents) }
-                ?: available.first()
+                ?: return if (targetInfos.drop(index).all { it.minTargets == 0 }) {
+                    applyTargets(baseAction, chosenTargets)
+                } else {
+                    action.action
+                }
             chosenTargets += toChosenTarget(state, info, selectedId, playerId)
             chosenIds += selectedId
         }
@@ -155,18 +172,6 @@ object TargetSelection {
             modeTargetsOrdered = orderedTargets,
             targets = orderedTargets.flatten(),
         )
-    }
-
-    /** The heuristically best [ChosenTarget] for one requirement. */
-    fun bestTarget(
-        state: GameState,
-        info: TargetInfo,
-        playerId: EntityId,
-        intents: IntentCatalog = IntentCatalog.NONE,
-    ): ChosenTarget {
-        val best = info.validTargets.maxByOrNull { rank(state, it, playerId, intents) }
-            ?: info.validTargets.first()
-        return toChosenTarget(state, info, best, playerId)
     }
 
     /**
