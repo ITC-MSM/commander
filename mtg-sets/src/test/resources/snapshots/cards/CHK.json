@@ -1618,7 +1618,11 @@
                 "type": "ConditionalStaticAbility",
                 "ability": {
                     "type": "GrantKeyword",
-                    "keyword": "INDESTRUCTIBLE"
+                    "keyword": "INDESTRUCTIBLE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
                 },
                 "condition": {
                     "type": "EntityMatches",

@@ -298,4 +298,15 @@ sealed interface CardValidationError {
         override val cardName: String,
         override val message: String
     ) : CardValidationError
+
+    /**
+     * A `GroupFilter` scoped to `Scope.AttachedTo` ("enchanted/equipped creature") on a card that
+     * can never be attached to anything. The engine resolves attach-scope only by walking the
+     * permanents attached to a host, so on a non-Aura/non-Equipment the filter matches nothing and
+     * whatever it gated is a silent no-op.
+     */
+    data class AttachedScopeGrantOnNonAttachment(
+        override val cardName: String,
+        override val message: String
+    ) : CardValidationError
 }
