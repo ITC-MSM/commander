@@ -3387,6 +3387,157 @@
     ]
 }
 
+// Mayor of Avabruck
+{
+    "name": "Mayor of Avabruck",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Advisor Werewolf",
+    "oracleText": "Other Human creatures you control get +1/+1.\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Human ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Howlpack Alpha",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Each other creature you control that's a Werewolf or a Wolf gets +1/+1.\nAt the beginning of your end step, create a 2/2 green Wolf creature token.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "END"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 2,
+                        "toughness": 2,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Wolf"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a53f8031-aaa8-424c-929a-5478538a8cc6.jpg?1783940880"
+                    }
+                },
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                {
+                                    "type": "HasAnyOfSubtypes",
+                                    "subtypes": [
+                                        "Werewolf",
+                                        "Wolf"
+                                    ]
+                                }
+                            ],
+                            "controllerPredicate": "ControlledByYou"
+                        },
+                        "excludeSelf": true
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "193",
+            "rarity": "RARE",
+            "artist": "Svetlin Velinov",
+            "imageUri": "https://cards.scryfall.io/normal/back/d/d/dd8ca448-f734-4cb9-b1d5-790eed9a4b2d.jpg?1783940920",
+            "rulings": [
+                {
+                    "date": "2025-01-24",
+                    "text": "A creature that is both a Werewolf and a Wolf gets only +1/+1 from Howlpack Alpha's first ability."
+                }
+            ]
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "rarity": "RARE",
+        "artist": "Svetlin Velinov",
+        "flavorText": "He can deny his true nature for only so long.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/dd8ca448-f734-4cb9-b1d5-790eed9a4b2d.jpg?1783940920"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Mentor of the Meek
 {
     "name": "Mentor of the Meek",

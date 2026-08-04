@@ -602,6 +602,223 @@
     "colorIdentityOverride": []
 }
 
+// Huntmaster of the Fells
+{
+    "name": "Huntmaster of the Fells",
+    "manaCost": "{2}{R}{G}",
+    "typeLine": "Creature — Human Werewolf",
+    "oracleText": "Whenever this creature enters or transforms into Huntmaster of the Fells, create a 2/2 green Wolf creature token and you gain 2 life.\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Wolf"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/8/9/89b89a55-3ea2-4186-b946-06831bc16169.jpg?1783907965"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "TransformEvent",
+                    "intoBackFace": false
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Wolf"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/8/9/89b89a55-3ea2-4186-b946-06831bc16169.jpg?1783907965"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Ravager of the Fells",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Trample\nWhenever this creature transforms into Ravager of the Fells, it deals 2 damage to target opponent or planeswalker and 2 damage to up to one target creature that player or that planeswalker's controller controls.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "keywords": [
+            "TRAMPLE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_4",
+                    "trigger": {
+                        "type": "TransformEvent",
+                        "intoBackFace": true
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target opponent or planeswalker"
+                                }
+                            },
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature that player controls"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirement": {
+                        "type": "TargetOpponentOrPlaneswalker",
+                        "id": "target opponent or planeswalker"
+                    },
+                    "additionalTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "optional": true,
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "controllerPredicate": {
+                                        "type": "ControlledByReferencedPlayer",
+                                        "target": {
+                                            "type": "BoundVariable",
+                                            "name": "target opponent or planeswalker"
+                                        }
+                                    }
+                                }
+                            },
+                            "id": "target creature that player controls"
+                        }
+                    ]
+                },
+                {
+                    "id": "ability_5",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "140",
+            "rarity": "MYTHIC",
+            "artist": "Chris Rahn",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/a/aae6fb12-b252-453b-bca7-1ea2a0d6c8dc.jpg?1783940803"
+        },
+        "colorIdentityOverride": [
+            "RED",
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "RED",
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "140",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rahn",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aae6fb12-b252-453b-bca7-1ea2a0d6c8dc.jpg?1783940803"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Lingering Souls
 {
     "name": "Lingering Souls",
