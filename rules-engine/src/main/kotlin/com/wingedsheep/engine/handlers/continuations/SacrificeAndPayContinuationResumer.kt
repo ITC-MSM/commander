@@ -249,31 +249,10 @@ class SacrificeAndPayContinuationResumer(
             return executePayOrSufferConsequence(state, continuation, checkForMore)
         }
 
-        // Player paid the cost - discard the selected cards
-        val handZone = ZoneKey(playerId, Zone.HAND)
-        val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
-        var newState = state
-        val events = mutableListOf<GameEvent>()
-
-        for (cardId in selectedCards) {
-            val cardName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown"
-            newState = newState.removeFromZone(handZone, cardId)
-            newState = newState.addToZone(graveyardZone, cardId)
-            events.add(
-                ZoneChangeEvent(
-                    entityId = cardId,
-                    entityName = cardName,
-                    fromZone = Zone.HAND,
-                    toZone = Zone.GRAVEYARD,
-                    ownerId = playerId
-                )
-            )
-        }
-
-        val discardNames = selectedCards.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
-        events.add(0, CardsDiscardedEvent(playerId, selectedCards, discardNames))
-        newState = ZoneTransitionService.trackDiscard(newState, playerId, selectedCards)
-        return checkForMore(newState, events)
+        // Player paid the cost — discard the selected cards through the shared discard path, so a
+        // card-intrinsic discard replacement (madness, CR 702.35a) applies here too.
+        val result = ZoneTransitionService.discardCards(state, playerId, selectedCards)
+        return checkForMore(result.state, result.events)
     }
 
     /**

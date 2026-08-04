@@ -152,6 +152,23 @@ enum class Keyword(val displayName: String) {
      * [com.wingedsheep.sdk.scripting.KeywordAbility.Mayhem].
      */
     MAYHEM("Mayhem"),
+
+    /**
+     * Madness [cost] (CR 702.35). "If you discard this card, discard it into exile. When you do,
+     * cast it for its madness cost or put it into your graveyard."
+     *
+     * Two abilities in one keyword (CR 702.35a): a **static** ability that functions in hand and
+     * replaces the discard's destination with exile, and a **triggered** ability that fires on that
+     * exile and offers its owner a one-shot cast for [cost]. Because the cast happens while the
+     * trigger resolves, timing restrictions don't apply — a madness sorcery can be cast during an
+     * opponent's turn. Declining (or being unable to pay) puts the card into the graveyard.
+     *
+     * Unlike [MAYHEM] — the other "you discarded it" recast — madness offers the cast *once*, at
+     * the moment of the discard, and the card never touches the graveyard on the way. The engine
+     * keys the whole mechanic off [com.wingedsheep.sdk.scripting.KeywordAbility.Madness]; the
+     * triggered half is the synthesized [com.wingedsheep.sdk.scripting.Madness.castAbility].
+     */
+    MADNESS("Madness"),
     EVOKE("Evoke"),
 
     /**

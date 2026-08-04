@@ -5608,7 +5608,7 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 ## 11. Keywords
 
 > **Where set-mechanic helpers live.** The `card { … }` keyword helpers below for *set-specific*
-> mechanics — `mayBeginGameOnBattlefield()`, `flurry { }`, `mobilize(…)`, `firebending(n)`, `sneak(cost)`, `webSlinging(cost)`, `mayhem(cost)`, `decayed()`,
+> mechanics — `mayBeginGameOnBattlefield()`, `flurry { }`, `mobilize(…)`, `firebending(n)`, `sneak(cost)`, `webSlinging(cost)`, `mayhem(cost)`, `madness(cost)`, `decayed()`,
 > `vividEtb { }` / `vividCostReduction()`, `convergeEntersWithCounters(counterType?)`,
 > `impending(time, cost)`, `renew(cost) { }`, `embalm(cost)`, `enduring()`,
 > `craft(filter, cost)`, `station()`, `jobSelect()`, `gift(kind)` — are `CardBuilder` **extension functions** in
@@ -6171,6 +6171,26 @@ composite abilities).
   A resolving spell carries the durable "mayhem cost was paid" fact — `ChoiceSlot.MAYHEM_CAST` on a permanent, the resolution
   context otherwise — read via `Conditions.MayhemCostWasPaid` (e.g. *Sandman's Quicksand*'s opponents-only rider). Pass `""`
   for the CR 702.187c no-cost land form. Printed or granted per-entity, resolved through `MayhemGrants.effectiveMayhem`.
+- `Madness(cost)` — `card { madness("{cost}") }` builder helper (CR 702.35). One keyword, **two abilities**
+  (CR 702.35a): a *static* one functioning in **hand** — *"if a player would discard this card, that player discards it,
+  but exiles it instead of putting it into their graveyard"* — and a *triggered* one functioning on that exile —
+  *"when this card is exiled this way, its owner may cast it by paying [cost] rather than paying its mana cost. If that
+  player doesn't, they put this card into their graveyard."* Both live in the engine, keyed off the
+  `KeywordAbility.Madness` entry. The static half is a card-intrinsic zone-change replacement in
+  `ZoneMovementUtils.checkZoneChangeRedirect` (`ZoneMovementUtils.madnessDiscardExile`), which is why it holds for
+  **every** discard route — an opponent's Mind Rot, a cost payment, cycling, the CR 514.1 cleanup-step hand-size
+  discard. The card is still *discarded*, so "whenever you discard" payoffs and `CardsDiscardedThisTurnComponent`
+  still see it. As it lands in exile it is stamped `MadnessExiledComponent` plus a
+  `PlayWithFixedAlternativeManaCostComponent` carrying the madness cost, and `ZoneTransitionService.moveToZone` emits
+  `CardExiledWithMadnessEvent`; `TriggerDetector.detectMadnessCastTriggers` turns that into `Madness.castAbility`, an
+  **owner-controlled** synthesized trigger (`activeZone = EXILE`) composing `MayEffect(GatherCardsEffect(CardSource.Self)
+  → CastFromCollectionWithoutPayingCostEffect(payManaCost = true))` with a trailing
+  `MoveToZoneEffect(Self, GRAVEYARD, fromZone = EXILE)`. That `fromZone` gate is the whole "if that player doesn't"
+  clause: it is a no-op when the card is on the stack (cast) and puts it in the graveyard when it isn't (declined, or
+  the cost couldn't be paid). Because the cast happens while the trigger resolves, **timing restrictions don't apply** —
+  a discarded madness *sorcery* can be cast on an opponent's turn (CR 702.35b). Both markers are stripped the moment the
+  card leaves exile, so a lingering fixed cost can never re-price a later graveyard cast.
+  *Fiery Temper*, *Gisa's Bidding*, *Bloodmad Vampire*.
 - `Suspend` (CR 702.62) — an **exile-zone** mechanic, unlike Impending/Vanishing which live on the battlefield.
   A suspended card sits in exile with **time counters**; at the beginning of its **owner's** upkeep one is removed,
   and when the last is gone its owner **may play it for free**, with **haste** if it's a creature. The lifecycle is

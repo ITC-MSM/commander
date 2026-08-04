@@ -541,6 +541,26 @@ object ZoneMovementUtils {
         }
     }
 
+    /**
+     * The card's Madness ability (CR 702.35a) when *this particular move* is the discard it
+     * replaces, or null otherwise. A hand → graveyard move is a discard by definition (CR 701.8a),
+     * so the from/to pair is the whole test.
+     *
+     * Single home for the predicate: [checkZoneChangeRedirect] uses it to divert the move to exile,
+     * and `ZoneTransitionService.moveToZone` uses the same call to recognise the diverted move
+     * afterwards and stamp the exiled card. Two readers, one rule.
+     */
+    fun madnessDiscardExile(
+        container: ComponentContainer,
+        fromZone: Zone?,
+        toZone: Zone
+    ): com.wingedsheep.engine.state.components.identity.MadnessComponent? =
+        if (fromZone == Zone.HAND && toZone == Zone.GRAVEYARD) {
+            container.get<com.wingedsheep.engine.state.components.identity.MadnessComponent>()
+        } else {
+            null
+        }
+
     fun checkZoneChangeRedirect(
         state: GameState,
         entityId: EntityId,
@@ -571,6 +591,14 @@ object ZoneMovementUtils {
                     reveal = effect.reveal
                 )
             }
+        }
+
+        // Madness (CR 702.35a) — "if a player would discard this card, that player discards it, but
+        // exiles it instead of putting it into their graveyard." Card-intrinsic like the
+        // self-redirect above (it functions from hand), and unqualified by cause: it applies to an
+        // opponent's Mind Rot, a cycling cost, and the cleanup-step hand-size discard alike.
+        if (madnessDiscardExile(container, fromZone, toZone) != null) {
+            return ZoneChangeRedirectResult(Zone.EXILE)
         }
 
         // Check if the entity itself has ExileOnLeaveBattlefieldComponent

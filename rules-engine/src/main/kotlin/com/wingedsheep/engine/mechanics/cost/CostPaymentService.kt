@@ -489,25 +489,14 @@ class CostPaymentService(private val services: EngineServices) {
     }
 
     private fun discardSelected(state: GameState, payerId: EntityId, selected: List<EntityId>): CostPaymentExecution {
-        val handZone = ZoneKey(payerId, Zone.HAND)
-        val graveyardZone = ZoneKey(payerId, Zone.GRAVEYARD)
-        var newState = state
-        val events = mutableListOf<GameEvent>()
-        val names = mutableListOf<String>()
-        for (cardId in selected) {
-            val name = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown"
-            names.add(name)
-            newState = newState.removeFromZone(handZone, cardId).addToZone(graveyardZone, cardId)
-            events.add(ZoneChangeEvent(cardId, name, Zone.HAND, Zone.GRAVEYARD, payerId))
-        }
-        events.add(0, CardsDiscardedEvent(payerId, selected, names))
-        newState = ZoneTransitionService.trackDiscard(newState, payerId, selected)
-        return CostPaymentExecution(newState, events, success = true)
+        // Through the shared discard path, so a card-intrinsic discard replacement (madness,
+        // CR 702.35a) applies to a card discarded to pay a cost just as it does anywhere else.
+        val result = ZoneTransitionService.discardCards(state, payerId, selected)
+        return CostPaymentExecution(result.state, result.events, success = true)
     }
 
     private fun discardRandom(state: GameState, payerId: EntityId, filter: GameObjectFilter, count: Int): CostPaymentExecution {
         val handZone = ZoneKey(payerId, Zone.HAND)
-        val graveyardZone = ZoneKey(payerId, Zone.GRAVEYARD)
         val context = PredicateContext(controllerId = payerId)
         val valid = state.getZone(handZone).filter {
             predicateEvaluator.matches(state, state.projectedState, it, filter, context)
@@ -516,18 +505,8 @@ class CostPaymentService(private val services: EngineServices) {
 
         val (shuffled, stateAfterShuffle) = state.nextRandom { shuffle(valid) }
         val toDiscard = shuffled.take(count)
-        var newState = stateAfterShuffle
-        val events = mutableListOf<GameEvent>()
-        val names = mutableListOf<String>()
-        for (cardId in toDiscard) {
-            val name = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown"
-            names.add(name)
-            newState = newState.removeFromZone(handZone, cardId).addToZone(graveyardZone, cardId)
-            events.add(ZoneChangeEvent(cardId, name, Zone.HAND, Zone.GRAVEYARD, payerId))
-        }
-        events.add(0, CardsDiscardedEvent(payerId, toDiscard, names))
-        newState = ZoneTransitionService.trackDiscard(newState, payerId, toDiscard)
-        return CostPaymentExecution(newState, events, success = true)
+        val result = ZoneTransitionService.discardCards(stateAfterShuffle, payerId, toDiscard)
+        return CostPaymentExecution(result.state, result.events, success = true)
     }
 
     /**
