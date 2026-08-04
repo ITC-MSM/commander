@@ -1455,37 +1455,43 @@ class CastSpellHandler(
      *     no payment (mirrors [ForageCostResolver]'s engine-direct fallback); else
      *  3. the first option (nothing payable — downstream validation/selection then rejects the cast).
      *
-     * Cost-vs-mana ([AdditionalCost.CostOrPay]) reduces to its atom when the caster populated that
-     * atom's payment field, and to *nothing* otherwise: declining the atom means they took the pay
+     * Cost-vs-mana ([AdditionalCost.OrPay]) reduces to its leg cost when the caster populated that
+     * cost's payment field, and to *nothing* otherwise: declining the leg means they took the pay
      * path, whose only consequence — the extra mana — is already folded into the spell's cost by
-     * [applyOrPayManaAdjustments]. Paying the atom then runs through the ordinary
-     * [AdditionalCost.Atom] machinery, so the or-pay family needs no validation or payment code of
-     * its own.
+     * [applyOrPayManaAdjustments]. Paying the leg then runs through that cost's ordinary machinery,
+     * so the or-pay shape needs no validation or payment code of its own.
+     *
+     * [AdditionalCost.Composite] steps are flattened on the way in and out, so an alternative
+     * nested inside a composite is reduced (and priced) like a top-level one.
      */
     private fun reduceCostAlternatives(
         costs: List<AdditionalCost>,
         state: GameState,
         playerId: EntityId,
         payment: AdditionalCostPayment?,
-    ): List<AdditionalCost> = costs.flatMap { cost ->
+    ): List<AdditionalCost> = flattenComposites(costs).flatMap { cost ->
         when (cost) {
             is AdditionalCost.Choice -> listOf(
-                cost.options.firstOrNull { optionPaymentSatisfied(it, payment) }
+                cost.options.firstOrNull { paymentSatisfied(it, payment) }
                     ?: cost.options.firstOrNull { costHandler.canPayAdditionalCost(state, it, playerId) }
                     ?: cost.options.first()
             )
-            is AdditionalCost.CostOrPay ->
-                if (atomPaymentSatisfied(cost.atom, payment)) listOf(AdditionalCost.Atom(cost.atom))
-                else emptyList()
+            is AdditionalCost.OrPay ->
+                if (paymentSatisfied(cost.cost, payment)) listOf(cost.cost) else emptyList()
             else -> listOf(cost)
         }
-    }
+    }.let(::flattenComposites)
+
+    /** Expand [AdditionalCost.Composite] wrappers so every cost in the list stands on its own. */
+    private fun flattenComposites(costs: List<AdditionalCost>): List<AdditionalCost> =
+        costs.flatMap { if (it is AdditionalCost.Composite) flattenComposites(it.steps) else listOf(it) }
 
     /**
      * Fold the alternative mana of every "… or pay {N}" additional cost in [costs] whose non-mana
      * leg the caster declined into [cost] (CR 601.2f — the total cost is locked in as the spell is
      * cast). Which leg was taken is read off which [AdditionalCostPayment] field the client
-     * populated, exactly as [reduceCostAlternatives] reads it.
+     * populated, exactly as [reduceCostAlternatives] reads it — and composites are flattened the
+     * same way, so the two always agree on which costs they see.
      *
      * Shared by validate() and execute() so the cast is priced identically in both.
      */
@@ -1493,39 +1499,35 @@ class CastSpellHandler(
         cost: ManaCost,
         costs: List<AdditionalCost>,
         payment: AdditionalCostPayment?,
-    ): ManaCost = costs.fold(cost) { acc, additionalCost ->
+    ): ManaCost = flattenComposites(costs).fold(cost) { acc, additionalCost ->
         val declinedLegPrice = when (additionalCost) {
-            is AdditionalCost.CostOrPay ->
-                additionalCost.alternativeManaCost.takeUnless { atomPaymentSatisfied(additionalCost.atom, payment) }
+            is AdditionalCost.OrPay ->
+                additionalCost.alternativeManaCost.takeUnless { paymentSatisfied(additionalCost.cost, payment) }
             is AdditionalCost.BlightOrPay ->
                 additionalCost.alternativeManaCost.takeIf { payment?.blightTargets.isNullOrEmpty() }
-            is AdditionalCost.BeholdOrPay ->
-                additionalCost.alternativeManaCost.takeIf { payment?.beheldCards.isNullOrEmpty() }
             else -> null
         }
         if (declinedLegPrice == null) acc else acc + ManaCost.parse(declinedLegPrice)
     }
 
-    /** True when [payment] already carries a selection for the field [option]'s atom consumes. */
-    private fun optionPaymentSatisfied(option: AdditionalCost, payment: AdditionalCostPayment?): Boolean {
-        val atom = (option as? AdditionalCost.Atom)?.atom ?: return false
-        return atomPaymentSatisfied(atom, payment)
-    }
-
     /**
-     * True when [payment] carries a selection in the field [atom] consumes — the signal that the
-     * caster paid this atom rather than an alternative offered alongside it. Atoms with no
+     * True when [payment] carries a selection in the field [cost] consumes — the signal that the
+     * caster paid this cost rather than an alternative offered alongside it. Costs with no
      * selection of their own (mana, life, mill, …) are never distinguishable this way, so they
-     * report false; [AdditionalCost.CostOrPay] and [AdditionalCost.Choice] document that boundary.
+     * report false; [AdditionalCost.OrPay] and [AdditionalCost.Choice] document that boundary.
      */
-    private fun atomPaymentSatisfied(atom: CostAtom, payment: AdditionalCostPayment?): Boolean {
+    private fun paymentSatisfied(cost: AdditionalCost, payment: AdditionalCostPayment?): Boolean {
         val p = payment ?: return false
-        return when (atom) {
-            is CostAtom.Sacrifice -> p.sacrificedPermanents.isNotEmpty()
-            is CostAtom.Discard -> p.discardedCards.isNotEmpty()
-            is CostAtom.ExileFrom -> p.exiledCards.isNotEmpty()
-            is CostAtom.TapPermanents -> p.tappedPermanents.isNotEmpty()
-            is CostAtom.ReturnToHand -> p.bouncedPermanents.isNotEmpty()
+        return when (cost) {
+            is AdditionalCost.Behold -> p.beheldCards.isNotEmpty()
+            is AdditionalCost.Atom -> when (cost.atom) {
+                is CostAtom.Sacrifice -> p.sacrificedPermanents.isNotEmpty()
+                is CostAtom.Discard -> p.discardedCards.isNotEmpty()
+                is CostAtom.ExileFrom -> p.exiledCards.isNotEmpty()
+                is CostAtom.TapPermanents -> p.tappedPermanents.isNotEmpty()
+                is CostAtom.ReturnToHand -> p.bouncedPermanents.isNotEmpty()
+                else -> false
+            }
             else -> false
         }
     }
@@ -1537,7 +1539,6 @@ class CastSpellHandler(
     ): String? {
         val projected = state.projectedState
         val flattenedCosts = reduceCostAlternatives(additionalCosts, state, action.playerId, action.additionalCostPayment)
-            .flatMap { if (it is AdditionalCost.Composite) it.steps else listOf(it) }
         for (additionalCost in flattenedCosts) {
             when (additionalCost) {
                 is AdditionalCost.Atom -> when (val atom = additionalCost.atom) {
@@ -1880,41 +1881,10 @@ class CastSpellHandler(
                         return "Pay X life: X ($amount) cannot exceed your life total ($currentLife)"
                     }
                 }
-                is AdditionalCost.BeholdOrPay -> {
-                    // BeholdOrPay: player chose behold if beheldCards is non-empty,
-                    // otherwise chose to pay extra mana (validated via mana payment)
-                    val beheld = action.additionalCostPayment?.beheldCards ?: emptyList()
-                    if (beheld.isNotEmpty()) {
-                        val handZone = ZoneKey(action.playerId, Zone.HAND)
-                        val handCards = state.getZone(handZone)
-                        val battlefieldCards = state.getBattlefield()
-                        val context = PredicateContext(controllerId = action.playerId)
-                        for (cardId in beheld) {
-                            val inHand = cardId in handCards && cardId != action.cardId
-                            val onBattlefield = cardId in battlefieldCards &&
-                                projected.getController(cardId) == action.playerId
-                            if (!inHand && !onBattlefield) {
-                                return "Beheld card must be a card in your hand or a permanent you control"
-                            }
-                            if (onBattlefield) {
-                                if (!predicateEvaluator.matches(state, projected, cardId, additionalCost.filter, context)) {
-                                    val cardName = state.getEntity(cardId)?.get<CardComponent>()?.name ?: "Card"
-                                    return "$cardName doesn't match the required filter: ${additionalCost.filter.description}"
-                                }
-                            } else {
-                                if (!predicateEvaluator.matches(state, state.projectedState, cardId, additionalCost.filter, context)) {
-                                    val cardName = state.getEntity(cardId)?.get<CardComponent>()?.name ?: "Card"
-                                    return "$cardName doesn't match the required filter: ${additionalCost.filter.description}"
-                                }
-                            }
-                        }
-                    }
-                    // If beheldCards is empty, the player is paying extra mana instead
-                }
-                is AdditionalCost.CostOrPay -> {
-                    // Unreachable: reduceCostAlternatives already replaced this with its atom (the
-                    // caster paid the non-mana leg — validated by the Atom branch above) or dropped
-                    // it (pay path — the alternative mana is validated as part of the mana payment).
+                is AdditionalCost.OrPay -> {
+                    // Unreachable: reduceCostAlternatives already replaced this with its leg cost
+                    // (the caster paid the non-mana leg — validated by that cost's branch above) or
+                    // dropped it (pay path — the alternative mana is validated with the mana payment).
                 }
                 is AdditionalCost.PayLifePerTarget -> {
                     val required = additionalCost.amountPerTarget * action.targets.size
@@ -2285,7 +2255,6 @@ class CastSpellHandler(
         }
 
         val flattenedAllCosts = reduceCostAlternatives(allAdditionalCosts, currentState, action.playerId, action.additionalCostPayment)
-            .flatMap { if (it is AdditionalCost.Composite) it.steps else listOf(it) }
 
         // Server-initiated free cast: pay the spell's printed additional costs even though the
         // mana cost is waived (CR 601.2f / 118.9). A normal client cast arrives with the
@@ -2588,36 +2557,11 @@ class CastSpellHandler(
                             }
                         }
                     }
-                    is AdditionalCost.BeholdOrPay -> {
-                        // Store beheld card IDs in pipeline and reveal them, if behold path chosen
-                        val chosen = action.additionalCostPayment.beheldCards
-                        if (chosen.isNotEmpty()) {
-                            beheldCards.addAll(chosen)
-                            costPipelineCollections[additionalCost.storeAs] = chosen
-
-                            val cardNames = chosen.mapNotNull { currentState.getEntity(it)?.get<CardComponent>()?.name }
-                            val imageUris = chosen.map { id ->
-                                val defId = currentState.getEntity(id)?.get<CardComponent>()?.cardDefinitionId
-                                defId?.let { cardRegistry.getCard(it)?.metadata?.imageUri }
-                            }
-                            val battlefield = currentState.getBattlefield()
-                            val anyOnBattlefield = chosen.any { it in battlefield }
-                            events.add(CardsRevealedEvent(
-                                revealingPlayerId = action.playerId,
-                                cardIds = chosen,
-                                cardNames = cardNames,
-                                imageUris = imageUris,
-                                source = cardComponent.name,
-                                revealToSelf = anyOnBattlefield
-                            ))
-                        }
-                        // If beheldCards is empty, "pay mana" path — extra mana already added to effectiveCost
-                    }
-                    is AdditionalCost.CostOrPay -> {
-                        // Unreachable: reduceCostAlternatives already replaced this with its atom
-                        // (paid by the Atom branch above, including LKI snapshots and discard
-                        // tracking) or dropped it (pay path — the alternative mana was folded into
-                        // effectiveCost).
+                    is AdditionalCost.OrPay -> {
+                        // Unreachable: reduceCostAlternatives already replaced this with its leg
+                        // cost (paid by that cost's branch above, including LKI snapshots, discard
+                        // tracking and behold's pipeline storage) or dropped it (pay path — the
+                        // alternative mana was folded into effectiveCost).
                     }
                     is AdditionalCost.PayLifePerTarget -> {
                         // Handled in the auto-pay pre-pass above (life total scales with target count).

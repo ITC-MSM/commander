@@ -847,10 +847,13 @@
         ],
         "additionalCosts": [
             {
-                "type": "CostOrPay",
-                "atom": {
-                    "type": "AtomSacrifice",
-                    "filter": "creature"
+                "type": "OrPay",
+                "cost": {
+                    "type": "AdditionalAtom",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "creature"
+                    }
                 },
                 "alternativeManaCost": "{3}{B}"
             }

@@ -207,10 +207,8 @@ class CastSpellEnumerator : ActionEnumerator {
             var blightVariableMaxX = 0
             var payXLifeCost: AdditionalCost.PayXLife? = null
             var payXLifeMaxX = 0
-            var beholdOrPayCost: AdditionalCost.BeholdOrPay? = null
-            var beholdOrPayTargets = emptyList<EntityId>()
-            var costOrPay: AdditionalCost.CostOrPay? = null
-            var costOrPayTargets = emptyList<EntityId>()
+            var orPayCost: AdditionalCost.OrPay? = null
+            var orPayTargets = emptyList<EntityId>()
             var canPayAdditionalCosts = true
             val flattenedCosts = additionalCosts.flatMap {
                 if (it is AdditionalCost.Composite) it.steps else listOf(it)
@@ -348,26 +346,11 @@ class CastSpellEnumerator : ActionEnumerator {
                         payXLifeCost = cost
                         payXLifeMaxX = currentLife
                     }
-                    is AdditionalCost.BeholdOrPay -> {
-                        // Always payable: player can always choose the "pay mana" path
-                        // Find valid behold targets (battlefield permanents + hand cards matching filter)
-                        beholdOrPayCost = cost
-                        val projected = state.projectedState
-                        val predicateContext = PredicateContext(controllerId = playerId)
-                        val battlefieldMatches = projected.getBattlefieldControlledBy(playerId).filter { permId ->
-                            context.predicateEvaluator.matches(state, projected, permId, cost.filter, predicateContext)
-                        }
-                        val handZone = ZoneKey(playerId, Zone.HAND)
-                        val handMatches = state.getZone(handZone)
-                            .filter { it != cardId } // Exclude the card being cast
-                            .filter { context.predicateEvaluator.matches(state, state.projectedState, it, cost.filter, predicateContext) }
-                        beholdOrPayTargets = battlefieldMatches + handMatches
-                    }
-                    is AdditionalCost.CostOrPay -> {
+                    is AdditionalCost.OrPay -> {
                         // Always payable: the player can always choose the "pay mana" path.
-                        // Surface the candidates for the atom path, whichever atom it carries.
-                        costOrPay = cost
-                        costOrPayTargets = orPayAtomCandidates(context, playerId, cardId, cost.atom)
+                        // Surface the candidates for the leg path, whichever cost it carries.
+                        orPayCost = cost
+                        orPayTargets = orPayLegCandidates(context, playerId, cardId, cost.cost)
                     }
                     is AdditionalCost.ChooseEntity -> {
                         // Search each (zone, filter) pair in `cost.zoneFilters`. Battlefield
@@ -428,16 +411,10 @@ class CastSpellEnumerator : ActionEnumerator {
                 effectiveCost = effectiveCost + ManaCost.parse(blightOrPayCost.alternativeManaCost)
             }
 
-            // Save base cost for behold path, then add extra mana for the "pay" path
-            val beholdBaseCost = effectiveCost
-            if (beholdOrPayCost != null) {
-                effectiveCost = effectiveCost + ManaCost.parse(beholdOrPayCost.alternativeManaCost)
-            }
-
-            // Save base cost for the atom path, then add extra mana for the "pay" path
-            val costOrPayBaseCost = effectiveCost
-            if (costOrPay != null) {
-                effectiveCost = effectiveCost + ManaCost.parse(costOrPay.alternativeManaCost)
+            // Save base cost for the or-pay leg path, then add extra mana for the "pay" path
+            val orPayBaseCost = effectiveCost
+            if (orPayCost != null) {
+                effectiveCost = effectiveCost + ManaCost.parse(orPayCost.alternativeManaCost)
             }
 
             // Spell-level waterbend additional cost (Avatar: The Last Airbender). A *mandatory*
@@ -578,25 +555,20 @@ class CastSpellEnumerator : ActionEnumerator {
                 context.manaSolver.canPay(state, playerId, blightBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
             } else false
 
-            // Check behold path affordability (base cost without the extra mana, but needs a beholdable target)
-            val canAffordBeholdPath = if (beholdOrPayCost != null && beholdOrPayTargets.isNotEmpty()) {
-                context.manaSolver.canPay(state, playerId, beholdBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
-            } else false
-
-            // Check the atom path's affordability (base cost without the extra mana, but needs
-            // enough candidates for the atom's own selection — permanents to sacrifice, cards to
-            // discard/exile, …).
-            val canAffordCostOrPayPath = if (costOrPay != null &&
-                costOrPayTargets.size >= costOrPay.atom.selectionCount
+            // Check the or-pay leg path's affordability (base cost without the extra mana, but needs
+            // enough candidates for the leg cost's own selection — permanents to sacrifice, cards to
+            // discard/exile/behold, …).
+            val canAffordOrPayPath = if (orPayCost != null &&
+                orPayTargets.size >= orPayLegSelectionCount(orPayCost.cost)
             ) {
-                context.manaSolver.canPay(state, playerId, costOrPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
+                context.manaSolver.canPay(state, playerId, orPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
             } else false
 
             // A `MayCastWithoutPayingManaCost` battlefield permission (e.g. Weftwalking) makes the
             // spell affordable for {0} when its gates are open. Emitted by its own branch below;
             // don't continue out before reaching it.
             val canAffordFreeCast = context.freeCastPermissionFor(cardId)
-            if (!canAfford && !canAffordAlternative && !canAffordSelfAlternative && !canAffordEvoke && !canAffordImpending && !canAffordCleave && !canAffordBlightPath && !canAffordBeholdPath && !canAffordCostOrPayPath && !canAffordFreeCast) {
+            if (!canAfford && !canAffordAlternative && !canAffordSelfAlternative && !canAffordEvoke && !canAffordImpending && !canAffordCleave && !canAffordBlightPath && !canAffordOrPayPath && !canAffordFreeCast) {
                 // The primary face can't be paid for by any path. Normally we skip it entirely.
                 // But if this is an Adventure/Omen/modal-DFC card whose *secondary* face is
                 // affordable, surface a grayed-out placeholder for the primary face so the
@@ -655,31 +627,18 @@ class CastSpellEnumerator : ActionEnumerator {
                 )
             } else null
 
-            val beholdPathInfo = if (canAffordBeholdPath && beholdOrPayCost != null) {
-                orPayPath(
-                    label = "Behold",
-                    baseCost = beholdBaseCost,
-                    legCostInfo = AdditionalCostData(
-                        description = beholdOrPayCost.description,
-                        costType = "Behold",
-                        validBeholdTargets = beholdOrPayTargets,
-                        beholdCount = 1
-                    )
-                )
-            } else null
-
-            // The atom leg reuses the atom's own client picker ("SacrificePermanent",
-            // "DiscardCard", …), so a plain sacrifice/discard/exile cost and the or-pay variant
+            // The leg reuses its own cost's client picker ("SacrificePermanent", "DiscardCard",
+            // "Behold", …), so a plain sacrifice/discard/exile/behold cost and the or-pay variant
             // drive the exact same selection UI.
-            val costOrPayPathInfo = if (canAffordCostOrPayPath && costOrPay != null) {
-                orPayAtomCostData(costOrPay.atom, costOrPayTargets)?.let { (label, legCostInfo) ->
-                    orPayPath(label = label, baseCost = costOrPayBaseCost, legCostInfo = legCostInfo)
+            val orPayPathInfo = if (canAffordOrPayPath && orPayCost != null) {
+                orPayLegCostData(orPayCost.cost, orPayTargets)?.let { (label, legCostInfo) ->
+                    orPayPath(label = label, baseCost = orPayBaseCost, legCostInfo = legCostInfo)
                 }
             } else null
 
             // Every or-pay leg emits the same shape of extra cast action, so the emission sites
             // below just loop over them.
-            val orPayPaths = listOfNotNull(blightPathInfo, beholdPathInfo, costOrPayPathInfo)
+            val orPayPaths = listOfNotNull(blightPathInfo, orPayPathInfo)
 
             // Calculate X cost info if the spell has X in its cost (printed, or the waterbend {X}
             // folded in above).
@@ -2245,7 +2204,9 @@ class CastSpellEnumerator : ActionEnumerator {
             val bounceCost = additionalCosts.firstNotNullOfOrNull { (it as? AdditionalCost.Atom)?.atom as? CostAtom.ReturnToHand }
             AdditionalCostData(
                 description = bounceCost?.description?.replaceFirstChar { it.uppercase() } ?: "Return a permanent you control to its owner's hand",
-                costType = "ReturnToHand",
+                // "BouncePermanent" is the bounce picker's costType everywhere else (activated
+                // abilities, Sneak, Web-slinging); "ReturnToHand" matches no client phase.
+                costType = "BouncePermanent",
                 validBounceTargets = bounceTargets,
                 bounceCount = bounceCount
             )
@@ -2272,7 +2233,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
     /**
      * One extra cast action for the non-mana leg of an "… or pay {N}" additional cost
-     * ([AdditionalCost.CostOrPay] / [AdditionalCost.BeholdOrPay] / [AdditionalCost.BlightOrPay]):
+     * ([AdditionalCost.OrPay] / [AdditionalCost.BlightOrPay]):
      * the spell's base cost *without* the alternative mana, plus that leg's own selection prompt.
      * The pay path needs nothing extra — it is the ordinary cast action, whose cost already carries
      * the alternative mana.
@@ -2287,89 +2248,120 @@ class CastSpellEnumerator : ActionEnumerator {
     )
 
     /**
-     * Candidates the caster could pick to pay [atom] as the non-mana leg of an
-     * [AdditionalCost.CostOrPay], excluding the spell being cast ([cardId]) — it is on the stack,
-     * not in the zone the cost draws from.
+     * Candidates the caster could pick to pay [leg] as the non-mana leg of an
+     * [AdditionalCost.OrPay], excluding the spell being cast ([cardId]) — it is on the stack, not in
+     * the zone the cost draws from.
      *
-     * Covers exactly the selection-carrying atoms the cast-time payment machinery can tell apart by
-     * payment field (see [AdditionalCost.CostOrPay]); anything else returns no candidates, so only
-     * the pay path is offered.
+     * Covers exactly the selection-carrying costs the cast-time payment machinery can tell apart by
+     * payment field (see [AdditionalCost.OrPay]); anything else returns no candidates, so only the
+     * pay path is offered.
      */
-    private fun orPayAtomCandidates(
+    private fun orPayLegCandidates(
         context: EnumerationContext,
         playerId: EntityId,
         cardId: EntityId,
-        atom: CostAtom,
+        leg: AdditionalCost,
     ): List<EntityId> {
         val state = context.state
-        return when (atom) {
-            is CostAtom.Sacrifice -> context.costUtils.findSacrificeTargets(state, playerId, atom)
-            is CostAtom.ExileFrom -> context.costUtils.findExileTargets(state, playerId, atom.filter, atom.zone)
-                .filter { it != cardId }
-            is CostAtom.Discard -> {
-                val handCards = state.getZone(ZoneKey(playerId, Zone.HAND)).filter { it != cardId }
-                if (atom.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) handCards
-                else {
-                    val predicateContext = PredicateContext(controllerId = playerId)
-                    handCards.filter {
+        val predicateContext = PredicateContext(controllerId = playerId)
+        return when (leg) {
+            // Behold spans battlefield *and* hand in one candidate pool.
+            is AdditionalCost.Behold -> {
+                val projected = state.projectedState
+                val battlefieldMatches = projected.getBattlefieldControlledBy(playerId).filter { permId ->
+                    context.predicateEvaluator.matches(state, projected, permId, leg.filter, predicateContext)
+                }
+                val handMatches = state.getZone(ZoneKey(playerId, Zone.HAND))
+                    .filter { it != cardId }
+                    .filter { context.predicateEvaluator.matches(state, projected, it, leg.filter, predicateContext) }
+                battlefieldMatches + handMatches
+            }
+            is AdditionalCost.Atom -> when (val atom = leg.atom) {
+                is CostAtom.Sacrifice -> context.costUtils.findSacrificeTargets(state, playerId, atom)
+                is CostAtom.ExileFrom -> context.costUtils.findExileTargets(state, playerId, atom.filter, atom.zone)
+                    .filter { it != cardId }
+                is CostAtom.Discard -> {
+                    val handCards = state.getZone(ZoneKey(playerId, Zone.HAND)).filter { it != cardId }
+                    if (atom.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) handCards
+                    else handCards.filter {
                         context.predicateEvaluator.matches(state, state.projectedState, it, atom.filter, predicateContext)
                     }
                 }
+                is CostAtom.TapPermanents -> context.costUtils.findAbilityTapTargets(state, playerId, atom.filter)
+                    .let { if (atom.excludeSelf) it.filter { id -> id != cardId } else it }
+                is CostAtom.ReturnToHand -> context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
+                else -> emptyList()
             }
-            is CostAtom.TapPermanents -> context.costUtils.findAbilityTapTargets(state, playerId, atom.filter)
-                .filter { it != cardId }
-            is CostAtom.ReturnToHand -> context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
-                .filter { it != cardId }
             else -> emptyList()
         }
     }
 
+    /** How many entities the caster must pick to pay [leg] — 0 when it carries no selection. */
+    private fun orPayLegSelectionCount(leg: AdditionalCost): Int = when (leg) {
+        is AdditionalCost.Behold -> leg.count
+        is AdditionalCost.Atom -> leg.atom.selectionCount
+        else -> 0
+    }
+
     /**
-     * The action-description label and client cost data for paying [atom] as an or-pay leg, or null
-     * when [atom] carries no selection the client could drive (so the leg isn't offered).
+     * The action-description label and client cost data for paying [leg] as an or-pay leg, or null
+     * when [leg] carries no selection the client could drive (so the leg isn't offered).
      *
-     * Deliberately reuses the same `costType`s a plain [AdditionalCost.Atom] cost of that kind
-     * emits, so the or-pay leg drives the existing pickers with no client-side changes.
+     * Deliberately reuses the same `costType`s the leg cost emits when it stands alone, so the
+     * or-pay leg drives the existing pickers with no client-side changes. `"ExileFromGraveyard"`
+     * pins the client's picker to the graveyard, so a non-graveyard exile leg is declined rather
+     * than shown against the wrong zone.
      */
-    private fun orPayAtomCostData(
-        atom: CostAtom,
+    private fun orPayLegCostData(
+        leg: AdditionalCost,
         candidates: List<EntityId>,
-    ): Pair<String, AdditionalCostData>? {
-        val description = atom.description.replaceFirstChar { it.uppercase() }
-        return when (atom) {
-            is CostAtom.Sacrifice -> "Sacrifice" to AdditionalCostData(
-                description = description,
-                costType = "SacrificePermanent",
-                validSacrificeTargets = candidates,
-                sacrificeCount = atom.count,
-            )
-            is CostAtom.Discard -> "Discard" to AdditionalCostData(
-                description = description,
-                costType = "DiscardCard",
-                validDiscardTargets = candidates,
-                discardCount = atom.count,
-            )
-            is CostAtom.ExileFrom -> "Exile from ${atom.zone.name.lowercase()}" to AdditionalCostData(
-                description = description,
-                costType = "ExileFromGraveyard",
-                validExileTargets = candidates,
-                exileMinCount = atom.count,
-                exileMaxCount = atom.count,
-            )
-            is CostAtom.TapPermanents -> "Tap" to AdditionalCostData(
-                description = description,
-                costType = "TapPermanents",
-                validTapTargets = candidates,
-                tapCount = atom.count,
-            )
-            is CostAtom.ReturnToHand -> "Return to hand" to AdditionalCostData(
-                description = description,
-                costType = "ReturnToHand",
-                validBounceTargets = candidates,
-                bounceCount = atom.count,
-            )
-            else -> null
+    ): Pair<String, AdditionalCostData>? = when (leg) {
+        is AdditionalCost.Behold -> "Behold" to AdditionalCostData(
+            description = leg.description,
+            costType = "Behold",
+            validBeholdTargets = candidates,
+            beholdCount = leg.count,
+        )
+        is AdditionalCost.Atom -> {
+            val description = leg.description
+            when (val atom = leg.atom) {
+                is CostAtom.Sacrifice -> "Sacrifice" to AdditionalCostData(
+                    description = description,
+                    costType = "SacrificePermanent",
+                    validSacrificeTargets = candidates,
+                    sacrificeCount = atom.count,
+                )
+                is CostAtom.Discard -> "Discard" to AdditionalCostData(
+                    description = description,
+                    costType = "DiscardCard",
+                    validDiscardTargets = candidates,
+                    discardCount = atom.count,
+                )
+                is CostAtom.ExileFrom -> if (atom.zone != Zone.GRAVEYARD) null else {
+                    "Exile from graveyard" to AdditionalCostData(
+                        description = description,
+                        costType = "ExileFromGraveyard",
+                        validExileTargets = candidates,
+                        exileMinCount = atom.count,
+                        exileMaxCount = atom.count,
+                    )
+                }
+                is CostAtom.TapPermanents -> "Tap" to AdditionalCostData(
+                    description = description,
+                    costType = "TapPermanents",
+                    validTapTargets = candidates,
+                    tapCount = atom.count,
+                )
+                is CostAtom.ReturnToHand -> "Return to hand" to AdditionalCostData(
+                    description = description,
+                    costType = "BouncePermanent",
+                    validBounceTargets = candidates,
+                    bounceCount = atom.count,
+                )
+                else -> null
+            }
         }
+        else -> null
     }
 
     /**

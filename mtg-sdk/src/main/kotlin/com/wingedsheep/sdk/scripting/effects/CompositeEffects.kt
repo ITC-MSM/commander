@@ -513,7 +513,8 @@ enum class DamageRecipient {
 /**
  * "Behold a [filter]" as a resolution-time effect (CR: a player beholds a permanent by either
  * choosing a matching permanent they control or revealing a matching card from their hand).
- * Unlike the cast-time [AdditionalCost.Behold] / [AdditionalCost.BeholdOrPay], this is the
+ * Unlike the cast-time [AdditionalCost.Behold] (on its own or as an [AdditionalCost.OrPay] leg),
+ * this is the
  * *effect-side* behold used inside abilities such as Sarkhan, Dragon Ascendant's ETB
  * ("you may behold a Dragon. If you do, create a Treasure token.").
  *

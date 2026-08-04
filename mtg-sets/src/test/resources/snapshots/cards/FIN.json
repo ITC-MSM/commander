@@ -11412,14 +11412,17 @@
         ],
         "additionalCosts": [
             {
-                "type": "CostOrPay",
-                "atom": {
-                    "type": "AtomSacrifice",
-                    "filter": {
-                        "cardPredicates": [
-                            "IsCreature",
-                            "IsLegendary"
-                        ]
+                "type": "OrPay",
+                "cost": {
+                    "type": "AdditionalAtom",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                "IsLegendary"
+                            ]
+                        }
                     }
                 },
                 "alternativeManaCost": "{2}"

@@ -463,34 +463,41 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   mana cost is waived — `GrantMayCastFromLinkedExile(withoutPayingManaCost = true, additionalCost =
   Costs.additional.PayLifeEqualToManaValueOfSpell)` — so the only cost paid is the life. The amount is
   read from the cast card's mana value, checked at cast time (CR 119.4 — must have at least that much life).
-- `Costs.additional.CostOrPay(atom, alternativeManaCost)` — **cost-vs-mana**: "as an additional cost
-  to cast this spell, \<pay this cost\> **or** pay {mana}". One `AdditionalCost.CostOrPay` covers the
-  whole "do X or pay {N}" family over the shared `CostAtom` vocabulary; the named shapes below are
-  its printed wordings and are one-line facades over it. The enumerator offers up to two cast paths:
-  the **atom path** (base cost + the atom's ordinary selection prompt — the same `costType` a plain
-  atom cost of that kind emits, so no new client UI) and the **pay path** (base cost +
-  `alternativeManaCost` folded in). The atom path is offered only when the board affords the atom's
-  selection, so with nothing to pay it only the pay path is castable — but the cost as a whole is
-  always payable. Which leg was taken is recovered at payment time from **which
-  `additionalCostPayment` field the client populated**, so `atom` must be a selection-carrying atom
-  (`Sacrifice` / `Discard` / `ExileFrom` / `TapPermanents` / `ReturnToHand`) and must not share its
-  field with another additional cost on the same card. `CastSpellHandler.reduceCostAlternatives`
-  then rewrites the cost to a plain `AdditionalCost.Atom` (leg paid) or drops it (pay path), so
-  validation, payment, LKI snapshots and discard tracking (CR 701.8) reuse the atom paths verbatim.
-  `BlightOrPay` / `BeholdOrPay` stay separate types because blight and behold aren't `CostAtom`s.
+- `Costs.additional.OrPay(cost, alternativeManaCost)` — **cost-vs-mana**: "as an additional cost
+  to cast this spell, \<pay this cost\> **or** pay {mana}". One `AdditionalCost.OrPay` covers the
+  whole "do X or pay {N}" family, parameterized by the `AdditionalCost` on the non-mana leg; the
+  named shapes below are its printed wordings and are one-line facades over it. The enumerator
+  offers up to two cast paths: the **leg path** (base cost + the leg cost's ordinary selection
+  prompt — the same `costType` that cost emits standing alone, so no new client UI) and the **pay
+  path** (base cost + `alternativeManaCost` folded in). The leg path is offered only when the board
+  affords the leg's selection, so with nothing to pay it only the pay path is castable — but the
+  cost as a whole is always payable. Which leg was taken is recovered at payment time from **which
+  `additionalCostPayment` field the client populated**, so `cost` must be a selection-carrying cost
+  — a `Behold`, or an atom cost over `Sacrifice` / `Discard` / `ExileFrom` / `TapPermanents` /
+  `ReturnToHand` — and must not share its field with another additional cost on the same card.
+  `CastSpellHandler.reduceCostAlternatives` then rewrites the whole cost to that plain leg cost (leg
+  paid) or drops it (pay path), so validation, payment, LKI snapshots, behold's pipeline storage and
+  discard tracking (CR 701.8) reuse the leg's own paths verbatim. `BlightOrPay` stays a separate
+  type only because there is no standalone blight `AdditionalCost` for `OrPay` to wrap.
+- `Costs.additional.BeholdOrPay(filter = Filters.Any, alternativeManaCost, storeAs = "beheld")` —
+  "behold a [filter] or pay {mana}" (Lys Alana Dignitary). `OrPay(AdditionalCost.Behold(filter,
+  storeAs = storeAs), …)`; the behold path surfaces as a `costType = "Behold"` cost over one
+  candidate pool spanning battlefield *and* hand, and stores the chosen cards under `storeAs` for
+  downstream costs/effects exactly as a plain `Behold` does.
 - `Costs.additional.ExileFromGraveyardOrPay(exileCount, alternativeManaCost, filter = Filters.Any)`
   — "exile N cards from your graveyard or pay {mana}" (Soaring Stoneglider: "exile two cards from
-  your graveyard or pay {1}{W}"). `CostOrPay(CostAtom.ExileFrom(GRAVEYARD, filter, exileCount), …)`;
+  your graveyard or pay {1}{W}"). `OrPay(Atom(CostAtom.ExileFrom(GRAVEYARD, filter, exileCount)), …)`;
   the exile path surfaces as a `costType = "ExileFromGraveyard"` cost and is offered only when the
-  graveyard holds at least `exileCount` matching cards.
+  graveyard holds at least `exileCount` matching cards. That `costType` pins the client's picker to
+  the graveyard, so an `ExileFrom` leg on any other zone is declined (pay path only).
 - `Costs.additional.SacrificeOrPay(filter = Filters.Any, alternativeManaCost, count = 1)` —
   "sacrifice a [filter] or pay {mana}" (Louisoix's Sacrifice: "sacrifice a legendary creature or pay
-  {2}"). `CostOrPay(CostAtom.Sacrifice(filter, count), …)`; the sacrifice path surfaces as a
+  {2}"). `OrPay(Atom(CostAtom.Sacrifice(filter, count)), …)`; the sacrifice path surfaces as a
   `costType = "SacrificePermanent"` cost (the on-battlefield picker Natural Order uses) and is
   offered only when you control at least `count` matching permanents.
 - `Costs.additional.DiscardOrPay(alternativeManaCost, filter = Filters.Any, count = 1)` — "discard a
   [filter] or pay {mana}" (Pumpkin Bombardment: "discard a card or pay {2}").
-  `CostOrPay(CostAtom.Discard(count, filter), …)`; the discard path surfaces as a `costType =
+  `OrPay(Atom(CostAtom.Discard(count, filter)), …)`; the discard path surfaces as a `costType =
   "DiscardCard"` cost (the hand picker Force of Will uses), excludes the spell being cast, and is
   offered only when you hold at least `count` other matching cards. The discard-as-cost still feeds
   the turn's discard tracking (CR 701.8), so it counts toward
@@ -499,8 +506,8 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   spell, pay exactly one of `options`" (Souls of the Lost: *"discard a card **or** sacrifice a
   permanent"*). The general, parameterized form of `Forage` — each option is itself an
   `AdditionalCost` (compose the `Sacrifice` / `Discard` / `ExileFrom` atoms). Distinct from the
-  `*OrPay` family (`CostOrPay` and its `SacrificeOrPay` / `DiscardOrPay` / `ExileFromGraveyardOrPay`
-  wordings, plus `BeholdOrPay` / `BlightOrPay`): those
+  `OrPay` family (`OrPay` and its `SacrificeOrPay` / `DiscardOrPay` / `ExileFromGraveyardOrPay` /
+  `BeholdOrPay` wordings, plus `BlightOrPay`): those
   fold a **mana** alternative into the spell's cost, whereas `Choice` is for options that are each
   independently payable **non-mana** costs (no mana-cost change). The enumerator emits **one cast
   action per payable option** (`CastSpellEnumerator.expandChoiceAdditionalCosts` +
@@ -847,7 +854,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   choose a matching permanent they control **or** reveal a matching card from hand (revealing emits
   `CardsRevealedEvent`; battlefield permanents are merely chosen). If they decline, or control no
   matching permanent and hold no matching card, `ifBeheld` does not run. Distinct from the cast-time
-  `AdditionalCost.Behold` / `AdditionalCost.BeholdOrPay` (which behold as a casting cost). Sarkhan,
+  `AdditionalCost.Behold` (on its own or as an `AdditionalCost.OrPay` leg — beholding as a casting
+  cost). Sarkhan,
   Dragon Ascendant ETB: `Effects.Behold(GameObjectFilter.Any.withSubtype(Subtype.DRAGON),
   ifBeheld = Effects.CreateTreasure())`.
 

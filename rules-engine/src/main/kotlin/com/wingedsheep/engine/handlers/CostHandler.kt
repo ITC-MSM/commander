@@ -1133,9 +1133,8 @@ class CostHandler {
             // The "… or pay {N}" family: always payable, because the caster can always decline the
             // non-mana leg and fold the alternative mana into the spell's cost instead. Whether the
             // non-mana leg is *available* only decides which cast paths the enumerator offers.
-            is AdditionalCost.CostOrPay,
-            is AdditionalCost.BlightOrPay,
-            is AdditionalCost.BeholdOrPay -> true
+            is AdditionalCost.OrPay,
+            is AdditionalCost.BlightOrPay -> true
             is AdditionalCost.BlightVariable -> {
                 // X = 0 is always legal (default minCount = 0); higher minCounts
                 // require a creature you control whose toughness >= minCount.

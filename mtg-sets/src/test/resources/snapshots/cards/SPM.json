@@ -7068,8 +7068,11 @@
         ],
         "additionalCosts": [
             {
-                "type": "CostOrPay",
-                "atom": "AtomDiscard",
+                "type": "OrPay",
+                "cost": {
+                    "type": "AdditionalAtom",
+                    "atom": "AtomDiscard"
+                },
                 "alternativeManaCost": "{2}"
             }
         ]

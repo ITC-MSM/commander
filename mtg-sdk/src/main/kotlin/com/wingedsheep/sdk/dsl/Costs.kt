@@ -528,21 +528,24 @@ object Costs {
             storeAs: String = "beheld"
         ): AdditionalCost = AdditionalCost.Behold(filter, count, storeAs)
 
-        /** Behold a [filter] card or pay [alternativeManaCost] instead. */
+        /**
+         * Pay [cost] or pay [alternativeManaCost] instead — the general "do X or pay {N}" shape
+         * ([AdditionalCost.OrPay]). [cost] must be a selection-carrying cost: a [Behold], or an
+         * atom cost over sacrifice / discard / exile-from-a-zone / tap / return-to-hand. The named
+         * shapes below are the printed wordings, and a new one is a one-line facade over this.
+         */
+        fun OrPay(cost: AdditionalCost, alternativeManaCost: String): AdditionalCost =
+            AdditionalCost.OrPay(cost, alternativeManaCost)
+
+        /** Behold a [filter] card or pay [alternativeManaCost] instead (Lys Alana Dignitary). */
         fun BeholdOrPay(
             filter: GameObjectFilter = GameObjectFilter.Any,
             alternativeManaCost: String,
             storeAs: String = "beheld"
-        ): AdditionalCost = AdditionalCost.BeholdOrPay(filter, alternativeManaCost, storeAs)
-
-        /**
-         * Pay [atom] or pay [alternativeManaCost] instead — the general "do X or pay {N}" shape
-         * ([AdditionalCost.CostOrPay]). [atom] must be a selection-carrying atom (sacrifice,
-         * discard, exile from a zone, tap, return to hand); the named shapes below are the printed
-         * wordings, and a new one is a one-line facade over this.
-         */
-        fun CostOrPay(atom: CostAtom, alternativeManaCost: String): AdditionalCost =
-            AdditionalCost.CostOrPay(atom, alternativeManaCost)
+        ): AdditionalCost = OrPay(
+            AdditionalCost.Behold(filter, count = 1, storeAs = storeAs),
+            alternativeManaCost
+        )
 
         /**
          * Exile [exileCount] cards matching [filter] from your graveyard, or pay
@@ -552,8 +555,8 @@ object Costs {
             exileCount: Int,
             alternativeManaCost: String,
             filter: GameObjectFilter = GameObjectFilter.Any,
-        ): AdditionalCost = CostOrPay(
-            CostAtom.ExileFrom(Zone.GRAVEYARD, filter, exileCount),
+        ): AdditionalCost = OrPay(
+            AdditionalCost.Atom(CostAtom.ExileFrom(Zone.GRAVEYARD, filter, exileCount)),
             alternativeManaCost
         )
 
@@ -565,7 +568,10 @@ object Costs {
             filter: GameObjectFilter = GameObjectFilter.Any,
             alternativeManaCost: String,
             count: Int = 1,
-        ): AdditionalCost = CostOrPay(CostAtom.Sacrifice(filter, count), alternativeManaCost)
+        ): AdditionalCost = OrPay(
+            AdditionalCost.Atom(CostAtom.Sacrifice(filter, count)),
+            alternativeManaCost
+        )
 
         /**
          * Discard [count] card(s) matching [filter] from your hand, or pay
@@ -575,7 +581,10 @@ object Costs {
             alternativeManaCost: String,
             filter: GameObjectFilter = GameObjectFilter.Any,
             count: Int = 1,
-        ): AdditionalCost = CostOrPay(CostAtom.Discard(count, filter), alternativeManaCost)
+        ): AdditionalCost = OrPay(
+            AdditionalCost.Atom(CostAtom.Discard(count, filter)),
+            alternativeManaCost
+        )
 
         /** "Behold a [filter] and exile it" — [Behold] + [ExileFromStorage] composed. */
         fun BeholdAndExile(
