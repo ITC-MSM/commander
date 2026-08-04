@@ -459,12 +459,27 @@ data class ClientCard(
     val copyOf: String? = null,
 
     /**
-     * True when this permanent's printed card has the Legendary supertype but its current
-     * type line does not — i.e. a copy effect explicitly stripped legendariness
-     * ("except it isn't legendary" / Impostor Syndrome). Lets the UI flag the difference
-     * between an original legendary creature and a non-legendary token copy of it.
+     * True when this permanent's printed card has the Legendary supertype but it is not legendary
+     * now — i.e. a copy effect explicitly stripped legendariness ("except it isn't legendary" /
+     * Impostor Syndrome). Lets the UI flag the difference between an original legendary creature
+     * and a non-legendary token copy of it. Mutually exclusive with [legendaryByEffect]: an effect
+     * that grants the supertype back wins, because the permanent then really is legendary.
      */
     val nonLegendaryCopy: Boolean = false,
+
+    /**
+     * The mirror of [nonLegendaryCopy]: this permanent's printed card is *not* legendary but a
+     * continuous effect has granted it the Legendary supertype — Origin of Spider-Man's "it becomes
+     * a legendary Spider Hero", the Ring emblem's "your Ring-bearer is legendary" (CR 701.54c). The
+     * printed art still shows a non-legendary frame, so the UI needs the flag to tell the player the
+     * legend rule now applies. [typeLine] carries the supertype too; this is the at-a-glance cue.
+     *
+     * Deliberately narrowed to Legendary rather than a general `grantedSupertypes` set: only the
+     * legend rule changes how a permanent must be played around, so only it earns a badge. A granted
+     * Snow or World supertype reaches the client through [typeLine] alone — widen this to a set
+     * rather than adding a second boolean if one of those ever needs its own cue.
+     */
+    val legendaryByEffect: Boolean = false,
 
     /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
     val damageDistribution: Map<EntityId, Int>? = null,

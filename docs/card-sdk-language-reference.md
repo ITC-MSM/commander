@@ -1072,7 +1072,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Color & type
 
-- `AddCardType(type, target, duration)` — add a card type (e.g. become an artifact).
+- `AddCardType(type, target, duration)` — add a card type (e.g. become an artifact). Also takes a **supertype** — `AddCardType("LEGENDARY", …)` for "it becomes a legendary Spider Hero" (Origin of Spider-Man) — because the layer projection stores supertypes in the same type set; there is no separate `AddSupertype`.
 - `AddSubtype(subtype, target, duration)` — add a subtype temporarily.
 - `SetLandType(landType, target, duration, fromChosenValueKey)` — target land *becomes* the basic land type, **replacing** its existing land subtypes (Rule 305.7); pass `fromChosenValueKey` to read the type from a preceding `ChooseOption(OptionType.BASIC_LAND_TYPE)`. One-shot counterpart to the `SetEnchantedLandType` aura static ability. (Dream Thrush)
 - `ChooseColorForTarget(target)` — target picks a color; stored in context.

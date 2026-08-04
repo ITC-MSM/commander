@@ -8,6 +8,7 @@ import com.wingedsheep.engine.mechanics.combat.rules.DefenderBypass
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.sdk.core.Supertype
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -1141,9 +1142,20 @@ class ClientStateTransformer(
         } else {
             typeLine.cardTypes.toList()
         }
+        // Supertypes share the projected `types` set with card types and subtypes (see
+        // StateProjector.extractTypes), so a granted supertype — Origin of Spider-Man's "it becomes
+        // a legendary Spider Hero", the Ring emblem's "your Ring-bearer is legendary" (CR 701.54c) —
+        // only reaches the client if we read them from the projection too. Reading base
+        // `typeLine.supertypes` dropped them: they're not a CardType, so `displayCardTypes` filters
+        // them out as well and "Legendary" vanished from the rendered type line entirely.
+        val displaySupertypes = if (projectedTypes != null) {
+            Supertype.fromProjectedTypes(projectedTypes)
+        } else {
+            typeLine.supertypes.toList()
+        }
         val typeLineParts = mutableListOf<String>()
-        if (typeLine.supertypes.isNotEmpty()) {
-            typeLineParts.add(typeLine.supertypes.joinToString(" ") { it.displayName })
+        if (displaySupertypes.isNotEmpty()) {
+            typeLineParts.add(displaySupertypes.joinToString(" ") { it.displayName })
         }
         typeLineParts.add(displayCardTypes.joinToString(" ") { it.displayName })
         val typeLineString = if (typeLineSubtypes.isNotEmpty()) {
@@ -1322,10 +1334,18 @@ class ClientStateTransformer(
             copyOf = container.get<com.wingedsheep.engine.state.components.identity.CopyOfComponent>()?.let { copyComp ->
                 cardRegistry.getCard(copyComp.originalCardDefinitionId)?.name
             },
+            // The two legendary flags are complements, and the `!in displaySupertypes` clause is what
+            // makes them so: a non-legendary copy that an effect then makes legendary again (Impostor
+            // Syndrome's copy designated Ring-bearer) is simply legendary, so "not legendary" is a lie
+            // about it and the client would otherwise badge it both ways at once.
             nonLegendaryCopy = zoneKey.zoneType == Zone.BATTLEFIELD
                 && cardDef != null
-                && com.wingedsheep.sdk.core.Supertype.LEGENDARY in cardDef.typeLine.supertypes
-                && com.wingedsheep.sdk.core.Supertype.LEGENDARY !in cardComponent.typeLine.supertypes,
+                && Supertype.LEGENDARY in cardDef.typeLine.supertypes
+                && Supertype.LEGENDARY !in cardComponent.typeLine.supertypes
+                && Supertype.LEGENDARY !in displaySupertypes,
+            legendaryByEffect = zoneKey.zoneType == Zone.BATTLEFIELD
+                && Supertype.LEGENDARY in displaySupertypes
+                && Supertype.LEGENDARY !in cardComponent.typeLine.supertypes,
             damageDistribution = (spellOnStack?.damageDistribution ?: container.get<TriggeredAbilityOnStackComponent>()?.damageDistribution)?.takeIf { it.isNotEmpty() },
             sagaTotalChapters = cardDef?.finalChapter,
             classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel,
