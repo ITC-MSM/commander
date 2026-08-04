@@ -1130,10 +1130,12 @@ class CostHandler {
                 // Payability determined by the preceding cost that populated the storage
                 true
             }
-            is AdditionalCost.BlightOrPay -> {
-                // Always payable: player can always choose the "pay mana" path
-                true
-            }
+            // The "… or pay {N}" family: always payable, because the caster can always decline the
+            // non-mana leg and fold the alternative mana into the spell's cost instead. Whether the
+            // non-mana leg is *available* only decides which cast paths the enumerator offers.
+            is AdditionalCost.CostOrPay,
+            is AdditionalCost.BlightOrPay,
+            is AdditionalCost.BeholdOrPay -> true
             is AdditionalCost.BlightVariable -> {
                 // X = 0 is always legal (default minCount = 0); higher minCounts
                 // require a creature you control whose toughness >= minCount.
@@ -1156,22 +1158,6 @@ class CostHandler {
             is AdditionalCost.PayLifeEqualToManaValueOfSpell -> {
                 // Affordability is per-cast (depends on the cast card's mana value), so it is
                 // checked at CastSpellHandler time, not here. Always "payable" at this generic gate.
-                true
-            }
-            is AdditionalCost.BeholdOrPay -> {
-                // Always payable: player can always choose the "pay mana" path
-                true
-            }
-            is AdditionalCost.ExileFromGraveyardOrPay -> {
-                // Always payable: player can always choose the "pay mana" path
-                true
-            }
-            is AdditionalCost.SacrificeOrPay -> {
-                // Always payable: player can always choose the "pay mana" path
-                true
-            }
-            is AdditionalCost.DiscardOrPay -> {
-                // Always payable: player can always choose the "pay mana" path
                 true
             }
             is AdditionalCost.Composite -> {

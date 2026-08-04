@@ -536,6 +536,15 @@ object Costs {
         ): AdditionalCost = AdditionalCost.BeholdOrPay(filter, alternativeManaCost, storeAs)
 
         /**
+         * Pay [atom] or pay [alternativeManaCost] instead — the general "do X or pay {N}" shape
+         * ([AdditionalCost.CostOrPay]). [atom] must be a selection-carrying atom (sacrifice,
+         * discard, exile from a zone, tap, return to hand); the named shapes below are the printed
+         * wordings, and a new one is a one-line facade over this.
+         */
+        fun CostOrPay(atom: CostAtom, alternativeManaCost: String): AdditionalCost =
+            AdditionalCost.CostOrPay(atom, alternativeManaCost)
+
+        /**
          * Exile [exileCount] cards matching [filter] from your graveyard, or pay
          * [alternativeManaCost] instead (Soaring Stoneglider).
          */
@@ -543,8 +552,10 @@ object Costs {
             exileCount: Int,
             alternativeManaCost: String,
             filter: GameObjectFilter = GameObjectFilter.Any,
-        ): AdditionalCost =
-            AdditionalCost.ExileFromGraveyardOrPay(exileCount, alternativeManaCost, filter)
+        ): AdditionalCost = CostOrPay(
+            CostAtom.ExileFrom(Zone.GRAVEYARD, filter, exileCount),
+            alternativeManaCost
+        )
 
         /**
          * Sacrifice [count] permanent(s) matching [filter] you control, or pay
@@ -554,8 +565,7 @@ object Costs {
             filter: GameObjectFilter = GameObjectFilter.Any,
             alternativeManaCost: String,
             count: Int = 1,
-        ): AdditionalCost =
-            AdditionalCost.SacrificeOrPay(filter, alternativeManaCost, count)
+        ): AdditionalCost = CostOrPay(CostAtom.Sacrifice(filter, count), alternativeManaCost)
 
         /**
          * Discard [count] card(s) matching [filter] from your hand, or pay
@@ -565,8 +575,7 @@ object Costs {
             alternativeManaCost: String,
             filter: GameObjectFilter = GameObjectFilter.Any,
             count: Int = 1,
-        ): AdditionalCost =
-            AdditionalCost.DiscardOrPay(alternativeManaCost, filter, count)
+        ): AdditionalCost = CostOrPay(CostAtom.Discard(count, filter), alternativeManaCost)
 
         /** "Behold a [filter] and exile it" — [Behold] + [ExileFromStorage] composed. */
         fun BeholdAndExile(

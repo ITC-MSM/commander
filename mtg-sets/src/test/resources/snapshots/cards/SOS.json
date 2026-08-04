@@ -14793,8 +14793,12 @@
     "script": {
         "additionalCosts": [
             {
-                "type": "ExileFromGraveyardOrPay",
-                "exileCount": 2,
+                "type": "CostOrPay",
+                "atom": {
+                    "type": "AtomExileFrom",
+                    "zone": "Graveyard",
+                    "count": 2
+                },
                 "alternativeManaCost": "{1}{W}"
             }
         ]

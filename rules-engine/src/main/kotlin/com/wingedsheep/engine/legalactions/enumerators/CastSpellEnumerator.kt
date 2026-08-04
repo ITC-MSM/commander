@@ -209,12 +209,8 @@ class CastSpellEnumerator : ActionEnumerator {
             var payXLifeMaxX = 0
             var beholdOrPayCost: AdditionalCost.BeholdOrPay? = null
             var beholdOrPayTargets = emptyList<EntityId>()
-            var exileOrPayCost: AdditionalCost.ExileFromGraveyardOrPay? = null
-            var exileOrPayTargets = emptyList<EntityId>()
-            var sacOrPayCost: AdditionalCost.SacrificeOrPay? = null
-            var sacOrPayTargets = emptyList<EntityId>()
-            var discardOrPayCost: AdditionalCost.DiscardOrPay? = null
-            var discardOrPayTargets = emptyList<EntityId>()
+            var costOrPay: AdditionalCost.CostOrPay? = null
+            var costOrPayTargets = emptyList<EntityId>()
             var canPayAdditionalCosts = true
             val flattenedCosts = additionalCosts.flatMap {
                 if (it is AdditionalCost.Composite) it.steps else listOf(it)
@@ -367,37 +363,11 @@ class CastSpellEnumerator : ActionEnumerator {
                             .filter { context.predicateEvaluator.matches(state, state.projectedState, it, cost.filter, predicateContext) }
                         beholdOrPayTargets = battlefieldMatches + handMatches
                     }
-                    is AdditionalCost.ExileFromGraveyardOrPay -> {
-                        // Always payable: player can always choose the "pay mana" path.
-                        // Surface the graveyard cards eligible for the exile path.
-                        exileOrPayCost = cost
-                        exileOrPayTargets = context.costUtils.findExileTargets(
-                            state, playerId, cost.filter, Zone.GRAVEYARD
-                        )
-                    }
-                    is AdditionalCost.SacrificeOrPay -> {
-                        // Always payable: player can always choose the "pay mana" path.
-                        // Surface the permanents you control eligible for the sacrifice path.
-                        sacOrPayCost = cost
-                        sacOrPayTargets = context.costUtils.findSacrificeTargets(
-                            state, playerId, CostAtom.Sacrifice(cost.filter, cost.count)
-                        )
-                    }
-                    is AdditionalCost.DiscardOrPay -> {
-                        // Always payable: player can always choose the "pay mana" path.
-                        // Surface the hand cards eligible for the discard path (excluding the
-                        // spell being cast).
-                        discardOrPayCost = cost
-                        val handZone = ZoneKey(playerId, Zone.HAND)
-                        val handCards = state.getZone(handZone).filter { it != cardId }
-                        val predicateContext = PredicateContext(controllerId = playerId)
-                        discardOrPayTargets = if (cost.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) {
-                            handCards
-                        } else {
-                            handCards.filter {
-                                context.predicateEvaluator.matches(state, state.projectedState, it, cost.filter, predicateContext)
-                            }
-                        }
+                    is AdditionalCost.CostOrPay -> {
+                        // Always payable: the player can always choose the "pay mana" path.
+                        // Surface the candidates for the atom path, whichever atom it carries.
+                        costOrPay = cost
+                        costOrPayTargets = orPayAtomCandidates(context, playerId, cardId, cost.atom)
                     }
                     is AdditionalCost.ChooseEntity -> {
                         // Search each (zone, filter) pair in `cost.zoneFilters`. Battlefield
@@ -464,22 +434,10 @@ class CastSpellEnumerator : ActionEnumerator {
                 effectiveCost = effectiveCost + ManaCost.parse(beholdOrPayCost.alternativeManaCost)
             }
 
-            // Save base cost for exile-from-graveyard path, then add extra mana for the "pay" path
-            val exileOrPayBaseCost = effectiveCost
-            if (exileOrPayCost != null) {
-                effectiveCost = effectiveCost + ManaCost.parse(exileOrPayCost.alternativeManaCost)
-            }
-
-            // Save base cost for sacrifice path, then add extra mana for the "pay" path
-            val sacOrPayBaseCost = effectiveCost
-            if (sacOrPayCost != null) {
-                effectiveCost = effectiveCost + ManaCost.parse(sacOrPayCost.alternativeManaCost)
-            }
-
-            // Save base cost for discard path, then add extra mana for the "pay" path
-            val discardOrPayBaseCost = effectiveCost
-            if (discardOrPayCost != null) {
-                effectiveCost = effectiveCost + ManaCost.parse(discardOrPayCost.alternativeManaCost)
+            // Save base cost for the atom path, then add extra mana for the "pay" path
+            val costOrPayBaseCost = effectiveCost
+            if (costOrPay != null) {
+                effectiveCost = effectiveCost + ManaCost.parse(costOrPay.alternativeManaCost)
             }
 
             // Spell-level waterbend additional cost (Avatar: The Last Airbender). A *mandatory*
@@ -625,29 +583,20 @@ class CastSpellEnumerator : ActionEnumerator {
                 context.manaSolver.canPay(state, playerId, beholdBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
             } else false
 
-            // Check exile-from-graveyard path affordability (base cost without the extra mana, but
-            // needs enough matching cards in the graveyard to exile).
-            val canAffordExileOrPayPath = if (exileOrPayCost != null && exileOrPayTargets.size >= exileOrPayCost.exileCount) {
-                context.manaSolver.canPay(state, playerId, exileOrPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
-            } else false
-
-            // Check sacrifice path affordability (base cost without the extra mana, but needs
-            // enough matching permanents on the battlefield to sacrifice).
-            val canAffordSacOrPayPath = if (sacOrPayCost != null && sacOrPayTargets.size >= sacOrPayCost.count) {
-                context.manaSolver.canPay(state, playerId, sacOrPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
-            } else false
-
-            // Check discard path affordability (base cost without the extra mana, but needs
-            // enough matching cards in hand to discard).
-            val canAffordDiscardOrPayPath = if (discardOrPayCost != null && discardOrPayTargets.size >= discardOrPayCost.count) {
-                context.manaSolver.canPay(state, playerId, discardOrPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
+            // Check the atom path's affordability (base cost without the extra mana, but needs
+            // enough candidates for the atom's own selection — permanents to sacrifice, cards to
+            // discard/exile, …).
+            val canAffordCostOrPayPath = if (costOrPay != null &&
+                costOrPayTargets.size >= costOrPay.atom.selectionCount
+            ) {
+                context.manaSolver.canPay(state, playerId, costOrPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
             } else false
 
             // A `MayCastWithoutPayingManaCost` battlefield permission (e.g. Weftwalking) makes the
             // spell affordable for {0} when its gates are open. Emitted by its own branch below;
             // don't continue out before reaching it.
             val canAffordFreeCast = context.freeCastPermissionFor(cardId)
-            if (!canAfford && !canAffordAlternative && !canAffordSelfAlternative && !canAffordEvoke && !canAffordImpending && !canAffordCleave && !canAffordBlightPath && !canAffordBeholdPath && !canAffordExileOrPayPath && !canAffordSacOrPayPath && !canAffordDiscardOrPayPath && !canAffordFreeCast) {
+            if (!canAfford && !canAffordAlternative && !canAffordSelfAlternative && !canAffordEvoke && !canAffordImpending && !canAffordCleave && !canAffordBlightPath && !canAffordBeholdPath && !canAffordCostOrPayPath && !canAffordFreeCast) {
                 // The primary face can't be paid for by any path. Normally we skip it entirely.
                 // But if this is an Adventure/Omen/modal-DFC card whose *secondary* face is
                 // affordable, surface a grayed-out placeholder for the primary face so the
@@ -681,91 +630,56 @@ class CastSpellEnumerator : ActionEnumerator {
                 payXLifeCost, payXLifeMaxX
             )
 
-            // Compute blight path info (separate legal action with lower mana cost + blight target selection)
+            // Compute the "… or pay {N}" cast paths — one extra legal action each, carrying the
+            // base cost (without the alternative mana) plus that leg's own selection prompt.
+            fun orPayPath(label: String, baseCost: ManaCost, legCostInfo: AdditionalCostData) = OrPayPath(
+                label = label,
+                manaCostString = baseCost.toString(),
+                autoTapPreview = if (context.skipAutoTapPreview) null else {
+                    context.manaSolver.solve(state, playerId, baseCost, precomputedSources = cachedSources)
+                        ?.sources?.map { it.entityId }
+                },
+                costInfo = legCostInfo,
+            )
+
             val blightPathInfo = if (canAffordBlightPath && blightOrPayCost != null) {
-                val blightManaCostString = blightBaseCost.toString()
-                val blightAutoTapPreview = if (context.skipAutoTapPreview) null else {
-                    context.manaSolver.solve(state, playerId, blightBaseCost, precomputedSources = cachedSources)
-                        ?.sources?.map { it.entityId }
-                }
-                val blightCostInfo = AdditionalCostData(
-                    description = "creature to blight",
-                    costType = "Blight",
-                    validBlightTargets = blightCreatures,
-                    blightAmount = blightOrPayCost.blightAmount
+                orPayPath(
+                    label = "Blight ${blightOrPayCost.blightAmount}",
+                    baseCost = blightBaseCost,
+                    legCostInfo = AdditionalCostData(
+                        description = "creature to blight",
+                        costType = "Blight",
+                        validBlightTargets = blightCreatures,
+                        blightAmount = blightOrPayCost.blightAmount
+                    )
                 )
-                Triple(blightManaCostString, blightAutoTapPreview, blightCostInfo)
             } else null
 
-            // Compute behold path info (separate legal action with lower mana cost + behold target selection)
             val beholdPathInfo = if (canAffordBeholdPath && beholdOrPayCost != null) {
-                val beholdManaCostString = beholdBaseCost.toString()
-                val beholdAutoTapPreview = if (context.skipAutoTapPreview) null else {
-                    context.manaSolver.solve(state, playerId, beholdBaseCost, precomputedSources = cachedSources)
-                        ?.sources?.map { it.entityId }
-                }
-                val beholdCostInfo = AdditionalCostData(
-                    description = beholdOrPayCost.description,
-                    costType = "Behold",
-                    validBeholdTargets = beholdOrPayTargets,
-                    beholdCount = 1
+                orPayPath(
+                    label = "Behold",
+                    baseCost = beholdBaseCost,
+                    legCostInfo = AdditionalCostData(
+                        description = beholdOrPayCost.description,
+                        costType = "Behold",
+                        validBeholdTargets = beholdOrPayTargets,
+                        beholdCount = 1
+                    )
                 )
-                Triple(beholdManaCostString, beholdAutoTapPreview, beholdCostInfo)
             } else null
 
-            // Compute exile-from-graveyard path info (separate legal action with lower mana cost +
-            // exile card selection). The player exiles exactly `exileCount` matching graveyard cards.
-            val exileOrPayPathInfo = if (canAffordExileOrPayPath && exileOrPayCost != null) {
-                val exileManaCostString = exileOrPayBaseCost.toString()
-                val exileAutoTapPreview = if (context.skipAutoTapPreview) null else {
-                    context.manaSolver.solve(state, playerId, exileOrPayBaseCost, precomputedSources = cachedSources)
-                        ?.sources?.map { it.entityId }
+            // The atom leg reuses the atom's own client picker ("SacrificePermanent",
+            // "DiscardCard", …), so a plain sacrifice/discard/exile cost and the or-pay variant
+            // drive the exact same selection UI.
+            val costOrPayPathInfo = if (canAffordCostOrPayPath && costOrPay != null) {
+                orPayAtomCostData(costOrPay.atom, costOrPayTargets)?.let { (label, legCostInfo) ->
+                    orPayPath(label = label, baseCost = costOrPayBaseCost, legCostInfo = legCostInfo)
                 }
-                val exileCostInfo = AdditionalCostData(
-                    description = "Exile ${exileOrPayCost.exileCount} card(s) from your graveyard",
-                    costType = "ExileFromGraveyard",
-                    validExileTargets = exileOrPayTargets,
-                    exileMinCount = exileOrPayCost.exileCount,
-                    exileMaxCount = exileOrPayCost.exileCount,
-                )
-                Triple(exileManaCostString, exileAutoTapPreview, exileCostInfo)
             } else null
 
-            // Compute sacrifice path info (separate legal action with lower mana cost + permanent
-            // selection). Reuses the "SacrificePermanent" cost type so the client drives the same
-            // on-battlefield sacrifice selection used by Natural Order's plain sacrifice cost.
-            val sacOrPayPathInfo = if (canAffordSacOrPayPath && sacOrPayCost != null) {
-                val sacManaCostString = sacOrPayBaseCost.toString()
-                val sacAutoTapPreview = if (context.skipAutoTapPreview) null else {
-                    context.manaSolver.solve(state, playerId, sacOrPayBaseCost, precomputedSources = cachedSources)
-                        ?.sources?.map { it.entityId }
-                }
-                val sacCostInfo = AdditionalCostData(
-                    description = sacOrPayCost.description,
-                    costType = "SacrificePermanent",
-                    validSacrificeTargets = sacOrPayTargets,
-                    sacrificeCount = sacOrPayCost.count,
-                )
-                Triple(sacManaCostString, sacAutoTapPreview, sacCostInfo)
-            } else null
-
-            // Compute discard path info (separate legal action with lower mana cost + hand card
-            // selection). Reuses the "DiscardCard" cost type so the client drives the same hand
-            // discard selection used by Force of Will's plain discard cost.
-            val discardOrPayPathInfo = if (canAffordDiscardOrPayPath && discardOrPayCost != null) {
-                val discardManaCostString = discardOrPayBaseCost.toString()
-                val discardAutoTapPreview = if (context.skipAutoTapPreview) null else {
-                    context.manaSolver.solve(state, playerId, discardOrPayBaseCost, precomputedSources = cachedSources)
-                        ?.sources?.map { it.entityId }
-                }
-                val discardCostInfo = AdditionalCostData(
-                    description = discardOrPayCost.description,
-                    costType = "DiscardCard",
-                    validDiscardTargets = discardOrPayTargets,
-                    discardCount = discardOrPayCost.count,
-                )
-                Triple(discardManaCostString, discardAutoTapPreview, discardCostInfo)
-            } else null
+            // Every or-pay leg emits the same shape of extra cast action, so the emission sites
+            // below just loop over them.
+            val orPayPaths = listOfNotNull(blightPathInfo, beholdPathInfo, costOrPayPathInfo)
 
             // Calculate X cost info if the spell has X in its cost (printed, or the waterbend {X}
             // folded in above).
@@ -967,9 +881,9 @@ class CastSpellEnumerator : ActionEnumerator {
                                     minChooseCount = all
                                 ),
                                 baseEffectiveCost = blightBaseCost,
-                                additionalCostInfo = blightPathInfo.third,
-                                manaCostString = blightPathInfo.first,
-                                autoTapPreview = blightPathInfo.second,
+                                additionalCostInfo = blightPathInfo.costInfo,
+                                manaCostString = blightPathInfo.manaCostString,
+                                autoTapPreview = blightPathInfo.autoTapPreview,
                                 descriptionSuffix = " (Blight ${blightOrPayCost.blightAmount})"
                             )
                         )
@@ -1230,69 +1144,17 @@ class CastSpellEnumerator : ActionEnumerator {
                                 autoTapPreview = freeCastResult.autoTapPreview
                             ))
                         }
-                        if (blightPathInfo != null) {
+                        for (path in orPayPaths) {
                             result.add(LegalAction(
                                 actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Blight ${blightOrPayCost!!.blightAmount})",
+                                description = "Cast ${cardComponent.name} (${path.label})",
                                 action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget)),
-                                additionalCostInfo = blightPathInfo.third,
-                                manaCostString = blightPathInfo.first,
+                                additionalCostInfo = path.costInfo,
+                                manaCostString = path.manaCostString,
                                 requiresDamageDistribution = requiresDamageDistribution,
                                 totalDamageToDistribute = totalDamageToDistribute,
                                 minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = blightPathInfo.second
-                            ))
-                        }
-                        if (beholdPathInfo != null) {
-                            result.add(LegalAction(
-                                actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Behold)",
-                                action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget)),
-                                additionalCostInfo = beholdPathInfo.third,
-                                manaCostString = beholdPathInfo.first,
-                                requiresDamageDistribution = requiresDamageDistribution,
-                                totalDamageToDistribute = totalDamageToDistribute,
-                                minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = beholdPathInfo.second
-                            ))
-                        }
-                        if (exileOrPayPathInfo != null) {
-                            result.add(LegalAction(
-                                actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Exile from graveyard)",
-                                action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget)),
-                                additionalCostInfo = exileOrPayPathInfo.third,
-                                manaCostString = exileOrPayPathInfo.first,
-                                requiresDamageDistribution = requiresDamageDistribution,
-                                totalDamageToDistribute = totalDamageToDistribute,
-                                minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = exileOrPayPathInfo.second
-                            ))
-                        }
-                        if (sacOrPayPathInfo != null) {
-                            result.add(LegalAction(
-                                actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Sacrifice)",
-                                action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget)),
-                                additionalCostInfo = sacOrPayPathInfo.third,
-                                manaCostString = sacOrPayPathInfo.first,
-                                requiresDamageDistribution = requiresDamageDistribution,
-                                totalDamageToDistribute = totalDamageToDistribute,
-                                minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = sacOrPayPathInfo.second
-                            ))
-                        }
-                        if (discardOrPayPathInfo != null) {
-                            result.add(LegalAction(
-                                actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Discard)",
-                                action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget)),
-                                additionalCostInfo = discardOrPayPathInfo.third,
-                                manaCostString = discardOrPayPathInfo.first,
-                                requiresDamageDistribution = requiresDamageDistribution,
-                                totalDamageToDistribute = totalDamageToDistribute,
-                                minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = discardOrPayPathInfo.second
+                                autoTapPreview = path.autoTapPreview
                             ))
                         }
                     } else {
@@ -1436,10 +1298,10 @@ class CastSpellEnumerator : ActionEnumerator {
                                 autoTapPreview = freeCastResult.autoTapPreview
                             ))
                         }
-                        if (blightPathInfo != null) {
+                        for (path in orPayPaths) {
                             result.add(LegalAction(
                                 actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Blight ${blightOrPayCost!!.blightAmount})",
+                                description = "Cast ${cardComponent.name} (${path.label})",
                                 action = CastSpell(playerId, cardId),
                                 validTargets = firstReqInfo.validTargets,
                                 requiresTargets = true,
@@ -1449,96 +1311,12 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                                 xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
                                 xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
-                                additionalCostInfo = blightPathInfo.third,
-                                manaCostString = blightPathInfo.first,
+                                additionalCostInfo = path.costInfo,
+                                manaCostString = path.manaCostString,
                                 requiresDamageDistribution = requiresDamageDistribution,
                                 totalDamageToDistribute = totalDamageToDistribute,
                                 minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = blightPathInfo.second
-                            ))
-                        }
-                        if (beholdPathInfo != null) {
-                            result.add(LegalAction(
-                                actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Behold)",
-                                action = CastSpell(playerId, cardId),
-                                validTargets = firstReqInfo.validTargets,
-                                requiresTargets = true,
-                                targetCount = firstReqInfo.maxTargets,
-                                minTargets = firstReq.effectiveMinCount,
-                                targetDescription = firstReq.description,
-                                targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
-                                xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
-                                xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
-                                additionalCostInfo = beholdPathInfo.third,
-                                manaCostString = beholdPathInfo.first,
-                                requiresDamageDistribution = requiresDamageDistribution,
-                                totalDamageToDistribute = totalDamageToDistribute,
-                                minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = beholdPathInfo.second
-                            ))
-                        }
-                        if (exileOrPayPathInfo != null) {
-                            result.add(LegalAction(
-                                actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Exile from graveyard)",
-                                action = CastSpell(playerId, cardId),
-                                validTargets = firstReqInfo.validTargets,
-                                requiresTargets = true,
-                                targetCount = firstReqInfo.maxTargets,
-                                minTargets = firstReq.effectiveMinCount,
-                                targetDescription = firstReq.description,
-                                targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
-                                xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
-                                xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
-                                additionalCostInfo = exileOrPayPathInfo.third,
-                                manaCostString = exileOrPayPathInfo.first,
-                                requiresDamageDistribution = requiresDamageDistribution,
-                                totalDamageToDistribute = totalDamageToDistribute,
-                                minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = exileOrPayPathInfo.second
-                            ))
-                        }
-                        if (sacOrPayPathInfo != null) {
-                            result.add(LegalAction(
-                                actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Sacrifice)",
-                                action = CastSpell(playerId, cardId),
-                                validTargets = firstReqInfo.validTargets,
-                                requiresTargets = true,
-                                targetCount = firstReqInfo.maxTargets,
-                                minTargets = firstReq.effectiveMinCount,
-                                targetDescription = firstReq.description,
-                                targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
-                                xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
-                                xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
-                                additionalCostInfo = sacOrPayPathInfo.third,
-                                manaCostString = sacOrPayPathInfo.first,
-                                requiresDamageDistribution = requiresDamageDistribution,
-                                totalDamageToDistribute = totalDamageToDistribute,
-                                minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = sacOrPayPathInfo.second
-                            ))
-                        }
-                        if (discardOrPayPathInfo != null) {
-                            result.add(LegalAction(
-                                actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (Discard)",
-                                action = CastSpell(playerId, cardId),
-                                validTargets = firstReqInfo.validTargets,
-                                requiresTargets = true,
-                                targetCount = firstReqInfo.maxTargets,
-                                minTargets = firstReq.effectiveMinCount,
-                                targetDescription = firstReq.description,
-                                targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
-                                xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
-                                xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
-                                additionalCostInfo = discardOrPayPathInfo.third,
-                                manaCostString = discardOrPayPathInfo.first,
-                                requiresDamageDistribution = requiresDamageDistribution,
-                                totalDamageToDistribute = totalDamageToDistribute,
-                                minDamagePerTarget = minDamagePerTarget,
-                                autoTapPreview = discardOrPayPathInfo.second
+                                autoTapPreview = path.autoTapPreview
                             ))
                         }
                     }
@@ -1617,54 +1395,14 @@ class CastSpellEnumerator : ActionEnumerator {
                         autoTapPreview = freeCastResult.autoTapPreview
                     ))
                 }
-                if (blightPathInfo != null) {
+                for (path in orPayPaths) {
                     result.add(LegalAction(
                         actionType = "CastSpell",
-                        description = "Cast ${cardComponent.name} (Blight ${blightOrPayCost!!.blightAmount})",
+                        description = "Cast ${cardComponent.name} (${path.label})",
                         action = CastSpell(playerId, cardId),
-                        additionalCostInfo = blightPathInfo.third,
-                        manaCostString = blightPathInfo.first,
-                        autoTapPreview = blightPathInfo.second
-                    ))
-                }
-                if (beholdPathInfo != null) {
-                    result.add(LegalAction(
-                        actionType = "CastSpell",
-                        description = "Cast ${cardComponent.name} (Behold)",
-                        action = CastSpell(playerId, cardId),
-                        additionalCostInfo = beholdPathInfo.third,
-                        manaCostString = beholdPathInfo.first,
-                        autoTapPreview = beholdPathInfo.second
-                    ))
-                }
-                if (exileOrPayPathInfo != null) {
-                    result.add(LegalAction(
-                        actionType = "CastSpell",
-                        description = "Cast ${cardComponent.name} (Exile from graveyard)",
-                        action = CastSpell(playerId, cardId),
-                        additionalCostInfo = exileOrPayPathInfo.third,
-                        manaCostString = exileOrPayPathInfo.first,
-                        autoTapPreview = exileOrPayPathInfo.second
-                    ))
-                }
-                if (sacOrPayPathInfo != null) {
-                    result.add(LegalAction(
-                        actionType = "CastSpell",
-                        description = "Cast ${cardComponent.name} (Sacrifice)",
-                        action = CastSpell(playerId, cardId),
-                        additionalCostInfo = sacOrPayPathInfo.third,
-                        manaCostString = sacOrPayPathInfo.first,
-                        autoTapPreview = sacOrPayPathInfo.second
-                    ))
-                }
-                if (discardOrPayPathInfo != null) {
-                    result.add(LegalAction(
-                        actionType = "CastSpell",
-                        description = "Cast ${cardComponent.name} (Discard)",
-                        action = CastSpell(playerId, cardId),
-                        additionalCostInfo = discardOrPayPathInfo.third,
-                        manaCostString = discardOrPayPathInfo.first,
-                        autoTapPreview = discardOrPayPathInfo.second
+                        additionalCostInfo = path.costInfo,
+                        manaCostString = path.manaCostString,
+                        autoTapPreview = path.autoTapPreview
                     ))
                 }
             }
@@ -2530,6 +2268,108 @@ class CastSpellEnumerator : ActionEnumerator {
                 beholdCount = beholdCount
             )
         } else null
+    }
+
+    /**
+     * One extra cast action for the non-mana leg of an "… or pay {N}" additional cost
+     * ([AdditionalCost.CostOrPay] / [AdditionalCost.BeholdOrPay] / [AdditionalCost.BlightOrPay]):
+     * the spell's base cost *without* the alternative mana, plus that leg's own selection prompt.
+     * The pay path needs nothing extra — it is the ordinary cast action, whose cost already carries
+     * the alternative mana.
+     *
+     * @property label Parenthesised suffix on the action description ("Sacrifice", "Blight 2", …).
+     */
+    private data class OrPayPath(
+        val label: String,
+        val manaCostString: String,
+        val autoTapPreview: List<EntityId>?,
+        val costInfo: AdditionalCostData,
+    )
+
+    /**
+     * Candidates the caster could pick to pay [atom] as the non-mana leg of an
+     * [AdditionalCost.CostOrPay], excluding the spell being cast ([cardId]) — it is on the stack,
+     * not in the zone the cost draws from.
+     *
+     * Covers exactly the selection-carrying atoms the cast-time payment machinery can tell apart by
+     * payment field (see [AdditionalCost.CostOrPay]); anything else returns no candidates, so only
+     * the pay path is offered.
+     */
+    private fun orPayAtomCandidates(
+        context: EnumerationContext,
+        playerId: EntityId,
+        cardId: EntityId,
+        atom: CostAtom,
+    ): List<EntityId> {
+        val state = context.state
+        return when (atom) {
+            is CostAtom.Sacrifice -> context.costUtils.findSacrificeTargets(state, playerId, atom)
+            is CostAtom.ExileFrom -> context.costUtils.findExileTargets(state, playerId, atom.filter, atom.zone)
+                .filter { it != cardId }
+            is CostAtom.Discard -> {
+                val handCards = state.getZone(ZoneKey(playerId, Zone.HAND)).filter { it != cardId }
+                if (atom.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) handCards
+                else {
+                    val predicateContext = PredicateContext(controllerId = playerId)
+                    handCards.filter {
+                        context.predicateEvaluator.matches(state, state.projectedState, it, atom.filter, predicateContext)
+                    }
+                }
+            }
+            is CostAtom.TapPermanents -> context.costUtils.findAbilityTapTargets(state, playerId, atom.filter)
+                .filter { it != cardId }
+            is CostAtom.ReturnToHand -> context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
+                .filter { it != cardId }
+            else -> emptyList()
+        }
+    }
+
+    /**
+     * The action-description label and client cost data for paying [atom] as an or-pay leg, or null
+     * when [atom] carries no selection the client could drive (so the leg isn't offered).
+     *
+     * Deliberately reuses the same `costType`s a plain [AdditionalCost.Atom] cost of that kind
+     * emits, so the or-pay leg drives the existing pickers with no client-side changes.
+     */
+    private fun orPayAtomCostData(
+        atom: CostAtom,
+        candidates: List<EntityId>,
+    ): Pair<String, AdditionalCostData>? {
+        val description = atom.description.replaceFirstChar { it.uppercase() }
+        return when (atom) {
+            is CostAtom.Sacrifice -> "Sacrifice" to AdditionalCostData(
+                description = description,
+                costType = "SacrificePermanent",
+                validSacrificeTargets = candidates,
+                sacrificeCount = atom.count,
+            )
+            is CostAtom.Discard -> "Discard" to AdditionalCostData(
+                description = description,
+                costType = "DiscardCard",
+                validDiscardTargets = candidates,
+                discardCount = atom.count,
+            )
+            is CostAtom.ExileFrom -> "Exile from ${atom.zone.name.lowercase()}" to AdditionalCostData(
+                description = description,
+                costType = "ExileFromGraveyard",
+                validExileTargets = candidates,
+                exileMinCount = atom.count,
+                exileMaxCount = atom.count,
+            )
+            is CostAtom.TapPermanents -> "Tap" to AdditionalCostData(
+                description = description,
+                costType = "TapPermanents",
+                validTapTargets = candidates,
+                tapCount = atom.count,
+            )
+            is CostAtom.ReturnToHand -> "Return to hand" to AdditionalCostData(
+                description = description,
+                costType = "ReturnToHand",
+                validBounceTargets = candidates,
+                bounceCount = atom.count,
+            )
+            else -> null
+        }
     }
 
     /**

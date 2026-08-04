@@ -141,8 +141,8 @@ sealed interface AdditionalCost : TextReplaceable<AdditionalCost> {
      *
      * **Boundary — what this is *not*:** [Choice] is for options that are each *independently payable
      * non-mana costs*. Options where one branch instead pays *additional mana* ("… or pay {2}") are the
-     * separate `*OrPay` family ([SacrificeOrPay], [ExileFromGraveyardOrPay], [BeholdOrPay],
-     * [BlightOrPay]) — those fold the alternative into the spell's mana cost, which [Choice] never does.
+     * separate `*OrPay` family ([CostOrPay], [BeholdOrPay], [BlightOrPay]) — those fold the
+     * alternative into the spell's mana cost, which [Choice] never does.
      * [Forage] (CR 701.61) is the named keyword shortcut for a fixed two-option cost-vs-cost (exile
      * three from your graveyard / sacrifice a Food); [Choice] is its open, parameterized generalization.
      *
@@ -233,6 +233,10 @@ sealed interface AdditionalCost : TextReplaceable<AdditionalCost> {
      * The enumerator produces two legal actions: one for the blight path (base cost + creature selection)
      * and one for the pay path (base cost + [alternativeManaCost]).
      *
+     * Its own type rather than a [CostOrPay] leg because blighting is not a [CostAtom]: it places
+     * counters on a chosen creature and exposes the amount to the spell's effects
+     * (`ChoiceSlot.BLIGHT_AMOUNT`), neither of which the shared cost vocabulary carries.
+     *
      * @property blightAmount Number of -1/-1 counters to place
      * @property alternativeManaCost Extra mana to pay instead of blighting (e.g., "{1}")
      */
@@ -296,6 +300,10 @@ sealed interface AdditionalCost : TextReplaceable<AdditionalCost> {
      * The enumerator produces two legal actions: one for the behold path (base cost +
      * card selection) and one for the pay path (base cost + [alternativeManaCost]).
      *
+     * Its own type rather than a [CostOrPay] leg because beholding is not a [CostAtom]: it reveals
+     * from hand, spans battlefield *and* hand in one candidate pool, and feeds pipeline storage —
+     * casting-context behavior the shared cost vocabulary deliberately leaves out.
+     *
      * @property filter Which cards/permanents can be beheld
      * @property alternativeManaCost Extra mana to pay instead of beholding (e.g., "{2}")
      * @property storeAs Pipeline storage key for the chosen cards (unused by cost itself,
@@ -325,134 +333,50 @@ sealed interface AdditionalCost : TextReplaceable<AdditionalCost> {
     }
 
     /**
-     * Exile [exileCount] cards matching [filter] from your graveyard, or pay additional mana:
-     * the caster must either exile that many matching cards from their graveyard, or pay extra mana
-     * on top of the spell's base mana cost. The sibling of [BlightOrPay] / [BeholdOrPay] for the
-     * "exile from graveyard or pay" shape (e.g. Soaring Stoneglider — "exile two cards from your
-     * graveyard or pay {1}{W}").
+     * Pay [atom], **or** pay [alternativeManaCost] on top of the spell's mana cost — the whole
+     * "do X or pay {N}" shape over the shared [CostAtom] vocabulary. One cost covers every printed
+     * variant: Louisoix's Sacrifice ("sacrifice a legendary creature or pay {2}"), Pumpkin
+     * Bombardment ("discard a card or pay {2}"), Soaring Stoneglider ("exile two cards from your
+     * graveyard or pay {1}{W}") differ only in which atom sits on the non-mana leg.
      *
-     * The enumerator produces up to two legal actions: one for the exile path (base cost + card
-     * selection from the graveyard) and one for the pay path (base cost + [alternativeManaCost]).
-     * The exile path is only offered when the graveyard holds at least [exileCount] matching cards.
-     * The chosen path is recovered at payment time from whether
-     * [AdditionalCostPayment.exiledCards] is non-empty.
+     * The enumerator produces up to two legal actions: the **atom path** (base cost + the atom's
+     * ordinary selection prompt — the same picker a plain [Atom] cost of the same kind uses, so no
+     * new client UI) and the **pay path** (base cost + [alternativeManaCost] folded in). The atom
+     * path is offered only when the board actually affords it — with nothing to sacrifice / discard
+     * / exile, only the pay path is castable. The pay path is always available, so the cost as a
+     * whole is always payable.
      *
-     * @property exileCount How many matching cards to exile from the graveyard
-     * @property alternativeManaCost Extra mana to pay instead of exiling (e.g., "{1}{W}")
-     * @property filter Which graveyard cards qualify (default any card)
+     * Which leg the caster took is recovered at payment time from **which
+     * [AdditionalCostPayment] field the client populated** — the same disambiguation [Choice] uses.
+     * Two consequences:
+     *
+     *  - [atom] must be a *selection-carrying* atom, i.e. one whose payment lands in its own field:
+     *    [CostAtom.Sacrifice], [CostAtom.Discard], [CostAtom.ExileFrom], [CostAtom.TapPermanents],
+     *    [CostAtom.ReturnToHand]. Atoms that are auto-paid with no selection ([CostAtom.PayLife],
+     *    [CostAtom.Mill]) leave no trace to read the choice from, so they can't sit on this leg.
+     *  - Don't pair it on one card with another additional cost that consumes the *same* payment
+     *    field (e.g. a mandatory discard cost alongside a "discard a card or pay {2}") — the two
+     *    would be indistinguishable.
+     *
+     * Once the leg is known, the atom path is paid through the ordinary [Atom] machinery
+     * (`CastSpellHandler` reduces this cost to `Atom(atom)`), so validation, payment, LKI snapshots
+     * and the turn's discard tracking (CR 701.8) all behave exactly as for a plain atom cost.
+     *
+     * @property atom The non-mana leg — what the caster pays instead of the extra mana.
+     * @property alternativeManaCost Extra mana to pay instead of [atom] (e.g. "{2}", "{1}{W}").
      */
-    @SerialName("ExileFromGraveyardOrPay")
+    @SerialName("CostOrPay")
     @Serializable
-    data class ExileFromGraveyardOrPay(
-        val exileCount: Int,
+    data class CostOrPay(
+        val atom: CostAtom,
         val alternativeManaCost: String,
-        val filter: GameObjectFilter = GameObjectFilter.Any,
     ) : AdditionalCost {
-        override val description: String = buildString {
-            append("Exile $exileCount ")
-            append(filter.description)
-            append(if (exileCount == 1) " card from your graveyard or pay " else " cards from your graveyard or pay ")
-            append(alternativeManaCost)
-        }
+        override val description: String get() =
+            "${atom.description.replaceFirstChar { it.uppercase() }} or pay $alternativeManaCost"
 
         override fun applyTextReplacement(replacer: TextReplacer): AdditionalCost {
-            val newFilter = filter.applyTextReplacement(replacer)
-            return if (newFilter !== filter) copy(filter = newFilter) else this
-        }
-    }
-
-    /**
-     * Sacrifice [count] permanent(s) matching [filter] you control, or pay additional mana: the
-     * caster must either sacrifice that many matching permanents, or pay extra mana on top of the
-     * spell's base mana cost. The sibling of [BlightOrPay] / [BeholdOrPay] /
-     * [ExileFromGraveyardOrPay] for the "sacrifice a permanent or pay" shape (e.g. Louisoix's
-     * Sacrifice — "sacrifice a legendary creature or pay {2}").
-     *
-     * The enumerator produces up to two legal actions: one for the sacrifice path (base cost +
-     * permanent selection from the battlefield, surfaced with `costType = "SacrificePermanent"`
-     * like Natural Order's plain sacrifice cost) and one for the pay path (base cost +
-     * [alternativeManaCost]). The sacrifice path is only offered when the caster controls at least
-     * [count] permanents matching [filter]. The chosen path is recovered at payment time from
-     * whether [AdditionalCostPayment.sacrificedPermanents] is non-empty.
-     *
-     * @property filter Which permanents you control qualify (e.g. legendary creature)
-     * @property alternativeManaCost Extra mana to pay instead of sacrificing (e.g. "{2}")
-     * @property count How many matching permanents to sacrifice on the sacrifice path
-     */
-    @SerialName("SacrificeOrPay")
-    @Serializable
-    data class SacrificeOrPay(
-        val filter: GameObjectFilter = GameObjectFilter.Any,
-        val alternativeManaCost: String,
-        val count: Int = 1,
-    ) : AdditionalCost {
-        override val description: String = buildString {
-            append("Sacrifice ")
-            if (count == 1) {
-                val filterDesc = filter.description
-                val article = if (filterDesc.firstOrNull()?.lowercase() in listOf("a", "e", "i", "o", "u")) "an" else "a"
-                append("$article ")
-                append(filterDesc)
-            } else {
-                append("$count ")
-                append(filter.description)
-                append("s")
-            }
-            append(" or pay ")
-            append(alternativeManaCost)
-        }
-
-        override fun applyTextReplacement(replacer: TextReplacer): AdditionalCost {
-            val newFilter = filter.applyTextReplacement(replacer)
-            return if (newFilter !== filter) copy(filter = newFilter) else this
-        }
-    }
-
-    /**
-     * Discard [count] card(s) matching [filter] from your hand, or pay additional mana: the caster
-     * must either discard that many matching cards, or pay extra mana on top of the spell's base
-     * mana cost. The sibling of [BlightOrPay] / [BeholdOrPay] / [ExileFromGraveyardOrPay] /
-     * [SacrificeOrPay] for the "discard a card or pay" shape (e.g. Pumpkin Bombardment —
-     * "discard a card or pay {2}").
-     *
-     * The enumerator produces up to two legal actions: one for the discard path (base cost + card
-     * selection from hand, surfaced with `costType = "DiscardCard"` like Force of Will's plain
-     * discard cost) and one for the pay path (base cost + [alternativeManaCost]). The discard path
-     * is only offered when the caster holds at least [count] cards matching [filter] (excluding the
-     * spell being cast). The chosen path is recovered at payment time from whether
-     * [AdditionalCostPayment.discardedCards] is non-empty. The discard-as-cost still counts toward
-     * the turn's discard tracking (CR 701.8), like every other discard site.
-     *
-     * @property alternativeManaCost Extra mana to pay instead of discarding (e.g. "{2}")
-     * @property filter Which hand cards qualify (default any card)
-     * @property count How many matching cards to discard on the discard path
-     */
-    @SerialName("DiscardOrPay")
-    @Serializable
-    data class DiscardOrPay(
-        val alternativeManaCost: String,
-        val filter: GameObjectFilter = GameObjectFilter.Any,
-        val count: Int = 1,
-    ) : AdditionalCost {
-        override val description: String = buildString {
-            append("Discard ")
-            if (count == 1) {
-                val filterDesc = filter.description
-                val article = if (filterDesc.firstOrNull()?.lowercase() in listOf("a", "e", "i", "o", "u")) "an" else "a"
-                append("$article ")
-                append(filterDesc)
-            } else {
-                append("$count ")
-                append(filter.description)
-                append("s")
-            }
-            append(" or pay ")
-            append(alternativeManaCost)
-        }
-
-        override fun applyTextReplacement(replacer: TextReplacer): AdditionalCost {
-            val newFilter = filter.applyTextReplacement(replacer)
-            return if (newFilter !== filter) copy(filter = newFilter) else this
+            val newAtom = atom.applyTextReplacement(replacer)
+            return if (newAtom !== atom) copy(atom = newAtom) else this
         }
     }
 

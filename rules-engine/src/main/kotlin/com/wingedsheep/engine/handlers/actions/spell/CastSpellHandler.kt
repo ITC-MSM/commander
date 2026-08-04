@@ -975,69 +975,12 @@ class CastSpellHandler(
             }
         }
 
-        // Apply BlightOrPay "pay mana" adjustment in validation
+        // Fold in the "… or pay {N}" alternative mana for every or-pay cost whose non-mana leg the
+        // caster declined (validation side; execute() applies the same rule to the cost it charges).
         if (cardDef != null && !playForFree) {
-            val blightOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.BlightOrPay>()
-                .firstOrNull()
-            if (blightOrPay != null) {
-                val choseBlight = action.additionalCostPayment?.blightTargets?.isNotEmpty() == true
-                if (!choseBlight) {
-                    effectiveCost = effectiveCost + ManaCost.parse(blightOrPay.alternativeManaCost)
-                }
-            }
-        }
-
-        // Apply BeholdOrPay "pay mana" adjustment in validation
-        if (cardDef != null && !playForFree) {
-            val beholdOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.BeholdOrPay>()
-                .firstOrNull()
-            if (beholdOrPay != null) {
-                val choseBehold = action.additionalCostPayment?.beheldCards?.isNotEmpty() == true
-                if (!choseBehold) {
-                    effectiveCost = effectiveCost + ManaCost.parse(beholdOrPay.alternativeManaCost)
-                }
-            }
-        }
-
-        // Apply ExileFromGraveyardOrPay "pay mana" adjustment in validation
-        if (cardDef != null && !playForFree) {
-            val exileOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.ExileFromGraveyardOrPay>()
-                .firstOrNull()
-            if (exileOrPay != null) {
-                val choseExile = action.additionalCostPayment?.exiledCards?.isNotEmpty() == true
-                if (!choseExile) {
-                    effectiveCost = effectiveCost + ManaCost.parse(exileOrPay.alternativeManaCost)
-                }
-            }
-        }
-
-        // Apply SacrificeOrPay "pay mana" adjustment in validation
-        if (cardDef != null && !playForFree) {
-            val sacOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.SacrificeOrPay>()
-                .firstOrNull()
-            if (sacOrPay != null) {
-                val choseSacrifice = action.additionalCostPayment?.sacrificedPermanents?.isNotEmpty() == true
-                if (!choseSacrifice) {
-                    effectiveCost = effectiveCost + ManaCost.parse(sacOrPay.alternativeManaCost)
-                }
-            }
-        }
-
-        // Apply DiscardOrPay "pay mana" adjustment in validation
-        if (cardDef != null && !playForFree) {
-            val discardOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.DiscardOrPay>()
-                .firstOrNull()
-            if (discardOrPay != null) {
-                val choseDiscard = action.additionalCostPayment?.discardedCards?.isNotEmpty() == true
-                if (!choseDiscard) {
-                    effectiveCost = effectiveCost + ManaCost.parse(discardOrPay.alternativeManaCost)
-                }
-            }
+            effectiveCost = applyOrPayManaAdjustments(
+                effectiveCost, cardDef.script.additionalCosts, action.additionalCostPayment
+            )
         }
 
         // Apply spell-level waterbend additional cost (Avatar: The Last Airbender). Adds the
@@ -1501,30 +1444,81 @@ class CastSpellHandler(
     }
 
     /**
-     * Reduce each cost-vs-cost [AdditionalCost.Choice] in [costs] to the single option the caster is
-     * actually paying, so every downstream cost path (validation, application, free-cast selection)
-     * handles it as a plain atom with no [Choice] awareness. The chosen option is:
+     * Reduce each cost that offers the caster a *choice of legs* to the leg they actually took, so
+     * every downstream cost path (validation, application, free-cast selection) handles a plain
+     * cost with no alternatives awareness.
+     *
+     * Cost-vs-cost ([AdditionalCost.Choice]) reduces to the single option being paid:
      *  1. the option whose [AdditionalCostPayment] field the client populated — a normal cast, where
      *     each option surfaced as its own legal action so exactly one field is filled; else
      *  2. the first option payable from the current board — server-initiated free/AI casts arrive with
      *     no payment (mirrors [ForageCostResolver]'s engine-direct fallback); else
      *  3. the first option (nothing payable — downstream validation/selection then rejects the cast).
+     *
+     * Cost-vs-mana ([AdditionalCost.CostOrPay]) reduces to its atom when the caster populated that
+     * atom's payment field, and to *nothing* otherwise: declining the atom means they took the pay
+     * path, whose only consequence — the extra mana — is already folded into the spell's cost by
+     * [applyOrPayManaAdjustments]. Paying the atom then runs through the ordinary
+     * [AdditionalCost.Atom] machinery, so the or-pay family needs no validation or payment code of
+     * its own.
      */
-    private fun reduceChoiceCosts(
+    private fun reduceCostAlternatives(
         costs: List<AdditionalCost>,
         state: GameState,
         playerId: EntityId,
         payment: AdditionalCostPayment?,
-    ): List<AdditionalCost> = costs.map { cost ->
-        if (cost !is AdditionalCost.Choice) cost
-        else cost.options.firstOrNull { optionPaymentSatisfied(it, payment) }
-            ?: cost.options.firstOrNull { costHandler.canPayAdditionalCost(state, it, playerId) }
-            ?: cost.options.first()
+    ): List<AdditionalCost> = costs.flatMap { cost ->
+        when (cost) {
+            is AdditionalCost.Choice -> listOf(
+                cost.options.firstOrNull { optionPaymentSatisfied(it, payment) }
+                    ?: cost.options.firstOrNull { costHandler.canPayAdditionalCost(state, it, playerId) }
+                    ?: cost.options.first()
+            )
+            is AdditionalCost.CostOrPay ->
+                if (atomPaymentSatisfied(cost.atom, payment)) listOf(AdditionalCost.Atom(cost.atom))
+                else emptyList()
+            else -> listOf(cost)
+        }
+    }
+
+    /**
+     * Fold the alternative mana of every "… or pay {N}" additional cost in [costs] whose non-mana
+     * leg the caster declined into [cost] (CR 601.2f — the total cost is locked in as the spell is
+     * cast). Which leg was taken is read off which [AdditionalCostPayment] field the client
+     * populated, exactly as [reduceCostAlternatives] reads it.
+     *
+     * Shared by validate() and execute() so the cast is priced identically in both.
+     */
+    private fun applyOrPayManaAdjustments(
+        cost: ManaCost,
+        costs: List<AdditionalCost>,
+        payment: AdditionalCostPayment?,
+    ): ManaCost = costs.fold(cost) { acc, additionalCost ->
+        val declinedLegPrice = when (additionalCost) {
+            is AdditionalCost.CostOrPay ->
+                additionalCost.alternativeManaCost.takeUnless { atomPaymentSatisfied(additionalCost.atom, payment) }
+            is AdditionalCost.BlightOrPay ->
+                additionalCost.alternativeManaCost.takeIf { payment?.blightTargets.isNullOrEmpty() }
+            is AdditionalCost.BeholdOrPay ->
+                additionalCost.alternativeManaCost.takeIf { payment?.beheldCards.isNullOrEmpty() }
+            else -> null
+        }
+        if (declinedLegPrice == null) acc else acc + ManaCost.parse(declinedLegPrice)
     }
 
     /** True when [payment] already carries a selection for the field [option]'s atom consumes. */
     private fun optionPaymentSatisfied(option: AdditionalCost, payment: AdditionalCostPayment?): Boolean {
         val atom = (option as? AdditionalCost.Atom)?.atom ?: return false
+        return atomPaymentSatisfied(atom, payment)
+    }
+
+    /**
+     * True when [payment] carries a selection in the field [atom] consumes — the signal that the
+     * caster paid this atom rather than an alternative offered alongside it. Atoms with no
+     * selection of their own (mana, life, mill, …) are never distinguishable this way, so they
+     * report false; [AdditionalCost.CostOrPay] and [AdditionalCost.Choice] document that boundary.
+     */
+    private fun atomPaymentSatisfied(atom: CostAtom, payment: AdditionalCostPayment?): Boolean {
         val p = payment ?: return false
         return when (atom) {
             is CostAtom.Sacrifice -> p.sacrificedPermanents.isNotEmpty()
@@ -1542,7 +1536,7 @@ class CastSpellHandler(
         action: CastSpell
     ): String? {
         val projected = state.projectedState
-        val flattenedCosts = reduceChoiceCosts(additionalCosts, state, action.playerId, action.additionalCostPayment)
+        val flattenedCosts = reduceCostAlternatives(additionalCosts, state, action.playerId, action.additionalCostPayment)
             .flatMap { if (it is AdditionalCost.Composite) it.steps else listOf(it) }
         for (additionalCost in flattenedCosts) {
             when (additionalCost) {
@@ -1917,77 +1911,10 @@ class CastSpellHandler(
                     }
                     // If beheldCards is empty, the player is paying extra mana instead
                 }
-                is AdditionalCost.ExileFromGraveyardOrPay -> {
-                    // ExileFromGraveyardOrPay: player chose the exile path if exiledCards is
-                    // non-empty, otherwise they pay extra mana (validated via mana payment).
-                    val exiled = action.additionalCostPayment?.exiledCards ?: emptyList()
-                    if (exiled.isNotEmpty()) {
-                        if (exiled.size != additionalCost.exileCount) {
-                            return "You must exile exactly ${additionalCost.exileCount} card(s) from your graveyard"
-                        }
-                        val graveyard = state.getZone(ZoneKey(action.playerId, Zone.GRAVEYARD))
-                        val context = PredicateContext(controllerId = action.playerId)
-                        for (cardId in exiled) {
-                            if (cardId !in graveyard) {
-                                return "Card to exile is not in your graveyard"
-                            }
-                            if (!predicateEvaluator.matches(state, state.projectedState, cardId, additionalCost.filter, context)) {
-                                val cardName = state.getEntity(cardId)?.get<CardComponent>()?.name ?: "Card"
-                                return "$cardName doesn't match the required filter: ${additionalCost.filter.description}"
-                            }
-                        }
-                    }
-                    // If exiledCards is empty, the player is paying extra mana instead
-                }
-                is AdditionalCost.SacrificeOrPay -> {
-                    // SacrificeOrPay: player chose the sacrifice path if sacrificedPermanents is
-                    // non-empty, otherwise they pay extra mana (validated via mana payment).
-                    val sacrificed = action.additionalCostPayment?.sacrificedPermanents ?: emptyList()
-                    if (sacrificed.isNotEmpty()) {
-                        if (sacrificed.size != additionalCost.count) {
-                            val spellName = state.getEntity(action.cardId)?.get<CardComponent>()?.name ?: "this spell"
-                            return "You must sacrifice exactly ${additionalCost.count} permanent(s) for $spellName"
-                        }
-                        val context = PredicateContext(controllerId = action.playerId)
-                        for (permId in sacrificed) {
-                            if (permId !in state.getBattlefield()) {
-                                return "Permanent to sacrifice is not on the battlefield"
-                            }
-                            if (projected.getController(permId) != action.playerId) {
-                                return "You can only sacrifice permanents you control"
-                            }
-                            if (!predicateEvaluator.matches(state, projected, permId, additionalCost.filter, context)) {
-                                val permName = state.getEntity(permId)?.get<CardComponent>()?.name ?: "Permanent"
-                                return "$permName doesn't match the required filter: ${additionalCost.filter.description}"
-                            }
-                        }
-                    }
-                    // If sacrificedPermanents is empty, the player is paying extra mana instead
-                }
-                is AdditionalCost.DiscardOrPay -> {
-                    // DiscardOrPay: player chose the discard path if discardedCards is non-empty,
-                    // otherwise they pay extra mana (validated via mana payment).
-                    val discarded = action.additionalCostPayment?.discardedCards ?: emptyList()
-                    if (discarded.isNotEmpty()) {
-                        if (discarded.size != additionalCost.count) {
-                            return "You must discard exactly ${additionalCost.count} card(s) from your hand"
-                        }
-                        val handCards = state.getZone(ZoneKey(action.playerId, Zone.HAND))
-                        val context = PredicateContext(controllerId = action.playerId)
-                        for (cardId in discarded) {
-                            if (cardId !in handCards) {
-                                return "Card to discard is not in your hand"
-                            }
-                            if (cardId == action.cardId) {
-                                return "Cannot discard the spell being cast"
-                            }
-                            if (!predicateEvaluator.matches(state, state.projectedState, cardId, additionalCost.filter, context)) {
-                                val cardName = state.getEntity(cardId)?.get<CardComponent>()?.name ?: "Card"
-                                return "$cardName doesn't match the required filter: ${additionalCost.filter.description}"
-                            }
-                        }
-                    }
-                    // If discardedCards is empty, the player is paying extra mana instead
+                is AdditionalCost.CostOrPay -> {
+                    // Unreachable: reduceCostAlternatives already replaced this with its atom (the
+                    // caster paid the non-mana leg — validated by the Atom branch above) or dropped
+                    // it (pay path — the alternative mana is validated as part of the mana payment).
                 }
                 is AdditionalCost.PayLifePerTarget -> {
                     val required = additionalCost.amountPerTarget * action.targets.size
@@ -2246,72 +2173,12 @@ class CastSpellHandler(
             }
         }
 
-        // Apply BlightOrPay: if player chose "pay mana" path (no blight targets), add extra mana
+        // Fold in the "… or pay {N}" alternative mana for every or-pay cost whose non-mana leg the
+        // caster declined — the same rule validate() priced the cast with.
         if (cardDef != null && !playForFreeInExecute) {
-            val blightOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.BlightOrPay>()
-                .firstOrNull()
-            if (blightOrPay != null) {
-                val choseBlight = action.additionalCostPayment?.blightTargets?.isNotEmpty() == true
-                if (!choseBlight) {
-                    effectiveCost = effectiveCost + ManaCost.parse(blightOrPay.alternativeManaCost)
-                }
-            }
-        }
-
-        // Apply BeholdOrPay: if player chose "pay mana" path (no beheld cards), add extra mana
-        if (cardDef != null && !playForFreeInExecute) {
-            val beholdOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.BeholdOrPay>()
-                .firstOrNull()
-            if (beholdOrPay != null) {
-                val choseBehold = action.additionalCostPayment?.beheldCards?.isNotEmpty() == true
-                if (!choseBehold) {
-                    effectiveCost = effectiveCost + ManaCost.parse(beholdOrPay.alternativeManaCost)
-                }
-            }
-        }
-
-        // Apply ExileFromGraveyardOrPay: if player chose the "pay mana" path (no exiled cards),
-        // add the extra mana on top of the base cost.
-        if (cardDef != null && !playForFreeInExecute) {
-            val exileOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.ExileFromGraveyardOrPay>()
-                .firstOrNull()
-            if (exileOrPay != null) {
-                val choseExile = action.additionalCostPayment?.exiledCards?.isNotEmpty() == true
-                if (!choseExile) {
-                    effectiveCost = effectiveCost + ManaCost.parse(exileOrPay.alternativeManaCost)
-                }
-            }
-        }
-
-        // Apply SacrificeOrPay: if player chose the "pay mana" path (no sacrificed permanents),
-        // add the extra mana on top of the base cost.
-        if (cardDef != null && !playForFreeInExecute) {
-            val sacOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.SacrificeOrPay>()
-                .firstOrNull()
-            if (sacOrPay != null) {
-                val choseSacrifice = action.additionalCostPayment?.sacrificedPermanents?.isNotEmpty() == true
-                if (!choseSacrifice) {
-                    effectiveCost = effectiveCost + ManaCost.parse(sacOrPay.alternativeManaCost)
-                }
-            }
-        }
-
-        // Apply DiscardOrPay: if player chose the "pay mana" path (no discarded cards), add the
-        // extra mana on top of the base cost.
-        if (cardDef != null && !playForFreeInExecute) {
-            val discardOrPay = cardDef.script.additionalCosts
-                .filterIsInstance<AdditionalCost.DiscardOrPay>()
-                .firstOrNull()
-            if (discardOrPay != null) {
-                val choseDiscard = action.additionalCostPayment?.discardedCards?.isNotEmpty() == true
-                if (!choseDiscard) {
-                    effectiveCost = effectiveCost + ManaCost.parse(discardOrPay.alternativeManaCost)
-                }
-            }
+            effectiveCost = applyOrPayManaAdjustments(
+                effectiveCost, cardDef.script.additionalCosts, action.additionalCostPayment
+            )
         }
 
         // Apply spell-level waterbend additional cost (Avatar: The Last Airbender) — add the
@@ -2417,7 +2284,7 @@ class CastSpellHandler(
                 ?.additionalCost?.let { add(it) }
         }
 
-        val flattenedAllCosts = reduceChoiceCosts(allAdditionalCosts, currentState, action.playerId, action.additionalCostPayment)
+        val flattenedAllCosts = reduceCostAlternatives(allAdditionalCosts, currentState, action.playerId, action.additionalCostPayment)
             .flatMap { if (it is AdditionalCost.Composite) it.steps else listOf(it) }
 
         // Server-initiated free cast: pay the spell's printed additional costs even though the
@@ -2746,77 +2613,11 @@ class CastSpellHandler(
                         }
                         // If beheldCards is empty, "pay mana" path — extra mana already added to effectiveCost
                     }
-                    is AdditionalCost.ExileFromGraveyardOrPay -> {
-                        // Exile the chosen graveyard cards if the player chose the exile path.
-                        // If exiledCards is empty, "pay mana" path — extra mana already added above.
-                        val exiledCards = action.additionalCostPayment.exiledCards
-                        for (cardId in exiledCards) {
-                            val cardContainer = currentState.getEntity(cardId) ?: continue
-                            val card = cardContainer.get<CardComponent>() ?: continue
-                            val sourceZone = ZoneKey(action.playerId, Zone.GRAVEYARD)
-                            val exileZone = ZoneKey(action.playerId, Zone.EXILE)
-
-                            currentState = currentState.removeFromZone(sourceZone, cardId)
-                            currentState = currentState.addToZone(exileZone, cardId)
-
-                            events.add(ZoneChangeEvent(
-                                entityId = cardId,
-                                entityName = card.name,
-                                fromZone = Zone.GRAVEYARD,
-                                toZone = Zone.EXILE,
-                                ownerId = action.playerId
-                            ))
-                        }
-                        exiledCardCount += exiledCards.size
-                    }
-                    is AdditionalCost.SacrificeOrPay -> {
-                        // Sacrifice the chosen permanents if the player chose the sacrifice path.
-                        // If sacrificedPermanents is empty, "pay mana" path — extra mana already
-                        // added above. Mirrors the CostAtom.Sacrifice payment, including the
-                        // last-known-information snapshot (CR 112.7a / 608.2h) so a sacrificed
-                        // permanent's stats survive onto downstream effects/triggers.
-                        val sacrificed = action.additionalCostPayment.sacrificedPermanents
-                        if (sacrificed.isNotEmpty()) {
-                            val projectedBeforeSacrifice = currentState.projectedState
-                            sacrificedSnapshots.addAll(
-                                captureEntitySnapshots(sacrificed, projectedBeforeSacrifice)
-                            )
-                            for (permId in sacrificed) {
-                                if (currentState.getEntity(permId) == null) continue
-                                currentState = sacrificePermanentAsCost(currentState, permId, action.playerId, events)
-                            }
-                        }
-                    }
-                    is AdditionalCost.DiscardOrPay -> {
-                        // Discard the chosen cards if the player chose the discard path.
-                        // If discardedCards is empty, "pay mana" path — extra mana already added
-                        // above. Mirrors the CostAtom.Discard payment, including the discard
-                        // tracking (CR 701.8) that feeds Mayhem / "discarded this turn" reads.
-                        val discardedCards = action.additionalCostPayment.discardedCards
-                        if (discardedCards.isNotEmpty()) {
-                            discardedAsCostCards.addAll(discardedCards)
-                            for (cardId in discardedCards) {
-                                val cardContainer = currentState.getEntity(cardId) ?: continue
-                                val card = cardContainer.get<CardComponent>() ?: continue
-                                val handZone = ZoneKey(action.playerId, Zone.HAND)
-                                val graveyardZone = ZoneKey(action.playerId, Zone.GRAVEYARD)
-
-                                currentState = currentState.removeFromZone(handZone, cardId)
-                                currentState = currentState.addToZone(graveyardZone, cardId)
-
-                                events.add(ZoneChangeEvent(
-                                    entityId = cardId,
-                                    entityName = card.name,
-                                    fromZone = Zone.HAND,
-                                    toZone = Zone.GRAVEYARD,
-                                    ownerId = action.playerId
-                                ))
-                            }
-                            val discardNames = discardedCards.map { currentState.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
-                            events.add(CardsDiscardedEvent(action.playerId, discardedCards, discardNames))
-                            currentState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                                .trackDiscard(currentState, action.playerId, discardedCards)
-                        }
+                    is AdditionalCost.CostOrPay -> {
+                        // Unreachable: reduceCostAlternatives already replaced this with its atom
+                        // (paid by the Atom branch above, including LKI snapshots and discard
+                        // tracking) or dropped it (pay path — the alternative mana was folded into
+                        // effectiveCost).
                     }
                     is AdditionalCost.PayLifePerTarget -> {
                         // Handled in the auto-pay pre-pass above (life total scales with target count).
