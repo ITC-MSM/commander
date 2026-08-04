@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
-import type { EntityId, ChooseTargetsDecision, ClientGameState } from '@/types'
+import type { EntityId, ChooseTargetsDecision } from '@/types'
 import { ZoneType } from '@/types'
 import { useResponsive } from '@/hooks/useResponsive.ts'
 import { LibrarySearchUI } from './LibrarySearchUI'
@@ -18,9 +18,8 @@ import { ChooseColorDecisionUI } from './ChooseColorDecisionUI'
 import { CardSelectionDecision } from './CardSelectionDecisionUI'
 import { BattlefieldSelectionUI } from './BattlefieldSelectionUI'
 import { MultiZoneSelectionUI } from './MultiZoneSelectionUI'
-import { BattlefieldTargetingUI } from './BattlefieldTargetingUI'
+import { ChooseTargetsUI } from './ChooseTargetsUI'
 import { PlayerTargetingUI } from './PlayerTargetingUI'
-import { GraveyardTargetingUI } from './GraveyardTargetingUI'
 import { SplitPilesUI } from './SplitPilesUI'
 import { ManaSourceSelectionUI } from './ManaSourceSelectionUI'
 import { isLoneTargetRequirement } from '@/utils/targeting.ts'
@@ -32,8 +31,8 @@ import styles from './DecisionUI.module.css'
  * Only then is the simple auto-submit [PlayerTargetingUI] banner appropriate. A decision with more
  * than one target requirement (e.g. Iroh, Tea Master: "target opponent" + "target permanent you
  * control") — or a single requirement wanting more than one target (e.g. Parker Luck: "two target
- * players", maxTargets = 2) — must route to [BattlefieldTargetingUI], which walks each requirement
- * in turn and accumulates player-orb selection through decisionSelectionState with a Confirm step.
+ * players", maxTargets = 2) — must route to [ChooseTargetsUI], which walks each requirement in turn
+ * and accumulates player-orb selection through decisionSelectionState with a Confirm step.
  * [PlayerTargetingUI] can only collect a lone player slot and would strand the rest.
  */
 function isPlayerOnlyTargeting(decision: ChooseTargetsDecision, playerIds: EntityId[]): boolean {
@@ -41,33 +40,6 @@ function isPlayerOnlyTargeting(decision: ChooseTargetsDecision, playerIds: Entit
   const legalTargets = decision.legalTargets[0] ?? []
   if (legalTargets.length === 0) return false
   return legalTargets.every((targetId) => playerIds.includes(targetId))
-}
-
-/**
- * Check if all legal targets in a ChooseTargetsDecision live in a hidden-from-battlefield zone
- * (graveyard or exile). Returns the cards if true, null otherwise — the caller routes the
- * resulting list into [GraveyardTargetingUI], which handles both zones (rendering owner-keyed
- * tabs and selection) since their pile semantics are identical for targeting.
- *
- * Mixed-zone target sets fall through to `null` here so they reach the battlefield targeting
- * path instead — that's a degenerate case today (Blade of the Swarm only targets exile, no
- * known card mixes graveyard + exile in one target slot).
- */
-function getGraveyardOrExileTargets(decision: ChooseTargetsDecision, gameState: ClientGameState | null) {
-  if (!gameState) return null
-  const legalTargets = decision.legalTargets[0] ?? []
-  if (legalTargets.length === 0) return null
-
-  const cards = []
-  for (const targetId of legalTargets) {
-    const card = gameState.cards[targetId]
-    const zoneType = card?.zone?.zoneType
-    if (!card || (zoneType !== ZoneType.GRAVEYARD && zoneType !== ZoneType.EXILE)) {
-      return null
-    }
-    cards.push(card)
-  }
-  return cards
 }
 
 /**
@@ -269,30 +241,18 @@ export function DecisionUI() {
   // Handle ChooseTargetsDecision
   if (pendingDecision.type === 'ChooseTargetsDecision') {
     const playerIds = gameState?.players.map((p) => p.playerId) ?? []
-    const isPlayerOnly = isPlayerOnlyTargeting(pendingDecision, playerIds)
-    const zoneTargets = getGraveyardOrExileTargets(pendingDecision, gameState)
-
-    // If all targets are in graveyards or exile, show a pile-selection overlay
-    if (zoneTargets && zoneTargets.length > 0) {
-      return (
-        <GraveyardTargetingUI
-          decision={pendingDecision}
-          graveyardCards={zoneTargets}
-          responsive={responsive}
-        />
-      )
-    }
 
     // Player-only targeting: simple banner (auto-submit via LifeDisplay click)
-    if (isPlayerOnly) {
+    if (isPlayerOnlyTargeting(pendingDecision, playerIds)) {
       return (
         <PlayerTargetingUI decision={pendingDecision} />
       )
     }
 
-    // Battlefield targeting: use selection state with Confirm/Decline buttons
+    // Everything else walks the requirements one at a time, routing each to the pile picker
+    // or the board-click banner depending on where that requirement's legal targets live.
     return (
-      <BattlefieldTargetingUI decision={pendingDecision} />
+      <ChooseTargetsUI key={pendingDecision.id} decision={pendingDecision} />
     )
   }
 

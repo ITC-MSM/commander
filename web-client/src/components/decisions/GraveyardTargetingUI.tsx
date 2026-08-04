@@ -8,21 +8,33 @@ import { getCardImageUrl } from '@/utils/cardImages.ts'
 import styles from './DecisionUI.module.css'
 
 /**
- * Graveyard / exile pile targeting UI — uses the shared ZoneSelectionUI component.
- * Supports selecting from multiple piles with owner tabs. Labels adapt to the cards'
- * actual zone (Graveyard vs Exile) so the same component renders Blade of the Swarm's
- * exile-targeting mode and the existing graveyard-target spells with the right wording.
+ * Graveyard / exile pile targeting UI for **one** requirement of a ChooseTargetsDecision — uses the
+ * shared ZoneSelectionUI component. Supports selecting from multiple piles with owner tabs. Labels
+ * adapt to the cards' actual zone (Graveyard vs Exile) so the same component renders Blade of the
+ * Swarm's exile-targeting mode and the existing graveyard-target spells with the right wording.
+ *
+ * The picked cards go back to the parent [ChooseTargetsUI] rather than straight to the server: the
+ * pile slot may be one of several requirements (The Spot, Living Portal exiles a battlefield
+ * permanent *and* a graveyard card), and only the parent knows whether more slots follow.
  */
 export function GraveyardTargetingUI({
   decision,
   graveyardCards,
   responsive,
+  requirementIndex,
+  totalRequirements,
+  onComplete,
+  onBack,
 }: {
   decision: ChooseTargetsDecision
   graveyardCards: ClientCard[]
   responsive: ResponsiveSizes
+  requirementIndex: number
+  totalRequirements: number
+  onComplete: (targets: readonly EntityId[]) => void
+  /** Present when an earlier requirement can be revised. */
+  onBack?: () => void
 }) {
-  const submitTargetsDecision = useGameStore((s) => s.submitTargetsDecision)
   const submitCancelDecision = useGameStore((s) => s.submitCancelDecision)
   const gameState = useGameStore((s) => s.gameState)
   const viewingPlayerId = gameState?.viewingPlayerId
@@ -85,19 +97,22 @@ export function GraveyardTargetingUI({
   }
 
   const handleConfirm = (selectedCards: EntityId[]) => {
-    // Submit with the selected targets for target index 0
-    // If minTargets is 0 (optional ability), submitting with 0 cards declines the ability
-    submitTargetsDecision({ 0: selectedCards })
+    // Hand this requirement's picks to the walker, which advances or submits.
+    // If minTargets is 0 (optional ability), confirming 0 cards declines this slot.
+    onComplete(selectedCards)
   }
 
   // Get target requirements
-  const targetReq = decision.targetRequirements[0]
+  const targetReq = decision.targetRequirements[requirementIndex]
   const minTargets = targetReq?.minTargets ?? 1
   const maxTargets = targetReq?.maxTargets ?? 1
   const isOptionalTarget = minTargets === 0
   const isMultiTarget = maxTargets > 1
   const sourceName = decision.context.sourceName ?? 'this ability'
-  const title = isOptionalTarget ? `Resolve ${sourceName}` : `Choose from ${pileNoun}`
+  const baseTitle = isOptionalTarget ? `Resolve ${sourceName}` : `Choose from ${pileNoun}`
+  const title = totalRequirements > 1
+    ? `${baseTitle} (${requirementIndex + 1}/${totalRequirements})`
+    : baseTitle
 
   // Derive the action verb from effectHint so the button/text matches the actual effect
   // (e.g., "Exile card in a graveyard" → "Exile"; "Shuffle … into its owner's library" → "Shuffle
@@ -165,7 +180,13 @@ export function GraveyardTargetingUI({
         confirmRequiresSelection={isOptionalTarget}
         sortByType={true}
         useGlobalHover={true}
-        onCancel={decision.canCancel ? () => submitCancelDecision() : undefined}
+        // The secondary button is "← Back" mid-walk (revise an earlier requirement) and
+        // "Cancel" otherwise; a cancellable cast can still be cancelled from requirement 0.
+        {...(onBack
+          ? { onCancel: onBack, cancelText: '← Back' }
+          : decision.canCancel
+            ? { onCancel: () => submitCancelDecision() }
+            : {})}
       />
     )
   }
@@ -246,6 +267,7 @@ export function GraveyardTargetingUI({
         confirmText={isOptionalTarget ? optionalConfirmText : 'Confirm Target'}
         declineText={isOptionalTarget ? 'Decline Trigger' : undefined}
         confirmRequiresSelection={isOptionalTarget}
+        {...(onBack ? { onBack } : {})}
       />
     </div>
   )
@@ -268,6 +290,7 @@ function GraveyardCardSelection({
   confirmText,
   declineText,
   confirmRequiresSelection,
+  onBack,
 }: {
   cards: ZoneCardInfo[]
   selectedCards: EntityId[]
@@ -281,6 +304,7 @@ function GraveyardCardSelection({
   confirmText: string
   declineText?: string | undefined
   confirmRequiresSelection: boolean
+  onBack?: () => void
 }) {
   const [hoveredCardId, setHoveredCardId] = useState<EntityId | null>(null)
   const hoverCard = useGameStore((s) => s.hoverCard)
@@ -412,6 +436,14 @@ function GraveyardCardSelection({
 
       {/* Action buttons */}
       <div className={styles.optionButtonRow}>
+        {onBack && (
+          <button
+            onClick={onBack}
+            className={styles.viewBattlefieldButton}
+          >
+            ← Back
+          </button>
+        )}
         <button
           onClick={onMinimize}
           className={styles.viewBattlefieldButton}

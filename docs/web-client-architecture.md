@@ -446,8 +446,16 @@ Confirming a step snapshots the outgoing `TargetingState` onto
 stack so the player can revise an already-confirmed target before the action is submitted —
 the restored step keeps its confirmed picks selected, and re-confirming recomputes later
 steps' valid-target pools against the revised selection. The resolution-time
-`ChooseTargetsDecision` flow (`BattlefieldTargetingUI`) implements the same back navigation
-over its local requirement index. Cancel still aborts the whole action.
+`ChooseTargetsDecision` flow (`ChooseTargetsUI`) implements the same back navigation over its
+requirement index. Cancel still aborts the whole action.
+
+`ChooseTargetsUI` also decides, **per requirement**, which UI collects that slot: a requirement
+whose legal targets all live in a graveyard or exile pile goes to `GraveyardTargetingUI` (a pile
+isn't clickable card-by-card on the board), everything else to `BattlefieldTargetingUI`, which
+highlights board objects through `decisionSelectionState`. The two can mix inside one decision —
+The Spot, Living Portal exiles "up to one target nonland permanent **and** up to one target
+nonland permanent card from a graveyard" — so the choice must not be made once for the whole
+decision. The cast-time equivalent is `TargetingOverlay`'s `ZoneCardTargetingOverlay` routing.
 
 ## Type Mapping
 
