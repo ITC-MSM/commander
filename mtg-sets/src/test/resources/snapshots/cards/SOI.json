@@ -1080,6 +1080,173 @@
     ]
 }
 
+// Duskwatch Recruiter
+{
+    "name": "Duskwatch Recruiter",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Warrior Werewolf",
+    "oracleText": "{2}{G}: Look at the top three cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest on the bottom of your library in any order.\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "creature",
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "prompt": "You may reveal a creature card and put it into your hand",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "ControllerChooses"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{2}{G}: Look at the top three cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest on the bottom of your library in any order."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Krallenhorde Howler",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Creature spells you cast cost {1} less to cast.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "ModifySpellCost",
+                    "target": {
+                        "type": "YouCast",
+                        "filter": "creature"
+                    },
+                    "modification": {
+                        "type": "ReduceGeneric",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "203",
+            "rarity": "UNCOMMON",
+            "artist": "Craig J Spearing",
+            "imageUri": "https://cards.scryfall.io/normal/back/e/1/e1915d93-c7dd-4bb7-bd5c-63a359a02b97.jpg?1783937740"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "rarity": "UNCOMMON",
+        "artist": "Craig J Spearing",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1915d93-c7dd-4bb7-bd5c-63a359a02b97.jpg?1783937740"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Epitaph Golem
 {
     "name": "Epitaph Golem",
@@ -1276,6 +1443,118 @@
     "colorIdentityOverride": [
         "RED",
         "GREEN"
+    ]
+}
+
+// Geier Reach Bandit
+{
+    "name": "Geier Reach Bandit",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Human Rogue Werewolf",
+    "oracleText": "Haste\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": "SpellsCastLastTurn",
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Vildin-Pack Alpha",
+        "manaCost": "",
+        "typeLine": "Creature — Werewolf",
+        "oracleText": "Whenever a Werewolf you control enters, you may transform it.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 3
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "ZoneChangeEvent",
+                        "filter": "creature Werewolf ctrl:you",
+                        "to": "Battlefield"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Transform",
+                            "target": "TriggeringEntity"
+                        }
+                    },
+                    "descriptionOverride": "Whenever a Werewolf you control enters, you may transform it."
+                },
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP",
+                        "player": "Each"
+                    },
+                    "binding": "ANY",
+                    "effect": "Transform",
+                    "triggerCondition": {
+                        "type": "Compare",
+                        "left": "SpellsCastLastTurn",
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "159",
+            "rarity": "RARE",
+            "artist": "Slawomir Maniak",
+            "imageUri": "https://cards.scryfall.io/normal/back/4/5/4570117d-c04b-4bdc-b804-21d49154721b.jpg?1783937760"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "159",
+        "rarity": "RARE",
+        "artist": "Slawomir Maniak",
+        "flavorText": "The cathars realized they had not tracked her—she had led them here.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/4570117d-c04b-4bdc-b804-21d49154721b.jpg?1783937760"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
