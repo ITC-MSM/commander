@@ -123,7 +123,8 @@ class BecomeArtifactExecutor(
                     GrantedActivatedAbility(
                         entityId = targetId,
                         ability = ability,
-                        duration = effect.duration
+                        duration = effect.duration,
+                        sourceId = context.sourceId
                     )
             )
         }
