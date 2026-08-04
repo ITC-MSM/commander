@@ -339,8 +339,12 @@ ZoneChange/SpellCast/Attack/DealsDamage variants:
 
 ### Costs (`scripting/AdditionalCost.kt`, `scripting/costs/PayCost.kt`)
 
-- **`AdditionalCost.BlightOrPay`** / **`BeholdOrPay`** → wrap any cost with
-  `OrPayMana(inner: AdditionalCost, manaCost: String)`.
+- ~~**`AdditionalCost.BeholdOrPay`** → wrap any cost with
+  `OrPayMana(inner: AdditionalCost, manaCost: String)`.~~ **Done** — landed as
+  `AdditionalCost.OrPay(cost: AdditionalCost, alternativeManaCost: String)`, which also
+  absorbed the `SacrificeOrPay` / `DiscardOrPay` / `ExileFromGraveyardOrPay` types.
+  `BlightOrPay` is the one holdout: there is no standalone blight `AdditionalCost` for
+  `OrPay` to wrap, so collapsing it means introducing one first.
 - **Strategic:** `AdditionalCost` (cast-time) and `PayCost` (activation-time) share
   concepts but neither references the other. Eventually unify under a single `Cost`
   sealed interface — flag, not an immediate change.

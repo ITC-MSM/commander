@@ -3739,8 +3739,8 @@ class StackResolver(
 /**
  * Build pipeline `storedCollections` for cost-chosen card IDs.
  *
- * The chosen IDs (from [AdditionalCost.Behold], [AdditionalCost.BeholdOrPay], or
- * [AdditionalCost.ChooseEntity]) are stored on the stack object as
+ * The chosen IDs (from [AdditionalCost.Behold] — on its own or as an [AdditionalCost.OrPay] leg —
+ * or [AdditionalCost.ChooseEntity]) are stored on the stack object as
  * [SpellOnStackComponent.beheldCards]. Each of those costs declares its own
  * `storeAs` key that the card's resolution-time effects reference (e.g. via
  * `EntityReference.FromCostStorage`). To keep the effect's reference
@@ -3758,16 +3758,15 @@ internal fun buildBeheldStoredCollections(
 ): Map<String, List<EntityId>> {
     if (beheldCards.isEmpty()) return emptyMap()
     val keys = mutableSetOf("beheld")
-    cardDef?.script?.additionalCosts?.forEach { cost ->
-        val flat = if (cost is AdditionalCost.Composite) cost.steps else listOf(cost)
-        for (c in flat) {
-            when (c) {
-                is AdditionalCost.Behold -> keys += c.storeAs
-                is AdditionalCost.BeholdOrPay -> keys += c.storeAs
-                is AdditionalCost.ChooseEntity -> keys += c.storeAs
-                else -> {}
-            }
+    fun collect(cost: AdditionalCost) {
+        when (cost) {
+            is AdditionalCost.Behold -> keys += cost.storeAs
+            is AdditionalCost.ChooseEntity -> keys += cost.storeAs
+            is AdditionalCost.Composite -> cost.steps.forEach(::collect)
+            is AdditionalCost.OrPay -> collect(cost.cost)
+            else -> {}
         }
     }
+    cardDef?.script?.additionalCosts?.forEach(::collect)
     return keys.associateWith { beheldCards }
 }

@@ -10546,8 +10546,11 @@
         ],
         "additionalCosts": [
             {
-                "type": "BeholdOrPay",
-                "filter": "Kithkin",
+                "type": "OrPay",
+                "cost": {
+                    "type": "Behold",
+                    "filter": "Kithkin"
+                },
                 "alternativeManaCost": "{2}"
             }
         ]
@@ -11551,8 +11554,11 @@
         ],
         "additionalCosts": [
             {
-                "type": "BeholdOrPay",
-                "filter": "Elf",
+                "type": "OrPay",
+                "cost": {
+                    "type": "Behold",
+                    "filter": "Elf"
+                },
                 "alternativeManaCost": "{2}"
             }
         ]
@@ -12870,8 +12876,11 @@
         ],
         "additionalCosts": [
             {
-                "type": "BeholdOrPay",
-                "filter": "Goblin",
+                "type": "OrPay",
+                "cost": {
+                    "type": "Behold",
+                    "filter": "Goblin"
+                },
                 "alternativeManaCost": "{2}"
             }
         ]
@@ -15899,8 +15908,11 @@
         ],
         "additionalCosts": [
             {
-                "type": "BeholdOrPay",
-                "filter": "Merfolk",
+                "type": "OrPay",
+                "cost": {
+                    "type": "Behold",
+                    "filter": "Merfolk"
+                },
                 "alternativeManaCost": "{2}"
             }
         ]
@@ -16268,8 +16280,11 @@
         ],
         "additionalCosts": [
             {
-                "type": "BeholdOrPay",
-                "filter": "Elemental",
+                "type": "OrPay",
+                "cost": {
+                    "type": "Behold",
+                    "filter": "Elemental"
+                },
                 "alternativeManaCost": "{2}"
             }
         ]

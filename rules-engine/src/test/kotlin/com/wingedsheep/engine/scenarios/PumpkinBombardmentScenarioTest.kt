@@ -19,8 +19,8 @@ import io.kotest.matchers.shouldBe
  * As an additional cost to cast this spell, discard a card or pay {2}.
  * Pumpkin Bombardment deals 3 damage to target creature.
  *
- * Exercises the new [com.wingedsheep.sdk.scripting.AdditionalCost.DiscardOrPay] additional cost
- * (discard path vs pay path), including the case where an empty hand leaves only the pay path.
+ * Exercises the discard leg of [com.wingedsheep.sdk.scripting.AdditionalCost.OrPay] (discard path
+ * vs pay path), including the case where an empty hand leaves only the pay path.
  */
 class PumpkinBombardmentScenarioTest : ScenarioTestBase() {
 
@@ -41,7 +41,7 @@ class PumpkinBombardmentScenarioTest : ScenarioTestBase() {
     init {
         cardRegistry.register(listOf(testBear, spareCard))
 
-        context("DiscardOrPay additional cost") {
+        context("discard-or-pay additional cost") {
             test("discard path: discards a card and deals 3 damage to the target creature") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
