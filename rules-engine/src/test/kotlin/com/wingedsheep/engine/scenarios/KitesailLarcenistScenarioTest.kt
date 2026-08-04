@@ -161,6 +161,51 @@ class KitesailLarcenistScenarioTest : FunSpec({
         }
     }
 
+    test("killing Kitesail in response to its own ETB grants nothing at all") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Island" to 40), startingLife = 20)
+        val you = driver.activePlayer!!
+        val opponent = driver.getOpponent(you)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val myCourser = driver.putCreatureOnBattlefield(you, "Centaur Courser")
+        val theirCourser = driver.putCreatureOnBattlefield(opponent, "Centaur Courser")
+
+        driver.castKitesail(you)
+        driver.submitMultiTargetSelection(
+            you,
+            mapOf(0 to listOf(myCourser), 1 to listOf(theirCourser))
+        )
+
+        // Kill Kitesail with its ETB trigger still on the stack — the other half of CR 611.2b:
+        // "if that duration ends before the moment the effect would first be applied ... the
+        // effect does nothing". The trigger still resolves (its targets are legal), so the
+        // executor still records the transform and the grant, both keyed to a source that is
+        // already gone. Bolt cast by Kitesail's own controller, so ward {1} stays out of the way.
+        val kitesail = driver.findPermanent(you, "Kitesail Larcenist")!!
+        val bolt = driver.putCardInHand(you, "Lightning Bolt")
+        driver.giveMana(you, Color.RED, 1)
+        driver.castSpell(you, bolt, listOf(kitesail))
+        driver.bothPass()
+        driver.findPermanent(you, "Kitesail Larcenist") shouldBe null
+        driver.bothPass()
+
+        // Nothing started: no lingering grant, and neither permanent was ever a Treasure.
+        driver.state.grantedActivatedAbilities.shouldBeEmpty()
+        val projected = projector.project(driver.state)
+        for (courser in listOf(myCourser, theirCourser)) {
+            projected.getTypes(courser) shouldContain "CREATURE"
+            projected.hasSubtype(courser, "Treasure") shouldBe false
+            projected.hasLostAllAbilities(courser) shouldBe false
+        }
+        val enumerator = LegalActionEnumerator.create(driver.cardRegistry)
+        for ((player, courser) in listOf(you to myCourser, opponent to theirCourser)) {
+            enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
+                .mapNotNull { it.action as? ActivateAbility }
+                .count { it.sourceId == courser } shouldBe 0
+        }
+    }
+
     test("'up to one' lets the controller choose no permanent for either player") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Island" to 40), startingLife = 20)

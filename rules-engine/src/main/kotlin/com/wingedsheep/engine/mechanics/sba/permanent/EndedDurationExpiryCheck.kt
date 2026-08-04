@@ -38,18 +38,21 @@ import com.wingedsheep.sdk.scripting.Duration
  *   ends when the source leaves the battlefield or untaps. The power variant additionally drops
  *   any affected creature whose projected power exceeds the source's projected power.
  * - [Duration.WhileSourceOnBattlefield]: ends when the source leaves the battlefield.
+ * - [Duration.WhileSourceAttachedToAffected]: keeps only affected objects the source Aura/Equipment
+ *   is still attached to — it leaving, detaching, or moving to another host all end it.
  * - [Duration.WhileAffectedTapped]: drops any affected object that is no longer tapped.
+ * - [Duration.WhileAffectedHasCounter]: drops any affected object that no longer carries the counter.
+ * - [Duration.WhileControlledByController]: drops any affected object the effect's controller no
+ *   longer controls.
+ * - [Duration.WhileYouControlSource]: ends when the source leaves the battlefield OR its
+ *   projected controller is no longer the effect's controller. Drops the entire effect (not
+ *   per-affected) — the source-controller half is binary, the source either is or isn't yours.
  *
  * The gates that depend only on the source or the affected object are additionally enforced for
  * duration-keyed grants in `grantedActivatedAbilities` / `grantedStaticAbilities`, which have no
  * floating-effect representation and so would otherwise never expire — Kitesail Larcenist's
  * granted Treasure mana ability is the source-keyed case, Ultima's counter-keyed "{T}: Add {C}"
  * and Braided Net's activation lock the affected-keyed ones.
- * - [Duration.WhileControlledByController]: drops any affected object the effect's controller no
- *   longer controls.
- * - [Duration.WhileYouControlSource]: ends when the source leaves the battlefield OR its
- *   projected controller is no longer the effect's controller. Drops the entire effect (not
- *   per-affected) — the source-controller half is binary, the source either is or isn't yours.
  *
  * Affected entities no longer on the battlefield are left untouched: the effect as a whole is
  * reaped by the untap-step cleanup / zone-change handling, and we must not emit spurious
@@ -198,7 +201,15 @@ class EndedDurationExpiryCheck : StateBasedActionCheck {
      *    effects revert through the per-effect loop in [check], but the granted ability has no
      *    floating-effect representation, so without this it would outlive Kitesail.
      *
-     * Covers both [GameState.grantedActivatedAbilities] and [GameState.grantedStaticAbilities].
+     * Covers [GameState.grantedActivatedAbilities] and [GameState.grantedStaticAbilities] — the two
+     * grant stores a "for as long as …" duration can reach today. [GameState.grantedTriggeredAbilities],
+     * [GameState.grantedReplacementEffects] and [GameState.globalGrantedTriggeredAbilities] are
+     * deliberately *not* pruned here: no card grants into them with a conditional duration, so they
+     * only ever need the `EndOfTurn` / `UntilYourNextTurn` filters in `CleanupPhaseManager`. Their
+     * executors do accept any [Duration] though, so the first card that grants a trigger or
+     * replacement effect "for as long as …" has to be added here (and carry a `sourceId` for a
+     * source-keyed gate) or it will leak exactly the way the activated-ability grant did.
+     *
      * The latch is one-way by nature: a pruned grant is never re-added. Returns the same
      * instance when nothing changed.
      */
