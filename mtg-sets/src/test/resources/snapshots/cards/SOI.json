@@ -743,6 +743,53 @@
     ]
 }
 
+// Bloodmad Vampire
+{
+    "name": "Bloodmad Vampire",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Vampire Berserker",
+    "oracleText": "Whenever this creature deals combat damage to a player, put a +1/+1 counter on it.\nMadness {1}{R} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 1
+    },
+    "keywords": [
+        "MADNESS"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Madness",
+            "cost": "{1}{R}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "artist": "Johannes Voss",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b64e974a-3cf7-49f1-9d5a-c74f920f0169.jpg?1783937758"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Bound by Moonsilver
 {
     "name": "Bound by Moonsilver",
@@ -1558,6 +1605,50 @@
     ]
 }
 
+// Gisa's Bidding
+{
+    "name": "Gisa's Bidding",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create two 2/2 black Zombie creature tokens.\nMadness {2}{B} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+    "keywords": [
+        "MADNESS"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Madness",
+            "cost": "{2}{B}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "power": 2,
+            "toughness": 2,
+            "colors": [
+                "BLACK"
+            ],
+            "creatureTypes": [
+                "Zombie"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "rarity": "UNCOMMON",
+        "artist": "Jason Felix",
+        "flavorText": "\"Soft dirt makes for light work.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e01e904c-7d8e-447b-90cb-1f4ae3fb304d.jpg?1783937773"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Gryff's Boon
 {
     "name": "Gryff's Boon",
@@ -2219,6 +2310,51 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Murderous Compulsion
+{
+    "name": "Murderous Compulsion",
+    "manaCost": "{1}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target tapped creature.\nMadness {1}{B} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+    "keywords": [
+        "MADNESS"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Madness",
+            "cost": "{1}{B}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature tapped"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "126",
+        "artist": "David Palumbo",
+        "flavorText": "\"Thank you. This blade becomes so hot in my hand, but your blood has quenched it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33b94db1-ac8c-4667-81d5-408df0f30879.jpg?1783937768"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
