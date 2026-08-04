@@ -98,6 +98,21 @@ object Emitter {
             return incomplete(ctx, pre, header, body, scryfall, pkg)
         }
 
+        // Conservative fidelity guardrails for oracle shapes the current IR handlers flatten into a
+        // different effect. Keep these cards in SCAFFOLD until their structure can be recovered exactly.
+        val oracle = ctx.oracleText.orEmpty().lowercase()
+        val unsupportedOracleShape = when {
+            "can't be blocked by tokens" in oracle -> "token blocker restriction"
+            "for each other creature you control" in oracle -> "self-excluding creature count"
+            "return this card from your graveyard to the battlefield attached" in oracle -> "return attached"
+            "put one onto the battlefield tapped and the other into your hand" in oracle -> "split search destinations"
+            else -> null
+        }
+        if (unsupportedOracleShape != null) {
+            ctx.reasons.add(unsupportedOracleShape)
+            return incomplete(ctx, pre, header, body, scryfall, pkg)
+        }
+
         body.add(RawLine("    manaCost = \"${renderMana(card["ManaCost"])}\""))
         colorIdentityDsl(scryfall)?.let { body.add(RawLine("    colorIdentity = \"$it\"")) }
         body.add(RawLine("    typeLine = \"${renderTypeline(card["Typeline"])}\""))

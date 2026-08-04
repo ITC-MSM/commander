@@ -2,13 +2,12 @@
 
 **Set Size:** 193 cards revealed as of 2026-08-04
 **Release Date:** August 14, 2026
-**Implemented:** 47 / 193
-
+**Implemented:** 43 / 193
 Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. This list covers only cards revealed as of that date.
 
 - [ ] 1. Long-Bodied Grey Dog
 - [x] 2. Old Thrush
-- [x] 3. Troop of Ponies
+- [ ] 3. Troop of Ponies
 - [ ] 4. Belladonna Took
 - [ ] 5. Bilbo's Gambit
 - [ ] 6. Bofur, Reliable Guardian
@@ -16,7 +15,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 8. Dáin, Lord of the Iron Hills
 - [x] 9. Dwarven Provisioner
 - [ ] 10. Dwarven Shortsword
-- [x] 11. Eagle of the Great Shelf
+- [ ] 11. Eagle of the Great Shelf
 - [ ] 12. The Eagles Are Coming!
 - [ ] 13. Esgaroth Garrison
 - [ ] 14. Fíli the Pathfinder
@@ -158,9 +157,9 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 150. The Chief Warg
 - [ ] 151. Chief Warg's Company
 - [ ] 152. Dáin's Company
-- [x] 153. Duskwatch Hunter
+- [ ] 153. Duskwatch Hunter
 - [ ] 154. Dwalin, Weaponmaster
-- [x] 155. Eagle's Rescue
+- [ ] 155. Eagle's Rescue
 - [ ] 156. Fearsome Goblin Pair
 - [ ] 157. Goblin Plate Mail
 - [ ] 158. The Great Goblin
