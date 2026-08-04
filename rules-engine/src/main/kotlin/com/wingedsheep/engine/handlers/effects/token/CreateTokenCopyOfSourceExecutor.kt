@@ -210,6 +210,14 @@ class CreateTokenCopyOfSourceExecutor(
             newState = sagaState
             events.addAll(sagaEvents)
 
+            // CR 306.5b: likewise a token copy of a planeswalker enters with the copied printed
+            // loyalty (a copiable value, CR 707.2), or state-based actions (CR 704.5i) bin it on
+            // arrival. No-op for non-planeswalkers.
+            val (loyaltyState, loyaltyEvents) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                .applyPlaneswalkerEntryIfNeeded(newState, tokenId, controllerId, cardRegistry)
+            newState = loyaltyState
+            events.addAll(loyaltyEvents)
+
             events.add(
                 ZoneChangeEvent(
                     entityId = tokenId,

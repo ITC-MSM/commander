@@ -11,7 +11,12 @@ import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Targets
+import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 
@@ -28,15 +33,52 @@ import io.kotest.matchers.shouldBe
  * The engine places these counters in two spots, matching the split that already exists for Saga
  * lore counters: the cast pipeline does it in `StackResolver` (it adds permanents to the
  * battlefield zone directly), and every other entry gets it from
- * `ZoneMovementUtils.applyPlaneswalkerEntryIfNeeded` via `ZoneTransitionService.moveToZone`. These
- * tests pin down both, plus the face-down exclusion.
+ * `ZoneMovementUtils.applyPlaneswalkerEntryIfNeeded` via `ZoneTransitionService.moveToZone`. Both
+ * end up in the same `EntersWithReplacements.placeEntryCounters` call, so counter-placement
+ * modifiers apply identically either way. These tests pin down both, the face-down exclusion, and
+ * that parity. Token copies are covered by [TokenCopyOfPlaneswalkerEntryScenarioTest].
  */
 class PlaneswalkerEntryLoyaltyScenarioTest : ScenarioTestBase() {
 
     private fun loyaltyOf(entityId: EntityId, state: com.wingedsheep.engine.state.GameState): Int =
         state.getEntity(entityId)?.get<CountersComponent>()?.getCount(CounterType.LOYALTY) ?: 0
 
+    /** A creature that flips onto a planeswalker back face — the "returns transformed" entry. */
+    private val squire: CardDefinition = CardDefinition.doubleFacedPermanent(
+        frontFace = card("Test Squire") {
+            manaCost = "{W}"
+            colorIdentity = "W"
+            typeLine = "Creature — Human Soldier"
+            power = 1
+            toughness = 1
+            oracleText = ""
+        },
+        backFace = card("Test Squire Ascended") {
+            manaCost = ""
+            colorIndicator = "W"
+            typeLine = "Legendary Planeswalker — Squire"
+            startingLoyalty = 3
+            oracleText = "+1: You gain 1 life."
+            loyaltyAbility(+1) { effect = Effects.GainLife(1) }
+        },
+    )
+
+    /** "Exile target creature, then return it to the battlefield transformed." */
+    private val ascension = card("Test Ascension") {
+        manaCost = "{W}"
+        colorIdentity = "W"
+        typeLine = "Instant"
+        oracleText = "Exile target creature, then return it to the battlefield transformed."
+        spell {
+            target = Targets.Creature
+            effect = Effects.ExileAndReturnTransformed(EffectTarget.ContextTarget(0))
+        }
+    }
+
     init {
+        cardRegistry.register(squire)
+        cardRegistry.register(ascension)
+
         context("CR 306.5b — a planeswalker enters with its printed loyalty however it enters") {
 
             test("a planeswalker returned by an 'exile until this leaves' aura comes back with its printed loyalty") {
@@ -210,6 +252,87 @@ class PlaneswalkerEntryLoyaltyScenarioTest : ScenarioTestBase() {
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )
                 loyaltyOf(bears, result.state) shouldBe 0
+            }
+
+            test("a double-faced card returning transformed enters with its back face's loyalty") {
+                // The back face's printed loyalty, not the front face's (a creature has none):
+                // returnDfcFace flips the CardComponent before handing the entity to moveToZone,
+                // so the entry step reads the planeswalker face's definition.
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardOnBattlefield(1, "Test Squire")
+                    .withCardInHand(1, "Test Ascension")
+                    .withLandsOnBattlefield(1, "Plains", 2)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val squirePermanent = game.findPermanent("Test Squire")!!
+                val cast = game.castSpell(1, "Test Ascension", squirePermanent)
+                withClue("casting the transform instant should succeed: ${cast.error}") {
+                    cast.error shouldBe null
+                }
+                game.resolveStack()
+
+                val ascended = game.findPermanent("Test Squire Ascended")
+                    ?: error("the transformed planeswalker is not on the battlefield")
+                withClue("it entered on its planeswalker face with that face's printed loyalty") {
+                    loyaltyOf(ascended, game.state) shouldBe 3
+                }
+            }
+        }
+
+        context("CR 306.5b entry counters honour counter-placement modifiers (CR 614)") {
+
+            // Doubling Season: "If an effect would put one or more counters on a permanent you
+            // control, it puts twice that many of those counters on that permanent instead." The
+            // entry loyalty counters are placed by a replacement effect like any other, so they
+            // double — the printed ruling, and the reason both entry paths route through
+            // EntersWithReplacements.placeEntryCounters instead of writing counters directly.
+
+            test("Doubling Season doubles the entry loyalty of a cast planeswalker") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Ajani, Outland Chaperone")
+                    .withCardOnBattlefield(1, "Doubling Season")
+                    .withLandsOnBattlefield(1, "Plains", 3)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val cast = game.castSpell(1, "Ajani, Outland Chaperone")
+                withClue("casting the planeswalker should succeed: ${cast.error}") {
+                    cast.error shouldBe null
+                }
+                game.resolveStack()
+
+                val ajani = game.findPermanent("Ajani, Outland Chaperone")!!
+                loyaltyOf(ajani, game.state) shouldBe 6
+            }
+
+            test("Doubling Season doubles the entry loyalty of a reanimated planeswalker") {
+                // The non-cast path has to reach the same modifiers, or the two pipelines disagree
+                // about the same card.
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Perennation")
+                    .withCardInGraveyard(1, "Ajani, Outland Chaperone")
+                    .withCardOnBattlefield(1, "Doubling Season")
+                    .withLandsOnBattlefield(1, "Plains", 4)
+                    .withLandsOnBattlefield(1, "Swamp", 1)
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val cast = game.castSpellTargetingGraveyardCard(
+                    1, "Perennation", 1, "Ajani, Outland Chaperone"
+                )
+                withClue("casting Perennation should succeed: ${cast.error}") { cast.error shouldBe null }
+                game.resolveStack()
+
+                val ajani = game.findPermanent("Ajani, Outland Chaperone")!!
+                loyaltyOf(ajani, game.state) shouldBe 6
             }
         }
     }

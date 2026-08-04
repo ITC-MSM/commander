@@ -505,10 +505,10 @@ object ZoneTransitionService {
                 val (sagaState, sagaEvents) = applySagaEntryIfNeeded(newState, entityId)
                 newState = sagaState
                 events.addAll(sagaEvents)
-                // Handle a planeswalker entering the battlefield (CR 306.5b). Face-down entries
-                // are excluded: a face-down permanent is a nameless 2/2 creature with no printed
-                // loyalty (CR 708.2), so there is nothing to place.
-                if (!options.faceDown && ::cardRegistry.isInitialized) {
+                // Handle a planeswalker entering the battlefield (CR 306.5b). The helper skips
+                // face-down entries itself — a face-down permanent is a nameless 2/2 creature with
+                // no printed loyalty (CR 708.2a).
+                if (::cardRegistry.isInitialized) {
                     val (loyaltyState, loyaltyEvents) = applyPlaneswalkerEntryIfNeeded(
                         newState, entityId, destControllerId, cardRegistry
                     )

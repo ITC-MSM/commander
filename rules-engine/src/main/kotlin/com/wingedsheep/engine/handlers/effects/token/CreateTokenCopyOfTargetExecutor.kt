@@ -363,6 +363,17 @@ class CreateTokenCopyOfTargetExecutor(
                 .applySagaEntryIfNeeded(newState, tokenId)
             newState = sagaState
             events.addAll(sagaEvents)
+
+            // CR 306.5b: likewise a token copy of a planeswalker enters with the copied printed
+            // loyalty (a copiable value, CR 707.2). Without it state-based actions (CR 704.5i)
+            // bin the token the instant it enters. No-op for non-planeswalkers.
+            cardRegistry?.let { registry ->
+                val (loyaltyState, loyaltyEvents) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                    .applyPlaneswalkerEntryIfNeeded(newState, tokenId, controllerId, registry)
+                newState = loyaltyState
+                events.addAll(loyaltyEvents)
+            }
+
             createdTokens.add(tokenId)
         }
 

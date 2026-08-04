@@ -159,6 +159,13 @@ object TokenFromDefinition {
         val (sagaState, sagaEvents) = ZoneMovementUtils.applySagaEntryIfNeeded(newState, tokenId)
         newState = sagaState
 
+        // CR 306.5b: same for a minted planeswalker — it enters with its printed loyalty counters,
+        // or state-based actions (CR 704.5i) bin it on arrival. No-op for non-planeswalkers.
+        val (loyaltyState, loyaltyEvents) = ZoneMovementUtils.applyPlaneswalkerEntryIfNeeded(
+            newState, tokenId, controllerId, cardRegistry
+        )
+        newState = loyaltyState
+
         val event = ZoneChangeEvent(
             entityId = tokenId,
             entityName = cardDef.name,
@@ -167,6 +174,8 @@ object TokenFromDefinition {
             ownerId = controllerId
         )
 
-        return EffectResult.success(newState, listOf(event) + counterEvents + sagaEvents)
+        return EffectResult.success(
+            newState, listOf(event) + counterEvents + sagaEvents + loyaltyEvents
+        )
     }
 }
