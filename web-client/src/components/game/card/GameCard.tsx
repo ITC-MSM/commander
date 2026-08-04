@@ -98,6 +98,98 @@ interface GameCardProps {
   enableDragToCast?: boolean
 }
 
+/** The three-point coronet shared by the commander crown and both legend chips. */
+const CROWN_PATH = 'M1.5 12 L1.5 9 L4.5 5 L8 8 L12 2 L16 8 L19.5 5 L22.5 9 L22.5 12 Z'
+
+/**
+ * Pill badge that floats over a battlefield card's top edge, carrying a crown glyph and a label.
+ * Used for the two legend chips, which say opposite things about the same supertype and so must
+ * look like one another's mirror — sharing the geometry here is what keeps them aligned as the
+ * card scales, and stops a third variant from being a third copy of ~50 lines of inline style.
+ */
+function LegendChip({
+  width,
+  bandTop,
+  label,
+  title,
+  gradient,
+  textColor,
+  crownFill,
+  struckThrough = false,
+}: {
+  width: number
+  bandTop: number
+  label: string
+  title: string
+  gradient: string
+  textColor: string
+  crownFill: string
+  struckThrough?: boolean
+}) {
+  const chipHeight = Math.max(10, Math.round(width * 0.12))
+  const crownW = Math.round(chipHeight * 0.95)
+  const crownH = Math.round(chipHeight * 0.55)
+  return (
+    <div
+      aria-label={label}
+      title={title}
+      style={{
+        position: 'absolute',
+        top: bandTop - Math.round(chipHeight * 0.55),
+        left: '50%',
+        transform: 'translateX(-50%)',
+        height: chipHeight,
+        padding: `0 ${Math.max(4, Math.round(chipHeight * 0.6))}px`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        background: gradient,
+        color: textColor,
+        fontSize: Math.max(8, Math.round(chipHeight * 0.62)),
+        fontWeight: 800,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        borderRadius: chipHeight,
+        border: '1px solid rgba(0, 0, 0, 0.55)',
+        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18)',
+        pointerEvents: 'none',
+        zIndex: 6,
+        whiteSpace: 'nowrap',
+        lineHeight: 1,
+      }}
+    >
+      <span style={{ position: 'relative', width: crownW, height: crownH, display: 'inline-block' }} aria-hidden>
+        <svg
+          viewBox="0 0 24 13"
+          width={crownW}
+          height={crownH}
+          preserveAspectRatio="none"
+          fill={crownFill}
+          stroke="rgba(0, 0, 0, 0.6)"
+          strokeWidth="0.5"
+          strokeLinejoin="round"
+          style={{ position: 'absolute', inset: 0 }}
+        >
+          <path d={CROWN_PATH} />
+        </svg>
+        {struckThrough && (
+          /* Diagonal strike over the crown, so the chip reads "no crown" at a glance. */
+          <svg
+            viewBox="0 0 24 13"
+            width={crownW}
+            height={crownH}
+            preserveAspectRatio="none"
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            <line x1="2" y1="11.5" x2="22" y2="1.5" stroke="#ff6464" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+        )}
+      </span>
+      {label}
+    </div>
+  )
+}
+
 /**
  * Single card display.
  */
@@ -2713,7 +2805,7 @@ function GameCardImpl({
           strokeLinejoin="round"
         >
           {/* Three-point coronet on a thin band: outer points at the corners, taller centre point */}
-          <path d="M1.5 12 L1.5 9 L4.5 5 L8 8 L12 2 L16 8 L19.5 5 L22.5 9 L22.5 12 Z" />
+          <path d={CROWN_PATH} />
         </svg>
       </div>
     )
@@ -2725,69 +2817,36 @@ function GameCardImpl({
   // frame, so without this chip a player can't tell the token copy isn't subject to
   // the legend rule. The server sets `nonLegendaryCopy` after comparing the printed
   // CardDefinition's supertypes to the live CardComponent's supertypes.
-  const showNonLegendaryChip = battlefield && !faceDown && card.nonLegendaryCopy === true
-  const nonLegendaryChip = showNonLegendaryChip ? (() => {
-    const chipHeight = Math.max(10, Math.round(width * 0.12))
-    const crownW = Math.round(chipHeight * 0.95)
-    const crownH = Math.round(chipHeight * 0.55)
-    return (
-      <div
-        aria-label="Not legendary"
-        title={`Not legendary — copy effect stripped the Legendary supertype (${card.typeLine})`}
-        style={{
-          position: 'absolute',
-          top: bandTop - Math.round(chipHeight * 0.55),
-          left: '50%',
-          transform: 'translateX(-50%)',
-          height: chipHeight,
-          padding: `0 ${Math.max(4, Math.round(chipHeight * 0.6))}px`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-          background: 'linear-gradient(135deg, #4a4a4a 0%, #6b6b6b 50%, #4a4a4a 100%)',
-          color: '#f0f0f0',
-          fontSize: Math.max(8, Math.round(chipHeight * 0.62)),
-          fontWeight: 800,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          borderRadius: chipHeight,
-          border: '1px solid rgba(0, 0, 0, 0.55)',
-          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18)',
-          pointerEvents: 'none',
-          zIndex: 6,
-          whiteSpace: 'nowrap',
-          lineHeight: 1,
-        }}
-      >
-        {/* Crown silhouette with a diagonal strike-through to read "no crown". */}
-        <span style={{ position: 'relative', width: crownW, height: crownH, display: 'inline-block' }} aria-hidden>
-          <svg
-            viewBox="0 0 24 13"
-            width={crownW}
-            height={crownH}
-            preserveAspectRatio="none"
-            fill="rgba(220, 220, 220, 0.55)"
-            stroke="rgba(0, 0, 0, 0.6)"
-            strokeWidth="0.5"
-            strokeLinejoin="round"
-            style={{ position: 'absolute', inset: 0 }}
-          >
-            <path d="M1.5 12 L1.5 9 L4.5 5 L8 8 L12 2 L16 8 L19.5 5 L22.5 9 L22.5 12 Z" />
-          </svg>
-          <svg
-            viewBox="0 0 24 13"
-            width={crownW}
-            height={crownH}
-            preserveAspectRatio="none"
-            style={{ position: 'absolute', inset: 0 }}
-          >
-            <line x1="2" y1="11.5" x2="22" y2="1.5" stroke="#ff6464" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
-        </span>
-        Not Legendary
-      </div>
-    )
-  })() : null
+  const nonLegendaryChip = battlefield && !faceDown && card.nonLegendaryCopy === true ? (
+    <LegendChip
+      width={width}
+      bandTop={bandTop}
+      label="Not Legendary"
+      title={`Not legendary — copy effect stripped the Legendary supertype (${card.typeLine})`}
+      gradient="linear-gradient(135deg, #4a4a4a 0%, #6b6b6b 50%, #4a4a4a 100%)"
+      textColor="#f0f0f0"
+      crownFill="rgba(220, 220, 220, 0.55)"
+      struckThrough
+    />
+  ) : null
+
+  // "Legendary" chip — the mirror of the one above, pinned to a permanent whose printed card is
+  // NOT legendary but which a continuous effect has made legendary (Origin of Spider-Man's "it
+  // becomes a legendary Spider Hero", the Ring emblem's "your Ring-bearer is legendary"). The
+  // printed art still shows a non-legendary frame, so without this chip the player can't see that
+  // the legend rule now applies. The server keeps the two flags mutually exclusive (a granted
+  // supertype clears `nonLegendaryCopy`), so the identically-positioned chips can't collide.
+  const grantedLegendaryChip = battlefield && !faceDown && card.legendaryByEffect === true ? (
+    <LegendChip
+      width={width}
+      bandTop={bandTop}
+      label="Legendary"
+      title={`Legendary — granted by an effect (${card.typeLine})`}
+      gradient="linear-gradient(135deg, #6b5312 0%, #b8912c 50%, #6b5312 100%)"
+      textColor="#fff6da"
+      crownFill="#f2d071"
+    />
+  ) : null
 
   // Wrap in container for sideways battlefield cards (tapped permanents and Rooms) to
   // prevent overlap with neighbours.
@@ -2806,15 +2865,16 @@ function GameCardImpl({
       }}>
         {commanderCrown}
         {nonLegendaryChip}
+        {grantedLegendaryChip}
         {cardElement}
       </div>
       </RenderProfiler>
     )
   }
 
-  // Commander OR non-legendary-copy permanents need a relative-positioned wrapper so the chip
-  // can float above the card without being clipped by the card's `overflow: hidden`.
-  if (showCommanderCrown || nonLegendaryChip) {
+  // Commander, non-legendary-copy OR granted-legendary permanents need a relative-positioned
+  // wrapper so the chip can float above the card without being clipped by `overflow: hidden`.
+  if (showCommanderCrown || nonLegendaryChip || grantedLegendaryChip) {
     return (
       <RenderProfiler id={profilerId}>
         <div style={{
@@ -2825,6 +2885,7 @@ function GameCardImpl({
         }}>
           {commanderCrown}
           {nonLegendaryChip}
+          {grantedLegendaryChip}
           {cardElement}
         </div>
       </RenderProfiler>

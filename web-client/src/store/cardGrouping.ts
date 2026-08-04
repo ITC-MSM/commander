@@ -127,6 +127,7 @@ export function computeCardGroupKey(card: ClientCard): string {
   // Copy provenance is badged and shown in details, so a token copy doesn't merge with the original.
   if (card.copyOf) parts.push(`copy:${card.copyOf}`)
   if (card.nonLegendaryCopy) parts.push('nonleg')
+  if (card.legendaryByEffect) parts.push('grantedleg')
 
   // Granted/projected keywords, ability flags and protections differ when one copy is
   // pumped or granted an ability (without an attachment) but its twin isn't.

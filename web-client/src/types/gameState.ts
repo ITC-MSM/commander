@@ -418,9 +418,19 @@ export interface ClientCard {
    * True when the printed card is legendary but this permanent's projected type line is not —
    * a copy effect explicitly stripped legendariness ("except it isn't legendary" /
    * Impostor Syndrome). The UI badges this so a non-legendary token copy of a legendary
-   * creature is visually distinguishable from the original.
+   * creature is visually distinguishable from the original. The server keeps this mutually
+   * exclusive with {@link legendaryByEffect} — an effect that grants the supertype back wins,
+   * because the permanent then really is legendary.
    */
   readonly nonLegendaryCopy?: boolean
+
+  /**
+   * The mirror of {@link nonLegendaryCopy}: the printed card is not legendary but a continuous
+   * effect has granted the Legendary supertype (Origin of Spider-Man, the Ring emblem's
+   * "your Ring-bearer is legendary"). The printed art shows a non-legendary frame, so the UI
+   * badges it to make the legend rule visible.
+   */
+  readonly legendaryByEffect?: boolean
 
   /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
   readonly damageDistribution?: Record<EntityId, number> | null
