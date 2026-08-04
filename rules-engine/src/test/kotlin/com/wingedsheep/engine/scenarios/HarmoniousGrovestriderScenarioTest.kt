@@ -1,14 +1,15 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.SpellCounteredEvent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
-import com.wingedsheep.mtg.sets.definitions.eoe.cards.HarmoniousGrovestrider
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 
@@ -27,8 +28,8 @@ class HarmoniousGrovestriderScenarioTest : FunSpec({
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
+        // TestCards.all spans MtgSetCatalog, so the EOE printing is already registered.
         driver.registerCards(TestCards.all)
-        driver.registerCard(HarmoniousGrovestrider)
         return driver
     }
 
@@ -40,8 +41,9 @@ class HarmoniousGrovestriderScenarioTest : FunSpec({
         val controller = driver.getOpponent(caster)
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
-        // Three lands keep the Grovestrider a 3/3 — big enough to survive the Bolt on its own
-        // merits, so a surviving creature only proves ward if the spell never resolves.
+        // Three lands make the Grovestrider exactly a 3/3 — precisely lethal to Lightning Bolt's
+        // 3 damage. That's what makes the survival assertion below mean something: a live
+        // Grovestrider can only mean the Bolt never resolved. Don't raise this land count.
         repeat(3) { driver.putLandOnBattlefield(controller, "Forest") }
         val grovestrider = driver.putCreatureOnBattlefield(controller, "Harmonious Grovestrider")
 
@@ -62,7 +64,15 @@ class HarmoniousGrovestriderScenarioTest : FunSpec({
         }
         driver.bothPass()
 
-        driver.findPermanent(controller, "Harmonious Grovestrider") shouldNotBe null
+        withClue("the 3/3 outlived a Bolt that would have been exactly lethal") {
+            driver.findPermanent(controller, "Harmonious Grovestrider") shouldNotBe null
+        }
+        // The graveyard alone can't tell the two outcomes apart — a Bolt that resolves ends up
+        // there too — so pin the actual counter.
+        withClue("ward countered the Bolt rather than it resolving") {
+            driver.events.filterIsInstance<SpellCounteredEvent>()
+                .map { it.cardName } shouldContain "Lightning Bolt"
+        }
         driver.getGraveyardCardNames(caster).contains("Lightning Bolt") shouldBe true
     }
 
