@@ -62,7 +62,8 @@ class GrantEmbalmExecutor : EffectExecutor<GrantEmbalmEffect> {
         val grant = GrantedActivatedAbility(
             entityId = targetId,
             ability = embalmAbility(embalmCost),
-            duration = effect.duration
+            duration = effect.duration,
+            sourceId = context.sourceId
         )
 
         return EffectResult.success(
