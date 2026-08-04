@@ -25,7 +25,6 @@ val ProwlerClawedThief = card("Prowler, Clawed Thief") {
 
     keywords(Keyword.MENACE)
 
-    // Whenever another Villain you control enters, Prowler connives.
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
             filter = GameObjectFilter.Creature.withSubtype("Villain").youControl(),
