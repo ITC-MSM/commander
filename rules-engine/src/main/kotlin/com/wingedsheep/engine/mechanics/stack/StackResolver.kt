@@ -1545,7 +1545,11 @@ class StackResolver(
             counterEvents.addAll(riderEvents)
         }
 
-        // Handle planeswalker starting loyalty (Rule 306.5b)
+        // Handle planeswalker starting loyalty (Rule 306.5b). This is the cast pipeline's copy of
+        // the intrinsic entry replacement; every non-stack entry (reanimation, an O-Ring style
+        // return, a tutor straight into play) gets it from
+        // ZoneMovementUtils.applyPlaneswalkerEntryIfNeeded instead. Keep the two in sync — the
+        // same split exists for Saga entry below.
         if (cardDef != null && !spellComponent.castFaceDown && cardDef.startingLoyalty != null) {
             val loyaltyCount = cardDef.startingLoyalty!!
             val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(

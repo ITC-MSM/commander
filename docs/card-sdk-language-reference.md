@@ -80,7 +80,10 @@ section; do not let SDK additions land without a corresponding doc update.
 - `dynamicStats(source, powerOffset?, toughnessOffset?)` — the `*`/`*` cycle: composes
   `dynamicPower` + `dynamicToughness` over one shared source, with optional `±` deltas
   (Tarmogoyf's `toughnessOffset = 1`).
-- `startingLoyalty: Int?` — starting loyalty for planeswalkers.
+- `startingLoyalty: Int?` — starting loyalty for planeswalkers. Placed as loyalty counters by the
+  engine's intrinsic enters-with replacement (CR 306.5b) on *every* battlefield entry — resolving from
+  the stack, reanimation, an "exile until this leaves" return, or any other put-onto-the-battlefield
+  effect. Card definitions never place them.
 - `colorIdentity: String?` — override (normally auto-detected). Treated as authoritative in this repo.
 - `colorIndicator: String?` — explicit color indicator (CR 204), e.g. `"B"`. `null` (default) = no
   indicator; the card's color is its mana-cost colors alone. Set it on a face printed with a color

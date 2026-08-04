@@ -505,6 +505,16 @@ object ZoneTransitionService {
                 val (sagaState, sagaEvents) = applySagaEntryIfNeeded(newState, entityId)
                 newState = sagaState
                 events.addAll(sagaEvents)
+                // Handle a planeswalker entering the battlefield (CR 306.5b). Face-down entries
+                // are excluded: a face-down permanent is a nameless 2/2 creature with no printed
+                // loyalty (CR 708.2), so there is nothing to place.
+                if (!options.faceDown && ::cardRegistry.isInitialized) {
+                    val (loyaltyState, loyaltyEvents) = applyPlaneswalkerEntryIfNeeded(
+                        newState, entityId, destControllerId, cardRegistry
+                    )
+                    newState = loyaltyState
+                    events.addAll(loyaltyEvents)
+                }
             }
             Zone.LIBRARY -> {
                 if (effectiveLibraryPlacement is LibraryPlacement.Shuffled) {
@@ -1142,6 +1152,18 @@ object ZoneTransitionService {
         entityId: EntityId
     ): Pair<GameState, List<EngineGameEvent>> {
         return ZoneMovementUtils.applySagaEntryIfNeeded(state, entityId)
+    }
+
+    /**
+     * Place a planeswalker's printed loyalty counters as it enters the battlefield (CR 306.5b).
+     */
+    private fun applyPlaneswalkerEntryIfNeeded(
+        state: GameState,
+        entityId: EntityId,
+        controllerId: EntityId,
+        registry: CardRegistry
+    ): Pair<GameState, List<EngineGameEvent>> {
+        return ZoneMovementUtils.applyPlaneswalkerEntryIfNeeded(state, entityId, controllerId, registry)
     }
 
     /**
