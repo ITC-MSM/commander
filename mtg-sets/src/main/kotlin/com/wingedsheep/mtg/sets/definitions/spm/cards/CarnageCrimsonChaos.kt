@@ -36,12 +36,7 @@ val CarnageCrimsonChaos = card("Carnage, Crimson Chaos") {
     typeLine = "Legendary Creature — Symbiote Villain"
     power = 4
     toughness = 3
-    oracleText = "Trample\n" +
-        "When Carnage enters, return target creature card with mana value 3 or less from your " +
-        "graveyard to the battlefield. It gains \"This creature attacks each combat if able\" and " +
-        "\"When this creature deals combat damage to a player, sacrifice it.\"\n" +
-        "Mayhem {B}{R} (You may cast this card from your graveyard for {B}{R} if you discarded it " +
-        "this turn. Timing rules still apply.)"
+    oracleText = "Trample\nWhen Carnage enters, return target creature card with mana value 3 or less from your graveyard to the battlefield. It gains \"This creature attacks each combat if able\" and \"When this creature deals combat damage to a player, sacrifice it.\"\nMayhem {B}{R}"
 
     keywords(Keyword.TRAMPLE)
     mayhem("{B}{R}")

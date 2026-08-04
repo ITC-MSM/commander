@@ -78,6 +78,7 @@ private val MilesMoralesFront = card("Miles Morales") {
         rarity = Rarity.MYTHIC
         collectorNumber = "108"
         artist = "L.A. Draws"
+        flavorText = "\"You can't call yourself Spider-Man without taking a leap of faith. It's a lot to live up to. But I'm creating an all-new legacy.\""
         imageUri = "https://cards.scryfall.io/normal/front/9/f/9f8b4d9b-208a-4673-a617-5e3edd069c33.jpg?1783905331"
     }
 }

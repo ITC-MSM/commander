@@ -43,6 +43,7 @@ val SpiderUK = card("Spider-UK") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "17"
         artist = "Allen Morris"
+        flavorText = "\"Spiders across the Multiverse are dying. I must keep them safe.\""
         imageUri = "https://cards.scryfall.io/normal/front/6/b/6beb4548-1fab-4b9e-bf24-f7b9aadecc87.jpg?1783905359"
     }
 }

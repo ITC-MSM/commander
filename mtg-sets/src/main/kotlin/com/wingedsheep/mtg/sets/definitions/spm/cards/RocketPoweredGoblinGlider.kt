@@ -29,12 +29,7 @@ import com.wingedsheep.sdk.scripting.ModifyStats
 val RocketPoweredGoblinGlider = card("Rocket-Powered Goblin Glider") {
     manaCost = "{3}"
     typeLine = "Artifact — Equipment"
-    oracleText = "When this Equipment enters, if it was cast from your graveyard, attach it to " +
-        "target creature you control.\n" +
-        "Equipped creature gets +2/+0 and has flying and haste.\n" +
-        "Equip {2}\n" +
-        "Mayhem {2} (You may cast this card from your graveyard for {2} if you discarded it this " +
-        "turn. Timing rules still apply.)"
+    oracleText = "When this Equipment enters, if it was cast from your graveyard, attach it to target creature you control.\nEquipped creature gets +2/+0 and has flying and haste.\nEquip {2}\nMayhem {2}"
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield

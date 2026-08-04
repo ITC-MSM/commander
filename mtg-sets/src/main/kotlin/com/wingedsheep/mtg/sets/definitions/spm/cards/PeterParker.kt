@@ -72,6 +72,7 @@ private val PeterParkerFront = card("Peter Parker") {
         rarity = Rarity.MYTHIC
         collectorNumber = "10"
         artist = "Thanh Tuấn"
+        flavorText = "\"This batch of web fluid will just have to wait!\""
         imageUri = "https://cards.scryfall.io/normal/front/3/c/3ce33422-5dba-4a42-8375-dd8ccc692a7b.jpg?1783905367"
     }
 }
@@ -104,6 +105,7 @@ private val AmazingSpiderManBack = card("Amazing Spider-Man") {
         rarity = Rarity.MYTHIC
         collectorNumber = "10"
         artist = "Thanh Tuấn"
+        flavorText = "\"Time to swing into action!\""
         imageUri = "https://cards.scryfall.io/normal/back/3/c/3ce33422-5dba-4a42-8375-dd8ccc692a7b.jpg?1783905367"
     }
 }

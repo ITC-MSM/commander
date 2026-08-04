@@ -38,6 +38,7 @@ val SpiderSense = card("Spider-Sense") {
         rarity = Rarity.RARE
         collectorNumber = "46"
         artist = "Borja Pindado"
+        flavorText = "\"My spider-sense—it's tingling! Something behind me!\""
         imageUri = "https://cards.scryfall.io/normal/front/4/4/4499a25b-f4a5-4f2c-9ebd-bc68c7840b39.jpg?1783905348"
     }
 }

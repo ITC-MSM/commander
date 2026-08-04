@@ -65,6 +65,7 @@ val SpiderPunk = card("Spider-Punk") {
         rarity = Rarity.RARE
         collectorNumber = "92"
         artist = "Forrest Imel"
+        flavorText = "\"Disrespect authority. Smash the system.\""
         imageUri = "https://cards.scryfall.io/normal/front/0/b/0bd41879-fcd4-4211-9b98-47e7cdba5399.jpg?1783905333"
     }
 }

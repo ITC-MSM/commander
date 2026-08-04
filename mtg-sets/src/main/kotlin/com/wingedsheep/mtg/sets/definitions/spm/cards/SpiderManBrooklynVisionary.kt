@@ -44,6 +44,7 @@ val SpiderManBrooklynVisionary = card("Spider-Man, Brooklyn Visionary") {
         rarity = Rarity.COMMON
         collectorNumber = "115"
         artist = "Aniekan Udofia"
+        flavorText = "\"Nothing like a little crimefighting after class.\""
         imageUri = "https://cards.scryfall.io/normal/front/e/1/e19929bc-cbe1-4970-952d-8e9d0193ddce.jpg?1783905323"
     }
 }

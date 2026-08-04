@@ -44,7 +44,7 @@ val PrisonBreak = card("Prison Break") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "61"
         artist = "John Tyler Christopher"
-        flavorText = "\"Anyone who's tired of the slammer, follow us!\" —Electro, Max Dillon"
+        flavorText = "\"Anyone who's tired of the slammer, follow us!\"\n—Electro, Max Dillon"
         imageUri = "https://cards.scryfall.io/normal/front/6/c/6c45a5df-048e-4b73-89c6-5cdaa330319e.jpg?1783905344"
     }
 }

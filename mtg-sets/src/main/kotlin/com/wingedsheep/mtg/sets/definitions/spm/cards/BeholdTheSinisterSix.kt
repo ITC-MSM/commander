@@ -39,9 +39,10 @@ val BeholdTheSinisterSix = card("Behold the Sinister Six!") {
     }
 
     metadata {
-        rarity = Rarity.RARE
+        rarity = Rarity.MYTHIC
         collectorNumber = "51"
         artist = "Nathaniel Himawan"
+        flavorText = "\"Open your eyes to your nightmare, Spider-Man.\"\n—Doctor Octopus, Otto Octavius"
         imageUri = "https://cards.scryfall.io/normal/front/1/9/1919bfec-1906-4178-ad32-d4589842e563.jpg?1783905348"
     }
 }

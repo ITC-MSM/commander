@@ -30,6 +30,7 @@ val SpiderManWebSlinger = card("Spider-Man, Web-Slinger") {
         rarity = Rarity.COMMON
         collectorNumber = "16"
         artist = "Ryan Pancoast"
+        flavorText = "\"Nothing like a little crimefighting before class.\""
         imageUri = "https://cards.scryfall.io/normal/front/8/9/897418bc-df8c-4c97-b6bf-7c9133a8a577.jpg?1783905360"
     }
 }

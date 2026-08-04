@@ -42,6 +42,7 @@ val MisterNegative = card("Mister Negative") {
         rarity = Rarity.MYTHIC
         collectorNumber = "135"
         artist = "Thanh Tuấn"
+        flavorText = "\"Light and dark. They are in opposition, but both are necessary. I am both, and so I am all.\""
         imageUri = "https://cards.scryfall.io/normal/front/2/c/2c9cb13d-55ff-4e26-aa49-755f8bcebc11.jpg?1783905315"
     }
 }

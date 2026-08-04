@@ -39,6 +39,7 @@ val KravenProudPredator = card("Kraven, Proud Predator") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "132"
         artist = "Alexander Mokhov"
+        flavorText = "The hunter seeks only the greatest prey—only Spider-Man's death will quench Kraven's thirst for glory."
         imageUri = "https://cards.scryfall.io/normal/front/a/f/af7c63e1-eccc-40a2-ba14-ce0d2a6123fc.jpg?1783905316"
     }
 }
