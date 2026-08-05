@@ -3641,6 +3641,49 @@
     ]
 }
 
+// Hawkeye, Young Avenger
+{
+    "name": "Hawkeye, Young Avenger",
+    "manaCost": "{3}{R}",
+    "typeLine": "Legendary Creature — Human Archer Hero",
+    "oracleText": "Reach\nIf a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, instead it deals that much damage plus X, where X is Hawkeye's power.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ModifyDamageAmount",
+                "dynamicModifier": {
+                    "type": "EntityProperty",
+                    "entity": "Source",
+                    "numericProperty": "Power"
+                },
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "OpponentOrPermanentTheyControl",
+                    "source": "SourceYouControl",
+                    "damageType": "DamageNonCombat"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "rarity": "UNCOMMON",
+        "artist": "Darius Zablockis",
+        "flavorText": "\"Not bad for a girl with no superpowers, huh?\"\n—Hawkeye, Kate Bishop",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3cebccbb-dde2-41fe-bfdc-0a46ee185749.jpg?1783902930"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hell's Kitchen
 {
     "name": "Hell's Kitchen",
