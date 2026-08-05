@@ -11114,6 +11114,78 @@
     ]
 }
 
+// Undercover Skrull
+{
+    "name": "Undercover Skrull",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Skrull Shapeshifter Villain",
+    "oracleText": "As long as there are two or more creature cards in your graveyard, this creature gets +2/+2 and is all creature types.\n{T}: Add one mana of any color.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "CompositeStaticAbility",
+                    "abilities": [
+                        {
+                            "type": "ModifyStats",
+                            "powerBonus": 2,
+                            "toughnessBonus": 2,
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        },
+                        {
+                            "type": "IsAllCreatureTypes",
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        }
+                    ]
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "creature"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "194",
+        "artist": "Svetlin Velinov",
+        "flavorText": "They're already here.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/90b9a3c0-3fd6-403e-9d6c-201342fea0ad.jpg?1783902909"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Vibranium Energy Daggers
 {
     "name": "Vibranium Energy Daggers",
