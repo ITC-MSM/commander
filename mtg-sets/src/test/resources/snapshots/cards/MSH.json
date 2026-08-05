@@ -4482,6 +4482,78 @@
     ]
 }
 
+// Jessica Jones, Private Eye
+{
+    "name": "Jessica Jones, Private Eye",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Human Detective Hero",
+    "oracleText": "{T}, Put a stun counter on Jessica Jones: Exile the top X cards of your library, where X is Jessica Jones's power. You may play those cards this turn. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPutCountersOnSelf",
+                                "counterType": "stun"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "EntityProperty",
+                                    "entity": "Source",
+                                    "numericProperty": "Power"
+                                }
+                            },
+                            "storeAs": "jessicaJonesExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "jessicaJonesExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "jessicaJonesExiled"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{T}, Put a stun counter on Jessica Jones: Exile the top X cards of your library, where X is Jessica Jones's power. You may play those cards this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Vasilyeva",
+        "flavorText": "\"I would trade all my powers for a fresh pot of hot coffee right now.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b48278fd-1d95-4ad6-9a51-f1c5a2ab9f4b.jpg?1783902929"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Justice, Vance Astrovik
 {
     "name": "Justice, Vance Astrovik",
