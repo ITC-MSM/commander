@@ -10158,6 +10158,75 @@
     ]
 }
 
+// Spider-Woman, Secret Agent
+{
+    "name": "Spider-Woman, Secret Agent",
+    "manaCost": "{3}{W/U}",
+    "typeLine": "Legendary Creature — Spider Human Spy Hero",
+    "oracleText": "Flash\nWhen Spider-Woman enters, tap target creature an opponent controls. That creature can't become untapped for as long as you control Spider-Woman.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "CANT_BECOME_UNTAPPED",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            },
+                            "duration": {
+                                "type": "WhileYouControlSource",
+                                "sourceDescription": "Spider-Woman"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                },
+                "descriptionOverride": "When Spider-Woman enters, tap target creature an opponent controls. That creature can't become untapped for as long as you control Spider-Woman."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "UNCOMMON",
+        "artist": "Pauline Voss",
+        "flavorText": "\"I'm not friendly, and this isn't my neighborhood.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/0/a0325cb5-4c43-418a-8f1b-cf5bf29e74d7.jpg?1783902897"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Stark Industries
 {
     "name": "Stark Industries",
