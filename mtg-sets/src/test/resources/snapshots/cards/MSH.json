@@ -1169,6 +1169,81 @@
     ]
 }
 
+// Black Widow, Super Spy
+{
+    "name": "Black Widow, Super Spy",
+    "manaCost": "{1}{B}",
+    "typeLine": "Legendary Creature — Human Spy Hero",
+    "oracleText": "Menace\nWhenever Black Widow deals combat damage to a player, that player exiles cards from the top of their library until they exile a nonland card. You may put a +1/+1 counter on Black Widow. If you don't, you may cast the exiled nonland card until end of turn and mana of any type can be spent to cast that spell.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherUntilMatch",
+                            "player": "TriggeringPlayer",
+                            "filter": "nonland",
+                            "storeMatch": "widowNonland",
+                            "storeRevealed": "widowExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "widowExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": "TriggeringPlayer"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": "Gate.MayDecide",
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            "otherwise": {
+                                "type": "GrantMayPlayFromExile",
+                                "from": "widowNonland",
+                                "withAnyManaType": true,
+                                "nonLandOnly": true
+                            },
+                            "descriptionOverride": "Put a +1/+1 counter on Black Widow"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Black Widow deals combat damage to a player, that player exiles cards from the top of their library until they exile a nonland card. You may put a +1/+1 counter on Black Widow. If you don't, you may cast the exiled nonland card until end of turn and mana of any type can be spent to cast that spell."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "rarity": "MYTHIC",
+        "artist": "Dan Brereton",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63ce0909-7d7d-410d-ab6c-c87fa3e23877.jpg?1783902946"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Borough Backup
 {
     "name": "Borough Backup",
