@@ -1264,6 +1264,61 @@
     ]
 }
 
+// Colleen Wing, Street Samurai
+{
+    "name": "Colleen Wing, Street Samurai",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Human Samurai Hero",
+    "oracleText": "Whenever you cast a spell that targets a creature you control, put a +1/+1 counter on Colleen Wing. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellTargetsMatching",
+                            "filter": "creature ctrl:you"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Scry",
+                            "count": 1
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you cast a spell that targets a creature you control, put a +1/+1 counter on Colleen Wing. Scry 1."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "UNCOMMON",
+        "artist": "Jurijus Chitrovas",
+        "flavorText": "\"This sword is my heritage. I respect it by having the skill to wield it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8bffc505-608e-4a5b-9ed9-2321e4cab484.jpg?1783902974"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Dark Deed
 {
     "name": "Dark Deed",
