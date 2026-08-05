@@ -13100,6 +13100,58 @@
     ]
 }
 
+// U.S.Agent, John Walker
+{
+    "name": "U.S.Agent, John Walker",
+    "manaCost": "{3}{W/B}",
+    "typeLine": "Legendary Creature — Human Soldier Hero",
+    "oracleText": "When U.S.Agent enters, create a colorless Equipment artifact token named Sturdy Shield with \"Equipped creature gets +1/+2\" and equip {2}. Attach it to U.S.Agent.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Sturdy Shield"
+                        },
+                        {
+                            "type": "AttachTargetEquipmentToCreature",
+                            "equipmentTarget": {
+                                "type": "PipelineTarget",
+                                "collectionName": "createdTokens"
+                            },
+                            "creatureTarget": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When U.S.Agent enters, create a colorless Equipment artifact token named Sturdy Shield with \"Equipped creature gets +1/+2\" and equip {2}. Attach it to U.S.Agent."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "236",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Vasilyeva",
+        "flavorText": "\"Rogers can talk all he wants about unity and dreams. Enemies understand strength.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35e11911-799c-4d82-9109-3ca27964bef0.jpg?1783902894"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Undercover Skrull
 {
     "name": "Undercover Skrull",
