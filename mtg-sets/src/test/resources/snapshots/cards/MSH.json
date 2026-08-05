@@ -12529,6 +12529,79 @@
     ]
 }
 
+// The Vision
+{
+    "name": "The Vision",
+    "manaCost": "{4}",
+    "typeLine": "Legendary Artifact Creature — Robot Hero",
+    "oracleText": "Flying, vigilance\nWhenever you cast a noncreature spell, choose one that hasn't been chosen this turn —\n• Solar Beam — The Vision gains double strike until end of turn.\n• Density Control — The Vision gains indestructible until end of turn.\n• Technopathy — Draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "DOUBLE_STRIKE",
+                                "target": "Self"
+                            },
+                            "description": "Solar Beam — The Vision gains double strike until end of turn"
+                        },
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "INDESTRUCTIBLE",
+                                "target": "Self"
+                            },
+                            "description": "Density Control — The Vision gains indestructible until end of turn"
+                        },
+                        {
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "description": "Technopathy — Draw a card"
+                        }
+                    ],
+                    "excludeModesChosenThisTurn": true,
+                    "countsAsModalSpell": false
+                },
+                "descriptionOverride": "Whenever you cast a noncreature spell, choose one that hasn't been chosen this turn — Solar Beam, Density Control, or Technopathy."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "255",
+        "rarity": "RARE",
+        "artist": "Carissa Susilo",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/2961cf20-33c8-4e66-9d0f-6daca8ea7880.jpg?1783902887"
+    },
+    "colorIdentityOverride": []
+}
+
 // The Wondrous Wasp
 {
     "name": "The Wondrous Wasp",
