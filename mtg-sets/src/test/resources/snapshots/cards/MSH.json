@@ -2569,6 +2569,56 @@
     ]
 }
 
+// Doc Samson, Super Psychiatrist
+{
+    "name": "Doc Samson, Super Psychiatrist",
+    "manaCost": "{4}{G}",
+    "typeLine": "Legendary Creature — Gamma Doctor Hero",
+    "oracleText": "If you would put one or more counters on a permanent you control, put that many plus one of each of those kinds of counters on that permanent instead.\n{T}: Add X mana of any one color, where X is Doc Samson's power.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 6
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add X mana of any one color, where X is Doc Samson's power."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "ModifyCounterPlacement",
+                "appliesTo": {
+                    "type": "CounterPlacementEvent",
+                    "recipient": "PermanentYouControl"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "UNCOMMON",
+        "artist": "Ryan Pancoast",
+        "flavorText": "\"Go ahead, Bruce. Let out your feelings.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/19dc5fcc-d05d-41a0-84c5-2dec996f3e4f.jpg?1783902920"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Doctor Doom
 {
     "name": "Doctor Doom",
