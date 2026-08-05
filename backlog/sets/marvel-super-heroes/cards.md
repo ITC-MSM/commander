@@ -1,0 +1,283 @@
+# Marvel Super Heroes (MSH) - Card Checklist
+
+**Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
+variants 297+ are excluded)
+**Release Date:** June 26, 2026
+**Implemented:** 206 / 276
+
+- [x] Agent 13, Sharon Carter
+- [ ] Agent Maria Hill
+- [x] Agent of Atlas
+- [x] Agent Phil Coulson
+- [x] Agents of S.H.I.E.L.D.
+- [x] Avengers Assemble!
+- [x] Borough Backup
+- [ ] Brave Brawler
+- [ ] Captain America, Super-Soldier
+- [x] Captain America, Wings of Freedom
+- [ ] Captain Marvel, Earth's Protector
+- [ ] Captain Mar-Vell, Space-Born
+- [x] Colleen Wing, Street Samurai
+- [x] Crowd of True Believers
+- [ ] Helicarrier Strike
+- [x] Hero in Training
+- [ ] Invisible Woman, Sue Storm
+- [x] Jennifer Walters // The Sensational She-Hulk
+- [x] Kree Commandos
+- [x] Luke Cage, Power Man
+- [x] The Mind Stone
+- [x] Mockingbird, Ace Agent
+- [x] Monica Rambeau // Photon, Living Light
+- [ ] Murdock's Crusade
+- [ ] Nick Fury, Agent of S.H.I.E.L.D.
+- [x] Night Nurse, Healer of Heroes
+- [x] Okoye, Dora Milaje Leader
+- [x] Origin of the Avengers
+- [x] Panther Pounce
+- [x] Patriot, Shield Wielder
+- [x] Political Triumph
+- [x] Quake, Agent of S.H.I.E.L.D.
+- [x] Raft Security Officer
+- [ ] Red Guardian, Super-Soldier
+- [x] The Sentry, Golden Guardian
+- [x] S.H.I.E.L.D. Spy Kit
+- [x] Super Villain Lockup
+- [x] Super-Soldier Serum
+- [x] Take Up the Shield
+- [x] Wakandan Drone Flock
+- [x] Web Up
+- [x] White Widow, Free Agent
+- [ ] Aerial Doombot
+- [x] A.I.M. Scientists
+- [x] Atlantean Cavalry
+- [ ] Atlantis Attacks
+- [x] Attuma, Atlantean Warlord
+- [ ] Bold Biochemist
+- [x] Bruce Banner // The Incredible Hulk
+- [x] Depower
+- [ ] Echo, Perceptive Prodigy
+- [x] Falcon, Winged Wonder
+- [x] Falcon's Wing Harness
+- [x] Frozen in Ice
+- [x] Futurist Forge
+- [x] Giant-Sized Flying Ant
+- [x] Hydraulic Helper
+- [x] I Am Iron Man
+- [x] Iron Lad, Diverging Destiny
+- [ ] Ironheart, Clever Champion
+- [x] Justice, Vance Astrovik
+- [ ] Kang the Conqueror
+- [ ] Kid Loki
+- [ ] Leader, Super-Genius
+- [ ] Loki, God of Mischief
+- [x] Mister Fantastic, Reed Richards
+- [x] Ms. Marvel, Kamala Khan
+- [x] Multiversal Incursion
+- [ ] Namor the Sub-Mariner
+- [x] Pym Particles
+- [x] Rewrite History
+- [x] Secret Invasion
+- [x] S.H.I.E.L.D. Deployment Drone
+- [x] S.H.I.E.L.D. Flying Car
+- [ ] Shuri, Wakandan Inventor
+- [ ] Stature, Size Shifter
+- [x] Super Intelligence
+- [x] Super Suit
+- [x] Thirst for Knowledge
+- [x] Tony Stark // The Invincible Iron Man
+- [x] Trickster's Stratagem
+- [ ] We Say Thee Nay!
+- [x] Wiccan, Rising Magician
+- [x] The Wondrous Wasp
+- [x] Agents of HYDRA
+- [x] Arnim Zola, Bio-Fanatic
+- [ ] Baron Helmut Zemo
+- [x] Baron Strucker, HYDRA Overlord
+- [x] Black Widow, Super Spy
+- [x] Construct a Cosmic Cube
+- [x] Crossbones, Malicious Mercenary
+- [ ] Cruel Alliance
+- [x] Dark Deed
+- [x] Decoy Ploy
+- [x] Doctor Doom
+- [ ] Doom Reigns Supreme
+- [x] Elektra, Daughter of the Hand
+- [x] Grim Reaper, Lethal Legionnaire
+- [x] Hour of Defeat
+- [x] HYDRA Infiltration
+- [x] HYDRA Troopers
+- [x] Kingpin's Enforcers
+- [x] Klaw, Sonic Subjugator
+- [x] Madame Masque
+- [x] The Masters of Evil
+- [x] M.O.D.O.K.
+- [x] Moonstone, Harsh Mistress
+- [ ] Ninja of the Hand
+- [x] Project Deathlok Soldier
+- [x] Red Room Recruit
+- [x] Robot Domination
+- [ ] Ronin, Shadow Stalker
+- [x] Roxxon Brutes
+- [x] Stolen Stark Tech
+- [x] Super-Skrull
+- [x] Swordsman, Sharp Scoundrel
+- [x] Thunderbolts Conspiracy
+- [ ] Too Evil to Stay Dead
+- [ ] Unliving Legionnaire
+- [x] Visions of Villainy
+- [x] Whiplash, Vengeful Engineer
+- [ ] Widow's Bite
+- [x] Yellowjacket, Heartless Marauder
+- [x] Avengers Disassembled
+- [x] Blazing Crescendo
+- [x] Crimson Operative
+- [x] Death to Our Enemies
+- [ ] Evil's Thrall
+- [x] Fin Fang Foom
+- [ ] Hawkeye, Master Marksman
+- [x] Hawkeye, Young Avenger
+- [x] Hawkeye's Bow
+- [x] Hex Magic
+- [x] Hire a Crew
+- [ ] HULK SMASH!
+- [ ] Human Torch, Johnny Storm
+- [x] HYDRA Assault Robot
+- [x] Iron Fist, Living Weapon
+- [x] Jessica Jones, Private Eye
+- [x] K'un-Lun Warrior
+- [x] Kree Sentinel
+- [x] Lightning Strike
+- [ ] Loki Laufeyson
+- [x] Machinesmith Automaton
+- [x] Misty Knight, Hero for Hire
+- [ ] Mjölnir, Hammer of Thor
+- [x] Photon Blast Barrage
+- [ ] Quicksilver, Brash Blur
+- [x] Red Hulk
+- [ ] Repulsor Blast
+- [ ] The Scarlet Witch
+- [x] Speed, Young Avenger
+- [x] Stark Industries Executive
+- [x] Super Speed
+- [ ] Team Tactics
+- [x] Thor, God of Thunder
+- [x] Truck Toss
+- [x] Vision of Love
+- [ ] Volcanic Villain
+- [ ] Wonder Man, Hollywood Hero
+- [x] Ant-Man's Army
+- [x] Call Damage Control
+- [x] Claim the Kingdom
+- [x] Doc Samson, Super Psychiatrist
+- [ ] Earth's Mightiest Heroes
+- [x] Epic Fight
+- [x] Giant Growth
+- [ ] Go Nuts!
+- [x] Guerrilla Gorilla
+- [x] Hellcat, Undying Vigilante
+- [ ] Hercules, Prince of Power
+- [x] Heroic Feast
+- [x] Hulkling, Burgeoning Bruiser
+- [x] Ka-Zar of the Savage Land
+- [x] Knight of Wundagore
+- [x] Mister Hyde, Monster Within
+- [x] Mole Man, Moloid Master
+- [ ] Pet Avengers
+- [ ] Powerful Broker
+- [x] Punishing Punch
+- [x] Rapid Rescue
+- [x] Reptil, Dinomorpher
+- [x] Restorative Technique
+- [x] Rick Jones, Destined Sidekick
+- [x] Savage Land Dinosaur
+- [ ] Serpent Specialist
+- [ ] Shang-Chi, Master of Kung Fu
+- [ ] She-Hulk, Jade Defender
+- [x] Super Strength
+- [x] The Thing, Ben Grimm
+- [x] Tigra, Feline Fury
+- [x] Training Regimen
+- [x] The Unbeatable Squirrel Girl
+- [x] Undercover Skrull
+- [x] Wakandan Royal Guard
+- [ ] White Tiger, Ava Ayala
+- [ ] World War Hulk
+- [ ] Abomination, Terrifying Titan
+- [ ] Absorbing Man
+- [x] Alien Invasion
+- [x] Ant-Man, Colony Commander
+- [x] Ares, God of War
+- [x] Armor Wars
+- [x] The Astonishing Ant-Man
+- [x] Avengers: Under Siege
+- [x] Beast, Erudite Aerialist
+- [x] Black Panther, Vanguard
+- [x] Black Widow, Double Agent
+- [ ] Bullseye, Death Dealer
+- [ ] Captain America, Living Legend
+- [ ] Cloak and Dagger, Entwined
+- [x] The Coming of Galactus
+- [x] Daredevil, Man Without Fear
+- [x] Ghost, Spectral Saboteur
+- [ ] Hulk, Gamma Goliath
+- [x] Iron Man, Master of Machines
+- [x] Kang, Temporal Tyrant
+- [x] Killmonger, Scourge of Wakanda
+- [x] King T'Challa // Black Panther, Hope Enduring
+- [x] The Kingpin of Crime
+- [x] Madame Hydra
+- [x] The Mighty Thor, Jane Foster
+- [x] Moon Girl and Devil Dinosaur
+- [x] The Ruinous Wrecking Crew
+- [ ] Scientist Supreme of A.I.M.
+- [ ] The Serpent Society
+- [x] Speedball, New Warrior
+- [x] Spider-Man, To the Rescue
+- [x] Spider-Woman, Secret Agent
+- [ ] Storm, Windrider
+- [x] The Super Hero Civil War
+- [ ] Taskmaster, Mercenary Mimic
+- [ ] Thanos, the Mad Titan
+- [x] Thor Odinson
+- [ ] Titania, Rugged Rumbler
+- [x] U.S.Agent, John Walker
+- [x] Vision Quest
+- [x] War Machine, Legacy of Iron
+- [x] Winter Soldier, Icy Assassin
+- [ ] Wolverine, Fierce Fighter
+- [x] Worlds Within Worlds
+- [x] A.I.M. Synthoids
+- [ ] Arc Reactor
+- [x] Captain America's Shield
+- [x] Cosmic Cube
+- [x] Dependable Quinjet
+- [x] H.E.R.B.I.E. Scout Unit
+- [x] Iron Man Armor
+- [x] S.H.I.E.L.D. Helicarrier
+- [ ] Super-Adaptoid
+- [x] The Ten Rings
+- [x] Ultron, Artificial Malevolence
+- [ ] Ultron Drone
+- [x] Vibranium Energy Daggers
+- [x] The Vision
+- [ ] Viv Vision, Teen Synthezoid
+- [x] A.I.M. Labs
+- [x] Asgardian Citadel
+- [x] Avengers Hangar
+- [x] Avengers Tower
+- [x] Baxter Building
+- [x] Birnin Zana Plaza
+- [x] Castle Doom
+- [x] Dark Fortress
+- [x] Fisk Tower
+- [x] Gathering Place
+- [x] Gleaming Bastion
+- [x] Hell's Kitchen
+- [x] Hidden Lair
+- [x] Los Diablos Missile Base
+- [x] Pym Technologies
+- [x] Stark Industries
+- [x] Subterranean Cavern
+- [x] Surveillance Room
+- [x] Training Compound
+- [x] Villainous Hideout
