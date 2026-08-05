@@ -3071,6 +3071,67 @@
     ]
 }
 
+// I Am Iron Man
+{
+    "name": "I Am Iron Man",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Until end of turn, target artifact or creature becomes an artifact creature with base power and toughness 4/4 and gains flying.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact or creature"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "addTypes": [
+                        "ARTIFACT"
+                    ]
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|artifact"
+                },
+                "id": "target artifact or creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "artist": "Filipe Pagliuso",
+        "flavorText": "\"Any questions?\"\n—Tony Stark",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c401abb-5978-41c0-962b-0432f9433929.jpg?1783902957"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Jennifer Walters
 {
     "name": "Jennifer Walters",
