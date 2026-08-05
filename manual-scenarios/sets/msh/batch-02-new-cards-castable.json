@@ -6,8 +6,8 @@
     "hand": [
       "Colleen Wing, Street Samurai",
       "Crowd of True Believers",
-      "Jennifer Walters",
       "The Mind Stone",
+      "Giant Growth",
       "Mockingbird, Ace Agent"
     ],
     "battlefield": [
@@ -54,6 +54,12 @@
         "name": "Plains"
       },
       {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
         "name": "Plains"
       }
     ],
@@ -66,12 +72,21 @@
     "library": [
       "Mountain",
       "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Island"
     ]
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": [],
+    "hand": [
+      "Smother",
+      "Lightning Bolt"
+    ],
     "battlefield": [
       {
         "name": "Grizzly Bears"
@@ -83,12 +98,28 @@
         "name": "Serra Angel"
       },
       {
+        "name": "Swamp"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
         "name": "Feldon's Cane"
       }
     ],
     "graveyard": [],
     "library": [
       "Plains",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
       "Swamp",
       "Forest"
     ]

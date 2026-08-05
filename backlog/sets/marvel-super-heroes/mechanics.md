@@ -396,6 +396,33 @@ damage and damage to creatures. Needed: `StatePredicate.DealtDamageThisTurn` plu
 `HasDealtDamageComponent`, cleared in `CleanupPhaseManager`, and wired into `PredicateEvaluator`,
 `AffectsFilterResolver`, `TriggerMatcher`, `BeginningPhaseManager` and `Serialization`.
 
+### "Do this only once each turn" — an effect cap, not a trigger cap — **Jennifer Walters** [18]
+> Whenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that
+> much damage to any target. **Do this only once each turn.**
+
+Per CR 603.2 the ability triggers **once per damaged creature**; "Do this only once each turn" limits
+how often the *effect* may be applied. So in a multi-block, every damaged creature puts a trigger on
+the stack and the controller declines until the one carrying the biggest damage number — the whole
+point of the card.
+
+Modelling it as `oncePerTurn = true` (a **trigger** cap) fires only for the *first* creature dealt
+damage and never offers the rest, so a big hit later in the same combat is unreachable. **Implemented
+then removed from this branch** for that reason; it needs a per-turn *effect* budget — an
+`effectOncePerTurn` flag on `TriggeredAbility` (or a turn-scoped "already applied" marker the effect
+checks and sets) so all instances trigger while at most one resolves its effect.
+
+Do not confuse this with the other wording: "**This ability triggers** only once each turn"
+(Crossbones [91], Moon Girl [223], Knight of Wundagore [175], Ant-Man [201]) *is* a trigger cap and is
+correctly `oncePerTurn = true` today.
+
+**Also removed for the same defect:** **Baron Strucker, HYDRA Overlord** [88] — "Whenever another
+Villain you control enters, you may have it connive. **Do this only once each turn.**" With
+`oncePerTurn = true`, when two Villains enter together only the first triggers, so you cannot pick
+which one connives.
+
+Both cards become implementable the moment the per-turn *effect* budget exists; neither needs
+anything else.
+
 ### Cost reduction reading the source's own characteristic — **The Scarlet Witch** [151]
 "Instant and sorcery spells you cast with mana value 4 or greater cost {X} less to cast, where X is
 The Scarlet Witch's power." The obvious recipe —

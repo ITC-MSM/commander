@@ -29,7 +29,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *   Prevent all damage that would be dealt to Black Panther.
  *   Whenever Black Panther deals combat damage to a player, draw a card.
  *
- * The set's Jennifer Walters / Monica Rambeau / Tony Stark / Bruce Banner shape: a transforming
+ * The set's Monica Rambeau / Tony Stark / Bruce Banner shape: a transforming
  * double-faced creature ([CardDefinition.doubleFacedCreature]) whose front owns the sorcery-speed
  * [TransformEffect] flip ([TimingRule.SorcerySpeed]). The back is reached only through that flip,
  * so it carries no castable mana cost — its W/U colors come from a color indicator (CR 204).
