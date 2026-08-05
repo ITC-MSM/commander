@@ -14073,6 +14073,94 @@
     ]
 }
 
+// Worlds Within Worlds
+{
+    "name": "Worlds Within Worlds",
+    "manaCost": "{5}{G}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Exile all creatures. Each player may put any number of creature cards from their hand onto the battlefield. Then put all cards exiled this way into their owners' hands. Exile Worlds Within Worlds.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "creature"
+                    },
+                    "storeAs": "worldsToExile"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "worldsToExile",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile"
+                    },
+                    "storeMovedAs": "worldsExiled"
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "ActivePlayerFirst"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "filter": "creature"
+                                },
+                                "storeAs": "worldsHandCandidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "worldsHandCandidates",
+                                "selection": "ChooseAnyNumber",
+                                "storeSelected": "worldsHandChosen",
+                                "prompt": "You may put any number of creature cards from your hand onto the battlefield."
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "worldsHandChosen",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "worldsExiled",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                }
+            ]
+        },
+        "selfExileOnResolve": true
+    },
+    "metadata": {
+        "collectorNumber": "241",
+        "rarity": "RARE",
+        "artist": "Michael MacRae",
+        "flavorText": "\"Uh, I think I might have overdone it a smidge.\"\n—Ant-Man, Scott Lang",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/4765e39c-cbf2-4605-9bf1-3baad7d92cfb.jpg?1783902892"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Yellowjacket, Heartless Marauder
 {
     "name": "Yellowjacket, Heartless Marauder",
