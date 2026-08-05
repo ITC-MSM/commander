@@ -4250,6 +4250,110 @@
     ]
 }
 
+// Klaw, Sonic Subjugator
+{
+    "name": "Klaw, Sonic Subjugator",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Human Rogue Villain",
+    "oracleText": "Sonic Attack — When Klaw enters, target player reveals a number of cards from their hand equal to one plus the number of creature cards in your graveyard. You choose one of them. That player discards that card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "klawHand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "klawHand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Add",
+                                    "left": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "right": {
+                                        "type": "Count",
+                                        "player": "You",
+                                        "zone": "Graveyard",
+                                        "filter": "creature"
+                                    }
+                                }
+                            },
+                            "chooser": "TargetPlayer",
+                            "storeSelected": "klawRevealed",
+                            "prompt": "Choose cards to reveal"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "klawRevealed",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "klawChosen",
+                            "prompt": "Choose a card that player discards"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "klawChosen",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "Sonic Attack — When Klaw enters, target player reveals a number of cards from their hand equal to one plus the number of creature cards in your graveyard. You choose one of them. That player discards that card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "rarity": "UNCOMMON",
+        "artist": "Andreia Ugrai",
+        "flavorText": "\"Listen to the sound of death. Hear the sound of your own cells exploding.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c79a86f8-24e9-49a2-8b1c-72a72fed1985.jpg?1783902943"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Kree Commandos
 {
     "name": "Kree Commandos",
