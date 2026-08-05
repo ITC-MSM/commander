@@ -14017,6 +14017,135 @@
     "colorIdentityOverride": []
 }
 
+// Villainous Hideout
+{
+    "name": "Villainous Hideout",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a Villain spell or to activate an ability of a Villain source.\n{3}, {T}: Target Villain you control connives. Activate only as a sorcery. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on that creature.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "restriction": {
+                        "type": "SubtypeSpellsOrAbilitiesOnly",
+                        "subtype": "Villain"
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "connive_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "connive_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "connive_discarded",
+                            "prompt": "Choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "connive_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "connive_discarded",
+                            "ifNotEmpty": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target Villain you control"
+                                }
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Connive"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Villain ctrl:you"
+                        },
+                        "id": "target Villain you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Target Villain you control connives. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "276",
+        "rarity": "UNCOMMON",
+        "artist": "Paulius Daščioras",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/822b0249-e1df-453d-8b60-75a5196ed818.jpg?1783902881"
+    },
+    "colorIdentityOverride": []
+}
+
 // Vision Quest
 {
     "name": "Vision Quest",
