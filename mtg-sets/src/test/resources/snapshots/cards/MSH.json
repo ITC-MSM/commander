@@ -13955,6 +13955,124 @@
     ]
 }
 
+// Winter Soldier, Icy Assassin
+{
+    "name": "Winter Soldier, Icy Assassin",
+    "manaCost": "{W}{B}",
+    "typeLine": "Legendary Creature — Human Assassin Villain",
+    "oracleText": "Vigilance, menace\nWinter Soldier gets +2/+0 for each Equipment attached to him.\n{3}{W}{B}: Return this card from your graveyard to the battlefield with a finality counter on him. Then you may attach an Equipment you control to him. (If a creature with a finality counter on it would die, exile it instead.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE",
+        "MENACE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{W}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Battlefield",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "finality",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.MayDecide",
+                                "feasibility": {
+                                    "type": "ControlsPermanentMatching",
+                                    "filter": "artifact Equipment"
+                                }
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "SelectTarget",
+                                        "requirement": {
+                                            "type": "TargetObject",
+                                            "filter": {
+                                                "baseFilter": "artifact Equipment ctrl:you"
+                                            }
+                                        },
+                                        "storeAs": "winterSoldierEquipment"
+                                    },
+                                    {
+                                        "type": "AttachTargetEquipmentToCreature",
+                                        "equipmentTarget": {
+                                            "type": "PipelineTarget",
+                                            "collectionName": "winterSoldierEquipment"
+                                        },
+                                        "creatureTarget": "Self"
+                                    }
+                                ]
+                            },
+                            "descriptionOverride": "You may attach an Equipment you control to Winter Soldier."
+                        }
+                    ]
+                },
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "{3}{W}{B}: Return this card from your graveyard to the battlefield with a finality counter on him. Then you may attach an Equipment you control to him."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "AttachmentCount",
+                            "kind": "EQUIPMENT"
+                        }
+                    },
+                    "multiplier": 2
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "239",
+        "rarity": "RARE",
+        "artist": "Riccardo Federici",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/b/ebf71ffc-6e3e-4ca0-a84a-3c1ebd2b64b1.jpg?1783902893"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Yellowjacket, Heartless Marauder
 {
     "name": "Yellowjacket, Heartless Marauder",
