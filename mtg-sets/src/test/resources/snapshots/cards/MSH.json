@@ -1740,6 +1740,75 @@
     ]
 }
 
+// Crimson Operative
+{
+    "name": "Crimson Operative",
+    "manaCost": "{3}{R}",
+    "typeLine": "Artifact Creature — Human Villain",
+    "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nWhen this creature enters, exile the top card of your library. Until the end of your next turn, you may play that card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "PROWESS"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "crimsonOperativeExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "crimsonOperativeExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "crimsonOperativeExiled",
+                            "expiry": {
+                                "type": "UntilControllerStep",
+                                "step": "CLEANUP",
+                                "includeCurrentTurn": false
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, exile the top card of your library. Until the end of your next turn, you may play that card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "126",
+        "artist": "Kevin Glint",
+        "flavorText": "\"I think you will find the latest version of my armor particularly impressive.\"\n—Crimson Dynamo, Dimitri Bukharin",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/4/c4bc077c-f220-47a5-aaf4-5324ca23d0c5.jpg?1783902933"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Crossbones, Malicious Mercenary
 {
     "name": "Crossbones, Malicious Mercenary",
