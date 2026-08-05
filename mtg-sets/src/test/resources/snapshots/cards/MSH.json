@@ -10102,6 +10102,52 @@
     ]
 }
 
+// The Thing, Ben Grimm
+{
+    "name": "The Thing, Ben Grimm",
+    "manaCost": "{5}{G}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Trample\nWhenever one or more Heroes you control deal damage to a player, put two +1/+1 counters on The Thing.",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": "AnyPlayer",
+                    "sourceFilter": "creature Hero ctrl:you",
+                    "batch": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever one or more Heroes you control deal damage to a player, put two +1/+1 counters on The Thing."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "190",
+        "rarity": "UNCOMMON",
+        "artist": "Gintas Galvanauskas",
+        "flavorText": "\"Don't worry, pal! Soon all yer problems'll be over, 'cause it's clobberin' time!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3f1933a8-046f-471a-afcf-cfb08ca0d239.jpg?1783902911"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // The Wondrous Wasp
 {
     "name": "The Wondrous Wasp",
