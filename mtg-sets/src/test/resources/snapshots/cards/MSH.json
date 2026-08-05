@@ -2654,6 +2654,75 @@
     ]
 }
 
+// Fin Fang Foom
+{
+    "name": "Fin Fang Foom",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Legendary Creature — Alien Dragon Villain",
+    "oracleText": "Flying\nWhenever you cast an instant or sorcery spell that targets an artifact or land, copy that spell. You may choose new targets for the copy. Put two +1/+1 counters on Fin Fang Foom.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    },
+                    "requires": [
+                        {
+                            "type": "SpellTargetsMatching",
+                            "filter": "artifact|land"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CopyTargetSpell",
+                            "target": "TriggeringEntity"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 2,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you cast an instant or sorcery spell that targets an artifact or land, copy that spell. You may choose new targets for the copy. Put two +1/+1 counters on Fin Fang Foom."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "rarity": "RARE",
+        "artist": "Filipe Pagliuso",
+        "flavorText": "His limbs shatter mountains. His back scrapes the sun.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/7777fac1-7bf5-4454-960d-26ec3183e392.jpg?1783902932"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Fisk Tower
 {
     "name": "Fisk Tower",
