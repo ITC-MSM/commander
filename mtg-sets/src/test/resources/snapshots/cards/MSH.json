@@ -7825,6 +7825,80 @@
     ]
 }
 
+// Speed, Young Avenger
+{
+    "name": "Speed, Young Avenger",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Mutant Hero",
+    "oracleText": "Haste\nWhenever you cast a noncreature spell, you may pay {1}. When you do, target creature with haste can't be blocked this turn except by creatures with haste.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "PayManaCost",
+                        "cost": "{1}"
+                    },
+                    "reflexiveEffect": {
+                        "type": "GrantCantBeBlockedExceptBy",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "blockerFilter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                {
+                                    "type": "HasKeyword",
+                                    "keyword": "HASTE"
+                                }
+                            ]
+                        }
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature kw:haste"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "You may pay {1}. When you do, target creature with haste can't be blocked this turn except by creatures with haste."
+                },
+                "descriptionOverride": "Whenever you cast a noncreature spell, you may pay {1}. When you do, target creature with haste can't be blocked this turn except by creatures with haste."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "rarity": "UNCOMMON",
+        "artist": "Tyler Walpole",
+        "flavorText": "\"Wait? Sorry, not in my vocabulary.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d15d187b-dc5d-482d-a79a-b9b98193ad7a.jpg?1783902923"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Stark Industries
 {
     "name": "Stark Industries",
