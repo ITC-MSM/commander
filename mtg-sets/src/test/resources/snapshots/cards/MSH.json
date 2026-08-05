@@ -10026,6 +10026,63 @@
     ]
 }
 
+// Speedball, New Warrior
+{
+    "name": "Speedball, New Warrior",
+    "manaCost": "{2}{U/R}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Whenever a player casts a spell that targets Speedball, he gets +2/+2 until end of turn. You may choose new targets for that spell.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "Each",
+                    "requires": [
+                        "SpellTargetsSource"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": "Self"
+                        },
+                        "ChangeTriggeringObjectTargets"
+                    ]
+                },
+                "descriptionOverride": "Whenever a player casts a spell that targets Speedball, he gets +2/+2 until end of turn. You may choose new targets for that spell."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "rarity": "UNCOMMON",
+        "artist": "Borja Pindado",
+        "flavorText": "\"Ah, to be a young and carefree Super Hero! Not a worry in the world for this spandex savior! I wish!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e040b456-9853-4e94-9bf8-9374888168bb.jpg?1783902897"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Stark Industries
 {
     "name": "Stark Industries",
