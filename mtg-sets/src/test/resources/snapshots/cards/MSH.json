@@ -6757,6 +6757,74 @@
     ]
 }
 
+// Red Hulk
+{
+    "name": "Red Hulk",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Legendary Creature — Gamma Berserker Villain",
+    "oracleText": "Reach, trample\nEnrage — Whenever Red Hulk is dealt damage, put a +1/+1 counter on him. When you do, he deals damage equal to the number of +1/+1 counters on him to any other target.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 7
+    },
+    "keywords": [
+        "REACH",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": {
+                                "type": "CounterCount",
+                                "counterType": "PlusOnePlusOne"
+                            }
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "damageSource": "Self"
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetOther",
+                            "baseRequirement": "AnyTarget"
+                        }
+                    ],
+                    "descriptionOverride": "Put a +1/+1 counter on him. When you do, he deals damage equal to the number of +1/+1 counters on him to any other target."
+                },
+                "descriptionOverride": "Enrage — Whenever Red Hulk is dealt damage, put a +1/+1 counter on him. When you do, he deals damage equal to the number of +1/+1 counters on him to any other target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "149",
+        "rarity": "UNCOMMON",
+        "artist": "Vilhelmas Banys",
+        "flavorText": "To finally defeat the Hulk, General \"Thunderbolt\" Ross became what he hated most.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e25468e2-17c6-47b2-8eb6-fcb8ae6f4c17.jpg?1783902924"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Red Room Recruit
 {
     "name": "Red Room Recruit",
