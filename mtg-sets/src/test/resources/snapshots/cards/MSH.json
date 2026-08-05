@@ -2760,6 +2760,106 @@
     ]
 }
 
+// Daredevil, Man Without Fear
+{
+    "name": "Daredevil, Man Without Fear",
+    "manaCost": "{2}{R}{W}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Vigilance, haste\nRadar Sense — You may look at the top card of your library any time.\nWhenever you attack, you may exile the top card of your library. If that card is a Hero card, Daredevil gets +2/+1 until end of turn. You may play that card this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "TopOfLibrary",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeAs": "daredevilExiled"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "daredevilExiled",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Exile"
+                                        }
+                                    },
+                                    {
+                                        "type": "GrantMayPlayFromExile",
+                                        "from": "daredevilExiled"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.WhenCondition",
+                                    "condition": {
+                                        "type": "CollectionContainsMatch",
+                                        "collection": "daredevilExiled",
+                                        "filter": "Hero"
+                                    }
+                                },
+                                "then": {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "target": "Self"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may exile the top card of your library. If that card is a Hero card, Daredevil gets +2/+1 until end of turn. You may play that card this turn."
+                },
+                "descriptionOverride": "Whenever you attack, you may exile the top card of your library. If that card is a Hero card, Daredevil gets +2/+1 until end of turn. You may play that card this turn."
+            }
+        ],
+        "staticAbilities": [
+            "LookAtTopOfLibrary"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "213",
+        "rarity": "RARE",
+        "artist": "Dan Brereton",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/14e821bb-55cc-474e-9b63-0ceecc2666c1.jpg?1783902902"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "RED"
+    ]
+}
+
 // Dark Deed
 {
     "name": "Dark Deed",
