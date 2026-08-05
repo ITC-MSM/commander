@@ -9297,6 +9297,107 @@
     ]
 }
 
+// Thor, God of Thunder
+{
+    "name": "Thor, God of Thunder",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Legendary Creature — God Warrior Hero",
+    "oracleText": "Flying\nWhen Thor enters, exile target Equipment, instant, or sorcery card from your graveyard. Until the end of your next turn, you may play that card.\nWhenever you cast a noncreature spell, Thor deals damage equal to that spell's mana value to any target.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "thorTargeted"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "thorTargeted",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "storeMovedAs": "thorExiled"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "thorExiled",
+                            "expiry": {
+                                "type": "UntilControllerStep",
+                                "step": "CLEANUP",
+                                "includeCurrentTurn": false
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "instant|sorcery|Equipment own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target Equipment, instant, or sorcery card from your graveyard"
+                },
+                "descriptionOverride": "When Thor enters, exile target Equipment, instant, or sorcery card from your graveyard. Until the end of your next turn, you may play that card."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Triggering",
+                        "numericProperty": "ManaValue"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "descriptionOverride": "Whenever you cast a noncreature spell, Thor deals damage equal to that spell's mana value to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "156",
+        "rarity": "MYTHIC",
+        "artist": "Jesper Ejsing",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cddd314c-c271-475a-b076-01a8599c8015.jpg?1783902923"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Thunderbolts Conspiracy
 {
     "name": "Thunderbolts Conspiracy",
