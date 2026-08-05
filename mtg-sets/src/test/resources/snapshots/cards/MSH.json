@@ -1740,6 +1740,68 @@
     ]
 }
 
+// Crossbones, Malicious Mercenary
+{
+    "name": "Crossbones, Malicious Mercenary",
+    "manaCost": "{3}{B}",
+    "typeLine": "Legendary Creature — Human Mercenary Villain",
+    "oracleText": "Deathtouch\nWhenever another Villain you control enters, put a +1/+1 counter on Crossbones. He deals 2 damage to each opponent. This ability triggers only once each turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Villain ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "EachOpponent"
+                            }
+                        }
+                    ]
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever another Villain you control enters, put a +1/+1 counter on Crossbones. He deals 2 damage to each opponent. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "rarity": "UNCOMMON",
+        "artist": "Kevin Sidharta",
+        "flavorText": "\"I consider myself an artist—a craftsman who specializes in murder, destruction, and terror!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/1576148a-2371-49ba-8eef-0bc2ec3dcaf3.jpg?1783902946"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Crowd of True Believers
 {
     "name": "Crowd of True Believers",
