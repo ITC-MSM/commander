@@ -1065,7 +1065,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   the hand artifact she free-casts at the count via `CollectionFilter.ManaValueAtMost(DynamicAmounts.countersOnSelf(
   CounterTypeFilter.Named(Counters.INGENUITY)))`), `Counters.FILM` (Peter Parker's Camera — enters with
   three via `EntersWithCounters(CounterTypeFilter.Named(Counters.FILM), count = 3, selfOnly = true)` and its
-  `{2}, {T}` copy ability spends one per activation via `Costs.RemoveCounterFromSelf(Counters.FILM, 1)`).
+  `{2}, {T}` copy ability spends one per activation via `Costs.RemoveCounterFromSelf(Counters.FILM, 1)`),
+  `Counters.PLAN` (MSH's Plan enchantment cycle — each Plan's own "whenever …" trigger adds one, and a
+  second `Triggers.countersPlacedOn(filter = GameObjectFilter.Any, counterType = Counters.PLAN,
+  firstTimeEachTurn = false, binding = TriggerBinding.SELF)` ability gated on
+  `triggerCondition = Conditions.SourceCounterCountAtLeast(Counters.PLAN, N)` models "when the Nth plan
+  counter is put on this enchantment"; exact because every payoff sacrifices its own source, so the
+  at-least gate can never fire a second time — no dedicated "Nth counter" trigger event is needed),
+  `Counters.INVASION` (Alien Invasion — a tally its begin-combat trigger reads via
+  `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.INVASION))` to size the +1/+1 counters
+  on the Alien token it just made, then increments).
 - `DistributeCountersFromSelf(type?, count?)` — split source's counters among creatures you control.
 - `DistributeCountersAmongTargets(total, type?, minPerTarget?)` — divvy N counters among chosen
   targets. `total` is a `DynamicAmount` (an `Int` overload wraps it in `Fixed`), evaluated once at

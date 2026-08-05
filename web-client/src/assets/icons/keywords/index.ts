@@ -133,4 +133,6 @@ export const counterManaClass: Record<string, string> = {
   FILM: 'counter-charge',
   ICE: 'counter-flood',
   HARNESS: 'counter-devotion',
+  PLAN: 'counter-lore',
+  INVASION: 'counter-charge',
 }
