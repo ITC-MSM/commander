@@ -2296,6 +2296,65 @@
     ]
 }
 
+// Elektra, Daughter of the Hand
+{
+    "name": "Elektra, Daughter of the Hand",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Legendary Creature — Human Ninja Villain",
+    "oracleText": "Sneak {1}{B}{B} (You may cast this spell for {1}{B}{B} if you also return an unblocked attacker you control to hand during the declare blockers step. She enters tapped and attacking.)\nWhen Elektra enters, destroy target creature an opponent controls with power 3 or less.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "SNEAK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Sneak",
+            "cost": "{1}{B}{B}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature an opponent controls with power 3 or less"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature pow<=3 ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls with power 3 or less"
+                },
+                "descriptionOverride": "When Elektra enters, destroy target creature an opponent controls with power 3 or less."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "rarity": "RARE",
+        "artist": "Bastien L. Deharme",
+        "flavorText": "\"I am Elektra Natchios. Not even the stars are safe in the sky.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac3e586c-d654-4631-beda-a5e29cf04717.jpg?1783902943"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Falcon's Wing Harness
 {
     "name": "Falcon's Wing Harness",
