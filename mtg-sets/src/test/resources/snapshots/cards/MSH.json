@@ -233,6 +233,55 @@
     ]
 }
 
+// Agent Phil Coulson
+{
+    "name": "Agent Phil Coulson",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Human Spy Hero",
+    "oracleText": "Vigilance\n{T}: Put a +1/+1 counter on each other Hero you control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "permanent Hero ctrl:you",
+                            "excludeSelf": true
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "RARE",
+        "artist": "Marc Aspinall",
+        "flavorText": "\"The big guns are in flight. Agent 13, what's your status?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/1383e587-df58-4b45-9067-b9399e90b9ed.jpg?1783902979"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Agent of Atlas
 {
     "name": "Agent of Atlas",
