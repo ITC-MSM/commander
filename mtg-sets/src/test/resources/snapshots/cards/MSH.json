@@ -10148,6 +10148,99 @@
     ]
 }
 
+// The Unbeatable Squirrel Girl
+{
+    "name": "The Unbeatable Squirrel Girl",
+    "manaCost": "{1}{G}{G}{G}",
+    "typeLine": "Legendary Creature — Squirrel Human Hero",
+    "oracleText": "Do You Like Squirrels? — Whenever The Unbeatable Squirrel Girl enters or attacks, create a 1/1 green Squirrel creature token.\nI LOVE Squirrels! — {1}{G}{G}{G}: Create X 1/1 green Squirrel creature tokens, where X is the number of Squirrels you control.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Squirrel"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd0474f3-682d-4c6d-b902-84f3250aa269.jpg?1783902800"
+                },
+                "descriptionOverride": "Do You Like Squirrels? — Whenever The Unbeatable Squirrel Girl enters, create a 1/1 green Squirrel creature token."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Squirrel"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd0474f3-682d-4c6d-b902-84f3250aa269.jpg?1783902800"
+                },
+                "descriptionOverride": "Do You Like Squirrels? — Whenever The Unbeatable Squirrel Girl attacks, create a 1/1 green Squirrel creature token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{G}{G}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature Squirrel"
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Squirrel"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd0474f3-682d-4c6d-b902-84f3250aa269.jpg?1783902800"
+                },
+                "descriptionOverride": "I LOVE Squirrels! — Create X 1/1 green Squirrel creature tokens, where X is the number of Squirrels you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "rarity": "RARE",
+        "artist": "Kim Dingwall",
+        "flavorText": "\"We're here to eat nuts and kick butts!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d8b94ebb-0b3a-4e68-8c0c-3a61ac32f3ef.jpg?1783902911"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // The Wondrous Wasp
 {
     "name": "The Wondrous Wasp",
