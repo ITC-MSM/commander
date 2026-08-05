@@ -3353,6 +3353,72 @@
     "colorIdentityOverride": []
 }
 
+// HYDRA Assault Robot
+{
+    "name": "HYDRA Assault Robot",
+    "manaCost": "{1}{R}",
+    "typeLine": "Artifact Creature — Robot Villain",
+    "oracleText": "Whenever another Villain and/or artifact you control enters, this creature deals 1 damage to target opponent.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsPermanent",
+                                            {
+                                                "type": "HasSubtype",
+                                                "subtype": "Villain"
+                                            }
+                                        ]
+                                    },
+                                    "IsArtifact"
+                                ]
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    },
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirement": "TargetOpponent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "artist": "Wero Gallo",
+        "flavorText": "\"I have come for you, Nick Fury!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e3b23fff-7d3b-4341-b556-82136f8c113b.jpg?1783902930"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // HYDRA Infiltration
 {
     "name": "HYDRA Infiltration",
