@@ -7758,6 +7758,81 @@
     ]
 }
 
+// Wiccan, Rising Magician
+{
+    "name": "Wiccan, Rising Magician",
+    "manaCost": "{4}{U}",
+    "typeLine": "Legendary Creature — Mutant Warlock Hero",
+    "oracleText": "Flying\nWhenever you cast a noncreature spell, exile another target nonland, nontoken permanent. Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "another target nonland, nontoken permanent"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "another target nonland, nontoken permanent"
+                                },
+                                "destination": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "nonland permanent nontoken",
+                        "excludeSelf": true
+                    },
+                    "id": "another target nonland, nontoken permanent"
+                },
+                "descriptionOverride": "Whenever you cast a noncreature spell, exile another target nonland, nontoken permanent. Return that card to the battlefield under its owner's control at the beginning of the next end step."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "rarity": "UNCOMMON",
+        "artist": "Josu Hernaiz",
+        "flavorText": "\"Step outside of reality for a moment. It might improve your attitude.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/d/5d27ddec-716d-47e5-ac48-365e91b88ff1.jpg?1783902949"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Yellowjacket, Heartless Marauder
 {
     "name": "Yellowjacket, Heartless Marauder",
