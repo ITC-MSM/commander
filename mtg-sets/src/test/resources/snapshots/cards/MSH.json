@@ -1111,6 +1111,142 @@
     ]
 }
 
+// Bruce Banner
+{
+    "name": "Bruce Banner",
+    "manaCost": "{U}",
+    "typeLine": "Legendary Creature — Human Scientist Hero",
+    "oracleText": "{X}{X}, {T}: Draw X cards. Activate only as a sorcery.\n{2}{R}{R}{G}{G}: Transform Bruce Banner. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{X}{X}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": "XValue"
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{X}{X}, {T}: Draw X cards. Activate only as a sorcery."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{R}{R}{G}{G}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Bruce Banner. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "The Incredible Hulk",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Gamma Berserker Hero",
+        "oracleText": "Reach, trample\nEnrage — Whenever The Incredible Hulk is dealt damage, put a +1/+1 counter on him. If he's attacking, untap him and there is an additional combat phase after this phase.",
+        "creatureStats": {
+            "power": 8,
+            "toughness": 8
+        },
+        "keywords": [
+            "REACH",
+            "TRAMPLE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": "DamageReceivedEvent",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.WhenCondition",
+                                    "condition": {
+                                        "type": "EntityMatches",
+                                        "entity": "Self",
+                                        "filter": "attacking"
+                                    }
+                                },
+                                "then": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "TapUntap",
+                                            "target": "Self",
+                                            "tap": false
+                                        },
+                                        "AddCombatPhase"
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Enrage — Whenever The Incredible Hulk is dealt damage, put a +1/+1 counter on him. If he's attacking, untap him and there is an additional combat phase after this phase."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "49",
+            "rarity": "MYTHIC",
+            "artist": "Tommy Arnold",
+            "flavorText": "\". . . You wouldn't like me when I'M ANGRY!!!\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/e/0/e0dbbdcf-84e1-494f-8b8c-0a094f603fa9.jpg?1783902972"
+        },
+        "colorIdentityOverride": [
+            "BLUE",
+            "RED",
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "RED",
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "rarity": "MYTHIC",
+        "artist": "Tommy Arnold",
+        "flavorText": "\"You shouldn't make me angry . . .\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e0dbbdcf-84e1-494f-8b8c-0a094f603fa9.jpg?1783902972"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Captain America's Shield
 {
     "name": "Captain America's Shield",
