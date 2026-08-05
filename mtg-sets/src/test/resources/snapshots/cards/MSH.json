@@ -2913,6 +2913,64 @@
     ]
 }
 
+// Grim Reaper, Lethal Legionnaire
+{
+    "name": "Grim Reaper, Lethal Legionnaire",
+    "manaCost": "{3}{B}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "Whenever Grim Reaper attacks, you may pay {3}{B}. When you do, return target creature card from your graveyard to the battlefield tapped and attacking with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "PayManaCost",
+                        "cost": "{3}{B}"
+                    },
+                    "reflexiveEffect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Battlefield",
+                        "placement": "TappedAndAttacking",
+                        "addCounterType": "FINALITY"
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature own:you",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "You may pay {3}{B}. When you do, return target creature card from your graveyard to the battlefield tapped and attacking with a finality counter on it."
+                },
+                "descriptionOverride": "Whenever Grim Reaper attacks, you may pay {3}{B}. When you do, return target creature card from your graveyard to the battlefield tapped and attacking with a finality counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "rarity": "UNCOMMON",
+        "artist": "Lie Setiawan",
+        "flavorText": "\"The corpses have been sown. Now, to harvest!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/b/4b1cedfe-4712-4602-a8a8-112bd54c9938.jpg?1783902943"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Guerrilla Gorilla
 {
     "name": "Guerrilla Gorilla",
