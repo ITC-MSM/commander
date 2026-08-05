@@ -4601,6 +4601,84 @@
     ]
 }
 
+// Hulkling, Burgeoning Bruiser
+{
+    "name": "Hulkling, Burgeoning Bruiser",
+    "manaCost": "{2}{G}",
+    "typeLine": "Legendary Creature — Kree Skrull Hero",
+    "oracleText": "Vigilance\nWhenever another creature you control enters, if it has greater power or toughness than Hulkling, put a +1/+1 counter on Hulkling.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "EntityProperty",
+                                "entity": "Triggering",
+                                "numericProperty": "Power"
+                            },
+                            "operator": "GT",
+                            "right": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": "Power"
+                            }
+                        },
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "EntityProperty",
+                                "entity": "Triggering",
+                                "numericProperty": "Toughness"
+                            },
+                            "operator": "GT",
+                            "right": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": "Toughness"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever another creature you control enters, if it has greater power or toughness than Hulkling, put a +1/+1 counter on Hulkling."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "UNCOMMON",
+        "artist": "Wero Gallo",
+        "flavorText": "\"We all named ourselves after the original Avengers. I picked the Hulk. Be honest. Wouldn't you?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/9018477f-a67b-4fa4-8661-11ab91fae863.jpg?1783902917"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hydraulic Helper
 {
     "name": "Hydraulic Helper",
