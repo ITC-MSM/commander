@@ -1319,6 +1319,90 @@
     ]
 }
 
+// Crowd of True Believers
+{
+    "name": "Crowd of True Believers",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "{T}: Target creature you control that's attacking alone gets +1/+0 until end of turn. You gain 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control that's attacking alone"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature attacking ctrl:you"
+                        },
+                        "id": "target creature you control that's attacking alone"
+                    }
+                ],
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "Each",
+                                "filter": "creature attacking"
+                            },
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "{T}: Target creature you control that's attacking alone gets +1/+0 until end of turn. You gain 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "artist": "Michele Giorgi",
+        "flavorText": "Being a hero is easy when you know who you're fighting for.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/b/4b2fffb8-d538-4772-8fbc-9bec3b9c4d9c.jpg?1783902974"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Dark Deed
 {
     "name": "Dark Deed",
