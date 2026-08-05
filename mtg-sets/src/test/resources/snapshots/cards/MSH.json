@@ -8502,6 +8502,62 @@
     ]
 }
 
+// Thunderbolts Conspiracy
+{
+    "name": "Thunderbolts Conspiracy",
+    "manaCost": "{3}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "Flash\nWhenever a Villain you control dies, return it to the battlefield under its owner's control with a finality counter on it. That creature is a Hero in addition to its other types. (If a creature with a finality counter on it would die, exile it instead.)",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Villain ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "TriggeringEntity",
+                            "destination": "Battlefield"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "finality",
+                            "count": 1,
+                            "target": "TriggeringEntity"
+                        },
+                        {
+                            "type": "AddCreatureType",
+                            "subtype": "Hero",
+                            "target": "TriggeringEntity"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "RARE",
+        "artist": "Lucio Parrillo",
+        "flavorText": "Justice, like lightning.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f498c1a4-54d2-4e87-952f-8cf7e408930c.jpg?1783902936"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Tigra, Feline Fury
 {
     "name": "Tigra, Feline Fury",
