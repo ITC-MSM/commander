@@ -5474,6 +5474,61 @@
     ]
 }
 
+// Misty Knight, Hero for Hire
+{
+    "name": "Misty Knight, Hero for Hire",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Human Detective Hero",
+    "oracleText": "{2}, {T}, Discard a card: Draw a card for each card you've discarded this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "CARDS_DISCARDED"
+                    }
+                },
+                "descriptionOverride": "{2}, {T}, Discard a card: Draw a card for each card you've discarded this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "rarity": "UNCOMMON",
+        "artist": "Eglė Mosakaitė",
+        "flavorText": "\"Hello, hero. This is Control. Are you for hire tonight?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b963642-a103-44a0-9eb7-9c3fdde181b7.jpg?1783902927"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Mockingbird, Ace Agent
 {
     "name": "Mockingbird, Ace Agent",
