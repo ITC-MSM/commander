@@ -9460,6 +9460,80 @@
     ]
 }
 
+// Whiplash, Vengeful Engineer
+{
+    "name": "Whiplash, Vengeful Engineer",
+    "manaCost": "{B}",
+    "typeLine": "Legendary Creature — Human Artificer Villain",
+    "oracleText": "Whiplash enters tapped.\nWhenever Whiplash attacks, if he's equipped, each opponent loses X life and you gain X life, where X is the number of Equipment attached to him.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": {
+                                    "type": "AttachmentCount",
+                                    "kind": "EQUIPMENT"
+                                }
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "EachOpponent"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": {
+                                    "type": "AttachmentCount",
+                                    "kind": "EQUIPMENT"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsEquipped"
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever Whiplash attacks, if he's equipped, each opponent loses X life and you gain X life, where X is the number of Equipment attached to him."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "rarity": "UNCOMMON",
+        "artist": "Alexander Gering",
+        "flavorText": "\"Wrap yourself in whatever armor you wish. I will shred you apart.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/f/6f6e6767-4d20-469c-9f4b-7286b8cc1979.jpg?1783902935"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // White Widow, Free Agent
 {
     "name": "White Widow, Free Agent",
