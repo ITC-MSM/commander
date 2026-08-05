@@ -4293,6 +4293,71 @@
     ]
 }
 
+// Heroic Feast
+{
+    "name": "Heroic Feast",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nWhenever you gain life, choose up to that many target creatures you control. Put a +1/+1 counter on each of them.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                },
+                "descriptionOverride": "When this enchantment enters, create a Food token."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "LifeGainEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "up to that many target creatures you control",
+                    "dynamicMaxCount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_LIFE_GAINED"
+                    }
+                },
+                "descriptionOverride": "Whenever you gain life, choose up to that many target creatures you control. Put a +1/+1 counter on each of them."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "RARE",
+        "artist": "Javier Charro",
+        "flavorText": "The Thing belched. \"I told youse guys. Yancy Street has the best sandwiches.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32d05c3d-cf03-492e-a956-2e77c36e36c4.jpg?1783902917"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hex Magic
 {
     "name": "Hex Magic",
