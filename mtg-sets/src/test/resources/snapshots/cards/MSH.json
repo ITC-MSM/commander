@@ -685,6 +685,96 @@
     ]
 }
 
+// Armor Wars
+{
+    "name": "Armor Wars",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — You may draw a card for each artifact you control. If you do, each opponent draws a card.\nII — Artifact spells you cast this turn cost {1} less to cast.\nIII — This Saga deals X damage to target opponent, where X is the greatest mana value among artifacts you control.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "AggregateBattlefield",
+                                    "player": "You",
+                                    "filter": "artifact"
+                                }
+                            },
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "EachOpponent"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may draw a card for each artifact you control. If you do, each opponent draws a card."
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "ReduceSpellCostsThisTurn",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsArtifact"
+                        ]
+                    },
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "artifact",
+                        "aggregation": "MAX",
+                        "property": "MANA_VALUE"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "rarity": "RARE",
+        "artist": "Serena Malyon",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/11a13397-1d31-4257-87c2-a757a751c601.jpg?1783902906"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Arnim Zola, Bio-Fanatic
 {
     "name": "Arnim Zola, Bio-Fanatic",
