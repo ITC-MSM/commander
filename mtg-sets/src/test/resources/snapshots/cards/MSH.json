@@ -3022,6 +3022,55 @@
     ]
 }
 
+// Hydraulic Helper
+{
+    "name": "Hydraulic Helper",
+    "manaCost": "{1}{U}",
+    "typeLine": "Artifact Creature — Robot",
+    "oracleText": "Defender\n{T}: Add {U}. This mana can't be spent to cast a nonartifact spell.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE",
+                    "restriction": {
+                        "type": "AnyOf",
+                        "restrictions": [
+                            {
+                                "type": "CardTypeSpellsOrAbilitiesOnly",
+                                "cardType": "ARTIFACT"
+                            },
+                            "AbilityActivationOnly"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {U}. This mana can't be spent to cast a nonartifact spell."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "artist": "Kevin Glint",
+        "flavorText": "\"Put it here. No, not there. I *said* not there. Great. You've ruined six million dollars' worth of research, and I still don't have my coffee.\"\n—Tony Stark",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/06d8a2a0-775b-4813-973f-8b15612b38d1.jpg?1783902958"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Jennifer Walters
 {
     "name": "Jennifer Walters",
