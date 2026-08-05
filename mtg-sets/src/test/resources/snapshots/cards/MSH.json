@@ -10143,6 +10143,92 @@
     ]
 }
 
+// The Astonishing Ant-Man
+{
+    "name": "The Astonishing Ant-Man",
+    "manaCost": "{G}{U}",
+    "typeLine": "Legendary Creature — Human Scientist Hero",
+    "oracleText": "Whenever you draw a card, put a +1/+1 counter on The Astonishing Ant-Man.\n{2}{G}, {T}, Remove any number of +1/+1 counters from The Astonishing Ant-Man: Create that many 1/1 green Insect creature tokens.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DrawEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you draw a card, put a +1/+1 counter on The Astonishing Ant-Man."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{G}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "+1/+1",
+                                "count": "XValue",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsPermanent"
+                                    ],
+                                    "statePredicates": [
+                                        "IsSource"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": "XValue",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Insect"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/e/5/e5aa36ec-5f3a-405d-9a65-5a56a44dcee3.jpg?1783902801"
+                },
+                "descriptionOverride": "{2}{G}, {T}, Remove any number of +1/+1 counters from The Astonishing Ant-Man: Create that many 1/1 green Insect creature tokens."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "204",
+        "rarity": "RARE",
+        "artist": "Randy Gallegos",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/d/5d98073e-2828-4365-a8d6-f631aac0cca9.jpg?1783902906"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "GREEN"
+    ]
+}
+
 // The Masters of Evil
 {
     "name": "The Masters of Evil",
