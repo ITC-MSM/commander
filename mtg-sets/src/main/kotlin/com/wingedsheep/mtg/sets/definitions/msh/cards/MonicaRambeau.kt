@@ -31,9 +31,11 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * that flip, so it carries no castable mana cost — its R/W colors come from a color indicator
  * (CR 204).
  *
- *  - Both faces keep prowess as the plain [Keyword.PROWESS] keyword; the back's own cast trigger
- *    is a *separate* ability, so casting a noncreature spell both pumps Photon (prowess) and puts
- *    counters on your other creatures.
+ *  - Both faces use the [prowess] DSL helper, not a bare [Keyword.PROWESS] in `keywords(...)`: the
+ *    keyword on its own is display-only, and the +1/+1 behavior comes from the intrinsic triggered
+ *    ability the helper adds alongside it. The back's own cast trigger is a *separate* ability, so
+ *    casting a noncreature spell both pumps Photon (prowess) and puts counters on your other
+ *    creatures.
  *  - "put a +1/+1 counter on each other creature you control" is [Effects.ForEachInGroup] over a
  *    [GroupFilter] of `Creature.youControl()` with `excludeSelf` — the Web-Warriors idiom — so no
  *    targeting is involved and Photon itself is skipped.
@@ -49,7 +51,8 @@ private val MonicaRambeauFront = card("Monica Rambeau") {
         "+1/+1 until end of turn.)\n" +
         "{2}{R}{W}{W}: Transform Monica Rambeau. Activate only as a sorcery."
 
-    keywords(Keyword.FLYING, Keyword.PROWESS)
+    keywords(Keyword.FLYING)
+    prowess()
 
     // {2}{R}{W}{W}: Transform Monica Rambeau. Activate only as a sorcery.
     activatedAbility {
@@ -79,7 +82,8 @@ private val PhotonLivingLightBack = card("Photon, Living Light") {
         "Whenever you cast a noncreature spell, put a +1/+1 counter on each other creature you " +
         "control."
 
-    keywords(Keyword.FLYING, Keyword.HEXPROOF, Keyword.PROWESS)
+    keywords(Keyword.FLYING, Keyword.HEXPROOF)
+    prowess()
 
     // Whenever you cast a noncreature spell, put a +1/+1 counter on each other creature you control.
     triggeredAbility {

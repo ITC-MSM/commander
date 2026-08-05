@@ -31,7 +31,7 @@ val CrimsonOperative = card("Crimson Operative") {
         "When this creature enters, exile the top card of your library. Until the end of your " +
         "next turn, you may play that card."
 
-    keywords(Keyword.PROWESS)
+    prowess()
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
