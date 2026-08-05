@@ -723,6 +723,96 @@
     ]
 }
 
+// Avengers Assemble!
+{
+    "name": "Avengers Assemble!",
+    "manaCost": "{4}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Flash\nHeroes you control get +2/+2.\nAt the beginning of each end step, if you attacked with a Hero this turn or a Hero entered the battlefield under your control this turn, draw a card.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "triggerCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsPermanent",
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Hero"
+                                    }
+                                ],
+                                "statePredicates": [
+                                    "AttackedThisTurn"
+                                ]
+                            }
+                        },
+                        {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsPermanent",
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Hero"
+                                    }
+                                ],
+                                "statePredicates": [
+                                    "EnteredThisTurn"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of each end step, if you attacked with a Hero this turn or a Hero entered the battlefield under your control this turn, draw a card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2,
+                "filter": {
+                    "baseFilter": "creature Hero ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "MYTHIC",
+        "artist": "Alex Horley-Orlandelli",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/f/bf736399-af74-4f52-9159-67ea67d0cf83.jpg?1783902981"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Avengers Disassembled
 {
     "name": "Avengers Disassembled",
