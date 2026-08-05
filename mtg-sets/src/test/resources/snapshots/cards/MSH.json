@@ -3809,6 +3809,66 @@
     ]
 }
 
+// Hex Magic
+{
+    "name": "Hex Magic",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery — Arcane",
+    "oracleText": "Exile all the cards from your hand, then draw that many cards. Until the end of your next turn, you may play cards exiled this way.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Hand"
+                    },
+                    "storeAs": "hexMagicExiled"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "hexMagicExiled",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile"
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "DistinctEntitiesInCollections",
+                        "collections": [
+                            "hexMagicExiled"
+                        ]
+                    }
+                },
+                {
+                    "type": "GrantMayPlayFromExile",
+                    "from": "hexMagicExiled",
+                    "expiry": {
+                        "type": "UntilControllerStep",
+                        "step": "CLEANUP",
+                        "includeCurrentTurn": false
+                    }
+                }
+            ],
+            "descriptionOverride": "Exile all the cards from your hand, then draw that many cards. Until the end of your next turn, you may play cards exiled this way."
+        }
+    },
+    "metadata": {
+        "collectorNumber": "133",
+        "rarity": "UNCOMMON",
+        "artist": "Kevin Glint",
+        "flavorText": "At the Scarlet Witch's touch, probabilities shift and the impossible becomes real.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/5/259bed47-1950-43ae-8efd-3009537529a8.jpg?1783902932"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hidden Lair
 {
     "name": "Hidden Lair",
