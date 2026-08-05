@@ -7490,6 +7490,98 @@
     "colorIdentityOverride": []
 }
 
+// The Masters of Evil
+{
+    "name": "The Masters of Evil",
+    "manaCost": "{5}{B}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "Other Villains you control get +2/+1.\n{1}{B}, Discard this card: Search your library for a Plan card, reveal it, put it into your hand, then shuffle.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "Plan"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Search your library for a Plan card, reveal it, put it into your hand, then shuffle."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Villain ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "rarity": "UNCOMMON",
+        "artist": "Bastien L. Deharme",
+        "flavorText": "\"You have made many enemies, Avengers. And your enemies have made many friends.\"\n—Baron Zemo",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/5/65ba4439-3282-4179-85b9-67a25e2e5d24.jpg?1783902941"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // The Mind Stone
 {
     "name": "The Mind Stone",
