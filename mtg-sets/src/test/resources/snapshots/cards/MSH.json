@@ -2076,6 +2076,104 @@
     ]
 }
 
+// Death to Our Enemies
+{
+    "name": "Death to Our Enemies",
+    "manaCost": "{2}{R}",
+    "typeLine": "Enchantment — Plan",
+    "oracleText": "Whenever you cast a noncreature spell, create a tapped Treasure token and put a plan counter on this enchantment.\nWhen the fourth plan counter is put on this enchantment, sacrifice it. When you do, it deals 7 damage divided as you choose among one or two targets.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Treasure",
+                            "tapped": true
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "plan",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you cast a noncreature spell, create a tapped Treasure token and put a plan counter on this enchantment."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "CountersPlacedEvent",
+                    "counterType": "plan"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "SacrificeTarget",
+                        "target": "Self"
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "DividedDamage",
+                        "totalDamage": 7,
+                        "maxTargets": 2
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "AnyTarget",
+                            "count": 2,
+                            "minCount": 1
+                        }
+                    ],
+                    "descriptionOverride": "Sacrifice this enchantment. When you do, it deals 7 damage divided as you choose among one or two targets."
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "plan"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                "descriptionOverride": "When the fourth plan counter is put on this enchantment, sacrifice it. When you do, it deals 7 damage divided as you choose among one or two targets."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "rarity": "UNCOMMON",
+        "artist": "Lee Woo-chul",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f2a8f518-c0b5-4e15-aab2-49b5ef29fb41.jpg?1783902933"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Decoy Ploy
 {
     "name": "Decoy Ploy",
