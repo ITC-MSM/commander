@@ -13282,6 +13282,106 @@
     "colorIdentityOverride": []
 }
 
+// Vision Quest
+{
+    "name": "Vision Quest",
+    "manaCost": "{X}{U}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library and/or graveyard for an artifact creature card with mana value X or less and put it onto the battlefield with X additional +1/+1 counters on it. If X is 4 or greater, it gains haste until end of turn. If you search your library this way, shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromMultipleZones",
+                        "zones": [
+                            "Library",
+                            "Graveyard"
+                        ],
+                        "filter": {
+                            "cardPredicates": [
+                                "IsArtifact",
+                                "IsCreature",
+                                {
+                                    "type": "ManaValueAtMostDynamic",
+                                    "amount": "XValue"
+                                }
+                            ]
+                        }
+                    },
+                    "storeAs": "visionQuestSearchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "visionQuestSearchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "visionQuestFound",
+                    "prompt": "Search your library and/or graveyard for an artifact creature card with mana value X or less."
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "visionQuestFound",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "storeMovedAs": "visionQuestCreature"
+                },
+                {
+                    "type": "AddCountersToCollection",
+                    "collectionName": "visionQuestCreature",
+                    "counterType": "+1/+1",
+                    "amount": "XValue"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "XValue",
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "GrantKeyword",
+                        "keyword": "HASTE",
+                        "target": {
+                            "type": "PipelineTarget",
+                            "collectionName": "visionQuestCreature"
+                        }
+                    }
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "RARE",
+        "artist": "Eglė Mosakaitė",
+        "flavorText": "\"Is there a problem, Wanda?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c01afea6-645d-4d4f-bdaa-90794a628bcd.jpg?1783902895"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Vision of Love
 {
     "name": "Vision of Love",
