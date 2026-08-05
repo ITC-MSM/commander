@@ -1700,6 +1700,63 @@
     ]
 }
 
+// Black Widow, Double Agent
+{
+    "name": "Black Widow, Double Agent",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Legendary Creature — Human Hero Villain",
+    "oracleText": "Deathtouch\nWhenever a creature you control attacks alone, it gains first strike and menace until end of turn. (It can't be blocked except by two or more creatures.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "filter": "creature ctrl:you",
+                    "requires": [
+                        "AttacksAlone"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FIRST_STRIKE",
+                            "target": "TriggeringEntity"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": "TriggeringEntity"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a creature you control attacks alone, it gains first strike and menace until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "UNCOMMON",
+        "artist": "Michael MacRae",
+        "flavorText": "\"Careful, I bite.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa8dbbb9-36a5-48e0-9e30-aeed0fb5d522.jpg?1783902905"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Black Widow, Super Spy
 {
     "name": "Black Widow, Super Spy",
