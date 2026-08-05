@@ -56,7 +56,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.permanent.types.returnDfcFace
-import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.ChoiceSlot
@@ -1545,16 +1545,18 @@ class StackResolver(
             counterEvents.addAll(riderEvents)
         }
 
-        // Handle planeswalker starting loyalty (Rule 306.5b)
+        // Handle planeswalker starting loyalty (Rule 306.5b). This is the cast pipeline's entry
+        // point for the intrinsic entry replacement — it runs here, while the permanent is still
+        // on the stack, because resolution places permanents via addToZone rather than
+        // ZoneTransitionService.moveToZone. Every other entry reaches the same shared
+        // placeEntryCounters call through ZoneMovementUtils.applyPlaneswalkerEntryIfNeeded.
         if (cardDef != null && !spellComponent.castFaceDown && cardDef.startingLoyalty != null) {
-            val loyaltyCount = cardDef.startingLoyalty!!
-            val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
-                newState, spellId, CounterType.LOYALTY, loyaltyCount, placerId = controllerId
+            val (loyaltyState, loyaltyEvents) = EntersWithReplacements.placeEntryCounters(
+                newState, spellId, CounterTypeFilter.Loyalty, cardDef.startingLoyalty!!,
+                controllerId, cardComponent?.name ?: ""
             )
-            val current = newState.getEntity(spellId)?.get<CountersComponent>() ?: CountersComponent()
-            newState = newState.updateEntity(spellId) { c ->
-                c.with(current.withAdded(CounterType.LOYALTY, modifiedCount))
-            }
+            newState = loyaltyState
+            counterEvents.addAll(loyaltyEvents)
         }
 
         // Handle Class entering the battlefield (Rule 716)

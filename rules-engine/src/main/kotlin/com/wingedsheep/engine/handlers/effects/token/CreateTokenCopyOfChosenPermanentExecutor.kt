@@ -196,7 +196,17 @@ class CreateTokenCopyOfChosenPermanentExecutor(
             val (sagaState, sagaEvents) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
                 .applySagaEntryIfNeeded(newState, tokenId)
 
-            return EffectResult.success(sagaState, listOf(event) + counterEvents + sagaEvents)
+            // CR 306.5b: likewise a token copy of a planeswalker enters with the copied printed
+            // loyalty (a copiable value, CR 707.2), or state-based actions (CR 704.5i) bin it on
+            // arrival. No-op for non-planeswalkers.
+            val (loyaltyState, loyaltyEvents) = cardRegistry?.let { registry ->
+                com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                    .applyPlaneswalkerEntryIfNeeded(sagaState, tokenId, controllerId, registry)
+            } ?: (sagaState to emptyList())
+
+            return EffectResult.success(
+                loyaltyState, listOf(event) + counterEvents + sagaEvents + loyaltyEvents
+            )
         }
     }
 }

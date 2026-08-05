@@ -7,6 +7,7 @@ import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.ComponentContainer
@@ -59,6 +60,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.RedirectZoneChange
 import com.wingedsheep.sdk.scripting.RedirectZoneChangeWithEffect
 import com.wingedsheep.sdk.scripting.ZoneChangeCause
+import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.predicates.evaluateWith
@@ -134,6 +136,58 @@ object ZoneMovementUtils {
                 .with(current.withAdded(CounterType.LORE, 1))
         }
         return newState to listOf(CountersAddedEvent(entityId, "LORE", 1, cardComponent.name))
+    }
+
+    /**
+     * Apply planeswalker entry setup to an entity entering the battlefield (CR 306.5b): a
+     * planeswalker has the intrinsic ability "This permanent enters with a number of loyalty
+     * counters on it equal to its printed loyalty number," which is a replacement effect
+     * (CR 614.1c) and therefore applies to *every* way it enters — not just a resolving spell.
+     * Without this, a planeswalker put onto the battlefield from any non-stack zone (returned by
+     * an O-Ring style "until this leaves" exile, reanimated, tutored straight into play) would
+     * enter with 0 loyalty and be put into its owner's graveyard by state-based actions
+     * (CR 704.5i) the moment it arrived.
+     *
+     * Called from both battlefield-entry pipelines, exactly like [applySagaEntryIfNeeded]:
+     * [ZoneTransitionService.moveToZone] for every zone-change entry, and the ad-hoc
+     * [BattlefieldEntry.place] token-minting paths for a token copy of a planeswalker (loyalty is a
+     * copiable value per CR 707.2, so the token has one to place). The cast pipeline reaches the
+     * same counters through [EntersWithReplacements.placeEntryCounters] while the permanent is
+     * still on the stack (see [com.wingedsheep.engine.mechanics.stack.StackResolver]), so no entry
+     * gets them twice.
+     *
+     * The loyalty number is read from the *current* [CardComponent]'s definition, so a
+     * double-faced card returning transformed onto its planeswalker back face gets the back
+     * face's printed loyalty (its `cardDefinitionId` has already been flipped by then).
+     *
+     * Face-down entries are skipped: a face-down permanent is a nameless 2/2 creature with no
+     * printed loyalty (CR 708.2a). The check lives here rather than at the call sites so every
+     * caller inherits it.
+     *
+     * Routed through [EntersWithReplacements.placeEntryCounters] so counter-placement modifiers
+     * (Doubling Season, Vorinclex, Pir) and the "a counter was placed this turn" tracker behave
+     * exactly as they do for a printed "enters with counters".
+     *
+     * @return Pair of (updated state, events to emit) — empty events if not a planeswalker
+     */
+    fun applyPlaneswalkerEntryIfNeeded(
+        state: GameState,
+        entityId: EntityId,
+        controllerId: EntityId,
+        cardRegistry: CardRegistry
+    ): Pair<GameState, List<EngineGameEvent>> {
+        val container = state.getEntity(entityId) ?: return state to emptyList()
+        if (container.has<FaceDownComponent>()) return state to emptyList()
+        val cardComponent = container.get<CardComponent>() ?: return state to emptyList()
+        if (!cardComponent.isPlaneswalker) return state to emptyList()
+
+        val startingLoyalty = cardRegistry.getCard(cardComponent.cardDefinitionId)?.startingLoyalty
+            ?: return state to emptyList()
+
+        return EntersWithReplacements.placeEntryCounters(
+            state, entityId, CounterTypeFilter.Loyalty, startingLoyalty, controllerId,
+            cardComponent.name
+        )
     }
 
     /**

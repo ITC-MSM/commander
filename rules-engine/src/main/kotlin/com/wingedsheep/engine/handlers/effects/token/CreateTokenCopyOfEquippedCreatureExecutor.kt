@@ -163,6 +163,13 @@ class CreateTokenCopyOfEquippedCreatureExecutor(
         val (sagaState, sagaEvents) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
             .applySagaEntryIfNeeded(newState, tokenId)
 
-        return EffectResult.success(sagaState, events + sagaEvents)
+        // CR 306.5b: the equipped creature can be a planeswalker card animated by its own ability
+        // (Gideon Blackblade) — the copy keeps the printed planeswalker types and loyalty (copiable
+        // values, CR 707.2) but not the animation, so it needs its loyalty counters or state-based
+        // actions (CR 704.5i) bin it on arrival. No-op for non-planeswalkers.
+        val (loyaltyState, loyaltyEvents) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+            .applyPlaneswalkerEntryIfNeeded(sagaState, tokenId, controllerId, cardRegistry)
+
+        return EffectResult.success(loyaltyState, events + sagaEvents + loyaltyEvents)
     }
 }
