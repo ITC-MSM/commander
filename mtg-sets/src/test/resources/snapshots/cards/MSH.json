@@ -6866,6 +6866,208 @@
     ]
 }
 
+// Tony Stark
+{
+    "name": "Tony Stark",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Human Artificer Hero",
+    "oracleText": "{1}, {T}: Look at the top four cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.\n{4}{U}{R}: Transform Tony Stark. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "artifact",
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "prompt": "You may reveal an artifact card and put it into your hand",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{U}{R}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Tony Stark. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "The Invincible Iron Man",
+        "manaCost": "",
+        "typeLine": "Legendary Artifact Creature — Human Hero",
+        "oracleText": "Flying, haste\nAt the beginning of combat on your turn, you may put an artifact card from your hand onto the battlefield. If it's an Equipment, attach it to The Invincible Iron Man.",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 5
+        },
+        "keywords": [
+            "FLYING",
+            "HASTE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "BEGIN_COMBAT"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "filter": "artifact"
+                                },
+                                "storeAs": "artifactsInHand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "artifactsInHand",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "chosenArtifact",
+                                "prompt": "You may put an artifact card from your hand onto the battlefield"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "chosenArtifact",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                },
+                                "storeMovedAs": "putOntoBattlefield"
+                            },
+                            {
+                                "type": "FilterCollection",
+                                "from": "putOntoBattlefield",
+                                "filter": {
+                                    "type": "MatchesFilter",
+                                    "filter": "artifact Equipment"
+                                },
+                                "storeMatching": "enteredEquipment"
+                            },
+                            {
+                                "type": "AttachTargetEquipmentToCreature",
+                                "equipmentTarget": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "enteredEquipment"
+                                },
+                                "creatureTarget": "Self"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "At the beginning of combat on your turn, you may put an artifact card from your hand onto the battlefield. If it's an Equipment, attach it to The Invincible Iron Man."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "80",
+            "rarity": "MYTHIC",
+            "artist": "Alexander Lozano",
+            "flavorText": "\"The future never stands still, and neither do I.\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/4/c/4cea42fd-035e-4b8f-8b1d-ff363b694f14.jpg?1783902955"
+        },
+        "colorIdentityOverride": [
+            "BLUE",
+            "RED"
+        ],
+        "colorIndicator": [
+            "BLUE",
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "rarity": "MYTHIC",
+        "artist": "Alexander Lozano",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4cea42fd-035e-4b8f-8b1d-ff363b694f14.jpg?1783902955"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Training Compound
 {
     "name": "Training Compound",
