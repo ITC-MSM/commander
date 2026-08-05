@@ -5447,6 +5447,57 @@
     ]
 }
 
+// The Sentry, Golden Guardian
+{
+    "name": "The Sentry, Golden Guardian",
+    "manaCost": "{3}{W}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Flying, vigilance, indestructible\nWhen The Sentry enters, target opponent creates The Void, a legendary 5/5 black Horror Villain creature token with flying, indestructible, and \"The Void attacks each combat if able.\"",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE",
+        "INDESTRUCTIBLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "The Void",
+                    "controller": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When The Sentry enters, target opponent creates The Void, a legendary 5/5 black Horror Villain creature token with flying, indestructible, and \"The Void attacks each combat if able.\""
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "RARE",
+        "artist": "Alexander Skripnikov",
+        "flavorText": "\"For all the kindness I spread, the Void only sows terror.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3f56c0e7-5b07-48e3-b0ca-5d09ddc8de9a.jpg?1783902966"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Thor Odinson
 {
     "name": "Thor Odinson",
