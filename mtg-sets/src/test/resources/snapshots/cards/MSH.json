@@ -11947,6 +11947,147 @@
     ]
 }
 
+// The Super Hero Civil War
+{
+    "name": "The Super Hero Civil War",
+    "manaCost": "{3}{R}{W}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Gain control of up to two target creatures with total mana value 6 or less for as long as this Saga remains on the battlefield.\nII — Creatures you control get +1/+1 and gain vigilance until end of turn.\nIII — Target creature you control fights up to one other target creature.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "GainControl",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "duration": {
+                            "type": "WhileSourceOnBattlefield",
+                            "sourceDescription": "this Saga"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 2,
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to two target creatures with total mana value 6 or less",
+                    "totalManaValueAtMost": {
+                        "type": "Fixed",
+                        "amount": 6
+                    }
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "GrantKeyword",
+                                "keyword": "VIGILANCE",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 1
+                            },
+                            "filter": "creature"
+                        }
+                    },
+                    "then": {
+                        "type": "Fight",
+                        "target1": {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        },
+                        "target2": {
+                            "type": "BoundVariable",
+                            "name": "up to one other target creature"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "up to one other target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "231",
+        "rarity": "RARE",
+        "artist": "Serena Malyon",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbd1f333-5640-41f8-b9dd-1c322ac7724a.jpg?1783902897"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // The Thing, Ben Grimm
 {
     "name": "The Thing, Ben Grimm",
