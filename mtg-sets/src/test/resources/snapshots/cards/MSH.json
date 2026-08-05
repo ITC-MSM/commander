@@ -3319,6 +3319,75 @@
     ]
 }
 
+// Justice, Vance Astrovik
+{
+    "name": "Justice, Vance Astrovik",
+    "manaCost": "{2}{U}",
+    "typeLine": "Legendary Creature — Mutant Hero",
+    "oracleText": "Flying\nWhen Justice enters, return up to one target nonland, nontoken permanent to its owner's hand.\nWhenever another nonland permanent you control is returned to its owner's hand, put a +1/+1 counter on Justice.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target nonland, nontoken permanent"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "nonland permanent nontoken"
+                    },
+                    "id": "up to one target nonland, nontoken permanent"
+                },
+                "descriptionOverride": "When Justice enters, return up to one target nonland, nontoken permanent to its owner's hand."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "nonland permanent ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Hand"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever another nonland permanent you control is returned to its owner's hand, put a +1/+1 counter on Justice."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "61",
+        "rarity": "UNCOMMON",
+        "artist": "Berto Martinez",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f1448731-d50e-4b9c-8eb2-3d85c21516c6.jpg?1783902956"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // K'un-Lun Warrior
 {
     "name": "K'un-Lun Warrior",
