@@ -7968,6 +7968,139 @@
     "colorIdentityOverride": []
 }
 
+// Swordsman, Sharp Scoundrel
+{
+    "name": "Swordsman, Sharp Scoundrel",
+    "manaCost": "{1}{B}",
+    "typeLine": "Legendary Creature — Human Hero Villain",
+    "oracleText": "Whenever another Villain you control enters, attach up to one target Equipment you control to target creature you control.\nWhenever an equipped creature you control attacks, it connives. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on that creature.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Villain ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "AttachTargetEquipmentToCreature",
+                    "equipmentTarget": {
+                        "type": "BoundVariable",
+                        "name": "up to one target Equipment you control"
+                    },
+                    "creatureTarget": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "artifact Equipment ctrl:you"
+                    },
+                    "id": "up to one target Equipment you control"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    }
+                ]
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "IsEquipped"
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "connive_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "connive_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "connive_discarded",
+                            "prompt": "Choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "connive_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "connive_discarded",
+                            "ifNotEmpty": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "TriggeringEntity"
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Connive"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "rarity": "UNCOMMON",
+        "artist": "Lordigan",
+        "flavorText": "\"None can match me with the blade!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/5/6572aafe-18ed-4182-92e9-25f003f5fe3d.jpg?1783902937"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // The Masters of Evil
 {
     "name": "The Masters of Evil",
