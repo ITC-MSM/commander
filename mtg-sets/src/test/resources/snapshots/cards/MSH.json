@@ -4164,6 +4164,71 @@
     ]
 }
 
+// Hellcat, Undying Vigilante
+{
+    "name": "Hellcat, Undying Vigilante",
+    "manaCost": "{G}{G}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Haste\nWhen Hellcat dies, return her to the battlefield under her owner's control with a +1/+1 counter on her. She loses all abilities and gains haste.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Battlefield"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "RemoveAllAbilities",
+                            "target": "Self",
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": "Self",
+                            "duration": "Permanent"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Hellcat dies, return her to the battlefield under her owner's control with a +1/+1 counter on her. She loses all abilities and gains haste."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "rarity": "UNCOMMON",
+        "artist": "Solan",
+        "flavorText": "\"I've been to hell and back. You punks barely even register.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d7922c5f-d6ee-4b62-a537-3be5aa280e10.jpg?1783902917"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hero in Training
 {
     "name": "Hero in Training",
