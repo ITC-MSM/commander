@@ -5357,6 +5357,104 @@
     ]
 }
 
+// Super-Soldier Serum
+{
+    "name": "Super-Soldier Serum",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +2/+2, has first strike and vigilance, and is a legendary Soldier in addition to its other types.\nWhenever enchanted creature attacks or blocks, attach any number of target Equipment you control to it.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "FIRST_STRIKE"
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            },
+            {
+                "type": "GrantSupertype",
+                "supertype": "LEGENDARY"
+            },
+            {
+                "type": "GrantSubtype",
+                "subtype": "Soldier",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            },
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "AttachTargetEquipmentToCreature",
+                            "creatureTarget": "Self"
+                        }
+                    },
+                    "targetRequirement": {
+                        "type": "TargetObject",
+                        "unlimited": true,
+                        "filter": {
+                            "baseFilter": "artifact Equipment ctrl:you"
+                        }
+                    },
+                    "descriptionOverride": "Whenever this creature attacks, attach any number of target Equipment you control to it."
+                }
+            },
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "trigger": "BlockEvent",
+                    "effect": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "AttachTargetEquipmentToCreature",
+                            "creatureTarget": "Self"
+                        }
+                    },
+                    "targetRequirement": {
+                        "type": "TargetObject",
+                        "unlimited": true,
+                        "filter": {
+                            "baseFilter": "artifact Equipment ctrl:you"
+                        }
+                    },
+                    "descriptionOverride": "Whenever this creature blocks, attach any number of target Equipment you control to it."
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "rarity": "RARE",
+        "artist": "Rafater",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/4/845b0be1-4f85-4a8c-8205-dc85c8cf9a61.jpg?1783902965"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Surveillance Room
 {
     "name": "Surveillance Room",
