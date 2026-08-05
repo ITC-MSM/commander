@@ -6129,6 +6129,95 @@
     ]
 }
 
+// Mister Hyde, Monster Within
+{
+    "name": "Mister Hyde, Monster Within",
+    "manaCost": "{2}{G}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "At the beginning of your upkeep, choose one —\n• Put a +1/+1 counter on Mister Hyde.\n• Remove a counter from a creature you control. If you do, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            "description": "Put a +1/+1 counter on Mister Hyde"
+                        },
+                        {
+                            "effect": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "SelectTarget",
+                                        "requirement": {
+                                            "type": "TargetObject",
+                                            "filter": {
+                                                "baseFilter": "creature ctrl:you"
+                                            }
+                                        },
+                                        "storeAs": "hydeCounterSource"
+                                    },
+                                    {
+                                        "type": "Gated",
+                                        "gate": {
+                                            "type": "Gate.DoAction",
+                                            "action": {
+                                                "type": "RemoveAnyNumberOfCounters",
+                                                "target": {
+                                                    "type": "PipelineTarget",
+                                                    "collectionName": "hydeCounterSource"
+                                                },
+                                                "maxTotal": 1
+                                            },
+                                            "successCriterion": "SuccessCriterion.CountersRemoved"
+                                        },
+                                        "then": {
+                                            "type": "DrawCards",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "description": "Remove a counter from a creature you control. If you do, draw a card"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your upkeep, choose one — • Put a +1/+1 counter on Mister Hyde. • Remove a counter from a creature you control. If you do, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "176",
+        "rarity": "UNCOMMON",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"I read what I wanted to read and became what I wanted to become.\"\n—Dr. Calvin Zabo",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3cf30476-ed92-4dc2-86b7-2b5fd60a2de7.jpg?1783902916"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Misty Knight, Hero for Hire
 {
     "name": "Misty Knight, Hero for Hire",
