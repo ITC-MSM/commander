@@ -5298,6 +5298,54 @@
     ]
 }
 
+// Ka-Zar of the Savage Land
+{
+    "name": "Ka-Zar of the Savage Land",
+    "manaCost": "{4}{G}",
+    "typeLine": "Legendary Creature — Human Barbarian Hero",
+    "oracleText": "You may look at the top card of your library any time.\nYou may play lands from the top of your library.\nWhen Ka-Zar enters, create Zabu, a legendary 2/2 green Cat creature token with \"Landfall — Whenever a land you control enters, put a +1/+1 counter on Zabu.\"",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Zabu"
+                },
+                "descriptionOverride": "When Ka-Zar enters, create Zabu, a legendary 2/2 green Cat creature token with \"Landfall — Whenever a land you control enters, put a +1/+1 counter on Zabu.\""
+            }
+        ],
+        "staticAbilities": [
+            "LookAtTopOfLibrary",
+            {
+                "type": "PlayLandsAndCastFilteredFromTopOfLibrary",
+                "spellFilter": {
+                    "cardPredicates": [
+                        "IsLand"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/caf70fc5-87a0-4b4d-bedd-74dd09569bed.jpg?1783902916"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Kingpin's Enforcers
 {
     "name": "Kingpin's Enforcers",
