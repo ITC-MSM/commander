@@ -6744,6 +6744,75 @@
     ]
 }
 
+// The Wondrous Wasp
+{
+    "name": "The Wondrous Wasp",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Flash\nFlying\nWasp's Sting — When The Wondrous Wasp enters, tap up to one target creature. It loses all abilities for as long as The Wondrous Wasp remains on the battlefield.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature"
+                            }
+                        },
+                        {
+                            "type": "RemoveAllAbilities",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature"
+                            },
+                            "duration": {
+                                "type": "WhileSourceOnBattlefield",
+                                "sourceDescription": "The Wondrous Wasp"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                },
+                "descriptionOverride": "Wasp's Sting — When The Wondrous Wasp enters, tap up to one target creature. It loses all abilities for as long as The Wondrous Wasp remains on the battlefield."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "84",
+        "rarity": "RARE",
+        "artist": "Gal Or",
+        "flavorText": "\"Don't overlook the little things.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/484e80a4-1d5f-4c27-98a8-ee2ef9d6cbdc.jpg?1783902947"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Thor Odinson
 {
     "name": "Thor Odinson",
