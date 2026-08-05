@@ -1619,6 +1619,87 @@
     ]
 }
 
+// Black Panther, Vanguard
+{
+    "name": "Black Panther, Vanguard",
+    "manaCost": "{2}{G}{W}",
+    "typeLine": "Legendary Creature — Human Warrior Hero",
+    "oracleText": "Whenever another nontoken Hero you control enters, choose one —\n• Create a 1/1 white Soldier creature token.\n• Creatures you control get +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Hero nontoken ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Soldier"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/e/c/ecd686bf-d14b-491c-b0c5-88fc8f0472f9.jpg?1783902804"
+                            },
+                            "description": "Create a 1/1 white Soldier creature token."
+                        },
+                        {
+                            "effect": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "target": "Self"
+                                }
+                            },
+                            "description": "Creatures you control get +1/+1 until end of turn."
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever another nontoken Hero you control enters, choose one — • Create a 1/1 white Soldier creature token. • Creatures you control get +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "207",
+        "rarity": "UNCOMMON",
+        "artist": "Aniekan Udofia",
+        "flavorText": "\"Wakanda forever!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9e308f77-206b-4c9d-bfba-f4c476ea574a.jpg?1783902905"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
 // Black Widow, Super Spy
 {
     "name": "Black Widow, Super Spy",
