@@ -1638,6 +1638,108 @@
     ]
 }
 
+// Construct a Cosmic Cube
+{
+    "name": "Construct a Cosmic Cube",
+    "manaCost": "{2}{B}",
+    "typeLine": "Enchantment — Plan",
+    "oracleText": "Whenever you draw your second card each turn, create a 2/1 black Villain creature token with menace and put a plan counter on this enchantment.\nWhen the seventh plan counter is put on this enchantment, sacrifice it. When you do, you control target opponent during their next turn. (You see all cards that player could see and make all decisions for them.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 1,
+                            "colors": [
+                                "BLACK"
+                            ],
+                            "creatureTypes": [
+                                "Villain"
+                            ],
+                            "keywords": [
+                                "MENACE"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a51b6a0-9a54-4f01-b959-0a28c15d103f.jpg?1783902804"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "plan",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you draw your second card each turn, create a 2/1 black Villain creature token with menace and put a plan counter on this enchantment."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "CountersPlacedEvent",
+                    "counterType": "plan"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "SacrificeTarget",
+                        "target": "Self"
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "HijackNextTurn",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "reflexiveTargetRequirements": [
+                        "TargetOpponent"
+                    ],
+                    "descriptionOverride": "Sacrifice this enchantment. When you do, you control target opponent during their next turn."
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "plan"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                },
+                "descriptionOverride": "When the seventh plan counter is put on this enchantment, sacrifice it. When you do, you control target opponent during their next turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "RARE",
+        "artist": "Eugene Maslovski",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/448de757-ac16-4529-b851-1a1331b821a5.jpg?1783902946"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Crowd of True Believers
 {
     "name": "Crowd of True Believers",
