@@ -12324,6 +12324,72 @@
     ]
 }
 
+// The Ten Rings
+{
+    "name": "The Ten Rings",
+    "manaCost": "{8}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "Your maximum hand size is ten.\nAt the beginning of your end step, if you have fewer than ten cards in hand, draw cards equal to the difference.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Subtract",
+                        "left": {
+                            "type": "Fixed",
+                            "amount": 10
+                        },
+                        "right": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Hand"
+                        }
+                    }
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Hand"
+                    },
+                    "operator": "LTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 9
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, if you have fewer than ten cards in hand, draw cards equal to the difference."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "SetMaximumHandSize",
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 10
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "251",
+        "rarity": "MYTHIC",
+        "artist": "Arthur Yuan",
+        "flavorText": "\"The rings act as if they have a will of their own.\"\n—Shang-Chi",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/2332bc91-b0f2-4911-844d-d1cc915cd6c8.jpg?1783902890"
+    },
+    "colorIdentityOverride": []
+}
+
 // The Thing, Ben Grimm
 {
     "name": "The Thing, Ben Grimm",
