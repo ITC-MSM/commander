@@ -4130,6 +4130,83 @@
     ]
 }
 
+// Raft Security Officer
+{
+    "name": "Raft Security Officer",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "{2}, {T}: Tap target creature. This ability costs {1} less to activate if it targets a creature with power 3 or less.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{2}, {T}: Tap target creature. This ability costs {1} less to activate if it targets a creature with power 3 or less.",
+                "genericCostReduction": {
+                    "type": "Conditional",
+                    "condition": {
+                        "type": "EntityMatches",
+                        "entity": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "filter": "creature pow<=3"
+                    },
+                    "ifTrue": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "ifFalse": {
+                        "type": "Fixed",
+                        "amount": 0
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "artist": "Bartek Fedyczak",
+        "flavorText": "\"We've upgraded the power dampeners since your last escape. No more breakouts on my watch.\"\n—[Name withheld on S.H.I.E.L.D. orders], last words",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f9b9f9d6-b50c-4b29-80be-284ba773c70b.jpg?1783902967"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Rapid Rescue
 {
     "name": "Rapid Rescue",
