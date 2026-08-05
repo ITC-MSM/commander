@@ -160,8 +160,14 @@ data class RawBoardFeatures(
                         (entity.get<CountersComponent>()?.getCount(CounterType.LOYALTY) ?: 0) else 0,
                     lands = result.lands + if (CardType.LAND.name in types) 1 else 0,
                     untappedLands = result.untappedLands + if (CardType.LAND.name in types && !entity.has<TappedComponent>()) 1 else 0,
-                    threatsInPlay = result.threatsInPlay + if (card?.let { intents.forName(it.name) }
-                            ?.tags?.any { it in THREAT_TAGS } == true) 1 else 0,
+                    // A *permanent's* threat, not its card's: a Room's locked half and an already
+                    // spent Adventure are text that is not on the battlefield, so they must not
+                    // count here. [IntentCatalog.forPermanent] is the same reading `BoardPresence`
+                    // prices the permanent by.
+                    threatsInPlay = result.threatsInPlay + if (card != null &&
+                        intents.forPermanent(entity, card.name)
+                            .any { intent -> intent.tags.any { it in THREAT_TAGS } }
+                    ) 1 else 0,
                 )
             }
             val removal = state.getHand(playerId).count { id ->

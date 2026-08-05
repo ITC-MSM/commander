@@ -12,7 +12,9 @@ import com.wingedsheep.mtg.sets.definitions.dsk.cards.UnholyAnnexRitualChamber
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 
 /**
@@ -44,8 +46,13 @@ class RoomAiTest : FunSpec({
 
     /** Pass until the stack is empty — a Room's door-unlock trigger needs its own round. */
     fun settle(driver: GameTestDriver) {
-        var guard = 0
-        while (driver.state.stack.isNotEmpty() && guard++ < 10) driver.bothPass()
+        var rounds = 0
+        while (driver.state.stack.isNotEmpty()) {
+            withClue("the stack never emptied, so the test's premise was never set up") {
+                rounds++ shouldBeLessThan 10
+            }
+            driver.bothPass()
+        }
     }
 
     test("the AI casts the Unholy Annex half rather than passing") {

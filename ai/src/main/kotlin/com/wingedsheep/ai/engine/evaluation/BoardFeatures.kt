@@ -8,6 +8,7 @@ import com.wingedsheep.ai.engine.knowledge.CardIntent
 import com.wingedsheep.ai.engine.knowledge.IntentCatalog
 import com.wingedsheep.ai.engine.lifePoolsOf
 import com.wingedsheep.ai.engine.sidesFor
+import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -16,7 +17,6 @@ import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComp
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.RoomComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
@@ -164,26 +164,32 @@ object BoardPresence : BoardFeature {
     }
 
     /**
-     * The prior for the permanent [entityId] *as it currently stands*.
+     * The prior for the permanent [entityId] *as it currently stands* — which is not the same
+     * question as what its card can do.
      *
-     * For everything except a Room that is the card's own [CardIntent]. A Room (CR 709.5) is one
-     * permanent with a door per half, and a locked half's rules text does not exist — so its value
-     * is the sum of what its **unlocked** faces do, and unlocking a door is what raises it. Reading
-     * the card as a whole would price a Room the same however many doors are open, which is exactly
-     * why the AI would cast a half and then never pay to unlock the other: a special action that
-     * moves no evaluated number can never beat passing.
+     * [IntentCatalog.forPermanent] answers with one [CardIntent] per reading in force: one for an
+     * ordinary permanent, one per **unlocked** door for a Room (CR 709.5). Reading a Room as a
+     * whole card would price it the same however many doors are open, which is exactly why the AI
+     * would cast a half and then never pay to unlock the other — a special action that moves no
+     * evaluated number can never beat passing.
+     *
+     * The readings combine as a baseline plus what each one adds *over* it, rather than a plain
+     * sum. `UNKNOWN.staticPriorValue` is the value of a permanent the analyzer cannot read, and a
+     * Room with two blank halves is still one unreadable permanent, not two — summing raw would
+     * make it outrank every other unreadable permanent for no reason at all.
      */
     private fun priorValue(
         projected: ProjectedState,
         entityId: EntityId,
-        container: com.wingedsheep.engine.state.ComponentContainer,
+        container: ComponentContainer,
         card: CardComponent,
         intents: IntentCatalog,
     ): Double {
-        val room = container.get<RoomComponent>()
-            ?: return intents.forName(card.name)?.let { intentValue(projected, entityId, it) } ?: 0.0
-        return room.unlockedFaces.sumOf { face ->
-            intents.forFace(card.name, face.name)?.let { intentValue(projected, entityId, it) } ?: 0.0
+        val inForce = intents.forPermanent(container, card.name)
+        if (inForce.isEmpty()) return 0.0
+        val unreadable = CardIntent.UNKNOWN.staticPriorValue
+        return unreadable + inForce.sumOf {
+            (intentValue(projected, entityId, it) - unreadable).coerceAtLeast(0.0)
         }
     }
 
@@ -217,7 +223,7 @@ object BoardPresence : BoardFeature {
         state: GameState,
         projected: ProjectedState,
         entityId: EntityId,
-        container: com.wingedsheep.engine.state.ComponentContainer
+        container: ComponentContainer
     ): Double {
         val power = projected.getPower(entityId) ?: 0
         val toughness = projected.getToughness(entityId) ?: 0

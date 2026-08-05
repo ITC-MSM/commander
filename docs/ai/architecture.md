@@ -32,6 +32,14 @@ Plus `IntentCatalog` (Phase 6), which is card knowledge rather than a control-fl
 `BoardPresence.permanentValue`, `TargetSelection.rank`, `HoldPolicy` and the rollout policy's
 priors.
 
+Multi-face cards make "what does this card do?" and "what is this permanent doing?" different
+questions, so the catalog answers them separately and callers must pick deliberately. A card in
+hand or on the stack is `forName` — every face unioned, because casting the Adventure half is a
+real option. A permanent on the battlefield is `forPermanent`, which reads only what is in force
+there: a Room (CR 709.5) contributes one reading per *unlocked* door, and everything else drops the
+spell faces of an Adventure / Omen / modal DFC, which resolve away and never stand on the board.
+Reaching for `forName` on a battlefield permanent is the bug both of those exist to prevent.
+
 Phase 9 adds a second leaf implementation behind the existing `BoardEvaluator` seam. Composite
 profiles load from `eval-weights.json`; fitted raw-feature profiles load from
 `raw-eval-weights.json`. `AiProfile.evalWeightsId` selects either kind, and malformed raw profiles
