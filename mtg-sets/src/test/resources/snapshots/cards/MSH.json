@@ -5498,6 +5498,83 @@
     ]
 }
 
+// S.H.I.E.L.D. Flying Car
+{
+    "name": "S.H.I.E.L.D. Flying Car",
+    "manaCost": "{2}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Flash\nFlying\nWhen this Vehicle enters, exile up to one target creature you control. Return that card to the battlefield under its owner's control at the beginning of the next end step.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature you control"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target creature you control"
+                                },
+                                "destination": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "up to one target creature you control"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "RARE",
+        "artist": "Paulius Daščioras",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8e651410-b829-4468-b866-a9dd15f909ad.jpg?1783902952"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // S.H.I.E.L.D. Helicarrier
 {
     "name": "S.H.I.E.L.D. Helicarrier",
