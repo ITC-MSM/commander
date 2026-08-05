@@ -13454,6 +13454,78 @@
     ]
 }
 
+// Ultron, Artificial Malevolence
+{
+    "name": "Ultron, Artificial Malevolence",
+    "manaCost": "{3}",
+    "typeLine": "Legendary Artifact Creature — Robot Villain",
+    "oracleText": "Whenever another nontoken artifact you control enters, you may pay {2}. If you do, create a token that's a copy of it. If the token isn't a creature, it becomes a 2/2 Robot Villain creature in addition to its other types.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact nontoken ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}"
+                        }
+                    },
+                    "then": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.WhenCondition",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": "TriggeringEntity",
+                                "filter": "noncreature"
+                            }
+                        },
+                        "then": {
+                            "type": "CreateTokenCopyOfTarget",
+                            "target": "TriggeringEntity",
+                            "overridePower": 2,
+                            "overrideToughness": 2,
+                            "addedSubtypes": [
+                                "Robot",
+                                "Villain"
+                            ],
+                            "addCardTypes": [
+                                "CREATURE"
+                            ]
+                        },
+                        "otherwise": {
+                            "type": "CreateTokenCopyOfTarget",
+                            "target": "TriggeringEntity"
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever another nontoken artifact you control enters, you may pay {2}. If you do, create a token that's a copy of it. If the token isn't a creature, it becomes a 2/2 Robot Villain creature in addition to its other types."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "252",
+        "rarity": "MYTHIC",
+        "artist": "Nino Is",
+        "flavorText": "\"Father, humans served their purpose. My imperative now is to terminate them . . . and you.\"\n—Ultron, to Hank Pym",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32ddd5ac-57ed-4e78-8932-a65980191f6e.jpg?1783902889"
+    },
+    "colorIdentityOverride": []
+}
+
 // Undercover Skrull
 {
     "name": "Undercover Skrull",
