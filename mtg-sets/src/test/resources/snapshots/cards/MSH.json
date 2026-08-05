@@ -3279,6 +3279,55 @@
     ]
 }
 
+// Mockingbird, Ace Agent
+{
+    "name": "Mockingbird, Ace Agent",
+    "manaCost": "{3}{W}",
+    "typeLine": "Legendary Creature — Human Spy Hero",
+    "oracleText": "Double strike\nWhenever you cast a spell that targets a creature you control, put a +1/+1 counter on Mockingbird.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "DOUBLE_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellTargetsMatching",
+                            "filter": "creature ctrl:you"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you cast a spell that targets a creature you control, put a +1/+1 counter on Mockingbird."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "rarity": "UNCOMMON",
+        "artist": "Sveta Pikul",
+        "flavorText": "\"My first love was lab work, but these days my heart's in the field.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f5701ac-ec30-4fb1-bd71-4bac4693c075.jpg?1783902972"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Okoye, Dora Milaje Leader
 {
     "name": "Okoye, Dora Milaje Leader",
