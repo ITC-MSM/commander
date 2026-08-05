@@ -1430,6 +1430,112 @@
     ]
 }
 
+// Call Damage Control
+{
+    "name": "Call Damage Control",
+    "manaCost": "{1}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose up to two. Return those cards from your graveyard to your hand.\n• Target artifact card.\n• Target creature card.\n• Target enchantment card.\n• Target land card.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Hand"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "artifact own:you",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ],
+                    "description": "Return target artifact card from your graveyard to your hand"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Hand"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature own:you",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ],
+                    "description": "Return target creature card from your graveyard to your hand"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Hand"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "enchantment own:you",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ],
+                    "description": "Return target enchantment card from your graveyard to your hand"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Hand"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "land own:you",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ],
+                    "description": "Return target land card from your graveyard to your hand"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 0
+        }
+    },
+    "metadata": {
+        "collectorNumber": "162",
+        "artist": "Slawomir Maniak",
+        "flavorText": "When the heroes clock out, they clock in.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/de1ed886-c33b-4cfd-8442-944cec654a8b.jpg?1783902921"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Captain America's Shield
 {
     "name": "Captain America's Shield",
