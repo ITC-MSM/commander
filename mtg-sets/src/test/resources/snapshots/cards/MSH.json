@@ -638,6 +638,53 @@
     ]
 }
 
+// Ares, God of War
+{
+    "name": "Ares, God of War",
+    "manaCost": "{1}{B}{R}",
+    "typeLine": "Legendary Creature — God Warrior Villain",
+    "oracleText": "Ares attacks each combat if able.\nWhenever an attacking creature you control dies, return that card to its owner's hand.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature attacking ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "TriggeringEntity",
+                    "destination": "Hand",
+                    "fromZone": "Graveyard"
+                },
+                "descriptionOverride": "Whenever an attacking creature you control dies, return that card to its owner's hand."
+            }
+        ],
+        "staticAbilities": [
+            "MustAttack"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "202",
+        "rarity": "RARE",
+        "artist": "Fesbra",
+        "flavorText": "\"Let the slaughter begin!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/e/3e121d65-d341-40b9-bebc-1e7d1b83905c.jpg?1783902906"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Arnim Zola, Bio-Fanatic
 {
     "name": "Arnim Zola, Bio-Fanatic",
