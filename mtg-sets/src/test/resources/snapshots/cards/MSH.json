@@ -10083,6 +10083,81 @@
     ]
 }
 
+// Spider-Man, To the Rescue
+{
+    "name": "Spider-Man, To the Rescue",
+    "manaCost": "{2}{G/W}",
+    "typeLine": "Legendary Creature — Spider Human Hero",
+    "oracleText": "Flash\nVigilance, reach\nNo One Dies! — When Spider-Man enters, you may tap him. When you do, another target nonattacking creature you control gains indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH",
+        "VIGILANCE",
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "TapUntap",
+                        "target": "Self"
+                    },
+                    "reflexiveEffect": {
+                        "type": "GrantKeyword",
+                        "keyword": "INDESTRUCTIBLE",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "statePredicates": [
+                                        {
+                                            "type": "StateNot",
+                                            "predicate": "IsAttacking"
+                                        }
+                                    ],
+                                    "controllerPredicate": "ControlledByYou"
+                                },
+                                "excludeSelf": true
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "You may tap Spider-Man. When you do, another target nonattacking creature you control gains indestructible until end of turn."
+                },
+                "descriptionOverride": "No One Dies! — When Spider-Man enters, you may tap him. When you do, another target nonattacking creature you control gains indestructible until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "rarity": "UNCOMMON",
+        "artist": "Anna Podedworna",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e5db6968-1ca3-46bd-8cf9-e2c411ab29c1.jpg?1783902898"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
 // Stark Industries
 {
     "name": "Stark Industries",
