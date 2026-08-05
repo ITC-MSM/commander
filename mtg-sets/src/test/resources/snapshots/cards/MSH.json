@@ -1195,6 +1195,75 @@
     "colorIdentityOverride": []
 }
 
+// Captain America, Wings of Freedom
+{
+    "name": "Captain America, Wings of Freedom",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Human Soldier Hero",
+    "oracleText": "Flying, first strike, ward {1} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {1}.)\nWhenever Captain America attacks, each other Hero you control gets +X/+X until end of turn, where X is Captain America's toughness.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "FIRST_STRIKE",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{1}"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature Hero ctrl:you",
+                            "excludeSelf": true
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": "Toughness"
+                        },
+                        "toughnessModifier": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": "Toughness"
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever Captain America attacks, each other Hero you control gets +X/+X until end of turn, where X is Captain America's toughness."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "rarity": "RARE",
+        "artist": "Dan Dos Santos",
+        "flavorText": "\"Our worst day is only where we start from. Where we *rise* from.\"\n—Captain America, Sam Wilson",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/8/c87ca9ce-5034-4137-99cc-c2b28f298912.jpg?1783902978"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Dark Deed
 {
     "name": "Dark Deed",
