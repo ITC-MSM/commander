@@ -36,9 +36,9 @@ val CoolButRude = card("Cool but Rude") {
         "{1}{R}: Level 3\nWhen this Class becomes level 3, search your library for a card, put it into your hand, shuffle, then discard a card at random."
 
     // Level 1: Whenever you attack, you may discard a card. If you do, draw a card.
-    // The draw hangs off `IfYouDo`, not off the may-decision: an empty hand discards nothing, so
-    // nothing is drawn (CR 701.8a — you can't discard a card you don't have). `feasibility` keeps
-    // the trigger from asking an unanswerable question on every single attack.
+    // The draw hangs off `IfYouDo`, not off the may-decision: discarding is moving a card from hand
+    // to graveyard (CR 701.9a), so an empty hand discards nothing and nothing is drawn.
+    // `feasibility` keeps the trigger from asking an unanswerable question on every single attack.
     triggeredAbility {
         trigger = Triggers.YouAttack
         effect = MayEffect(

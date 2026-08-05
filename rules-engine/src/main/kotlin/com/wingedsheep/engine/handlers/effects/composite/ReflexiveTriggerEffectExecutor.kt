@@ -71,6 +71,15 @@ class ReflexiveTriggerEffectExecutor(
         effect: ReflexiveTriggerEffect,
         context: EffectContext
     ): EffectResult {
+        // An action that can't be performed never happens, so CR 603.12's "when you do" never
+        // triggers. Gating here rather than inside the optional branch covers both templates:
+        // the "you may [action]" prompt is meaningless (saying yes would no-op the action while
+        // still firing the payoff), and a mandatory [action] would otherwise resolve vacuously —
+        // a discard pipeline on an empty hand auto-selects nothing and reports success, which
+        // `executeActionThenEmit`'s `result.isSuccess` check can't distinguish from a real discard.
+        if (!isActionFeasible(state, effect.action, context)) {
+            return EffectResult.success(state)
+        }
         if (effect.optional) {
             return presentOptionalChoice(state, effect, context)
         }
@@ -82,13 +91,6 @@ class ReflexiveTriggerEffectExecutor(
         effect: ReflexiveTriggerEffect,
         context: EffectContext
     ): EffectResult {
-        // If the action can't be performed, skip the may decision entirely. Saying "yes"
-        // to "you may [action]. If you do, [reflexive]" is meaningless when [action] is
-        // impossible — the reflexive payoff must not fire.
-        if (!isActionFeasible(state, effect.action, context)) {
-            return EffectResult.success(state)
-        }
-
         val playerId = context.controllerId
         val sourceName = context.sourceId?.let { sourceId ->
             state.getEntity(sourceId)?.get<CardComponent>()?.name
@@ -136,33 +138,36 @@ class ReflexiveTriggerEffectExecutor(
     }
 
     /**
-     * Check whether the action half of a "you may [action]. If you do, [reflexive]" trigger can
-     * actually be performed. When false, presenting a yes/no decision is meaningless — saying yes
-     * would silently no-op the action while still firing the reflexive payoff.
+     * Check whether the action half of a "[action]. When you do, [reflexive]" trigger can actually
+     * be performed. When false the whole effect is skipped: for the optional template presenting a
+     * yes/no is meaningless (saying yes would silently no-op the action while still firing the
+     * reflexive payoff), and for the mandatory one the action would resolve vacuously to the same
+     * end.
      *
      * Walks the action effect tree looking for gating sub-effects:
      *  - [SelectTargetEffect] with no legal targets → infeasible
      *  - [SacrificeEffect] with fewer controlled matches than its count → infeasible
      *    (e.g. Shire Shirriff's "you may sacrifice a token" when you control no token)
      *  - [ChooseActionEffect] with no feasible choice → infeasible
-     *  - [SelectFromCollectionEffect] whose minimum can't be met by the collection a preceding
-     *    [GatherCardsEffect] will produce → infeasible. This is the Gather → Select → Move discard
-     *    pipeline ([com.wingedsheep.sdk.dsl.Effects.Discard]): "you may discard a card" with an
-     *    empty hand is impossible, so Inti, Seneschal of the Sun must not hand out its +1/+1
-     *    counter for a discard that never happens.
+     *  - [SelectFromCollectionEffect] carrying a minimum, drawing from a collection a preceding
+     *    [GatherCardsEffect] will leave empty → infeasible. This is the Gather → Select → Move
+     *    discard pipeline ([com.wingedsheep.sdk.dsl.Effects.Discard]): "you may discard a card"
+     *    with an empty hand is impossible, so Inti, Seneschal of the Sun must not hand out its
+     *    +1/+1 counter for a discard that never happens.
      *  - [CompositeEffect] → feasible iff every step is feasible, walked in order so the gathered
      *    collection sizes are known by the time a select step is scored (top-level sequencing)
      *  - any other effect → assumed feasible (don't gate on shapes we don't recognize)
      *
      * @param gathered Sizes of the pipeline collections produced by preceding [GatherCardsEffect]
      * steps of the enclosing composite. A collection that isn't in the map is unknown, and any
-     * selection from it fails open.
+     * selection from it fails open; `null` means the bookkeeping has stopped altogether, so every
+     * selection fails open (see [isCompositeFeasible]).
      */
     private fun isActionFeasible(
         state: GameState,
         action: Effect,
         context: EffectContext,
-        gathered: Map<String, Int> = emptyMap()
+        gathered: Map<String, Int>? = emptyMap()
     ): Boolean = when (action) {
         is SelectTargetEffect -> targetFinder.findLegalTargets(
             state = state,
@@ -190,9 +195,13 @@ class ReflexiveTriggerEffectExecutor(
             checkFeasibility(state, context.controllerId, choice.feasibilityCheck)
         }
         is SelectFromCollectionEffect -> {
-            val available = gathered[action.from]
+            val available = gathered?.get(action.from)
             val minimum = minimumSelection(state, action.selection, context)
-            available == null || minimum == null || available >= minimum
+            // "Non-empty", not "at least `minimum`": SelectFromCollectionExecutor clamps a
+            // ChooseExactly/Random count down to the collection size, so "discard two cards" with
+            // one card in hand discards that one and succeeds. Only an empty collection makes a
+            // minimum-carrying selection impossible.
+            available == null || minimum == null || minimum == 0 || available > 0
         }
         is CompositeEffect -> isCompositeFeasible(state, action, context, gathered)
         // "You may pay {E}{E}{E}" (Guide of Souls) — an all-or-nothing player-counter payment
@@ -214,30 +223,34 @@ class ReflexiveTriggerEffectExecutor(
     /**
      * Walk a composite action's steps in order, threading the sizes of the collections its
      * [GatherCardsEffect] steps produce so a later [SelectFromCollectionEffect] is scored against
-     * real numbers — the Gather → Select → Move shape every discard pattern compiles to.
+     * real numbers — the Gather → Select → Move shape the counted discards compile to. (The
+     * uncounted `Patterns.Hand.discardHand` is a bare Gather → Move with no selection step, so it
+     * has nothing to score and is never gated.)
      *
      * Gather sizes are read off the *pre-action* state, so they're only recorded while every step
-     * so far has been a gather or a select. The first step of any other kind stops the bookkeeping:
-     * from there on selections fail open rather than being judged against a stale count, so
-     * "you may draw a card, then discard a card" is still offered on an empty hand.
+     * so far has been a gather or a select. The first step of any other kind stops the bookkeeping
+     * by collapsing the map to `null`: from there on every selection fails open rather than being
+     * judged against a stale count, so "you may draw a card, then discard a card" is still offered
+     * on an empty hand. The stopped state is threaded *into* nested composites too — `Effect.then`
+     * only flattens when its receiver is already a composite, so that draw-then-discard shape is
+     * `Composite[Draw, Composite[Gather, Select, Move]]`, and a per-call flag would let the inner
+     * walk start scoring again against the pre-draw hand.
      */
     private fun isCompositeFeasible(
         state: GameState,
         action: CompositeEffect,
         context: EffectContext,
-        gathered: Map<String, Int>
+        gathered: Map<String, Int>?
     ): Boolean {
         var known = gathered
-        var trackable = true
         for (step in action.effects) {
             if (!isActionFeasible(state, step, context, known)) return false
-            when (step) {
-                is GatherCardsEffect -> if (trackable) {
-                    val count = gatherableCount(state, step, context)
-                    if (count == null) trackable = false else known = known + (step.storeAs to count)
+            known = when (step) {
+                is GatherCardsEffect -> known?.let { sizes ->
+                    gatherableCount(state, step, context)?.let { sizes + (step.storeAs to it) }
                 }
-                is SelectFromCollectionEffect -> Unit
-                else -> trackable = false
+                is SelectFromCollectionEffect -> known
+                else -> null
             }
         }
         return true
@@ -247,7 +260,14 @@ class ReflexiveTriggerEffectExecutor(
      * How many cards a selection mode *requires*, or null when it has no minimum
      * ([SelectionMode.ChooseUpTo], [SelectionMode.All], [SelectionMode.ChooseAnyNumber] — each is
      * satisfied by selecting nothing, so an empty collection doesn't make them impossible; cf.
-     * Vaultguard Trooper, where "you may discard your hand" is a legal choice on an empty hand).
+     * Miasma Demon, whose "you may discard any number of cards" (`Patterns.Hand.discardAnyNumber`,
+     * a [SelectionMode.ChooseAnyNumber]) is still a legal action on an empty hand — discarding zero
+     * performs it, and the reflexive payoff then targets up to zero creatures).
+     *
+     * Only the [SelectionMode] is scored; [SelectFromCollectionEffect.restrictions] are ignored.
+     * That's safe in the fail-open direction as long as no restriction *raises* a minimum —
+     * [com.wingedsheep.sdk.scripting.effects.SelectionRestriction.ReducedMinimumIfMatches] only
+     * lowers it, and the rest narrow the maximum.
      */
     private fun minimumSelection(
         state: GameState,

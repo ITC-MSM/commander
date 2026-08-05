@@ -20,8 +20,8 @@ import io.kotest.matchers.shouldBe
  * The draw is gated on the *discard actually happening* ([com.wingedsheep.sdk.dsl.Effects.IfYouDo]),
  * not on the yes/no answer — an empty hand can't discard, so it can't draw either. That case is also
  * declared infeasible up front, so this attack trigger stops asking an unanswerable question every
- * single combat. (Contrast Vaultguard Trooper's "you may discard your hand", where discarding zero
- * cards is a legal way to perform the action and the payoff does happen.)
+ * single combat. (Contrast Miasma Demon's "you may discard any number of cards", where discarding
+ * zero cards is a legal way to perform the action and the payoff does happen.)
  */
 class CoolButRudeScenarioTest : FunSpec({
 
