@@ -7220,6 +7220,89 @@
     ]
 }
 
+// Punishing Punch
+{
+    "name": "Punishing Punch",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {2} less to cast if there are two or more creature cards in your graveyard.\nTarget creature you control deals damage equal to twice its power to target creature an opponent controls.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Multiply",
+                "amount": {
+                    "type": "EntityProperty",
+                    "entity": "Target",
+                    "numericProperty": "Power"
+                },
+                "multiplier": 2
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature an opponent controls"
+            },
+            "damageSource": {
+                "type": "BoundVariable",
+                "name": "target creature you control"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "target creature an opponent controls"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 2
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "Compare",
+                        "left": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Graveyard",
+                            "filter": "creature"
+                        },
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "180",
+        "rarity": "UNCOMMON",
+        "artist": "Bachzim",
+        "flavorText": "\"I can't help it! Your face is just so punchable!\"\n—Titania, Mary MacPherran",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a33a4cb4-1b57-47ca-8e5e-58ff46a6e0ce.jpg?1783902913"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Pym Particles
 {
     "name": "Pym Particles",
