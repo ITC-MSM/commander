@@ -2545,6 +2545,104 @@
     ]
 }
 
+// Cosmic Cube
+{
+    "name": "Cosmic Cube",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "Ward {2}\nWhenever you attack, look at the top six cards of your library. You may cast a spell from among them with mana value less than or equal to the greatest power among attacking creatures you control without paying its mana cost. Put the rest on the bottom of your library in a random order.",
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 6
+                                }
+                            },
+                            "storeAs": "cosmicCubeLooked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "cosmicCubeLooked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsNonland",
+                                    {
+                                        "type": "ManaValueAtMostDynamic",
+                                        "amount": {
+                                            "type": "AggregateBattlefield",
+                                            "player": "You",
+                                            "filter": "creature attacking",
+                                            "aggregation": "MAX",
+                                            "property": "POWER"
+                                        }
+                                    }
+                                ]
+                            },
+                            "storeSelected": "cosmicCubeChosen",
+                            "storeRemainder": "cosmicCubeToBottom",
+                            "prompt": "You may cast a spell from among these cards without paying its mana cost.",
+                            "selectedLabel": "Cast for free",
+                            "remainderLabel": "Put on the bottom",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "cosmicCubeToBottom",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        },
+                        {
+                            "type": "CastFromCollectionWithoutPayingCost",
+                            "from": "cosmicCubeChosen"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "245",
+        "rarity": "MYTHIC",
+        "artist": "Justyna Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1cf1ead-fe91-4328-89ab-6d0bc9ff6cbe.jpg?1783902891"
+    },
+    "colorIdentityOverride": []
+}
+
 // Crimson Operative
 {
     "name": "Crimson Operative",
