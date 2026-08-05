@@ -2685,6 +2685,120 @@
     ]
 }
 
+// Jennifer Walters
+{
+    "name": "Jennifer Walters",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Human Advisor Hero",
+    "oracleText": "Your opponents can't cast spells during your turn.\n{3}{G}{W}{W}: Transform Jennifer Walters. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{G}{W}{W}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Jennifer Walters. Activate only as a sorcery."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "PlayersCantCastSpells",
+                "condition": "IsYourTurn"
+            }
+        ]
+    },
+    "backFace": {
+        "name": "The Sensational She-Hulk",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Gamma Hero",
+        "oracleText": "Reach, trample\nYour opponents can't cast spells during your turn.\nWhenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that much damage to any target. Do this only once each turn.",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 6
+        },
+        "keywords": [
+            "REACH",
+            "TRAMPLE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "DealsDamageEvent",
+                        "recipient": "CreatureYouControl"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "ContextProperty",
+                                "key": "TRIGGER_DAMAGE_AMOUNT"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        }
+                    },
+                    "targetRequirement": {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    },
+                    "oncePerTurn": true,
+                    "descriptionOverride": "Whenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that much damage to any target. Do this only once each turn."
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "PlayersCantCastSpells",
+                    "condition": "IsYourTurn"
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "18",
+            "rarity": "MYTHIC",
+            "artist": "Taurin Clarke",
+            "imageUri": "https://cards.scryfall.io/normal/back/6/1/61237530-ad49-469c-a952-67c92315708e.jpg?1783902978"
+        },
+        "colorIdentityOverride": [
+            "GREEN",
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "GREEN",
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "rarity": "MYTHIC",
+        "artist": "Taurin Clarke",
+        "flavorText": "\"I will remind the witness that I have permission to treat her as hostile.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/1/61237530-ad49-469c-a952-67c92315708e.jpg?1783902978"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // K'un-Lun Warrior
 {
     "name": "K'un-Lun Warrior",
