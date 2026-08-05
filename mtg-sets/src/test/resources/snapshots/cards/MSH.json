@@ -6324,6 +6324,125 @@
     ]
 }
 
+// King T'Challa
+{
+    "name": "King T'Challa",
+    "manaCost": "{1}{W}{U}",
+    "typeLine": "Legendary Creature — Human Noble Hero",
+    "oracleText": "Flash\nWhenever a player draws their second card each turn, you draw a card.\n{4}{W}{U}: Transform King T'Challa. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2,
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever a player draws their second card each turn, you draw a card."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{W}{U}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform King T'Challa. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Black Panther, Hope Enduring",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Human Warrior Hero",
+        "oracleText": "Flash\nDouble strike\nPrevent all damage that would be dealt to Black Panther.\nWhenever Black Panther deals combat damage to a player, draw a card.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "keywords": [
+            "FLASH",
+            "DOUBLE_STRIKE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "DealsDamageEvent",
+                        "damageType": "DamageCombat",
+                        "recipient": "AnyPlayer"
+                    },
+                    "effect": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "descriptionOverride": "Whenever Black Panther deals combat damage to a player, draw a card."
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "PreventDamage",
+                    "appliesTo": {
+                        "type": "DamageEvent",
+                        "recipient": "RecipientSelf"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "219",
+            "rarity": "MYTHIC",
+            "artist": "Eric Wilkerson",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/d/add7d3ce-aa58-4da0-8c2a-cfd01c3a8975.jpg?1783902911"
+        },
+        "colorIdentityOverride": [
+            "WHITE",
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "WHITE",
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "MYTHIC",
+        "artist": "Aaron J. Riley",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/add7d3ce-aa58-4da0-8c2a-cfd01c3a8975.jpg?1783902911"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Kingpin's Enforcers
 {
     "name": "Kingpin's Enforcers",
