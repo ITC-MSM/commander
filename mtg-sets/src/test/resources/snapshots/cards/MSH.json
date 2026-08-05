@@ -2789,6 +2789,92 @@
     ]
 }
 
+// Epic Fight
+{
+    "name": "Epic Fight",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one or both —\n• Double target creature's power and toughness until end of turn.\n• Target creature you control fights target creature an opponent controls.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "EntityProperty",
+                            "entity": "Target",
+                            "numericProperty": "Power"
+                        },
+                        "toughnessModifier": {
+                            "type": "EntityProperty",
+                            "entity": "Target",
+                            "numericProperty": "Toughness"
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target creature"
+                        }
+                    ],
+                    "description": "Double target creature's power and toughness until end of turn"
+                },
+                {
+                    "effect": {
+                        "type": "Fight",
+                        "target1": {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        },
+                        "target2": {
+                            "type": "BoundVariable",
+                            "name": "target creature an opponent controls"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            },
+                            "id": "target creature you control"
+                        },
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            },
+                            "id": "target creature an opponent controls"
+                        }
+                    ],
+                    "description": "Target creature you control fights target creature an opponent controls"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "166",
+        "rarity": "RARE",
+        "artist": "Wei Guan",
+        "flavorText": "\"You think being big is going to help you? Bub, all that does is make you easier to hit.\"\n—Wolverine",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d521b80b-4b0b-4d69-bd95-4c83feaf2145.jpg?1783902918"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Falcon's Wing Harness
 {
     "name": "Falcon's Wing Harness",
