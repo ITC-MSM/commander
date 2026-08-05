@@ -7781,6 +7781,90 @@
     ]
 }
 
+// Reptil, Dinomorpher
+{
+    "name": "Reptil, Dinomorpher",
+    "manaCost": "{G}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Brontosaurus — {3}: Until end of turn, Reptil becomes a Dinosaur Hero with base power and toughness 3/5 and gains vigilance and reach.\nTyrannosaurus Rex — {6}: Until end of turn, Reptil becomes a Dinosaur Hero with base power and toughness 6/6 and gains trample.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "keywords": [
+                        "VIGILANCE",
+                        "REACH"
+                    ],
+                    "creatureTypes": [
+                        "Dinosaur",
+                        "Hero"
+                    ]
+                },
+                "descriptionOverride": "Brontosaurus — {3}: Until end of turn, Reptil becomes a Dinosaur Hero with base power and toughness 3/5 and gains vigilance and reach."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{6}"
+                    }
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 6
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 6
+                    },
+                    "keywords": [
+                        "TRAMPLE"
+                    ],
+                    "creatureTypes": [
+                        "Dinosaur",
+                        "Hero"
+                    ]
+                },
+                "descriptionOverride": "Tyrannosaurus Rex — {6}: Until end of turn, Reptil becomes a Dinosaur Hero with base power and toughness 6/6 and gains trample."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "182",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/472db3f2-23df-46c1-86c6-f35fbe5ab4e3.jpg?1783902913"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Restorative Technique
 {
     "name": "Restorative Technique",
