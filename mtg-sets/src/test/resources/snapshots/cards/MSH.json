@@ -2490,6 +2490,81 @@
     ]
 }
 
+// Castle Doom
+{
+    "name": "Castle Doom",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast an artifact spell.\n{3}, {T}, Sacrifice an artifact: Create a 3/3 colorless Robot Villain artifact creature token named Doombot. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "restriction": {
+                        "type": "CardTypeSpellsOrAbilitiesOnly",
+                        "cardType": "ARTIFACT"
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Doombot"
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Create a 3/3 colorless Robot Villain artifact creature token named Doombot. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "263",
+        "rarity": "RARE",
+        "artist": "Nino Is",
+        "flavorText": "Those in Doom's shadow know his protection. And his wrath.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b39d7a6-ca2d-4376-a18e-efd0138e83bc.jpg?1783902886"
+    },
+    "colorIdentityOverride": []
+}
+
 // Claim the Kingdom
 {
     "name": "Claim the Kingdom",
