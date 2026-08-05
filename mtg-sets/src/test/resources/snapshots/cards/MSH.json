@@ -4228,6 +4228,73 @@
     ]
 }
 
+// Iron Fist, Living Weapon
+{
+    "name": "Iron Fist, Living Weapon",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Human Warrior Hero",
+    "oracleText": "Whenever you cast a spell that targets a creature you control, Iron Fist gains \"{T}: Iron Fist deals damage equal to his power to any other target\" until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellTargetsMatching",
+                            "filter": "creature ctrl:you"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantActivatedAbility",
+                    "ability": {
+                        "id": "ability_2",
+                        "cost": "CostTap",
+                        "effect": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": "Power"
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        "targetRequirements": [
+                            {
+                                "type": "TargetOther",
+                                "baseRequirement": "AnyTarget"
+                            }
+                        ],
+                        "descriptionOverride": "{T}: Iron Fist deals damage equal to his power to any other target"
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you cast a spell that targets a creature you control, Iron Fist gains \"{T}: Iron Fist deals damage equal to his power to any other target\" until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "138",
+        "rarity": "UNCOMMON",
+        "artist": "Erikas Perl",
+        "flavorText": "Danny Rand plunged his fists into the molten heart of the dragon, again and again, until they glowed and smoldered like hot iron.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5cc2d948-ac8b-4466-b604-3fabc0ab6bb9.jpg?1783902929"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Iron Lad, Diverging Destiny
 {
     "name": "Iron Lad, Diverging Destiny",
