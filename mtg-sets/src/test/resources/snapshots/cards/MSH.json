@@ -3132,6 +3132,79 @@
     ]
 }
 
+// Iron Lad, Diverging Destiny
+{
+    "name": "Iron Lad, Diverging Destiny",
+    "manaCost": "{2}{U}",
+    "typeLine": "Legendary Artifact Creature — Human Hero",
+    "oracleText": "Flying, vigilance\nYou may look at the top card of your library any time.\n{T}: Reveal the top card of your library. If it's an artifact card, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "ironLadRevealed",
+                            "revealed": true
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "CollectionContainsMatch",
+                                    "collection": "ironLadRevealed",
+                                    "filter": "artifact"
+                                }
+                            },
+                            "then": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{T}: Reveal the top card of your library. If it's an artifact card, draw a card."
+            }
+        ],
+        "staticAbilities": [
+            "LookAtTopOfLibrary"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "rarity": "UNCOMMON",
+        "artist": "Erikas Perl",
+        "flavorText": "\"If you had a chance to change your fate, would you take it?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/355e7197-2f20-43b6-9305-73c4e1fd4a3c.jpg?1783902957"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Jennifer Walters
 {
     "name": "Jennifer Walters",
