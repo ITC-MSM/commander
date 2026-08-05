@@ -7212,6 +7212,129 @@
     ]
 }
 
+// Trickster's Stratagem
+{
+    "name": "Trickster's Stratagem",
+    "manaCost": "{3}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "The owner of target creature an opponent controls puts it into their library second from the top or on the bottom. Then up to one target creature you control connives. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on that creature.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "PutOnLibraryPositionOfChoice",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature an opponent controls"
+                    },
+                    "positions": [
+                        "SecondFromTop",
+                        "Bottom"
+                    ]
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 1
+                            },
+                            "filter": "creature"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "connive_hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "connive_hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "connive_discarded",
+                                "prompt": "Choose a card to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "connive_discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "connive_discarded",
+                                "ifNotEmpty": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "up to one target creature you control"
+                                    }
+                                },
+                                "filter": "nonland"
+                            }
+                        ],
+                        "descriptionOverride": "Connive"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "target creature an opponent controls"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "up to one target creature you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "81",
+        "artist": "David Palumbo",
+        "flavorText": "\"Let's take you off the board, shall we?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/620376d0-dc0c-405f-8121-eb36d9b4f4c2.jpg?1783902948"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Truck Toss
 {
     "name": "Truck Toss",
