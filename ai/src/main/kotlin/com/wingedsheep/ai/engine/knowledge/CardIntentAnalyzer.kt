@@ -3,6 +3,7 @@ package com.wingedsheep.ai.engine.knowledge
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.CardFace
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.Duration
@@ -43,29 +44,63 @@ import java.util.concurrent.ConcurrentHashMap
  * gave *every* non-creature permanent before this existed. The failure mode is "no better than
  * before", never "confidently wrong".
  *
+ * ## Faces
+ *
+ * A multi-face card keeps its rules text on [CardFace.script], and its top-level
+ * [CardDefinition.script] is empty — a Room (CR 709.5), a split card (709), an Adventure (715), a
+ * modal DFC (712). Reading only the top level therefore reported *every* such card as
+ * uninterpretable, which is how `Unholy Annex // Ritual Chamber` — a repeatable draw engine —
+ * priced identically to a vanilla enchantment. [analyze] folds every face's script in, exactly as
+ * [com.wingedsheep.engine.state.components.identity.RoomFaceStatics] does for static abilities.
+ *
+ * A tag is a claim about what the card can do *somewhere*, so unioning faces is the same
+ * "anywhere on this card" reading the walk already applies within one script. What it is not is a
+ * claim about a *permanent* on the battlefield: only one half of a Room functions per unlocked
+ * door, so battlefield value goes through [analyzeFace] per unlocked face instead.
+ *
  * ## Purity and caching
  *
  * `analyze` is a pure function of the definition, so results are memoized process-wide by card
  * name. A card name resolves to one canonical [CardDefinition] in a
  * [com.wingedsheep.engine.registry.CardRegistry] (later printings are `Printing` rows, not
  * duplicate definitions), so the name is a sound key and the cost is paid once per process rather
- * than once per game — which matters when the arena plays a thousand of them.
+ * than once per game — which matters when the arena plays a thousand of them. Face names are
+ * unique within a card, so `"<card>//<face>"` keys the per-face results the same way.
  */
 object CardIntentAnalyzer {
 
     private val cache = ConcurrentHashMap<String, CardIntent>()
 
-    /** The [CardIntent] for [card], computing it on first sight. */
-    fun analyze(card: CardDefinition): CardIntent = cache.getOrPut(card.name) { compute(card) }
+    /** The [CardIntent] for [card] — its own script and every face's — computing it on first sight. */
+    fun analyze(card: CardDefinition): CardIntent =
+        cache.getOrPut(card.name) { compute(card, listOf(card.script) + card.cardFaces.map { it.script }) }
 
-    private fun compute(card: CardDefinition): CardIntent {
-        val script = card.script
+    /**
+     * The [CardIntent] of one face of [card], read as what that face contributes on its own.
+     *
+     * This is the reading a Room's battlefield value needs: a locked door's text does not exist
+     * (CR 709.5), so a permanent is worth the sum of what its *unlocked* faces do, not what the
+     * card as a whole could do. The face is analyzed against the card's own type line and keywords,
+     * because it is the card that is (or is not) a permanent.
+     */
+    fun analyzeFace(card: CardDefinition, face: CardFace): CardIntent =
+        cache.getOrPut("${card.name}//${face.name}") { compute(card, listOf(face.script)) }
+
+    /**
+     * The intent [scripts] add up to, read as belonging to [card].
+     *
+     * Every caller passes the scripts that are in force for what it is asking about — the whole
+     * card for [analyze], one face for [analyzeFace] — and nothing here reads [card] for anything
+     * but its printed characteristics (type line, keywords), which faces share.
+     */
+    private fun compute(card: CardDefinition, scripts: List<CardScript>): CardIntent {
         // Every effect the card can produce, flattened. A tag answers "does this card do X
         // anywhere?", so where in the script the effect sat does not change the answer — the
         // origin discounts [EffectWalker.slots] carries are the rater's concern, not this one's.
-        val leaves = (EffectWalker.slots(script).map { it.effect } +
-            script.stateTriggeredAbilities.map { it.effect })
-            .flatMap { EffectWalker.leaves(it) }
+        val leaves = scripts.flatMap { script ->
+            EffectWalker.slots(script).map { it.effect } +
+                script.stateTriggeredAbilities.map { it.effect }
+        }.flatMap { EffectWalker.leaves(it) }
 
         val tags = mutableSetOf<IntentTag>()
         var removalReach: Int? = null
@@ -80,25 +115,28 @@ object CardIntentAnalyzer {
         }
 
         var anthemBonus = 0
-        for (static in script.staticAbilities) {
+        for (static in scripts.flatMap { it.staticAbilities }) {
             tags += tagsOf(static)
             anthemBonus = maxOf(anthemBonus, anthemBonusOf(static))
         }
 
-        if (script.activatedAbilities.any { it.isManaAbility }) tags += IntentTag.RAMP
-        if (script.activatedAbilities.any { !it.isManaAbility && sacrificesOthers(it.cost) }) {
+        val activated = scripts.flatMap { it.activatedAbilities }
+        if (activated.any { it.isManaAbility }) tags += IntentTag.RAMP
+        if (activated.any { !it.isManaAbility && sacrificesOthers(it.cost) }) {
             tags += IntentTag.SACRIFICE_OUTLET
         }
         // An Aura/Equipment whose whole point is the creature it sits on is a pump, not an anthem.
-        if (script.isAura && script.staticAbilities.any { it is ModifyStats }) tags += IntentTag.PUMP
+        if (scripts.any { it.isAura && it.staticAbilities.any { static -> static is ModifyStats } }) {
+            tags += IntentTag.PUMP
+        }
 
         // A combat trick is an instant pump that *expires*. A "+1/+1 counter at instant speed" is
         // a permanent investment you can make whenever you like, and holding it for combat is not
         // the same decision — so it stays PUMP and never reaches [HoldPolicy]'s no-window verdict.
-        val speed = speedOf(card, tags)
+        val speed = speedOf(card, scripts, tags)
         if (speed == Speed.INSTANT && expiringPump) tags += IntentTag.COMBAT_TRICK
 
-        val repeatable = repeatableOf(card, script)
+        val repeatable = repeatableOf(card, scripts)
         val intent = CardIntent(
             tags = tags,
             speed = speed,
@@ -306,15 +344,14 @@ object CardIntentAnalyzer {
     // Speed / repeatability
     // ═════════════════════════════════════════════════════════════════════════
 
-    private fun speedOf(card: CardDefinition, tags: Set<IntentTag>): Speed {
-        val script = card.script
+    private fun speedOf(card: CardDefinition, scripts: List<CardScript>, tags: Set<IntentTag>): Speed {
         if (!card.typeLine.isPermanent) {
             return if (card.typeLine.isInstant || Keyword.FLASH in card.keywords) Speed.INSTANT
             else Speed.SORCERY
         }
         if (Keyword.FLASH in card.keywords) return Speed.INSTANT
-        if (script.activatedAbilities.any { !it.isManaAbility }) return Speed.ACTIVATED
-        if (script.staticAbilities.isNotEmpty() || IntentTag.ANTHEM in tags) return Speed.STATIC
+        if (scripts.any { script -> script.activatedAbilities.any { !it.isManaAbility } }) return Speed.ACTIVATED
+        if (scripts.any { it.staticAbilities.isNotEmpty() } || IntentTag.ANTHEM in tags) return Speed.STATIC
         return Speed.SORCERY
     }
 
@@ -327,10 +364,12 @@ object CardIntentAnalyzer {
      * leave-the-battlefield trigger fires once per object (Banishing Light), so counting it would
      * make every ETB permanent in the catalog read as a repeatable one.
      */
-    private fun repeatableOf(card: CardDefinition, script: CardScript): Boolean {
+    private fun repeatableOf(card: CardDefinition, scripts: List<CardScript>): Boolean {
         if (!card.typeLine.isPermanent) return false
-        return script.activatedAbilities.any { !it.isManaAbility && !consumesSource(it.cost) } ||
-            script.triggeredAbilities.any { canFireMoreThanOnce(it) }
+        return scripts.any { script ->
+            script.activatedAbilities.any { !it.isManaAbility && !consumesSource(it.cost) } ||
+                script.triggeredAbilities.any { canFireMoreThanOnce(it) }
+        }
     }
 
     private fun consumesSource(cost: AbilityCost): Boolean = when (cost) {
@@ -339,11 +378,22 @@ object CardIntentAnalyzer {
         else -> false
     }
 
-    /** False exactly for "when *this* permanent enters/leaves the battlefield" — a once-per-object event. */
+    /**
+     * False for a trigger that fires once for the object it is on and then never again while it
+     * sits there: "when *this* permanent enters/leaves the battlefield", and a Room half's "when
+     * you unlock this door" (CR 709.5), which fires on the transition rather than on a repeating
+     * event. Counting either would read every ETB permanent, and every spent Room door, as an
+     * engine.
+     */
     private fun canFireMoreThanOnce(ability: TriggeredAbility): Boolean {
         if (ability.binding != TriggerBinding.SELF) return true
-        val pattern = ability.trigger as? EventPattern.ZoneChangeEvent ?: return true
-        return pattern.to != Zone.BATTLEFIELD && pattern.from != Zone.BATTLEFIELD
+        return when (val pattern = ability.trigger) {
+            is EventPattern.ZoneChangeEvent ->
+                pattern.to != Zone.BATTLEFIELD && pattern.from != Zone.BATTLEFIELD
+
+            is EventPattern.DoorUnlockedEvent -> false
+            else -> true
+        }
     }
 
     private fun sacrificesOthers(cost: AbilityCost): Boolean = when (cost) {

@@ -36,6 +36,20 @@ class IntentCatalog private constructor(private val registry: CardRegistry?) {
         return CardIntentAnalyzer.analyze(definition)
     }
 
+    /**
+     * The intent of the face called [faceName] on the card called [cardName], or null when the
+     * catalog is off, the name is not a real card, or that card has no such face.
+     *
+     * What one *face* does is the question a Room asks (CR 709.5): a locked door's text does not
+     * exist, so a Room permanent is worth what its unlocked faces do — see
+     * [com.wingedsheep.ai.engine.evaluation.BoardPresence].
+     */
+    fun forFace(cardName: String, faceName: String): CardIntent? {
+        val definition = registry?.getCard(cardName) ?: return null
+        val face = definition.cardFaces.find { it.name == faceName } ?: return null
+        return CardIntentAnalyzer.analyzeFace(definition, face)
+    }
+
     /** The intent of a definition already in hand. Always answers, even on [NONE]. */
     fun forCard(card: CardDefinition): CardIntent = CardIntentAnalyzer.analyze(card)
 

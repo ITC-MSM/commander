@@ -16,6 +16,7 @@ import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComp
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.RoomComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
@@ -136,7 +137,7 @@ object BoardPresence : BoardFeature {
         // max keeps both, and guarantees no permanent is ever valued lower than it was before
         // Phase 6 — so a position the AI played correctly on the old numbers still scores at least
         // as well.
-        val prior = intents.forName(card.name)?.let { intentValue(projected, entityId, it) } ?: 0.0
+        val prior = priorValue(projected, entityId, container, card, intents)
 
         // Planeswalkers: the flat 4.0 priced a fresh Jace and a Jace at 1 loyalty identically.
         // Loyalty is both the walker's life total and its remaining activations, so it is the one
@@ -160,6 +161,30 @@ object BoardPresence : BoardFeature {
         // text — a signet, an Oblivion Ring and a Bitterblossom scoring the same number is the
         // blindness Phase 6 exists to remove.
         return maxOf(0.5, prior)
+    }
+
+    /**
+     * The prior for the permanent [entityId] *as it currently stands*.
+     *
+     * For everything except a Room that is the card's own [CardIntent]. A Room (CR 709.5) is one
+     * permanent with a door per half, and a locked half's rules text does not exist — so its value
+     * is the sum of what its **unlocked** faces do, and unlocking a door is what raises it. Reading
+     * the card as a whole would price a Room the same however many doors are open, which is exactly
+     * why the AI would cast a half and then never pay to unlock the other: a special action that
+     * moves no evaluated number can never beat passing.
+     */
+    private fun priorValue(
+        projected: ProjectedState,
+        entityId: EntityId,
+        container: com.wingedsheep.engine.state.ComponentContainer,
+        card: CardComponent,
+        intents: IntentCatalog,
+    ): Double {
+        val room = container.get<RoomComponent>()
+            ?: return intents.forName(card.name)?.let { intentValue(projected, entityId, it) } ?: 0.0
+        return room.unlockedFaces.sumOf { face ->
+            intents.forFace(card.name, face.name)?.let { intentValue(projected, entityId, it) } ?: 0.0
+        }
     }
 
     /**
