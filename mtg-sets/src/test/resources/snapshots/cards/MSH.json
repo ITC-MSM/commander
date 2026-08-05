@@ -5507,6 +5507,52 @@
     ]
 }
 
+// Knight of Wundagore
+{
+    "name": "Knight of Wundagore",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Cat Knight Villain",
+    "oracleText": "Trample\nWhenever you put a +1/+1 counter on another creature, put a +1/+1 counter on this creature. This ability triggers only once each turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CountersPlacedEvent",
+                    "counterType": "+1/+1",
+                    "filter": "creature",
+                    "placedBy": "You"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you put a +1/+1 counter on another creature, put a +1/+1 counter on this creature. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "artist": "Rafater",
+        "flavorText": "\"Well struck, Lord Gator! Let our atomic steeds carry us to victory!\"\n—Lord Tyger",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3003766-9383-44e0-8b51-35ccbed137ed.jpg?1783902917"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Kree Commandos
 {
     "name": "Kree Commandos",
