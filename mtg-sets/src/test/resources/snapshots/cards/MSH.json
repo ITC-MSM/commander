@@ -5087,6 +5087,72 @@
     ]
 }
 
+// Moonstone, Harsh Mistress
+{
+    "name": "Moonstone, Harsh Mistress",
+    "manaCost": "{3}{B}",
+    "typeLine": "Legendary Creature — Human Doctor Villain",
+    "oracleText": "Flying\nWhenever you discard a card, you may exile that card from your graveyard. If you do, until the end of your next turn, you may play that card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DiscardEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": "TriggeringEntity",
+                                "storeAs": "moonstoneDiscarded"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "moonstoneDiscarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            },
+                            {
+                                "type": "GrantMayPlayFromExile",
+                                "from": "moonstoneDiscarded",
+                                "expiry": {
+                                    "type": "UntilControllerStep",
+                                    "step": "CLEANUP",
+                                    "includeCurrentTurn": false
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Exile that card from your graveyard? You may play it until the end of your next turn."
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "rarity": "UNCOMMON",
+        "artist": "Grace Zhu",
+        "flavorText": "\"Let me show you the dark side of the moon.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/a/1a1b2bd0-e17d-4b34-a8ee-7c913a6bc945.jpg?1783902940"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Ms. Marvel, Kamala Khan
 {
     "name": "Ms. Marvel, Kamala Khan",
