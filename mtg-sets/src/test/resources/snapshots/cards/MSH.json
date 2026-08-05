@@ -431,6 +431,83 @@
     ]
 }
 
+// Alien Invasion
+{
+    "name": "Alien Invasion",
+    "manaCost": "{1}{R}{R}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of combat on your turn, create a 1/1 red Alien creature token with haste and \"This token attacks each combat if able.\" Put a +1/+1 counter on it for each invasion counter on this enchantment, then put an invasion counter on this enchantment.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [
+                                "RED"
+                            ],
+                            "creatureTypes": [
+                                "Alien"
+                            ],
+                            "keywords": [
+                                "HASTE"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/e/c/eca87cbb-5958-4775-93ce-b1d4c7ef3a99.jpg?1783902802",
+                            "staticAbilities": [
+                                "MustAttack"
+                            ]
+                        },
+                        {
+                            "type": "AddCountersToCollection",
+                            "collectionName": "createdTokens",
+                            "counterType": "+1/+1",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": {
+                                    "type": "CounterCount",
+                                    "counterType": {
+                                        "type": "Named",
+                                        "name": "invasion"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "invasion",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, create a 1/1 red Alien creature token with haste and \"This token attacks each combat if able.\" Put a +1/+1 counter on it for each invasion counter on this enchantment, then put an invasion counter on this enchantment."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "200",
+        "rarity": "RARE",
+        "artist": "Björn Barends",
+        "flavorText": "\"New York? Again? Too afraid of Asgard, I see.\"\n—Thor",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f46a7158-5807-4750-a1f3-853aabb56b99.jpg?1783902907"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Ant-Man's Army
 {
     "name": "Ant-Man's Army",
