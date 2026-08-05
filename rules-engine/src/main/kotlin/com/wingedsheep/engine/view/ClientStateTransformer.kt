@@ -2962,7 +2962,7 @@ class ClientStateTransformer(
 
         for (ability in cardDef.triggeredAbilities) {
             val condition = ability.triggerCondition ?: continue
-            val badge = evaluateConditionBadge(state, condition, controllerId)
+            val badge = evaluateConditionBadge(state, condition, controllerId, entityId)
             if (badge != null) badges.add(badge)
         }
 
@@ -2975,12 +2975,18 @@ class ClientStateTransformer(
     private fun evaluateConditionBadge(
         state: GameState,
         condition: Condition,
-        controllerId: EntityId
+        controllerId: EntityId,
+        sourceId: EntityId,
     ): ClientCardEffect? {
         return when (condition) {
             is Compare -> {
+                // The badge must evaluate against the permanent that owns the ability: conditions
+                // routinely read `EntityReference.Source` (counters on this permanent, its power,
+                // whether it's attacking). With a null sourceId those resolve to 0, so the badge
+                // reads a permanently-stuck "0/N" while the real condition works fine — e.g. MSH's
+                // Plan enchantments, whose "the number of plan counters" badge never moved.
                 val context = com.wingedsheep.engine.handlers.EffectContext(
-                    sourceId = null,
+                    sourceId = sourceId,
                     controllerId = controllerId,
                 )
                 val evaluator = com.wingedsheep.engine.handlers.DynamicAmountEvaluator()

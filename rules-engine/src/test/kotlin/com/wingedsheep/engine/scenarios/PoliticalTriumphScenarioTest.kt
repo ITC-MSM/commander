@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.msh.cards.PoliticalTriumph
@@ -76,6 +77,26 @@ class PoliticalTriumphScenarioTest : FunSpec({
         d.settle()
 
         d.planCounters(triumphCard) shouldBe 1
+    }
+
+    // The client renders an intervening-if condition as a "current/required" badge. It used to be
+    // evaluated with sourceId = null, so any condition reading EntityReference.Source — counters on
+    // this permanent, its power, whether it's attacking — resolved to 0 and the badge sat at "0/4"
+    // forever while the ability itself worked. Pin the badge against the real counter count.
+    test("the trigger-condition badge tracks the real plan-counter count") {
+        val d = driver()
+        val triumph = d.putPermanentOnBattlefield(d.player1, "Political Triumph")
+
+        val creature = d.putCardInHand(d.player1, "Centaur Courser")
+        d.giveMana(d.player1, Color.GREEN, 3)
+        d.castSpell(d.player1, creature).isSuccess shouldBe true
+        d.settle()
+        d.planCounters(triumph) shouldBe 1
+
+        val view = ClientStateTransformer(d.cardRegistry).transform(d.state, d.player1)
+        val badge = view.cards.getValue(triumph)
+            .activeEffects.first { effect -> effect.effectId == "condition_compare" }
+        badge.name shouldBe "1/4"
     }
 
     test("a second creature adds a second plan counter") {
