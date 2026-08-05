@@ -6234,6 +6234,60 @@
     ]
 }
 
+// Photon Blast Barrage
+{
+    "name": "Photon Blast Barrage",
+    "manaCost": "{X}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "When you cast this spell, copy it X times. You may choose new targets for the copies.\nPhoton Blast Barrage deals 1 damage to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 1
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ],
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CastThisSpellEvent",
+                "effect": {
+                    "type": "CopyTargetSpell",
+                    "target": "TriggeringEntity",
+                    "copies": {
+                        "type": "ContextProperty",
+                        "key": "X_VALUE_OF_TRIGGERING_SPELL"
+                    }
+                },
+                "descriptionOverride": "When you cast this spell, copy it X times. You may choose new targets for the copies."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "rarity": "UNCOMMON",
+        "artist": "Immanuela Crovius",
+        "flavorText": "\"Try to outrun light, suckers.\"\n—Photon, Monica Rambeau",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f85a77d2-e11e-44bc-a1e7-d783cd49d714.jpg?1783902926"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Political Triumph
 {
     "name": "Political Triumph",
