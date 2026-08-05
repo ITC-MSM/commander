@@ -2185,6 +2185,117 @@
     ]
 }
 
+// Doctor Doom
+{
+    "name": "Doctor Doom",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Legendary Creature — Human Scientist Villain",
+    "oracleText": "When Doctor Doom enters, create two 3/3 colorless Robot Villain artifact creature tokens named Doombot.\nAs long as you control an artifact creature or a Plan, Doctor Doom has indestructible.\nAt the beginning of your end step, you draw a card and lose 1 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Doombot",
+                    "count": 2
+                },
+                "descriptionOverride": "When Doctor Doom enters, create two 3/3 colorless Robot Villain artifact creature tokens named Doombot."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": "Controller"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your end step, you draw a card and lose 1 life."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "INDESTRUCTIBLE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsArtifact",
+                                            "IsCreature"
+                                        ]
+                                    },
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsPermanent",
+                                            {
+                                                "type": "HasSubtype",
+                                                "subtype": "Plan"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "rarity": "MYTHIC",
+        "artist": "David Palumbo",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b1f213a-e1d4-4a0f-954b-c83915698d98.jpg?1783902944"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Falcon's Wing Harness
 {
     "name": "Falcon's Wing Harness",
