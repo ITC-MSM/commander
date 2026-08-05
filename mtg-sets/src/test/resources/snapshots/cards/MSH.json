@@ -5715,6 +5715,144 @@
     ]
 }
 
+// Iron Man Armor
+{
+    "name": "Iron Man Armor",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "When this Equipment enters, attach it to target creature you control.\nEquipped creature gets +2/+1 and has flying.\n{2}: If this Equipment isn't a creature, it becomes a 0/0 Construct Hero artifact creature with flying and \"This creature gets +1/+1 for each artifact you control\" until end of turn.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "descriptionOverride": "When this Equipment enters, attach it to target creature you control."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": "noncreature"
+                        }
+                    },
+                    "then": {
+                        "type": "BecomeCreature",
+                        "power": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "toughness": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "keywords": [
+                            "FLYING"
+                        ],
+                        "creatureTypes": [
+                            "Construct",
+                            "Hero"
+                        ],
+                        "addTypes": [
+                            "ARTIFACT"
+                        ],
+                        "dynamicPower": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "artifact"
+                        },
+                        "dynamicToughness": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "artifact"
+                        }
+                    }
+                },
+                "descriptionOverride": "{2}: If this Equipment isn't a creature, it becomes a 0/0 Construct Hero artifact creature with flying and \"This creature gets +1/+1 for each artifact you control\" until end of turn."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "248",
+        "rarity": "MYTHIC",
+        "artist": "Javier Charro",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/361c2f3b-f04e-446b-a683-9195e238daf0.jpg?1783902891"
+    },
+    "colorIdentityOverride": []
+}
+
 // Iron Man, Master of Machines
 {
     "name": "Iron Man, Master of Machines",
