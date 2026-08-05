@@ -3328,6 +3328,114 @@
     ]
 }
 
+// Monica Rambeau
+{
+    "name": "Monica Rambeau",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Flying, prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\n{2}{R}{W}{W}: Transform Monica Rambeau. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "PROWESS"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{R}{W}{W}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Monica Rambeau. Activate only as a sorcery."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Photon, Living Light",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Elemental Hero",
+        "oracleText": "Flying, hexproof, prowess\nWhenever you cast a noncreature spell, put a +1/+1 counter on each other creature you control.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 4
+        },
+        "keywords": [
+            "FLYING",
+            "HEXPROOF",
+            "PROWESS"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "SpellCastEvent",
+                        "spellFilter": {
+                            "cardPredicates": [
+                                "IsNoncreature"
+                            ]
+                        }
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you",
+                                "excludeSelf": true
+                            }
+                        },
+                        "body": {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    },
+                    "descriptionOverride": "Whenever you cast a noncreature spell, put a +1/+1 counter on each other creature you control."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "23",
+            "rarity": "MYTHIC",
+            "artist": "Marta Nael",
+            "flavorText": ". . . her power beyond anyone's wildest dreams.",
+            "imageUri": "https://cards.scryfall.io/normal/back/3/f/3f995518-b12a-4623-9ab3-b79a5cef3cba.jpg?1783902975"
+        },
+        "colorIdentityOverride": [
+            "RED",
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "RED",
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "rarity": "MYTHIC",
+        "artist": "Xabi Gaztelua",
+        "flavorText": "Above the city, she glows . . .",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3f995518-b12a-4623-9ab3-b79a5cef3cba.jpg?1783902975"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Okoye, Dora Milaje Leader
 {
     "name": "Okoye, Dora Milaje Leader",
