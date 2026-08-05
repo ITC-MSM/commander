@@ -4142,6 +4142,42 @@
     ]
 }
 
+// Multiversal Incursion
+{
+    "name": "Multiversal Incursion",
+    "manaCost": "{5}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "For each nontoken creature you control, create a token that's a copy of that creature, except it isn't legendary.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature nontoken ctrl:you"
+                }
+            },
+            "body": {
+                "type": "CreateTokenCopyOfTarget",
+                "target": "Self",
+                "removedSupertypes": [
+                    "LEGENDARY"
+                ]
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "rarity": "MYTHIC",
+        "artist": "Lordigan",
+        "flavorText": "\"Dibs on not dying this time.\"\n—Spider-Man, Peter Parker",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/a/8a505f6f-933c-4644-838f-897f5e4133b0.jpg?1783902956"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Night Nurse, Healer of Heroes
 {
     "name": "Night Nurse, Healer of Heroes",
