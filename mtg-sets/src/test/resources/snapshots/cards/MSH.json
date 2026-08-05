@@ -5617,6 +5617,72 @@
     ]
 }
 
+// Iron Man, Master of Machines
+{
+    "name": "Iron Man, Master of Machines",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Legendary Artifact Creature — Human Hero",
+    "oracleText": "Flying, vigilance\nIron Man gets +1/+0 for each other artifact you control.\nWhenever Iron Man attacks, if an artifact entered the battlefield under your control this turn, draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "triggerCondition": {
+                    "type": "PermanentTypeEnteredBattlefieldThisTurn",
+                    "cardType": "ARTIFACT"
+                },
+                "descriptionOverride": "Whenever Iron Man attacks, if an artifact entered the battlefield under your control this turn, draw a card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "artifact",
+                    "excludeSelf": true
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "216",
+        "rarity": "UNCOMMON",
+        "artist": "John Tyler Christopher",
+        "flavorText": "\"The future is what we make it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f84ab0a-bf6e-4f28-9da8-998512a224ed.jpg?1783902901"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Jennifer Walters
 {
     "name": "Jennifer Walters",
