@@ -1061,6 +1061,56 @@
     ]
 }
 
+// Borough Backup
+{
+    "name": "Borough Backup",
+    "manaCost": "{4}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create two 3/2 white Hero creature tokens with vigilance.\nBasic landcycling {2} ({2}, Discard this card: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    "IsBasicLand"
+                ]
+            },
+            "displayPrefix": "Basic landcycling"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "power": 3,
+            "toughness": 2,
+            "colors": [
+                "WHITE"
+            ],
+            "creatureTypes": [
+                "Hero"
+            ],
+            "keywords": [
+                "VIGILANCE"
+            ],
+            "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4a64831-eec5-4fc9-8904-19523af3ca42.jpg?1783902804"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "artist": "Gal Or",
+        "flavorText": "\"Ninjas? Again? Lose our number, man.\"\n—Luke Cage, Power Man",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/b/bb753ac8-67e1-44b0-b404-37f04c2b7438.jpg?1783902978"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Captain America's Shield
 {
     "name": "Captain America's Shield",
