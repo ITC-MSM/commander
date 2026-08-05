@@ -9284,6 +9284,59 @@
     ]
 }
 
+// Visions of Villainy
+{
+    "name": "Visions of Villainy",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {1} less to cast if you control a Villain.\nYou draw two cards and lose 2 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Controller"
+                }
+            ]
+        },
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "FixedIfControlFilter",
+                        "amount": 1,
+                        "filter": "permanent Villain"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "artist": "Pavel Kolomeyets",
+        "flavorText": "As Thanos gazed into the cosmic vortex of the Infinity Well, he beheld the means to serve Death all the better.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8f1e4f9-7415-437f-b694-ecbdd76db114.jpg?1783902935"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Wakandan Drone Flock
 {
     "name": "Wakandan Drone Flock",
