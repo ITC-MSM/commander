@@ -4077,6 +4077,59 @@
     ]
 }
 
+// Quake, Agent of S.H.I.E.L.D.
+{
+    "name": "Quake, Agent of S.H.I.E.L.D.",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Inhuman Spy Hero",
+    "oracleText": "Seismic Takedown — Whenever you cast a noncreature spell, tap target creature or land.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or land"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature|land"
+                    },
+                    "id": "target creature or land"
+                },
+                "descriptionOverride": "Seismic Takedown — Whenever you cast a noncreature spell, tap target creature or land."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "rarity": "UNCOMMON",
+        "artist": "Solan",
+        "flavorText": "\"Let's see you drive away without a road.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/92dad216-ef8e-4af2-a3c6-1d215721c478.jpg?1783902967"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Rapid Rescue
 {
     "name": "Rapid Rescue",
