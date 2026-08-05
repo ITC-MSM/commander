@@ -6322,6 +6322,49 @@
     ]
 }
 
+// Mole Man, Moloid Master
+{
+    "name": "Mole Man, Moloid Master",
+    "manaCost": "{2}{G}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "You may play lands from your graveyard.\nLandfall — Whenever a land you control enters, create a 1/1 green Minion creature token named Moloid with \"Whenever this token attacks, you may mill a card.\"",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Moloid"
+                },
+                "descriptionOverride": "Landfall — Whenever a land you control enters, create a 1/1 green Minion creature token named Moloid with \"Whenever this token attacks, you may mill a card.\""
+            }
+        ],
+        "staticAbilities": [
+            "MayPlayLandsFromGraveyard"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "177",
+        "rarity": "RARE",
+        "artist": "Michele Giorgi",
+        "flavorText": "\"Forward, my mindless minions! To the surface, to take what's ours!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b406cc5-75c9-430a-83a2-de0f2a8aeae6.jpg?1783902919"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Monica Rambeau
 {
     "name": "Monica Rambeau",
