@@ -1962,6 +1962,18 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   round-trip via `PendingTrigger.carriedPipeline`/`TriggeredAbilityOnStackComponent.carriedPipeline`.
   This differs from the cast-time path (`TargetValidator.effectiveMaxCount`), where the pipeline isn't
   live yet — pipeline-linked caps only work on reflexive/resolution-time targets.
+  With `optional = true`, `ReflexiveTriggerEffectExecutor.isActionFeasible` decides whether the "may
+  [action]?" question is worth asking at all: an action that can't be performed is skipped silently,
+  because answering yes would no-op the action while still firing the reflexive payoff. Alongside
+  `SelectTargetEffect` / `SacrificeEffect` / `ChooseActionEffect` / `PayFixedCountersEffect`, it scores
+  the **Gather → Select → Move pipeline** every discard pattern compiles to — a `SelectFromCollection`
+  whose `SelectionMode` carries a minimum (`ChooseExactly`, `Random`) against the size of the collection
+  the preceding `GatherCards` will produce. So `ReflexiveTriggerEffect(action = Effects.Discard(1),
+  optional = true, …)` on an empty hand never prompts and never pays out (Inti, Seneschal of the Sun).
+  Minimum-less modes (`ChooseUpTo`, `All`, `ChooseAnyNumber`) stay feasible — discarding zero cards is a
+  legal way to perform "discard your hand" (Vaultguard Trooper). Gather sizes are read off the
+  pre-action state, so the bookkeeping stops at the first composite step that is neither a gather nor a
+  select; later selections then fail open rather than being judged against a stale count.
 - **Branching on gathered properties** — "reveal/look, if it's a [type] do X, otherwise Y" needs no
   bespoke effect type; it is the partition + collection-gate composition:
   1. **Partition:** `FilterCollection(from, CollectionFilter.MatchesFilter(filter), storeMatching,
