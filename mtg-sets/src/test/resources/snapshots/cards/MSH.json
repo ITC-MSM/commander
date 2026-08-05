@@ -3868,6 +3868,55 @@
     ]
 }
 
+// Mister Fantastic, Reed Richards
+{
+    "name": "Mister Fantastic, Reed Richards",
+    "manaCost": "{3}{U}",
+    "typeLine": "Legendary Creature — Human Scientist Hero",
+    "oracleText": "Reach\nWhenever one or more tokens you control enter, you may draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsEnteredEvent",
+                    "filter": "token"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever one or more tokens you control enter, you may draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "UNCOMMON",
+        "artist": "Rimas Valeikis",
+        "flavorText": "He's always in control of the situation, even when stretched thin.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/17ef068b-61fc-443d-97b0-1e41f2622425.jpg?1783902954"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Mockingbird, Ace Agent
 {
     "name": "Mockingbird, Ace Agent",
