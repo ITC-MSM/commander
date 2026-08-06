@@ -654,16 +654,27 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature attacking ctrl:you",
+                    "filter": "creature ctrl:you",
                     "from": "Battlefield",
                     "to": "Graveyard"
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": "TriggeringEntity",
-                    "destination": "Hand",
-                    "fromZone": "Graveyard"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "TriggeringEntity",
+                            "filter": "attacking"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": "TriggeringEntity",
+                        "destination": "Hand",
+                        "fromZone": "Graveyard"
+                    }
                 },
                 "descriptionOverride": "Whenever an attacking creature you control dies, return that card to its owner's hand."
             }
@@ -1046,37 +1057,23 @@
                     "type": "Any",
                     "conditions": [
                         {
-                            "type": "Exists",
-                            "player": "You",
-                            "zone": "Battlefield",
-                            "filter": {
-                                "cardPredicates": [
-                                    "IsPermanent",
-                                    {
-                                        "type": "HasSubtype",
-                                        "subtype": "Hero"
-                                    }
-                                ],
-                                "statePredicates": [
-                                    "AttackedThisTurn"
-                                ]
-                            }
+                            "type": "PlayerAttackedWithCreaturesThisTurn",
+                            "filter": "creature Hero",
+                            "atLeast": 1
                         },
                         {
-                            "type": "Exists",
-                            "player": "You",
-                            "zone": "Battlefield",
-                            "filter": {
-                                "cardPredicates": [
-                                    "IsPermanent",
-                                    {
-                                        "type": "HasSubtype",
-                                        "subtype": "Hero"
-                                    }
-                                ],
-                                "statePredicates": [
-                                    "EnteredThisTurn"
+                            "type": "Compare",
+                            "left": {
+                                "type": "SubtypeEnteredUnderControlThisTurn",
+                                "player": "You",
+                                "subtypes": [
+                                    "Hero"
                                 ]
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
                             }
                         }
                     ]
@@ -1646,7 +1643,11 @@
                         "scope": "Self"
                     }
                 },
-                "condition": "SourceReceivedCounterThisTurn"
+                "condition": {
+                    "type": "SourceReceivedCounterThisTurn",
+                    "counterType": "+1/+1",
+                    "placedByYou": true
+                }
             }
         ]
     },
@@ -2070,7 +2071,12 @@
                                     "condition": {
                                         "type": "EntityMatches",
                                         "entity": "Self",
-                                        "filter": "attacking"
+                                        "filter": {
+                                            "statePredicates": [
+                                                "IsOnBattlefield",
+                                                "IsAttacking"
+                                            ]
+                                        }
                                     }
                                 },
                                 "then": {
@@ -3024,27 +3030,17 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature attacking ctrl:you"
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "IsAttackingAlone"
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            }
                         },
                         "id": "target creature you control that's attacking alone"
-                    }
-                ],
-                "restrictions": [
-                    {
-                        "type": "ActivationOnlyIfCondition",
-                        "condition": {
-                            "type": "Compare",
-                            "left": {
-                                "type": "AggregateBattlefield",
-                                "player": "Each",
-                                "filter": "creature attacking"
-                            },
-                            "operator": "EQ",
-                            "right": {
-                                "type": "Fixed",
-                                "amount": 1
-                            }
-                        }
                     }
                 ],
                 "descriptionOverride": "{T}: Target creature you control that's attacking alone gets +1/+0 until end of turn. You gain 1 life."
@@ -3593,7 +3589,8 @@
                 "appliesTo": {
                     "type": "CounterPlacementEvent",
                     "recipient": "PermanentYouControl"
-                }
+                },
+                "placedByYou": true
             }
         ]
     },
@@ -5182,13 +5179,8 @@
                         {
                             "type": "MoveToZone",
                             "target": "Self",
-                            "destination": "Battlefield"
-                        },
-                        {
-                            "type": "AddCounters",
-                            "counterType": "+1/+1",
-                            "count": 1,
-                            "target": "Self"
+                            "destination": "Battlefield",
+                            "addCounterType": "PLUS_ONE_PLUS_ONE"
                         },
                         {
                             "type": "RemoveAllAbilities",
@@ -5691,13 +5683,9 @@
                     "type": "AddMana",
                     "color": "BLUE",
                     "restriction": {
-                        "type": "AnyOf",
-                        "restrictions": [
-                            {
-                                "type": "CardTypeSpellsOrAbilitiesOnly",
-                                "cardType": "ARTIFACT"
-                            },
-                            "AbilityActivationOnly"
+                        "type": "CannotCastSpellsOtherThan",
+                        "cardTypes": [
+                            "ARTIFACT"
                         ]
                     }
                 },
@@ -6407,11 +6395,7 @@
             "LookAtTopOfLibrary",
             {
                 "type": "PlayLandsAndCastFilteredFromTopOfLibrary",
-                "spellFilter": {
-                    "cardPredicates": [
-                        "IsLand"
-                    ]
-                }
+                "spellFilter": null
             }
         ]
     },
@@ -11233,7 +11217,11 @@
         "imageUri": "https://cards.scryfall.io/normal/front/1/1/11fc8221-756a-4919-9272-38793e9c1ad9.jpg?1783902936"
     },
     "colorIdentityOverride": [
-        "BLACK"
+        "WHITE",
+        "BLUE",
+        "BLACK",
+        "RED",
+        "GREEN"
     ]
 }
 
@@ -12366,10 +12354,13 @@
                 },
                 "additionalTargetRequirements": [
                     {
-                        "type": "TargetObject",
-                        "optional": true,
-                        "filter": {
-                            "baseFilter": "creature"
+                        "type": "TargetOther",
+                        "baseRequirement": {
+                            "type": "TargetObject",
+                            "optional": true,
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
                         },
                         "id": "up to one other target creature"
                     }

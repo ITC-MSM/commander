@@ -997,6 +997,10 @@ class PredicateEvaluator {
         val container = state.getEntity(entityId) ?: return false
 
         return when (predicate) {
+            // Zone. Deliberately a *live* read with no last-known fallback — this predicate exists
+            // to cancel the fallbacks the combat predicates below carry.
+            StatePredicate.IsOnBattlefield -> entityId in state.getBattlefield()
+
             // Tap state
             StatePredicate.IsTapped -> container.has<TappedComponent>()
             StatePredicate.IsUntapped -> !container.has<TappedComponent>()
@@ -1012,6 +1016,14 @@ class PredicateEvaluator {
             StatePredicate.IsAttacking ->
                 container.get<AttackingComponent>() != null ||
                     container.get<LastKnownPermanentComponent>()?.snapshot?.wasAttacking == true
+            // CR 506.5. A live read with no last-known fallback: "attacking alone" is a fact about
+            // the current attacking set, and the snapshot records only that *this* creature was
+            // attacking, never how many others were.
+            StatePredicate.IsAttackingAlone ->
+                container.has<AttackingComponent>() &&
+                    state.getBattlefield().none {
+                        it != entityId && state.getEntity(it)?.has<AttackingComponent>() == true
+                    }
             // "Attacking one of your opponents": the defender has to be an opponent *player* of
             // the asking ability's controller — `getOpponents` only ever yields players, so an
             // attacker pointed at a planeswalker or battle never matches. No last-known fallback:

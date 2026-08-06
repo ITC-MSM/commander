@@ -111,7 +111,10 @@ class CommandZoneAbilityEnumerator : ActionEnumerator {
                 val maxAffordableX = if (hasXCost) {
                     context.costUtils.calculateMaxAffordableX(
                         state, playerId, ability.cost, abilityManaCost,
-                        precomputedSources = context.availableManaSources
+                        precomputedSources = context.availableManaSources,
+                        // Same source scoping the battlefield enumerator passes: cost filters
+                        // routinely resolve against the ability's own permanent.
+                        sourceId = entityId
                     )
                 } else null
 

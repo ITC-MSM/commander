@@ -1,5 +1,6 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
+import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
@@ -23,11 +24,11 @@ import com.wingedsheep.sdk.scripting.GrantKeyword
  *    evaluates the condition during state projection, so flying appears and disappears in
  *    Layer 6 as the turn's counter history dictates, and it survives the counters later being
  *    removed (the card asks what you *put on* him this turn, not what is on him now).
- *  - **Fidelity caveat:** `SourceReceivedCounterThisTurn` matches a counter of *any* kind,
- *    while the card says "+1/+1 counters" specifically. Every counter this set can put on Beast
- *    is a +1/+1 counter, so the two readings coincide in practice — but a stun/shield/oil
- *    counter from outside the set would switch flying on where the printed card would not.
- *    Tightening it needs a counter-type parameter on that condition, i.e. new SDK vocabulary.
+ *  - Both narrowing parameters are set, because the printed text uses both: `counterType` for
+ *    "**+1/+1** counters" (a stun or shield counter must not switch flying on) and `placedByYou`
+ *    for "**you've** put" (an opponent proliferating Beast must not either). Both facts are
+ *    recorded on the permanent when the counter is placed rather than derived later, which is
+ *    what lets the grant outlive the counters themselves.
  */
 val BeastEruditeAerialist = card("Beast, Erudite Aerialist") {
     manaCost = "{3}{G/U}"
@@ -41,7 +42,10 @@ val BeastEruditeAerialist = card("Beast, Erudite Aerialist") {
     staticAbility {
         ability = ConditionalStaticAbility(
             ability = GrantKeyword(Keyword.FLYING, Filters.Self),
-            condition = Conditions.SourceReceivedCounterThisTurn,
+            condition = Conditions.SourceReceivedCounterThisTurn(
+                counterType = Counters.PLUS_ONE_PLUS_ONE,
+                placedByYou = true,
+            ),
         )
     }
 

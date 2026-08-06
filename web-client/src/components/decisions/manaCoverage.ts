@@ -31,7 +31,7 @@ export interface PipCoverage {
 const COLOR_OR_COLORLESS = new Set(['W', 'U', 'B', 'R', 'G', 'C'])
 
 /**
- * The colours a pip will accept. A hybrid pays with *either* half (CR 107.4d), so `{W/B}` accepts
+ * The colours a pip will accept. A hybrid pays with *either* half (CR 107.4e), so `{W/B}` accepts
  * white or black; a monocolour hybrid like `{2/W}` accepts white here and its generic half in the
  * generic pass. Phyrexian `{W/P}` keeps its colour half (the life option isn't paid from sources).
  */

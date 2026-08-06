@@ -58,7 +58,12 @@ val DocSamsonSuperPsychiatrist = card("Doc Samson, Super Psychiatrist") {
             appliesTo = EventPattern.CounterPlacementEvent(
                 counterType = CounterTypeFilter.Any,
                 recipient = RecipientFilter.PermanentYouControl
-            )
+            ),
+            // "If **you** would put ..." — the placer matters, not just the recipient. Without
+            // this the card reads like Winding Constrictor ("if counters would be put"), and an
+            // opponent proliferating or otherwise adding counters to your permanent would feed
+            // Doc Samson too.
+            placedByYou = true
         )
     )
 

@@ -80,12 +80,20 @@ object Conditions {
     val YouChoseOtherCreatureAsRingBearer: ConditionInterface = YouChoseOtherCreatureAsRingBearerCondition
 
     /**
-     * If you put a counter on this creature this turn (Secrets of Strixhaven — Fractal
-     * Tender). True while the source permanent carries the per-turn "received counters"
-     * marker, which the counter-placement path stamps and cleanup clears each turn.
+     * If a counter was put on this creature this turn (Secrets of Strixhaven — Fractal Tender).
+     * True while the source permanent carries the per-turn "received counters" marker, which the
+     * counter-placement path stamps and cleanup clears each turn.
+     *
+     * Narrow it when the printed text does. [counterType] scopes it to one kind, and [placedByYou]
+     * to counters *you* put on — Beast, Erudite Aerialist ("as long as you've put one or more +1/+1
+     * counters on Beast this turn") needs both:
+     * `SourceReceivedCounterThisTurn(Counters.PLUS_ONE_PLUS_ONE, placedByYou = true)`.
      */
-    val SourceReceivedCounterThisTurn: ConditionInterface =
-        com.wingedsheep.sdk.scripting.conditions.SourceReceivedCounterThisTurn
+    fun SourceReceivedCounterThisTurn(
+        counterType: String? = null,
+        placedByYou: Boolean = false
+    ): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.SourceReceivedCounterThisTurn(counterType, placedByYou)
 
     /**
      * If a permanent entered the battlefield face down under your control this turn (Duskmourn —

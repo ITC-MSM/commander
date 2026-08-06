@@ -14,15 +14,15 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 /**
- * A creature granted "can't be blocked except by creatures with haste" (Speed, Young Avenger's
- * reflexive payoff; Resilient Roadrunner's activated ability) routes through the projected evasion
- * channel, so the block rules enforce it — but it carried no client badge, leaving the restriction
- * invisible to both players. Only the *colour* variant had one.
+ * A creature granted "can't be blocked except by creatures with <filter>" routes through the
+ * projected evasion channel, so the block rules enforce it — but it carried no client badge,
+ * leaving the restriction invisible to both players. Only the *colour* variant had one.
  *
- * Driven through the bare effect rather than the card so it also covers Resilient Roadrunner and any
- * future filter-based grant.
+ * Named for the mechanic, not a card, because it is driven through the bare effect: every
+ * filter-based grant shares this path (Speed, Young Avenger's reflexive payoff; Resilient
+ * Roadrunner's activated ability), and no single card's file would own it.
  */
-class SpeedYoungAvengerScenarioTest : FunSpec({
+class CantBeBlockedExceptByFilterScenarioTest : FunSpec({
 
     val grantHasteEvasion = card("Grant Haste Evasion Test") {
         manaCost = "{R}"

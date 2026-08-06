@@ -47,8 +47,43 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
+    // Zone (Entity)
+    // =============================================================================
+
+    /**
+     * The object is on the battlefield *right now*.
+     *
+     * Exists to cancel the last-known-information fallbacks that several Entity predicates carry.
+     * [IsAttacking], for one, deliberately falls back to `EntitySnapshot.wasAttacking` once its
+     * object has left the battlefield, because that is what a dies trigger asking "was it
+     * attacking?" needs (Garna, Bloodfist of Keld). An ability asking whether its *own source* is
+     * attacking **now** wants the opposite — an already-dead source must read as not attacking —
+     * and gets it by composing `onBattlefield().attacking()`.
+     */
+    @SerialName("IsOnBattlefield")
+    @Serializable
+    data object IsOnBattlefield : Entity {
+        override val description: String = "on the battlefield"
+    }
+
+    // =============================================================================
     // Combat (Entity)
     // =============================================================================
+
+    /**
+     * Attacking, and no other creature is attacking (CR 506.5 — "a creature is attacking alone if
+     * it's attacking but no other creatures are").
+     *
+     * Belongs on the *target filter* rather than in an activation restriction: "target creature you
+     * control that's attacking alone" is a targeting restriction, so CR 608.2b has to re-check it on
+     * resolution and counter the ability when a second attacker showed up in response. An
+     * `ActivationRestriction` is only consulted when the ability is activated.
+     */
+    @SerialName("IsAttackingAlone")
+    @Serializable
+    data object IsAttackingAlone : Entity {
+        override val description: String = "attacking alone"
+    }
 
     @SerialName("IsAttacking")
     @Serializable

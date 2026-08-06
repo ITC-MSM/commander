@@ -1,6 +1,6 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
-import com.wingedsheep.sdk.core.Counters
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
@@ -45,10 +45,15 @@ val HellcatUndyingVigilante = card("Hellcat, Undying Vigilante") {
     triggeredAbility {
         trigger = Triggers.Dies
         effect = Effects.Composite(
-            // Return her to the battlefield under her owner's control ...
-            Effects.Move(EffectTarget.Self, Zone.BATTLEFIELD),
-            // ... with a +1/+1 counter on her.
-            Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self),
+            // Return her to the battlefield under her owner's control *with* a +1/+1 counter on
+            // her — `addCounterType`, not a following AddCounters, because "with a counter on it"
+            // is an as-enters replacement (CR 614.1c): counter doublers and "enters with an
+            // additional counter" effects have to see her enter carrying it.
+            Effects.Move(
+                EffectTarget.Self,
+                Zone.BATTLEFIELD,
+                addCounterType = CounterType.PLUS_ONE_PLUS_ONE,
+            ),
             // She loses all abilities ...
             Effects.RemoveAllAbilities(EffectTarget.Self, Duration.Permanent),
             // ... and gains haste (granted after the strip, so it has the later timestamp).

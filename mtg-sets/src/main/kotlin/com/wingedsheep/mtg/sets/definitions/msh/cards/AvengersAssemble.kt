@@ -3,6 +3,7 @@ package com.wingedsheep.mtg.sets.definitions.msh.cards
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Conditions
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -10,6 +11,8 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
+import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Avengers Assemble! — Marvel Super Heroes #6 (mythic)
@@ -26,14 +29,18 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
  * - The draw is [Triggers.EachEndStep] (each player's end step, not just yours) with an
  *   intervening-if (CR 603.4): the condition is checked both when the trigger would fire and
  *   again on resolution, which is what "if …" before the effect means.
- * - **Known approximation.** Both halves of the intervening-if are battlefield existence checks
- *   (`attackedThisTurn` / `enteredThisTurn` state predicates over Heroes you control), not
- *   turn-history trackers. A Hero that attacked (or entered) and has since left the battlefield,
- *   changed controller, or stopped being a Hero therefore no longer satisfies the condition,
- *   whereas the printed card only cares that the event happened. The engine has no
- *   subtype-scoped "attacked this turn" / "entered this turn" player tracker to key off —
- *   `Conditions.YouAttackedThisTurn` is untyped and
- *   `Conditions.PermanentTypeEnteredBattlefieldThisTurn` keys on card type, not subtype.
+ * - Both halves are **turn-history** reads, not battlefield-existence checks. That distinction is
+ *   the whole card: "you attacked with a Hero this turn" stays true after the Hero trades in
+ *   combat, and trading in combat then drawing at end step is the card's ordinary line.
+ *   - The attack half is [Conditions.YouAttackedWithCreaturesThisTurn], which walks the player's
+ *     own `PlayerAttackersThisTurnComponent` id set. The filter deliberately omits `youControl()`:
+ *     the set is already per-player, so scoping is free, and a Hero sitting in the graveyard has
+ *     no controller to test — dropping it is what lets a dead attacker still count (its subtype
+ *     falls back to the printed type line). Keying off *your* attacker set also kills the
+ *     converse bug: gaining control of an opponent's Hero that attacked doesn't qualify.
+ *   - The entered half counts entries in `PermanentsEnteredUnderControlThisTurnComponent` via
+ *     [DynamicAmounts.subtypeEnteredUnderControlThisTurn], whose records capture subtypes at
+ *     entry time — so it survives the Hero leaving or later losing the type, exactly as printed.
  */
 val AvengersAssemble = card("Avengers Assemble!") {
     manaCost = "{4}{W}"
@@ -57,11 +64,14 @@ val AvengersAssemble = card("Avengers Assemble!") {
     triggeredAbility {
         trigger = Triggers.EachEndStep
         triggerCondition = Conditions.Any(
-            Conditions.YouControl(
-                GameObjectFilter.Permanent.withSubtype(Subtype.HERO).attackedThisTurn(),
+            Conditions.YouAttackedWithCreaturesThisTurn(
+                filter = GameObjectFilter.Creature.withSubtype(Subtype.HERO),
+                atLeast = 1,
             ),
-            Conditions.YouControl(
-                GameObjectFilter.Permanent.withSubtype(Subtype.HERO).enteredThisTurn(),
+            Conditions.CompareAmounts(
+                DynamicAmounts.subtypeEnteredUnderControlThisTurn(Subtype.HERO),
+                ComparisonOperator.GTE,
+                DynamicAmount.Fixed(1),
             ),
         )
         effect = Effects.DrawCards(1)

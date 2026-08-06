@@ -410,9 +410,15 @@ excluded.
   from among permanents matching `filter` you control. When `counterType` is set (e.g. `"+1/+1"`),
   only counters of that type are removed; when `null`, counters of any type may be removed in any
   combination (Tayam, Luminous Enigma).
-- `Costs.RemoveXCounters(counterType = "+1/+1")` — remove X +1/+1 counters from among creatures
-  you control, where X is the activated ability's chosen variable-cost value. Use
-  `Costs.RemoveXCounters()` (the default) to remove X counters of any type.
+- `Costs.RemoveXCounters(counterType = "+1/+1", filter = Permanent, self = false)` — remove X
+  counters, where X is the activated ability's chosen variable-cost value. Use
+  `Costs.RemoveXCounters()` (the default) to remove X counters of any type. By default the removal
+  is spread across permanents matching `filter` — the player is asked to distribute it, the
+  Retribution of the Ancients shape. Pass **`self = true`** for "remove any number of counters from
+  ~" (The Astonishing Ant-Man), where the counters come off the ability's own source: that takes
+  the direct payment path and caps X by the source's own counters. The filter-based form is not
+  merely imprecise for a self-scoped cost, it is *unpayable* — nothing is ever distributed, so
+  payment fails with a total of 0. Don't reach for `GameObjectFilter.Permanent.sourceItself()`.
 
 **Spell-level alternatives**
 
@@ -2251,7 +2257,7 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   Forager). For forage as a *cost*, use `Costs.Forage()` / `Costs.additional.Forage` (§3).
 - `loot(draw?, discard?)` — "draw N, discard M" loop.
 - `rummage(count?)` — discard then draw.
-- `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 702.166). Also exposed as `Effects.Connive(target)`.
+- `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`.
 - `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`.
 - `readTheRunes()` — "draw X cards; for each, discard a card unless you sacrifice a permanent." Composes `RepeatDynamicTimesEffect(XValue, ChooseActionEffect(...))` with feasibility guards. Exposed as `Effects.ReadTheRunes()`.
 - `eachOpponentMayPutFromHand(filter?)` — each opponent may dump a matching card.
@@ -3175,12 +3181,31 @@ work for abilities-on-stack (which carry no `CardComponent`).
 
 - `IsTapped` — currently tapped.
 - `IsUntapped` — currently untapped.
+- `IsOnBattlefield` (filter builder `onBattlefield()`) — the object is on the battlefield **right
+  now**, a strictly live read with no last-known fallback. Its job is to *cancel* the LKI fallbacks
+  the predicates below carry: `GameObjectFilter.Any.onBattlefield().attacking()` is "is attacking",
+  where a bare `.attacking()` is "is or was attacking". Reach for it whenever an ability asks about
+  its own source's combat state at resolution and a dead source must answer "no" — Bruce Banner //
+  The Incredible Hulk's Enrage ("if he's attacking, untap him and there is an additional combat
+  phase") fires on lethal damage, so without it a Hulk that just died still granted the phase.
 - `IsAttacking` — declared as attacker this combat. **Last-known-information aware** (CR 608.2h): once
   the permanent has left the battlefield the live attack is gone, so the predicate falls back to the
   battlefield-exit snapshot (`EntitySnapshot.wasAttacking`). That is what lets a dies trigger ask
   "was it attacking?" after the creature is already in the graveyard — Garna, Bloodfist of Keld:
   `Conditions.EntityMatches(EffectTarget.TriggeringEntity, GameObjectFilter.Any.attacking())`.
   Battlefield reads are unchanged; the fallback can only fire for an entity outside the battlefield.
+  **Not usable as a zone-change trigger filter.** `TriggerMatcher` carries event-side LKI only for
+  the counter/power/attachment predicates; `IsAttacking` falls through to the "don't gate" list and
+  returns `true` unconditionally, so `leavesBattlefield(filter = Creature.youControl().attacking())`
+  silently matches *every* dying creature you control. Put the plain filter on the trigger and the
+  attacking test in the effect, as Garna and Ares, God of War do.
+- `IsAttackingAlone` (filter builder `attackingAlone()`, also on `TargetFilter`) — attacking, with no
+  other creature attacking (CR 506.5). Live read, no last-known fallback (the exit snapshot records
+  only that *this* creature was attacking, never how many others were). Put it on the **target
+  filter**, not in an `ActivationRestriction`: "target creature you control that's attacking alone"
+  (Crowd of True Believers) is a targeting restriction, so CR 608.2b re-checks it on resolution and
+  counters the ability when a second attacker appears in response. An activation restriction is
+  consulted once, at activation, and would let that case resolve.
 - `IsAttackingAnOpponent` (filter builder `attackingAnOpponent()`) — attacking one of *your* opponents,
   where "you" is the controller of the ability applying the filter. Strictly narrower than `IsAttacking`:
   the attacker's defender must be an opponent **player**, so an attacker aimed at a planeswalker or battle
@@ -7653,6 +7678,16 @@ restriction matches the spell context.
 - `ManaRestriction.UnlockDoorOnly` — only the unlock-a-door special action (CR 709.5e).
   Satisfied by `SpellPaymentContext.isUnlockDoorAction`; the unlock-room handler/enumerator pass
   that context. Creeping Peeper (inside `AnyOf`).
+- `ManaRestriction.CannotCastSpellsOtherThan(cardTypes)` — the family's only **negative**
+  restriction: "This mana can't be spent to cast a non[type] spell" (Hydraulic Helper —
+  `CannotCastSpellsOtherThan(setOf(CardType.ARTIFACT))`). Every other variant is a whitelist
+  ("spend this mana *only* to …") and therefore blocks anything not named; this one blocks exactly
+  one thing — casting a spell lacking one of `cardTypes` — and leaves every other spend legal:
+  activating an ability, a ward cost, an "unless that player pays {2}" tax, a cost demanded during
+  resolution, turning a permanent face up. Reach for it whenever the printed text says "can't be
+  spent to" rather than "spend only to"; the positive composition
+  `AnyOf(CardTypeSpellsOrAbilitiesOnly(X), AbilityActivationOnly)` is strictly narrower and
+  silently rejects the non-cast spends. Backed by `SpellPaymentContext.isSpellCast`.
 - `ManaRestriction.AnyOf(restrictions)` — disjunction; the mana is spendable in any context that
   satisfies *any* listed restriction. Compose atomic restrictions for multi-option mana — e.g.
   Creeping Peeper's "cast an enchantment spell, unlock a door, or turn a permanent face up" is
@@ -8317,11 +8352,17 @@ The priority groups are (CR 616.1a–f):
   for each card that actually reached exile. `maxCards = DynamicAmount.XValue` models X-bounded entry
   choices; a zero maximum or no matching cards skips the prompt. **Mimeoplasm, Revered One** uses this
   with creature cards, three +1/+1 counters per card, and later targets the linked exile pile.
-- `ModifyCounterPlacement(modifier, appliesTo)` / `DoubleCounterPlacement(placedByYou?, appliesTo)` —
+- `ModifyCounterPlacement(modifier, appliesTo, placedByYou?)` / `DoubleCounterPlacement(placedByYou?, appliesTo)` —
   **static** counter-placement modifiers living on a battlefield permanent for as long as it remains
   (Hardened Scales `+1`, Winding Constrictor `+1`, Doubling Season doubles). `appliesTo` is an
   `EventPattern.CounterPlacementEvent(counterType, recipient)`; `recipient = CreatureYouControl` is
-  resolved relative to the *source permanent's* controller. For the **activated/spell-granted,
+  resolved relative to the *source permanent's* controller. **`placedByYou`** (both types, default
+  `false`) is the *placer* axis, and it is what separates the two printed wordings: leave it `false`
+  for "**if counters would be put** on …" (Hardened Scales, Winding Constrictor, Doubling Season),
+  where an opponent's proliferate feeds the effect too and the recipient filter is the only
+  "you control" gate; set it `true` for "**if you would put** one or more counters on …" (Doc
+  Samson, Super Psychiatrist; Innkeeper's Talent), which applies only when the effect's own
+  controller is the one placing them. For the **activated/spell-granted,
   duration-scoped** version of this (Prairie Dog), use the effect
   `Effects.GrantCounterPlacementModifier(...)` (§4 Counters) instead — it records a controller-scoped
   modifier in a turn-scoped game-state store consulted from the same counter-placement chokepoint,

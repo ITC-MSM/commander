@@ -515,17 +515,22 @@ data object RevealTopOfLibrary : StaticAbility {
  * Unlike PlayFromTopOfLibrary, this restricts which spells can be cast (but always allows lands).
  * Used for Glarb, Calamity's Augur (mana value 4 or greater).
  *
- * @property spellFilter The filter that spells on top of library must match to be castable
+ * @property spellFilter The filter that spells on top of library must match to be castable, or
+ *   `null` for **lands only** — "you may play lands from the top of your library" with no spell
+ *   permission at all (Ka-Zar of the Savage Land). Passing a land-shaped filter instead behaves the
+ *   same, since a land is never cast, but renders a nonsense description ("cast spells matching
+ *   land"), and that description is what the UI shows for a granted ability.
  */
 @SerialName("PlayLandsAndCastFilteredFromTopOfLibrary")
 @Serializable
 data class PlayLandsAndCastFilteredFromTopOfLibrary(
-    val spellFilter: GameObjectFilter
+    val spellFilter: GameObjectFilter?
 ) : StaticAbility {
     override val description: String =
-        "You may play lands and cast spells matching ${spellFilter.description} from the top of your library."
+        if (spellFilter == null) "You may play lands from the top of your library."
+        else "You may play lands and cast spells matching ${spellFilter.description} from the top of your library."
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
-        val newFilter = spellFilter.applyTextReplacement(replacer)
+        val newFilter = spellFilter?.applyTextReplacement(replacer)
         return if (newFilter !== spellFilter) copy(spellFilter = newFilter) else this
     }
 }

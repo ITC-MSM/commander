@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.TransformEffect
@@ -107,7 +108,15 @@ private val TheIncredibleHulkBack = card("The Incredible Hulk") {
         effect = Effects.Composite(
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self),
             ConditionalEffect(
-                condition = Conditions.SourceIsAttacking,
+                // "If he's attacking" — a *live* check, hence the `onBattlefield()` conjunct.
+                // Bare `SourceIsAttacking` resolves through PredicateEvaluator, whose IsAttacking
+                // arm falls back to `LastKnownPermanentComponent.snapshot.wasAttacking` for any
+                // object off the battlefield (CR 608.2h, what Garna needs). Enrage routinely fires
+                // on lethal damage, so without the conjunct a Hulk that died to the very damage
+                // that triggered it still read as attacking and handed out a free combat phase.
+                condition = Conditions.SourceMatches(
+                    GameObjectFilter.Any.onBattlefield().attacking(),
+                ),
                 effect = Effects.Composite(
                     // "untap him"
                     Effects.Untap(EffectTarget.Self),

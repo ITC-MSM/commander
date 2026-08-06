@@ -411,6 +411,9 @@ data class TargetFilter(
     /** Must be attacking */
     fun attacking() = copy(baseFilter = baseFilter.attacking())
 
+    /** Attacking, with no other creature attacking (CR 506.5) — Crowd of True Believers. */
+    fun attackingAlone() = copy(baseFilter = baseFilter.attackingAlone())
+
     /** Spell on the stack cast from [zone] (reads `SpellOnStackComponent.castFromZone`). */
     fun castFromZone(zone: Zone) = copy(baseFilter = baseFilter.castFromZone(zone))
 

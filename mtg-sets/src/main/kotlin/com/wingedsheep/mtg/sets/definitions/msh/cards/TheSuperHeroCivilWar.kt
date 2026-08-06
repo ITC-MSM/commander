@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import com.wingedsheep.sdk.scripting.targets.TargetObject
+import com.wingedsheep.sdk.scripting.targets.TargetOther
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -48,18 +49,19 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    running [Effects.Fight] (whose executor errors on an unresolvable target rather than
  *    shrugging).
  *
- * Known engine deviations (both pre-existing, shared with Fall of Gil-galad / Fire Lord Sozin):
+ * "Up to one **other** target creature" is [TargetOther], whose whole job is this: it delegates to
+ * the wrapped requirement and additionally rejects anything already chosen for an earlier
+ * requirement of the same activation. `TargetValidator` enforces that authoritatively, so chapter
+ * III can't point both slots at one creature and have it fight itself. (`excludeSelf` would be the
+ * wrong tool — it excludes the *ability's source*, here the Saga, which isn't a creature at all.)
+ *
+ * Known engine deviation (pre-existing, shared with Fall of Gil-galad / Fire Lord Sozin):
  *  - The `totalManaValueAtMost` cap is enforced interactively by `DecisionValidators` (which sums
  *    each selected permanent's mana value), but `TargetValidator`'s authoritative cross-target
  *    check only sums *card* targets, so battlefield permanents contribute 0 there — it can only
  *    ever be more permissive, never reject a legal choice. The battlefield targeting UI likewise
  *    doesn't gray out over-cap creatures the way `GraveyardTargetingUI` does; the server rejects
  *    the selection instead.
- *  - "up to one *other* target creature" means other than the *first chosen target*, which no
- *    existing target filter can express (`excludeSelf` excludes the ability's source — here the
- *    Saga, which isn't a creature). Cross-requirement duplicates are legal in the engine, so a
- *    player could point both slots at the same creature and have it fight itself. Strictly
- *    self-harming, and the same gap Fall of Gil-galad already ships with.
  */
 val TheSuperHeroCivilWar = card("The Super Hero Civil War") {
     manaCost = "{3}{R}{W}"
@@ -112,7 +114,10 @@ val TheSuperHeroCivilWar = card("The Super Hero Civil War") {
     // III — Target creature you control fights up to one other target creature.
     sagaChapter(3) {
         val mine = target("target creature you control", Targets.CreatureYouControl)
-        val other = target("up to one other target creature", TargetCreature(optional = true))
+        val other = target(
+            "up to one other target creature",
+            TargetOther(TargetCreature(optional = true)),
+        )
         effect = ConditionalEffect(
             condition = Conditions.TargetMatchesFilter(GameObjectFilter.Creature, targetIndex = 1),
             effect = Effects.Fight(mine, other),

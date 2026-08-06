@@ -1,17 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
-import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.ActivationRestriction
-import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Crowd of True Believers — Marvel Super Heroes #14 (common)
@@ -21,28 +16,16 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * You gain 1 life.
  *
  * "Attacking alone" is CR 506.5 — *a creature is attacking alone if it's attacking but no other
- * creatures are*. That decomposes into two existing primitives rather than a new predicate:
- *  - the **target** is an attacking creature you control
- *    ([TargetFilter.Creature].youControl().attacking()), and
- *  - the **global** "no other creature is attacking" half is an
- *    [ActivationRestriction.OnlyIfCondition] comparing the battlefield-wide attacker count
- *    ([DynamicAmount.AggregateBattlefield] over [Player.Each], so defending-player attackers in
- *    multiplayer count too) against 1.
- *
- * With exactly one attacker on the battlefield, the target filter can only ever pick that
- * creature, so the pair is equivalent to the printed restriction at activation time. Known
- * limitation: the alone-ness gate is an *activation* restriction, so it is not re-checked on
- * resolution — if a second creature somehow starts attacking with the ability on the stack (an
- * effect that puts a creature onto the battlefield attacking), the ability still resolves. The
- * target itself is re-checked normally, so the ability still fizzles if the creature stops
- * attacking or leaves.
+ * creatures are* — and it lives entirely in the **target filter**
+ * ([TargetFilter].Creature.youControl().attackingAlone()), because it is a targeting restriction.
+ * That placement is the point: CR 608.2b re-checks every target on resolution, so if a second
+ * creature starts attacking while the ability is on the stack (an effect that puts a creature onto
+ * the battlefield attacking), the chosen target stops being legal and the ability is countered for
+ * having no legal targets — which is what the printed card does. Splitting the clause into an
+ * attacking-only target plus an [ActivationRestriction] on the global attacker count reads the same
+ * at activation time but silently resolves in that case, because activation restrictions are
+ * consulted once, when the ability is activated.
  */
-private val ATTACKING_ALONE = Conditions.CompareAmounts(
-    DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Creature.attacking()),
-    ComparisonOperator.EQ,
-    DynamicAmount.Fixed(1),
-)
-
 val CrowdOfTrueBelievers = card("Crowd of True Believers") {
     manaCost = "{W}"
     colorIdentity = "W"
@@ -56,13 +39,12 @@ val CrowdOfTrueBelievers = card("Crowd of True Believers") {
         cost = Costs.Tap
         val attacker = target(
             "target creature you control that's attacking alone",
-            TargetCreature(filter = TargetFilter.Creature.youControl().attacking()),
+            TargetCreature(filter = TargetFilter.Creature.youControl().attackingAlone()),
         )
         effect = Effects.Composite(
             Effects.ModifyStats(1, 0, attacker),
             Effects.GainLife(1),
         )
-        restrictions = listOf(ActivationRestriction.OnlyIfCondition(ATTACKING_ALONE))
         description = "{T}: Target creature you control that's attacking alone gets +1/+0 until " +
             "end of turn. You gain 1 life."
     }

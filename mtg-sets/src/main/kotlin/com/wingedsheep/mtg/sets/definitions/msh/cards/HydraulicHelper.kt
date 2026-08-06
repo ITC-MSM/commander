@@ -17,11 +17,12 @@ import com.wingedsheep.sdk.scripting.effects.ManaRestriction
  * Defender
  * {T}: Add {U}. This mana can't be spent to cast a nonartifact spell.
  *
- * The spend restriction is the Purple Dragon Punks composition: [ManaRestriction.AnyOf] of
- * [ManaRestriction.CardTypeSpellsOrAbilitiesOnly] for [CardType.ARTIFACT] (`allowSpells = true`,
- * so artifact spells qualify) and [ManaRestriction.AbilityActivationOnly] (activating any ability
- * is never "casting a nonartifact spell", so it stays legal). Between them they cover both spend
- * contexts the printed negative wording permits.
+ * The printed restriction is **negative** — it forbids one spend rather than permitting one — so it
+ * uses [ManaRestriction.CannotCastSpellsOtherThan] rather than a whitelist. The Purple Dragon Punks
+ * composition (`AnyOf(CardTypeSpellsOrAbilitiesOnly(ARTIFACT), AbilityActivationOnly)`) is the
+ * positive Guidelight Optimizer clause, "spend this mana only to cast an artifact spell or activate
+ * an ability", and is strictly narrower: it also rejects paying a ward cost, an "unless that player
+ * pays {2}" tax, or a cost demanded while something resolves — none of which is casting a spell.
  */
 val HydraulicHelper = card("Hydraulic Helper") {
     manaCost = "{1}{U}"
@@ -38,16 +39,7 @@ val HydraulicHelper = card("Hydraulic Helper") {
         effect = Effects.AddMana(
             Color.BLUE,
             1,
-            restriction = ManaRestriction.AnyOf(
-                listOf(
-                    ManaRestriction.CardTypeSpellsOrAbilitiesOnly(
-                        cardType = CardType.ARTIFACT,
-                        allowSpells = true,
-                        allowAbilities = false,
-                    ),
-                    ManaRestriction.AbilityActivationOnly,
-                )
-            ),
+            restriction = ManaRestriction.CannotCastSpellsOtherThan(setOf(CardType.ARTIFACT)),
         )
         manaAbility = true
         timing = TimingRule.ManaAbility

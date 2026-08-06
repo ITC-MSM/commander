@@ -22,7 +22,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Four independent, unrestricted activated abilities — each a plain mana cost with no tap and no
  * activation limit, so any of them can be activated any number of times at instant speed as long as
  * the mana is there. The Fantastic Four homage means each ability is in a different color, but the
- * costs are ordinary mana costs; nothing about the card cares which color paid for what.
+ * costs are ordinary mana costs; nothing about *paying* them cares which color paid for what.
+ * Colour *identity* is a different question and does care — see [colorIdentity] below.
  *
  * The Wall token is colorless (empty `colors`), not white — the {W} in the activation cost doesn't
  * color the token. Its defender is a real keyword on the token, so the projected state stops it
@@ -30,7 +31,12 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  */
 val SuperSkrull = card("Super-Skrull") {
     manaCost = "{1}{B}{B}{B}"
-    colorIdentity = "B"
+    // WUBRG, not mono-black: colour identity counts the coloured pips in *every* mana symbol on the
+    // card, activation costs included (CR 903.4), so the {W}/{G}/{R}/{U} activations all count. The
+    // field is the authoritative Scryfall identity and feeds Commander deck validation, the
+    // commander deck generator, and the draft/deckbuild scorers — "B" would let a mono-black
+    // Commander deck run him illegally.
+    colorIdentity = "WUBRG"
     typeLine = "Legendary Creature — Skrull Shapeshifter Villain"
     power = 4
     toughness = 5
