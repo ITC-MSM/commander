@@ -2,7 +2,7 @@
 
 **Set Size:** 193 cards revealed as of 2026-08-04
 **Release Date:** August 14, 2026
-**Implemented:** 48 / 193
+**Implemented:** 51 / 193
 Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. This list covers only cards revealed as of that date.
 
 - [x] 1. Long-Bodied Grey Dog
@@ -14,7 +14,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 7. Celebrate the Mountain-king
 - [ ] 8. Dáin, Lord of the Iron Hills
 - [x] 9. Dwarven Provisioner
-- [ ] 10. Dwarven Shortsword
+- [x] 10. Dwarven Shortsword
 - [ ] 11. Eagle of the Great Shelf
 - [ ] 12. The Eagles Are Coming!
 - [ ] 13. Esgaroth Garrison
@@ -119,7 +119,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 112. Snowslope Hunter
 - [ ] 113. Stone-Giant of High Pass
 - [ ] 114. Thorin, Mountain-king
-- [ ] 115. Tidings of War
+- [x] 115. Tidings of War
 - [x] 116. Attercop
 - [ ] 117. Bejeweled Warg
 - [ ] 118. Beorn, Reluctant Host
@@ -160,7 +160,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 153. Duskwatch Hunter
 - [ ] 154. Dwalin, Weaponmaster
 - [ ] 155. Eagle's Rescue
-- [ ] 156. Fearsome Goblin Pair
+- [x] 156. Fearsome Goblin Pair
 - [ ] 157. Goblin Plate Mail
 - [ ] 158. The Great Goblin
 - [x] 159. Large Bear
