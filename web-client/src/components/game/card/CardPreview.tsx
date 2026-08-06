@@ -315,6 +315,20 @@ export function CardPreview() {
         </div>
       )}
 
+      {/* Granted types — the printed image can't show a type an effect added (Super-Soldier Serum
+          making its target a Soldier), and the type line above is only printed for tokens, so the
+          grant would otherwise be invisible even though the rules apply it. */}
+      {card.grantedSubtypes && card.grantedSubtypes.length > 0 && (
+        <div style={styles.cardPreviewEffects}>
+          <div style={styles.cardPreviewEffect}>
+            <span style={styles.cardPreviewEffectName}>Granted types</span>
+            <span style={styles.cardPreviewEffectText}>
+              {card.grantedSubtypes.join(', ')}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Granted / active-effect abilities — temporary text not in the printed oracle text
           (e.g. an ability granted by Dreadmaw's Ire). The DTO carries these in activeEffects;
           the on-card badge only surfaces them on a nested hover, so show them here too. */}

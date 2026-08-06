@@ -481,6 +481,18 @@ data class ClientCard(
      */
     val legendaryByEffect: Boolean = false,
 
+    /**
+     * Subtypes this permanent has only because an effect granted them — the projected subtypes minus
+     * the printed ones (e.g. Super-Soldier Serum's "is a legendary Soldier in addition to its other
+     * types").
+     *
+     * The battlefield renders the printed card image, which can never show a granted type, and the
+     * hover preview only prints [typeLine] for tokens. Without this the grant is invisible to the
+     * player even though the rules apply it. Empty when nothing was granted, and deliberately empty
+     * for "is every creature type" effects, which would otherwise list ~150 entries.
+     */
+    val grantedSubtypes: Set<String> = emptySet(),
+
     /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
     val damageDistribution: Map<EntityId, Int>? = null,
 

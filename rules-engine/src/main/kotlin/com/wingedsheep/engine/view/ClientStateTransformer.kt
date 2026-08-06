@@ -1351,6 +1351,12 @@ class ClientStateTransformer(
             legendaryByEffect = zoneKey.zoneType == Zone.BATTLEFIELD
                 && Supertype.LEGENDARY in displaySupertypes
                 && Supertype.LEGENDARY !in cardComponent.typeLine.supertypes,
+            // Same projected-minus-printed shape as legendaryByEffect. Skipped for the
+            // all-creature-types case, which typeLineSubtypes already collapses above.
+            grantedSubtypes = if (zoneKey.zoneType == Zone.BATTLEFIELD && !hasAllCreatureTypes) {
+                val printed = cardComponent.typeLine.subtypes.map { it.value }.toSet()
+                displaySubtypes.filterNot { it in printed }.toSet()
+            } else emptySet(),
             damageDistribution = (spellOnStack?.damageDistribution ?: container.get<TriggeredAbilityOnStackComponent>()?.damageDistribution)?.takeIf { it.isNotEmpty() },
             sagaTotalChapters = cardDef?.finalChapter,
             classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel,

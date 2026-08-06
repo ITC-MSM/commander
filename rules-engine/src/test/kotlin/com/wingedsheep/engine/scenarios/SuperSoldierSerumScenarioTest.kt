@@ -49,5 +49,10 @@ class SuperSoldierSerumScenarioTest : FunSpec({
         }
         card.power shouldBe 5
         card.toughness shouldBe 5
+
+        // The battlefield renders the printed image and the preview only prints the type line for
+        // tokens, so the grant is only visible to the player through this field.
+        card.grantedSubtypes shouldBe setOf("Soldier")
+        card.legendaryByEffect shouldBe true
     }
 })
