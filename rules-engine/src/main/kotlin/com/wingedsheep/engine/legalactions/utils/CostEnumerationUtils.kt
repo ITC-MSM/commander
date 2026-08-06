@@ -595,6 +595,16 @@ class CostEnumerationUtils(
         if (removeXAtoms.isNotEmpty()) {
             val projected = state.projectedState
             val counterCaps = removeXAtoms.map { atom ->
+                    // A self-scoped removal ("remove any number of counters from ~") comes off the
+                    // source alone; counting every matching permanent would overstate the cap.
+                    if (atom.self) {
+                        val type = atom.counterType?.let {
+                            com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType(it)
+                        }
+                        val counters = sourceId?.let { state.getEntity(it)?.get<CountersComponent>() }
+                        return@map if (type != null) counters?.getCount(type) ?: 0
+                        else counters?.counters?.values?.sum() ?: 0
+                    }
                     val type = atom.counterType?.let {
                         com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType(it)
                     }

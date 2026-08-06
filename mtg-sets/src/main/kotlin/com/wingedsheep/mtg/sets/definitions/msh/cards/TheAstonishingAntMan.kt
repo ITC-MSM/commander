@@ -7,7 +7,6 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
@@ -26,7 +25,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *  - "Remove any number of +1/+1 counters from ~" is the Retribution of the Ancients cost shape:
  *    [Costs.RemoveXCounters] with the count left at its [DynamicAmount.XValue] default and the
  *    filter narrowed to the source permanent itself
- *    (`GameObjectFilter.Permanent.sourceItself()`), so the player is only ever offered Ant-Man's
+ *    (`self = true`), so the counters come off Ant-Man's
  *    own counters. "Any number" includes zero, which the X cost already allows — and X = 0
  *    creates no tokens.
  *  - "That many" is the same X, read back by the dynamic-count [Effects.CreateToken] overload,
@@ -52,9 +51,12 @@ val TheAstonishingAntMan = card("The Astonishing Ant-Man") {
         cost = Costs.Composite(
             Costs.Mana("{2}{G}"),
             Costs.Tap,
+            // `self` — the counters come off Ant-Man himself. The filter-based form would ask the
+            // player to distribute the removal across matching permanents, which never resolves for
+            // a self-scoped cost.
             Costs.RemoveXCounters(
                 counterType = Counters.PLUS_ONE_PLUS_ONE,
-                filter = GameObjectFilter.Permanent.sourceItself(),
+                self = true,
             ),
         )
         effect = Effects.CreateToken(

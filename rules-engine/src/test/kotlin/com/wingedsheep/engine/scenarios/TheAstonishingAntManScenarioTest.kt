@@ -54,4 +54,32 @@ class TheAstonishingAntManScenarioTest : FunSpec({
             activation!!.maxAffordableX shouldBe 3
         }
     }
+
+    // The cap being right isn't enough: the cost must also *pay*. The filter-based form asked the
+    // player to distribute the removal across permanents and settled on nothing, failing with
+    // "Counter removal total (0) does not match required count (2)".
+    test("paying it removes that many counters and makes that many Insects") {
+        val d = driver()
+        val antMan = d.putCreatureOnBattlefield(d.player1, "The Astonishing Ant-Man")
+        d.removeSummoningSickness(antMan)
+        d.addCounters(antMan, CounterType.PLUS_ONE_PLUS_ONE, 3)
+        d.giveMana(d.player1, Color.GREEN, 3)
+
+        val ability = d.legalActions(d.player1)
+            .first { it.actionType == "ActivateAbility" && it.maxAffordableX != null }
+        val activate = ability.action as com.wingedsheep.engine.core.ActivateAbility
+        val result = d.submit(activate.copy(xValue = 2))
+        withClue("activation failed: ${result.error}") { result.isSuccess shouldBe true }
+        repeat(12) {
+            if (d.state.pendingDecision != null) d.autoResolveDecision()
+            else if (d.stackSize > 0) d.bothPass()
+            else return@repeat
+        }
+
+        d.state.getEntity(antMan)?.get<CountersComponent>()
+            ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 1
+        // Match by subtype, not name: CreateTokenExecutor names a token "<types> Token".
+        d.state.projectedState.getBattlefieldControlledBy(d.player1)
+            .count { id -> "Insect" in d.state.projectedState.getSubtypes(id) } shouldBe 2
+    }
 })

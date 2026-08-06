@@ -11577,14 +11577,7 @@
                                 "type": "AtomRemoveCounters",
                                 "counterType": "+1/+1",
                                 "count": "XValue",
-                                "filter": {
-                                    "cardPredicates": [
-                                        "IsPermanent"
-                                    ],
-                                    "statePredicates": [
-                                        "IsSource"
-                                    ]
-                                }
+                                "self": true
                             }
                         }
                     ]
