@@ -1,6 +1,7 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -8,6 +9,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.MustAttack
 import com.wingedsheep.sdk.scripting.TriggerBinding
+import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
@@ -22,10 +24,16 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * - "Attacks each combat if able" is the [MustAttack] static over [GroupFilter.source] — a
  *   requirement the declare-attackers legality check enforces, not an effect that taps Ares.
  * - The death trigger is a battlefield → graveyard zone change ([Triggers.leavesBattlefield] with
- *   `to = Zone.GRAVEYARD`) filtered to attacking creatures you control. The `attacking()` predicate
- *   reads the last-known-information snapshot (`EntitySnapshot.wasAttacking`) rather than live
- *   state — the creature has already left combat and the battlefield by the time the trigger is
- *   detected (CR 603.10) — the same mechanism Éomer, Marshal of Rohan relies on.
+ *   `to = Zone.GRAVEYARD`) over *every* creature you control, with the "attacking" half tested at
+ *   **resolution** instead of in the trigger filter. That split is mandatory, not stylistic:
+ *   `TriggerMatcher` gates zone-change triggers through `matchesStatePredicateForZoneChangeTrigger`,
+ *   which carries last-known info only for the counter/power/attachment predicates and delegates
+ *   everything else to `matchesStatePredicateForTrigger` — where `StatePredicate.IsAttacking` sits
+ *   in the explicit "don't gate" list and returns `true` unconditionally. An `.attacking()` in the
+ *   filter is therefore a silent no-op that would return *every* creature you control that dies.
+ *   [PredicateEvaluator] is the one that reads `EntitySnapshot.wasAttacking` (CR 608.2h), and it
+ *   runs at resolution — so [Conditions.EntityMatches] over [EffectTarget.TriggeringEntity] is
+ *   where the check belongs. Same shape as Garna, Bloodfist of Keld.
  * - [TriggerBinding.ANY], not `OTHER`: the printed text has no "another", so Ares dying while
  *   attacking returns *himself* to hand.
  * - "Return **that card**" is [EffectTarget.TriggeringEntity] with `fromZone = Zone.GRAVEYARD`.
@@ -51,14 +59,20 @@ val AresGodOfWar = card("Ares, God of War") {
 
     triggeredAbility {
         trigger = Triggers.leavesBattlefield(
-            filter = GameObjectFilter.Creature.youControl().attacking(),
+            filter = GameObjectFilter.Creature.youControl(),
             to = Zone.GRAVEYARD,
             binding = TriggerBinding.ANY,
         )
-        effect = Effects.Move(
-            EffectTarget.TriggeringEntity,
-            Zone.HAND,
-            fromZone = Zone.GRAVEYARD,
+        effect = ConditionalEffect(
+            condition = Conditions.EntityMatches(
+                EffectTarget.TriggeringEntity,
+                GameObjectFilter.Any.attacking(),
+            ),
+            effect = Effects.Move(
+                EffectTarget.TriggeringEntity,
+                Zone.HAND,
+                fromZone = Zone.GRAVEYARD,
+            ),
         )
         description = "Whenever an attacking creature you control dies, return that card to its " +
             "owner's hand."
