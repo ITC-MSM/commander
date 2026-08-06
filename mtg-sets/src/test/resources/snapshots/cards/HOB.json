@@ -85,6 +85,110 @@
     ]
 }
 
+// Boughside Wanderers
+{
+    "name": "Boughside Wanderers",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Elf Scout",
+    "oracleText": "When this creature enters, look at the top four cards of your library. You may reveal a permanent card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.\nLandfall — Whenever a land you control enters, this creature gets +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "permanent",
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Put on bottom"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Landfall — Whenever a land you control enters, this creature gets +2/+2 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "artist": "Irina Nordsol",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/71bec005-2925-4944-be16-2cc5eb30f5d6.jpg?1785497158"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Confusticate and Bebother
 {
     "name": "Confusticate and Bebother",
@@ -343,6 +447,47 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Dreaded Bat-Cloud
+{
+    "name": "Dreaded Bat-Cloud",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Bat",
+    "oracleText": "This spell costs {3} less to cast if a creature died this turn.\nFlying, deathtouch",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "FixedIfCreatureDiedThisTurn",
+                        "amount": 3
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "UNCOMMON",
+        "artist": "Andreia Ugrai",
+        "flavorText": "Beneath the thunder another blackness whirled forward, so dense that no light could be seen between their wings.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67d52db5-597e-46d5-af39-c3a2de107d30.jpg?1785497085"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -723,6 +868,60 @@
         "artist": "Irina Nordsol",
         "flavorText": "\"Hundreds of torches and many fires must have been lit suddenly and by magic. And hark to the singing and the harps!\"\n—Kíli",
         "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c50656d-c74a-4e90-9ef7-afa237682516.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Enchanted River's Grasp
+{
+    "name": "Enchanted River's Grasp",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, tap enchanted creature and remove all counters from it.\nEnchanted creature loses all abilities and doesn't untap during its controller's untap step.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": "EnchantedCreature"
+                        },
+                        {
+                            "type": "RemoveAllCounters",
+                            "target": "EnchantedCreature"
+                        }
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            "LoseAllAbilities",
+            {
+                "type": "GrantKeyword",
+                "keyword": "DOESNT_UNTAP"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "artist": "Javier Charro",
+        "flavorText": "And fast asleep Bombur remained in spite of all they could do.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad40a4b9-9fab-49c1-8e9f-6e0776966833.jpg?1785497045"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -1361,6 +1560,70 @@
     "colorIdentityOverride": []
 }
 
+// Iron Hills Stalwart
+{
+    "name": "Iron Hills Stalwart",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Dwarf Warrior",
+    "oracleText": "Reach, trample\nWhen this creature enters, attach target Equipment you control to up to one target creature you control.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "REACH",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AttachTargetEquipmentToCreature",
+                    "equipmentTarget": {
+                        "type": "BoundVariable",
+                        "name": "Equipment you control"
+                    },
+                    "creatureTarget": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact Equipment ctrl:you"
+                    },
+                    "id": "Equipment you control"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Michele Giorgi",
+        "flavorText": "Their fires caught the attention of huge bats flapping and whirring round their ears.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/46daa9ac-0ac7-4df9-b9d2-e03ab5b56c72.jpg?1785497126"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Large Bear
 {
     "name": "Large Bear",
@@ -1557,6 +1820,59 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Mirkwood Meditator
+{
+    "name": "Mirkwood Meditator",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Elf Druid",
+    "oracleText": "Landfall — Whenever a land you control enters, you may have this creature's base power and toughness become 4/2 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "SetBaseStats",
+                        "target": "Self",
+                        "power": {
+                            "type": "Fixed",
+                            "amount": 4
+                        },
+                        "toughness": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "duration": "EndOfTurn"
+                    },
+                    "descriptionOverride": "Have Mirkwood Meditator's base power and toughness become 4/2 until end of turn?"
+                },
+                "descriptionOverride": "Landfall — Whenever a land you control enters, you may have this creature's base power and toughness become 4/2 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Francisco Miyara",
+        "flavorText": "Elves always knew what was going on among the peoples of the land—as quick as water flows, or quicker.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad7ed4e6-3fe2-40f1-909b-a03b2a3c941a.jpg?1785497064"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

@@ -4909,6 +4909,10 @@ staticAbility {
   spells you cast cost {X} less to cast, where X is your speed"; "no speed" reads as 0 per CR
   702.179f, so a player who never started their engines simply gets no reduction),
   `CardsInGraveyardMatchingFilter`, `FixedIfAnyTargetMatches`,
+  `FixedIfCreatureDiedThisTurn(amount)` (the morbid discount — "costs {N} less to cast if a creature
+  died this turn", Dreaded Bat-Cloud. Reads the same per-player `CreaturesDiedThisTurnComponent`
+  tallies as `Conditions.CreatureDiedThisTurn`, summed across the table, so an opponent's creature
+  dying counts; turn *history*, so a creature that died and then left the graveyard still counts),
   `GreatestPropertyAmongPermanentsYouControl(property, filter)` — "{X} less, where X is the greatest
   `<property>` among `<filter>` you control", parameterized over `EntityNumericProperty`:
   `ManaValue` (Sunderflock — "greatest mana value among Elementals you control", read from the card

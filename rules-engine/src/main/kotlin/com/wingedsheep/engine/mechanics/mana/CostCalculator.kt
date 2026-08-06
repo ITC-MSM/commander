@@ -9,6 +9,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
@@ -442,6 +443,9 @@ class CostCalculator(
             is CostReductionSource.GreatestPropertyAmongPermanentsYouControl -> {
                 greatestPropertyAmongMatching(state, playerId, source.filter, source.property)
             }
+            is CostReductionSource.FixedIfCreatureDiedThisTurn -> {
+                if (anyCreatureDiedThisTurn(state)) source.amount else 0
+            }
             is CostReductionSource.FixedIfVoid -> {
                 if (state.nonlandPermanentLeftBattlefieldThisTurn || state.spellWarpedThisTurn)
                     source.amount
@@ -477,6 +481,18 @@ class CostCalculator(
                 ?.attackerIds
                 ?.size
                 ?: 0
+        }
+
+    /**
+     * Whether a creature died this turn under any player's control. Reads the same per-player
+     * `CreaturesDiedThisTurnComponent` tallies that back
+     * [com.wingedsheep.sdk.scripting.conditions.CreatureDiedThisTurnCondition] — turn history that
+     * `ZoneTransitionService` increments on death and `CleanupPhaseManager` clears at end of turn,
+     * so a creature that died and then left the graveyard still counts.
+     */
+    private fun anyCreatureDiedThisTurn(state: GameState): Boolean =
+        state.turnOrder.any { playerId ->
+            (state.getEntity(playerId)?.get<CreaturesDiedThisTurnComponent>()?.count ?: 0) > 0
         }
 
     /**
