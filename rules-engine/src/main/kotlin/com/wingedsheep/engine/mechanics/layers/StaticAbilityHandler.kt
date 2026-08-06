@@ -17,6 +17,7 @@ import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSour
 import com.wingedsheep.engine.state.components.battlefield.SuppressesHexproofForGroupComponent
 import com.wingedsheep.engine.state.components.battlefield.SuppressesWardForGroupComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.GrantsMadnessToOwnedCardsComponent
 import com.wingedsheep.engine.state.components.identity.RoomFaceStatics
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.scripting.DoubleDamage
@@ -297,6 +298,15 @@ class StaticAbilityHandler(
             .map { it.filter }
         if (suppressHexproofFilters.isNotEmpty()) {
             result = result.with(SuppressesHexproofForGroupComponent(suppressHexproofFilters))
+        }
+
+        // Add component for "each [filter] card you own that isn't on the battlefield has madness"
+        // (Falkenrath Gorger) — read off the permanent by MadnessGrants at discard time.
+        val madnessGrantFilters = allStaticAbilities
+            .filterIsInstance<com.wingedsheep.sdk.scripting.GrantMadnessToOwnedCards>()
+            .map { it.filter }
+        if (madnessGrantFilters.isNotEmpty()) {
+            result = result.with(GrantsMadnessToOwnedCardsComponent(madnessGrantFilters))
         }
 
         // Add component for "ward abilities of creatures matching filter don't trigger"
@@ -975,6 +985,7 @@ class StaticAbilityHandler(
             is com.wingedsheep.sdk.scripting.OpponentsCantMakeYouSacrifice,
             is StationUsingToughness,
             is SuppressHexproofForGroup,
+            is com.wingedsheep.sdk.scripting.GrantMadnessToOwnedCards,
             is SuppressWardForGroup -> null
         }
     }

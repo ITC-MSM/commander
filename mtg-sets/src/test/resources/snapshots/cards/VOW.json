@@ -4025,6 +4025,81 @@
     ]
 }
 
+// Edgar's Awakening
+{
+    "name": "Edgar's Awakening",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return target creature card from your graveyard to the battlefield.\nWhen you discard this card, you may pay {B}. When you do, return target creature card from your graveyard to your hand.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature card from your graveyard"
+            },
+            "destination": "Battlefield"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target creature card from your graveyard"
+            }
+        ],
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DiscardEvent",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "PayManaCost",
+                        "cost": "{B}"
+                    },
+                    "reflexiveEffect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Hand"
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature own:you",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "You may pay {B}. When you do, return target creature card from your graveyard to your hand."
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "110",
+        "rarity": "UNCOMMON",
+        "artist": "Joshua Raphael",
+        "flavorText": "\"Here you go. Can't have you sleeping through your own wedding day.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96ff9de6-f9ae-4b1c-9fd1-4ba9663922af.jpg?1783924865",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "You can't discard Edgar's Awakening just because you want to. In order to discard it, a rule or effect needs to allow or instruct you to do so."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Edgar, Charmed Groom
 {
     "name": "Edgar, Charmed Groom",

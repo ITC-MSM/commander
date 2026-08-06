@@ -311,6 +311,42 @@ data class GrantMiracleToCardsInHand(
 }
 
 /**
+ * Grants madness (CR 702.35) to cards the granter's controller **owns** that match [filter] and
+ * aren't on the battlefield, with the madness cost equal to each card's own mana cost. Models
+ * Falkenrath Gorger: "Each Vampire creature card you own that isn't on the battlefield has madness.
+ * The madness cost is equal to its mana cost."
+ *
+ * Cost-free by construction: "equal to its mana cost" is the only shape printed on a card, so the
+ * granted cost is derived per card rather than carried here. Should a grant with a fixed cost ever
+ * print, that's a second field, not a second static.
+ *
+ * Read by the discard path exactly where printed madness is read — `MadnessGrants` is consulted by
+ * the zone-change replacement that diverts a discard to exile, so a granted madness behaves
+ * identically to a printed one: same exile redirect, same CR 702.35a cast offer, same fixed
+ * alternative cost stamped on the exiled card. Because the exiled card carries the cost from that
+ * moment on, the grant leaving the battlefield mid-trigger doesn't revoke the offer.
+ *
+ * The "isn't on the battlefield" clause is the card's own wording; madness only ever *functions*
+ * from a hand (CR 702.35a replaces a discard), so in practice the grant is read for cards being
+ * discarded from their owner's hand.
+ *
+ * @property filter Which cards the controller owns gain madness (e.g. Vampire creature card).
+ */
+@SerialName("GrantMadnessToOwnedCards")
+@Serializable
+data class GrantMadnessToOwnedCards(
+    val filter: GameObjectFilter
+) : StaticAbility {
+    override val description: String =
+        "Each ${filter.description} you own that isn't on the battlefield has madness. " +
+            "The madness cost is equal to its mana cost."
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * You may cast spells matching [filter] from your graveyard, optionally by paying [lifeCost]
  * life in addition to their other costs. Only during your turn if [duringYourTurnOnly] is true.
  *

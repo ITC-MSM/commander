@@ -3757,6 +3757,12 @@ single "it" for "one or more cards".
 
 - `AnyOpponentDiscards` — whenever an opponent discards a card. (Entropic Battlecruiser.)
 - `YouDiscard` — whenever you discard a card.
+- `YouDiscardThis` — **self-bound**: "when *you* discard **this** card" (Edgar's Awakening). The
+  ability functions in hand and fires as the card is discarded, wherever the discard sends it —
+  graveyard normally, exile if the card also has madness. Detected on the discarded card itself
+  (`TriggerDetector.detectSelfDiscardTriggers`, the sibling of the cycling pass), so it needs no
+  permanent watching for it. The trigger's controller is the discarding player, which is what
+  "when you discard" means even for an opponent's Mind Rot on your hand.
 - `YouDiscardOneOrMore` — **batch wording** "whenever you discard one or more cards"
   (CR 603.2c): fires once per discard event no matter how many cards it contained
   (Inti, Seneschal of the Sun). Sequential discards in the same resolution ("discard a
@@ -6221,6 +6227,18 @@ composite abilities).
   a discarded madness *sorcery* can be cast on an opponent's turn (CR 702.35b). Both markers are stripped the moment the
   card leaves exile, so a lingering fixed cost can never re-price a later graveyard cast.
   *Fiery Temper*, *Gisa's Bidding*, *Bloodmad Vampire*.
+  - **Granting madness** — `GrantMadnessToOwnedCards(filter)` is the static half of Falkenrath Gorger:
+    *"Each Vampire creature card you own that isn't on the battlefield has madness. The madness cost is equal to its
+    mana cost."* It carries no cost field — "equal to its mana cost" is the only printed shape, so the cost is derived
+    per card. `StaticAbilityHandler` bakes it into a `GrantsMadnessToOwnedCardsComponent` on the permanent (the discard
+    replacement walks the battlefield with no `CardRegistry` in hand), and `MadnessGrants.effectiveMadnessCost` is the
+    single source of truth `ZoneMovementUtils.madnessDiscardExile` consults: printed `MadnessComponent` wins, else the
+    first matching grant controlled by the card's **owner**. Everything downstream is shared with printed madness —
+    same exile redirect, same stamped `PlayWithFixedAlternativeManaCostComponent`, same CR 702.35a cast offer (which
+    reads its cost off that stamp, so it works for both sources and survives the granter leaving the battlefield).
+    **Known simplification:** CR 616.1 lets the player choose among applicable replacements, so a discarded Vampire
+    with *printed* madness should be offered the choice of which madness exiles it; we take the printed cost without
+    asking, which is the cheaper one for every card in the pool.
 - `Suspend` (CR 702.62) — an **exile-zone** mechanic, unlike Impending/Vanishing which live on the battlefield.
   A suspended card sits in exile with **time counters**; at the beginning of its **owner's** upkeep one is removed,
   and when the last is gone its owner **may play it for free**, with **haste** if it's a creature. The lifecycle is
