@@ -589,6 +589,22 @@ sealed interface CostReductionSource {
     }
 
     /**
+     * Reduces cost by a fixed amount if a creature died this turn under *any* player's control —
+     * the morbid family's cost-reduction shape ("This spell costs {3} less to cast if a creature
+     * died this turn", Dreaded Bat-Cloud).
+     *
+     * Reads the same per-player died-this-turn tally as
+     * [com.wingedsheep.sdk.scripting.conditions.CreatureDiedThisTurnCondition], summed across the
+     * table, so an opponent's creature dying counts. Turn history, not a graveyard scan: a creature
+     * that died and was then exiled or reanimated still counts.
+     */
+    @SerialName("FixedIfCreatureDiedThisTurn")
+    @Serializable
+    data class FixedIfCreatureDiedThisTurn(val amount: Int) : CostReductionSource {
+        override val description: String = "$amount if a creature died this turn"
+    }
+
+    /**
      * Reduces cost by a fixed amount if the Void condition is met this turn — i.e.,
      * a nonland permanent left the battlefield this turn or a spell was warped this turn.
      * Used for Edge of Eternities cards like Temporal Intervention

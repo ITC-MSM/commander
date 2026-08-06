@@ -2,7 +2,7 @@
 
 **Set Size:** 193 cards revealed as of 2026-08-04
 **Release Date:** August 14, 2026
-**Implemented:** 61 / 193
+**Implemented:** 66 / 193
 Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. This list covers only cards revealed as of that date.
 
 - [x] 1. Long-Bodied Grey Dog
@@ -43,7 +43,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 36. Elrond, Moon-Reader
 - [x] 37. Elven Raft-Steerer
 - [x] 38. Elvenking's Harper
-- [ ] 39. Enchanted River's Grasp
+- [x] 39. Enchanted River's Grasp
 - [x] 40. Fateful Discovery
 - [ ] 41. Gandalf, Wandering Wizard
 - [ ] 42. Great Gilded Boat
@@ -52,7 +52,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 45. Long Lake Nuisance
 - [ ] 46. The Lord of the Eagles
 - [ ] 47. Master's Councillors
-- [ ] 48. Mirkwood Meditator
+- [x] 48. Mirkwood Meditator
 - [ ] 49. Most Decrepit Old Bird
 - [ ] 50. Old Fat Spider Can't See Me
 - [ ] 51. Plunder the Trollshaws
@@ -70,7 +70,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [x] 63. Crude Bent Blade
 - [x] 64. Desolation Prowler
 - [ ] 65. Down, Down to Goblin-town
-- [ ] 66. Dreaded Bat-Cloud
+- [x] 66. Dreaded Bat-Cloud
 - [x] 67. Front Porch Sentries
 - [ ] 68. Gathering of Darkness
 - [x] 69. Gnashing of Teeth
@@ -106,7 +106,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 99. Glóin the Mighty
 - [ ] 100. Goblin-town Flunkies
 - [x] 101. Gundabad Opportunist
-- [ ] 102. Iron Hills Stalwart
+- [x] 102. Iron Hills Stalwart
 - [ ] 103. Last Light of Durin's Day
 - [ ] 104. The Misty Mountains Cold
 - [ ] 105. Misty Mountains Raider
@@ -125,7 +125,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 118. Beorn, Reluctant Host
 - [ ] 119. Beorn the Fierce
 - [ ] 120. Beorn's Hospitality
-- [ ] 121. Boughside Wanderers
+- [x] 121. Boughside Wanderers
 - [ ] 122. Cantankerous Keepers
 - [ ] 123. Dancing from Dark to Dawn
 - [ ] 124. Down in the Valley
