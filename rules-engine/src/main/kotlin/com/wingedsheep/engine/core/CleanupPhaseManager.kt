@@ -182,6 +182,13 @@ class CleanupPhaseManager(
      * step (to prevent untapping), then removed afterward.
      */
     fun expireUntilYourNextTurnEffects(state: GameState, activePlayer: EntityId): GameState {
+        // Event-based delayed triggers scoped "until your next turn" (Tamiyo, Field Researcher's
+        // +1). Keyed to the delayed trigger's own controller, so an opponent's rider is untouched
+        // by this player's untap step.
+        val remainingDelayed = state.delayedTriggers.filter { delayed ->
+            !(delayed.expiry is DelayedTriggerExpiry.UntilControllersNextTurn &&
+                delayed.controllerId == activePlayer)
+        }
         val remainingFloating = state.floatingEffects.filter { floatingEffect ->
             !(floatingEffect.duration is Duration.UntilYourNextTurn &&
                 floatingEffect.controllerId == activePlayer)
@@ -203,11 +210,13 @@ class CleanupPhaseManager(
         val floatingChanged = remainingFloating.size != state.floatingEffects.size
         val globalChanged = remainingGlobal.size != state.globalGrantedTriggeredAbilities.size
         val grantedActivatedChanged = remainingGrantedActivated.size != state.grantedActivatedAbilities.size
-        var result = if (floatingChanged || globalChanged || grantedActivatedChanged) {
+        val delayedChanged = remainingDelayed.size != state.delayedTriggers.size
+        var result = if (floatingChanged || globalChanged || grantedActivatedChanged || delayedChanged) {
             state.copy(
                 floatingEffects = if (floatingChanged) remainingFloating else state.floatingEffects,
                 globalGrantedTriggeredAbilities = if (globalChanged) remainingGlobal else state.globalGrantedTriggeredAbilities,
-                grantedActivatedAbilities = if (grantedActivatedChanged) remainingGrantedActivated else state.grantedActivatedAbilities
+                grantedActivatedAbilities = if (grantedActivatedChanged) remainingGrantedActivated else state.grantedActivatedAbilities,
+                delayedTriggers = if (delayedChanged) remainingDelayed else state.delayedTriggers
             )
         } else {
             state

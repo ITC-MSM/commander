@@ -1394,7 +1394,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   Aetherdrift's "3/2 colorless Vehicle artifact token with crew 1" (Mu Yanling, Wind Rider). A *noncreature*
   artifact carrying printed P/T and the ordinary `crew 1` keyword, defined on the predefined `Vehicle`
   `CardDefinition`, so it can't attack or block until something crews it and it crews through the normal path.
-- `CreatePermanentEmblem(groupFilter, powerBonus?, toughnessBonus?, grantedKeywords?, grantedActivatedAbilities?, emblemDescription)` — permanent planeswalker emblem whose dynamically evaluated group receives the listed stats, keywords, and activated abilities. Unlike a one-shot group grant, the emblem also affects matching permanents that enter later. The activated-ability form powers Arlinn Kord's emblem.
+- `CreatePermanentEmblem(groupFilter?, powerBonus?, toughnessBonus?, grantedKeywords?, grantedActivatedAbilities?, ownedStaticAbilities?, emblemDescription)` — permanent planeswalker emblem whose dynamically evaluated group receives the listed stats, keywords, and activated abilities. Unlike a one-shot group grant, the emblem also affects matching permanents that enter later. The activated-ability form powers Arlinn Kord's emblem.
+  - `ownedStaticAbilities` carries wording the emblem has **itself** rather than grants to a group — "You may cast spells from your hand without paying their mana costs" (Tamiyo, Field Researcher's −7) is `MayCastWithoutPayingManaCost(controllerOnly = true)`, the same static Omniscience prints. Such an emblem leaves `groupFilter` and the group modifications at their defaults. The emblem entity lives outside every zone, so a scan that only walks the battlefield won't see it; the free-cast scan (`CostCalculator.hasFreeCastPermission`) consults emblem statics explicitly. `firstSpellOfTurnOnly` / `oncePerTurn` gates are rejected there rather than approximated, since both key off marking a *battlefield* source used.
 
 ### Ability granting
 
@@ -4384,7 +4385,14 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
     until expiry (double-strike combat damage). One-shot consumption happens when the trigger goes
     on the stack (`TriggerProcessor`), so a second matching event the same turn won't re-fire it.
   - `expiry` — when the resident delayed trigger is removed. `DelayedTriggerExpiry.EndOfTurn`
-    (default) drops it in the end-of-turn cleanup ("this turn" riders). `DelayedTriggerExpiry.Never`
+    (default) drops it in the end-of-turn cleanup ("this turn" riders).
+    `DelayedTriggerExpiry.UntilControllersNextTurn` is the delayed-trigger analogue of
+    `Duration.UntilYourNextTurn`, swept on the same post-untap hook keyed to the *delayed trigger's*
+    controller — for "Until your next turn, whenever …" riders that install a watcher rather than a
+    continuous effect (Tamiyo, Field Researcher's +1: "Until your next turn, whenever either of
+    those creatures deals combat damage, you draw a card", one entity-scoped watcher per chosen
+    creature so simultaneous combat damage draws twice). It survives the intervening opponents'
+    turns, which `EndOfTurn` would not. `DelayedTriggerExpiry.Never`
     keeps it across turns until it fires (pair with `fireOnce = true`) or the game ends — for
     watch-a-permanent-until-it-leaves reflexive triggers that aren't turn-scoped, e.g. Zenos yae
     Galvus's "When the chosen creature leaves the battlefield, transform Zenos yae Galvus"

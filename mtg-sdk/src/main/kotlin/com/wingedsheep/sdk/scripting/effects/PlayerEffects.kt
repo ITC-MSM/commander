@@ -689,20 +689,29 @@ data class GrantSpellsCantBeCounteredEffect(
  *
  * Composes with `Effects.Composite(ChooseCreatureTypeEffect, CreatePermanentEmblem(...))`.
  *
- * @property groupFilter Which permanents the emblem affects.
+ * An emblem whose text affects its **controller** rather than a group of permanents ("You may cast
+ * spells from your hand without paying their mana costs" — Tamiyo, Field Researcher's −7) carries
+ * that wording in [ownedStaticAbilities] instead, and leaves [groupFilter] at its default. The
+ * emblem entity then reads as a source of those statics exactly as a battlefield permanent printing
+ * them would, so no separate "player permission" concept is needed.
+ *
+ * @property groupFilter Which permanents the emblem affects. Unused — and so left at its default —
+ *   by an emblem that carries no group modification at all, only [ownedStaticAbilities].
  * @property powerBonus Power modification applied to each affected creature.
  * @property toughnessBonus Toughness modification applied to each affected creature.
  * @property grantedKeywords Keywords granted to each affected creature.
+ * @property ownedStaticAbilities Static abilities the *emblem itself* has, as though printed on it.
  * @property emblemDescription Human-readable description of the emblem (without the "You get an emblem with" prefix).
  */
 @SerialName("CreatePermanentEmblem")
 @Serializable
 data class CreatePermanentEmblemEffect(
-    val groupFilter: GroupFilter,
+    val groupFilter: GroupFilter = GroupFilter(GameObjectFilter.Any),
     val powerBonus: Int = 0,
     val toughnessBonus: Int = 0,
     val grantedKeywords: List<String> = emptyList(),
     val grantedActivatedAbilities: List<com.wingedsheep.sdk.scripting.ActivatedAbility> = emptyList(),
+    val ownedStaticAbilities: List<com.wingedsheep.sdk.scripting.StaticAbility> = emptyList(),
     val emblemDescription: String
 ) : Effect {
     override val description: String = "You get an emblem with \"$emblemDescription\""
