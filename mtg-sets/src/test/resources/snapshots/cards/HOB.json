@@ -346,6 +346,65 @@
     ]
 }
 
+// Duskwatch Hunter
+{
+    "name": "Duskwatch Hunter",
+    "manaCost": "{2}{B/G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "This creature can't be blocked by tokens.\nWhen this creature enters, put a +1/+1 counter on target creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    }
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        "IsToken"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "artist": "Samuele Bandini",
+        "flavorText": "Packs of evil wolves lived under the shadow of the Goblin-infested mountains, over the Edge of the Wild on the borders of the unknown.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/3685c783-d837-4466-a960-ab3098db64c3.jpg?1785323286"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Dwarven Provisioner
 {
     "name": "Dwarven Provisioner",
@@ -803,6 +862,52 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Gandalf, Spark Starter
+{
+    "name": "Gandalf, Spark Starter",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Legendary Creature — Avatar Wizard",
+    "oracleText": "Reach\nWhen Gandalf enters, he deals 3 damage divided as you choose among one, two, or three targets.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DividedDamage",
+                    "totalDamage": 3
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "count": 3,
+                    "minCount": 1
+                },
+                "descriptionOverride": "When Gandalf, Spark Starter enters, he deals 3 damage divided as you choose among one, two, or three targets."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "rarity": "UNCOMMON",
+        "artist": "Javier Charro",
+        "flavorText": "Gandalf thought of most things; and though he could not do everything, he could do a great deal for friends in a tight corner.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c5c6f1c-35cf-4172-b5a1-b73222b0723b.jpg?1784895032"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -2228,6 +2333,67 @@
     ]
 }
 
+// Smaug the Magnificent
+{
+    "name": "Smaug the Magnificent",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Legendary Creature — Dragon",
+    "oracleText": "Flying, haste\nWhenever Smaug attacks, he deals damage equal to the number of Treasures you control to any target.\nAt the beginning of your upkeep, create a Treasure token.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "artifact Treasure"
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirement": "AnyTarget",
+                "descriptionOverride": "Whenever Smaug the Magnificent attacks, he deals damage equal to the number of Treasures you control to any target."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, create a Treasure token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "110",
+        "rarity": "MYTHIC",
+        "artist": "Francisco Miyara",
+        "flavorText": "\"You think you will get a fair share? If you get off alive, you will be lucky.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6a5d8fad-2ffd-4645-8c49-907999b6cecf.jpg?1783902784"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Smaug's Fury
 {
     "name": "Smaug's Fury",
@@ -2365,6 +2531,68 @@
     ]
 }
 
+// The Chief Warg
+{
+    "name": "The Chief Warg",
+    "manaCost": "{2}{B}{G}",
+    "typeLine": "Legendary Creature — Wolf",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nFerocious — Whenever you attack while you control a creature with power 4 or greater, you draw a card and lose 1 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": "Controller"
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature pow>=4"
+                },
+                "descriptionOverride": "Ferocious — Whenever you attack while you control a creature with power 4 or greater, you draw a card and lose 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "rarity": "UNCOMMON",
+        "artist": "Tomas Duchek",
+        "flavorText": "Even magic rings were not much use against wolves—especially against the evil packs that lived near Goblin-infested mountains.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c397a298-bf7f-49d7-a26a-206ccf9e8120.jpg?1784377030"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Thorin's Last Stand
 {
     "name": "Thorin's Last Stand",
@@ -2443,6 +2671,70 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Through the Forest Gate
+{
+    "name": "Through the Forest Gate",
+    "manaCost": "{6}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Look at the top twenty cards of your library, put any number of land cards from among them onto the battlefield tapped, then shuffle. You gain 8 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 20
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "looked",
+                    "selection": "ChooseAnyNumber",
+                    "filter": "land",
+                    "storeSelected": "toBattlefield",
+                    "prompt": "Put any number of land cards onto the battlefield tapped",
+                    "selectedLabel": "Onto the battlefield tapped",
+                    "remainderLabel": "Leave in your library",
+                    "showAllCards": true
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toBattlefield",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield",
+                        "placement": "Tapped"
+                    }
+                },
+                "ShuffleLibrary",
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 8
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "rarity": "RARE",
+        "artist": "Leon Tukker",
+        "flavorText": "\"Well, here is Mirkwood—the greatest of the forests of the northern world. I hope you like the look of it.\"\n—Gandalf",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/880adfc8-69cf-4062-a804-e65b6cb6056d.jpg?1784895046"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

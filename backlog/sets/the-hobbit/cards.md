@@ -2,7 +2,7 @@
 
 **Set Size:** 193 cards revealed as of 2026-08-04
 **Release Date:** August 14, 2026
-**Implemented:** 56 / 193
+**Implemented:** 61 / 193
 Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. This list covers only cards revealed as of that date.
 
 - [x] 1. Long-Bodied Grey Dog
@@ -101,7 +101,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [x] 94. Dori, Bearer of Friends
 - [ ] 95. Dwarven Mauler
 - [ ] 96. Gandalf, Goblins' Bane
-- [ ] 97. Gandalf, Spark Starter
+- [x] 97. Gandalf, Spark Starter
 - [ ] 98. Getaway Barrel
 - [ ] 99. Glóin the Mighty
 - [ ] 100. Goblin-town Flunkies
@@ -114,7 +114,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 107. Pinecone Strike
 - [x] 108. Ragged Short Spear
 - [ ] 109. Smaug, the Great Calamity
-- [ ] 110. Smaug the Magnificent
+- [x] 110. Smaug the Magnificent
 - [x] 111. Smaug's Fury
 - [ ] 112. Snowslope Hunter
 - [ ] 113. Stone-Giant of High Pass
@@ -141,7 +141,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 134. Part in Friendship
 - [x] 135. Quarrel
 - [ ] 136. Radagast of Rhosgobel
-- [ ] 137. Through the Forest Gate
+- [x] 137. Through the Forest Gate
 - [x] 138. Troll Negotiations
 - [x] 139. Warg Tactics
 - [x] 140. Wargling
@@ -154,10 +154,10 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 147. Bifur, Melodic Rider
 - [ ] 148. Bolg of the North
 - [ ] 149. Bolg's Company
-- [ ] 150. The Chief Warg
+- [x] 150. The Chief Warg
 - [ ] 151. Chief Warg's Company
 - [ ] 152. Dáin's Company
-- [ ] 153. Duskwatch Hunter
+- [x] 153. Duskwatch Hunter
 - [ ] 154. Dwalin, Weaponmaster
 - [ ] 155. Eagle's Rescue
 - [x] 156. Fearsome Goblin Pair
