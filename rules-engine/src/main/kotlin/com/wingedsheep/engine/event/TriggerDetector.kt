@@ -35,7 +35,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.EmblemSourceComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
-import com.wingedsheep.engine.state.components.identity.MadnessComponent
+import com.wingedsheep.engine.state.components.identity.PlayWithFixedAlternativeManaCostComponent
 import com.wingedsheep.engine.state.components.identity.MadnessExiledComponent
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.SuppressEntersTriggers
@@ -1433,6 +1433,13 @@ class TriggerDetector(
             detectCyclingCardTriggers(state, index.statics, event, triggers)
         }
 
+        // Handle "when you discard this card" triggers on the discarded card itself, which now
+        // sits in the graveyard (or in exile, if it also had madness) rather than in hand —
+        // e.g. Edgar's Awakening. Mirrors the cycling pass above.
+        if (event is CardsDiscardedEvent) {
+            detectSelfDiscardTriggers(state, index.statics, event, triggers)
+        }
+
         // Handle "when this card becomes plotted" triggers on the plotted card itself, which
         // now sits face up in exile rather than on the battlefield (e.g., Aloe Alchemist).
         if (event is CardPlottedEvent) {
@@ -1761,6 +1768,50 @@ class TriggerDetector(
     }
 
     /**
+     * Detect "when you discard this card" triggers on the card that was discarded (Edgar's
+     * Awakening). The ability functions in hand but the card is already in the graveyard — or in
+     * exile, if it also had madness — by the time the event fires, so the main index scan never
+     * sees it. Mirrors [detectCyclingCardTriggers].
+     *
+     * Only [TriggerBinding.SELF] discard triggers belong here: an `ANY`-bound
+     * [EventPattern.DiscardEvent] is an observer ("whenever you discard a card") owned by the
+     * battlefield pass, and would fire twice if this pass also claimed it.
+     *
+     * The trigger's controller is the discarding player, which is what "when *you* discard this
+     * card" means — an opponent's Mind Rot on your hand is your discard, and the card's owner is
+     * the one holding it.
+     */
+    private fun detectSelfDiscardTriggers(
+        state: GameState,
+        statics: BattlefieldStaticsIndex,
+        event: CardsDiscardedEvent,
+        triggers: MutableList<PendingTrigger>
+    ) {
+        for (entityId in event.cardIds) {
+            val container = state.getEntity(entityId) ?: continue
+            val cardComponent = container.get<CardComponent>() ?: continue
+
+            val abilities =
+                abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, statics)
+
+            for (ability in abilities) {
+                if (ability.trigger !is EventPattern.DiscardEvent) continue
+                if (ability.binding != TriggerBinding.SELF) continue
+                triggers.add(
+                    PendingTrigger(
+                        ability = ability,
+                        sourceId = entityId,
+                        sourceName = cardComponent.name,
+                        controllerId = event.playerId,
+                        triggerContext = TriggerContext.fromEvent(event)
+                            .copy(triggeringEntityId = entityId)
+                    )
+                )
+            }
+        }
+    }
+
+    /**
      * Detect "when this card becomes plotted" triggers on the plotted card itself (e.g.,
      * Aloe Alchemist). After the plot special action resolves the card sits face up in exile,
      * not on the battlefield, so the main index scan never sees it. This mirrors
@@ -1813,7 +1864,10 @@ class TriggerDetector(
         // exile in the same event batch has already stripped the marker.
         val container = state.getEntity(event.cardId) ?: return
         if (!container.has<MadnessExiledComponent>()) return
-        val cost = container.get<MadnessComponent>()?.cost ?: return
+        // The cost comes off the fixed alternative cost stamped alongside the marker rather than
+        // off the card's printed MadnessComponent: madness can also be *granted* (Falkenrath
+        // Gorger), and the stamped cost is the one the cast will actually charge either way.
+        val cost = container.get<PlayWithFixedAlternativeManaCostComponent>()?.fixedCost ?: return
 
         triggers.add(
             PendingTrigger(

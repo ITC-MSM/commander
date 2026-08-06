@@ -39,3 +39,19 @@ data class MadnessComponent(
 data class MadnessExiledComponent(
     val ownerId: EntityId
 ) : Component
+
+/**
+ * Battlefield permanent marker: this permanent grants madness to cards its controller owns that
+ * match one of [filters] and aren't on the battlefield, at each card's own mana cost (Falkenrath
+ * Gorger). Baked from [com.wingedsheep.sdk.scripting.GrantMadnessToOwnedCards] by
+ * [com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler].
+ *
+ * A component rather than a card-definition lookup for the same reason the ward and hexproof
+ * suppressors are: the discard-replacement check walks the battlefield with no [CardRegistry] in
+ * hand, so the grant has to be readable straight off the permanent. Read via
+ * [com.wingedsheep.engine.mechanics.MadnessGrants].
+ */
+@Serializable
+data class GrantsMadnessToOwnedCardsComponent(
+    val filters: List<com.wingedsheep.sdk.scripting.GameObjectFilter>
+) : Component

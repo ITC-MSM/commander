@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 200 / 273
+**Implemented:** 201 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -85,7 +85,7 @@
 - [ ] Dreamshackle Geist
 - [ ] Drogskol Infantry
 - [ ] Dying to Serve
-- [ ] Edgar's Awakening
+- [x] Edgar's Awakening
 - [x] Edgar, Charmed Groom
 - [x] End the Festivities
 - [ ] Eruth, Tormented Prophet

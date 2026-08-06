@@ -1129,6 +1129,19 @@ object Triggers {
     )
 
     /**
+     * When *you* discard **this** card (Edgar's Awakening). The ability functions while the card
+     * is in your hand and fires as it is discarded, wherever the discard sends it — the graveyard
+     * normally, exile if the card also has madness.
+     *
+     * The self-bound counterpart to [YouDiscard]: that one is an observer on a permanent watching
+     * your discards, this one belongs to the discarded card itself.
+     */
+    val YouDiscardThis: TriggerSpec = TriggerSpec(
+        event = DiscardEvent(player = Player.You),
+        binding = TriggerBinding.SELF
+    )
+
+    /**
      * Whenever you discard one or more cards — batch wording (CR 603.2c): fires once per
      * discard event no matter how many cards it contained (Inti, Seneschal of the Sun).
      * Sequential discards in the same resolution are separate events and fire separately.

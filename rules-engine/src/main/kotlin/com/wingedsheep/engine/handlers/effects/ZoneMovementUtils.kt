@@ -51,8 +51,10 @@ import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.engine.state.components.player.SkipNextTurnComponent
+import com.wingedsheep.engine.mechanics.MadnessGrants
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.sdk.core.CounterType
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -596,21 +598,27 @@ object ZoneMovementUtils {
     }
 
     /**
-     * The card's Madness ability (CR 702.35a) when *this particular move* is the discard it
-     * replaces, or null otherwise. A hand → graveyard move is a discard by definition (CR 701.8a),
-     * so the from/to pair is the whole test.
+     * The madness cost that applies (CR 702.35a) when *this particular move* is the discard the
+     * madness replacement replaces, or null otherwise. A hand → graveyard move is a discard by
+     * definition (CR 701.8a), so the from/to pair is the whole test.
+     *
+     * The cost may be printed on the card or granted by a battlefield permanent (Falkenrath
+     * Gorger); [MadnessGrants] is the single place that decides which, so both readers here get
+     * granted madness for free.
      *
      * Single home for the predicate: [checkZoneChangeRedirect] uses it to divert the move to exile,
      * and `ZoneTransitionService.moveToZone` uses the same call to recognise the diverted move
      * afterwards and stamp the exiled card. Two readers, one rule.
      */
     fun madnessDiscardExile(
+        state: GameState,
+        entityId: EntityId,
         container: ComponentContainer,
         fromZone: Zone?,
         toZone: Zone
-    ): com.wingedsheep.engine.state.components.identity.MadnessComponent? =
+    ): ManaCost? =
         if (fromZone == Zone.HAND && toZone == Zone.GRAVEYARD) {
-            container.get<com.wingedsheep.engine.state.components.identity.MadnessComponent>()
+            MadnessGrants.effectiveMadnessCost(state, entityId, container)
         } else {
             null
         }
@@ -651,7 +659,7 @@ object ZoneMovementUtils {
         // exiles it instead of putting it into their graveyard." Card-intrinsic like the
         // self-redirect above (it functions from hand), and unqualified by cause: it applies to an
         // opponent's Mind Rot, a cycling cost, and the cleanup-step hand-size discard alike.
-        if (madnessDiscardExile(container, fromZone, toZone) != null) {
+        if (madnessDiscardExile(state, entityId, container, fromZone, toZone) != null) {
             return ZoneChangeRedirectResult(Zone.EXILE)
         }
 

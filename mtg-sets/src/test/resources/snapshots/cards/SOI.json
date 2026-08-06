@@ -1521,6 +1521,49 @@
     ]
 }
 
+// Falkenrath Gorger
+{
+    "name": "Falkenrath Gorger",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Vampire Berserker",
+    "oracleText": "Each Vampire creature card you own that isn't on the battlefield has madness. The madness cost is equal to its mana cost. (If you discard a card with madness, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantMadnessToOwnedCards",
+                "filter": "creature Vampire"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "155",
+        "rarity": "RARE",
+        "artist": "Anna Steinbauer",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/474895d8-1f2c-45bb-b721-4cf7c290eb23.jpg?1783937755",
+        "rulings": [
+            {
+                "date": "2016-04-08",
+                "text": "If Falkenrath Gorger leaves the battlefield before the madness trigger has resolved for a Vampire card that gained madness with its ability, the madness ability will still let you cast that Vampire card for the appropriate cost even though it no longer has madness."
+            },
+            {
+                "date": "2016-04-08",
+                "text": "If you discard a Vampire creature card that already has a madness ability, you'll choose which madness ability exiles it. You may choose either the one it normally has or the one it gains from Falkenrath Gorger."
+            },
+            {
+                "date": "2016-04-08",
+                "text": "Falkenrath Gorger's ability only applies while it's on the battlefield. If you discard it, it won't give itself madness."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Game Trail
 {
     "name": "Game Trail",

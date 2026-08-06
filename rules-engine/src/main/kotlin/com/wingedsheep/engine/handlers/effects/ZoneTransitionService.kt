@@ -747,11 +747,13 @@ object ZoneTransitionService {
         // is what the trigger detector turns into the cast offer; it is emitted after the
         // ZoneChangeEvent so the exile is already history by the time the trigger is built.
         if (!options.skipZoneChangeRedirect && actualDestZone == Zone.EXILE) {
-            val madness = ZoneMovementUtils.madnessDiscardExile(container, fromZone, destinationZone)
-            if (madness != null) {
+            val madnessCost = ZoneMovementUtils.madnessDiscardExile(
+                state, entityId, container, fromZone, destinationZone
+            )
+            if (madnessCost != null) {
                 newState = newState.updateEntity(entityId) { c ->
                     c.with(MadnessExiledComponent(ownerId))
-                        .with(PlayWithFixedAlternativeManaCostComponent(ownerId, madness.cost))
+                        .with(PlayWithFixedAlternativeManaCostComponent(ownerId, madnessCost))
                 }
                 events.add(CardExiledWithMadnessEvent(ownerId, entityId, cardComponent.name))
             }
