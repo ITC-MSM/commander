@@ -54,5 +54,10 @@ class SuperSoldierSerumScenarioTest : FunSpec({
         // tokens, so the grant is only visible to the player through this field.
         card.grantedSubtypes shouldBe setOf("Soldier")
         card.legendaryByEffect shouldBe true
+
+        // grantedSubtypes exists for *static* grants like this Aura. Subtypes added by a floating
+        // effect are excluded, because those already carry their own "+X" type-change badge and
+        // would otherwise be reported twice in the preview.
+        card.activeEffects.none { it.effectId == "type_added" } shouldBe true
     }
 })
