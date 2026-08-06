@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeCoverage, pipColorOptions, pipGenericAmount } from './ManaSourceSelectionUI'
+import { computeCoverage, pipColorOptions, pipGenericAmount } from './manaCoverage'
 
 type Pool = Parameters<typeof computeCoverage>[1]
 const pool = (over: Record<string, number> = {}): Pool =>
