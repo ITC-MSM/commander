@@ -1060,13 +1060,22 @@ object Effects {
     /**
      * Create a permanent emblem that grants a static modification to permanents matching a filter.
      * Used for planeswalker -X abilities that produce static-ability emblems.
+     *
+     * [ownedStaticAbilities] carries wording the emblem has *itself* rather than grants to a group —
+     * "You may cast spells from your hand without paying their mana costs" (Tamiyo, Field
+     * Researcher). Such an emblem leaves [groupFilter] and the group modifications at their
+     * defaults.
      */
     fun CreatePermanentEmblem(
-        groupFilter: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter,
+        groupFilter: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter =
+            com.wingedsheep.sdk.scripting.filters.unified.GroupFilter(
+                com.wingedsheep.sdk.scripting.GameObjectFilter.Any
+            ),
         powerBonus: Int = 0,
         toughnessBonus: Int = 0,
         grantedKeywords: List<String> = emptyList(),
         grantedActivatedAbilities: List<com.wingedsheep.sdk.scripting.ActivatedAbility> = emptyList(),
+        ownedStaticAbilities: List<com.wingedsheep.sdk.scripting.StaticAbility> = emptyList(),
         emblemDescription: String
     ): Effect = com.wingedsheep.sdk.scripting.effects.CreatePermanentEmblemEffect(
         groupFilter = groupFilter,
@@ -1074,6 +1083,7 @@ object Effects {
         toughnessBonus = toughnessBonus,
         grantedKeywords = grantedKeywords,
         grantedActivatedAbilities = grantedActivatedAbilities,
+        ownedStaticAbilities = ownedStaticAbilities,
         emblemDescription = emblemDescription
     )
 

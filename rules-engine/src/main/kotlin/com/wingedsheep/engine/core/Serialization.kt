@@ -389,6 +389,7 @@ val engineSerializersModule = SerializersModule {
         subclass(PutIntoGraveyardThisTurnComponent::class)
         subclass(EmblemSourceComponent::class)
         subclass(EmblemActivatedAbilityComponent::class)
+        subclass(EmblemStaticAbilityComponent::class)
         subclass(CommanderComponent::class)
         subclass(RingBearerComponent::class)
         subclass(TheRingComponent::class)

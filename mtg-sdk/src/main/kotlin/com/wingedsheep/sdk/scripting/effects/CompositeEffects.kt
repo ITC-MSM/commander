@@ -814,6 +814,21 @@ sealed interface DelayedTriggerExpiry {
     @SerialName("DelayedTriggerExpiry.Never")
     @Serializable
     data object Never : DelayedTriggerExpiry
+
+    /**
+     * Remove the delayed trigger after the untap step of its **controller's** next turn — the
+     * delayed-trigger analogue of [com.wingedsheep.sdk.scripting.Duration.UntilYourNextTurn], and
+     * expired on the same post-untap hook so both wordings wear off at the same moment.
+     *
+     * Models "Until your next turn, whenever …" riders that install a watcher rather than a
+     * continuous effect: Tamiyo, Field Researcher's +1 ("Until your next turn, whenever either of
+     * those creatures deals combat damage, you draw a card"). Unlike [EndOfTurn] the trigger
+     * survives the intervening opponents' turns, and unlike [Never] it does not outlive the
+     * controller's next untap step.
+     */
+    @SerialName("DelayedTriggerExpiry.UntilControllersNextTurn")
+    @Serializable
+    data object UntilControllersNextTurn : DelayedTriggerExpiry
 }
 
 /**

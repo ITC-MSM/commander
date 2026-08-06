@@ -1280,6 +1280,44 @@ class CostCalculator(
                 return true
             }
         }
+        return hasEmblemFreeCastPermission(state, casterId, spellCardDef, castFromZone)
+    }
+
+    /**
+     * The emblem half of [hasFreeCastPermission] (Tamiyo, Field Researcher's −7). Emblems are
+     * synthetic entities that live outside every zone, so the battlefield scan can't see them;
+     * their statics are read from
+     * [com.wingedsheep.engine.state.components.identity.EmblemStaticAbilityComponent] instead.
+     *
+     * The `firstSpellOfTurnOnly` / `oncePerTurn` gates are deliberately not honored here: those key
+     * off a *battlefield source* being marked used, and no emblem prints them. An emblem carrying
+     * one would silently grant an unlimited permission, so it is rejected outright rather than
+     * approximated.
+     */
+    private fun hasEmblemFreeCastPermission(
+        state: GameState,
+        casterId: EntityId,
+        spellCardDef: CardDefinition?,
+        castFromZone: com.wingedsheep.sdk.core.Zone?
+    ): Boolean {
+        for ((entityId, container) in state.entities) {
+            val statics = container
+                .get<com.wingedsheep.engine.state.components.identity.EmblemStaticAbilityComponent>()
+                ?: continue
+            val emblemController = container
+                .get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()
+                ?.playerId
+            for (ability in statics.abilities) {
+                if (ability !is MayCastWithoutPayingManaCost) continue
+                if (ability.firstSpellOfTurnOnly || ability.oncePerTurn) continue
+                if (ability.fromExileOnly && castFromZone != com.wingedsheep.sdk.core.Zone.EXILE) continue
+                if (ability.controllerOnly && emblemController != casterId) continue
+                if (spellCardDef != null && ability.spellFilter != GameObjectFilter.Any &&
+                    !matchesCardDefinition(spellCardDef, ability.spellFilter, entityId, state, state.projectedState)
+                ) continue
+                return true
+            }
+        }
         return false
     }
 
@@ -1296,6 +1334,9 @@ class CostCalculator(
         spellCardDef: CardDefinition?,
         castFromZone: com.wingedsheep.sdk.core.Zone? = null
     ): EntityId? {
+        // An emblem's permission is always unlimited, so it covers this cast on its own and no
+        // battlefield once-per-turn use should be consumed.
+        if (hasEmblemFreeCastPermission(state, casterId, spellCardDef, castFromZone)) return null
         var oncePerTurnCandidate: EntityId? = null
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue

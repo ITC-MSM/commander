@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 113 / 312
+**Implemented:** 114 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -281,7 +281,7 @@
 - [ ] Tainted Wood
 - [x] Talisman of Impulse
 - [ ] Talisman of Resilience
-- [ ] Tamiyo, Field Researcher
+- [x] Tamiyo, Field Researcher
 - [ ] Tear Asunder
 - [ ] Teferi, Time Raveler
 - [x] Temple of Abandon

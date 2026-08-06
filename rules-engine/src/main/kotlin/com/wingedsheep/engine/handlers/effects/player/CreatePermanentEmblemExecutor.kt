@@ -15,6 +15,7 @@ import com.wingedsheep.engine.state.components.battlefield.withCastChoice
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.EmblemSourceComponent
 import com.wingedsheep.engine.state.components.identity.EmblemActivatedAbilityComponent
+import com.wingedsheep.engine.state.components.identity.EmblemStaticAbilityComponent
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.CreatePermanentEmblemEffect
@@ -75,6 +76,13 @@ class CreatePermanentEmblemExecutor : EffectExecutor<CreatePermanentEmblemEffect
         if (effect.grantedActivatedAbilities.isNotEmpty()) {
             emblemContainer = emblemContainer.with(
                 EmblemActivatedAbilityComponent(effect.groupFilter, effect.grantedActivatedAbilities)
+            )
+        }
+        // Statics the emblem has itself (Tamiyo's "You may cast spells from your hand without
+        // paying their mana costs") rather than grants to a group.
+        if (effect.ownedStaticAbilities.isNotEmpty()) {
+            emblemContainer = emblemContainer.with(
+                EmblemStaticAbilityComponent(effect.ownedStaticAbilities)
             )
         }
 

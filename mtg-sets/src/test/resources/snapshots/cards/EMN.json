@@ -3625,6 +3625,175 @@
     ]
 }
 
+// Tamiyo, Field Researcher
+{
+    "name": "Tamiyo, Field Researcher",
+    "manaCost": "{1}{G}{W}{U}",
+    "typeLine": "Legendary Planeswalker — Tamiyo",
+    "oracleText": "+1: Choose up to two target creatures. Until your next turn, whenever either of those creatures deals combat damage, you draw a card.\n−2: Tap up to two target nonland permanents. They don't untap during their controller's next untap step.\n−7: Draw three cards. You get an emblem with \"You may cast spells from your hand without paying their mana costs.\"",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "CreateDelayedTrigger",
+                        "effect": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        "trigger": {
+                            "event": {
+                                "type": "DealsDamageEvent",
+                                "damageType": "DamageCombat"
+                            }
+                        },
+                        "watchedTarget": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "expiry": "DelayedTriggerExpiry.UntilControllersNextTurn"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 2,
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "up to two target creatures"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Choose up to two target creatures. Until your next turn, whenever either of those creatures deals combat damage, you draw a card."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -2
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "TapUntap",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "DOESNT_UNTAP",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "duration": "UntilAfterAffectedControllersNextUntap"
+                            }
+                        ]
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 2,
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "nonland permanent"
+                        },
+                        "id": "up to two target nonland permanents"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Tap up to two target nonland permanents. They don't untap during their controller's next untap step."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -7
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        },
+                        {
+                            "type": "CreatePermanentEmblem",
+                            "ownedStaticAbilities": [
+                                {
+                                    "type": "MayCastWithoutPayingManaCost",
+                                    "controllerOnly": true
+                                }
+                            ],
+                            "emblemDescription": "You may cast spells from your hand without paying their mana costs."
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "190",
+        "rarity": "MYTHIC",
+        "artist": "Tianhua X",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9f9aced7-9ae9-432f-b8c0-caac9cad098b.jpg?1783937424",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "Tamiyo's first ability can target creatures you don't control. You'll draw a card, not their controller, if they deal combat damage."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Tamiyo's first ability sets up a delayed triggered ability that triggers even if Tamiyo has left the battlefield before those creatures deal combat damage."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If Tamiyo's first ability targets two creatures, and both deal combat damage at the same time, the delayed triggered ability triggers twice."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If you cast a spell \"without paying its mana cost,\" you can't choose to cast it for any alternative costs. You can, however, pay additional costs. If the spell has any mandatory additional costs, those must be paid to cast the spell."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If a spell has {X} in its mana cost, you must choose 0 as the value of X when casting it without paying its mana cost."
+            }
+        ]
+    },
+    "startingLoyalty": 4,
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Thalia, Heretic Cathar
 {
     "name": "Thalia, Heretic Cathar",
