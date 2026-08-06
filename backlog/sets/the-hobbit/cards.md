@@ -2,7 +2,7 @@
 
 **Set Size:** 193 cards revealed as of 2026-08-04
 **Release Date:** August 14, 2026
-**Implemented:** 66 / 193
+**Implemented:** 71 / 193
 Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. This list covers only cards revealed as of that date.
 
 - [x] 1. Long-Bodied Grey Dog
@@ -23,7 +23,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 16. Iron Hills Blacksmith
 - [ ] 17. Kíli the Resourceful
 - [ ] 18. Lake-town Lookout
-- [ ] 19. Lake-town Toymaker
+- [x] 19. Lake-town Toymaker
 - [x] 20. Magnificent End
 - [ ] 21. Moment of Glory
 - [ ] 22. The Mountain-king's Return
@@ -93,7 +93,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 86. Supper for Spiders
 - [ ] 87. Balin, Loremaster
 - [ ] 88. Bombur, Gentle Dreamer
-- [ ] 89. Bothersome Noisemaker
+- [x] 89. Bothersome Noisemaker
 - [ ] 90. Burn, Burn, Tree and Fern
 - [ ] 91. Dáin Ironfoot
 - [ ] 92. Desert Were-Worm
@@ -104,12 +104,12 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [x] 97. Gandalf, Spark Starter
 - [ ] 98. Getaway Barrel
 - [ ] 99. Glóin the Mighty
-- [ ] 100. Goblin-town Flunkies
+- [x] 100. Goblin-town Flunkies
 - [x] 101. Gundabad Opportunist
 - [x] 102. Iron Hills Stalwart
 - [ ] 103. Last Light of Durin's Day
 - [ ] 104. The Misty Mountains Cold
-- [ ] 105. Misty Mountains Raider
+- [x] 105. Misty Mountains Raider
 - [ ] 106. Óin the Brave
 - [ ] 107. Pinecone Strike
 - [x] 108. Ragged Short Spear
@@ -117,7 +117,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [x] 110. Smaug the Magnificent
 - [x] 111. Smaug's Fury
 - [ ] 112. Snowslope Hunter
-- [ ] 113. Stone-Giant of High Pass
+- [x] 113. Stone-Giant of High Pass
 - [ ] 114. Thorin, Mountain-king
 - [x] 115. Tidings of War
 - [x] 116. Attercop

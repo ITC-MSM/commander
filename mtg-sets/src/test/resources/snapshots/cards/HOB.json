@@ -85,6 +85,48 @@
     ]
 }
 
+// Bothersome Noisemaker
+{
+    "name": "Bothersome Noisemaker",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Bard",
+    "oracleText": "Whenever you cast a noncreature spell, amass Goblins 1. (Put a +1/+1 counter on an Army you control. It's also a Goblin. If you don't control an Army, create a 0/0 black Goblin Army creature token first.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Amass",
+                    "subtype": "Goblin"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "rarity": "UNCOMMON",
+        "artist": "Andreia Ugrai",
+        "flavorText": "The Goblins began to sing, or croak, keeping time with the flap of their flat feet on the stone.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cb25b11a-6bf5-4a9a-b60f-d4dcac3816d6.jpg?1784894881"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Boughside Wanderers
 {
     "name": "Boughside Wanderers",
@@ -1329,6 +1371,45 @@
     ]
 }
 
+// Goblin-town Flunkies
+{
+    "name": "Goblin-town Flunkies",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Soldier",
+    "oracleText": "Haste\nWhen this creature enters, amass Goblins 1. (Put a +1/+1 counter on an Army you control. It's also a Goblin. If you don't control an Army, create a 0/0 black Goblin Army creature token first.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Amass",
+                    "subtype": "Goblin"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "artist": "Jason Kang",
+        "flavorText": "Goblins made no beautiful things, but they made many clever ones.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/ccff7382-8609-494c-aeee-cd1436456dd0.jpg?1785497117"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Great Fierce Bee
 {
     "name": "Great Fierce Bee",
@@ -1621,6 +1702,80 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Lake-town Toymaker
+{
+    "name": "Lake-town Toymaker",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Artificer",
+    "oracleText": "At the beginning of combat on your turn, if you've drawn two or more cards this turn, another target creature you control gets +3/+0 and gains first strike until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "another target creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FIRST_STRIKE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "another target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "another target creature you control"
+                },
+                "triggerCondition": {
+                    "type": "PlayerDrewCardsThisTurn",
+                    "atLeast": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "rarity": "UNCOMMON",
+        "artist": "Marina Ortega Lorente",
+        "flavorText": "In the great days of old, when Dale in the North was rich and prosperous, Lake-town flourished.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67304269-c595-4cf0-8dbf-fcb2e9e01fe2.jpg?1785496951"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1986,6 +2141,45 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Misty Mountains Raider
+{
+    "name": "Misty Mountains Raider",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Goblin Soldier",
+    "oracleText": "Whenever you attack, amass Goblins 2. (Put two +1/+1 counters on an Army you control. It's also a Goblin. If you don't control an Army, create a 0/0 black Goblin Army creature token first.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Amass",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "subtype": "Goblin"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "rarity": "UNCOMMON",
+        "artist": "Tomas Duchek",
+        "flavorText": "The Wargs and the Goblins often helped one another in wicked deeds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6dff14cd-b60b-48f4-9d9f-c9019b55df4c.jpg?1785152178"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -2768,6 +2962,117 @@
         "artist": "Andrea Piparo",
         "flavorText": "The Dwarves had barely time to fly back to the tunnel when Smaug came hurtling from the north, licking the mountainsides with flame, beating his great wings with a noise like a roaring wind.",
         "imageUri": "https://cards.scryfall.io/normal/front/a/1/a16f203a-785e-4c78-9410-fb9f8a0ffa01.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Stone-Giant of High Pass
+{
+    "name": "Stone-Giant of High Pass",
+    "manaCost": "{5}{R}{R}",
+    "typeLine": "Creature — Giant",
+    "oracleText": "Whenever this creature enters or attacks, create a 3/1 colorless Wall artifact creature token with defender named Stone Boulder.\n{2}{R}, Sacrifice an artifact: This creature deals 4 damage to any target.",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Wall"
+                    ],
+                    "keywords": [
+                        "DEFENDER"
+                    ],
+                    "name": "Stone Boulder",
+                    "imageUri": "https://cards.scryfall.io/normal/front/3/4/3440e247-a733-4609-9d80-d4a5fc58ae46.jpg?1785502811",
+                    "artifactToken": true
+                },
+                "descriptionOverride": "Whenever this creature enters, create a 3/1 colorless Wall artifact creature token with defender named Stone Boulder."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Wall"
+                    ],
+                    "keywords": [
+                        "DEFENDER"
+                    ],
+                    "name": "Stone Boulder",
+                    "imageUri": "https://cards.scryfall.io/normal/front/3/4/3440e247-a733-4609-9d80-d4a5fc58ae46.jpg?1785502811",
+                    "artifactToken": true
+                },
+                "descriptionOverride": "Whenever this creature attacks, create a 3/1 colorless Wall artifact creature token with defender named Stone Boulder."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{R}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "{2}{R}, Sacrifice an artifact: This creature deals 4 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "113",
+        "rarity": "RARE",
+        "artist": "Miklós Ligeti",
+        "flavorText": "The stone-giants were out and were hurling rocks at one another for a game.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5f4f4683-ffd2-447a-932b-276f7fa17cca.jpg?1785496221"
     },
     "colorIdentityOverride": [
         "RED"
