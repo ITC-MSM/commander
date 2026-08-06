@@ -1,6 +1,9 @@
 package com.wingedsheep.ai.engine.knowledge
 
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.state.ComponentContainer
+import com.wingedsheep.engine.state.components.identity.RoomComponent
+import com.wingedsheep.engine.state.components.identity.RoomFaceId
 import com.wingedsheep.sdk.model.CardDefinition
 
 /**
@@ -34,6 +37,47 @@ class IntentCatalog private constructor(private val registry: CardRegistry?) {
     fun forName(name: String): CardIntent? {
         val definition = registry?.getCard(name) ?: return null
         return CardIntentAnalyzer.analyze(definition)
+    }
+
+    /**
+     * The intent of the face called [faceName] on the card called [cardName], or null when the
+     * catalog is off, the name is not a real card, or that card has no such face.
+     *
+     * What one *face* does is the question a Room asks (CR 709.5): a locked door's text does not
+     * exist, so a Room permanent is worth what its unlocked faces do — see [forPermanent].
+     */
+    fun forFace(cardName: String, faceName: String): CardIntent? {
+        val definition = registry?.getCard(cardName) ?: return null
+        val face = definition.cardFaces.find { it.name == faceName } ?: return null
+        return CardIntentAnalyzer.analyzeFace(definition, face)
+    }
+
+    /**
+     * Every intent currently *in force* on the battlefield permanent [container], whose card is
+     * called [cardName]. Empty when the catalog is off or the name is not a real card — which
+     * callers must read as "no information", never as "this permanent does nothing".
+     *
+     * This is the only reading a permanent should ever be valued by, and it is deliberately the
+     * one place that knows a Room from anything else:
+     *
+     *  - A Room (CR 709.5) contributes one entry per **unlocked** door, because a locked half's
+     *    rules text does not exist. Unlocking is what raises the total — and a Room put onto the
+     *    battlefield with both doors locked (CR 709.5d) contributes nothing, correctly.
+     *  - Anything else contributes its own top-level reading, with the spell faces of an
+     *    Adventure / Omen / modal DFC left out: those resolve away to exile, library or graveyard
+     *    and are never the permanent standing here.
+     *
+     * Face membership is tested the same way
+     * [com.wingedsheep.engine.state.components.identity.RoomFaceStatics] tests it — by [RoomFaceId]
+     * against the card definition's faces — so the two cannot drift on which door is open.
+     */
+    fun forPermanent(container: ComponentContainer, cardName: String): List<CardIntent> {
+        val definition = registry?.getCard(cardName) ?: return emptyList()
+        val room = container.get<RoomComponent>()
+            ?: return listOf(CardIntentAnalyzer.analyzeSelf(definition))
+        return definition.cardFaces
+            .filter { RoomFaceId(it.name) in room.unlocked }
+            .map { CardIntentAnalyzer.analyzeFace(definition, it) }
     }
 
     /** The intent of a definition already in hand. Always answers, even on [NONE]. */

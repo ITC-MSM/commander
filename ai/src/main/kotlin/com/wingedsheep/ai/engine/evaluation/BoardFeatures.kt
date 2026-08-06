@@ -8,6 +8,7 @@ import com.wingedsheep.ai.engine.knowledge.CardIntent
 import com.wingedsheep.ai.engine.knowledge.IntentCatalog
 import com.wingedsheep.ai.engine.lifePoolsOf
 import com.wingedsheep.ai.engine.sidesFor
+import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -136,7 +137,7 @@ object BoardPresence : BoardFeature {
         // max keeps both, and guarantees no permanent is ever valued lower than it was before
         // Phase 6 — so a position the AI played correctly on the old numbers still scores at least
         // as well.
-        val prior = intents.forName(card.name)?.let { intentValue(projected, entityId, it) } ?: 0.0
+        val prior = priorValue(projected, entityId, container, card, intents)
 
         // Planeswalkers: the flat 4.0 priced a fresh Jace and a Jace at 1 loyalty identically.
         // Loyalty is both the walker's life total and its remaining activations, so it is the one
@@ -160,6 +161,36 @@ object BoardPresence : BoardFeature {
         // text — a signet, an Oblivion Ring and a Bitterblossom scoring the same number is the
         // blindness Phase 6 exists to remove.
         return maxOf(0.5, prior)
+    }
+
+    /**
+     * The prior for the permanent [entityId] *as it currently stands* — which is not the same
+     * question as what its card can do.
+     *
+     * [IntentCatalog.forPermanent] answers with one [CardIntent] per reading in force: one for an
+     * ordinary permanent, one per **unlocked** door for a Room (CR 709.5). Reading a Room as a
+     * whole card would price it the same however many doors are open, which is exactly why the AI
+     * would cast a half and then never pay to unlock the other — a special action that moves no
+     * evaluated number can never beat passing.
+     *
+     * The readings combine as a baseline plus what each one adds *over* it, rather than a plain
+     * sum. `UNKNOWN.staticPriorValue` is the value of a permanent the analyzer cannot read, and a
+     * Room with two blank halves is still one unreadable permanent, not two — summing raw would
+     * make it outrank every other unreadable permanent for no reason at all.
+     */
+    private fun priorValue(
+        projected: ProjectedState,
+        entityId: EntityId,
+        container: ComponentContainer,
+        card: CardComponent,
+        intents: IntentCatalog,
+    ): Double {
+        val inForce = intents.forPermanent(container, card.name)
+        if (inForce.isEmpty()) return 0.0
+        val unreadable = CardIntent.UNKNOWN.staticPriorValue
+        return unreadable + inForce.sumOf {
+            (intentValue(projected, entityId, it) - unreadable).coerceAtLeast(0.0)
+        }
     }
 
     /**
@@ -192,7 +223,7 @@ object BoardPresence : BoardFeature {
         state: GameState,
         projected: ProjectedState,
         entityId: EntityId,
-        container: com.wingedsheep.engine.state.ComponentContainer
+        container: ComponentContainer
     ): Double {
         val power = projected.getPower(entityId) ?: 0
         val toughness = projected.getToughness(entityId) ?: 0

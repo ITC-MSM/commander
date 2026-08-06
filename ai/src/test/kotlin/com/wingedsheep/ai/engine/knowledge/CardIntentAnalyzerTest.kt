@@ -1,8 +1,16 @@
 package com.wingedsheep.ai.engine.knowledge
 
+import com.wingedsheep.engine.state.ComponentContainer
+import com.wingedsheep.engine.state.components.identity.RoomComponent
+import com.wingedsheep.engine.state.components.identity.RoomFace
+import com.wingedsheep.engine.state.components.identity.RoomFaceId
 import com.wingedsheep.engine.support.ScenarioTestBase
+import com.wingedsheep.mtg.sets.definitions.dsk.cards.UnholyAnnexRitualChamber
+import com.wingedsheep.mtg.sets.definitions.woe.cards.VirtueOfLoyalty
 import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.doubles.shouldBeLessThan
@@ -18,6 +26,18 @@ import io.kotest.matchers.shouldBe
 class CardIntentAnalyzerTest : ScenarioTestBase() {
 
     private fun intentOf(name: String) = CardIntentAnalyzer.analyze(cardRegistry.requireCard(name))
+
+    private fun roomFace(name: String) = UnholyAnnexRitualChamber.cardFaces.first { it.name == name }
+
+    /** An `Unholy Annex // Ritual Chamber` permanent with exactly [unlocked] doors open. */
+    private fun roomPermanent(vararg unlocked: String) = ComponentContainer().withComponent(
+        RoomComponent(
+            faces = UnholyAnnexRitualChamber.cardFaces.map {
+                RoomFace(RoomFaceId(it.name), it.name, it.manaCost)
+            },
+            unlocked = unlocked.map { RoomFaceId(it) }.toSet(),
+        )
+    )
 
     init {
         test("a repeatable tapper reads as a repeatable tapper") {
@@ -95,6 +115,93 @@ class CardIntentAnalyzerTest : ScenarioTestBase() {
             val intent = intentOf("Grizzly Bears")
             intent.tags shouldBe emptySet()
             intent.staticPriorValue shouldBe CardIntent.UNKNOWN.staticPriorValue
+        }
+
+        test("a Room's rules text lives on its faces, and the analyzer reads it") {
+            // Top-level script is empty for a split card (CR 709) — reading only that priced this
+            // repeatable draw engine as a vanilla enchantment, and the AI never cast it.
+            val intent = CardIntentAnalyzer.analyze(UnholyAnnexRitualChamber)
+            intent.tags shouldContain IntentTag.DRAW
+            intent.tags shouldContain IntentTag.TOKEN_MAKER
+            intent.repeatable shouldBe true
+            intent.staticPriorValue shouldBeGreaterThan 2.7
+        }
+
+        test("each Room half is valued on its own, so unlocking a door is worth something") {
+            val annex = CardIntentAnalyzer.analyzeFace(UnholyAnnexRitualChamber, roomFace("Unholy Annex"))
+            withClue("an end-step draw trigger that fires every turn") {
+                annex.tags shouldContain IntentTag.DRAW
+                annex.repeatable shouldBe true
+                annex.staticPriorValue shouldBeGreaterThan 2.7
+            }
+
+            val chamber = CardIntentAnalyzer.analyzeFace(UnholyAnnexRitualChamber, roomFace("Ritual Chamber"))
+            chamber.tags shouldContain IntentTag.TOKEN_MAKER
+            withClue("'when you unlock this door' fires once for that door, like an ETB") {
+                chamber.repeatable shouldBe false
+                chamber.staticPriorValue shouldBe CardIntent.UNKNOWN.staticPriorValue
+            }
+        }
+
+        test("the catalog resolves a face by name, and shrugs at a face that isn't there") {
+            val catalog = IntentCatalog.of(cardRegistry.apply { register(UnholyAnnexRitualChamber) })
+            catalog.forFace(UnholyAnnexRitualChamber.name, "Unholy Annex")!!.tags shouldContain IntentTag.DRAW
+            catalog.forFace(UnholyAnnexRitualChamber.name, "Broom Closet") shouldBe null
+            IntentCatalog.NONE.forFace(UnholyAnnexRitualChamber.name, "Unholy Annex") shouldBe null
+        }
+
+        test("a spent Adventure half does not inflate the permanent it left behind") {
+            // Virtue of Loyalty is an enchantment whose Adventure (CR 715) makes a 2/2 Knight. The
+            // Adventure resolves to exile — it is never text on the battlefield — so the
+            // enchantment standing there must not be priced as a token engine.
+            val wholeCard = CardIntentAnalyzer.analyze(VirtueOfLoyalty)
+            withClue("casting the Adventure is a real option, so the card as a whole still shows it") {
+                wholeCard.tags shouldContain IntentTag.TOKEN_MAKER
+            }
+
+            val asPermanent = CardIntentAnalyzer.analyzeSelf(VirtueOfLoyalty)
+            asPermanent.tags shouldNotContain IntentTag.TOKEN_MAKER
+            withClue("a repeatable token maker prices at 3.0; this end-step trigger is worth 1.5") {
+                asPermanent.staticPriorValue shouldBeLessThan wholeCard.staticPriorValue
+            }
+        }
+
+        test("a single-face card reads the same whether asked as a card or as a permanent") {
+            val card = cardRegistry.requireCard("Icy Manipulator")
+            CardIntentAnalyzer.analyzeSelf(card) shouldBe CardIntentAnalyzer.analyze(card)
+        }
+
+        test("a permanent is read from the faces in force on it, and a Room's are its open doors") {
+            val catalog = IntentCatalog.of(
+                cardRegistry.apply { register(UnholyAnnexRitualChamber); register(VirtueOfLoyalty) }
+            )
+
+            withClue("an ordinary permanent is one reading — its own, minus the Adventure") {
+                val plain = catalog.forPermanent(ComponentContainer(), VirtueOfLoyalty.name)
+                plain.map { it.tags } shouldBe listOf(CardIntentAnalyzer.analyzeSelf(VirtueOfLoyalty).tags)
+            }
+
+            withClue("a Room contributes one reading per unlocked door, and none for a locked one") {
+                val oneDoor = catalog.forPermanent(
+                    roomPermanent("Unholy Annex"), UnholyAnnexRitualChamber.name
+                )
+                oneDoor.single().tags shouldContain IntentTag.DRAW
+                oneDoor.single().tags shouldNotContain IntentTag.TOKEN_MAKER
+
+                catalog.forPermanent(
+                    roomPermanent("Unholy Annex", "Ritual Chamber"), UnholyAnnexRitualChamber.name
+                ) shouldHaveSize 2
+            }
+
+            withClue("both doors locked (CR 709.5d) is no text at all, not the whole card") {
+                catalog.forPermanent(roomPermanent(), UnholyAnnexRitualChamber.name).shouldBeEmpty()
+            }
+
+            withClue("the off position answers nothing, so every caller keeps its old behaviour") {
+                IntentCatalog.NONE.forPermanent(
+                    roomPermanent("Unholy Annex"), UnholyAnnexRitualChamber.name
+                ).shouldBeEmpty()
+            }
         }
 
         test("the catalog is off by default and answers nothing") {
