@@ -36,7 +36,27 @@ interface PipCoverage {
  * the server still re-solves on submit. Skips X (variable). `extraGeneric` folds in non-mana
  * payment: each tapped Waterbend permanent pays {1} generic.
  */
-function computeCoverage(
+const COLOR_OR_COLORLESS = new Set(['W', 'U', 'B', 'R', 'G', 'C'])
+
+/**
+ * The colours a pip will accept. A hybrid pays with *either* half (CR 107.4d), so `{W/B}` accepts
+ * white or black; a monocolour hybrid like `{2/W}` accepts white here and its generic half in the
+ * generic pass. Phyrexian `{W/P}` keeps its colour half (the life option isn't paid from sources).
+ */
+export function pipColorOptions(symbol: string): string[] {
+  return symbol.split('/').filter((part) => COLOR_OR_COLORLESS.has(part))
+}
+
+/** The generic amount a pip can be paid with, if any: `3` -> 3, `2/W` -> 2, `W` -> null. */
+export function pipGenericAmount(symbol: string): number | null {
+  for (const part of symbol.split('/')) {
+    const parsed = parseInt(part, 10)
+    if (!isNaN(parsed)) return parsed
+  }
+  return null
+}
+
+export function computeCoverage(
   costSymbols: readonly string[],
   pool: ClientManaPool | null,
   selectedIds: readonly EntityId[],
@@ -56,9 +76,9 @@ function computeCoverage(
 
   // Pass 1 — floating mana against coloured pips it exactly matches.
   for (const pip of pips) {
-    const have = floatingByColor[pip.symbol]
-    if (have !== undefined && have > 0) {
-      floatingByColor[pip.symbol] = have - 1
+    const paidWith = pipColorOptions(pip.symbol).find((color) => (floatingByColor[color] ?? 0) > 0)
+    if (paidWith !== undefined) {
+      floatingByColor[paidWith] = (floatingByColor[paidWith] ?? 0) - 1
       pip.floating = true
     }
   }
@@ -71,7 +91,10 @@ function computeCoverage(
     if (!source) continue
     const colors = (source.producesColors ?? []).map(toPip)
     const match = pips.find(
-      (pip) => !pip.floating && !pip.pending && colors.includes(pip.symbol),
+      (pip) =>
+        !pip.floating &&
+        !pip.pending &&
+        pipColorOptions(pip.symbol).some((option) => colors.includes(option)),
     )
     if (match) match.pending = true
     else flexibleSources.push(source)
@@ -83,8 +106,8 @@ function computeCoverage(
   let leftoverPending = flexibleSources.length + extraGeneric
   for (const pip of pips) {
     if (pip.floating || pip.pending) continue
-    const amount = parseInt(pip.symbol, 10)
-    if (isNaN(amount)) continue
+    const amount = pipGenericAmount(pip.symbol)
+    if (amount === null) continue
     if (leftoverFloating >= amount) {
       leftoverFloating -= amount
       pip.floating = true
