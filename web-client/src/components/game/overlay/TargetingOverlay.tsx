@@ -571,16 +571,20 @@ export function TargetingOverlay() {
           : isBounce
             ? `Select ${targetingState.targetDescription ?? 'a creature to return to its owner’s hand'} (${targetDisplay})`
             : isSacrifice
-              ? `Select creature to sacrifice (${targetDisplay})`
+              ? // The cost description reads "sacrifice an artifact" / "sacrifice two creatures";
+                // capitalise it rather than assuming a creature.
+                targetingState.targetDescription
+                ? `${targetingState.targetDescription.charAt(0).toUpperCase()}${targetingState.targetDescription.slice(1)} (${targetDisplay})`
+                : `Select permanent to sacrifice (${targetDisplay})`
               : targetingState.targetDescription
                 ? `Select ${targetingState.targetDescription} (${targetDisplay})`
                 : `Select targets (${targetDisplay})`
 
   const hintText = hasMaxTargets
-    ? isBehold ? 'Card selected' : isDiscard ? 'Card selected' : isReveal ? 'Card selected' : isTapPermanent ? 'Permanents selected' : isBounce ? 'Creature selected' : isSacrifice ? 'Creature selected' : 'Maximum targets selected'
+    ? isBehold ? 'Card selected' : isDiscard ? 'Card selected' : isReveal ? 'Card selected' : isTapPermanent ? 'Permanents selected' : isBounce ? 'Creature selected' : isSacrifice ? 'Selected' : 'Maximum targets selected'
     : hasEnoughTargets
       ? 'Click Confirm or select more'
-      : isBehold ? `Click a highlighted card on the battlefield or in your hand` : isDiscard ? 'Click a card in your hand' : isReveal ? 'Click a card in your hand' : isTapPermanent ? 'Click a highlighted permanent' : isBounce ? 'Click an attacking creature you control' : isSacrifice ? 'Click a creature you control' : 'Click a highlighted target'
+      : isBehold ? `Click a highlighted card on the battlefield or in your hand` : isDiscard ? 'Click a card in your hand' : isReveal ? 'Click a card in your hand' : isTapPermanent ? 'Click a highlighted permanent' : isBounce ? 'Click an attacking creature you control' : isSacrifice ? 'Click a highlighted permanent you control' : 'Click a highlighted target'
 
   return (
     <div

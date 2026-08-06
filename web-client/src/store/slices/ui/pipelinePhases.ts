@@ -690,12 +690,17 @@ export function enterPhase(
           minTargets = costInfo.sacrificeCount ?? 1
           maxTargets = costInfo.sacrificeCount ?? 1
           flags.isSacrificeSelection = true
+          // The cost knows what it wants ("sacrifice an artifact"); without forwarding it the
+          // overlay falls back to hardcoded "creature" wording and misdescribes every
+          // non-creature sacrifice cost (Castle Doom's artifact, a land, an enchantment).
+          flags.targetDescription = costInfo.description
           break
         case 'SacrificeForCostReduction':
           validTargets = [...(costInfo.validSacrificeTargets ?? [])]
           minTargets = 0
           maxTargets = validTargets.length
           flags.isSacrificeSelection = true
+          flags.targetDescription = costInfo.description
           break
         case 'TapPermanents': {
           validTargets = [...(costInfo.validTapTargets ?? [])]
