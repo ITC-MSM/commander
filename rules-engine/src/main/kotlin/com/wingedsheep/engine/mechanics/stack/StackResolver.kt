@@ -8,6 +8,7 @@ import com.wingedsheep.engine.handlers.EffectHandler
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.daynight.DayNightService
+import com.wingedsheep.engine.mechanics.layers.ContinuousEffectSourceComponent
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -55,7 +56,9 @@ import com.wingedsheep.sdk.scripting.effects.MoveTrackedBattlefieldObjectEffect
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+import com.wingedsheep.engine.handlers.effects.permanent.types.buildCardComponentForDfcFace
 import com.wingedsheep.engine.handlers.effects.permanent.types.returnDfcFace
+import com.wingedsheep.engine.handlers.effects.permanent.types.withDfcFaceSelfRedirects
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
@@ -100,6 +103,10 @@ class StackResolver(
      * @param castFaceDown If true, cast as a face-down 2/2 creature (morph). The spell
      *                     will resolve as a face-down creature with FaceDownComponent
      *                     and MorphDataComponent.
+     * @param castTransformed If true, the card goes on the stack **back face up** (CR 712.8c) —
+     *                     disturb (CR 702.146). The face swap happens here, before the push, so
+     *                     every downstream read (resolution, targeting, the client view) sees the
+     *                     back face's characteristics without a special case.
      * @param damageDistribution Pre-chosen damage distribution for DividedDamageEffect spells
      */
     fun castSpell(
@@ -110,6 +117,7 @@ class StackResolver(
         xValue: Int? = null,
         sacrificedPermanents: List<EntitySnapshot> = emptyList(),
         castFaceDown: Boolean = false,
+        castTransformed: Boolean = false,
         damageDistribution: Map<EntityId, Int>? = null,
         targetRequirements: List<TargetRequirement> = emptyList(),
         chosenCreatureType: String? = null,
@@ -163,6 +171,40 @@ class StackResolver(
         var newState = removeFromCurrentZone(state, cardId, casterId)
         if (castFaceDown) {
             newState = clearRevealedMorphsInHand(newState, casterId)
+        }
+
+        // Cast transformed (CR 712.8c, disturb): flip the card to its back face *before* it becomes
+        // a spell, so the stack object — and the permanent it resolves into — has only the back
+        // face's characteristics. The front-face CardComponent is stashed on the
+        // DoubleFacedComponent so Rule 712.8a restores it if the spell is countered or the
+        // permanent later leaves the battlefield (ZoneTransitionService does that restore, and it
+        // deliberately exempts the stack).
+        if (castTransformed) {
+            val frontDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+            val backDef = frontDef?.backFace
+            if (backDef != null) {
+                newState = newState.updateEntity(cardId) { c ->
+                    var updated = c
+                        .with(buildCardComponentForDfcFace(cardComponent, backDef))
+                        .with(
+                            DoubleFacedComponent(
+                                frontCardDefinitionId = frontDef.name,
+                                backCardDefinitionId = backDef.name,
+                                currentFace = DoubleFacedComponent.Face.BACK,
+                                frontFaceCard = cardComponent
+                            )
+                        )
+                        .without<ContinuousEffectSourceComponent>()
+                        .without<ReplacementEffectSourceComponent>()
+                    // Register the back face's static and replacement effects (the "if this would
+                    // be put into a graveyard from anywhere, exile it instead" clause the disturb
+                    // cycle prints on its back faces is one of these, and it must function from the
+                    // moment the card is a back-face object — CR 614.12).
+                    updated = staticAbilityHandler.addContinuousEffectComponent(updated, backDef)
+                    updated = staticAbilityHandler.addReplacementEffectComponent(updated, backDef)
+                    withDfcFaceSelfRedirects(updated, backDef)
+                }
+            }
         }
 
         // Build the flat target union for choose-N modal spells (Rule 700.2 / 601.2c).

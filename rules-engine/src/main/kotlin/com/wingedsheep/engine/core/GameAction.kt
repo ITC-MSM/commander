@@ -207,6 +207,14 @@ enum class AlternativeCostType {
      * on resolution.
      */
     MAYHEM,
+    /**
+     * Disturb ([com.wingedsheep.sdk.scripting.KeywordAbility.Disturb], CR 702.146) — graveyard, at
+     * the *back* face's normal timing. Pays the disturb mana instead of the mana cost and puts the
+     * card on the stack transformed (back face up, CR 712.8c), so the spell's type line, targets and
+     * abilities are the back face's. Like [MAYHEM] and unlike [FLASHBACK]/[HARMONIZE], the card is
+     * not exiled on resolution.
+     */
+    DISTURB,
     /** Warp ([com.wingedsheep.sdk.scripting.KeywordAbility.Warp], printed or granted) — hand (graveyard if opted in). */
     WARP,
     /**

@@ -9,6 +9,7 @@ import com.wingedsheep.engine.handlers.effects.ZoneTransitionResult
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
 import com.wingedsheep.engine.mechanics.layers.ContinuousEffectSourceComponent
@@ -16,11 +17,13 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.identity.SelfZoneRedirectComponent
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.RedirectZoneChange
 import com.wingedsheep.sdk.scripting.effects.TransformEffect
 import kotlin.reflect.KClass
 
@@ -146,6 +149,7 @@ internal fun flipDfcInPlace(
         // Re-register the new face's static and replacement effects.
         updated = staticAbilityHandler.addContinuousEffectComponent(updated, nextCardDef)
         updated = staticAbilityHandler.addReplacementEffectComponent(updated, nextCardDef)
+        updated = withDfcFaceSelfRedirects(updated, nextCardDef)
         updated
     }
 
@@ -155,6 +159,34 @@ internal fun flipDfcInPlace(
         newFaceName = nextCardDef.name,
         controllerId = controllerId
     )
+}
+
+/**
+ * Re-derive the entity's card-intrinsic "would be put into [zone] from anywhere → redirect instead"
+ * self-replacements ([SelfZoneRedirectComponent]) from [face].
+ *
+ * That component is normally built once, at entity creation, from the printed front face — so
+ * without this a face swap would leave the wrong face's redirects in place. It matters for the
+ * disturb cycle, whose back faces each print "If ~ would be put into a graveyard from anywhere,
+ * exile it instead": the clause has to start applying the moment the card becomes a back-face
+ * object (CR 614.12 — it functions in every zone, so a countered disturb spell is exiled rather
+ * than put into the graveyard), and stop applying when Rule 712.8a turns the card back over.
+ *
+ * Called from every face swap: [flipDfcInPlace], [returnDfcFace], the disturb cast in
+ * `StackResolver.castSpell`, and the 712.8a restore in `ZoneTransitionService`.
+ */
+internal fun withDfcFaceSelfRedirects(
+    container: ComponentContainer,
+    face: CardDefinition
+): ComponentContainer {
+    val redirects = face.script.replacementEffects
+        .filterIsInstance<RedirectZoneChange>()
+        .filter { it.selfOnly }
+    return if (redirects.isEmpty()) {
+        container.without<SelfZoneRedirectComponent>()
+    } else {
+        container.with(SelfZoneRedirectComponent(redirects))
+    }
 }
 
 /**
@@ -232,7 +264,9 @@ internal fun returnDfcFace(
         DoubleFacedComponent.Face.FRONT -> dfc.copy(currentFace = destinationFace, frontFaceCard = null)
     }
 
-    val prepared = state.updateEntity(entityId) { c -> c.with(destinationCard).with(updatedDfc) }
+    val prepared = state.updateEntity(entityId) { c ->
+        withDfcFaceSelfRedirects(c.with(destinationCard).with(updatedDfc), destinationDef)
+    }
     return ZoneTransitionService.moveToZone(
         prepared,
         entityId,

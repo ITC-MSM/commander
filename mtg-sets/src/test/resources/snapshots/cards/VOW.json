@@ -7912,6 +7912,100 @@
     ]
 }
 
+// Lantern Bearer
+{
+    "name": "Lantern Bearer",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flying\nDisturb {2}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{2}{U}"
+        }
+    ],
+    "backFace": {
+        "name": "Lanterns' Lift",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature gets +1/+1 and has flying.\nIf Lanterns' Lift would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING"
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "66",
+            "artist": "Zoltan Boros",
+            "flavorText": ". . . but she knew it would be rude to refuse.",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/4/a4d3652a-6774-4b16-aa8b-cb11d72ec7aa.jpg?1783924899"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "artist": "Zoltan Boros",
+        "flavorText": "Val didn't know what the silent geist was offering . . .",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4d3652a-6774-4b16-aa8b-cb11d72ec7aa.jpg?1783924899",
+        "rulings": [
+            {
+                "date": "2021-09-24",
+                "text": "When you cast a spell using a card's disturb ability, the card is put onto the stack with its back face up. The resulting spell has all the characteristics of that face."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The mana value of a spell cast using disturb is determined by the mana cost on the front face of the card, no matter what the total cost to cast the spell was."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The back face of each card with disturb has an ability that instructs its controller to exile it if it would be put into a graveyard from anywhere. This includes going to the graveyard from the stack, so if the spell is countered after you cast it using the disturb ability, it will be put into exile."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Lantern Flare
 {
     "name": "Lantern Flare",
@@ -12587,6 +12681,97 @@
         "artist": "Slawomir Maniak",
         "flavorText": "Priests of the Sigardian Sect travel to the farthest reaches to spread hope and healing, even in the darkest times.",
         "imageUri": "https://cards.scryfall.io/normal/front/e/6/e672a05c-5f1a-4aa6-9398-e33df01c7c96.jpg?1782703166"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Twinblade Geist
+{
+    "name": "Twinblade Geist",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Spirit Warrior",
+    "oracleText": "Double strike\nDisturb {2}{W} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "DOUBLE_STRIKE",
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{2}{W}"
+        }
+    ],
+    "backFace": {
+        "name": "Twinblade Invocation",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature has double strike.\nIf Twinblade Invocation would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "DOUBLE_STRIKE"
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "40",
+            "rarity": "UNCOMMON",
+            "artist": "Tuan Duong Chu",
+            "flavorText": "Since her passing, many more travelers have made it home alive.",
+            "imageUri": "https://cards.scryfall.io/normal/back/f/1/f1deb24b-3d8f-4251-a901-85eeb891f26f.jpg?1783924914"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "rarity": "UNCOMMON",
+        "artist": "Tuan Duong Chu",
+        "flavorText": "She faced down a howlpack alone, saving her town at the cost of her life.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f1deb24b-3d8f-4251-a901-85eeb891f26f.jpg?1783924914",
+        "rulings": [
+            {
+                "date": "2021-09-24",
+                "text": "When you cast a spell using a card's disturb ability, the card is put onto the stack with its back face up. The resulting spell has all the characteristics of that face."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The mana value of a spell cast using disturb is determined by the mana cost on the front face of the card, no matter what the total cost to cast the spell was."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The back face of each card with disturb has an ability that instructs its controller to exile it if it would be put into a graveyard from anywhere. This includes going to the graveyard from the stack, so if the spell is countered after you cast it using the disturb ability, it will be put into exile."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "WHITE"

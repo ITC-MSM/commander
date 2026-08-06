@@ -401,13 +401,16 @@ export function attachmentStackLayout(input: {
 export function hasMultipleCastingOptions(cardLegalActions: LegalActionInfo[]): boolean {
   // Count distinct casting method types
   const hasNormalCast = cardLegalActions.some(
-    (a) => a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastWithFlashback' && a.actionType !== 'CastWithWarp' && a.actionType !== 'CastWithDash'
+    (a) => a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastWithFlashback' && a.actionType !== 'CastWithWarp' && a.actionType !== 'CastWithDash' && a.actionType !== 'CastWithDisturb'
   )
   const hasMorphCast = cardLegalActions.some((a) => a.actionType === 'CastFaceDown')
   const hasKickerCast = cardLegalActions.some((a) => a.actionType === 'CastWithKicker')
   const hasFlashbackCast = cardLegalActions.some((a) => a.actionType === 'CastWithFlashback')
   const hasWarpCast = cardLegalActions.some((a) => a.actionType === 'CastWithWarp')
   const hasDashCast = cardLegalActions.some((a) => a.actionType === 'CastWithDash')
+  // Disturb (CR 702.146) casts the card's back face from the graveyard, so it is a distinct
+  // casting option from any normal cast of the same card.
+  const hasDisturbCast = cardLegalActions.some((a) => a.actionType === 'CastWithDisturb')
   const hasCycling = cardLegalActions.some((a) => a.action.type === 'CycleCard')
   const hasPlot = cardLegalActions.some((a) => a.action.type === 'PlotCard')
   const hasSuspend = cardLegalActions.some((a) => a.action.type === 'SuspendCardFromHand')
@@ -420,6 +423,7 @@ export function hasMultipleCastingOptions(cardLegalActions: LegalActionInfo[]): 
   if (hasFlashbackCast) options++
   if (hasWarpCast) options++
   if (hasDashCast) options++
+  if (hasDisturbCast) options++
   if (hasCycling) options++
   if (hasPlot) options++
   if (hasSuspend) options++

@@ -465,6 +465,35 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Disturb
+    // =========================================================================
+
+    /**
+     * Disturb [cost] (CR 702.146a). "You may cast this card transformed from your graveyard by
+     * paying [cost] rather than its mana cost."
+     *
+     * Printed on the front face of a transforming double-faced card, and functional only from its
+     * owner's graveyard. Casting this way puts the card on the stack **back face up**, so per
+     * CR 712.8c the spell has only the back face's characteristics — its card types decide the
+     * timing, and its `targetRequirements` / `auraTarget` decide what is targeted (the Innistrad
+     * disturb cycle has both creature and Aura back faces). Its mana value is still calculated from
+     * the front face's mana cost.
+     *
+     * Unlike [Flashback]/[Harmonize] a disturb cast does **not** exile the card on resolution: the
+     * back face enters the battlefield, and it is the back face's own printed "if this would be put
+     * into a graveyard from anywhere, exile it instead" replacement that keeps it from coming back a
+     * second time.
+     */
+    @SerialName("Disturb")
+    @Serializable
+    data class Disturb(
+        val cost: ManaCost
+    ) : KeywordAbility {
+        override val keyword: Keyword = Keyword.DISTURB
+        override val description: String = "Disturb $cost"
+    }
+
+    // =========================================================================
     // Madness
     // =========================================================================
 
@@ -1117,6 +1146,12 @@ sealed interface KeywordAbility {
          * Create Madness with mana cost from string (e.g., "Madness {R}").
          */
         fun madness(cost: String): KeywordAbility = Madness(ManaCost.parse(cost))
+
+        /**
+         * Create Disturb with mana cost from string (e.g., "Disturb {1}{W}"). Belongs on the front
+         * face of a transforming double-faced card whose back face is a permanent.
+         */
+        fun disturb(cost: String): KeywordAbility = Disturb(ManaCost.parse(cost))
 
         /**
          * Create Kicker with a mana cost.

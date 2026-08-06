@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.identity.CommanderZoneChoiceAskedComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.handlers.effects.permanent.types.withDfcFaceSelfRedirects
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
@@ -550,9 +551,16 @@ object ZoneTransitionService {
             if (entityContainer != null) {
                 val dfc = entityContainer.get<DoubleFacedComponent>()
                 if (dfc != null && dfc.isBack && dfc.frontFaceCard != null) {
+                    // The front face's own "from anywhere" self-replacements come back with it —
+                    // and, just as importantly, the back face's stop applying. A disturbed creature
+                    // that is exiled by its own back-face clause reverts to a plain front face.
+                    val frontDef = if (::cardRegistry.isInitialized) {
+                        cardRegistry.getCard(dfc.frontCardDefinitionId)
+                    } else null
                     newState = newState.updateEntity(entityId) { c ->
-                        c.with(dfc.frontFaceCard)
+                        val reverted = c.with(dfc.frontFaceCard)
                             .with(dfc.copy(currentFace = DoubleFacedComponent.Face.FRONT, frontFaceCard = null))
+                        if (frontDef != null) withDfcFaceSelfRedirects(reverted, frontDef) else reverted
                     }
                 }
             }

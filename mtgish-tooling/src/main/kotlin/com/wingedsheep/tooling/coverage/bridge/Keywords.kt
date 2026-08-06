@@ -121,6 +121,16 @@ internal fun BridgeBuilder.keywords() {
     // `madness("{cost}")` builder call for the pure-mana shape (all of them, in practice); anything
     // else declines -> SCAFFOLD. This entry only marks the capability covered (never blocking).
     supported("Madness", "keyword ability: Madness [cost] -> madness(\"{cost}\") builder (CR 702.35)")
+    // Disturb [cost] (CR 702.146) — a PARAMETERIZED keyword ability, so `supported` rather than
+    // `keyword`: `Keyword.DISTURB` exists, so PascalCase→enum auto-resolve would stamp a bare
+    // `keywords(Keyword.DISTURB)` and drop both the cost and the transform — the Ward/Saddle/Madness
+    // trap. Modelled as `disturb("{cost}")` on the FRONT face; the engine owns the whole mechanic
+    // (graveyard cast enumeration, the back-face flip before the spell is put on the stack, back-face
+    // timing/targets per CR 712.8c, front-face mana value).
+    // NOTE: this pins the *capability* only. Every disturb card is a transforming DFC, and the emitter
+    // declines every multi-faced card (the bridge sees only the front face's IR), so these stay
+    // SCAFFOLD and get hand-authored — exactly like Daybound/Nightbound above.
+    supported("Disturb", "keyword ability: Disturb [cost] -> disturb(\"{cost}\") builder on the DFC front face (CR 702.146)")
 
     composed("Landwalk", "specific *WALK keywords (SWAMPWALK, FORESTWALK, ...)")
     // Equip is a keyword ability, but the engine has no `Keyword.EQUIP` enum member: `equipAbility(cost)`
