@@ -2710,7 +2710,26 @@ class ClientStateTransformer(
                 entityId in it.effect.affectedEntities &&
                     it.effect.modification is SerializableModification.SetCreatureSubtypes
             }
-            if (hasSetCreatureSubtypes && projectedSubtypes.isNotEmpty() && projectedSubtypes != baseSubtypes) {
+            // "Is all creature types" (Undercover Skrull's graveyard-gated static, Stalactite
+            // Dagger) projects every creature type. The type line deliberately collapses back to the
+            // printed subtypes rather than rendering ~150 of them, and a *granted* all-types has no
+            // CHANGELING keyword to badge — so without this the state is invisible. Checked before
+            // the diff branches below, which would otherwise try to list every type.
+            val isEveryCreatureType = projectedSubtypes.isNotEmpty() &&
+                Subtype.ALL_CREATURE_TYPES.all { it in projectedSubtypes }
+            val hasChangelingKeyword = baseCardComponent?.baseKeywords?.contains(Keyword.CHANGELING) == true
+            if (isEveryCreatureType && !hasChangelingKeyword) {
+                effects.add(
+                    ClientCardEffect(
+                        effectId = "all_creature_types",
+                        name = "All types",
+                        description = "Is every creature type",
+                        icon = "type-change"
+                    )
+                )
+            } else if (isEveryCreatureType) {
+                // Native changeling already reads off the printed keyword badge.
+            } else if (hasSetCreatureSubtypes && projectedSubtypes.isNotEmpty() && projectedSubtypes != baseSubtypes) {
                 val joined = projectedSubtypes.joinToString(" ")
                 effects.add(
                     ClientCardEffect(
