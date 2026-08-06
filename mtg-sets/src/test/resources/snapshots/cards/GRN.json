@@ -21,16 +21,16 @@
                     "target1": "Self",
                     "target2": {
                         "type": "BoundVariable",
-                        "name": "target"
+                        "name": "target creature you don't control"
                     }
                 },
                 "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
-                        "baseFilter": "creature ctrl:you"
+                        "baseFilter": "creature ctrl:opponent"
                     },
-                    "id": "target"
+                    "id": "target creature you don't control"
                 }
             }
         ]

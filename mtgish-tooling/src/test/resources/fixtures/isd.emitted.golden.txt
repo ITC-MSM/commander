@@ -6285,7 +6285,7 @@ val PreyUpon = card("Prey Upon") {
     oracleText = "Target creature you control fights target creature you don't control. (Each deals damage equal to its power to the other.)"
     spell {
         val t1 = target("t1", TargetCreature(filter = TargetFilter.Creature.youControl()))
-        val t2 = target("t2", TargetCreature(filter = TargetFilter.Creature.youControl()))
+        val t2 = target("t2", TargetCreature(filter = TargetFilter.Creature.opponentControls()))
         effect = Effects.Fight(t1, t2)
     }
     metadata {
