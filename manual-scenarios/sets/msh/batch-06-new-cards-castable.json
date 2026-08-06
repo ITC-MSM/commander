@@ -8,9 +8,18 @@
       "Justice, Vance Astrovik",
       "Baxter Building",
       "Mister Fantastic, Reed Richards",
-      "Ms. Marvel, Kamala Khan"
+      "Bruce Banner"
     ],
     "battlefield": [
+      {
+        "name": "Ajani, Outland Chaperone",
+        "counters": {
+          "LOYALTY": 5
+        }
+      },
+      {
+        "name": "Island"
+      },
       {
         "name": "Island"
       },
@@ -71,6 +80,18 @@
     ],
     "library": [
       "Mountain",
+      "Mountain",
+      "Jalum Tome",
+      "Giant Growth",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Forest",
       "Island"
     ]
@@ -106,5 +127,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

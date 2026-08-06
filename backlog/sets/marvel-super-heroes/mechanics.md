@@ -423,6 +423,30 @@ which one connives.
 Both cards become implementable the moment the per-turn *effect* budget exists; neither needs
 anything else.
 
+### Power-only dynamic CDA granted for a duration — **Ms. Marvel, Kamala Khan** [67]
+> Embiggen Fist — Whenever you cast a spell that targets a creature you control, draw a card. Until
+> end of turn, Ms. Marvel gains "**Ms. Marvel's base power is equal to the number of cards in your
+> hand.**"
+
+The granted clause is a **characteristic-defining ability**: base power must keep tracking hand size
+for the rest of the turn. `Effects.SetBasePower` is a one-shot resolution-time *set* —
+`SetBaseStatsEffect` documents its `power` as "evaluated at resolution time" and is deliberately
+distinct from the projector's `SetPowerToughnessDynamic`, which is "re-evaluated per affected entity
+at projection time". So her power froze at whatever the hand was when the trigger resolved.
+Reproduced: hand 8 → power 11 (8 base + Giant Growth's 3); after a draw, hand 9 → power still 11.
+
+**Implemented then removed from this branch.** The right shape is
+`Effects.GrantStaticAbility(<power-only dynamic CDA>, EffectTarget.Self, Duration.EndOfTurn)` —
+`GrantStaticAbility` already exists, but there is no power-only dynamic CDA to hand it:
+`SetBasePowerToughnessDynamicStatic` (`mtg-sdk/.../scripting/StatsStaticAbilities.kt`) sets **both**
+stats from one `DynamicAmount`, which would clobber her printed toughness of 4. Needed: a
+`SetBasePowerDynamicStatic` mirroring the existing toughness-only `SetBaseToughnessForCreatureGroup`,
+plus its `StaticAbilityHandler` branch onto the projector's existing `SetPowerToughnessDynamic` path.
+Narrow and reusable — any "power is equal to X" grant wants it.
+
+Her other two lines are fine today: `NoMaximumHandSize` and
+`Triggers.youCastSpellTargeting(Creature.youControl())`.
+
 ### Cost reduction reading the source's own characteristic — **The Scarlet Witch** [151]
 "Instant and sorcery spells you cast with mana value 4 or greater cost {X} less to cast, where X is
 The Scarlet Witch's power." The obvious recipe —

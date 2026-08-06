@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 204 / 276
+**Implemented:** 203 / 276
 
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
@@ -71,7 +71,7 @@ variants 297+ are excluded)
 - [ ] Leader, Super-Genius
 - [ ] Loki, God of Mischief
 - [x] Mister Fantastic, Reed Richards
-- [x] Ms. Marvel, Kamala Khan
+- [ ] Ms. Marvel, Kamala Khan
 - [x] Multiversal Incursion
 - [ ] Namor the Sub-Mariner
 - [x] Pym Particles
