@@ -440,6 +440,13 @@ export interface ClientCard {
    */
   readonly grantedSubtypes?: readonly string[]
 
+  /**
+   * Card types granted by a continuous effect rather than printed (I Am Iron Man's "becomes an
+   * artifact creature", a manland's animation). Uppercase, matching {@link cardTypes}. Invisible on
+   * the battlefield for the same reason as {@link grantedSubtypes} — the printed image is drawn.
+   */
+  readonly grantedCardTypes?: readonly string[]
+
   /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
   readonly damageDistribution?: Record<EntityId, number> | null
 

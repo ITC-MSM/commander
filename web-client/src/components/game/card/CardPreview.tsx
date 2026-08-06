@@ -318,16 +318,22 @@ export function CardPreview() {
       {/* Granted types — the printed image can't show a type an effect added (Super-Soldier Serum
           making its target a Soldier), and the type line above is only printed for tokens, so the
           grant would otherwise be invisible even though the rules apply it. */}
-      {card.grantedSubtypes && card.grantedSubtypes.length > 0 && (
-        <div style={styles.cardPreviewEffects}>
-          <div style={styles.cardPreviewEffect}>
-            <span style={styles.cardPreviewEffectName}>Granted types</span>
-            <span style={styles.cardPreviewEffectText}>
-              {card.grantedSubtypes.join(', ')}
-            </span>
+      {(() => {
+        // Card types arrive uppercase (matching `cardTypes`); subtypes are already title-case.
+        const grantedTypes = [
+          ...(card.grantedCardTypes ?? []).map((t) => t.charAt(0) + t.slice(1).toLowerCase()),
+          ...(card.grantedSubtypes ?? []),
+        ]
+        if (grantedTypes.length === 0) return null
+        return (
+          <div style={styles.cardPreviewEffects}>
+            <div style={styles.cardPreviewEffect}>
+              <span style={styles.cardPreviewEffectName}>Granted types</span>
+              <span style={styles.cardPreviewEffectText}>{grantedTypes.join(', ')}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Granted / active-effect abilities — temporary text not in the printed oracle text
           (e.g. an ability granted by Dreadmaw's Ire). The DTO carries these in activeEffects;

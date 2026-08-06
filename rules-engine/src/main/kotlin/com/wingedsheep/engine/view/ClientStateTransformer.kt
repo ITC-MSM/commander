@@ -1357,6 +1357,10 @@ class ClientStateTransformer(
                 val printed = cardComponent.typeLine.subtypes.map { it.value }.toSet()
                 displaySubtypes.filterNot { it in printed }.toSet()
             } else emptySet(),
+            grantedCardTypes = if (zoneKey.zoneType == Zone.BATTLEFIELD) {
+                val printed = cardComponent.typeLine.cardTypes.map { it.name }.toSet()
+                displayCardTypes.map { it.name }.filterNot { it in printed }.toSet()
+            } else emptySet(),
             damageDistribution = (spellOnStack?.damageDistribution ?: container.get<TriggeredAbilityOnStackComponent>()?.damageDistribution)?.takeIf { it.isNotEmpty() },
             sagaTotalChapters = cardDef?.finalChapter,
             classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel,

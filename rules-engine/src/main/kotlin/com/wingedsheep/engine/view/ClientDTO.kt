@@ -493,6 +493,14 @@ data class ClientCard(
      */
     val grantedSubtypes: Set<String> = emptySet(),
 
+    /**
+     * Card types this permanent has only because an effect granted them — the projected card types
+     * minus the printed ones (I Am Iron Man's "becomes an artifact creature", a manland's animation).
+     * Uppercase, matching [cardTypes]. Invisible to the player for the same reason as
+     * [grantedSubtypes]: the battlefield draws the printed image.
+     */
+    val grantedCardTypes: Set<String> = emptySet(),
+
     /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
     val damageDistribution: Map<EntityId, Int>? = null,
 
