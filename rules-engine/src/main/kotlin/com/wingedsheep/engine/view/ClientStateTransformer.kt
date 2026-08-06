@@ -2406,6 +2406,20 @@ class ClientStateTransformer(
                         )
                     )
                 }
+                // The filter-based sibling of the color case above (Speed, Young Avenger's "can't be
+                // blocked this turn except by creatures with haste", Resilient Roadrunner). It routes
+                // through the same projected evasion channel, so the block rules already enforced it
+                // — only the badge was missing, leaving the restriction invisible to both players.
+                is SerializableModification.CantBeBlockedExceptBy -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "cant_be_blocked_except_by",
+                            name = "Evasion",
+                            description = "Can't be blocked except by ${modification.blockerFilter.description}",
+                            icon = "evasion"
+                        )
+                    )
+                }
                 is SerializableModification.MustBeBlockedByAll -> {
                     effects.add(
                         ClientCardEffect(
