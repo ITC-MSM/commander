@@ -334,18 +334,9 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
     // names a specific player ref (e.g. the attack trigger's defending player). Either is a controller
     // restriction that must be preserved or the card declines — never silently widened.
     val hasController = "ControlledByAPlayer" in blob || "ControlledByPlayer" in blob
-    val controller: Link? = when {
-        !hasController -> null
-        // "target creature defending player controls" in an attack trigger (Spring Splasher): the
-        // defending player is by definition an opponent of the attacking source's controller.
-        "\"Trigger_DefendingPlayer\"" in blob -> Link("opponentControls")
-        "\"Opponent\"" in blob -> Link("opponentControls")
-        "\"You\"" in blob -> Link("youControl")
-        // "a creature that player controls" in a combat-damage trigger: the player ~ dealt damage to is an
-        // opponent (your creature dealt them combat damage), so it's that opponent's creature (Skirk Commando).
-        "\"Trigger_ThatPlayer\"" in blob -> Link("opponentControls")
-        else -> return null
-    }
+    val controller: Link? =
+        if (!hasController) null
+        else controllerSuffix(filterNode, allowTriggerPlayerRefs = true) ?: return null
     // Whole-creature shapes whose helpers live on GameObjectFilter (not TargetFilter), or are a named
     // TargetFilter constant. ONS targets use these in isolation, so render them as the whole filter.
     if ("IsAttacking" in blob && "IsBlocking" in blob) {
@@ -520,12 +511,8 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
         val artifactSubtype = args.firstArgWordTagged("IsArtifactType")
         if (artifactSubtype != null) {
             if (types.isNotEmpty() || "IsNonCardtype" in blob || hasCreatureSubtype) return null
-            val controller: Link? = when {
-                "ControlledByAPlayer" !in blob -> null
-                "\"You\"" in blob -> Link("youControl")
-                "\"Opponent\"" in blob -> Link("opponentControls")
-                else -> return null
-            }
+            val controller: Link? =
+                if ("ControlledByAPlayer" !in blob) null else controllerSuffix(args) ?: return null
             var base: Dsl = Lit("GameObjectFilter.Artifact").dot("withSubtype", arg(subtypeArg(artifactSubtype)))
             controller?.let { base = base.dot(it) }
             val parts = mutableListOf(arg("filter", Call("TargetFilter", listOf(arg(base)))))
@@ -568,12 +555,8 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
                 "IsToken", "IsSupertype", "IsArtifactType", "ManaValueAtMost", "ManaValueAtLeast",
             )
             if (extras.any { it in blob }) return@run
-            val controller: Link? = when {
-                "ControlledByAPlayer" !in blob -> null
-                "\"You\"" in blob -> Link("youControl")
-                "\"Opponent\"" in blob -> Link("opponentControls")
-                else -> return null
-            }
+            val controller: Link? =
+                if ("ControlledByAPlayer" !in blob) null else controllerSuffix(args) ?: return null
             if (controller == null) {
                 // No controller restriction — the named TargetCreatureOrPlaneswalker is exact.
                 val parts = listOfNotNull(
@@ -632,12 +615,8 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             // ControlledByAPlayer clause. Preserve it as a `.youControl()` / `.opponentControls()` suffix
             // (mirrors the creature path); a controller clause we can't render exactly declines (-> SCAFFOLD)
             // rather than silently widening to any land/artifact/enchantment.
-            val controller: Link? = when {
-                "ControlledByAPlayer" !in blob -> null
-                "\"You\"" in blob -> Link("youControl")
-                "\"Opponent\"" in blob -> Link("opponentControls")
-                else -> return null
-            }
+            val controller: Link? =
+                if ("ControlledByAPlayer" !in blob) null else controllerSuffix(args) ?: return null
             var f: Dsl = Lit(singleType.getValue(types.first()))
             if (nonbasic) f = f.dot("nonbasic")
             controller?.let { f = f.dot(it) }  // "land you control" -> TargetFilter.Land.youControl()
@@ -662,12 +641,8 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
                     "HasACounterOfType",
                 )
                 if (extras.any { it in blob }) return null
-                val controller: Link? = when {
-                    "ControlledByAPlayer" !in blob -> null
-                    "\"You\"" in blob -> Link("youControl")
-                    "\"Opponent\"" in blob -> Link("opponentControls")
-                    else -> return null
-                }
+                val controller: Link? =
+                    if ("ControlledByAPlayer" !in blob) null else controllerSuffix(args) ?: return null
                 var g: Dsl = Lit("GameObjectFilter.NonlandPermanent").dot("notSubtype", arg(subtypeCtorArg(negSubs[0])))
                 controller?.let { g = g.dot(it) }
                 val parts = mutableListOf(arg("filter", Call("TargetFilter", listOf(arg(g)))))
@@ -694,9 +669,7 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             val controller: Link? = when {
                 "ControlledByAPlayer" !in blob -> null
                 manaValueX -> return null  // .manaValueEqualsX() + controller has no composed shape here
-                "\"You\"" in blob -> Link("youControl")
-                "\"Opponent\"" in blob -> Link("opponentControls")
-                else -> return null
+                else -> controllerSuffix(args) ?: return null
             }
             var f: Dsl = when {
                 controller == null -> Lit("TargetFilter.NonlandPermanent")
@@ -756,12 +729,8 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             setOf("Artifact", "Enchantment") to "TargetFilter.ArtifactOrEnchantment",
         )
         multiTypeFilter[types]?.let { union ->
-            val controller: Link? = when {
-                "ControlledByAPlayer" !in blob -> null
-                "\"You\"" in blob -> Link("youControl")
-                "\"Opponent\"" in blob -> Link("opponentControls")
-                else -> return null
-            }
+            val controller: Link? =
+                if ("ControlledByAPlayer" !in blob) null else controllerSuffix(args) ?: return null
             // "creatures and/or enchantments YOU OWN" (Get Out mode 2) — an OwnedByAPlayer(You) clause.
             // Render `.ownedByYou()` so the ownership restriction isn't silently dropped (which would let
             // the spell bounce an opponent's permanents); any other owner shape declines (-> SCAFFOLD).
@@ -1389,5 +1358,51 @@ internal fun EmitCtx.landSearchFilterExpr(filterNode: JsonElement?): Dsl {
             out
         }
         else -> Lit("GameObjectFilter.Any")
+    }
+}
+
+/**
+ * The `.youControl()` / `.opponentControls()` suffix carried by a filter's controller restriction —
+ * a `ControlledByAPlayer` clause (the generic "you / an opponent" scope) or a `ControlledByPlayer`
+ * one (a specific player ref, e.g. an attack trigger's defending player).
+ *
+ * The clause's player scope is inspected **structurally**, never by scanning the serialized blob for a
+ * bare `"You"`. `Other(You)` is "a player other than you" — i.e. an opponent — so "target creature you
+ * DON'T control" (Affectionate Indrik, Primal Might, Bite Down) carries a `You` player ref that a
+ * substring scan reads as `youControl`, inverting the restriction and offering exactly the wrong half of
+ * the battlefield. This mirrors the scope handling [groupFilterExpr] already does for group filters.
+ *
+ * [allowTriggerPlayerRefs] widens the accepted set to a trigger's implied opponent (the defending
+ * player, the player just dealt combat damage). Collapsing those to "an opponent" is exact in a
+ * two-player game but LOSSY in multiplayer — the IR names one specific player, `opponentControls`
+ * matches any of them. Only the plain-creature surface has historically taken that trade; the other
+ * surfaces decline, and they stay that way here so this stays a bug fix and not a coverage change.
+ *
+ * @return the suffix to append, or null when the scope has no exact rendering — the caller declines
+ *   (-> SCAFFOLD) rather than silently widening the target to every permanent.
+ */
+private fun controllerSuffix(filterNode: JsonElement?, allowTriggerPlayerRefs: Boolean = false): Link? {
+    val clause = filterNode.nodesTagged("ControlledByAPlayer").firstOrNull()
+        ?: filterNode.nodesTagged("ControlledByPlayer").firstOrNull()
+        ?: return null
+    val scope = clause.field("args")
+    // `ControlledByAPlayer` wraps a `_Players` collection ({"_Players":"SinglePlayer","args":{"_Player":…}});
+    // `ControlledByPlayer` names the `_Player` directly ({"_Player":"Trigger_DefendingPlayer"}).
+    val playersKind = scope.strField("_Players")
+    val playerRef = scope.field("args").strField("_Player") ?: scope.strField("_Player")
+    return when {
+        playersKind == "Opponent" -> Link("opponentControls")
+        // "creature you don't control" — Other(You) is every player but you, i.e. your opponents.
+        playersKind == "Other" && playerRef == "You" -> Link("opponentControls")
+        playerRef == "You" -> Link("youControl")
+        !allowTriggerPlayerRefs -> null
+        // "target creature defending player controls" in an attack trigger (Spring Splasher): the
+        // defending player is by definition an opponent of the attacking source's controller.
+        playerRef == "Trigger_DefendingPlayer" -> Link("opponentControls")
+        // "a creature that player controls" in a combat-damage trigger: the player ~ dealt damage to is
+        // an opponent (your creature dealt them combat damage), so it's that opponent's creature
+        // (Skirk Commando).
+        playerRef == "Trigger_ThatPlayer" -> Link("opponentControls")
+        else -> null
     }
 }

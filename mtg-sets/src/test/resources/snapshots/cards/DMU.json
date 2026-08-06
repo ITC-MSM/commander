@@ -93,11 +93,11 @@
             },
             "target": {
                 "type": "BoundVariable",
-                "name": "t2"
+                "name": "target creature or planeswalker you don't control"
             },
             "damageSource": {
                 "type": "BoundVariable",
-                "name": "t1"
+                "name": "target creature you control"
             }
         },
         "targetRequirements": [
@@ -106,14 +106,14 @@
                 "filter": {
                     "baseFilter": "creature ctrl:you"
                 },
-                "id": "t1"
+                "id": "target creature you control"
             },
             {
                 "type": "TargetObject",
                 "filter": {
-                    "baseFilter": "creature|planeswalker ctrl:you"
+                    "baseFilter": "creature|planeswalker ctrl:opponent"
                 },
-                "id": "t2"
+                "id": "target creature or planeswalker you don't control"
             }
         ]
     },
