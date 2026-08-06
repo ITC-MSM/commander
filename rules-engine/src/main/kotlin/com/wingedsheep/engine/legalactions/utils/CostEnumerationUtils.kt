@@ -535,7 +535,13 @@ class CostEnumerationUtils(
         playerId: EntityId,
         abilityCost: AbilityCost,
         manaCost: ManaCost?,
-        precomputedSources: List<ManaSource>? = null
+        precomputedSources: List<ManaSource>? = null,
+        /**
+         * The permanent whose ability this is. Cost filters routinely scope to it — a
+         * "remove any number of +1/+1 counters from ~" cost filters with `sourceItself()`
+         * (`StatePredicate.IsSource`), which can never match without this, capping X at 0.
+         */
+        sourceId: EntityId? = null
     ): Int {
         var maxX = if (manaCost != null && manaCost.hasX) {
             val availableSources = manaSolver.getAvailableManaCount(state, playerId, precomputedSources)
@@ -563,7 +569,7 @@ class CostEnumerationUtils(
         if (exileXCosts.isNotEmpty()) {
             val graveyard = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
             val projected = state.projectedState
-            val context = PredicateContext(controllerId = playerId)
+            val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
             exileXCosts.forEach { cost ->
                 val matching = graveyard.count { cardId ->
                     predicateEvaluator.matches(state, projected, cardId, cost.filter, context)
@@ -595,7 +601,7 @@ class CostEnumerationUtils(
                     projected.getBattlefieldControlledBy(playerId).sumOf { entityId ->
                         if (!predicateEvaluator.matches(
                                 state, projected, entityId, atom.filter,
-                                PredicateContext(controllerId = playerId)
+                                PredicateContext(controllerId = playerId, sourceId = sourceId)
                             )
                         ) 0
                         else {
