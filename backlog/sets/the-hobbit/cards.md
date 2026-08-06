@@ -2,12 +2,12 @@
 
 **Set Size:** 193 cards revealed as of 2026-08-04
 **Release Date:** August 14, 2026
-**Implemented:** 51 / 193
+**Implemented:** 56 / 193
 Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. This list covers only cards revealed as of that date.
 
 - [x] 1. Long-Bodied Grey Dog
 - [x] 2. Old Thrush
-- [ ] 3. Troop of Ponies
+- [x] 3. Troop of Ponies
 - [ ] 4. Belladonna Took
 - [ ] 5. Bilbo's Gambit
 - [ ] 6. Bofur, Reliable Guardian
@@ -15,7 +15,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 8. Dáin, Lord of the Iron Hills
 - [x] 9. Dwarven Provisioner
 - [x] 10. Dwarven Shortsword
-- [ ] 11. Eagle of the Great Shelf
+- [x] 11. Eagle of the Great Shelf
 - [ ] 12. The Eagles Are Coming!
 - [ ] 13. Esgaroth Garrison
 - [ ] 14. Fíli the Pathfinder
@@ -105,7 +105,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 98. Getaway Barrel
 - [ ] 99. Glóin the Mighty
 - [ ] 100. Goblin-town Flunkies
-- [ ] 101. Gundabad Opportunist
+- [x] 101. Gundabad Opportunist
 - [ ] 102. Iron Hills Stalwart
 - [ ] 103. Last Light of Durin's Day
 - [ ] 104. The Misty Mountains Cold
@@ -130,7 +130,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 123. Dancing from Dark to Dawn
 - [ ] 124. Down in the Valley
 - [ ] 125. Galion, Elvenking's Butler
-- [ ] 126. Gigantic Big Bear
+- [x] 126. Gigantic Big Bear
 - [x] 127. Guardian of the Halls
 - [x] 128. Little Bear
 - [x] 129. Mirkwood Pathmaker
@@ -164,7 +164,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 157. Goblin Plate Mail
 - [ ] 158. The Great Goblin
 - [x] 159. Large Bear
-- [ ] 160. Mirkwood Nurturer
+- [x] 160. Mirkwood Nurturer
 - [x] 161. Nori, Teller of Tales
 - [ ] 162. Patient Instructor
 - [ ] 163. Silvan Reveler
