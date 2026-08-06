@@ -617,7 +617,7 @@ object Effects {
         )
 
     /**
-     * Connive (CR 702.166): draw a card, then discard a card. If the discarded card
+     * Connive (CR 701.50): draw a card, then discard a card. If the discarded card
      * is a nonland, put a +1/+1 counter on [target].
      *
      * Composed entirely from atomic pipeline primitives — see [HandPatterns.connive].

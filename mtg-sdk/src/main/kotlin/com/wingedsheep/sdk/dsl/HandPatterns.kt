@@ -593,7 +593,7 @@ object HandPatterns {
     )
 
     /**
-     * Shared connive pipeline (CR 702.166): draw a card, then discard a card; if the discard was a
+     * Shared connive pipeline (CR 701.50): draw a card, then discard a card; if the discard was a
      * nonland, run [onNonland]. Draw → Gather(hand) → Select(1) → Move(Discard) →
      * ConditionalOnCollection(Nonland). SelectFromCollection auto-resolves on empty / single-card
      * hands, matching the old monolithic executor's short-circuit behavior. [connive] and
@@ -628,7 +628,7 @@ object HandPatterns {
     )
 
     /**
-     * Connive (CR 702.166): draw a card, then discard a card. If the discarded card
+     * Connive (CR 701.50): draw a card, then discard a card. If the discarded card
      * is a nonland, put a +1/+1 counter on [target].
      */
     fun connive(target: EffectTarget = EffectTarget.Self): CompositeEffect = connivePipeline(

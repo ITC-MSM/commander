@@ -22,7 +22,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  *  - The removal half is [Effects.PutSecondFromTopOrBottomOfLibrary] — the owner of the targeted
  *    creature picks second-from-top or bottom as it resolves (the Temporal Cleansing shape).
  *  - The connive half copies Unstable Experiment: "up to one target creature you control connives"
- *    means *that creature* is the source of the connive keyword action (CR 702.166), so when the
+ *    means *that creature* is the source of the connive keyword action (CR 701.50), so when the
  *    optional target was declined — or the chosen creature has left the battlefield by resolution —
  *    nothing connives and you neither draw nor discard. Hence the [ConditionalEffect] gate on the
  *    second target slot actually holding a creature, rather than an unconditional connive.

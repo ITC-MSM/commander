@@ -20,7 +20,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  *
  * Two independent targets, chosen at cast time (CR 601.2c): a player who draws, and — via "up to
  * one target" — an optional creature you control that connives. The conniving creature is the
- * source of the connive keyword action (CR 702.166), so when no creature is chosen (or the chosen
+ * source of the connive keyword action (CR 701.50), so when no creature is chosen (or the chosen
  * creature has left the battlefield by resolution) nothing connives: you neither draw nor discard.
  * That's why the connive is gated on the second target slot actually holding a creature via
  * [Conditions.TargetMatchesFilter] on `targetIndex = 1`, rather than run unconditionally — the

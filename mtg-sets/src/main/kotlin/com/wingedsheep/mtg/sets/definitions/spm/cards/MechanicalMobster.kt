@@ -21,7 +21,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * Two independent targets on one ETB trigger: the graveyard exile is "up to one target" (optional,
  * so the ability resolves fine with no card chosen or if the chosen card leaves the graveyard),
  * while the connive recipient is a mandatory "target creature you control". Connive itself
- * (CR 702.166) is draw-a-card-then-discard, with a +1/+1 counter on the conniving creature if a
+ * (CR 701.50) is draw-a-card-then-discard, with a +1/+1 counter on the conniving creature if a
  * nonland was discarded.
  */
 val MechanicalMobster = card("Mechanical Mobster") {

@@ -21,7 +21,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
  *
  * The activated ability has no mana component at all: its whole cost is [Costs.PayLife] 3, gated
  * to your own turn by [ActivationRestriction.OnlyDuringYourTurn] (there is no once-per-turn cap,
- * so it can be repeated as long as you can pay). [Effects.Connive] (CR 702.166) is the standard
+ * so it can be repeated as long as you can pay). [Effects.Connive] (CR 701.50) is the standard
  * draw-then-discard-then-counter-if-nonland pipeline, targeting M.O.D.O.K. itself.
  *
  * The shrink is a plain Layer 7c [ModifyStats] over [GroupFilter.AllCreaturesOpponentsControl] —

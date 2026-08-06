@@ -27,7 +27,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *   with toughness greater than their power assign combat damage equal to their toughness rather
  *   than their power.
  *
- *  - **Extort** (CR 702.99) has no `Keyword` of its own here, and it does not need one: it *is*
+ *  - **Extort** (CR 702.101) has no `Keyword` of its own here, and it does not need one: it *is*
  *    exactly "whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life
  *    and you gain that much life", which composes from primitives already in the SDK —
  *    [Triggers.YouCastSpell] + [MayPayManaEffect] over [Effects.DrainLife]. The hybrid `{W/B}`
@@ -40,9 +40,12 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *    trigger factory) when a second extort card lands — one card doesn't yet justify new SDK
  *    vocabulary, but two do, and the reminder text should not be re-typed per card.
  *
- *  - **The attack ability** is a [Gate.MayPay] over [PayLifeEffect]`(2)` — a cost the engine can
- *    check for affordability before prompting, so a controller at 2 or less life is never offered
- *    an illegal "yes". Fires on [Triggers.YouAttack] (declare attackers, once per combat,
+ *  - **The attack ability** is a [Gate.MayPay] over [PayLifeEffect]`(2)` — a cost the engine checks
+ *    for affordability before prompting, so a controller who cannot pay is never offered the choice.
+ *    `GatedEffectExecutor.canAfford` is `life >= amount`, so paying at exactly 2 life *is* offered:
+ *    CR 118.3/118.3b bar only a payment you lack the life for, so paying down to 0 is legal, and it
+ *    is the separate state-based action (CR 704.5a) that ends the game afterwards.
+ *    Fires on [Triggers.YouAttack] (declare attackers, once per combat,
  *    regardless of whether the Kingpin himself attacks — he is a 1/5 that would rather stay home).
  *
  *  - **"creatures you control with toughness greater than their power"** is resolved *once*, when
