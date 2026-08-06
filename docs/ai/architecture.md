@@ -210,3 +210,73 @@ sampling reveals the tempo it cannot see. `SearchAllowances.NORMAL_PLAYOUTS` the
 That ladder is also Phase 7's safety net, the analogue of `ArenaBudgetScalingTest` one level down:
 strength must never *fall* with more playouts, or the search is generating noise rather than signal.
 Saturation is fine; inversion is the alarm.
+
+---
+
+## Watching a decision happen (local testing mode)
+
+Everything above is invisible from inside a game: `Strategist` computes a
+`List<Pair<LegalAction, Double>>`, takes the max, returns the winner, and the numbers go out of
+scope. When the AI makes a move that looks wrong, "wrong" is all you can observe.
+
+`AiInsightSink` (in `ai/insight/`) is the one place those numbers escape. `Strategist` publishes the
+options it scored, `CombatAdvisor` publishes the attack/block plans its local search simulated, and
+each record carries the `GameState` the decision was made from:
+
+```
+Strategist.chooseAction ──┐
+                          ├── AiInsightSink.record(state, AiDecisionInsight)
+CombatAdvisor local search ┘
+```
+
+Three properties are load-bearing:
+
+- **It is the real decision, not a re-run.** The sink is fed from the same locals the choice was made
+  from, so a captured ranking cannot disagree with the move — which is exactly what a
+  recompute-for-display would eventually do, and only under the conditions you were investigating.
+- **It is free when off.** The sink is null in production and every recording site is behind a null
+  check. No extra simulation, no extra scoring; `AiProfile` is untouched.
+- **The dropped candidates are in it too.** An action that failed materialization, walked back into a
+  position already acted from (`StateProgress`), or fell off the end of the budget is recorded with
+  the reason. Without them the panel silently implies the AI never considered a line it in fact
+  discarded — the most misleading thing a debugging view can do.
+
+Scores are raw evaluator units (see above), so an option is reported as an **advantage over the
+baseline** — passing priority, or declaring no attackers — which is the threshold it actually had to
+clear. `AdjustedScore.note` says when a hold-policy verdict or a `CardAdvisor` override, rather than
+the board score, is what decided it.
+
+The game server records into `AiInsightService` and serves `/api/dev/ai-insight/{playerId}`, mounted
+only under `game.ai.insight-enabled` (on in `application-local.yml`). The web client's `AiInsightPanel`
+browses it live and exports `(board state, ratings)` bundles; the `state` in an export is a full
+`GameState`, so a position that produced a bad rating also re-opens through
+`POST /api/scenarios/from-state`. The export is unmasked by design — which is why the flag is separate
+from `game.dev-endpoints.enabled` and off by default.
+
+### Stepping and overriding
+
+Reading a ranking after the fact answers "what did it think?". **Step mode** answers the more useful
+question, "what if it had done something else?".
+
+Each `AiActionOption` carries the concrete `GameAction` the AI would submit for it — already
+materialized, already simulated — so an option is not merely a label but a *playable* move. With step
+mode on, `AiActionGate` holds the AI between choosing and submitting, and the panel can hand the
+engine any option's action in place of the AI's own. The line then plays out for real rather than
+being argued about.
+
+Three constraints shape it:
+
+- **The gate runs after the decision is recorded**, so a held game is showing a finished ranking, not
+  a blank panel.
+- **Only submittable options are offered.** A candidate the processor already rejected is still
+  listed (the AI did consider it) but carries no action, so the panel can never offer a move the
+  engine would refuse. `AiInsightCaptureTest` pins this by submitting every offered option through a
+  real `ActionProcessor`.
+- **It can never wedge a game.** Every path that isn't an explicit human choice — timeout, no
+  recorded decision, seat mismatch, step mode toggled off, history cleared — falls back to the AI's
+  own pick. Step mode is also keyed by *seat* and gated on a recent poll: a closed tab reads as
+  "nobody is watching" and the game plays on at full speed.
+
+An override is stamped on the recorded decision and travels into the export as `humanOverride`, which
+is the pair actually worth training on: the position, what the AI ranked highest, and what a human
+played instead.

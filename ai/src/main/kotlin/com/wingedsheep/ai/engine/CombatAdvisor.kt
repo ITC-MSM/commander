@@ -3,6 +3,7 @@ package com.wingedsheep.ai.engine
 import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
 import com.wingedsheep.ai.engine.budget.DecisionBudget
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
+import com.wingedsheep.ai.insight.CombatPlanTrace
 import com.wingedsheep.engine.core.DeclareAttackers
 import com.wingedsheep.engine.core.DeclareBlockers
 import com.wingedsheep.engine.core.GameAction
@@ -78,6 +79,8 @@ class CombatAdvisor(
         legalAction: LegalAction,
         playerId: EntityId,
         budget: DecisionBudget = DecisionBudget.legacy(),
+        /** Local testing mode: collects the plans local search simulated. Null in production. */
+        trace: CombatPlanTrace? = null,
     ): GameAction {
         val projected = state.projectedState
         val validAttackers = legalAction.validAttackers ?: emptyList()
@@ -105,7 +108,7 @@ class CombatAdvisor(
         }
         if (state.step == Step.DECLARE_ATTACKERS && enemyControlsCreature) {
             improveAttackViaLocalSearch(
-                state, playerId, opponentId, validAttackers, mandatory.toSet(), seedMap, budget
+                state, playerId, opponentId, validAttackers, mandatory.toSet(), seedMap, budget, trace
             )
         }
 
@@ -133,6 +136,8 @@ class CombatAdvisor(
         playerId: EntityId,
         useSimulation: Boolean = false,
         budget: DecisionBudget = DecisionBudget.legacy(),
+        /** Local testing mode: collects the plans local search simulated. Null in production. */
+        trace: CombatPlanTrace? = null,
     ): GameAction {
         val projected = state.projectedState
         val validBlockers = legalAction.validBlockers ?: emptyList()
@@ -173,7 +178,7 @@ class CombatAdvisor(
         val bestMap = if (useSimulation) {
             improveViaLocalSearch(
                 state, projected, playerId, attackers, validBlockers,
-                mandatoryBlockerIds, seedMap, budget
+                mandatoryBlockerIds, seedMap, budget, trace
             )
         } else {
             seedMap
@@ -331,9 +336,11 @@ class CombatAdvisor(
         mandatoryBlockerIds: Set<EntityId>,
         seedMap: MutableMap<EntityId, List<EntityId>>,
         budget: DecisionBudget,
+        trace: CombatPlanTrace? = null,
     ): MutableMap<EntityId, List<EntityId>> {
         var currentPlan = seedMap.toMutableMap()
         var currentScore = evaluateBlockingPlan(state, playerId, currentPlan) ?: return currentPlan
+        trace?.recordBlock(currentPlan, currentScore)
         var simulationsLeft = budget.allowances.blockSimulations
         val deadline = budget.combatDeadlineNanos
 
@@ -353,6 +360,7 @@ class CombatAdvisor(
                 if (simulationsLeft <= 0 || System.nanoTime() > deadline) break
                 simulationsLeft--
                 val score = evaluateBlockingPlan(state, playerId, mutation) ?: continue
+                trace?.recordBlock(mutation, score)
                 if (score > bestScore) {
                     bestScore = score
                     bestMutation = mutation
@@ -948,16 +956,19 @@ class CombatAdvisor(
         mandatoryAttackers: Set<EntityId>,
         attackerMap: MutableMap<EntityId, EntityId>,
         budget: DecisionBudget,
+        trace: CombatPlanTrace? = null,
     ) {
         val deadline = budget.combatDeadlineNanos
         // Baseline: use current board evaluation. Attack plans must beat this.
         val noAttackScore = evaluateAttackPlan(state, playerId, opponentId, emptyMap())
             ?: evaluator.evaluate(state, state.projectedState, playerId)
+        trace?.recordAttack(emptyMap(), noAttackScore)
         var currentScore = if (attackerMap.isEmpty()) {
             noAttackScore
         } else {
             evaluateAttackPlan(state, playerId, opponentId, attackerMap) ?: return
         }
+        trace?.recordAttack(attackerMap, currentScore)
 
         // If seed plan is worse than not attacking, start from empty
         if (currentScore < noAttackScore && mandatoryAttackers.isEmpty()) {
@@ -978,6 +989,7 @@ class CombatAdvisor(
                 val mutation = attackerMap.toMutableMap()
                 mutation[attacker] = opponentId
                 val score = evaluateAttackPlan(state, playerId, opponentId, mutation) ?: continue
+                trace?.recordAttack(mutation, score)
                 if (score > bestScore) {
                     bestScore = score
                     bestMutation = mutation
@@ -996,6 +1008,7 @@ class CombatAdvisor(
                 } else {
                     evaluateAttackPlan(state, playerId, opponentId, mutation) ?: continue
                 }
+                trace?.recordAttack(mutation, score)
                 if (score > bestScore) {
                     bestScore = score
                     bestMutation = mutation

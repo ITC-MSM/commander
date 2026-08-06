@@ -34,7 +34,8 @@ class AiGameManager(
     private val sessionRegistry: SessionRegistry,
     private val deckGenerator: SealedDeckGenerator,
     private val cardRegistry: CardRegistry,
-    private val llmCostTracker: com.wingedsheep.gameserver.tournament.llm.LlmCostTracker
+    private val llmCostTracker: com.wingedsheep.gameserver.tournament.llm.LlmCostTracker,
+    private val aiInsightService: AiInsightService,
 ) {
     /**
      * The live AI sessions of each game, keyed game → AI player. A multiplayer pod seats more than
@@ -130,17 +131,22 @@ class AiGameManager(
         val aiConfig = ai.toAiConfig().let { cfg ->
             if (modelOverride != null) cfg.copy(model = modelOverride, mode = "llm") else cfg
         }
+        // Local testing mode only, and null everywhere else: the LLM controller's engine fallback
+        // gets one too, so a fallback decision doesn't silently vanish from the panel.
+        val insightSink = gameSession?.sessionId?.let { aiInsightService.sinkFor(it, aiPlayerId) }
         return if (aiConfig.isEngineMode) {
             EngineAiPlayerController(
                 cardRegistry = cardRegistry,
                 playerId = aiPlayerId,
-                gameStateProvider = { gameSession?.getStateSnapshot() }
+                gameStateProvider = { gameSession?.getStateSnapshot() },
+                insightSink = insightSink,
             )
         } else {
             val engineFallback = EngineAiPlayerController(
                 cardRegistry = cardRegistry,
                 playerId = aiPlayerId,
-                gameStateProvider = { gameSession?.getStateSnapshot() }
+                gameStateProvider = { gameSession?.getStateSnapshot() },
+                insightSink = insightSink,
             )
             // Attribute in-game LLM token usage + cost to this game session, so the LLM-tournament
             // can report cost per game. No-op when there's no game (e.g. placeholder identities).
@@ -158,6 +164,38 @@ class AiGameManager(
         model = model, deckbuildingModel = deckbuildingModel,
         reasoningEffort = reasoningEffort, maxRetries = maxRetries,
         timeoutMs = timeoutMs, thinkingDelayMs = thinkingDelayMs
+    )
+
+    /**
+     * The only place an [AiWebSocketSession] is constructed.
+     *
+     * There are four bring-up paths (fresh opponent, placeholder identity, rehydrated identity,
+     * re-wire at match start), and per-seat wiring added later has twice been attached to some of
+     * them and not the rest — the local testing mode's step gate went in at [registerAiSession] and
+     * was silently absent from [wireAiForGame], which is the path a normal game against the AI
+     * actually takes. Funnelling every construction through here is what stops the next addition
+     * from repeating that.
+     *
+     * A null [gameSession] means a placeholder seat that is not attached to a game yet: no
+     * callbacks, and no step gate to hang one on.
+     */
+    private fun buildAiSession(
+        aiPlayerId: EntityId,
+        controller: AiPlayerController,
+        gameSession: GameSession?,
+        onActionReady: (EntityId, GameAction) -> Unit = { _, _ -> },
+        onMulliganKeep: (EntityId) -> Unit = { _ -> },
+        onMulliganTake: (EntityId) -> Unit = { _ -> },
+        onBottomCards: (EntityId, List<EntityId>) -> Unit = { _, _ -> },
+    ): AiWebSocketSession = AiWebSocketSession(
+        aiPlayerId = aiPlayerId,
+        controller = controller,
+        thinkingDelayMs = gameProperties.ai.thinkingDelayMs,
+        onActionReady = onActionReady,
+        onMulliganKeep = onMulliganKeep,
+        onMulliganTake = onMulliganTake,
+        onBottomCards = onBottomCards,
+        actionGate = gameSession?.let { aiInsightService.gateFor(it.sessionId) },
     )
 
     /**
@@ -179,14 +217,14 @@ class AiGameManager(
         onMulliganTake: (EntityId) -> Unit,
         onBottomCards: (EntityId, List<EntityId>) -> Unit,
     ): Pair<PlayerSession, PlayerIdentity> {
-        val aiSession = AiWebSocketSession(
+        val aiSession = buildAiSession(
             aiPlayerId = aiPlayerId,
             controller = controller,
-            thinkingDelayMs = gameProperties.ai.thinkingDelayMs,
+            gameSession = gameSession,
             onActionReady = onActionReady,
             onMulliganKeep = onMulliganKeep,
             onMulliganTake = onMulliganTake,
-            onBottomCards = onBottomCards
+            onBottomCards = onBottomCards,
         )
 
         val playerSession = PlayerSession(
@@ -304,7 +342,10 @@ class AiGameManager(
         val controller = EngineAiPlayerController(
             cardRegistry = cardRegistry,
             playerId = aiPlayerId,
-            gameStateProvider = { gameSession.getStateSnapshot() }
+            gameStateProvider = { gameSession.getStateSnapshot() },
+            // Scenarios are the sharpest use of the local testing mode — a hand-built position is
+            // exactly where you want to read what the AI made of it.
+            insightSink = aiInsightService.sinkFor(gameSession.sessionId, aiPlayerId),
         )
 
         val (playerSession, identity) = registerAiSession(
@@ -345,16 +386,9 @@ class AiGameManager(
         // Use a placeholder controller — will be replaced when match starts
         val controller = createController(aiPlayerId, modelOverride = modelOverride)
 
-        val aiSession = AiWebSocketSession(
-            aiPlayerId = aiPlayerId,
-            controller = controller,
-            thinkingDelayMs = aiProperties.thinkingDelayMs,
-            // No-op callbacks — will be replaced when match starts
-            onActionReady = { _, _ -> },
-            onMulliganKeep = { _ -> },
-            onMulliganTake = { _ -> },
-            onBottomCards = { _, _ -> }
-        )
+        // No game yet, so no callbacks and no step gate — [wireAiForGame] replaces this session
+        // wholesale once a match starts.
+        val aiSession = buildAiSession(aiPlayerId, controller, gameSession = null)
 
         val effectiveModel = modelOverride ?: if (gameProperties.ai.isLlmMode) gameProperties.ai.model else null
         val modelSuffix = effectiveModel?.substringAfterLast('/')?.let { " ($it)" } ?: ""
@@ -405,16 +439,8 @@ class AiGameManager(
         val aiProperties = gameProperties.ai
 
         val controller = createController(aiPlayerId, modelOverride = identity.aiModelOverride)
-        val aiSession = AiWebSocketSession(
-            aiPlayerId = aiPlayerId,
-            controller = controller,
-            thinkingDelayMs = aiProperties.thinkingDelayMs,
-            // No-op callbacks — replaced when a match (or draft) wires this AI.
-            onActionReady = { _, _ -> },
-            onMulliganKeep = { _ -> },
-            onMulliganTake = { _ -> },
-            onBottomCards = { _, _ -> }
-        )
+        // Replaced when a match (or draft) wires this AI, so no callbacks and no step gate here.
+        val aiSession = buildAiSession(aiPlayerId, controller, gameSession = null)
 
         identity.webSocketSession = aiSession
         val playerSession = PlayerSession(
@@ -458,14 +484,14 @@ class AiGameManager(
             controller.setDeckList(deckList)
         }
 
-        val newSession = AiWebSocketSession(
+        val newSession = buildAiSession(
             aiPlayerId = aiPlayerId,
             controller = controller,
-            thinkingDelayMs = aiProperties.thinkingDelayMs,
+            gameSession = gameSession,
             onActionReady = onActionReady,
             onMulliganKeep = onMulliganKeep,
             onMulliganTake = onMulliganTake,
-            onBottomCards = onBottomCards
+            onBottomCards = onBottomCards,
         )
 
         // Update identity and registry to use the new session

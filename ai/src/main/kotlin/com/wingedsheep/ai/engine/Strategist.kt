@@ -14,8 +14,17 @@ import com.wingedsheep.ai.engine.rollout.CandidateEvaluator
 import com.wingedsheep.ai.engine.rollout.PlayoutPolicy
 import com.wingedsheep.ai.engine.rollout.RolloutCandidateEvaluator
 import com.wingedsheep.ai.engine.rollout.StaticCandidateEvaluator
+import com.wingedsheep.ai.insight.AiActionOption
+import com.wingedsheep.ai.insight.AiDecisionInsight
+import com.wingedsheep.ai.insight.AiDecisionKind
+import com.wingedsheep.ai.insight.AiInsightLabels
+import com.wingedsheep.ai.insight.AiInsightSink
+import com.wingedsheep.ai.insight.CombatPlan
+import com.wingedsheep.ai.insight.CombatPlanTrace
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.DeclareAttackers
+import com.wingedsheep.engine.core.DeclareBlockers
 import com.wingedsheep.engine.core.GameAction
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.MeaningfulActionFilter
@@ -83,6 +92,12 @@ class Strategist(
     private val candidateEvaluator: CandidateEvaluator = StaticCandidateEvaluator(evaluator),
     /** Phase 8: a fair complete world, sampled once before any candidate simulation. */
     private val stateSampler: ((GameState, EntityId) -> GameState)? = null,
+    /**
+     * Local testing mode: where the per-candidate scores this class computes go, instead of being
+     * dropped once the winner is picked. Null in production, and the only thing that reads it is a
+     * null check — the numbers are already being computed either way, so recording adds no search.
+     */
+    private val insightSink: AiInsightSink? = null,
 ) {
     private val holdPolicy = HoldPolicy(intents)
 
@@ -99,6 +114,7 @@ class Strategist(
         legalActions: List<LegalAction>,
         playerId: EntityId
     ): LegalAction {
+        val startNanos = if (insightSink != null) System.nanoTime() else 0L
         val evaluationState = stateSampler?.invoke(state, playerId) ?: state
         // Combat declaration steps need the CombatAdvisor to fill in attacker/blocker maps
         // even when there's only one legal action (which is the common case — the enumerator
@@ -106,7 +122,7 @@ class Strategist(
         val combatAction = legalActions.find { it.actionType == "DeclareAttackers" || it.actionType == "DeclareBlockers" }
         if (combatAction != null) {
             val budget = budgetPolicy.budgetFor(state, playerId, listOf(combatAction))
-            return handleCombatDeclaration(evaluationState, combatAction, playerId, budget)
+            return handleCombatDeclaration(evaluationState, combatAction, playerId, budget, startNanos)
         }
 
         if (legalActions.size == 1) {
@@ -131,11 +147,16 @@ class Strategist(
         // the real option it is rather than as a separately-computed threshold.
         val leaves = mutableListOf<LegalAction>()
         val leafStates = mutableListOf<GameState>()
+        // Local testing mode only: the candidates that never reached scoring. Reading the panel
+        // without them makes the AI look like it never considered a play it in fact discarded.
+        val dropped = if (insightSink != null) mutableListOf<AiActionOption>() else null
+        var searched = 0
         if (pass != null) {
             leaves += pass
             leafStates += simulator.simulate(evaluationState, pass.action).state
         }
         for (action in affordable) {
+            searched++
             val (materialized, simulation) = materialize(evaluationState, action, playerId, budget, here)
             val usable = when {
                 // LegalAction affordability is necessarily a preview for costs such as convoke and
@@ -154,11 +175,35 @@ class Strategist(
             if (usable) {
                 leaves += action.copy(action = materialized)
                 leafStates += simulation.state
+            } else {
+                val illegal = simulation is SimulationResult.Illegal
+                dropped?.add(
+                    droppedOption(
+                        evaluationState, action, materialized,
+                        note = if (illegal) {
+                            "dropped — illegal once materialized"
+                        } else {
+                            "dropped — leads back to a position already acted from"
+                        },
+                        submittable = !illegal,
+                    )
+                )
             }
             // Every candidate cost a simulation whether or not it survived those filters, so the
             // anytime cut is taken on all of them. Checking only after a survivor was recorded
             // would let a board full of inert candidates run straight past the budget.
             if (budget.expired()) break
+        }
+        if (dropped != null) {
+            for (action in affordable.drop(searched)) {
+                dropped += droppedOption(
+                    evaluationState, action, action.action,
+                    note = "not searched — decision budget expired",
+                    // Never materialized, so its targets are unfilled — not something to hand the
+                    // processor. Listed so the panel can say the budget, not the AI, ruled it out.
+                    submittable = false,
+                )
+            }
         }
 
         // ── Pass 2: score every leaf at once ──
@@ -172,9 +217,10 @@ class Strategist(
 
         // ── Pass 3: per-card timing and advisor adjustments, in raw evaluator units ──
         val firstCandidate = if (pass != null) 1 else 0
-        val scored = (firstCandidate until leaves.size).map { i ->
-            leaves[i] to adjustScore(evaluationState, leaves[i], playerId, leafScores[i], passScore)
+        val adjusted = (firstCandidate until leaves.size).map { i ->
+            Triple(leaves[i], leafScores[i], adjustScore(evaluationState, leaves[i], playerId, leafScores[i], passScore))
         }
+        val scored = adjusted.map { (action, _, adjustment) -> action to adjustment.score }
 
         // On the opponent's end step, unspent mana is about to be wasted. Reduce the pass threshold
         // so the AI is more willing to use instants rather than letting mana evaporate.
@@ -191,16 +237,119 @@ class Strategist(
             }
 
         val best = scored.maxByOrNull { it.second }
-        return if (best != null && best.second > adjustedPassScore) {
+        val takeAction = best != null && best.second > adjustedPassScore
+        val chosen = if (takeAction) {
             remember(here)
             // Fill in targets on the returned action so the processor can execute it.
             // The committed target is chosen by simulation (not just the heuristic) so the
             // AI sees the real resolved board, including effects already on the stack.
-            best.first
+            best!!.first
         } else {
             pass ?: legalActions.first()
         }
+
+        if (insightSink != null) {
+            recordPriorityInsight(
+                state, evaluationState, playerId, startNanos,
+                pass = pass, passScore = passScore, adjustedPassScore = adjustedPassScore,
+                adjusted = adjusted, dropped = dropped.orEmpty(),
+                chosenAction = if (takeAction) best!!.first else null,
+            )
+        }
+        return chosen
     }
+
+    /**
+     * Hand the scores this decision produced to [insightSink], best-first, with passing sitting in
+     * the ranking at its own score so the waterline every option had to clear is visible.
+     */
+    private fun recordPriorityInsight(
+        state: GameState,
+        evaluationState: GameState,
+        playerId: EntityId,
+        startNanos: Long,
+        pass: LegalAction?,
+        passScore: Double,
+        adjustedPassScore: Double,
+        adjusted: List<Triple<LegalAction, Double, AdjustedScore>>,
+        dropped: List<AiActionOption>,
+        chosenAction: LegalAction?,
+    ) {
+        val sink = insightSink ?: return
+        val options = mutableListOf<AiActionOption>()
+        if (pass != null) {
+            options += AiActionOption(
+                label = "Pass priority",
+                actionType = "PassPriority",
+                score = adjustedPassScore,
+                rawScore = passScore.takeIf { it != adjustedPassScore },
+                advantage = 0.0,
+                chosen = chosenAction == null,
+                baseline = true,
+                note = if (adjustedPassScore != passScore) {
+                    "opponent's end step — pass discounted so unspent mana isn't wasted"
+                } else {
+                    null
+                },
+                action = pass.action,
+            )
+        }
+        for ((action, leafScore, adjustment) in adjusted) {
+            options += AiActionOption(
+                label = AiInsightLabels.describe(evaluationState, action, action.action),
+                actionType = action.actionType,
+                cardName = AiInsightLabels.cardName(evaluationState, action.action),
+                targets = AiInsightLabels.targetNames(evaluationState, action.action),
+                score = adjustment.score,
+                rawScore = leafScore.takeIf { it != adjustment.score },
+                advantage = adjustment.score - adjustedPassScore,
+                chosen = action === chosenAction,
+                note = adjustment.note,
+                action = action.action,
+            )
+        }
+        options.sortByDescending { it.score }
+        options += dropped
+
+        sink.record(
+            evaluationState,
+            AiDecisionInsight(
+                kind = AiDecisionKind.PRIORITY,
+                playerId = playerId,
+                turnNumber = state.turnNumber,
+                step = state.step.name,
+                activePlayerId = state.activePlayerId,
+                onOwnTurn = state.activePlayerId == playerId,
+                baselineLabel = "Pass priority",
+                baselineScore = adjustedPassScore,
+                chosenLabel = options.firstOrNull { it.chosen }?.label ?: "Pass priority",
+                thinkTimeMs = (System.nanoTime() - startNanos) / 1_000_000,
+                options = options,
+            ),
+        )
+    }
+
+    /**
+     * An option that never reached scoring, so the panel can say what happened to it.
+     *
+     * [submittable] is false for a candidate the processor already rejected — it stays visible (the
+     * AI did consider it) but carries no action, so the local testing mode can't offer to play a
+     * line the engine would refuse.
+     */
+    private fun droppedOption(
+        state: GameState,
+        action: LegalAction,
+        materialized: GameAction,
+        note: String,
+        submittable: Boolean,
+    ): AiActionOption = AiActionOption(
+        label = AiInsightLabels.describe(state, action, materialized),
+        actionType = action.actionType,
+        cardName = AiInsightLabels.cardName(state, materialized),
+        targets = AiInsightLabels.targetNames(state, materialized),
+        note = note,
+        action = materialized.takeIf { submittable },
+    )
 
     /**
      * The concrete action the AI would submit for [action], and the position it leads to.
@@ -273,14 +422,117 @@ class Strategist(
         legalAction: LegalAction,
         playerId: EntityId,
         budget: DecisionBudget,
+        startNanos: Long,
     ): LegalAction {
+        val trace = if (insightSink != null) CombatPlanTrace() else null
         val action = when (legalAction.actionType) {
-            "DeclareAttackers" -> combatAdvisor.chooseAttackers(state, legalAction, playerId, budget)
-            "DeclareBlockers" ->
-                combatAdvisor.chooseBlockers(state, legalAction, playerId, useSimulation = true, budget = budget)
+            "DeclareAttackers" -> combatAdvisor.chooseAttackers(state, legalAction, playerId, budget, trace)
+            "DeclareBlockers" -> combatAdvisor.chooseBlockers(
+                state, legalAction, playerId, useSimulation = true, budget = budget, trace = trace
+            )
             else -> legalAction.action
         }
+        if (trace != null) recordCombatInsight(state, legalAction, playerId, action, trace, startNanos)
         return legalAction.copy(action = action)
+    }
+
+    /**
+     * Hand the combat plans local search simulated to [insightSink], measured against declaring
+     * nothing.
+     *
+     * The trace is empty on the paths that skip local search altogether — a lethal alpha strike, an
+     * opponent with no creatures to block with, no legal blockers — so the submitted plan is
+     * recorded on its own with that said plainly, rather than as an unexplained single row.
+     */
+    private fun recordCombatInsight(
+        state: GameState,
+        legalAction: LegalAction,
+        playerId: EntityId,
+        action: GameAction,
+        trace: CombatPlanTrace,
+        startNanos: Long,
+    ) {
+        val sink = insightSink ?: return
+        val attacking = legalAction.actionType == "DeclareAttackers"
+        val chosenPlan: Any = when (action) {
+            is DeclareAttackers -> action.attackers
+            is DeclareBlockers -> action.blockers.filterValues { it.isNotEmpty() }
+            else -> emptyMap<EntityId, EntityId>()
+        }
+        val describe: (CombatPlan) -> String = { plan ->
+            when (plan) {
+                is CombatPlan.Attack -> AiInsightLabels.describeAttackPlan(state, plan.attackers)
+                is CombatPlan.Block -> AiInsightLabels.describeBlockPlan(state, plan.blockers)
+            }
+        }
+        val planOf: (CombatPlan) -> Any = { plan ->
+            when (plan) {
+                is CombatPlan.Attack -> plan.attackers
+                is CombatPlan.Block -> plan.blockers
+            }
+        }
+        val actionOf: (CombatPlan) -> GameAction = { plan ->
+            when (plan) {
+                is CombatPlan.Attack -> DeclareAttackers(playerId, plan.attackers)
+                is CombatPlan.Block -> DeclareBlockers(playerId, plan.blockers)
+            }
+        }
+        val baselineLabel = if (attacking) "No attacks" else "No blocks"
+        val baselineScore = trace.plans
+            .firstOrNull { describe(it) == baselineLabel }
+            ?.score
+            ?: trace.plans.minOfOrNull { it.score }
+            ?: 0.0
+
+        val options = trace.plans
+            .map { plan ->
+                AiActionOption(
+                    label = describe(plan),
+                    actionType = legalAction.actionType,
+                    score = plan.score,
+                    advantage = plan.score - baselineScore,
+                    chosen = planOf(plan) == chosenPlan,
+                    baseline = describe(plan) == baselineLabel,
+                    action = actionOf(plan),
+                )
+            }
+            .sortedByDescending { it.score }
+            .toMutableList()
+
+        val chosenLabel = if (attacking) {
+            AiInsightLabels.describeAttackPlan(state, (action as? DeclareAttackers)?.attackers.orEmpty())
+        } else {
+            AiInsightLabels.describeBlockPlan(state, (action as? DeclareBlockers)?.blockers.orEmpty())
+        }
+        if (options.none { it.chosen }) {
+            options.add(
+                0,
+                AiActionOption(
+                    label = chosenLabel,
+                    actionType = legalAction.actionType,
+                    chosen = true,
+                    note = "heuristic seed — local search did not run for this declaration",
+                    action = action,
+                ),
+            )
+        }
+
+        sink.record(
+            state,
+            AiDecisionInsight(
+                kind = if (attacking) AiDecisionKind.DECLARE_ATTACKERS else AiDecisionKind.DECLARE_BLOCKERS,
+                playerId = playerId,
+                turnNumber = state.turnNumber,
+                step = state.step.name,
+                activePlayerId = state.activePlayerId,
+                onOwnTurn = state.activePlayerId == playerId,
+                baselineLabel = baselineLabel,
+                baselineScore = baselineScore,
+                chosenLabel = chosenLabel,
+                thinkTimeMs = (System.nanoTime() - startNanos) / 1_000_000,
+                options = options,
+            ),
+        )
     }
 
     /**
@@ -296,8 +548,8 @@ class Strategist(
         playerId: EntityId,
         leafScore: Double,
         passScore: Double,
-    ): Double {
-        val cardName = resolveCardName(state, action) ?: return leafScore
+    ): AdjustedScore {
+        val cardName = resolveCardName(state, action) ?: return AdjustedScore(leafScore)
 
         // Phase 6: what the board looks like after this resolves is only half the question; the
         // other half is whether this was the window.
@@ -305,14 +557,16 @@ class Strategist(
         if (timing is TimingVerdict.NoWindow) {
             // The card does nothing here, so nothing the simulation reports should make it beat
             // passing. See [TimingVerdict.NoWindow] for why this is a floor and not a penalty.
-            return passScore - 1.0
+            return AdjustedScore(passScore - 1.0, "hold policy: wrong window — floored below passing")
         }
         val timingDelta = (timing as? TimingVerdict.Adjust)?.delta ?: 0.0
+        val timingNote = if (timingDelta != 0.0) "hold policy timing %+.2f".format(timingDelta) else null
 
         // Check for card-specific advisor override. Timing is applied outside it, so a per-card
         // advisor still sees the pure board score as its `defaultScore` and a card with both
         // keeps both.
-        val advisor = advisorRegistry.getAdvisor(cardName) ?: return leafScore + timingDelta
+        val advisor = advisorRegistry.getAdvisor(cardName)
+            ?: return AdjustedScore(leafScore + timingDelta, timingNote)
         val context = CastContext(
             state = state,
             projected = state.projectedState,
@@ -323,8 +577,21 @@ class Strategist(
             evaluator = evaluator,
             simulator = simulator
         )
-        return (advisor.evaluateCast(context) ?: leafScore) + timingDelta
+        val override = advisor.evaluateCast(context)
+        val advisorNote = override?.let { "${advisor::class.simpleName} replaced the board score" }
+        return AdjustedScore(
+            (override ?: leafScore) + timingDelta,
+            listOfNotNull(advisorNote, timingNote).joinToString("; ").ifEmpty { null },
+        )
     }
+
+    /**
+     * A leaf score after per-card adjustment, plus what did the adjusting.
+     *
+     * The [note] exists for the local testing mode: a candidate the AI passed over despite a strong
+     * board score is only explicable if the panel can say *which* policy floored it.
+     */
+    private data class AdjustedScore(val score: Double, val note: String? = null)
 
     /**
      * Pick the targets the AI actually commits to for a chosen targeted action, by simulation

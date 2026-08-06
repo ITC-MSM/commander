@@ -14,6 +14,7 @@ import { TargetingArrows } from '../targeting/TargetingArrows'
 import { DraggedCardOverlay } from './DraggedCardOverlay'
 import { GameLog } from './GameLog'
 import { ActiveYieldsPanel } from './ActiveYieldsPanel'
+import { AiInsightPanel } from './AiInsightPanel'
 import { DrawAnimations } from '../animations/DrawAnimations'
 import { DamageAnimations } from '../animations/DamageAnimations'
 import { RevealAnimations } from '../animations/RevealAnimations'
@@ -1974,6 +1975,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           that size anyway. */}
       {!spectatorMode && !responsive.isMobile && <GameLog />}
       {!spectatorMode && <ActiveYieldsPanel />}
+      {!spectatorMode && <AiInsightPanel />}
 
       {/* Draw animations */}
       <DrawAnimations />
