@@ -122,6 +122,9 @@ game:
     open-router-api-key: ${OPENROUTER_API_KEY:}
     # When true, AI sealed decks always use the deterministic heuristic builder (skips the LLM).
     heuristic-deckbuilding: ${GAME_AI_HEURISTIC_DECKBUILDING:false}
+    # Local testing mode: record the engine AI's candidate actions + scores and serve them from
+    # /api/dev/ai-insight. Off in production — recording retains a GameState per decision.
+    insight-enabled: ${GAME_AI_INSIGHT_ENABLED:false}
 
 # Swagger UI - only enabled when dev endpoints are enabled
 springdoc:

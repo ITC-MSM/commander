@@ -2,6 +2,7 @@ package com.wingedsheep.ai.engine
 
 import com.wingedsheep.ai.ActionResponse
 import com.wingedsheep.ai.AiPlayerController
+import com.wingedsheep.ai.insight.AiInsightSink
 import com.wingedsheep.ai.llm.BottomCardsInfo
 import com.wingedsheep.ai.llm.CardSummary
 import com.wingedsheep.ai.llm.MulliganInfo
@@ -29,10 +30,15 @@ private val logger = LoggerFactory.getLogger(EngineAiPlayerController::class.jav
 class EngineAiPlayerController(
     private val cardRegistry: CardRegistry,
     private val playerId: EntityId,
-    private val gameStateProvider: () -> GameState?
+    private val gameStateProvider: () -> GameState?,
+    /**
+     * Local testing mode: publishes the scores the [Strategist] assigned each candidate, so a human
+     * can browse what the AI weighed. Null in normal play.
+     */
+    insightSink: AiInsightSink? = null,
 ) : AiPlayerController {
 
-    private val aiPlayer = AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION)
+    private val aiPlayer = AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION, insightSink = insightSink)
 
     override fun chooseAction(
         state: ClientGameState,

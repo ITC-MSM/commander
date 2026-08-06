@@ -6,6 +6,7 @@ import com.wingedsheep.ai.engine.evaluation.*
 import com.wingedsheep.ai.engine.knowledge.IntentCatalog
 import com.wingedsheep.ai.engine.hidden.Determinizer
 import com.wingedsheep.ai.engine.hidden.OpponentModel
+import com.wingedsheep.ai.insight.AiInsightSink
 import com.wingedsheep.ai.engine.rollout.CandidateEvaluator
 import com.wingedsheep.ai.engine.rollout.FastDecisionResponder
 import com.wingedsheep.ai.engine.rollout.PlayoutEngine
@@ -180,6 +181,11 @@ class AIPlayer(
             playerId: EntityId,
             profile: AiProfile,
             opponentModels: Map<EntityId, OpponentModel> = emptyMap(),
+            /**
+             * Local testing mode: where the [Strategist]'s per-candidate scores are published
+             * instead of being discarded. Null (the default) is production — no recording.
+             */
+            insightSink: AiInsightSink? = null,
         ): AIPlayer {
             val advisorRegistry = CardAdvisorRegistry()
             profile.advisorModules.forEach { it.register(advisorRegistry) }
@@ -238,6 +244,7 @@ class AIPlayer(
                     } else {
                         null
                     },
+                    insightSink = insightSink,
                 ),
                 responder = responder,
                 useMeaningfulFilter = profile.useMeaningfulFilter,

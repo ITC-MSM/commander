@@ -34,7 +34,8 @@ class AiGameManager(
     private val sessionRegistry: SessionRegistry,
     private val deckGenerator: SealedDeckGenerator,
     private val cardRegistry: CardRegistry,
-    private val llmCostTracker: com.wingedsheep.gameserver.tournament.llm.LlmCostTracker
+    private val llmCostTracker: com.wingedsheep.gameserver.tournament.llm.LlmCostTracker,
+    private val aiInsightService: AiInsightService,
 ) {
     /**
      * The live AI sessions of each game, keyed game → AI player. A multiplayer pod seats more than
@@ -130,17 +131,22 @@ class AiGameManager(
         val aiConfig = ai.toAiConfig().let { cfg ->
             if (modelOverride != null) cfg.copy(model = modelOverride, mode = "llm") else cfg
         }
+        // Local testing mode only, and null everywhere else: the LLM controller's engine fallback
+        // gets one too, so a fallback decision doesn't silently vanish from the panel.
+        val insightSink = gameSession?.sessionId?.let { aiInsightService.sinkFor(it, aiPlayerId) }
         return if (aiConfig.isEngineMode) {
             EngineAiPlayerController(
                 cardRegistry = cardRegistry,
                 playerId = aiPlayerId,
-                gameStateProvider = { gameSession?.getStateSnapshot() }
+                gameStateProvider = { gameSession?.getStateSnapshot() },
+                insightSink = insightSink,
             )
         } else {
             val engineFallback = EngineAiPlayerController(
                 cardRegistry = cardRegistry,
                 playerId = aiPlayerId,
-                gameStateProvider = { gameSession?.getStateSnapshot() }
+                gameStateProvider = { gameSession?.getStateSnapshot() },
+                insightSink = insightSink,
             )
             // Attribute in-game LLM token usage + cost to this game session, so the LLM-tournament
             // can report cost per game. No-op when there's no game (e.g. placeholder identities).
@@ -186,7 +192,8 @@ class AiGameManager(
             onActionReady = onActionReady,
             onMulliganKeep = onMulliganKeep,
             onMulliganTake = onMulliganTake,
-            onBottomCards = onBottomCards
+            onBottomCards = onBottomCards,
+            actionGate = aiInsightService.gateFor(gameSession.sessionId),
         )
 
         val playerSession = PlayerSession(
@@ -304,7 +311,10 @@ class AiGameManager(
         val controller = EngineAiPlayerController(
             cardRegistry = cardRegistry,
             playerId = aiPlayerId,
-            gameStateProvider = { gameSession.getStateSnapshot() }
+            gameStateProvider = { gameSession.getStateSnapshot() },
+            // Scenarios are the sharpest use of the local testing mode — a hand-built position is
+            // exactly where you want to read what the AI made of it.
+            insightSink = aiInsightService.sinkFor(gameSession.sessionId, aiPlayerId),
         )
 
         val (playerSession, identity) = registerAiSession(
