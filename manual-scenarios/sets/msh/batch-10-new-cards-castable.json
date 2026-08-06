@@ -98,13 +98,27 @@
     ],
     "library": [
       "Mountain",
+      "Construct a Cosmic Cube",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Forest",
       "Island"
     ]
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": [],
+    "hand": ["Plains", "Swamp", "Forest"],
     "battlefield": [
       {
         "name": "Grizzly Bears"
@@ -123,6 +137,18 @@
     "library": [
       "Plains",
       "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
       "Forest"
     ]
   },
@@ -133,5 +159,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

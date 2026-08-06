@@ -12,6 +12,9 @@
     ],
     "battlefield": [
       {
+        "name": "Jalum Tome"
+      },
+      {
         "name": "Swamp"
       },
       {
@@ -87,6 +90,13 @@
     "library": [
       "Mountain",
       "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Island"
     ]
   },
@@ -111,6 +121,14 @@
     "library": [
       "Plains",
       "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
       "Forest"
     ]
   },
@@ -121,5 +139,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

@@ -12,6 +12,15 @@
     ],
     "battlefield": [
       {
+        "name": "Bruce Banner"
+      },
+      {
+        "name": "Grizzly Bears"
+      },
+      {
+        "name": "Hill Giant"
+      },
+      {
         "name": "Island"
       },
       {
@@ -89,6 +98,30 @@
     ],
     "library": [
       "Mountain",
+      "Jalum Tome",
+      "Mountain",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Forest",
       "Island"
     ]
@@ -114,6 +147,12 @@
     "library": [
       "Plains",
       "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
       "Forest"
     ]
   },
@@ -124,5 +163,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

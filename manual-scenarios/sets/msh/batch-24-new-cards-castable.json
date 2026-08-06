@@ -100,7 +100,18 @@
       "Forest"
     ],
     "library": [
+      "Falcon's Wing Harness",
       "Mountain",
+      "Forest",
+      "Jalum Tome",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Ornithopter",
       "Forest",
       "Island"
     ]
@@ -126,6 +137,17 @@
     "library": [
       "Plains",
       "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
       "Forest"
     ]
   },
@@ -136,5 +158,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

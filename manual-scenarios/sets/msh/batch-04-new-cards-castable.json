@@ -12,7 +12,16 @@
     ],
     "battlefield": [
       {
-        "name": "Plains"
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
       },
       {
         "name": "Plains"
@@ -65,6 +74,23 @@
     ],
     "library": [
       "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain",
       "Forest",
       "Island"
     ]
@@ -100,5 +126,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

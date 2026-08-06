@@ -12,6 +12,9 @@
     ],
     "battlefield": [
       {
+        "name": "Jalum Tome"
+      },
+      {
         "name": "Island"
       },
       {
@@ -112,5 +115,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

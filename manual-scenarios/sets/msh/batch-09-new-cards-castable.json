@@ -8,9 +8,13 @@
       "Construct a Cosmic Cube",
       "Crossbones, Malicious Mercenary",
       "Doctor Doom",
-      "Elektra, Daughter of the Hand"
+      "Elektra, Daughter of the Hand",
+      "Terror"
     ],
     "battlefield": [
+      {
+        "name": "Jalum Tome"
+      },
       {
         "name": "Swamp"
       },
@@ -90,6 +94,12 @@
     "library": [
       "Mountain",
       "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Island"
     ]
   },
@@ -114,6 +124,15 @@
     "library": [
       "Plains",
       "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Serra Angel",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
       "Forest"
     ]
   },
@@ -124,5 +143,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

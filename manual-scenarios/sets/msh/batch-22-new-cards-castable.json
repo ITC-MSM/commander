@@ -8,7 +8,8 @@
       "The Kingpin of Crime",
       "The Mighty Thor, Jane Foster",
       "Moon Girl and Devil Dinosaur",
-      "The Ruinous Wrecking Crew"
+      "The Ruinous Wrecking Crew",
+      "Jalum Tome"
     ],
     "battlefield": [
       {
@@ -94,7 +95,19 @@
       "Forest"
     ],
     "library": [
+      "Falcon's Wing Harness",
+      "Falcon's Wing Harness",
       "Mountain",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Forest",
       "Island"
     ]
@@ -130,5 +143,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

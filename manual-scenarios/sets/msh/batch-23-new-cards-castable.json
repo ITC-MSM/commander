@@ -107,6 +107,9 @@
     "hand": [],
     "battlefield": [
       {
+        "name": "Mountain"
+      },
+      {
         "name": "Grizzly Bears"
       },
       {
@@ -133,5 +136,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

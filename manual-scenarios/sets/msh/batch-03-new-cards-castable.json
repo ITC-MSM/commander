@@ -4,6 +4,7 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
+      "Grizzly Bears",
       "Monica Rambeau",
       "Night Nurse, Healer of Heroes",
       "Origin of the Avengers",
@@ -12,10 +13,10 @@
     ],
     "battlefield": [
       {
-        "name": "Plains"
+        "name": "Mountain"
       },
       {
-        "name": "Plains"
+        "name": "Forest"
       },
       {
         "name": "Plains"
@@ -100,5 +101,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

@@ -8,9 +8,16 @@
       "Daredevil, Man Without Fear",
       "Iron Man, Master of Machines",
       "Kang, Temporal Tyrant",
-      "Killmonger, Scourge of Wakanda"
+      "Killmonger, Scourge of Wakanda",
+      "Jalum Tome"
     ],
     "battlefield": [
+      {
+        "name": "Jalum Tome"
+      },
+      {
+        "name": "Jalum Tome"
+      },
       {
         "name": "Plains"
       },
@@ -98,6 +105,11 @@
     ],
     "library": [
       "Mountain",
+      "Iron Man, Master of Machines",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Forest",
       "Island"
     ]
@@ -123,6 +135,13 @@
     "library": [
       "Plains",
       "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
       "Forest"
     ]
   },
@@ -133,5 +152,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

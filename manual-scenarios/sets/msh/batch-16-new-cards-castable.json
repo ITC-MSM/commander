@@ -8,6 +8,7 @@
       "Doc Samson, Super Psychiatrist",
       "Villainous Hideout",
       "Epic Fight",
+      "Fin Fang Foom",
       "Hellcat, Undying Vigilante"
     ],
     "battlefield": [
@@ -69,6 +70,12 @@
     "library": [
       "Mountain",
       "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Island"
     ]
   },
@@ -103,5 +110,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

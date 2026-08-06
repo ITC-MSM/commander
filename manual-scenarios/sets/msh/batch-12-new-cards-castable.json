@@ -12,16 +12,16 @@
     ],
     "battlefield": [
       {
-        "name": "Swamp"
+        "name": "Plains"
       },
       {
-        "name": "Swamp"
+        "name": "Forest"
       },
       {
-        "name": "Swamp"
+        "name": "Mountain"
       },
       {
-        "name": "Swamp"
+        "name": "Island"
       },
       {
         "name": "Swamp"
@@ -73,6 +73,7 @@
       "Forest"
     ],
     "library": [
+      "Falcon's Wing Harness",
       "Mountain",
       "Forest",
       "Island"
@@ -109,5 +110,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

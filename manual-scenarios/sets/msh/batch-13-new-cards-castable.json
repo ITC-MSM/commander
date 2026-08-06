@@ -8,7 +8,10 @@
       "Crimson Operative",
       "Death to Our Enemies",
       "Fin Fang Foom",
-      "Hawkeye, Young Avenger"
+      "Hawkeye, Young Avenger",
+      "Lightning Bolt",
+      "Lightning Bolt",
+      "Lightning Bolt"
     ],
     "battlefield": [
       {
@@ -118,5 +121,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }

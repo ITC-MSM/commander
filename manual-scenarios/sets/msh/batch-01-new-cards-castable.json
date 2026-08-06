@@ -78,6 +78,17 @@
     "library": [
       "Mountain",
       "Forest",
+      "Captain America, Wings of Freedom",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
       "Island"
     ]
   },
@@ -112,5 +123,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }
