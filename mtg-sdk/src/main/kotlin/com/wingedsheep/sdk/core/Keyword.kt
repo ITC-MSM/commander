@@ -169,6 +169,20 @@ enum class Keyword(val displayName: String) {
      * triggered half is the synthesized [com.wingedsheep.sdk.scripting.Madness.castAbility].
      */
     MADNESS("Madness"),
+
+    /**
+     * Disturb [cost] (CR 702.146). "You may cast this card transformed from your graveyard by
+     * paying [cost] rather than its mana cost."
+     *
+     * Printed on the *front* face of a transforming double-faced card; the resulting spell has its
+     * **back** face up and only the back face's characteristics (CR 712.8c) — so its type line,
+     * targets (an Aura back face chooses what to enchant), P/T, and abilities all come from the back
+     * face, while its mana value still comes from the front face's mana cost. Unlike
+     * [FLASHBACK]/[HARMONIZE] the card is not exiled on resolution; the back faces carry their own
+     * "if this would be put into a graveyard from anywhere, exile it instead" replacement.
+     * See [com.wingedsheep.sdk.scripting.KeywordAbility.Disturb].
+     */
+    DISTURB("Disturb"),
     EVOKE("Evoke"),
 
     /**

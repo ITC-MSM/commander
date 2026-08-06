@@ -38,6 +38,7 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.MayCastFromGraveyard
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
+import com.wingedsheep.engine.mechanics.DisturbCasts
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.MayhemGrants
@@ -76,6 +77,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
         enumerateFlashback(context, result)
         enumerateHarmonize(context, result)
         enumerateMayhem(context, result)
+        enumerateDisturb(context, result)
         enumerateGraveyardCast(context, result)
         enumerateWarp(context, result)
         enumerateDash(context, result)
@@ -1487,6 +1489,138 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         actionType = "CastWithMayhem",
                         description = "Cast ${cardComponent.name} (Mayhem)",
                         action = CastSpell(playerId, cardId, useAlternativeCost = true, alternativeCostType = AlternativeCostType.MAYHEM),
+                        manaCostString = costString,
+                        autoTapPreview = autoTapPreview,
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
+            }
+        }
+    }
+
+    // =========================================================================
+    // Disturb (cards in graveyard with the Disturb keyword)
+    // =========================================================================
+
+    /**
+     * Disturb (CR 702.146a): "You may cast this card transformed from your graveyard by paying
+     * [cost] rather than its mana cost."
+     *
+     * Everything except the cost is read off the **back** face, because that is the face the spell
+     * will have on the stack (CR 712.8c): its card types decide the timing, its target requirements
+     * and `auraTarget` decide what has to be chosen (the Innistrad cycle's Aura backs enchant a
+     * creature), and its name is what the offer is labelled with — the player is picking "cast this
+     * as Luminous Phantom", not "cast Lunarch Veteran". The cost is the front face's disturb
+     * keyword, run through the same battlefield cost-modifier pipeline as any other cast.
+     *
+     * Disturb grants no timing permission of its own, so a permanent back face is sorcery-speed
+     * unless it has flash.
+     */
+    private fun enumerateDisturb(
+        context: EnumerationContext,
+        result: MutableList<LegalAction>
+    ) {
+        val state = context.state
+        val playerId = context.playerId
+        val graveyardCards = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
+
+        for (cardId in graveyardCards) {
+            val container = state.getEntity(cardId) ?: continue
+            val cardComponent = container.get<CardComponent>() ?: continue
+            val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
+
+            val disturb = DisturbCasts.printedDisturb(cardDef) ?: continue
+            val backFace = DisturbCasts.castFace(cardDef) ?: continue
+
+            val isInstant = backFace.typeLine.isInstant
+            val hasFlash = backFace.keywords.contains(com.wingedsheep.sdk.core.Keyword.FLASH) ||
+                context.castPermissionUtils.hasGrantedFlash(state, cardId)
+            if (!isInstant && !hasFlash && !context.canPlaySorcerySpeed) continue
+
+            val description = "Cast ${backFace.name} (Disturb)"
+            val disturbAction = CastSpell(
+                playerId, cardId,
+                useAlternativeCost = true,
+                alternativeCostType = AlternativeCostType.DISTURB
+            )
+
+            if (context.cantCastSpell(cardId)) {
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithDisturb",
+                        description = description,
+                        action = disturbAction,
+                        affordable = false,
+                        manaCostString = disturb.cost.toString(),
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
+                continue
+            }
+
+            // Cast restrictions are a property of the whole card, so they are read from the front
+            // face's script exactly as a normal cast of this card would.
+            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, cardDef.script.castRestrictions)) continue
+
+            val effectiveCost = context.costCalculator.calculateEffectiveCostWithAlternativeBase(
+                state, cardDef, disturb.cost, playerId
+            )
+            val costString = effectiveCost.toString()
+            val canAfford = context.manaSolver.canPay(
+                state, playerId, effectiveCost, precomputedSources = context.availableManaSources
+            )
+
+            if (!canAfford) {
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithDisturb",
+                        description = description,
+                        action = disturbAction,
+                        affordable = false,
+                        manaCostString = costString,
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
+                continue
+            }
+
+            val targetReqs = buildList {
+                addAll(backFace.script.targetRequirements)
+                backFace.script.auraTarget?.let { add(it) }
+            }
+
+            val autoTapPreview = if (context.skipAutoTapPreview) null else {
+                context.manaSolver.solve(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)
+                    ?.sources?.map { it.entityId }
+            }
+
+            if (targetReqs.isNotEmpty()) {
+                val targetInfos = context.targetUtils.buildTargetInfos(state, playerId, targetReqs)
+                if (!context.targetUtils.allRequirementsSatisfied(targetInfos)) continue
+                val firstReq = targetReqs.first()
+                val firstInfo = targetInfos.first()
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithDisturb",
+                        description = description,
+                        action = disturbAction,
+                        validTargets = firstInfo.validTargets,
+                        requiresTargets = true,
+                        targetCount = firstInfo.maxTargets,
+                        minTargets = firstReq.effectiveMinCount,
+                        targetDescription = firstReq.description,
+                        targetRequirements = if (targetInfos.size > 1) targetInfos else null,
+                        manaCostString = costString,
+                        autoTapPreview = autoTapPreview,
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
+            } else {
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithDisturb",
+                        description = description,
+                        action = disturbAction,
                         manaCostString = costString,
                         autoTapPreview = autoTapPreview,
                         sourceZone = "GRAVEYARD"

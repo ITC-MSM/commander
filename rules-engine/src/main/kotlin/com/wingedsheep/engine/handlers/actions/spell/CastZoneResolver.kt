@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.actions.spell
 import com.wingedsheep.engine.core.GraveyardCastRiderSelection
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
+import com.wingedsheep.engine.mechanics.DisturbCasts
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.WarpGrants
@@ -26,6 +27,7 @@ import com.wingedsheep.engine.state.permissions.hasMayPlayFor
 import com.wingedsheep.engine.state.components.player.FlashGrantsThisTurnComponent
 import com.wingedsheep.engine.state.components.player.MayCastCreaturesFromGraveyardWithForageComponent
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
@@ -354,6 +356,25 @@ class CastZoneResolver(
         return FlashbackGrants.effectiveFlashback(
             state, cardId, cardDef, playerId, cardRegistry, predicateEvaluator
         ) != null
+    }
+
+    /**
+     * The back face a card in [playerId]'s graveyard would be cast as through disturb (CR 702.146a),
+     * or null when it isn't there, has no disturb keyword, or has no permanent back face.
+     *
+     * Returning the face rather than a boolean is deliberate: every disturb caller immediately needs
+     * the back face's characteristics (timing from its card types, its target requirements /
+     * `auraTarget`), so the permission check and the face lookup are the same question.
+     */
+    fun disturbCastFace(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): CardDefinition? {
+        val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
+        if (cardId !in state.getZone(graveyardZone)) return null
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
+        return DisturbCasts.castFace(cardRegistry.getCard(cardComponent.cardDefinitionId))
     }
 
     /**

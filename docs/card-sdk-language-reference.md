@@ -5814,7 +5814,7 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 (`Keyword.NONBASIC_LANDWALK` — unblockable while the defending player controls any non-basic land;
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Defender, Indestructible, Hexproof, Shroud, Haste,
-Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Storm, Flashback, Harmonize, Mayhem, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
+Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Storm, Flashback, Harmonize, Mayhem, Disturb, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
 Offspring, Persist, Undying, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
 composite abilities).
 
@@ -6219,6 +6219,24 @@ composite abilities).
   A resolving spell carries the durable "mayhem cost was paid" fact — `ChoiceSlot.MAYHEM_CAST` on a permanent, the resolution
   context otherwise — read via `Conditions.MayhemCostWasPaid` (e.g. *Sandman's Quicksand*'s opponents-only rider). Pass `""`
   for the CR 702.187c no-cost land form. Printed or granted per-entity, resolved through `MayhemGrants.effectiveMayhem`.
+- `Disturb(cost)` — `card { disturb("{cost}") }` builder helper (CR 702.146, Innistrad: Midnight Hunt / Crimson Vow).
+  A **graveyard** alternative cost printed on the **front** face of a transforming double-faced card:
+  *"You may cast this card transformed from your graveyard by paying [cost] rather than its mana cost."* The resulting
+  spell goes on the stack **back face up**, so per CR 712.8c it has **only the back face's characteristics** — its card
+  types decide the timing, its `targetRequirements` / `auraTarget` decide what is chosen as the spell is cast (the
+  Innistrad cycle has both creature and Aura back faces), and its name/colors/P/T are the back face's. Its **mana value
+  still comes from the front face's mana cost**. Grants no timing permission of its own. Unlike `Flashback`/`Harmonize`
+  the card is **not exiled on resolution**; every printed disturb back face instead carries its own
+  `RedirectZoneChange(EXILE, to = GRAVEYARD, selfOnly = true)` — *"if this would be put into a graveyard from anywhere,
+  exile it instead"* — which functions in every zone (CR 614.12), so a **countered** disturb spell is exiled too and the
+  card can never be disturbed twice. All behavior is in the engine, keyed off the `KeywordAbility.Disturb` entry:
+  `DisturbCasts.castFace` resolves the printed keyword plus a permanent back face into the face being cast;
+  `CastFromZoneEnumerator.enumerateDisturb` surfaces a `CastWithDisturb` (`AlternativeCostType.DISTURB`) labelled with the
+  back face's name; `CastZoneResolver.disturbCastFace` re-derives it authoritatively in `CastSpellHandler`; and
+  `StackResolver.castSpell(castTransformed = true)` flips the card — swapping its `CardComponent`, stamping a
+  `DoubleFacedComponent` on the back face, and re-registering the back face's statics, replacements and self-redirects —
+  before it becomes a spell, so resolution, targeting and the client view need no special case. Rule 712.8a still turns
+  the card back over as it leaves the battlefield or stack for any other zone.
 - `Madness(cost)` — `card { madness("{cost}") }` builder helper (CR 702.35). One keyword, **two abilities**
   (CR 702.35a): a *static* one functioning in **hand** — *"if a player would discard this card, that player discards it,
   but exiles it instead of putting it into their graveyard"* — and a *triggered* one functioning on that exile —

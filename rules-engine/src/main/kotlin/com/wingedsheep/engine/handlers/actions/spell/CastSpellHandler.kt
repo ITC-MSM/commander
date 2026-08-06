@@ -21,6 +21,7 @@ import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.CardsRevealedEvent
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
+import com.wingedsheep.engine.mechanics.DisturbCasts
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.MayhemGrants
@@ -249,7 +250,16 @@ class CastSpellHandler(
             cardComponent.typeLine.isCreature &&
             action.cardId in state.getGraveyard(action.playerId) &&
             SneakWindow.graveyardSneakGrantCost(state, action.playerId, cardRegistry) != null
-        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasMayhem && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast && !hasGraveyardSneak) {
+        // Disturb (CR 702.146a) — cast transformed from your graveyard for the disturb cost. The
+        // face this cast puts on the stack is the back face, and it drives timing and targeting
+        // below (CR 712.8c), so the permission check hands back the face itself.
+        val disturbFace = if (
+            !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone &&
+            action.useAlternativeCost && action.altAllows(AlternativeCostType.DISTURB)
+        ) {
+            zoneResolver.disturbCastFace(state, action.playerId, action.cardId)
+        } else null
+        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasHarmonize && !hasMayhem && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast && !hasGraveyardSneak && disturbFace == null) {
             return "Card is not in your hand"
         }
 
@@ -349,9 +359,11 @@ class CastSpellHandler(
             return validatePayment(state, action, morphCastCost)
         }
 
-        // Check timing — for Adventure / split faces use the face's type line (CR 715 / 709.4)
+        // Check timing — for Adventure / split faces use the face's type line (CR 715 / 709.4);
+        // a disturb cast is timed by the back face it puts on the stack (CR 712.8c).
         val effectiveTypeLine = action.faceIndex
             ?.let { cardDef?.cardFaces?.getOrNull(it)?.typeLine }
+            ?: disturbFace?.typeLine
             ?: cardComponent.typeLine
         // Sneak (CR 702.190a) grants an instant-speed casting permission during the active
         // player's declare blockers step — bypassing the normal sorcery-speed timing.
@@ -590,7 +602,10 @@ class CastSpellHandler(
         // Use mode-specific targets for modal spells, kickerTargetRequirements when kicked
         if (cardDef != null) {
             // Adventure / split face cast (CR 715 / 709) — read targets from the face's script.
+            // A disturb cast reads the back face's script instead (CR 712.8c): the Innistrad
+            // disturb cycle's Aura backs choose what to enchant as the spell is cast.
             val faceScript = action.faceIndex?.let { cardDef.cardFaces.getOrNull(it)?.script }
+                ?: disturbFace?.script
             val effectiveScript = faceScript ?: cardDef.script
             val modalEffect = effectiveScript.spellEffect as? com.wingedsheep.sdk.scripting.effects.ModalEffect
             // A choose-N modal cast that arrives with modes chosen but targets deferred
@@ -619,7 +634,7 @@ class CastSpellHandler(
             }
             val targetRequirements = buildList {
                 addAll(baseTargetReqs)
-                cardDef.script.auraTarget?.let { add(it) }
+                (disturbFace ?: cardDef).script.auraTarget?.let { add(it) }
             }
             if (targetRequirements.isNotEmpty()) {
                 // Reject casting if spell requires targets but none were provided
@@ -634,8 +649,8 @@ class CastSpellHandler(
                     action.targets,
                     targetRequirements,
                     action.playerId,
-                    sourceColors = cardDef.colors,
-                    sourceSubtypes = cardDef.typeLine.subtypes.map { it.value }.toSet(),
+                    sourceColors = (disturbFace ?: cardDef).colors,
+                    sourceSubtypes = (disturbFace ?: cardDef).typeLine.subtypes.map { it.value }.toSet(),
                     sourceId = action.cardId,
                     xValue = action.xValue
                 )
@@ -870,6 +885,15 @@ class CastSpellHandler(
                 // Mayhem cost (CR 702.187) — cast from graveyard for its mayhem cost.
                 costCalculator.calculateEffectiveCostWithAlternativeBase(
                     state, cardDef, MayhemGrants.effectiveMayhem(state, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)!!.cost, action.playerId
+                )
+            } else if (action.altAllows(AlternativeCostType.DISTURB) &&
+                DisturbCasts.printedDisturb(cardDef) != null &&
+                zoneResolver.disturbCastFace(state, action.playerId, action.cardId) != null) {
+                // Disturb cost (CR 702.146a) — printed on the front face, which is also the face the
+                // battlefield cost-modifier pipeline is applied against (the spell's mana value comes
+                // from the front face, CR 712.8c).
+                costCalculator.calculateEffectiveCostWithAlternativeBase(
+                    state, cardDef, DisturbCasts.printedDisturb(cardDef)!!.cost, action.playerId
                 )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
@@ -1933,6 +1957,13 @@ class CastSpellHandler(
         val xValue = action.xValue ?: 0
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
 
+        // Disturb (CR 702.146a) — resolved against the pre-cast state, while the card is still in
+        // the graveyard. Non-null means this cast puts the card on the stack transformed, so the
+        // back face supplies the spell's characteristics (CR 712.8c).
+        val disturbFace = if (action.useAlternativeCost && action.altAllows(AlternativeCostType.DISTURB)) {
+            zoneResolver.disturbCastFace(state, action.playerId, action.cardId)
+        } else null
+
         // Rule 400.7: a card that changed zones is a new object. Drop any stale
         // LinkedExileComponent carried over from a previous battlefield visit (e.g.
         // Veteran Survivor bounced to hand, then recast) before additional costs run —
@@ -2024,6 +2055,13 @@ class CastSpellHandler(
                 // Mayhem cost (CR 702.187) — cast from graveyard for its mayhem cost.
                 costCalculator.calculateEffectiveCostWithAlternativeBase(
                     currentState, cardDef, MayhemGrants.effectiveMayhem(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator)!!.cost, action.playerId
+                )
+            } else if (action.altAllows(AlternativeCostType.DISTURB) &&
+                DisturbCasts.printedDisturb(cardDef) != null &&
+                zoneResolver.disturbCastFace(currentState, action.playerId, action.cardId) != null) {
+                // Disturb cost (CR 702.146a) — mirrors validate().
+                costCalculator.calculateEffectiveCostWithAlternativeBase(
+                    currentState, cardDef, DisturbCasts.printedDisturb(cardDef)!!.cost, action.playerId
                 )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
@@ -2784,8 +2822,10 @@ class CastSpellHandler(
             } else emptyMap()
 
         val spellTargetRequirements = if (cardDef != null) {
-            // Adventure / split face cast (CR 715 / 709) — read targets from the face's script.
+            // Adventure / split face cast (CR 715 / 709) — read targets from the face's script;
+            // a disturb cast reads the back face's (CR 712.8c). Mirrors validate().
             val faceScriptForTargets = action.faceIndex?.let { cardDef.cardFaces.getOrNull(it)?.script }
+                ?: disturbFace?.script
             val baseTargetReqs = if (action.chosenModes.isNotEmpty() && modalEffectForTargets != null) {
                 // Modal spell with modes chosen at cast time — union per-mode requirements
                 action.chosenModes.flatMap { idx ->
@@ -2800,7 +2840,7 @@ class CastSpellHandler(
             }
             buildList {
                 addAll(baseTargetReqs)
-                cardDef.script.auraTarget?.let { add(it) }
+                (disturbFace ?: cardDef).script.auraTarget?.let { add(it) }
             }
         } else {
             emptyList()
@@ -2933,9 +2973,12 @@ class CastSpellHandler(
         // Track spell records cast this turn (for conditional evasion like Relic Runner, and "first of type" triggers)
         run {
             val record = com.wingedsheep.engine.state.CastSpellRecord(
-                typeLine = cardComponent.typeLine,
+                // A disturb cast is on the stack back face up, so "a Spirit spell was cast" and
+                // colour/type history read the back face (CR 712.8c). Its mana value still comes
+                // from the front face's mana cost, which is what `cardComponent` still holds here.
+                typeLine = disturbFace?.typeLine ?: cardComponent.typeLine,
                 manaValue = cardComponent.manaValue,
-                colors = cardComponent.colors,
+                colors = disturbFace?.colors ?: cardComponent.colors,
                 isFaceDown = action.castFaceDown,
                 spentManaSubtypes = paymentResult.spentManaProvenance.spentSubtypes,
                 // The cast card moves to the stack keeping its entity id, so this matches the
@@ -2949,7 +2992,7 @@ class CastSpellHandler(
                 castFromZone = stackResolver.findCastFromZone(currentState, action.cardId, action.playerId),
                 // Face-down casts hide the card's identity; a face-up cast records the name so
                 // name predicates ("the first Otter spell other than Alania") can match history.
-                name = if (action.castFaceDown) null else cardComponent.name,
+                name = if (action.castFaceDown) null else (disturbFace?.name ?: cardComponent.name),
             )
             val existing = currentState.spellsCastThisTurnByPlayer[action.playerId] ?: emptyList()
             currentState = currentState.copy(
@@ -3027,6 +3070,7 @@ class CastSpellHandler(
             action.xValue,
             sacrificedSnapshots,
             castFaceDown = action.castFaceDown,
+            castTransformed = disturbFace != null,
             damageDistribution = action.damageDistribution,
             targetRequirements = spellTargetRequirements,
             exiledCardCount = exiledCardCount,

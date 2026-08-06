@@ -586,6 +586,170 @@
     ]
 }
 
+// Covetous Castaway
+{
+    "name": "Covetous Castaway",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human",
+    "oracleText": "When this creature dies, mill three cards. (Put the top three cards of your library into your graveyard.)\nDisturb {3}{U}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{3}{U}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature dies, mill three cards."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Ghostly Castigator",
+        "manaCost": "",
+        "typeLine": "Creature — Spirit",
+        "oracleText": "Flying\nWhen this creature enters, you may shuffle up to three target cards from your graveyard into your library.\nIf Ghostly Castigator would be put into a graveyard from anywhere, exile it instead.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 4
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Battlefield"
+                    },
+                    "effect": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ForEach",
+                                    "space": "IterationSpace.Targets",
+                                    "body": {
+                                        "type": "MoveToZone",
+                                        "target": {
+                                            "type": "ContextTarget",
+                                            "index": 0
+                                        },
+                                        "destination": "Library"
+                                    }
+                                },
+                                "ShuffleLibrary"
+                            ]
+                        },
+                        "descriptionOverride": "Shuffle the targeted cards from your graveyard into your library?"
+                    },
+                    "targetRequirement": {
+                        "type": "TargetObject",
+                        "count": 3,
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "three target cards from your graveyard"
+                    },
+                    "descriptionOverride": "When this creature enters, you may shuffle up to three target cards from your graveyard into your library."
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "45",
+            "rarity": "UNCOMMON",
+            "artist": "Dan Murayama Scott",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/3/03a3ea4b-d292-4602-985f-7a7971ca73ec.jpg?1783925651"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "rarity": "UNCOMMON",
+        "artist": "Dan Murayama Scott",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/03a3ea4b-d292-4602-985f-7a7971ca73ec.jpg?1783925651",
+        "rulings": [
+            {
+                "date": "2021-09-24",
+                "text": "When you cast a spell using a card's disturb ability, the card is put onto the stack with its back face up. The resulting spell has all the characteristics of that face."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The mana value of a spell cast using disturb is determined by the mana cost on the front face of the card, no matter what the total cost to cast the spell was."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The back face of each card with disturb has an ability that instructs its controller to exile it if it would be put into a graveyard from anywhere. This includes going to the graveyard from the stack, so if the spell is countered after you cast it using the disturb ability, it will be put into exile."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Crawl from the Cellar
 {
     "name": "Crawl from the Cellar",
@@ -1592,6 +1756,128 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Lunarch Veteran
+{
+    "name": "Lunarch Veteran",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Whenever another creature you control enters, you gain 1 life.\nDisturb {1}{W} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{1}{W}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever another creature you control enters, you gain 1 life."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Luminous Phantom",
+        "manaCost": "",
+        "typeLine": "Creature — Spirit Cleric",
+        "oracleText": "Flying\nWhenever another creature you control leaves the battlefield, you gain 1 life.\nIf Luminous Phantom would be put into a graveyard from anywhere, exile it instead.",
+        "creatureStats": {
+            "power": 1,
+            "toughness": 1
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "ZoneChangeEvent",
+                        "filter": "creature ctrl:you",
+                        "from": "Battlefield"
+                    },
+                    "binding": "OTHER",
+                    "effect": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "descriptionOverride": "Whenever another creature you control leaves the battlefield, you gain 1 life."
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "27",
+            "artist": "Igor Kieryluk",
+            "imageUri": "https://cards.scryfall.io/normal/back/d/2/d2704743-2e23-40b9-a367-c73d2db45afc.jpg?1783925662"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "27",
+        "artist": "Igor Kieryluk",
+        "flavorText": "\"Even in our darkest times, Avacyn's light still guides us.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/2/d2704743-2e23-40b9-a367-c73d2db45afc.jpg?1783925662",
+        "rulings": [
+            {
+                "date": "2021-09-24",
+                "text": "When you cast a spell using a card's disturb ability, the card is put onto the stack with its back face up. The resulting spell has all the characteristics of that face."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The mana value of a spell cast using disturb is determined by the mana cost on the front face of the card, no matter what the total cost to cast the spell was."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The back face of each card with disturb has an ability that instructs its controller to exile it if it would be put into a graveyard from anywhere. This includes going to the graveyard from the stack, so if the spell is countered after you cast it using the disturb ability, it will be put into exile."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

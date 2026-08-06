@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 201 / 273
+**Implemented:** 207 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -21,7 +21,7 @@
 - [x] Ballista Watcher
 - [x] Belligerent Guest
 - [ ] Binding Geist
-- [ ] Biolume Egg
+- [x] Biolume Egg
 - [x] Bleed Dry
 - [x] Blood Fountain
 - [x] Blood Hypnotist
@@ -46,7 +46,7 @@
 - [ ] Cemetery Protector
 - [ ] Cemetery Prowler
 - [ ] Ceremonial Knife
-- [ ] Chandra, Dressed to Kill
+- [x] Chandra, Dressed to Kill
 - [ ] Change of Fortune
 - [x] Child of the Pack
 - [ ] Chill of the Grave
@@ -149,7 +149,7 @@
 - [x] Lacerate Flesh
 - [x] Laid to Rest
 - [x] Lambholt Raconteur
-- [ ] Lantern Bearer
+- [x] Lantern Bearer
 - [x] Lantern Flare
 - [x] Lantern of the Lost
 - [x] Lightning Wolf
@@ -179,7 +179,7 @@
 - [x] Ollenbock Escort
 - [x] Overcharged Amalgam
 - [x] Packsong Pup
-- [ ] Panicked Bystander
+- [x] Panicked Bystander
 - [x] Panicked Bystander
 - [x] Parasitic Grasp
 - [x] Parish-Blade Trainee
@@ -221,7 +221,7 @@
 - [x] Skywarp Skaab
 - [x] Snarling Wolf
 - [ ] Sorin the Mirthless
-- [ ] Soulcipher Board
+- [x] Soulcipher Board
 - [x] Spiked Ripsaw
 - [ ] Splendid Reclamation
 - [x] Spore Crawler
@@ -243,7 +243,7 @@
 - [x] Toxic Scorpion
 - [ ] Toxrill, the Corrosive
 - [x] Traveling Minister
-- [ ] Twinblade Geist
+- [x] Twinblade Geist
 - [x] Ulvenwald Oddity
 - [x] Undead Butler
 - [x] Undying Malice
