@@ -564,6 +564,44 @@ function battlefieldCardsEqual(a: BattlefieldCards, b: BattlefieldCards): boolea
  * proper doesn't need it: there `selectViewingPlayerId` already resolves to the bottom
  * seat).
  */
+/**
+ * Reorder a creature row so soulbond-paired creatures sit **next to each other** (CR 702.95b).
+ *
+ * Without this the bond `SoulbondBonds` draws can stripe across the whole row over unrelated
+ * creatures that happen to sit between the pair, which reads as "these two are connected to
+ * something in the middle" rather than "these two are one". Adjacency makes the bond short and its
+ * meaning obvious, and it matches how a player physically slides two paired cards together.
+ *
+ * Stable and idempotent: cards keep their relative order except that a paired creature's partner is
+ * pulled up to immediately follow it. Only the *first* of a pair moves its partner, so the pair
+ * lands wherever the earlier half already was rather than jumping the row around.
+ */
+function orderPairsAdjacent(cards: readonly ClientCard[]): ClientCard[] {
+  if (cards.length < 3) return [...cards]
+  if (!cards.some((c) => c.pairedWithId)) return [...cards]
+
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  const emitted = new Set<EntityId>()
+  const ordered: ClientCard[] = []
+
+  for (const card of cards) {
+    if (emitted.has(card.id)) continue
+    ordered.push(card)
+    emitted.add(card.id)
+
+    const partnerId = card.pairedWithId
+    if (!partnerId || emitted.has(partnerId)) continue
+    const partner = byId.get(partnerId)
+    // The partner may be off this row entirely — an opponent's creature after a control change, or
+    // a permanent that stopped being a creature. Leave the row alone in that case.
+    if (!partner) continue
+    ordered.push(partner)
+    emitted.add(partnerId)
+  }
+
+  return ordered
+}
+
 export function useBattlefieldCards(
   opponentId?: EntityId | null,
   playerIdOverride?: EntityId | null,
@@ -650,11 +688,11 @@ export function useBattlefieldCards(
 
     const result: BattlefieldCards = {
       playerLands: playerCards.filter((c) => isNonCreatureLand(c) && isNotAttached(c)),
-      playerCreatures: playerCards.filter((c) => isCreature(c) && isNotAttached(c)),
+      playerCreatures: orderPairsAdjacent(playerCards.filter((c) => isCreature(c) && isNotAttached(c))),
       playerPlaneswalkers: playerCards.filter((c) => isPlaneswalker(c) && !isCreature(c) && !isLand(c) && isNotAttached(c)),
       playerOther: playerCards.filter((c) => !isCreature(c) && !isPlaneswalker(c) && !isLand(c) && isNotAttached(c)),
       opponentLands: opponentCards.filter((c) => isNonCreatureLand(c) && isNotAttached(c)),
-      opponentCreatures: opponentCards.filter((c) => isCreature(c) && isNotAttached(c)),
+      opponentCreatures: orderPairsAdjacent(opponentCards.filter((c) => isCreature(c) && isNotAttached(c))),
       opponentPlaneswalkers: opponentCards.filter((c) => isPlaneswalker(c) && !isCreature(c) && !isLand(c) && isNotAttached(c)),
       opponentOther: opponentCards.filter((c) => !isCreature(c) && !isPlaneswalker(c) && !isLand(c) && isNotAttached(c)),
       attachmentsByCardId,
