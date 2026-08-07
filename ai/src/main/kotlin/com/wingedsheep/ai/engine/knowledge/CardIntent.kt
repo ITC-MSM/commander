@@ -125,6 +125,23 @@ enum class IntentTag {
     /** Removal aimed at a whole group rather than one target (a wrath). */
     SWEEPER,
 
+    /**
+     * Shuts one creature off without removing it — the Pacifism shape: an Aura whose static
+     * ability says the *enchanted* creature can't attack or block.
+     *
+     * Tagged apart from [REMOVAL] rather than folded into it, because the two are only alike from
+     * the caster's side of the table. A Pacifism leaves a permanent on the battlefield that other
+     * cards can still read, untap, sacrifice or re-target, and — the reason it is a separate tag
+     * here — [CardIntent.staticPriorValue]'s ladder prices [REMOVAL] at 3.5, so folding it in would
+     * silently re-value every Aura of this shape sitting on a battlefield. This tag is deliberately
+     * absent from that ladder: it changes what the AI does with the card *in hand*, and nothing
+     * about what the permanent is worth.
+     *
+     * The scope test is what keeps it honest — see `CardIntentAnalyzer.neutralizeTags`. "This
+     * creature can't block" printed on a creature is a drawback, not an answer.
+     */
+    NEUTRALIZE,
+
     /** Draws cards. */
     DRAW,
 

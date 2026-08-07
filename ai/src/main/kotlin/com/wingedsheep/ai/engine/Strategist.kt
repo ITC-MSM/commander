@@ -7,6 +7,7 @@ import com.wingedsheep.ai.engine.budget.DecisionBudget
 import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.BoardPresence
+import com.wingedsheep.ai.engine.evaluation.EvaluationWeights
 import com.wingedsheep.ai.engine.knowledge.HoldPolicy
 import com.wingedsheep.ai.engine.knowledge.IntentCatalog
 import com.wingedsheep.ai.engine.knowledge.TimingVerdict
@@ -88,6 +89,16 @@ class Strategist(
     /** [AiProfile.combatTricksWaitForBlocks] — passed straight through to [HoldPolicy]. */
     private val combatTricksWaitForBlocks: Boolean = false,
     /**
+     * [AiProfile.holdRemovalForBetterTargets] — passed straight through to [HoldPolicy], which
+     * hands it to [com.wingedsheep.ai.engine.knowledge.RemovalPatience].
+     */
+    private val holdRemovalForBetterTargets: Boolean = false,
+    /**
+     * The profile's `EvaluationWeights.boardPresence`. Only [HoldPolicy] reads it, to quote a
+     * patience discount in the same units the leaf score prices board value in.
+     */
+    private val boardPresenceWeight: Double = EvaluationWeights.DEFAULT.boardPresence,
+    /**
      * Phase 7: how a candidate's post-action state is scored. Defaults to the pre-Phase-7 leaf, so
      * a caller that doesn't opt in gets the greedy 1-ply AI unchanged.
      */
@@ -101,7 +112,9 @@ class Strategist(
      */
     private val insightSink: AiInsightSink? = null,
 ) {
-    private val holdPolicy = HoldPolicy(intents, combatTricksWaitForBlocks)
+    private val holdPolicy = HoldPolicy(
+        intents, combatTricksWaitForBlocks, holdRemovalForBetterTargets, boardPresenceWeight,
+    )
 
     /**
      * Positions this player has already taken a non-pass action from, oldest first.
@@ -554,15 +567,19 @@ class Strategist(
         val cardName = resolveCardName(state, action) ?: return AdjustedScore(leafScore)
 
         // Phase 6: what the board looks like after this resolves is only half the question; the
-        // other half is whether this was the window.
-        val timing = holdPolicy.verdictFor(state, playerId, cardName)
+        // other half is whether this was the window — and, for removal, whether this was the target
+        // worth spending the card on. The materialized action is what carries the committed
+        // targets, so the hold policy is asked about the same spell the processor would receive.
+        val timing = holdPolicy.verdictFor(state, playerId, cardName, action.action as? CastSpell)
         if (timing is TimingVerdict.NoWindow) {
             // The card does nothing here, so nothing the simulation reports should make it beat
             // passing. See [TimingVerdict.NoWindow] for why this is a floor and not a penalty.
             return AdjustedScore(passScore - 1.0, "hold policy: wrong window — floored below passing")
         }
         val timingDelta = (timing as? TimingVerdict.Adjust)?.delta ?: 0.0
-        val timingNote = if (timingDelta != 0.0) "hold policy timing %+.2f".format(timingDelta) else null
+        val timingReason = (timing as? TimingVerdict.Adjust)?.reason ?: "timing"
+        val timingNote =
+            if (timingDelta != 0.0) "hold policy $timingReason %+.2f".format(timingDelta) else null
 
         // Check for card-specific advisor override. Timing is applied outside it, so a per-card
         // advisor still sees the pure board score as its `defaultScore` and a card with both

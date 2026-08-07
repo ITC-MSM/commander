@@ -184,6 +184,42 @@ data class AiProfile(
      * polarity comes from.
      */
     val discountedRaceClock: Boolean = false,
+    /**
+     * Charge a removal spell for pointing at a creature that isn't worth a card yet — so the AI
+     * stops spending its Pacifism on the first 1/1 across the table.
+     *
+     * A one-ply evaluator scores the board right after the removal resolves, sees an opposing
+     * creature gone, and has no term at all for the option the card *was*. So the removal fires at
+     * the first legal target, every game, whatever it is.
+     *
+     * Phase 6 built the obvious fix — a **constant** penalty on "instant removal in our own main
+     * phase" — measured it, and removed it: the one large enough to change behaviour also vetoed
+     * casting a Disenchant at the only artifact on the table. See
+     * [com.wingedsheep.ai.engine.knowledge.HoldPolicy]'s KDoc for the verdict.
+     *
+     * [com.wingedsheep.ai.engine.knowledge.RemovalPatience] charges a different thing. Not the
+     * window — the **target**, by how far its board value falls short of a creature the removal's
+     * own mana value should expect to trade with, priced at the profile's `boardPresence` weight.
+     * A 1/1 under a Murder is 2.8 points short and pays; a 3/3 is fair and pays nothing; a
+     * Disenchant is not aimed at a creature at all and is out of scope by construction, which is
+     * what makes this a proportional comparison rather than the preference a constant could not
+     * price. It ends four ways: a **hard veto** on any turn where the opponent has lethal on board
+     * (`ThreatAssessment.lethalOnBoardAgainst`, the same predicate the evaluator's own −10.0 term
+     * uses — the AI must never sit on removal while it dies, and a magnitude argument is not a
+     * guarantee); a hand at the discard limit; a bar that decays to nothing by turn 14; and, short
+     * of lethal, a board score that outvotes it whenever the kill is genuinely urgent.
+     *
+     * The targets are `timing-01` — hold the Murder against a lone 2/2 with five open lands across
+     * the table, the puzzle `KNOWN_FAILURES` records as "the exact case `HoldPolicy` declines on
+     * purpose" — and the new `removal-07` / `removal-08` pair, which holds the board fixed and
+     * moves only the hand size. Needs [useCardIntent], which is what the policy runs on at all.
+     *
+     * Note that `timing-01` can only move on a profile that *also* has [discountedRaceClock]: with
+     * the turns-form sentinel in play, killing the opponent's only creature scores about +160, and
+     * no defensible discount competes with that. [PRODUCTION_PATIENCE]'s attribution column is
+     * therefore expected to be quiet there, and [PRODUCTION_CANDIDATE_PATIENCE]'s is not.
+     */
+    val holdRemovalForBetterTargets: Boolean = false,
     /** Non-null profiles may only be selected automatically for this set. Arena selection stays explicit. */
     val restrictedToSet: String? = null,
 ) {
@@ -505,7 +541,9 @@ data class AiProfile(
          * [PRODUCTION_CANDIDATE_TRICKWINDOW] plus [discountedRaceClock] — the agent that stops
          * pricing an empty board as a 99-turn clock.
          *
-         * **What a player faces in a real game today** — see [EngineAiPlayerController].
+         * What a player faced in a real game until [PRODUCTION_CANDIDATE_PATIENCE] replaced it in
+         * [EngineAiPlayerController]. Kept unchanged as the baseline that promotion is measured
+         * against.
          *
          * The first promotion here to clear the bar on the *arena* half rather than on the puzzle
          * half. `just arena production-candidate-trickwindow production-candidate-raceclock 300`
@@ -529,6 +567,66 @@ data class AiProfile(
         val PRODUCTION_CANDIDATE_RACECLOCK = PRODUCTION_CANDIDATE_TRICKWINDOW.copy(
             id = "production-candidate-raceclock",
             discountedRaceClock = true,
+        )
+
+        /**
+         * [holdRemovalForBetterTargets] alone on top of [PRODUCTION], so a puzzle or an arena point
+         * that moves is attributable to it — the same isolation [PRODUCTION_LANDSEQ] gives land
+         * sequencing.
+         *
+         * Read this column for what patience *costs*, not for what it closes. `timing-01`, the
+         * puzzle the term exists for, cannot move here: `PRODUCTION` scores the race in turns, and
+         * the `99.0` no-attacker sentinel prices killing the opponent's only creature at about +160
+         * — see [PRODUCTION_RACECLOCK] for the arithmetic. What this column *can* say is whether
+         * holding removal breaks any of the 86 positions that have nothing to do with it, and the
+         * answer is no: **73/86, failing set identical to `production`'s.** A term that moves
+         * nothing on the agent it cannot help is the cheapest evidence available that it is not
+         * quietly taxing every removal spell in the suite.
+         */
+        val PRODUCTION_PATIENCE = PRODUCTION.copy(
+            id = "production-patience",
+            holdRemovalForBetterTargets = true,
+        )
+
+        /**
+         * The promotion candidate: [PRODUCTION_CANDIDATE_RACECLOCK] plus [holdRemovalForBetterTargets]
+         * — the agent that stops spending its removal on the first small creature it sees.
+         *
+         * On the 86-puzzle suite it takes the live pair from **78/86 to 80/86**, closing both
+         * puzzles the term names — `removal-07` (Murder on a 1/1 with slack in hand) and
+         * `timing-01`, which `PuzzleSuiteTest.KNOWN_FAILURES` has recorded since Phase 2c as "the
+         * exact case `HoldPolicy` declines on purpose". Its failing set is a **strict subset** of
+         * `production-candidate-raceclock`'s, so nothing was traded for them; `removal-08` and
+         * `removal-09` — the same board with a full hand and on turn twenty — stay passing, which
+         * is what says the AI is weighing a trade rather than refusing to spend removal.
+         *
+         * **What a player faces in a real game today** — see [EngineAiPlayerController].
+         *
+         * **Promoted on the puzzle half; the arena half came back null rather than neutral.**
+         * `just arena production-candidate-raceclock production-candidate-patience 100` measured
+         * **50.0%, CI [50.0%, 50.0%]**, 50W-50L, 100/100 completed, 0 illegal actions — and all 50
+         * pairs at 1-1-0, where the three runs before this one had 10, 36 and 37 decisive pairs out
+         * of 150. A zero-width CI is a fact about the measurement before it is one about the agent:
+         * this says the flag changes the outcome of a real sealed game *rarely*, not that it is
+         * worthless and not that it is safe.
+         *
+         * The isolation column says the same thing (`production` vs `production-patience`, 100
+         * games, 30 s: 50.0%, 0 decisive pairs), so it was measured directly rather than argued
+         * about: instrumenting `discount()` over 20 games puts the fire rate at **about once per
+         * game** — 19 non-zero discounts in 463 turns. Real, and far smaller than 50 pairs can
+         * resolve. Notably the three releases are *not* what makes it rare (13 stops against 27
+         * that reached the bar), so lengthening the patience window is not the lever if this is
+         * ever tuned for more effect. Full numbers, the pair-distribution table and a harness
+         * caveat that cost two discarded measurements: `docs/ai/baseline-metrics.md`.
+         *
+         * If a later run comes back below parity, revert the two call sites
+         * ([EngineAiPlayerController] and [AiProfileSelector]'s fallback) rather than the flag: it
+         * is off for every other profile, so backing the promotion out costs nothing and loses no
+         * measurement.
+         */
+        val PRODUCTION_CANDIDATE_PATIENCE = PRODUCTION_CANDIDATE_RACECLOCK.copy(
+            id = "production-candidate-patience",
+            holdRemovalForBetterTargets = true,
         )
 
         /**
@@ -604,7 +702,7 @@ object AiProfileSelector {
     fun select(
         setCode: String?,
         requested: AiProfile?,
-        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_RACECLOCK,
+        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_PATIENCE,
     ): AiProfile {
         if (requested == null) return fallback
         val restriction = requested.restrictedToSet ?: return requested

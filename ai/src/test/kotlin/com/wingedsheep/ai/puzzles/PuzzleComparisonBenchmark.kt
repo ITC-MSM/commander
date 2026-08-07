@@ -62,6 +62,13 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // so the column is read for what it *costs* as much as for what it closes.
                 AiProfile.PRODUCTION_RACECLOCK,
                 AiProfile.PRODUCTION_CANDIDATE_RACECLOCK,
+                // Removal patience, alone and on top of what is live. `timing-01` and `removal-07`
+                // are the verdicts that should move — but only in the candidate column, since the
+                // turns-form race sentinel outscores any discount on `production`. `removal-08`
+                // (the same board with a full hand) and `noncreature-01` (the Disenchant a constant
+                // penalty used to veto) are the negative controls: both must stay passing.
+                AiProfile.PRODUCTION_PATIENCE,
+                AiProfile.PRODUCTION_CANDIDATE_PATIENCE,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

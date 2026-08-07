@@ -245,6 +245,11 @@ class AIPlayer(
                     budgetPolicy = profile.budgetPolicy,
                     intents = intents,
                     combatTricksWaitForBlocks = profile.combatTricksWaitForBlocks,
+                    holdRemovalForBetterTargets = profile.holdRemovalForBetterTargets,
+                    // Same seam as `CombatAdvisor`'s `lifeWeight`: a raw Phase 9 profile resolves
+                    // to the compiled fallback here, which is the right answer for a policy that
+                    // only needs to know what a point of board value trades against.
+                    boardPresenceWeight = EvalWeights.resolve(profile.evalWeightsId).boardPresence,
                     candidateEvaluator = candidateEvaluatorFor(
                         cardRegistry, profile, evaluator, advisorRegistry, intents,
                         EvalWeights.winProbabilityScale(profile.evalWeightsId),

@@ -1436,3 +1436,210 @@ All bound the sentinel just as well; all were swept and rejected before urgency:
   on while leaving the turns unit — and the sublinearity in power — in place.
 
 The common lesson: bounding the sentinel is not the fix. Changing the unit is.
+
+---
+
+# Promotion — `production-candidate-patience` goes live
+
+**Measured:** 2026-08-07. Flag `AiProfile.holdRemovalForBetterTargets`, profiles
+`production-patience` and `production-candidate-patience`. Implementation:
+`ai/.../engine/knowledge/RemovalPatience.kt`.
+
+> **The arena could not measure this one.** 100 games came back at exactly 50.0%, CI
+> [50.0%, 50.0%], with **all 50 pairs at 1-1-0** — zero decisive pairs, where the three runs before
+> it had 10, 36 and 37 out of 150. Read that as *no detectable effect*, not as *neutral with
+> confidence*. See "The arena half" below for what it does and does not license.
+
+## The defect
+
+A one-ply evaluator scores the board right after the removal resolves, sees an opposing creature
+gone, and has **no term at all for the option the card was**. So the removal fires at the first
+legal target on the board, every game, whatever it is — the Pacifism goes on the turn-one 1/1 and
+the Craw Wurm that shows up on turn six is unanswerable.
+
+This is not new, and it is not undiagnosed. Phase 6 built the obvious fix — a **constant** penalty
+on "instant removal in our own main phase" — measured it, and removed it, because the value large
+enough to change behaviour (−2.0) also vetoed `noncreature-01`, the instant-speed Disenchant at the
+only artifact on the table. `HoldPolicy`'s KDoc and `KNOWN_FAILURES`' entry for `timing-01` both
+record the verdict: *holding removal is a preference between two futures, and a constant cannot
+price one.*
+
+## The fix: charge the target, not the window
+
+The Phase 6 diagnosis is right about a constant and wrong about the question. The mistake is not
+"the AI casts removal in its main phase" — it is "the AI casts removal at a **target that is not
+worth a card**", and that is a comparison rather than a preference:
+
+> A removal spell should answer a creature at least as expensive as itself. The discount is what the
+> target falls **short** of that bar, priced at the profile's `boardPresence` weight.
+
+`FAIR_TRADE_VALUE_PER_MANA = 1.4` is read off `BoardPresence.creatureValue`'s own scale rather than
+chosen — a vanilla creature prices at about 1.4 per mana on it (Grizzly Bears 2.8, Hill Giant 4.2,
+Craw Wurm 7.6, Air Elemental 8.3). So the bar moves with the card: a Shock is content with a 1/1
+and a Murder is not.
+
+| removal | bar | vs 1/1 (1.4) | vs 3/3 (4.2) | vs 6/4 (7.6) |
+|---|---|---|---|---|
+| Lightning Bolt {R} | 1.4 | 0 | 0 | 0 |
+| Pacifism {1}{W} | 2.8 | −2.1 | 0 | 0 |
+| Murder {1}{B}{B} | 4.2 | −4.2 | 0 | 0 |
+
+Two things fall out of the shape that a constant could not give:
+
+- **The Disenchant is safe by construction, not by tuning.** The discount only applies to a
+  *creature* target — a creature is the thing a better one replaces next turn, which is the whole
+  bet. An opposing artifact is a fixed, already-visible quantity with nothing better coming.
+- **It ends four ways.** A **hard veto** whenever the opponent has lethal on board; a hand at the
+  discard limit (`>= MaximumHandSize.DEFAULT`, so the next draw is already the pitch); a bar that
+  decays linearly from turn 6 to nothing by turn 14; and, short of lethal, a board score that
+  outvotes the discount whenever the kill is genuinely urgent — it is capped at
+  `1.4 × manaValue × boardPresence`, small next to what `ThreatAssessment` pays for a creature that
+  is actually racing us.
+
+## The lethal veto, and why a magnitude argument was not enough
+
+The first draft had only the last three exits, on the reasoning that the evaluator already prices
+being dead on board at `−10.0` raw against a discount capped near 6, so the AI was going to cast
+anyway. That is an argument about **magnitudes**, and the rule it stands in for is not: *the AI must
+never sit on removal on a turn where doing nothing loses the game.* A magnitude argument holds until
+someone refits the weights — Phase 9 is explicitly going to — and holds only for the profiles that
+were measured. So the release is a veto, and it costs one boolean.
+
+`ThreatAssessment.lethalOnBoardAgainst` is the predicate, extracted from the `−10.0` term itself so
+there is one definition of "they have lethal" rather than two that can drift. It reads *unblockable*
+damage — `attackPower >= life && attackPower > defense` — so a 0/8 in the way means the 1/1 is not
+killing anyone and patience survives, which `RemovalPatienceTest` pins from both sides.
+
+The narrow reading (lethal **now**, not lethal in two turns) is sufficient because it re-asks every
+turn: at 4 life against a lone 2/2 nothing fires, and by the time the same board reads lethal — at
+2 life — the removal is released with a turn still in hand.
+
+## The card-knowledge gap it exposed
+
+Pacifism — the card that motivated the request — carried **no `IntentTag` at all**. The analyzer
+reads `ModifyStats` and `GrantKeyword` statics; `CantAttack` / `CantBlock` fell through to the empty
+set, so no policy in the AI could see that Pacifism answers anything. `IntentTag.NEUTRALIZE` fixes
+that, gated on `filter.scope == Scope.AttachedTo` so a creature's own printed drawback ("this
+creature can't block") is not read as removal. It is deliberately **absent from
+`priorValueOf`'s ladder**: it changes what the AI does with the card in hand and nothing about what
+the permanent on the battlefield is worth, so no frozen `BoardPresence` number moves.
+
+## Puzzles — 87 positions, four new
+
+`removal-07` … `10` are one board (Murder, a lone 1/1, three cards of slack) with one thing moved at
+a time: hold at four cards on turn one, **cast** at eight cards, **cast** on turn twenty, **cast**
+at 1 life with the blocker taken away. "Hold it" is only defensible if every exit is pinned too, and
+`removal-10` is the one that pins the rule Vincent stated as non-negotiable.
+
+| | `production` | live (`production-candidate-raceclock`) |
+|---|---|---|
+| puzzles, baseline | 74/87 | 79/87 |
+| puzzles, with the fix | 74/87 | **81/87** |
+| closes | — | `removal-07`, `timing-01` |
+| loses | — | — |
+
+The candidate's failing set is a **strict subset** of the live agent's, so nothing was traded.
+`removal-08` / `09` / `10` and `noncreature-01` — the four negative controls — stay passing in
+every column, `removal-10` for every profile in the table including `v0`.
+
+The `production` column is flat, and that is expected rather than disappointing: `timing-01` cannot
+move on an agent that scores the race in turns, where the `99.0` no-attacker sentinel prices killing
+the opponent's only creature at about +160 and no defensible discount competes. Read that column for
+what patience *costs* on the 86 positions that have nothing to do with it — which is nothing.
+
+## The arena half — measured, and null
+
+```
+just arena production-candidate-raceclock production-candidate-patience 100
+```
+
+| | value |
+|---|---|
+| Baseline (`production-candidate-raceclock`) win % | **50.0%**, CI [50.0%, 50.0%] |
+| Record | 50W-50L-0D |
+| Completed / illegal actions | 100/100, 0 |
+| Wall clock | 627 s on 8 threads |
+
+By the letter of the standing bar a CI spanning parity is a pass. This one does not merely span
+parity, it **is** parity, with zero width — and a degenerate CI is a fact about the measurement
+before it is a fact about the agent.
+
+The pair distribution is where the information actually is. A pair is the same decks and seed played
+with the seats swapped, so `1-1` means swapping the agents did not change who won:
+
+| run | pairs | `1-1` (tie) | decisive |
+|---|---|---|---|
+| `production-candidate-trickwindow` vs `-raceclock` | 150 | 114 | **36** |
+| `production` vs `production-raceclock` | 150 | 113 | **37** |
+| `production-candidate-landdrop` vs `-landseq` | 150 | 140 | **10** |
+| `production-candidate-raceclock` vs `-patience` | 50 | 50 | **0** |
+| `production` vs `production-patience` (isolation) | 50 | 50 | **0** |
+
+High tie rates are normal here — mirror decklists and a shared seed mean the draw usually decides
+the game — but *zero* is not, and it happened twice: the isolation run on `production` (30 s, no
+rollouts on either seat) returned the same 50/50, CI [50.0%, 50.0%], 0 decisive pairs. Combined
+that is 0 of 100 pairs; under the land-sequencing rate, the mildest prior comparison at 6.7%
+decisive, that has p ≈ 0.001.
+
+That is small enough that "the case is rare" stopped being an adequate explanation, so it was
+measured directly — see the next section. The answer is that the term fires **about once a game**,
+which is a real effect and a far smaller one than 50 pairs can resolve.
+
+What that licenses, precisely:
+
+- **It is not a demonstrated strength gain.** Nothing here says the agent got better at winning.
+- **It is not costing anything either.** Zero decisive pairs means it never lost one, and the four
+  negative controls plus a strict-subset failing set say the same thing on the tactical side.
+- **A larger run would be needed to resolve an effect this small**, and at ~6 s a game that is an
+  expensive way to measure something the mechanism predicts is rare. The isolation column
+  (`just arena production production-patience 300`) is cheaper — no rollouts on either seat — and is
+  the one to run if this is revisited.
+
+## How often does it actually fire?
+
+The null result deserved a direct measurement rather than more reasoning about it, so: instrument
+`discount()`, play 20 `production-patience` games (463 turns), and count. The instrumentation was
+temporary and is gone.
+
+| | count |
+|---|---|
+| `discount()` calls (every cast candidate is scored) | 1469 |
+| … not a removal spell at all (untagged, or a creature body) | −1320 |
+| … no single opposing *permanent* target (mostly burn aimed at the face) | −109 |
+| … stopped by a release: turn window 7, hand full 4, facing lethal 2 | −13 |
+| **reached the bar** | **27** |
+| **non-zero discount — patience actually bit** | **19** |
+
+**About once per game.** Not "never", which was the hypothesis this measurement killed, and not
+often enough for 50 pairs to see. A term that changes roughly one decision a game — a decision that
+is frequently not outcome-relevant even when it is right — is exactly the size of effect this arena
+cannot resolve, which reconciles the null result with the puzzle result without either being wrong.
+
+The second finding is that **the three releases are not what makes it rare**: 13 stops across 20
+games, against 27 that reached the bar. The turn window in particular cost only 7. If this is ever
+tuned for *more* effect, the lever is `FAIR_TRADE_VALUE_PER_MANA` or the `no-single-opposing-target`
+path — not lengthening the patience window, which is not the binding constraint.
+
+## A harness caveat found on the way
+
+Two `production`-class games on the same deck, the same seed and the **same agent object** produce
+different action streams — 4/4 attempts. So action-stream divergence is not a usable instrument for
+these profiles, and two attempts to use it here were discarded (the first also confounded by
+`TieredBudgetPolicy`'s wall-clock budget, which varies search depth with machine load). Counting
+inside the term, as above, is immune to this and is the right instrument.
+
+`FrozenBaselineTest` is unaffected: it pins `LEGACY_V0` on an all-vanilla Portal deck, which is
+reproducible. The cause is undiagnosed and is its own piece of work — most likely an
+identity-hash-ordered collection somewhere in the advisor or intent path, since that varies between
+two constructions inside one JVM run.
+
+## Promotion status
+
+`EngineAiPlayerController` and `AiProfileSelector`'s fallback point at
+`production-candidate-patience`, promoted on the puzzle half with the arena half returning null.
+To back it out, revert those two call sites rather than the flag: it is off for every other profile,
+so backing the promotion out costs nothing and loses no measurement.
+
+The honest one-line summary: the AI is **tactically better** at two positions it used to get wrong,
+with nothing traded on the other 85, and its **strength is unmeasured and probably unmeasurable at
+this sample size**.

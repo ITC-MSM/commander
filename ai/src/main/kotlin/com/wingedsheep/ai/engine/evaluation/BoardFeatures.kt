@@ -615,8 +615,8 @@ object ThreatAssessment : BoardFeature {
             }
 
             // Lethal on board next turn is very valuable
-            if (myAttackPower >= theirLife && myAttackPower > theirDefense) score += 8.0
-            if (theirAttackPower >= myLife && theirAttackPower > myDefense) score -= 10.0
+            if (hasLethalOnBoard(myAttackPower, theirLife, theirDefense)) score += 8.0
+            if (hasLethalOnBoard(theirAttackPower, myLife, myDefense)) score -= 10.0
 
             // Evasive damage (flying power they can't block)
             val theirEvasivePower = evasivePower(state, projected, opponent, sides.mine)
@@ -624,6 +624,38 @@ object ThreatAssessment : BoardFeature {
             score += (myEvasivePower - theirEvasivePower) * 0.5
 
             score
+        }
+    }
+
+    /**
+     * Whether an attacking side with [attackPower] kills a defending side at [life] behind
+     * [defense] **this coming combat** — power enough to finish it, and more than the defender can
+     * put in the way.
+     *
+     * Extracted so the two lethal bonuses in [score] and [lethalOnBoardAgainst] are the same claim
+     * rather than the same expression written three times.
+     */
+    private fun hasLethalOnBoard(attackPower: Int, life: Int, defense: Int): Boolean =
+        attackPower >= life && attackPower > defense
+
+    /**
+     * Whether some opposing side can kill [playerId] with the board exactly as it stands.
+     *
+     * The same claim [score]'s `−10.0` term makes, exposed because one consumer needs it as a
+     * **veto** rather than as a number: [com.wingedsheep.ai.engine.knowledge.RemovalPatience] must
+     * never talk the AI into holding a removal spell on a turn where doing nothing loses the game,
+     * and "the board score will outvote the discount" is an argument about magnitudes rather than a
+     * guarantee. This makes it one.
+     *
+     * Folded as "any opposing side", not [OpponentAggregate.THREAT]: in a pod, one player having
+     * lethal on us is lethal on us however the other matchups are going.
+     */
+    fun lethalOnBoardAgainst(state: GameState, projected: ProjectedState, playerId: EntityId): Boolean {
+        val sides = state.sidesFor(playerId) ?: return false
+        val myLife = sideLife(state, sides.mine)
+        val myDefense = defensePotential(state, projected, sides.mine)
+        return sides.opponents.any { opponent ->
+            hasLethalOnBoard(attackPotential(state, projected, opponent), myLife, myDefense)
         }
     }
 

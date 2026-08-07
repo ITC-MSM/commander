@@ -21,13 +21,14 @@ private val logger = LoggerFactory.getLogger(EngineAiPlayerController::class.jav
  * AI controller powered by the built-in rules-engine [AIPlayer].
  *
  * Runs entirely locally with no API calls. Uses the engine's ActionProcessor, board evaluator,
- * [Strategist] and [CombatAdvisor] directly, configured by [AiProfile.PRODUCTION_CANDIDATE_RACECLOCK]
+ * [Strategist] and [CombatAdvisor] directly, configured by [AiProfile.PRODUCTION_CANDIDATE_PATIENCE]
  * — rollout candidate evaluation over a determinized state, on a four-tier decision budget, with a
  * land drop priced as the card conversion it is, land *order* priced by the mana it makes usable,
- * a combat trick held until blocks are in and searched properly once they are, and the race scored
- * in urgency rather than in turns.
+ * a combat trick held until blocks are in and searched properly once they are, the race scored
+ * in urgency rather than in turns, and removal held for a target worth a card.
  * Each superseded configuration is kept as the baseline its successor was measured against:
- * [AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW] ran immediately before it,
+ * [AiProfile.PRODUCTION_CANDIDATE_RACECLOCK] ran immediately before it,
+ * [AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW] before it,
  * [AiProfile.PRODUCTION_CANDIDATE_LANDSEQ] before it,
  * [AiProfile.PRODUCTION_CANDIDATE_LANDDROP] before that,
  * [AiProfile.PRODUCTION_CANDIDATE_TUNED] before that, and the greedy 1-ply
@@ -49,7 +50,7 @@ class EngineAiPlayerController(
 ) : AiPlayerController {
 
     private val aiPlayer =
-        AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION_CANDIDATE_RACECLOCK, insightSink = insightSink)
+        AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION_CANDIDATE_PATIENCE, insightSink = insightSink)
 
     override fun chooseAction(
         state: ClientGameState,

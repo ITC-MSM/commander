@@ -1,5 +1,7 @@
 package com.wingedsheep.ai.engine.knowledge
 
+import com.wingedsheep.ai.engine.evaluation.EvaluationWeights
+import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
@@ -38,19 +40,72 @@ class HoldPolicy(
      * — narrow the combat window to the steps where blocks are already in.
      */
     private val tricksWaitForBlocks: Boolean = false,
+    /**
+     * [AiProfile.holdRemovalForBetterTargets][com.wingedsheep.ai.engine.AiProfile.holdRemovalForBetterTargets]
+     * — charge a removal spell for pointing at a target below a fair trade. See [RemovalPatience],
+     * which is where the whole idea lives.
+     */
+    private val holdRemovalForBetterTargets: Boolean = false,
+    /**
+     * The profile's `EvaluationWeights.boardPresence`, so [RemovalPatience] can quote its discount
+     * in the same currency as the board value it compares against. The default is the compiled
+     * fallback's, which is what every profile that does not opt in would have used anyway.
+     */
+    private val boardPresenceWeight: Double = EvaluationWeights.DEFAULT.boardPresence,
 ) {
 
     /** Whether this policy can say anything. False when the agent has no card knowledge. */
     val isEnabled: Boolean get() = intents.isEnabled
 
     /**
-     * The policy's reading of *this* window for [cardName].
+     * The policy's reading of casting [cardName] here — the window it is in, plus what it is being
+     * pointed at.
      *
-     * Only instant-speed cards are ever judged: a sorcery has no window to wait for, and
-     * penalizing one would just make the AI pass with a full hand.
+     * The two halves are deliberately asymmetric about speed. **Windows** only judge instant-speed
+     * cards: a sorcery has no window to wait for, and penalizing one would just make the AI pass
+     * with a full hand. **[RemovalPatience]** judges any removal at all, because "is this creature
+     * worth a card?" is the same question for a Pacifism as for a Doom Blade — and the Aura is the
+     * case that motivated it.
+     *
+     * @param cast the materialized spell, when this action is one. Null for an activated ability,
+     *   which spends no card and so is never charged for patience.
      */
-    fun verdictFor(state: GameState, playerId: EntityId, cardName: String): TimingVerdict {
+    fun verdictFor(
+        state: GameState,
+        playerId: EntityId,
+        cardName: String,
+        cast: CastSpell? = null,
+    ): TimingVerdict {
         val intent = intents.forName(cardName) ?: return TimingVerdict.Neutral
+
+        val window = windowVerdictFor(state, playerId, intent)
+        // A card that accomplishes nothing here is already floored below passing; there is no
+        // target trade left to price on top of that.
+        if (window is TimingVerdict.NoWindow) return window
+
+        val patience = patienceFor(state, playerId, intent, cast)
+        if (patience <= 0.0) return window
+
+        val windowDelta = (window as? TimingVerdict.Adjust)?.delta ?: 0.0
+        return TimingVerdict.Adjust(windowDelta - patience, reason = "patience")
+    }
+
+    /** The patience discount for [cast], or `0.0` when the flag is off or the shape doesn't fit. */
+    private fun patienceFor(
+        state: GameState,
+        playerId: EntityId,
+        intent: CardIntent,
+        cast: CastSpell?,
+    ): Double {
+        if (!holdRemovalForBetterTargets || cast == null) return 0.0
+        val card = state.getEntity(cast.cardId)?.get<CardComponent>() ?: return 0.0
+        return RemovalPatience.discount(
+            state, playerId, intent, card, cast.targets, boardPresenceWeight,
+        )
+    }
+
+    /** The window half — "is this the moment?", which only an instant-speed card can get wrong. */
+    private fun windowVerdictFor(state: GameState, playerId: EntityId, intent: CardIntent): TimingVerdict {
         if (intent.speed != Speed.INSTANT) return TimingVerdict.Neutral
 
         val stackHasSomething = state.stack.isNotEmpty()
@@ -73,13 +128,16 @@ class HoldPolicy(
             // Instant-speed removal: reward the windows that are strictly better than now, and
             // charge nothing for casting it early.
             //
-            // The symmetric penalty — "hold it, our own main phase is the wrong time" — is what the
-            // plan proposed, and it was built, measured and removed. Holding removal is a
-            // *preference* between two futures, not a provable loss: it costs the option of a
-            // better target later and buys certainty now. A constant cannot price that, and the one
-            // large enough to change behaviour was large enough to veto casting the removal at all
-            // — the exact blindness this phase exists to fix. Pricing "what if a better target
-            // shows up" needs the rollout evaluator (Phase 7), not a literal.
+            // The symmetric *window* penalty — "hold it, our own main phase is the wrong time" — is
+            // what the plan proposed, and it was built, measured and removed. Holding removal is a
+            // preference between two futures, not a provable loss, and a constant cannot price one:
+            // the one large enough to change behaviour was large enough to veto casting the removal
+            // at all, which is the exact blindness this phase exists to fix.
+            //
+            // What survives that verdict is [RemovalPatience], and the difference is what it
+            // charges *for*. Not the window — the **target**, by how far it falls short of a fair
+            // trade, so a 1/1 is charged and the artifact the Disenchant is aimed at is not charged
+            // at all. It is applied outside this `when`, to sorcery-speed removal too.
             intent.tags.any { it in REMOVAL_TAGS } -> when {
                 stackHasSomething -> TimingVerdict.Adjust(RESPONSE_WINDOW)
                 state.activePlayerId != playerId && state.step == Step.END ->
@@ -238,8 +296,14 @@ sealed interface TimingVerdict {
     /** Timing says nothing here; the board score stands as it is. */
     data object Neutral : TimingVerdict
 
-    /** A nudge in the board score's own units. */
-    data class Adjust(val delta: Double) : TimingVerdict
+    /**
+     * A nudge in the board score's own units.
+     *
+     * [reason] is for the local testing mode's decision panel and nothing else: a candidate the AI
+     * passed over despite a strong board score is only explicable if the panel can name which half
+     * of the policy moved it. Null means the window half, which is what an `Adjust` used to be.
+     */
+    data class Adjust(val delta: Double, val reason: String? = null) : TimingVerdict
 
     /**
      * The card **cannot accomplish anything** in this window — a counterspell with an empty stack,

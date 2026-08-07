@@ -6,6 +6,8 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardFace
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityCost
+import com.wingedsheep.sdk.scripting.CantAttack
+import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.EntersTapped
@@ -17,6 +19,7 @@ import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.effects.*
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -392,8 +395,27 @@ object CardIntentAnalyzer {
             if (static.filter.scope == Scope.Battlefield) setOf(IntentTag.ANTHEM) else setOf(IntentTag.PUMP)
 
         is GrantKeyword -> keywordTags(static.keyword)
+        is CantAttack -> neutralizeTags(static.filter)
+        is CantBlock -> neutralizeTags(static.filter)
         else -> emptySet()
     }
+
+    /**
+     * [IntentTag.NEUTRALIZE] for a "can't attack / can't block" that lands on the **attached**
+     * creature, and nothing for any other scope.
+     *
+     * The scope is the whole test, and both rejections are load-bearing. [Scope.Source] is a
+     * creature's own printed drawback (Juggernaut can't block) — reading that as an answer would
+     * tag a sizeable slice of the catalog's creatures as removal. [Scope.Battlefield] is a
+     * symmetric lock (Meekstone, Blazing Archon) whose worth is a board-wide question this tag's
+     * one consumer — a per-target trade — cannot ask.
+     *
+     * Two static abilities, not one: Pacifism prints them separately, and a card that only takes
+     * blocking away (Dead Weight-style "can't block") is still the same decision about the same
+     * kind of trade.
+     */
+    private fun neutralizeTags(filter: GroupFilter): Set<IntentTag> =
+        if (filter.scope == Scope.AttachedTo) setOf(IntentTag.NEUTRALIZE) else emptySet()
 
     /**
      * Total P+T a battlefield-wide anthem hands to each creature it covers. Zero for an
@@ -538,6 +560,7 @@ object CardIntentAnalyzer {
         IntentTag.REMOVAL,
         IntentTag.EXILE_REMOVAL,
         IntentTag.SWEEPER,
+        IntentTag.NEUTRALIZE,
         IntentTag.COUNTERSPELL,
         IntentTag.DISCARD,
         IntentTag.TAPPER,

@@ -132,5 +132,109 @@ object RemovalTargetingPuzzles {
                 shouldTarget("Air Elemental")
             },
         ),
+
+        // ── Is the target worth the card at all? ──
+        // 01–06 all assume the removal is being cast and ask where it points. These three ask the
+        // question before that one, and they are a triple rather than a pair because "hold it" is
+        // only defensible if both of its exits are pinned too. Same board every time; only the
+        // hand size and the turn number move.
+
+        AiPuzzle(
+            id = "removal-07",
+            category = PuzzleCategory.REMOVAL_TARGETING,
+            expectation = "Hold Murder rather than spend it on a 1/1 with three cards of slack in hand",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withLandsOnBattlefield(1, "Swamp", 3)
+                    .withCardInHand(1, "Murder")
+                    // Slack, deliberately uncastable off Swamps: without it, emptying the hand costs
+                    // 4.0 of card advantage and the AI holds the Murder for a reason that has
+                    // nothing to do with the target — which would make this puzzle pass blind.
+                    .withCardsInHand(1, "Craw Wurm", 3)
+                    // A 0/8 defender, so the 1/1 is neither attacking nor blocking anything that
+                    // matters. Nothing about this turn changes by killing it.
+                    .withCardOnBattlefield(1, "Wall of Stone")
+                    .withCardOnBattlefield(2, "Mons's Goblin Raiders")
+                    .withLandsOnBattlefield(2, "Mountain", 5)
+                    .withCardsInHand(2, "Craw Wurm", 3)
+                    .build()
+            },
+            check = { shouldNotCast("Murder") },
+        ),
+
+        AiPuzzle(
+            id = "removal-08",
+            category = PuzzleCategory.REMOVAL_TARGETING,
+            expectation = "Same 1/1, but the hand is at the discard limit — spend the Murder rather than pitch a card",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withLandsOnBattlefield(1, "Swamp", 3)
+                    .withCardInHand(1, "Murder")
+                    // Eight cards: holding the Murder means discarding *something* at cleanup, so
+                    // patience has stopped being free. The negative control for removal-07 — if
+                    // that one passes and this fails, the AI is not weighing a trade, it is
+                    // refusing to spend removal on small creatures full stop.
+                    .withCardsInHand(1, "Craw Wurm", 7)
+                    .withCardOnBattlefield(1, "Wall of Stone")
+                    .withCardOnBattlefield(2, "Mons's Goblin Raiders")
+                    .withLandsOnBattlefield(2, "Mountain", 5)
+                    .withCardsInHand(2, "Craw Wurm", 3)
+                    .build()
+            },
+            check = {
+                shouldCast("Murder")
+                shouldTarget("Mons's Goblin Raiders")
+            },
+        ),
+
+        AiPuzzle(
+            id = "removal-09",
+            category = PuzzleCategory.REMOVAL_TARGETING,
+            expectation = "removal-07's board on turn twenty — the better target is not coming, so stop waiting for it",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withTurnNumber(20)
+                    .withLandsOnBattlefield(1, "Swamp", 3)
+                    .withCardInHand(1, "Murder")
+                    .withCardsInHand(1, "Craw Wurm", 3)
+                    .withCardOnBattlefield(1, "Wall of Stone")
+                    .withCardOnBattlefield(2, "Mons's Goblin Raiders")
+                    .withLandsOnBattlefield(2, "Mountain", 5)
+                    .withCardsInHand(2, "Craw Wurm", 3)
+                    .build()
+            },
+            check = {
+                shouldCast("Murder")
+                shouldTarget("Mons's Goblin Raiders")
+            },
+        ),
+
+        AiPuzzle(
+            id = "removal-10",
+            category = PuzzleCategory.REMOVAL_TARGETING,
+            expectation = "The 1/1 is lethal on board at 1 life — kill it, however small it is",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    // removal-07's hand and removal-07's target, with the Wall taken away and the
+                    // life total at one. Nothing about the *trade* has changed; what has changed is
+                    // that passing loses the game, and no valuation of the target may outrank that.
+                    .withLifeTotal(1, 1)
+                    .withLandsOnBattlefield(1, "Swamp", 3)
+                    .withCardInHand(1, "Murder")
+                    .withCardsInHand(1, "Craw Wurm", 3)
+                    .withCardOnBattlefield(2, "Mons's Goblin Raiders")
+                    .withLandsOnBattlefield(2, "Mountain", 5)
+                    .withCardsInHand(2, "Craw Wurm", 3)
+                    .build()
+            },
+            check = {
+                shouldCast("Murder")
+                shouldTarget("Mons's Goblin Raiders")
+            },
+        ),
     )
 }

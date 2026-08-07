@@ -1015,6 +1015,21 @@ freshly measured baseline. `just test-rules` and `:game-server:test` green.
 >    this phase exists to enable. A combat trick outside combat provably does nothing; holding
 >    removal is a *preference between futures*, and pricing it is a Phase 7 rollout question, not a
 >    constant. The shipped policy asserts the first and is silent on the second.
+>
+>    **Reopened and answered, 2026-08-07** — `RemovalPatience`, behind
+>    `AiProfile.holdRemovalForBetterTargets`. The diagnosis above is right about a *constant* and
+>    wrong about the question: the mistake is not the window, it is the **target**, and "is this
+>    creature worth a card?" is a comparison rather than a preference. The discount is what the
+>    target falls short of a creature the removal's own mana value should trade with, so a 1/1 under
+>    a Murder pays and a 3/3 does not — and the Disenchant that killed the constant is out of scope
+>    by construction, since the term only reads *creature* targets. It closes `timing-01` and the new
+>    `removal-07` on the live agent (79/87 → 81/87, strict subset of failures) and moves nothing on
+>    `production`. **Promoted on the puzzle half; the arena came back null** — 100 games at 50.0%,
+>    CI [50.0%, 50.0%], all 50 pairs 1-1-0 against 10/36/37 decisive pairs in the three prior runs,
+>    which says the case arises rarely in sealed play rather than that the fix is wrong. Numbers,
+>    the lethal veto, and a harness caveat (`production`-class games are not reproducible, so
+>    action-stream divergence is not a usable instrument):
+>    [`docs/ai/baseline-metrics.md`](../docs/ai/baseline-metrics.md#promotion--production-candidate-patience-goes-live).
 > 2. **A penalty cannot beat a mis-measurement.** `ThreatAssessment` reads a Giant Growth's +3/+3 as
 >    a permanently faster clock and pays **+10.8** for it, so no defensible constant closes
 >    `instants-01`. `TimingVerdict.NoWindow` — "whatever the simulation reports, this is not better

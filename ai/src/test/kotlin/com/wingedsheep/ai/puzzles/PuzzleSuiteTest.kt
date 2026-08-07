@@ -36,7 +36,7 @@ class PuzzleSuiteTest : ScenarioTestBase() {
                     PuzzleCatalog.byCategory(category).size shouldBeGreaterThanOrEqual 6
                 }
             }
-            PuzzleCatalog.all.size shouldBe 83
+            PuzzleCatalog.all.size shouldBe 87
         }
 
         test("every KNOWN_FAILURES id names a real puzzle") {
@@ -192,6 +192,19 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // ROUTINE, which is below the threshold where targets are picked by simulation at all.
             // One fix does not close both — see `AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW`.
             "instants-08",
+
+            // ── Is the target worth the card? ──
+            // Murder on a 1/1, on turn one, with three cards of slack in hand and a 0/8 holding the
+            // ground. The evaluator sees an opposing creature gone and has no term at all for the
+            // option the Murder *was*, so it fires at the first legal target it is offered.
+            //
+            // **Closed by `AiProfile.holdRemovalForBetterTargets`**, but only in combination with
+            // `discountedRaceClock` — see `AiProfile.PRODUCTION_PATIENCE`. On this frozen baseline
+            // the race is scored in turns, so killing the opponent's only creature swaps a `99.0`
+            // sentinel into the subtraction and scores about +160; no discount that leaves the AI
+            // able to cast removal at all competes with that. Its pair, `removal-08`, is the same
+            // board with a full hand and passes here and everywhere.
+            "removal-07",
         )
     }
 }

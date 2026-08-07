@@ -90,6 +90,13 @@ object ArenaAgents {
         // promotion gate, against what players face today.
         ArenaAgent("production-raceclock", AiProfile.PRODUCTION_RACECLOCK),
         ArenaAgent("production-candidate-raceclock", AiProfile.PRODUCTION_CANDIDATE_RACECLOCK),
+        // Removal patience: don't spend the Pacifism on the first 1/1.
+        // `just arena production production-patience 1000` prices the term on its own — read that
+        // column for what it *costs*, since the puzzle it targets needs the race clock to move at
+        // all. `just arena production-candidate-raceclock production-candidate-patience 300` is its
+        // promotion gate, against what players face today.
+        ArenaAgent("production-patience", AiProfile.PRODUCTION_PATIENCE),
+        ArenaAgent("production-candidate-patience", AiProfile.PRODUCTION_CANDIDATE_PATIENCE),
         ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.
