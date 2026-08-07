@@ -314,6 +314,20 @@ data class AdditionalCostData(
     val costType: String,
     val validSacrificeTargets: List<EntityId> = emptyList(),
     val sacrificeCount: Int = 1,
+    /**
+     * The spell's remaining mana cost after sacrificing each candidate in [validSacrificeTargets],
+     * keyed by that candidate — emerge (CR 702.119), where the emerge cost is reduced by generic
+     * mana equal to the sacrificed creature's mana value.
+     *
+     * Emerge is the only cost whose *mana* half depends on which permanent pays its *non-mana*
+     * half, so `LegalAction.manaCostString` alone can't tell the player what a given choice will
+     * actually cost, and the client must not re-derive it (the generic-only clamp is a rule, and
+     * rules live server-side). The client shows `manaCostString → costAfterSacrifice[candidate]`
+     * live as the player picks, and prices manual mana-source selection off the chosen entry.
+     *
+     * Empty for every other sacrifice cost, where the mana is fixed regardless of the choice.
+     */
+    val costAfterSacrifice: Map<EntityId, String> = emptyMap(),
     val validTapTargets: List<EntityId> = emptyList(),
     val tapCount: Int = 0,
     /**

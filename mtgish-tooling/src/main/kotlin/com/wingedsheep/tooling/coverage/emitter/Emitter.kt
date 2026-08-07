@@ -318,6 +318,15 @@ object Emitter {
                 rname == "Madness" -> block = manaKeywordCost(rule)?.let {
                     listOf(Eval(call("madness", arg("\"$it\""))))
                 }
+                // Emerge [cost] (CR 702.119) carries a `_Cost: PayMana` arg -> the `emerge("{cost}")`
+                // CardBuilder helper. Same trap as Madness/Ward: `Keyword.EMERGE` exists, so falling
+                // through to the bare-keyword case would print the word while dropping the cost that
+                // the whole alternative-cost pipeline (sacrifice + generic reduction by the sacrificed
+                // creature's mana value) keys off. Every printed emerge cost is mana; anything else
+                // declines -> scaffold.
+                rname == "Emerge" -> block = manaKeywordCost(rule)?.let {
+                    listOf(Eval(call("emerge", arg("\"$it\""))))
+                }
                 // Affinity for <group> (cost-reduction keyword, CR 702.41) — "this spell costs {1} less
                 // to cast for each <filter> you control." The engine has no Keyword.AFFINITY card-keyword
                 // path for arbitrary group affinity, so render a self-cast ModifySpellCost whose

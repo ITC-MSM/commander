@@ -92,6 +92,7 @@ val AbundantGrowth = card("Abundant Growth") {
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.dsl.emerge
 import com.wingedsheep.sdk.model.Rarity
 
 
@@ -110,7 +111,8 @@ val AbundantMaw = card("Abundant Maw") {
     oracleText = "Emerge {6}{B} (You may cast this spell by sacrificing a creature and paying the emerge cost reduced by that creature's mana value.)\nWhen you cast this spell, target opponent loses 3 life and you gain 3 life."
     power = 6
     toughness = 4
-    // STRUCTURE needs human wiring: Emerge
+    emerge("{6}{B}")
+    // STRUCTURE needs human wiring: FromStack
     metadata {
         rarity = Rarity.COMMON
         collectorNumber = "1"
@@ -2457,6 +2459,7 @@ package com.wingedsheep.mtg.sets.generated.demo.cards
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.dsl.emerge
 import com.wingedsheep.sdk.model.Rarity
 
 
@@ -2477,7 +2480,8 @@ val DecimatorOfTheProvinces = card("Decimator of the Provinces") {
     power = 7
     toughness = 7
     keywords(Keyword.TRAMPLE, Keyword.HASTE)
-    // STRUCTURE needs human wiring: Emerge
+    emerge("{6}{G}{G}{G}")
+    // STRUCTURE needs human wiring: FromStack
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "2"
@@ -2664,6 +2668,7 @@ val DesertedBeach = card("Deserted Beach") {
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.dsl.emerge
 import com.wingedsheep.sdk.model.Rarity
 
 
@@ -2682,7 +2687,8 @@ val DistendedMindbender = card("Distended Mindbender") {
     oracleText = "Emerge {5}{B}{B} (You may cast this spell by sacrificing a creature and paying the emerge cost reduced by that creature's mana value.)\nWhen you cast this spell, target opponent reveals their hand. You choose from it a nonland card with mana value 3 or less and a card with mana value 4 or greater. That player discards those cards."
     power = 5
     toughness = 5
-    // STRUCTURE needs human wiring: Emerge
+    emerge("{5}{B}{B}")
+    // STRUCTURE needs human wiring: FromStack
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "3"
@@ -3045,6 +3051,7 @@ package com.wingedsheep.mtg.sets.generated.demo.cards
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.dsl.emerge
 import com.wingedsheep.sdk.model.Rarity
 
 
@@ -3065,7 +3072,8 @@ val ElderDeepFiend = card("Elder Deep-Fiend") {
     power = 5
     toughness = 6
     keywords(Keyword.FLASH)
-    // STRUCTURE needs human wiring: Emerge
+    emerge("{5}{U}{U}")
+    // STRUCTURE needs human wiring: FromStack
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "4"
@@ -5474,6 +5482,7 @@ val Island = card("Island") {
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.dsl.emerge
 import com.wingedsheep.sdk.model.Rarity
 
 
@@ -5492,7 +5501,8 @@ val ItOfTheHorridSwarm = card("It of the Horrid Swarm") {
     oracleText = "Emerge {6}{G} (You may cast this spell by sacrificing a creature and paying the emerge cost reduced by that creature's mana value.)\nWhen you cast this spell, create two 1/1 green Insect creature tokens."
     power = 4
     toughness = 4
-    // STRUCTURE needs human wiring: Emerge
+    emerge("{6}{G}")
+    // STRUCTURE needs human wiring: FromStack
     metadata {
         rarity = Rarity.COMMON
         collectorNumber = "6"
@@ -10530,6 +10540,7 @@ package com.wingedsheep.mtg.sets.generated.demo.cards
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.dsl.emerge
 import com.wingedsheep.sdk.model.Rarity
 
 
@@ -10550,7 +10561,8 @@ val WretchedGryff = card("Wretched Gryff") {
     power = 3
     toughness = 4
     keywords(Keyword.FLYING)
-    // STRUCTURE needs human wiring: Emerge
+    emerge("{5}{U}")
+    // STRUCTURE needs human wiring: FromStack
     metadata {
         rarity = Rarity.COMMON
         collectorNumber = "7"

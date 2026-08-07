@@ -215,6 +215,9 @@ data class AdditionalCostInfo(
     val costType: String,
     val validSacrificeTargets: List<EntityId> = emptyList(),
     val sacrificeCount: Int = 1,
+    /** Emerge (CR 702.119): the mana cost left after sacrificing each candidate — see
+     *  [com.wingedsheep.engine.legalactions.AdditionalCostData.costAfterSacrifice]. Empty otherwise. */
+    val costAfterSacrifice: Map<EntityId, String> = emptyMap(),
     val validTapTargets: List<EntityId> = emptyList(),
     val tapCount: Int = 0,
     /** Station-style shortcut: when > 1, up to this many single-creature tap activations may be

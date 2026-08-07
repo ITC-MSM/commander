@@ -9,6 +9,8 @@ import { useResponsiveContext, handleImageError } from '../board/shared'
 import { styles } from '../board/styles'
 import { TARGET_COLOR, TARGET_COLOR_BRIGHT } from '@/styles/targetingColors.ts'
 import { CraftMaterialOverlay } from '@/components/decisions/CraftMaterialOverlay'
+import { ManaSymbol } from '@/components/ui/ManaSymbols'
+import { parseManaCost } from '@/utils/manaCost'
 
 /**
  * Cross-zone card targeting overlay — shows when targeting mode requires selecting card(s) from a
@@ -580,6 +582,17 @@ export function TargetingOverlay() {
                 ? `Select ${targetingState.targetDescription} (${targetDisplay})`
                 : `Select targets (${targetDisplay})`
 
+  // Emerge (CR 702.119): the sacrifice is the only cost choice that changes the mana owed, so the
+  // banner shows the server's per-candidate arithmetic live — "{5}{U} → {2}{U}" the moment a
+  // creature is picked. Without it the player has to know the generic-only reduction rule and do
+  // the subtraction in their head against a cost label that never moves.
+  const costBeforeSacrifice = targetingState.costBeforeSacrifice
+  const costAfterMap = targetingState.costAfterSacrifice
+  const chosenSacrifice = targetingState.selectedTargets[0]
+  const costAfterSacrifice =
+    costAfterMap && chosenSacrifice ? costAfterMap[chosenSacrifice] : undefined
+  const showSacrificeCost = !!costBeforeSacrifice && !!costAfterMap
+
   const hintText = hasMaxTargets
     ? isBehold ? 'Card selected' : isDiscard ? 'Card selected' : isReveal ? 'Card selected' : isTapPermanent ? 'Permanents selected' : isBounce ? 'Creature selected' : isSacrifice ? 'Selected' : 'Maximum targets selected'
     : hasEnoughTargets
@@ -643,6 +656,45 @@ export function TargetingOverlay() {
       <div style={{ color: '#aaa', fontSize: responsive.fontSize.small, marginTop: 4 }}>
         {hintText}
       </div>
+      {showSacrificeCost && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            gap: 6,
+            marginTop: 8,
+            padding: '5px 10px',
+            borderRadius: 6,
+            background: 'rgba(255, 255, 255, 0.06)',
+            fontSize: responsive.fontSize.small,
+          }}
+        >
+          <span style={{ color: '#aaa' }}>You pay</span>
+          <span style={{ display: 'inline-flex', gap: 2, opacity: costAfterSacrifice ? 0.45 : 1 }}>
+            {parseManaCost(costBeforeSacrifice!).map((symbol, i) => (
+              <ManaSymbol key={i} symbol={symbol} size={16} />
+            ))}
+          </span>
+          <span style={{ color: '#888' }}>→</span>
+          {costAfterSacrifice !== undefined ? (
+            parseManaCost(costAfterSacrifice).length > 0 ? (
+              <span style={{ display: 'inline-flex', gap: 2 }}>
+                {parseManaCost(costAfterSacrifice).map((symbol, i) => (
+                  <ManaSymbol key={i} symbol={symbol} size={16} />
+                ))}
+              </span>
+            ) : (
+              <span style={{ color: '#86efac', fontWeight: 700 }}>free</span>
+            )
+          ) : (
+            <span style={{ color: '#888', fontStyle: 'italic' }}>
+              pick a creature — its mana value comes off
+            </span>
+          )}
+        </div>
+      )}
       {targetingState.warning && (
         <div
           role="alert"

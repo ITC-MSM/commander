@@ -568,9 +568,18 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     const action = actionInfo.action as {
       xValue?: number
       alternativePayment?: { harmonizeCreature?: EntityId | null }
+      additionalCostPayment?: { sacrificedPermanents?: readonly EntityId[] }
     }
     const xValue = action.xValue ?? 0
-    const manaCost = actionInfo.manaCostString ?? ''
+    // Emerge (CR 702.119): the creature chosen in the prior costPayment phase reduces the emerge
+    // cost by its mana value, so the printed `manaCostString` overstates what's owed. The server
+    // sent the resulting cost for every candidate, so price this step off the chosen entry rather
+    // than re-deriving the (generic-only) reduction here — that clamp is a rule, not client math.
+    const emergeSacrifice = action.additionalCostPayment?.sacrificedPermanents?.[0]
+    const emergeCost = emergeSacrifice
+      ? actionInfo.additionalCostInfo?.costAfterSacrifice?.[emergeSacrifice]
+      : undefined
+    const manaCost = emergeCost ?? actionInfo.manaCostString ?? ''
     const xSymbolCount = Math.max(1, (manaCost.match(/\{X\}/g)?.length ?? 0))
 
     // Harmonize creature-tap (chosen in the prior `harmonize` phase) reduces the
@@ -612,8 +621,10 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     // [autoTapPreview] is null. Once convoke/delve has trimmed the cost we can
     // compute a fresh preview from [availableManaSources] so the player isn't
     // left to hand-pick lands.
+    // An emerge cast's server preview was solved for the *first* candidate; the player may have
+    // picked a different creature, so recompute from the cost that choice actually left.
     const reducedSymbols = parseManaCostUtil(manaCost)
-    const preSelectedIds: EntityId[] = (actionInfo.autoTapPreview && actionInfo.autoTapPreview.length > 0)
+    const preSelectedIds: EntityId[] = (!emergeCost && actionInfo.autoTapPreview && actionInfo.autoTapPreview.length > 0)
       ? [...actionInfo.autoTapPreview]
       : (reducedSymbols.length > 0 ? computeAutoTapPreview(sources, reducedSymbols) : [])
     if (xManaNeeded > 0) {
