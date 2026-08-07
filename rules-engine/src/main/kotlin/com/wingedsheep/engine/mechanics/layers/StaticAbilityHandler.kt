@@ -4,6 +4,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.engine.state.components.battlefield.CantBeTargetedByOpponentAbilitiesComponent
+import com.wingedsheep.engine.state.components.battlefield.CantBeBlockedIfPowerAtMostComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsCantLoseGameComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsOpponentsCantWinGameComponent
@@ -290,6 +291,16 @@ class StaticAbilityHandler(
             .firstOrNull()
         if (smallCreaturesAbility != null) {
             result = result.with(GrantCantBeBlockedToSmallCreaturesComponent(smallCreaturesAbility.maxValue))
+        }
+
+        // Add component for "this creature can't be blocked if its power is N or less". Kept out
+        // of the layer system on purpose — see CantBeBlockedIfPowerAtMost: the gate reads Layer 7
+        // power, so it is resolved in a post-layer projector pass rather than as a Layer 6 grant.
+        val ownPowerEvasion = allStaticAbilities
+            .filterIsInstance<com.wingedsheep.sdk.scripting.CantBeBlockedIfPowerAtMost>()
+            .firstOrNull()
+        if (ownPowerEvasion != null) {
+            result = result.with(CantBeBlockedIfPowerAtMostComponent(ownPowerEvasion.maxPower))
         }
 
         // Add component for "creatures matching filter can be targeted as though they didn't have hexproof"
@@ -870,6 +881,7 @@ class StaticAbilityHandler(
             is CantBeBlockedByMoreThan,
             is com.wingedsheep.sdk.scripting.CantBeBlockedByFewerThan,
             is CantBeBlockedIfCastSpellType,
+            is com.wingedsheep.sdk.scripting.CantBeBlockedIfPowerAtMost,
             is CantBeBlockedUnlessDefenderSharesCreatureType,
             is CantBlockCreaturesWithGreaterPower,
             is CantBlockUnless,

@@ -912,6 +912,14 @@ data object CantBeTargetedByOpponentAbilitiesComponent : Component
 data class GrantCantBeBlockedToSmallCreaturesComponent(val maxValue: Int) : Component
 
 /**
+ * Marks a permanent whose own evasion is power-gated: it can't be blocked while its **projected**
+ * power is at most [maxPower] (Stature, Size Shifter). Read by StateProjector's post-layer pass,
+ * which runs after every P/T layer so the gate sees final power rather than the printed value.
+ */
+@Serializable
+data class CantBeBlockedIfPowerAtMostComponent(val maxPower: Int) : Component
+
+/**
  * Marks a permanent as suppressing hexproof for creatures matching any of [filters].
  *
  * Stores one filter per [SuppressHexproofForGroup] static ability on the permanent so

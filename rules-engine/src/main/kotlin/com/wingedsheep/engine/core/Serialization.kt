@@ -446,6 +446,7 @@ val engineSerializersModule = SerializersModule {
         subclass(ExileOnLeaveBattlefieldComponent::class)
         subclass(EnteredViaAbilityComponent::class)
         subclass(GrantCantBeBlockedToSmallCreaturesComponent::class)
+        subclass(CantBeBlockedIfPowerAtMostComponent::class)
         subclass(GrantsCantLoseGameComponent::class)
         subclass(GrantsOpponentsCantWinGameComponent::class)
         subclass(GrantsCantLoseGameFromLifeComponent::class)

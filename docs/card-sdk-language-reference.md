@@ -4781,6 +4781,22 @@ staticAbility {
   (`attachedCreature()`, `source()`) resolve correctly; a `Battlefield`-scope filter matches every
   attacker. No separate "while attacking" gate is needed — must-be-blocked only bites while the
   creature attacks.
+- `CantBeBlockedIfPowerAtMost(maxPower)` — "this creature can't be blocked if its power is N or
+  less" (**Stature, Size Shifter**). Self-scoped and **power-only**, unlike its controller-scoped
+  sibling `GrantCantBeBlockedToSmallCreatures(maxValue)` (Tetsuko Umezawa: "creatures you control
+  with power *or toughness* N or less can't be blocked"), which is a lord.
+  **Do not reach for `ConditionalStaticAbility(CantBeBlocked(), condition = <power comparison>)` —
+  it silently never switches off.** A `CantBeBlocked` grant is a Layer 6 ability modification, but
+  power is settled in Layer 7; when the Layer 6 effect is applied the projection has no power for
+  the permanent yet and the condition falls back to the *printed* P/T, so the gate answers "yes"
+  forever no matter how big the creature gets. This holds however the condition is spelled —
+  `Conditions.CompareAmounts(DynamicAmounts.sourcePower(), …)` and
+  `Conditions.SourceMatches(GameObjectFilter.Any.powerAtMost(n))` both fail the same way. Both
+  power-gated evasions are therefore resolved in **post-layer passes** in `StateProjector`
+  (`applyCantBeBlockedIfPowerAtMost` / `applyGrantCantBeBlockedToSmallCreatures`) that run after
+  every P/T layer, so they read final projected power and are re-asked each projection — the
+  evasion comes back if the creature shrinks again. The same trap applies to any static whose gate
+  reads a later layer than the static's own.
 - `CantBeBlockedBy(blockerFilter, filter = GroupFilter.source())` — evasion: the affected creature
   can't be blocked by creatures matching `blockerFilter` (Juggernaut's "can't be blocked by Walls",
   Steel Leaf Champion's "power 2 or less"). Resolved by `CantBeBlockedByRule`, which reads three

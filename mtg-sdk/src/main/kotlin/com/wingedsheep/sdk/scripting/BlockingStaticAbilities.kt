@@ -175,6 +175,33 @@ data class GrantCantBeBlockedToSmallCreatures(
 }
 
 /**
+ * This creature can't be blocked as long as *its own* power is at most [maxPower].
+ * Stature, Size Shifter: "Stature can't be blocked if her power is 1 or less."
+ *
+ * The self-scoped sibling of [GrantCantBeBlockedToSmallCreatures], and it exists for the same
+ * reason: the gate reads **projected** power, so it cannot be a `ConditionalStaticAbility` whose
+ * condition compares power. A `CantBeBlocked` grant is a Layer 6 ability modification, but power
+ * is settled in Layer 7 — at the moment the Layer 6 effect is applied the projection has no power
+ * for the permanent yet and falls back to its printed value, so the gate would answer against the
+ * base P/T and never switch off. Like its sibling this is applied in a post-layer pass over final
+ * projected power instead.
+ *
+ * Deliberately power-only (not "power or toughness" like [GrantCantBeBlockedToSmallCreatures]) and
+ * self-only, because that is what the printed card says: growing the creature — including with its
+ * own power-up — is what takes the evasion away.
+ *
+ * @property maxPower The highest own-power at which the evasion still applies
+ */
+@SerialName("CantBeBlockedIfPowerAtMost")
+@Serializable
+data class CantBeBlockedIfPowerAtMost(
+    val maxPower: Int
+) : StaticAbility {
+    override val description: String =
+        "This creature can't be blocked if its power is $maxPower or less"
+}
+
+/**
  * This creature can't be blocked if its controller has cast a spell matching
  * the given filter this turn. Used for Relic Runner: "can't be blocked if you've
  * cast a historic spell this turn."

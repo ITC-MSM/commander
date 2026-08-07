@@ -11496,21 +11496,8 @@
         ],
         "staticAbilities": [
             {
-                "type": "ConditionalStaticAbility",
-                "ability": "CantBeBlocked",
-                "condition": {
-                    "type": "Compare",
-                    "left": {
-                        "type": "EntityProperty",
-                        "entity": "Source",
-                        "numericProperty": "Power"
-                    },
-                    "operator": "LTE",
-                    "right": {
-                        "type": "Fixed",
-                        "amount": 1
-                    }
-                }
+                "type": "CantBeBlockedIfPowerAtMost",
+                "maxPower": 1
             }
         ]
     },

@@ -1,15 +1,11 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Counters
-import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Costs
-import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.CantBeBlocked
-import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
-import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
+import com.wingedsheep.sdk.scripting.CantBeBlockedIfPowerAtMost
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
@@ -42,14 +38,7 @@ val StatureSizeShifter = card("Stature, Size Shifter") {
     toughness = 1
 
     staticAbility {
-        ability = ConditionalStaticAbility(
-            ability = CantBeBlocked(),
-            condition = Conditions.CompareAmounts(
-                DynamicAmounts.sourcePower(),
-                ComparisonOperator.LTE,
-                DynamicAmount.Fixed(1)
-            )
-        )
+        ability = CantBeBlockedIfPowerAtMost(maxPower = 1)
     }
 
     activatedAbility {

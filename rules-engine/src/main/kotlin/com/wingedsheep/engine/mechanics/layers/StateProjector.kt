@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DashedComponent
+import com.wingedsheep.engine.state.components.battlefield.CantBeBlockedIfPowerAtMostComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -362,6 +363,11 @@ class StateProjector(
         // GrantCantBeBlockedToSmallCreatures (e.g., Tetsuko Umezawa, Fugitive).
         // Must happen after all P/T layers so projected power/toughness is final.
         applyGrantCantBeBlockedToSmallCreatures(state, projectedValues)
+
+        // Post-layer pass: the self-scoped, power-gated evasion (Stature, Size Shifter). Same
+        // reason as above — the gate must see final projected power, so it can't be a Layer 6
+        // conditional grant.
+        applyCantBeBlockedIfPowerAtMost(state, projectedValues)
 
         // Post-layer pass: enforce the affected-power half of
         // [Duration.WhileSourceTappedAndAffectedPowerAtMostSource] (Old Man of the Sea).
@@ -837,6 +843,30 @@ class StateProjector(
                     break
                 }
             }
+        }
+    }
+
+    /**
+     * Grant CANT_BE_BLOCKED to each permanent carrying [CantBeBlockedIfPowerAtMostComponent] whose
+     * own projected power is at most its threshold (Stature, Size Shifter — "can't be blocked if
+     * her power is 1 or less").
+     *
+     * Runs after every P/T layer, which is the whole point: this is a Layer 6-shaped ability whose
+     * gate reads Layer 7 power, so evaluating it during layer application would read the printed
+     * P/T and the evasion would never switch off when the creature grows. Re-asked on every
+     * projection, so it also comes back if the creature shrinks again.
+     */
+    private fun applyCantBeBlockedIfPowerAtMost(
+        state: GameState,
+        projectedValues: MutableMap<EntityId, MutableProjectedValues>
+    ) {
+        for (entityId in state.getBattlefield()) {
+            val maxPower = state.getEntity(entityId)
+                ?.get<CantBeBlockedIfPowerAtMostComponent>()?.maxPower ?: continue
+            val values = projectedValues[entityId] ?: continue
+            if (!values.types.contains("CREATURE")) continue
+            val power = values.power ?: continue
+            if (power <= maxPower) values.keywords.add(AbilityFlag.CANT_BE_BLOCKED.name)
         }
     }
 }
