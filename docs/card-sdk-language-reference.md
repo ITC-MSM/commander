@@ -5848,7 +5848,7 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 (`Keyword.NONBASIC_LANDWALK` — unblockable while the defending player controls any non-basic land;
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Defender, Indestructible, Hexproof, Shroud, Haste,
-Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Storm, Flashback, Harmonize, Mayhem, Disturb, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
+Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Emerge, Storm, Flashback, Harmonize, Mayhem, Disturb, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
 Offspring, Persist, Undying, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
 composite abilities).
 
@@ -6242,6 +6242,22 @@ composite abilities).
   `WebSlingingCastEnumerator` and `CastSpellHandler` consult, so a granted web-slinging behaves exactly like a printed
   one. Amazing Spider-Man (back of Peter Parker): "Each legendary spell you cast that's one or more colors has web-slinging
   {G}{W}{U}" → `GrantWebSlingingToSpells({G}{W}{U}, GameObjectFilter(cardPredicates = [IsLegendary, IsColored]))`.
+- `Emerge(cost)` — `card { emerge("{cost}") }` builder helper (CR 702.119, Eldritch Moon). A **hand** alternative
+  cost that bundles a sacrifice *and* a cost reduction derived from it: *"You may cast this spell by paying [cost] and
+  sacrificing a creature rather than paying its mana cost"* plus *"if you chose to pay this spell's emerge cost, its
+  total cost is reduced by an amount of **generic** mana equal to the sacrificed creature's mana value."* Generic-only,
+  so a colored pip is never reduced and mana value beyond the generic portion is wasted (a mana-value-7 creature turns
+  Elder Deep-Fiend's emerge {5}{U}{U} into {U}{U}, not into {0}). Grants **no timing permission** — the spell is cast at
+  its normal timing, which is why Elder Deep-Fiend needs its own flash. All behavior is in the engine, keyed off the
+  `KeywordAbility.Emerge` entry and centralised in `EmergeCasts`: `EmergeCastEnumerator` surfaces a
+  `CastWithAlternativeCost` (`AlternativeCostType.EMERGE`) whose `additionalCostInfo` is an ordinary
+  `SacrificePermanent` selection, filtered to **only the creatures that leave the reduced cost payable** — affordability
+  is per-candidate, so offering an unpayable one would hand the client (and the AI, which takes the first candidate) an
+  action that errors on submission. `CastSpellHandler` prices the cast against the creature actually chosen and
+  sacrifices it **after** the mana payment: CR 601.2f–g activate mana abilities before CR 601.2h pays the total cost, so
+  the creature may legally be tapped for mana toward its own emerge cost before it dies. The chosen creature rides
+  `CastSpell.additionalCostPayment.sacrificedPermanents`, exactly as Sneak's bounce rides `bouncedPermanents`. Printed
+  only — no card grants emerge.
 - `Mayhem(cost)` — `card { mayhem("{cost}") }` builder helper (CR 702.187, Marvel's Spider-Man). A **graveyard**
   alternative cost: *"As long as you discarded this card this turn, you may cast it from your graveyard by paying [cost]
   rather than paying its mana cost."* Grants **no timing permission** (normal timing — sorcery speed unless the card is an

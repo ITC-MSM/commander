@@ -162,6 +162,18 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
     phases.push({ type: 'harmonize' })
   }
 
+  // 3c. Emerge sacrifice (CR 702.119). The sacrificed creature's mana value reduces the emerge
+  //     cost, so — like the harmonize creature-tap above — the pick has to happen before any
+  //     manual mana-source selection, which prices what's left to pay. Pushed here instead of in
+  //     the generic cost-payment step below, which runs after mana selection.
+  const isEmergeCast =
+    actionInfo.action.type === 'CastSpell' &&
+    actionInfo.action.alternativeCostType === 'EMERGE' &&
+    (actionInfo.additionalCostInfo?.validSacrificeTargets?.length ?? 0) > 0
+  if (isEmergeCast) {
+    phases.push({ type: 'costPayment' })
+  }
+
   // 4. Mana source selection (skipped when auto-tap is enabled, except for delve/convoke
   //    spells where the player should always confirm land selection after alternative payment)
   const hasAlternativePaymentPhase = phases.some((p) => p.type === 'delve' || p.type === 'convoke' || p.type === 'waterbend')
@@ -172,8 +184,8 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
     phases.push({ type: 'manaSource' })
   }
 
-  // 5. Cost payment (sacrifice/discard/tap/bounce/exile)
-  if (actionInfo.additionalCostInfo?.costType) {
+  // 5. Cost payment (sacrifice/discard/tap/bounce/exile) — emerge already pushed its own above.
+  if (actionInfo.additionalCostInfo?.costType && !isEmergeCast) {
     const costType = actionInfo.additionalCostInfo.costType
     const costTypesNeedingSelection = [
       'SacrificePermanent',

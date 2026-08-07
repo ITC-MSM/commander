@@ -655,6 +655,48 @@ abstract class ScenarioTestBase : FunSpec() {
         }
 
         /**
+         * Cast a spell for its emerge cost (CR 702.119), sacrificing [sacrificeCreatureName].
+         *
+         * Emerge is an alternative cost whose non-mana portion — sacrificing a creature you
+         * control — also determines the mana actually charged: the emerge cost is reduced by an
+         * amount of generic mana equal to the sacrificed creature's mana value. Both halves ride
+         * one action, so this stamps [AlternativeCostType.EMERGE] and puts the chosen creature in
+         * `additionalCostPayment.sacrificedPermanents`, exactly as the enumerator's
+         * `SacrificePermanent` selection does.
+         */
+        fun castSpellWithEmerge(
+            playerNumber: Int,
+            spellName: String,
+            sacrificeCreatureName: String,
+            targets: List<ChosenTarget> = emptyList()
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val hand = state.getHand(playerId)
+            val cardId = hand.find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's hand")
+
+            val sacrificeId = state.getBattlefield().find { entityId ->
+                val container = state.getEntity(entityId) ?: return@find false
+                container.get<CardComponent>()?.name == sacrificeCreatureName &&
+                    container.get<ControllerComponent>()?.playerId == playerId
+            } ?: error("Creature '$sacrificeCreatureName' not found on player $playerNumber's battlefield")
+
+            return execute(
+                CastSpell(
+                    playerId = playerId,
+                    cardId = cardId,
+                    targets = targets,
+                    useAlternativeCost = true,
+                    alternativeCostType = com.wingedsheep.engine.core.AlternativeCostType.EMERGE,
+                    additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
+                        sacrificedPermanents = listOf(sacrificeId)
+                    )
+                )
+            )
+        }
+
+        /**
          * Cast a spell for its Cleave cost (CR 702.148), optionally targeting a permanent. Cleave
          * is an alternative cost, so this drives [CastSpell.useAlternativeCost] gated on
          * [AlternativeCostType.CLEAVE]; the handler swaps in the brackets-removed

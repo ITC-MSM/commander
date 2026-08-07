@@ -735,6 +735,35 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Emerge
+    // =========================================================================
+
+    /**
+     * Emerge [cost] (CR 702.119, Eldritch Moon).
+     * "You may cast this spell by paying [cost] and sacrificing a creature rather than paying its
+     * mana cost" plus "if you chose to pay this spell's emerge cost, its total cost is reduced by
+     * an amount of generic mana equal to the sacrificed creature's mana value" (CR 702.119a).
+     *
+     * An alternative cost (like [Evoke]) with two extra characteristics:
+     *  - an **additional cost** paid alongside the mana: sacrificing one creature you control,
+     *    chosen as you choose to pay the emerge cost and sacrificed as you pay the total cost
+     *    (CR 702.119c); and
+     *  - a **cost reduction** derived from that choice: the sacrificed creature's mana value comes
+     *    off the *generic* portion only, so it can never reduce a colored pip and any excess is
+     *    simply wasted.
+     *
+     * The sacrifice rides `CastSpell.additionalCostPayment.sacrificedPermanents`, exactly like
+     * [Sneak]'s bounce rides `bouncedPermanents`. Attach via the `emerge("{cost}")` DSL helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder].
+     */
+    @SerialName("Emerge")
+    @Serializable
+    data class Emerge(val cost: ManaCost) : KeywordAbility {
+        override val keyword: Keyword = Keyword.EMERGE
+        override val description: String = "Emerge $cost"
+    }
+
+    // =========================================================================
     // Gift
     // =========================================================================
 
@@ -1227,6 +1256,12 @@ sealed interface KeywordAbility {
          * Create Evoke with mana cost from string.
          */
         fun evoke(cost: String): KeywordAbility = Evoke(ManaCost.parse(cost))
+
+        /**
+         * Create Emerge with mana cost from string (CR 702.119). Prefer the `emerge(cost)` DSL
+         * helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+         */
+        fun emerge(cost: String): KeywordAbility = Emerge(ManaCost.parse(cost))
 
         /**
          * Create Sneak with mana cost from string. Prefer the `sneak(cost)` DSL helper on

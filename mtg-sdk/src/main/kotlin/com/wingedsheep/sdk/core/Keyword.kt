@@ -125,6 +125,17 @@ enum class Keyword(val displayName: String) {
     DELVE("Delve"),
     AFFINITY("Affinity"),
 
+    /**
+     * Emerge [cost] (CR 702.119, Eldritch Moon). "You may cast this spell by paying [cost] and
+     * sacrificing a creature rather than paying its mana cost. If you chose to pay this spell's
+     * emerge cost, its total cost is reduced by an amount of generic mana equal to the sacrificed
+     * creature's mana value."
+     *
+     * An alternative cost that bundles a sacrifice *and* a cost reduction derived from what was
+     * sacrificed. See [com.wingedsheep.sdk.scripting.KeywordAbility.Emerge].
+     */
+    EMERGE("Emerge"),
+
     // ── Spell mechanics ─────────────────────────────────────
     STORM("Storm"),
     FLASHBACK("Flashback"),

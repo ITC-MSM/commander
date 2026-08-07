@@ -22,6 +22,7 @@ import com.wingedsheep.engine.core.CardsRevealedEvent
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.mechanics.DisturbCasts
+import com.wingedsheep.engine.mechanics.EmergeCasts
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.MayhemGrants
@@ -418,6 +419,25 @@ class CastSpellHandler(
             }
             if (bounced.first() !in WebSlinging.tappedCreaturesYouControl(state, action.playerId)) {
                 return "The chosen creature is not a tapped creature you control"
+            }
+        }
+
+        // Emerge (CR 702.119a/c): the player must sacrifice exactly one creature they control as
+        // the non-mana portion of the alternative cost, chosen as they choose to pay the emerge
+        // cost (CR 601.2b). Timing is the spell's normal timing (checked above) — emerge grants no
+        // extra permission. The chosen creature also fixes the generic reduction, so
+        // computeTotalCastCost prices the cast against exactly this selection.
+        val castingForEmerge = action.useAlternativeCost &&
+            action.altAllows(AlternativeCostType.EMERGE) &&
+            cardDef != null &&
+            EmergeCasts.printedEmerge(cardDef) != null
+        if (castingForEmerge) {
+            val sacrificed = action.additionalCostPayment?.sacrificedPermanents ?: emptyList()
+            if (sacrificed.size != 1) {
+                return "Emerge requires sacrificing exactly one creature you control"
+            }
+            if (sacrificed.first() !in EmergeCasts.sacrificeCandidates(state, action.playerId)) {
+                return "The permanent chosen for emerge is not a creature you control"
             }
         }
 
@@ -916,12 +936,26 @@ class CastSpellHandler(
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     // Check dash cost (CR 702.109 — hand only, printed only for now).
                     val dashAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Dash>().firstOrNull()
+                    // Check emerge cost (CR 702.119 — mana portion; the sacrifice is paid separately).
+                    val emergeAbility = EmergeCasts.printedEmerge(cardDef)
                     if (action.altAllows(AlternativeCostType.SNEAK) && sneakCost != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, sneakCost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.WEB_SLINGING) && webSlingingAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, webSlingingAbility.cost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.EVOKE) && evokeAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, evokeAbility.cost, action.playerId)
+                    } else if (action.altAllows(AlternativeCostType.EMERGE) && emergeAbility != null) {
+                        // CR 702.119a — the emerge cost, then reduced by an amount of *generic*
+                        // mana equal to the sacrificed creature's mana value. The reduction lands
+                        // after the battlefield cost-modifier pipeline because it is a cost
+                        // reduction (CR 601.2f applies increases before reductions), and the
+                        // creature is still on the battlefield here: it is sacrificed only as the
+                        // total cost is paid (CR 601.2h), which execute() does after mana payment.
+                        EmergeCasts.reduceForSacrifice(
+                            costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, emergeAbility.cost, action.playerId),
+                            state,
+                            action.additionalCostPayment?.sacrificedPermanents?.firstOrNull()
+                        )
                     } else if (action.altAllows(AlternativeCostType.DASH) && dashAbility != null && zoneResolver.hasDashPermission(state, action.playerId, action.cardId)) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, dashAbility.cost, action.playerId)
                     } else {
@@ -2083,12 +2117,23 @@ class CastSpellHandler(
                     val evokeAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Evoke>().firstOrNull()
                     // Check dash cost (CR 702.109 — hand only, printed only for now).
                     val dashAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Dash>().firstOrNull()
+                    // Check emerge cost (CR 702.119 — mana portion; the sacrifice is paid below,
+                    // after the mana payment, per CR 601.2f–h).
+                    val emergeAbility = EmergeCasts.printedEmerge(cardDef)
                     if (action.altAllows(AlternativeCostType.SNEAK) && sneakCost != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, sneakCost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.WEB_SLINGING) && webSlingingAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, webSlingingAbility.cost, action.playerId)
                     } else if (action.altAllows(AlternativeCostType.EVOKE) && evokeAbility != null) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, evokeAbility.cost, action.playerId)
+                    } else if (action.altAllows(AlternativeCostType.EMERGE) && emergeAbility != null) {
+                        // CR 702.119a — mirrors validate(): emerge cost reduced by an amount of
+                        // generic mana equal to the sacrificed creature's mana value.
+                        EmergeCasts.reduceForSacrifice(
+                            costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, emergeAbility.cost, action.playerId),
+                            currentState,
+                            action.additionalCostPayment?.sacrificedPermanents?.firstOrNull()
+                        )
                     } else if (action.altAllows(AlternativeCostType.DASH) && dashAbility != null && zoneResolver.hasDashPermission(currentState, action.playerId, action.cardId)) {
                         costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, dashAbility.cost, action.playerId)
                     } else {
@@ -2745,6 +2790,25 @@ class CastSpellHandler(
         }
         currentState = paymentResult.state
         events.addAll(paymentResult.events)
+
+        // Emerge (CR 702.119a/c): the chosen creature is sacrificed *as the total cost is paid*
+        // (CR 601.2h), which is why this sits after the mana payment rather than in the additional-
+        // cost block above — mana abilities are activated first (CR 601.2f–g), so the creature can
+        // legally be tapped for mana toward its own emerge cost before it dies. Its mana value was
+        // already taken off the generic portion of `effectiveCost` while it was on the battlefield.
+        // The snapshot feeds "as it last existed on the battlefield" reads (CR 608.2h) exactly like
+        // a scripted sacrifice cost does.
+        if (action.useAlternativeCost && action.altAllows(AlternativeCostType.EMERGE) &&
+            cardDef != null && EmergeCasts.printedEmerge(cardDef) != null
+        ) {
+            val emergeSacrifice = action.additionalCostPayment?.sacrificedPermanents?.firstOrNull()
+            if (emergeSacrifice != null && currentState.getEntity(emergeSacrifice) != null) {
+                sacrificedSnapshots.addAll(
+                    captureEntitySnapshots(listOf(emergeSacrifice), currentState.projectedState)
+                )
+                currentState = sacrificePermanentAsCost(currentState, emergeSacrifice, action.playerId, events)
+            }
+        }
 
         // Track total mana spent on spells this turn (for Expend triggers)
         val manaSpentThisCast = paymentResult.events

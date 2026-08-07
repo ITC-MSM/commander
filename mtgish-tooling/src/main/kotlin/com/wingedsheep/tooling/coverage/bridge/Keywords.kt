@@ -131,6 +131,14 @@ internal fun BridgeBuilder.keywords() {
     // declines every multi-faced card (the bridge sees only the front face's IR), so these stay
     // SCAFFOLD and get hand-authored — exactly like Daybound/Nightbound above.
     supported("Disturb", "keyword ability: Disturb [cost] -> disturb(\"{cost}\") builder on the DFC front face (CR 702.146)")
+    // Emerge [cost] (CR 702.119) — a PARAMETERIZED keyword ability, so `supported` rather than
+    // `keyword`: `Keyword.EMERGE` exists, so PascalCase→enum auto-resolve would stamp a bare
+    // `keywords(Keyword.EMERGE)` and drop the cost — the Ward/Saddle/Madness trap. Modelled as
+    // `emerge("{cost}")`; the engine owns the whole mechanic (the hand alternative cost, the
+    // creature sacrifice, and the generic-only reduction by the sacrificed creature's mana value).
+    // The emitter's `rname == "Emerge"` branch renders the builder call for the pure-mana shape
+    // (every printed emerge); anything else declines -> SCAFFOLD.
+    supported("Emerge", "keyword ability: Emerge [cost] -> emerge(\"{cost}\") builder (CR 702.119)")
 
     composed("Landwalk", "specific *WALK keywords (SWAMPWALK, FORESTWALK, ...)")
     // Equip is a keyword ability, but the engine has no `Keyword.EQUIP` enum member: `equipAbility(cost)`

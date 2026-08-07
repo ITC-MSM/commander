@@ -227,6 +227,15 @@ enum class AlternativeCostType {
     /** Evoke ([com.wingedsheep.sdk.scripting.KeywordAbility.Evoke]) — hand. */
     EVOKE,
     /**
+     * Emerge ([com.wingedsheep.sdk.scripting.KeywordAbility.Emerge], CR 702.119) — hand, at the
+     * spell's normal timing. Pays the emerge mana *reduced by the sacrificed creature's mana value*
+     * (generic portion only) instead of the mana cost, plus sacrifices that creature
+     * ([CastSpell.additionalCostPayment] `sacrificedPermanents`). Unlike every other alternative
+     * cost here the mana actually charged depends on the non-mana choice, so the enumerator only
+     * offers creatures that leave the reduced cost payable.
+     */
+    EMERGE,
+    /**
      * Sneak ([com.wingedsheep.sdk.scripting.KeywordAbility.Sneak], CR 702.190) — hand,
      * legal only during the active player's declare blockers step. Pays the sneak mana
      * plus returns an unblocked attacker you control to hand
