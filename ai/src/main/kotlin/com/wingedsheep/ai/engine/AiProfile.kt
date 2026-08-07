@@ -750,24 +750,25 @@ data class AiProfile(
         )
 
         /**
-         * The cantrip window on top of what is live — **not promoted, and not for want of an arena
-         * run.** It is level with [PRODUCTION_CANDIDATE_BOARDVALUE] at 83/87 with an *identical*
-         * failing set: `timing-05` still fails here, on the exact flag that closes it one column
-         * over.
+         * The cantrip window on top of what is live — **84/87**, closing `timing-05`, with a
+         * failing set that is a strict subset of [PRODUCTION_CANDIDATE_BOARDVALUE]'s.
          *
-         * That gap is the finding, and it is worth more than the puzzle would have been. The term
-         * itself is demonstrably right — [PRODUCTION_CANTRIP] closes `timing-05` and only
-         * `timing-05`, `HoldPolicyTest` pins the verdict at the window and the `instants-06`
-         * control beside it, so what fails here is not the policy's reading. Something between the
-         * verdict and the decision is absorbing it, and the two candidates differ by rollouts and
-         * budget tiers: either the rollout mixture's scale swamps a 1.5-point static adjustment, or
-         * the opponent's end step is graded below the tier where the candidate is searched at all.
+         * It first measured *level* with its baseline, failing the one puzzle it exists for on the
+         * exact flag that closes it one column over, and the reason is worth more than the puzzle
+         * was: it was the **harness**, not the agent. `PuzzleRunner` stocked every puzzle library
+         * with basic lands, so the card an Opt draws was a Forest — and [landDropIsNotCardLoss],
+         * live since 2026-08-08, deliberately does not count a land held against an unused land
+         * drop as a card. Drawing one therefore read as drawing *nothing* and stepped off the
+         * topdeck cliff, which priced casting the cantrip at −4.45 against passing where the same
+         * agent without that one flag said −0.45. A 1.5-point window cannot cover four points of
+         * measurement error, and the term looked broken.
          *
-         * The second is the same shape as the bug [PRODUCTION_CANDIDATE_TRICKWINDOW] found — a
-         * missing search looking exactly like a missing evaluation until you vary the tier — and
-         * that one needed **both** halves before either worked. This is left standing as the
-         * attribution pair that will identify which, rather than deleted or promoted on a puzzle it
-         * does not actually close.
+         * The `production` column was what made it findable: [PRODUCTION_CANTRIP] closes
+         * `timing-05` cleanly, because a greedy agent with no land-drop accounting never sees the
+         * artifact. **A term that works on the isolation column and not on the live agent is the
+         * signal to go and look at the leaf**, not to argue about rollout scale or budget tiers —
+         * both of which were the wrong first guesses here. `PuzzleRunner.stockLibraries` carries the
+         * fix and the general rule.
          */
         val PRODUCTION_CANDIDATE_CANTRIP = PRODUCTION_CANDIDATE_BOARDVALUE.copy(
             id = "production-candidate-cantrip",

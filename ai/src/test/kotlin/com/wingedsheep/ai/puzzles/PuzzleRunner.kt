@@ -95,11 +95,34 @@ class PuzzleRunner(
      * the draw step with nothing to draw, and every playout ends in a decking race decided by whose
      * draw step comes first (CR 104.3c). A puzzle answered that way measures the harness.
      *
-     * Basic lands specifically: a land is the most inert card in Magic, so a stocked library adds a
-     * clock and nothing else. Deep enough that no horizon reaches the bottom.
+     * **A vanilla six-drop, and emphatically not a basic land.** The original filler was `Forest`,
+     * on the reasoning that "a land is the most inert card in Magic, so a stocked library adds a
+     * clock and nothing else". That stopped being true the day
+     * [com.wingedsheep.ai.engine.AiProfile.landDropIsNotCardLoss] shipped, which makes a land in
+     * hand *deliberately* not a card: with an all-Forest library, drawing a card draws a land, and a
+     * lone land earmarked against an unused land drop counts as an **empty hand**. So every card the
+     * AI drew inside a simulation stepped straight off the topdeck cliff, and any spell that drew
+     * one was charged for it. Measured on `timing-05`: casting Opt scored −0.45 against passing on
+     * `production` and **−4.45** on the same agent with nothing changed but that flag, which is four
+     * points of pure harness. Its `cashCantripsInTheEndStep` window covers 1.5 of that and so looked
+     * like a term that did not work.
+     *
+     * `Craw Wurm` is the replacement because it is inert to the *evaluator* rather than inert in
+     * Magic: no ETB, no keywords, no activated ability, and at six mana it is out of reach in
+     * essentially every position here. Re-measured across all 34 profiles in
+     * [PuzzleComparisonBenchmark], the swap moves **four verdicts, all upward**, and leaves
+     * `production` and every promotion baseline — and therefore `PuzzleSuiteTest.KNOWN_FAILURES` —
+     * untouched. All four are searching agents, which is the same story from the other side: an
+     * all-basic-land library is a distribution only a rollout is deep enough to notice.
+     *
+     * The general rule this cost us, worth stating once: **the filler must be a card no evaluator
+     * term special-cases.** "Inert in Magic" is not the same property, and the gap between them is
+     * silent.
+     *
+     * Deep enough that no horizon reaches the bottom.
      */
     private fun stockLibraries(game: ScenarioTestBase.TestGame) {
-        val forest = registry.getCard("Forest") ?: return
+        val filler = registry.getCard(LIBRARY_FILLER) ?: return
         var state = game.state
         var counter = 0
         for (playerId in state.turnOrder) {
@@ -108,7 +131,7 @@ class PuzzleRunner(
             repeat(LIBRARY_SIZE) {
                 val cardId = EntityId.of("puzzle-library-${playerId.value}-${counter++}")
                 state = state
-                    .withEntity(cardId, CardEntityFactory.create(forest, playerId))
+                    .withEntity(cardId, CardEntityFactory.create(filler, playerId))
                     .addToZone(zone, cardId)
             }
         }
@@ -124,5 +147,8 @@ class PuzzleRunner(
 
         /** Deeper than any rollout horizon can reach, and shorter than a real deck. */
         const val LIBRARY_SIZE = 30
+
+        /** See [stockLibraries]. A card no evaluation term special-cases — in particular, not a land. */
+        const val LIBRARY_FILLER = "Craw Wurm"
     }
 }

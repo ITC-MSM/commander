@@ -1723,33 +1723,64 @@ Four puzzles remain unsolved by the live agent, and each names a subsystem rathe
 for a Hill Giant while holding a Counterspell — held mana as options, which nothing prices), and
 `timing-05` (a cantrip left uncast at the opponent's end step).
 
-## A term that is right and still does nothing: the cantrip window
+## The cantrip window, and the harness bug it exposed
 
-`AiProfile.cashCantripsInTheEndStep`, measured alongside the above and **not promoted**.
+`AiProfile.cashCantripsInTheEndStep`. `HoldPolicy` only ever handed the opponent's end step back to
+`REMOVAL`, so a DRAW-tagged instant got nothing at all and a cantrip — board value ~= 0, a card drawn
+against a card spent — lost to passing at every window through to cleanup. The fix is a window on the
+**tag**, not a discount on the **step**, which is what keeps `instants-06` answered: an expiring pump
+is `COMBAT_TRICK` and is caught by the branch above it. That distinction is why `Strategist`'s old
+blanket `passScore - 1.5` had to go.
 
-`HoldPolicy` only ever handed the opponent's end step back to `REMOVAL`, so a DRAW-tagged instant
-got nothing at all and a cantrip — board value ≈ 0, a card drawn against a card spent — lost to
-passing at every window through to cleanup. `KNOWN_FAILURES` has carried that diagnosis since Phase
-2c. The fix is a window on the **tag**, not a discount on the **step**, which is what keeps
-`instants-06` answered: an expiring pump is `COMBAT_TRICK` and is caught by the branch above it.
-That distinction is the whole reason `Strategist`'s old blanket `passScore - 1.5` had to go.
+It first measured **level** with its baseline — closing `timing-05` on `production` (74 -> 75) and
+moving nothing on the live agent. The term was right; the harness was wrong.
 
-| | `production` | live (`production-candidate-boardvalue`) |
+### The diagnosis
+
+The insight sink prints the per-candidate table, and it was decisive in one run — the window fires on
+both agents, note and all. What differs is the *leaf*:
+
+| profile | pass | cast Opt | deficit | window | result |
+|---|---|---|---|---|---|
+| `production` | 11.20 | 10.75 | -0.45 | +1.50 | casts |
+| live (`production-candidate-boardvalue`) | 10.20 | 7.20 | **-3.00** | +1.50 | passes |
+
+Bisecting the promotion chain one flag at a time isolates it to **`landDropIsNotCardLoss`**, live
+since 2026-08-08: `production` + that flag alone prices casting Opt at **-4.45**. Nothing else in the
+chain — `resolveThroughCombatDamage`, `concave-hand-2`, the rollouts, the budget tiers — moves the
+number at all.
+
+The mechanism: `PuzzleRunner.stockLibraries` filled every puzzle library with 30 `Forest`, on the
+reasoning that "a land is the most inert card in Magic". `landDropIsNotCardLoss` makes a land in hand
+*deliberately not a card* — it is mana waiting to be tapped. So the card Opt draws is a Forest, a lone
+land earmarked against an unused land drop counts as an **empty hand**, and the cantrip's own draw
+steps off the topdeck cliff. Four points of pure harness, against a 1.5-point window.
+
+Swapping the filler to `Craw Wurm` — inert to the *evaluator* rather than inert in Magic — restores
+`-0.45` on every profile and the live agent casts the Opt.
+
+### Blast radius of the harness fix
+
+Re-measured across all 34 profiles. Four verdicts move, all by +1, all upward:
+
+| profile | Forest | Craw Wurm |
 |---|---|---|
-| baseline | 74/87 | 83/87 |
-| with the flag | **75/87** | 83/87 |
-| closes | `timing-05` | — |
-| loses | — | — |
+| `production` | 74/87 | 74/87 |
+| `production-candidate-boardvalue` (live) | 83/87 | 83/87 |
+| `production-candidate` | 70/87 | **71/87** |
+| `v0-rollout-pure` | 60/87 | **61/87** |
+| `v0-phase4-intent-rollout` | 70/87 | **71/87** |
+| `production-candidate-cantrip` | 83/87 | **84/87** |
 
-**The term works and the agent that ships it does not use it.** `production-cantrip` closes
-`timing-05` and only `timing-05`, with `instants-06` held, and `HoldPolicyTest` pins the verdict at
-the window directly — so the policy's reading is not what fails. On the live agent the same flag
-moves no verdict at all, and the two differ by rollouts and budget tiers. Either the rollout
-mixture's scale swamps a 1.5-point static adjustment, or the opponent's end step grades below the
-tier at which the candidate gets searched.
+`production` and every promotion baseline are unchanged, so `PuzzleSuiteTest.KNOWN_FAILURES` needs no
+edit and no published number rebases. All four that move are *searching* agents — an all-basic-land
+library is a distribution only a rollout is deep enough to notice.
 
-The second possibility has a precedent: `PRODUCTION_CANDIDATE_TRICKWINDOW` found exactly that shape
-— "the missing search looks exactly like a missing evaluation until you vary the tier" — and needed
-its evaluation half and its budget half together before either did anything. Both profiles are left
-registered, unpromoted, as the attribution pair that will tell the two apart. No arena run was spent
-on a candidate whose puzzle column is identical to its baseline's.
+**The rule this cost us:** a puzzle library's filler must be a card **no evaluator term
+special-cases**. "Inert in Magic" is not that property, and the gap between the two is silent.
+
+**And the debugging lesson**, which generalizes past this bug: *a term that closes its puzzle on the
+isolation column and does nothing on the live agent is a signal to go and read the leaf scores.* The
+two obvious hypotheses here — the rollout mixture swamping a static adjustment, and the window
+grading below its budget tier — were both wrong, and one insight-sink dump settled it faster than
+either could have been argued.
