@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 223 / 276
+**Implemented:** 224 / 276
 
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
@@ -13,7 +13,7 @@ variants 297+ are excluded)
 - [x] Avengers Assemble!
 - [x] Borough Backup
 - [x] Brave Brawler
-- [ ] Captain America, Super-Soldier
+- [x] Captain America, Super-Soldier
 - [x] Captain America, Wings of Freedom
 - [x] Captain Marvel, Earth's Protector
 - [ ] Captain Mar-Vell, Space-Born
