@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 224 / 276
+**Implemented:** 223 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -28,7 +28,7 @@ variants 297+ are excluded)
 - [x] Mockingbird, Ace Agent
 - [x] Monica Rambeau // Photon, Living Light
 - [ ] Murdock's Crusade
-- [x] Nick Fury, Agent of S.H.I.E.L.D.
+- [ ] Nick Fury, Agent of S.H.I.E.L.D.
 - [x] Night Nurse, Healer of Heroes
 - [x] Okoye, Dora Milaje Leader
 - [x] Origin of the Avengers

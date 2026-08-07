@@ -5,7 +5,7 @@ missing mechanic they need. Each mechanic is `add-feature` territory (a new SDK 
 keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
-updated 2026-08-07 after **power-up shipped**. **46 of the 276 are blocked**; every other card is
+updated 2026-08-07 after **power-up shipped**. **47 of the 276 are blocked**; every other card is
 buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
@@ -19,7 +19,7 @@ documented routine card work — see `docs/card-sdk-language-reference.md` §16)
 
 ---
 
-## Power-up — SHIPPED ✅ (21 of 24 cards unblocked)
+## Power-up — SHIPPED ✅ (20 of 24 cards unblocked)
 
 > Power-up — {4}{W}: Put two +1/+1 counters on this creature. *(Activate each power-up ability
 > only once. Reduce the cost by its mana cost if it entered this turn.)*
@@ -52,8 +52,8 @@ Tests: `ManaCostSubtractTest` (every printed MSH power-up cost/mana-cost pair, p
 subrules the set doesn't exercise) and `PowerUpKeywordScenarioTest` (once-only, re-entry reset,
 entered-this-turn gating, displayed-vs-paid lockstep, stacking with `powerUpOnly`).
 
-**Now buildable as ordinary card work (21):** Brave Brawler [8] · Captain Marvel, Earth's Protector
-[11] · Nick Fury, Agent of S.H.I.E.L.D. [25] · Aerial Doombot [43] · Bold Biochemist [48] · Stature,
+**Now buildable as ordinary card work (20):** Brave Brawler [8] · Captain Marvel, Earth's Protector
+[11] · Aerial Doombot [43] · Bold Biochemist [48] · Stature,
 Size Shifter [76] · Ninja of the Hand [108] · Unliving Legionnaire [119] · Human Torch, Johnny Storm
 [136] · Quicksilver, Brash Blur [148] · Volcanic Villain [159] · Hercules, Prince of Power [171] ·
 Pet Avengers [178] · Serpent Specialist [186] · She-Hulk, Jade Defender [188] · White Tiger, Ava
@@ -64,7 +64,7 @@ Non-blocking notes for those: Stature's "can't be blocked if her power is 1 or l
 `ConditionalStaticAbility`; Quicksilver's opening-hand clause is `mayBeginGameOnBattlefield()`;
 Thanos's odd/even sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
 
-### Still blocked — 3 cards, each needing one more thing ⛔
+### Still blocked — 4 cards, each needing one more thing ⛔
 
 - **Wonder Man, Hollywood Hero** [160] — "Each power-up ability of permanents you control can be
   activated an additional time" must *raise* the limit. `ActivationRestriction.Once` is a fixed
@@ -76,6 +76,16 @@ Thanos's odd/even sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
   turn-scoped flag on `GameState`, read where granted `PreventActivatedAbilities` is read
   (`CastPermissionUtils.isActivationPrevented`) and gated on `ActivatedAbility.isPowerUp`, which now
   exists. The extra turn itself is fine (`Effects.TakeExtraTurn`).
+- **Nick Fury, Agent of S.H.I.E.L.D.** [25] — the power-up and the top-seven dig are both ordinary
+  composition (Gather → Select → Move, Gishath's shape), but *"If it's a double-faced card, you may
+  transform it"* has no faithful modelling: there is no "is a double-faced card" predicate anywhere
+  in the SDK, so the optional transform can only be offered unconditionally — a prompt on a
+  single-faced permanent, where the printed card offers none. Needed: a `StatePredicate.IsDoubleFaced`
+  (the card component already knows its back face; it is the *predicate* and its `PredicateEvaluator`
+  branch that are missing), then wrap the existing `MayEffect(ForEachInCollectionEffect(…,
+  TransformEffect))` in a `ConditionalEffect` over it. Note the transform must stay *post-entry* —
+  the printed order puts the card onto the battlefield first, so its ETB triggers fire on the front
+  face and only then does it flip, which is not the same as entering transformed.
 - **Loki Laufeyson** [143] — the power-up half is done; the *other* ability needs a delayed "when you
   next cast" trigger whose spell filter is source-relative
   (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the predicate exists, but
