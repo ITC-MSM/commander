@@ -12430,6 +12430,143 @@
     ]
 }
 
+// Thanos, the Mad Titan
+{
+    "name": "Thanos, the Mad Titan",
+    "manaCost": "{R}{W}{B}",
+    "typeLine": "Legendary Creature — Eternal Villain",
+    "oracleText": "Deathtouch, lifelink\nPower-up — {C}{W}{U}{B}{R}{G}: Put two +1/+1 counters on Thanos. Choose odd or even. Destroy each other creature with mana value of the chosen quality. (Activate each power-up ability only once. Reduce the cost by his mana cost if he entered this turn. Zero is even.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "LIFELINK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{C}{W}{U}{B}{R}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 2,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Modal",
+                            "modes": [
+                                {
+                                    "effect": {
+                                        "type": "Composite",
+                                        "effects": [
+                                            {
+                                                "type": "GatherCards",
+                                                "source": {
+                                                    "type": "BattlefieldMatching",
+                                                    "filter": {
+                                                        "cardPredicates": [
+                                                            "IsCreature",
+                                                            "ManaValueIsOdd"
+                                                        ],
+                                                        "statePredicates": [
+                                                            {
+                                                                "type": "StateNot",
+                                                                "predicate": "IsSource"
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "storeAs": "destroyAll_gathered"
+                                            },
+                                            {
+                                                "type": "MoveCollection",
+                                                "from": "destroyAll_gathered",
+                                                "destination": {
+                                                    "type": "ToZone",
+                                                    "zone": "Graveyard"
+                                                },
+                                                "moveType": "Destroy"
+                                            }
+                                        ]
+                                    },
+                                    "description": "Odd — Destroy each other creature with an odd mana value."
+                                },
+                                {
+                                    "effect": {
+                                        "type": "Composite",
+                                        "effects": [
+                                            {
+                                                "type": "GatherCards",
+                                                "source": {
+                                                    "type": "BattlefieldMatching",
+                                                    "filter": {
+                                                        "cardPredicates": [
+                                                            "IsCreature",
+                                                            "ManaValueIsEven"
+                                                        ],
+                                                        "statePredicates": [
+                                                            {
+                                                                "type": "StateNot",
+                                                                "predicate": "IsSource"
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "storeAs": "destroyAll_gathered"
+                                            },
+                                            {
+                                                "type": "MoveCollection",
+                                                "from": "destroyAll_gathered",
+                                                "destination": {
+                                                    "type": "ToZone",
+                                                    "zone": "Graveyard"
+                                                },
+                                                "moveType": "Destroy"
+                                            }
+                                        ]
+                                    },
+                                    "description": "Even — Destroy each other creature with an even mana value."
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put two +1/+1 counters on Thanos. Choose odd or even. Destroy each other creature with mana value of the chosen quality.",
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "233",
+        "rarity": "MYTHIC",
+        "artist": "Björn Barends",
+        "flavorText": "\"I shall restore the cosmic balance.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e669c0b2-0011-4feb-9263-f1ecc0a98f18.jpg?1783902896"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
+}
+
 // The Astonishing Ant-Man
 {
     "name": "The Astonishing Ant-Man",
