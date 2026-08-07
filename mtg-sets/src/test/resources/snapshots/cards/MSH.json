@@ -2542,6 +2542,68 @@
     ]
 }
 
+// Captain Marvel, Earth's Protector
+{
+    "name": "Captain Marvel, Earth's Protector",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Legendary Creature — Human Kree Hero",
+    "oracleText": "Flash\nFlying, lifelink\nPower-up — {5}{W}{W}: Put a +1/+1 counter and an indestructible counter on Captain Marvel. (Activate each power-up ability only once. Reduce the cost by her mana cost if she entered this turn.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING",
+        "LIFELINK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{W}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "indestructible",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put a +1/+1 counter and an indestructible counter on Captain Marvel.",
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "11",
+        "rarity": "MYTHIC",
+        "artist": "Victor Adame Minguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/b/eb098550-22e6-4079-8c59-ed9ec2f764e3.jpg?1783902976"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Castle Doom
 {
     "name": "Castle Doom",
