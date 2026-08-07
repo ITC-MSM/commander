@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 221 / 276
+**Implemented:** 222 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -218,7 +218,7 @@ variants 297+ are excluded)
 - [x] The Coming of Galactus
 - [x] Daredevil, Man Without Fear
 - [x] Ghost, Spectral Saboteur
-- [ ] Hulk, Gamma Goliath
+- [x] Hulk, Gamma Goliath
 - [x] Iron Man, Master of Machines
 - [x] Kang, Temporal Tyrant
 - [x] Killmonger, Scourge of Wakanda
