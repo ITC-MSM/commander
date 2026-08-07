@@ -535,7 +535,13 @@ class CostEnumerationUtils(
         playerId: EntityId,
         abilityCost: AbilityCost,
         manaCost: ManaCost?,
-        precomputedSources: List<ManaSource>? = null
+        precomputedSources: List<ManaSource>? = null,
+        /**
+         * The permanent whose ability this is. Cost filters routinely scope to it — a
+         * "remove any number of +1/+1 counters from ~" cost filters with `sourceItself()`
+         * (`StatePredicate.IsSource`), which can never match without this, capping X at 0.
+         */
+        sourceId: EntityId? = null
     ): Int {
         var maxX = if (manaCost != null && manaCost.hasX) {
             val availableSources = manaSolver.getAvailableManaCount(state, playerId, precomputedSources)
@@ -563,7 +569,7 @@ class CostEnumerationUtils(
         if (exileXCosts.isNotEmpty()) {
             val graveyard = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
             val projected = state.projectedState
-            val context = PredicateContext(controllerId = playerId)
+            val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
             exileXCosts.forEach { cost ->
                 val matching = graveyard.count { cardId ->
                     predicateEvaluator.matches(state, projected, cardId, cost.filter, context)
@@ -589,13 +595,23 @@ class CostEnumerationUtils(
         if (removeXAtoms.isNotEmpty()) {
             val projected = state.projectedState
             val counterCaps = removeXAtoms.map { atom ->
+                    // A self-scoped removal ("remove any number of counters from ~") comes off the
+                    // source alone; counting every matching permanent would overstate the cap.
+                    if (atom.self) {
+                        val type = atom.counterType?.let {
+                            com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType(it)
+                        }
+                        val counters = sourceId?.let { state.getEntity(it)?.get<CountersComponent>() }
+                        return@map if (type != null) counters?.getCount(type) ?: 0
+                        else counters?.counters?.values?.sum() ?: 0
+                    }
                     val type = atom.counterType?.let {
                         com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType(it)
                     }
                     projected.getBattlefieldControlledBy(playerId).sumOf { entityId ->
                         if (!predicateEvaluator.matches(
                                 state, projected, entityId, atom.filter,
-                                PredicateContext(controllerId = playerId)
+                                PredicateContext(controllerId = playerId, sourceId = sourceId)
                             )
                         ) 0
                         else {

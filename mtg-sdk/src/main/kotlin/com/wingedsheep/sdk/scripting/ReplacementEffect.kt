@@ -251,6 +251,14 @@ data class DoubleCounterPlacement(
 /**
  * Add additional counters when counters are placed.
  * Example: Hardened Scales (+1), Winding Constrictor (+1), Branching Evolution (double)
+ *
+ * @param placedByYou When true, only applies when the controller of this effect is the player
+ *                    putting the counters — "**If you** would put one or more counters on a
+ *                    permanent you control" (Doc Samson, Super-Psychiatrist). When false (the
+ *                    default), applies regardless of who is placing them, so the recipient filter
+ *                    on [appliesTo] is the sole "you control" gate — the Hardened Scales /
+ *                    Winding Constrictor reading, where an opponent's proliferate also feeds it.
+ *                    Same axis as [DoubleCounterPlacement.placedByYou].
  */
 @SerialName("ModifyCounterPlacement")
 @Serializable
@@ -259,7 +267,8 @@ data class ModifyCounterPlacement(
     override val appliesTo: EventPattern = EventPattern.CounterPlacementEvent(
         counterType = CounterTypeFilter.PlusOnePlusOne,
         recipient = RecipientFilter.CreatureYouControl
-    )
+    ),
+    val placedByYou: Boolean = false
 ) : ReplacementEffect {
     override val description: String = buildString {
         append("If ${appliesTo.description}, ")

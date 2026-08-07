@@ -19,7 +19,7 @@ const COLOR_PIP = new Set(['W', 'U', 'B', 'R', 'G'])
  * (single-letter WUBRG)? This drives the "at most" deckbuilder filter, which
  * asks whether a card is castable in a deck limited to a colour set.
  *
- * A hybrid pip like `{R/W}` is payable with EITHER half (CR 107.4d), so a
+ * A hybrid pip like `{R/W}` is payable with EITHER half (CR 107.4e), so a
  * `{R/W}` card is castable in a mono-white *or* mono-red deck and must survive
  * "at most W". Phyrexian (`{W/P}`) and monocolor-hybrid / "twobrid" (`{2/W}`)
  * pips always have a non-colored payment (life / generic), so they never force

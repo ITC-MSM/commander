@@ -642,7 +642,9 @@ class CastZoneResolver(
                     if (hasUse && matchesCardFilter(cardComponent, unwrapped.filter)) return true
                 }
                 if (unwrapped is PlayLandsAndCastFilteredFromTopOfLibrary) {
-                    if (matchesCardFilter(cardComponent, unwrapped.spellFilter)) return true
+                    // A null spellFilter is a lands-only permission: nothing is castable.
+                    val spellFilter = unwrapped.spellFilter
+                    if (spellFilter != null && matchesCardFilter(cardComponent, spellFilter)) return true
                 }
             }
         }
@@ -675,7 +677,7 @@ class CastZoneResolver(
                 } else ability
                 if (unwrapped is PlayFromTopOfLibrary) return null
                 if (unwrapped is PlayLandsAndCastFilteredFromTopOfLibrary &&
-                    matchesCardFilter(cardComponent, unwrapped.spellFilter)
+                    unwrapped.spellFilter?.let { matchesCardFilter(cardComponent, it) } == true
                 ) return null
                 if (unwrapped !is CastSpellTypesFromTopOfLibrary ||
                     !matchesCardFilter(cardComponent, unwrapped.filter)

@@ -486,9 +486,11 @@ class BeginningPhaseManager(
         // implied; combat is empty) or would require state we don't have here. Returning
         // true preserves the historical "no constraint" behavior, but the case is now
         // explicit so adding a new StatePredicate variant becomes a compile-time decision.
+        StatePredicate.IsOnBattlefield,
         StatePredicate.IsTapped,
         StatePredicate.IsUntapped,
         StatePredicate.IsAttacking,
+        StatePredicate.IsAttackingAlone,
         StatePredicate.IsAttackingAnOpponent,
         StatePredicate.IsBlocking,
         StatePredicate.IsBlocked,

@@ -709,9 +709,31 @@ data class TargetedByControllerThisTurnComponent(
  * triggers (e.g. Stalwart Successor). Set the first time any counter lands on the permanent
  * (see DamageUtils.markCounterPlacedOnCreature), read to compute the per-event "first this turn"
  * flag, and cleared at end of turn by CleanupPhaseManager.
+ *
+ * Mere *presence* answers "did anything land here this turn"; the two sets narrow that by the two
+ * axes printed cards actually use. Beast, Erudite Aerialist wants both — "as long as you've put one
+ * or more **+1/+1** counters on Beast this turn" is scoped to a counter kind *and* to a placer.
+ * Both are recorded at placement time, so they survive the counters later being removed.
  */
 @Serializable
-data object ReceivedCountersThisTurnComponent : Component
+data class ReceivedCountersThisTurnComponent(
+    /** Counter types placed here this turn, by anyone. Empty when the placer path knew no type. */
+    val counterTypes: Set<String> = emptySet(),
+    /**
+     * The subset of [counterTypes] placed by this permanent's own controller (as of the placement).
+     * "You've put …" reads this; "counters would be put …" reads [counterTypes].
+     */
+    val typesFromController: Set<String> = emptySet()
+) : Component {
+    fun with(counterType: String?, byController: Boolean): ReceivedCountersThisTurnComponent {
+        if (counterType == null) return this
+        return copy(
+            counterTypes = counterTypes + counterType,
+            typesFromController =
+                if (byController) typesFromController + counterType else typesFromController
+        )
+    }
+}
 
 /**
  * Tracks which creatures this entity dealt damage to this turn.

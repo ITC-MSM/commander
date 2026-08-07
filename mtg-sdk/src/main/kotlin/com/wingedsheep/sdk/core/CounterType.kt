@@ -82,6 +82,8 @@ enum class CounterType {
     ENERGY,
     ICE,
     OMEN,
+    PLAN,
+    INVASION,
 
     /**
      * Harness counter (Marvel's Spider-Man Infinity Stones). A binary "harnessed" marker: the Stone's
@@ -427,6 +429,28 @@ object Counters {
      * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val ICE = "ice"
+
+    /**
+     * Plan counter (MSH — the Plan enchantment cycle: Political Triumph, Rewrite History,
+     * Construct a Cosmic Cube, Robot Domination, Death to Our Enemies, Claim the Kingdom).
+     * Passive named counter with no inherent rule of its own — each Plan enchantment's own
+     * "whenever …" trigger adds one, and a second ability gated on
+     * `Conditions.SourceCounterCountAtLeast(Counters.PLAN, N)` fires when the Nth one lands and
+     * sacrifices the enchantment. Same accumulate-then-threshold shape as `Counters.POINT` /
+     * `Counters.LANDMARK`, but the payoff removes the source instead of transforming it.
+     * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val PLAN = "plan"
+
+    /**
+     * Invasion counter (MSH — Alien Invasion). Passive tally counter with no inherent rule of its
+     * own — the enchantment's begin-combat trigger reads the count (via
+     * `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.INVASION))`) to size the
+     * +1/+1 counters on the Alien token it just made, then adds one more, so each combat's Alien
+     * is one bigger than the last. Same tally shape as `Counters.SKEWER`.
+     * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val INVASION = "invasion"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.

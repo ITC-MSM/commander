@@ -661,9 +661,23 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.HasLockedDoor
     )
 
+    /**
+     * Must be on the battlefield right now. Pair with a predicate that carries a last-known-info
+     * fallback to force a live reading — `onBattlefield().attacking()` is "is attacking", where a
+     * bare `attacking()` is "is or was attacking" for an object that has already left.
+     */
+    fun onBattlefield() = copy(
+        statePredicates = statePredicates + StatePredicate.IsOnBattlefield
+    )
+
     /** Must be attacking */
     fun attacking() = copy(
         statePredicates = statePredicates + StatePredicate.IsAttacking
+    )
+
+    /** Must be attacking, with no other creature attacking (CR 506.5). */
+    fun attackingAlone() = copy(
+        statePredicates = statePredicates + StatePredicate.IsAttackingAlone
     )
 
     /**

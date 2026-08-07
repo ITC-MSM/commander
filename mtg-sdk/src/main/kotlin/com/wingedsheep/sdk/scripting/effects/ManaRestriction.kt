@@ -188,6 +188,33 @@ sealed interface ManaRestriction {
     }
 
     /**
+     * "This mana can't be spent to cast a non-[cardTypes] spell" (Hydraulic Helper:
+     * "{T}: Add {U}. This mana can't be spent to cast a nonartifact spell").
+     *
+     * The only **negative** restriction in this family, and the distinction is load-bearing.
+     * Every other variant is a whitelist — "spend this mana *only* to …" — which blocks any spend
+     * that isn't the named one. This clause blocks exactly one thing, casting a spell that lacks
+     * one of [cardTypes], and leaves every other spend legal: activating an ability, paying a ward
+     * cost, an "unless that player pays {2}" tax, a cost demanded while something resolves,
+     * turning a permanent face up. Modelling it as `AnyOf(CardTypeSpellsOrAbilitiesOnly(…),
+     * AbilityActivationOnly)` covers only the first of those and silently rejects the rest.
+     */
+    @SerialName("CannotCastSpellsOtherThan")
+    @Serializable
+    data class CannotCastSpellsOtherThan(
+        val cardTypes: Set<com.wingedsheep.sdk.core.CardType>
+    ) : ManaRestriction {
+        init {
+            require(cardTypes.isNotEmpty()) { "CannotCastSpellsOtherThan needs at least one card type" }
+        }
+
+        override val description: String =
+            "This mana can't be spent to cast a non${
+                cardTypes.joinToString("/") { it.displayName.lowercase() }
+            } spell"
+    }
+
+    /**
      * "Spend this mana only to cast a spell from anywhere other than your hand."
      *
      * Used by Mm'menon, the Right Hand's granted artifact ability. Generalizes

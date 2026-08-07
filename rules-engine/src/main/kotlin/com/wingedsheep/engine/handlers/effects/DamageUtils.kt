@@ -720,15 +720,31 @@ object DamageUtils {
      * "if you put a counter on a creature this turn", Lasting Tarfire) and the per-creature
      * [com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent]
      * marker (for "first time counters this turn" triggers, Stalwart Successor).
+     *
+     * [counterType] is optional because a few placement paths don't have a single kind to name; when
+     * given, it is recorded on the marker so type-scoped conditions ("you've put one or more +1/+1
+     * counters on ~ this turn", Beast, Erudite Aerialist) can tell kinds apart. The placer is
+     * compared against the target's *projected* controller at placement time so the "you've put"
+     * axis is recorded too — both facts have to be captured now, since the counters themselves may
+     * be gone by the time the condition is read.
      */
-    fun markCounterPlacedOnCreature(state: GameState, placerId: EntityId, targetId: EntityId): GameState {
+    fun markCounterPlacedOnCreature(
+        state: GameState,
+        placerId: EntityId,
+        targetId: EntityId,
+        counterType: String? = null
+    ): GameState {
         if (!state.projectedState.isCreature(targetId)) return state
+        val byController = state.projectedState.getController(targetId) == placerId
         return state
             .updateEntity(placerId) { container ->
                 container.with(com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent)
             }
             .updateEntity(targetId) { container ->
-                container.with(com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent)
+                val existing = container
+                    .get<com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent>()
+                    ?: com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent()
+                container.with(existing.with(counterType, byController))
             }
     }
 
@@ -750,7 +766,10 @@ object DamageUtils {
         val first = state.getEntity(targetId)
             ?.has<com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent>() != true
         val newState = state.updateEntity(targetId) { container ->
-            container.with(com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent)
+            container.with(
+                container.get<com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent>()
+                    ?: com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent()
+            )
         }
         return newState to first
     }

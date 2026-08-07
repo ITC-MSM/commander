@@ -300,9 +300,20 @@ class ConditionEvaluator(
 
             is SourceReceivedCounterThisTurn -> {
                 val sourceId = ctx.sourceId
-                sourceId != null &&
-                    state.getEntity(sourceId)
-                        ?.has<com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent>() == true
+                val marker = sourceId?.let {
+                    state.getEntity(it)
+                        ?.get<com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent>()
+                }
+                when {
+                    marker == null -> false
+                    // Widest reading: the marker's mere presence means something landed this turn.
+                    condition.counterType == null && !condition.placedByYou -> true
+                    else -> {
+                        val recorded =
+                            if (condition.placedByYou) marker.typesFromController else marker.counterTypes
+                        condition.counterType?.let { it in recorded } ?: recorded.isNotEmpty()
+                    }
+                }
             }
 
             // The unified "an entity matches a filter" primitive. Dispatches on the entity role:

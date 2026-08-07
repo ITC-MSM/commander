@@ -388,12 +388,18 @@ object Costs {
     /**
      * Remove X counters of any type from among creatures you control.
      * X is the value chosen for this ability's variable cost.
+     *
+     * Pass [self] for "remove any number of counters from ~" (The Astonishing Ant-Man), where the
+     * counters come off the ability's own source. That takes the direct payment path; the default
+     * filter-based form instead asks the player to distribute the removal across matching
+     * permanents, which is wrong — and unpayable — for a self-scoped cost.
      */
     fun RemoveXCounters(
             counterType: String? = null,
             count: DynamicAmount = DynamicAmount.XValue,
-            filter: GameObjectFilter = GameObjectFilter.Permanent
-        ): AbilityCost = AbilityCost.Atom(CostAtom.RemoveCounters(counterType, count, filter))
+            filter: GameObjectFilter = GameObjectFilter.Permanent,
+            self: Boolean = false
+        ): AbilityCost = AbilityCost.Atom(CostAtom.RemoveCounters(counterType, count, filter, self))
 
     // =========================================================================
     // Composite Costs

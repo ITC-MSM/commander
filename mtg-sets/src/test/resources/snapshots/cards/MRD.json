@@ -3855,6 +3855,80 @@
     ]
 }
 
+// Thirst for Knowledge
+{
+    "name": "Thirst for Knowledge",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Draw three cards. Then discard two cards unless you discard an artifact card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeSelected": "discarded",
+                            "prompt": "Choose 2 cards to discard, or 1 artifact card",
+                            "restrictions": [
+                                {
+                                    "type": "ReducedMinimumIfMatches",
+                                    "reducedMinimum": 1,
+                                    "filter": "artifact"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "rarity": "UNCOMMON",
+        "artist": "Ben Thompson",
+        "flavorText": "Lymph, the fluid essence of blinkmoths, is prized by wizards for the rush of intellect it provides.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0ff1f608-203e-4413-8753-37fc49731c87.jpg?1783944550"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Titanium Golem
 {
     "name": "Titanium Golem",

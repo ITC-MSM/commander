@@ -432,6 +432,21 @@ export interface ClientCard {
    */
   readonly legendaryByEffect?: boolean
 
+  /**
+   * Subtypes granted by a continuous effect rather than printed on the card (Super-Soldier Serum's
+   * "is a legendary Soldier in addition to its other types"). The battlefield shows the printed card
+   * image and the preview only prints the type line for tokens, so without surfacing these the grant
+   * is invisible. Empty when nothing was granted.
+   */
+  readonly grantedSubtypes?: readonly string[]
+
+  /**
+   * Card types granted by a continuous effect rather than printed (I Am Iron Man's "becomes an
+   * artifact creature", a manland's animation). Uppercase, matching {@link cardTypes}. Invisible on
+   * the battlefield for the same reason as {@link grantedSubtypes} — the printed image is drawn.
+   */
+  readonly grantedCardTypes?: readonly string[]
+
   /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
   readonly damageDistribution?: Record<EntityId, number> | null
 

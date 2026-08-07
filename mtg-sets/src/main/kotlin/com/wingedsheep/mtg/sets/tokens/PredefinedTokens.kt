@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.model.CardDefinition.Companion.doubleFacedPermanent
 import com.wingedsheep.sdk.scripting.CanOnlyBlockCreaturesWith
 import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
+import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.effects.SearchDestination
 import com.wingedsheep.sdk.scripting.effects.TransformEffect
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -23,6 +24,7 @@ import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.GrantWard
 import com.wingedsheep.sdk.scripting.ModifyStats
+import com.wingedsheep.sdk.scripting.MustAttack
 import com.wingedsheep.sdk.scripting.SetBasePowerToughnessStatic
 import com.wingedsheep.sdk.scripting.effects.WardCost
 import com.wingedsheep.sdk.scripting.references.Player
@@ -678,6 +680,185 @@ object PredefinedTokens {
     }
 
     /**
+     * The Void — the legendary 5/5 black Horror Villain token that The Sentry, Golden Guardian
+     * hands to an opponent (Marvel Super Heroes).
+     *
+     * Registered here rather than minted inline because it is a *named* token carrying abilities:
+     * flying, indestructible, and "The Void attacks each combat if able." The last is the ordinary
+     * [MustAttack] static over `GroupFilter.source()` — the same wiring printed cards like Zurgo
+     * Helmsmasher use — so the combat legality checker enforces it for free. Its black color comes
+     * from a color indicator (CR 204), stored via `colorIdentity`, since tokens have no mana cost.
+     */
+    val TheVoid = card("The Void") {
+        typeLine = "Legendary Creature — Horror Villain"
+        colorIdentity = "B"
+        power = 5
+        toughness = 5
+        oracleText = "Flying, indestructible\nThe Void attacks each combat if able."
+
+        keywords(Keyword.FLYING, Keyword.INDESTRUCTIBLE)
+
+        staticAbility {
+            ability = MustAttack()
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/d/6/d656b085-fb86-4d2f-a4fc-b65f6ed9f001.jpg?1783902802"
+            artist = "Lixin Yin"
+        }
+    }
+
+    /**
+     * Redwing — the legendary 1/1 blue Bird Scout token created by Falcon, Winged Wonder
+     * (Marvel Super Heroes).
+     *
+     * Named token with an embedded attack trigger, so it needs a registered definition: the
+     * trigger detector resolves a token's abilities through the CardRegistry by its
+     * `cardDefinitionId`, which the predefined-token executor sets to the token's name.
+     */
+    val Redwing = card("Redwing") {
+        typeLine = "Legendary Creature — Bird Scout"
+        colorIdentity = "U"
+        power = 1
+        toughness = 1
+        oracleText = "Flying\nWhenever Redwing attacks, surveil 1."
+
+        keywords(Keyword.FLYING)
+
+        triggeredAbility {
+            trigger = Triggers.Attacks
+            effect = Patterns.Library.surveil(1)
+            description = "Whenever Redwing attacks, surveil 1."
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/9/0/905bbfdf-17c4-4493-a842-3112947d8e13.jpg?1783902803"
+            artist = "Leesha Hannigan"
+        }
+    }
+
+    /**
+     * Doombot — the 3/3 colorless Robot Villain artifact creature token named by Doctor Doom
+     * (Marvel Super Heroes). No abilities; registered so the name and artifact-creature type line
+     * come from one canonical definition rather than being re-spelled at each creation site.
+     */
+    val Doombot = card("Doombot") {
+        typeLine = "Artifact Creature — Robot Villain"
+        power = 3
+        toughness = 3
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/4/5/452680b5-5032-413a-bb5a-3fc8cfe88be9.jpg?1783902799"
+            artist = "L J Koh"
+        }
+    }
+
+    /**
+     * Zabu — the legendary 2/2 green Cat token created by Ka-Zar of the Savage Land
+     * (Marvel Super Heroes).
+     *
+     * Named token carrying its own landfall trigger, so it needs a registered definition: the
+     * trigger detector resolves a token's abilities through the CardRegistry by its
+     * `cardDefinitionId`, which the predefined-token executor sets to the token's name. Green
+     * comes from a color indicator (CR 204) via `colorIdentity`, since tokens have no mana cost.
+     */
+    val Zabu = card("Zabu") {
+        typeLine = "Legendary Creature — Cat"
+        colorIdentity = "G"
+        power = 2
+        toughness = 2
+        oracleText = "Landfall — Whenever a land you control enters, put a +1/+1 counter on Zabu."
+
+        triggeredAbility {
+            trigger = Triggers.LandYouControlEnters
+            effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
+            description = "Landfall — Whenever a land you control enters, put a +1/+1 counter on Zabu."
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/8/f/8ff55043-379e-400c-9847-30b75e4a1322.jpg?1783902799"
+            artist = "Rhonda Libbey"
+        }
+    }
+
+    /**
+     * Moloid — the 1/1 green Minion token created by Mole Man, Moloid Master
+     * (Marvel Super Heroes).
+     *
+     * Named token with an embedded attack trigger ("you may mill a card"), so it is registered
+     * here rather than minted inline. Green comes from a color indicator (CR 204).
+     */
+    val Moloid = card("Moloid") {
+        typeLine = "Creature — Minion"
+        colorIdentity = "G"
+        power = 1
+        toughness = 1
+        oracleText = "Whenever this token attacks, you may mill a card."
+
+        triggeredAbility {
+            trigger = Triggers.attacks()
+            effect = MayEffect(Patterns.Library.mill(1))
+            description = "Whenever this token attacks, you may mill a card."
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/5/7/57bcf5f4-da1e-4b6a-85ef-aad91d2276cf.jpg?1783902803"
+            artist = "Genel Jumalon"
+        }
+    }
+
+    /**
+     * Galactus — the legendary 16/16 black Elder Alien token created by chapter IV of
+     * The Coming of Galactus (Marvel Super Heroes).
+     *
+     * Named token with flying, trample, and its own attack trigger, so it needs a registered
+     * definition. Black comes from a color indicator (CR 204) via `colorIdentity`.
+     */
+    val Galactus = card("Galactus") {
+        typeLine = "Legendary Creature — Elder Alien"
+        colorIdentity = "B"
+        power = 16
+        toughness = 16
+        oracleText = "Flying, trample\nWhenever Galactus attacks, destroy target land."
+
+        keywords(Keyword.FLYING, Keyword.TRAMPLE)
+
+        triggeredAbility {
+            trigger = Triggers.attacks()
+            val land = target("target land", Targets.Land)
+            effect = Effects.Destroy(land)
+            description = "Whenever Galactus attacks, destroy target land."
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/d/9/d911f8c6-88a5-4f66-a400-4df72b49c351.jpg?1783902803"
+            artist = "Justyna Dura"
+        }
+    }
+
+    /**
+     * Sturdy Shield — the colorless Equipment artifact token created by U.S.Agent, John Walker
+     * (Marvel Super Heroes): "Equipped creature gets +1/+2" and equip {2}.
+     *
+     * Same shape as [Sword], with a different name, art, and toughness bonus.
+     */
+    val SturdyShield = card("Sturdy Shield") {
+        typeLine = "Artifact — Equipment"
+        oracleText = "Equipped creature gets +1/+2.\nEquip {2}"
+
+        staticAbility {
+            ability = ModifyStats(+1, +2, Filters.EquippedCreature)
+        }
+
+        equipAbility("{2}")
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/d/a/da23a10f-7ac6-4cdc-a35c-ef6bba6b6b6f.jpg?1783902798"
+            artist = "Svetlin Velinov"
+        }
+    }
+
+    /**
      * All predefined token definitions.
      * Register these in the CardRegistry so token abilities are resolved.
      */
@@ -706,6 +887,13 @@ object PredefinedTokens {
         Munitions,
         Mutagen,
         Frog,
-        Vehicle
+        Vehicle,
+        TheVoid,
+        Redwing,
+        Doombot,
+        Zabu,
+        Moloid,
+        Galactus,
+        SturdyShield
     )
 }

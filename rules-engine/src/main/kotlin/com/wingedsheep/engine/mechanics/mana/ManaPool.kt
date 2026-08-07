@@ -59,7 +59,16 @@ data class SpellPaymentContext(
      * (Creeping Peeper).
      */
     val isUnlockDoorAction: Boolean = false,
-)
+) {
+    /**
+     * True when this payment is for *casting a spell*, as opposed to activating an ability, a
+     * special action, or any other cost a player is asked to pay. Every spell has at least one
+     * card type, and [cardTypes] is documented as empty for non-spell contexts, so the two
+     * together are the signal. Read by the negative restrictions, which must let every non-cast
+     * spend through rather than falling back to "not the thing I allow, so no".
+     */
+    val isSpellCast: Boolean get() = !isAbilityActivation && cardTypes.isNotEmpty()
+}
 
 /**
  * Check whether a mana restriction is satisfied by the spell being cast or ability being activated.
@@ -89,6 +98,10 @@ fun ManaRestriction.isSatisfiedBy(context: SpellPaymentContext): Boolean = when 
     is ManaRestriction.CardTypeSpellsOrAbilitiesOnly ->
         if (context.isAbilityActivation) allowAbilities && (cardType in context.abilitySourceCardTypes) != negated
         else allowSpells && (cardType in context.cardTypes) != negated
+    // Negative restriction: only a spell cast can ever violate it, so every other kind of
+    // payment passes untouched.
+    is ManaRestriction.CannotCastSpellsOtherThan ->
+        !context.isSpellCast || cardTypes.any { it in context.cardTypes }
 }
 
 /**

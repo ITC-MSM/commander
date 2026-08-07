@@ -387,9 +387,17 @@ internal class AffectsFilterResolver {
          */
         sourceController: EntityId?
     ): Boolean = when (predicate) {
+        // Everything this resolver is handed is already a battlefield permanent, so the predicate
+        // is trivially satisfied here; it only does work in PredicateEvaluator, where an object
+        // that has left the battlefield can still be asked about.
+        StatePredicate.IsOnBattlefield -> true
         StatePredicate.IsTapped -> container.has<TappedComponent>()
         StatePredicate.IsUntapped -> !container.has<TappedComponent>()
         StatePredicate.IsAttacking -> container.has<AttackingComponent>()
+        StatePredicate.IsAttackingAlone -> container.has<AttackingComponent>() &&
+            state.getBattlefield().none {
+                it != entityId && state.getEntity(it)?.has<AttackingComponent>() == true
+            }
         // "Attacking one of your opponents" — the defender must be an opponent *player* of the
         // static ability's controller, so an attacker aimed at a planeswalker or battle drops out.
         // Fails closed without a controller to scope "your" against.

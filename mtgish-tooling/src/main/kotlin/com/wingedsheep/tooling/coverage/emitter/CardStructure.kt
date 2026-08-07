@@ -2599,7 +2599,7 @@ private fun EmitCtx.singleInterveningIfDsl(cond: JsonObject): String? {
         val perms = ((cond["args"].asArr?.getOrNull(1)) as? JsonObject)?.get("args") as? JsonObject
         val isThisPermanent = perms?.strField("_Permanents") == "SinglePermanent" &&
             perms.field("args").strField("_Permanent") == "ThisPermanent"
-        return if (isThisPermanent) "Conditions.SourceReceivedCounterThisTurn" else null
+        return if (isThisPermanent) "Conditions.SourceReceivedCounterThisTurn()" else null
     }
     // "if you gained N or more life this turn" — PlayerPassesFilter(You, GainedLifeAmountThisTurn(
     // [Comparison GreaterThanOrEqualTo Integer N])) (Scheming Silvertongue's "if you gained 2 or more

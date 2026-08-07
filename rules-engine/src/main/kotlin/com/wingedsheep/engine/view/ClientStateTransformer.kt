@@ -1134,8 +1134,7 @@ class ClientStateTransformer(
         // subtypes instead. The CHANGELING badge (if any) or the source's static ability
         // already conveys "every creature type" to the player. The DTO `subtypes` field
         // still carries the full projected set for any client-side filtering.
-        val hasAllCreatureTypes = projectedSubtypes != null &&
-            Subtype.ALL_CREATURE_TYPES.all { it in projectedSubtypes }
+        val hasAllCreatureTypes = projectedSubtypes != null && hasEveryCreatureType(projectedSubtypes)
         val typeLineSubtypes = if (rawKeywords.contains(Keyword.CHANGELING) || hasAllCreatureTypes) {
             typeLine.subtypes.map { it.value }
         } else {
@@ -1351,6 +1350,32 @@ class ClientStateTransformer(
             legendaryByEffect = zoneKey.zoneType == Zone.BATTLEFIELD
                 && Supertype.LEGENDARY in displaySupertypes
                 && Supertype.LEGENDARY !in cardComponent.typeLine.supertypes,
+            // Same projected-minus-printed shape as legendaryByEffect. Skipped for the
+            // all-creature-types case, which typeLineSubtypes already collapses above.
+            grantedSubtypes = if (zoneKey.zoneType == Zone.BATTLEFIELD && !hasAllCreatureTypes) {
+                val printed = cardComponent.typeLine.subtypes.map { it.value }.toSet()
+                // Subtypes a *floating* effect is responsible for already have their own badge —
+                // "+Hero" for AddSubtype (`type_added`) and the full list for SetCreatureSubtypes
+                // (`type_changed`), both built below from those effects directly. Repeating them
+                // here would show the same grant twice in the preview. What this field is actually
+                // for is the case those badges miss: a grant from a continuous *static* ability,
+                // such as an Aura's "is a legendary Soldier in addition to its other types".
+                val alreadyBadged = state.floatingEffects
+                    .filter { entityId in it.effect.affectedEntities }
+                    .flatMap {
+                        when (val mod = it.effect.modification) {
+                            is SerializableModification.AddSubtype -> listOf(mod.subtype)
+                            is SerializableModification.SetCreatureSubtypes -> displaySubtypes
+                            else -> emptyList()
+                        }
+                    }
+                    .toSet()
+                displaySubtypes.filterNot { it in printed || it in alreadyBadged }.toSet()
+            } else emptySet(),
+            grantedCardTypes = if (zoneKey.zoneType == Zone.BATTLEFIELD) {
+                val printed = cardComponent.typeLine.cardTypes.map { it.name }.toSet()
+                displayCardTypes.map { it.name }.filterNot { it in printed }.toSet()
+            } else emptySet(),
             damageDistribution = (spellOnStack?.damageDistribution ?: container.get<TriggeredAbilityOnStackComponent>()?.damageDistribution)?.takeIf { it.isNotEmpty() },
             sagaTotalChapters = cardDef?.finalChapter,
             classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel,
@@ -2385,6 +2410,20 @@ class ClientStateTransformer(
                         )
                     )
                 }
+                // The filter-based sibling of the color case above (Speed, Young Avenger's "can't be
+                // blocked this turn except by creatures with haste", Resilient Roadrunner). It routes
+                // through the same projected evasion channel, so the block rules already enforced it
+                // — only the badge was missing, leaving the restriction invisible to both players.
+                is SerializableModification.CantBeBlockedExceptBy -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "cant_be_blocked_except_by",
+                            name = "Evasion",
+                            description = "Can't be blocked except by ${modification.blockerFilter.description}",
+                            icon = "evasion"
+                        )
+                    )
+                }
                 is SerializableModification.MustBeBlockedByAll -> {
                     effects.add(
                         ClientCardEffect(
@@ -2675,7 +2714,27 @@ class ClientStateTransformer(
                 entityId in it.effect.affectedEntities &&
                     it.effect.modification is SerializableModification.SetCreatureSubtypes
             }
-            if (hasSetCreatureSubtypes && projectedSubtypes.isNotEmpty() && projectedSubtypes != baseSubtypes) {
+            // "Is all creature types" (Undercover Skrull's graveyard-gated static, Stalactite
+            // Dagger) projects every creature type. The type line deliberately collapses back to the
+            // printed subtypes rather than rendering ~150 of them, and a *granted* all-types has no
+            // CHANGELING keyword to badge — so without this the state is invisible. Checked before
+            // the diff branches below, which would otherwise try to list every type.
+            val isEveryCreatureType = hasEveryCreatureType(projectedSubtypes)
+            val hasChangelingKeyword = baseCardComponent?.baseKeywords?.contains(Keyword.CHANGELING) == true
+            if (isEveryCreatureType) {
+                // A *native* changeling already reads off its printed keyword badge; only a
+                // granted all-types needs one of its own.
+                if (!hasChangelingKeyword) {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "all_creature_types",
+                            name = "All types",
+                            description = "Is every creature type",
+                            icon = "type-change"
+                        )
+                    )
+                }
+            } else if (hasSetCreatureSubtypes && projectedSubtypes.isNotEmpty() && projectedSubtypes != baseSubtypes) {
                 val joined = projectedSubtypes.joinToString(" ")
                 effects.add(
                     ClientCardEffect(
@@ -2962,7 +3021,7 @@ class ClientStateTransformer(
 
         for (ability in cardDef.triggeredAbilities) {
             val condition = ability.triggerCondition ?: continue
-            val badge = evaluateConditionBadge(state, condition, controllerId)
+            val badge = evaluateConditionBadge(state, condition, controllerId, entityId)
             if (badge != null) badges.add(badge)
         }
 
@@ -2972,15 +3031,35 @@ class ClientStateTransformer(
     /**
      * Evaluate a trigger condition and return a badge showing progress.
      */
+    /**
+     * Whether [subtypes] covers every creature type — printed changeling, granted changeling, or an
+     * "is all creature types" static (Undercover Skrull, Stalactite Dagger). Two places need the
+     * same answer and must not drift: the type line collapses back to the printed subtypes rather
+     * than rendering ~150 entries, and the badge builder substitutes a single "All types" badge.
+     */
+    private fun hasEveryCreatureType(subtypes: Collection<String>): Boolean {
+        if (subtypes.isEmpty()) return false
+        // Hash once: one caller hands us a List, and a linear `in` per creature type would make
+        // this ~150 scans of it on every card of every state transform.
+        val lookup = if (subtypes is Set<String>) subtypes else subtypes.toSet()
+        return Subtype.ALL_CREATURE_TYPES.all { it in lookup }
+    }
+
     private fun evaluateConditionBadge(
         state: GameState,
         condition: Condition,
-        controllerId: EntityId
+        controllerId: EntityId,
+        sourceId: EntityId,
     ): ClientCardEffect? {
         return when (condition) {
             is Compare -> {
+                // The badge must evaluate against the permanent that owns the ability: conditions
+                // routinely read `EntityReference.Source` (counters on this permanent, its power,
+                // whether it's attacking). With a null sourceId those resolve to 0, so the badge
+                // reads a permanently-stuck "0/N" while the real condition works fine — e.g. MSH's
+                // Plan enchantments, whose "the number of plan counters" badge never moved.
                 val context = com.wingedsheep.engine.handlers.EffectContext(
-                    sourceId = null,
+                    sourceId = sourceId,
                     controllerId = controllerId,
                 )
                 val evaluator = com.wingedsheep.engine.handlers.DynamicAmountEvaluator()
