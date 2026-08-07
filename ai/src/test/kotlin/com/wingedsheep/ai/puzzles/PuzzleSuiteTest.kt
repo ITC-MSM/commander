@@ -91,6 +91,10 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // `production-candidate-tuned` alike (+1 each, nothing broken).
             "sequencing-02",
             // No model of "keep a blocker home": every attacker is scored on the damage it deals.
+            //
+            // **Also closed by `AiProfile.discountedRaceClock`** — not by a model of blocking, but
+            // because scoring the race in urgency rather than turns makes the opponent's clock
+            // linear in the power we leave unblocked, where the turns form flattened it.
             "race-03",
             // The same `cardValue(0)` cliff as sequencing-02, measured exactly: with one card in
             // hand, casting the Disenchant costs 4.0 of card advantage, and destroying an anthem
@@ -160,8 +164,19 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // Not a "does it respond" failure — the AI casts the Unsummon. It aims it at the
             // opponent's 2/2 instead of at its own Serra Angel, which is dying to the Murder on the
             // stack. So the miss is in target *polarity*, and the puzzle is built to catch exactly
-            // that (the second legal target is there on purpose). Where in target selection it goes
-            // wrong is not yet diagnosed, and this entry deliberately does not guess.
+            // that (the second legal target is there on purpose).
+            //
+            // **Diagnosed**, and not in target selection: `Strategist.chooseCommittedTargets` does
+            // simulate both targets here and picks the worse board on the merits. `ThreatAssessment`
+            // hands a side with no creatures the sentinel `99.0` turns and then *subtracts* it, so
+            // saving the Angel — which leaves their 2/2 alive against our empty board — scores −160
+            // against bouncing the 2/2's 0. Getting a 4/4 flier back is worth +3.8 of everything
+            // else in the evaluator combined, and loses by forty times that.
+            //
+            // **Closed by `AiProfile.discountedRaceClock`**, which scores the race in urgency
+            // (`power / life`) rather than in turns, so a distant clock is discounted and an absent
+            // one is zero with no sentinel at all. Still fails here only because [AiProfile.
+            // PRODUCTION] is the frozen baseline this set describes.
             "lastchance-05",
 
             // ── The combat trick window ──

@@ -514,7 +514,69 @@ object CardAdvantage : BoardFeature {
  * team dies when any of its pools does.
  */
 object ThreatAssessment : BoardFeature {
-    override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
+    /**
+     * The scale the race is measured on: what a full turn of urgency — a clock that kills next
+     * turn — is worth before the 2.0 / 1.5 slope.
+     *
+     * The historical race term is linear in **turns**: `(theirClock − ourClock) × 2.0` when we are
+     * faster and `× 1.5` when we are not, with a side that has no attacker handed the sentinel
+     * `99.0` turns. Two things are wrong with that and they are the same thing.
+     *
+     * The sentinel goes into the subtraction, so an empty board facing one 2/2 scores
+     * `(99 − 10) × 1.5` — **−160 once weighted**, on a scale where a point of life is worth 1.0 and
+     * that 2/2 is worth 3.6 of board presence. And even without the sentinel, a turn is a turn: the
+     * difference between dying on turn 10 and turn 20 counts for as much as the difference between
+     * dying next turn and the turn after. It is not worth as much. A lot happens in ten turns, and
+     * almost nothing the evaluator can see reaches that far.
+     *
+     * So [discountedRaceClock] scores the race in **urgency** — `power / life`, the share of a life
+     * total removed per turn — rather than in turns. Urgency is `1 / turns`, so it discounts a
+     * distant clock exactly the way distance should: a 1-turn clock is 1.0, three turns 0.33, ten
+     * turns 0.1, and no creatures at all is **0.0** with no sentinel and no special case. It also
+     * makes the term linear in *power*, which the turns form got backwards — going 2 power → 4 was
+     * worth 7.5 there and 4 → 8 only 3.75, though each adds the same damage.
+     *
+     * Urgency is capped at 1.0 — nothing kills you more than dead this turn — so the whole term
+     * lands inside +8/−6 raw at this scale, alongside the +8/−10 lethal bonuses below it rather
+     * than fifteen times them.
+     *
+     * **4.0 is measured, not derived.** Near a symmetric clock of `T` turns the urgency form is the
+     * turns form divided by `T²`, so the value that would reproduce the old term at a typical
+     * 3-turn race is ~10 — and 10 is *too strong*, because the old term was double-counting: it
+     * charges for life that [LifeDifferential] already prices at 1.0 a point and for power that
+     * `BoardPresence` already prices. Swept on the 83-puzzle suite against `production`:
+     *
+     * | scale | 0 | 2 | 4 | 6 | 10 | 15 | 20 | unbounded (today) |
+     * |---|---|---|---|---|---|---|---|---|
+     * | passes | 69 | 70 | **71** | 70 | 68 | 68 | 69 | 71 |
+     *
+     * A real optimum rather than an edge: 0 is the control that deletes the term, and losing two
+     * puzzles to it is what says the race is worth scoring at all.
+     */
+    const val RACE_URGENCY_SCALE = 4.0
+
+    /**
+     * How much of [life] a side removes per turn, in `[0, 1]`. `0.0` for a side with no attacker —
+     * which is the whole point: the no-clock case needs no sentinel. See [RACE_URGENCY_SCALE].
+     */
+    private fun urgency(life: Int, power: Int): Double =
+        if (power <= 0 || life <= 0) 0.0 else minOf(power.toDouble() / life, 1.0)
+
+    /** Score with the historical turns-linear race and its `99.0` sentinel. */
+    override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double =
+        score(state, projected, playerId, discountedRaceClock = false)
+
+    /**
+     * @param discountedRaceClock score the race in urgency rather than in turns, so a distant clock
+     *   is discounted and an absent one is zero. `EvaluationWeights.toEvaluator` binds this from
+     *   [com.wingedsheep.ai.engine.AiProfile.discountedRaceClock]; see [RACE_URGENCY_SCALE].
+     */
+    fun score(
+        state: GameState,
+        projected: ProjectedState,
+        playerId: EntityId,
+        discountedRaceClock: Boolean,
+    ): Double {
         val sides = state.sidesFor(playerId) ?: return 0.0
 
         val myLife = sideLife(state, sides.mine)
@@ -530,18 +592,26 @@ object ThreatAssessment : BoardFeature {
             val theirAttackPower = attackPotential(state, projected, opponent)
             val theirDefense = defensePotential(state, projected, opponent)
 
-            // How many turns until opponent kills us (if we can't block)
-            val turnsUntilDead = if (theirAttackPower > 0) myLife.toDouble() / theirAttackPower else 99.0
-            val turnsUntilWeKill = if (myAttackPower > 0) theirLife.toDouble() / myAttackPower else 99.0
-
             // Score: positive if we're the faster clock
             var score = 0.0
 
-            // Being closer to killing them is good
-            if (turnsUntilWeKill < turnsUntilDead) {
-                score += (turnsUntilDead - turnsUntilWeKill) * 2.0
+            // Being closer to killing them is good.
+            if (discountedRaceClock) {
+                // Urgency, not turns — see [RACE_URGENCY_SCALE]. Same slopes, same sign, and the
+                // no-clock sentinel simply does not exist on this path.
+                val lead = urgency(theirLife, myAttackPower) - urgency(myLife, theirAttackPower)
+                score += lead * RACE_URGENCY_SCALE * if (lead > 0) 2.0 else 1.5
             } else {
-                score -= (turnsUntilWeKill - turnsUntilDead) * 1.5
+                // How many turns until opponent kills us (if we can't block)
+                val turnsUntilDead =
+                    if (theirAttackPower > 0) myLife.toDouble() / theirAttackPower else 99.0
+                val turnsUntilWeKill =
+                    if (myAttackPower > 0) theirLife.toDouble() / myAttackPower else 99.0
+                if (turnsUntilWeKill < turnsUntilDead) {
+                    score += (turnsUntilDead - turnsUntilWeKill) * 2.0
+                } else {
+                    score -= (turnsUntilWeKill - turnsUntilDead) * 1.5
+                }
             }
 
             // Lethal on board next turn is very valuable

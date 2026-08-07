@@ -212,6 +212,7 @@ class AIPlayer(
                 evaluationIntents,
                 landDropIsNotCardLoss = profile.landDropIsNotCardLoss,
                 sequenceLandsByUsableMana = profile.sequenceLandsByUsableMana,
+                discountedRaceClock = profile.discountedRaceClock,
             )
             val combatAdvisor = CombatAdvisor(
                 simulator, evaluator, cardRegistry, advisorRegistry,

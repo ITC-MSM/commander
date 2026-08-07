@@ -84,6 +84,12 @@ object ArenaAgents {
         // promotion gate, against what players face today.
         ArenaAgent("production-trickwindow", AiProfile.PRODUCTION_TRICKWINDOW),
         ArenaAgent("production-candidate-trickwindow", AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW),
+        // The race-clock bound: stop the "no attackers" sentinel from swamping the evaluator.
+        // `just arena production production-raceclock 1000` prices the term on its own;
+        // `just arena production-candidate-trickwindow production-candidate-raceclock 300` is its
+        // promotion gate, against what players face today.
+        ArenaAgent("production-raceclock", AiProfile.PRODUCTION_RACECLOCK),
+        ArenaAgent("production-candidate-raceclock", AiProfile.PRODUCTION_CANDIDATE_RACECLOCK),
         ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.

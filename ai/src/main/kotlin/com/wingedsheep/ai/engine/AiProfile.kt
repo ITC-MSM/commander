@@ -157,6 +157,33 @@ data class AiProfile(
      * should not have reached.
      */
     val combatTricksWaitForBlocks: Boolean = false,
+    /**
+     * Score the race in **urgency** — the share of a life total removed per turn — rather than in
+     * turns, so a distant clock is discounted and an absent one is simply zero.
+     *
+     * [com.wingedsheep.ai.engine.evaluation.ThreatAssessment] measures the race by subtracting one
+     * side's turns-to-kill from the other's, and hands a side with no attacker the sentinel `99.0`.
+     * The sentinel goes into the subtraction: an empty board facing a lone 2/2 scores
+     * `(99 − 10) × 1.5`, or −160 once weighted, on a scale where that same 2/2 is worth 3.6 of board
+     * presence and a point of life is worth 1. It fires in both directions — a 5/5 against no
+     * creatures reads **+190** — so every position with an empty board on one side is decided by
+     * this one term.
+     *
+     * The sentinel is the symptom; measuring the race in raw turns is the cause. A turn is not a
+     * turn: the gap between dying on turn 10 and turn 20 counted for as much as the gap between
+     * dying next turn and the turn after, and a great deal happens in ten turns. Urgency is `1 /
+     * turns`, so it discounts distance the way distance should be discounted, needs no sentinel, and
+     * is linear in power — which turns got backwards, pricing 2 power → 4 at twice what it priced
+     * 4 → 8. See [com.wingedsheep.ai.engine.evaluation.ThreatAssessment.RACE_URGENCY_SCALE] for the
+     * scale sweep, and [PRODUCTION_RACECLOCK] for what it moves.
+     *
+     * The target is `lastchance-05` — Unsummon our own Serra Angel in response to a Murder, rather
+     * than bouncing the opposing 2/2. Saving the Angel leaves their 2/2 on board and so pays the
+     * −160; throwing it away clears the board and does not. Nothing about the *card* was misread,
+     * and `PuzzleSuiteTest` was right to record the miss as target polarity: this is where the
+     * polarity comes from.
+     */
+    val discountedRaceClock: Boolean = false,
     /** Non-null profiles may only be selected automatically for this set. Arena selection stays explicit. */
     val restrictedToSet: String? = null,
 ) {
@@ -411,7 +438,10 @@ data class AiProfile(
          * this work and were never diagnosed, because the missing search looks exactly like a
          * missing evaluation until you vary the tier.
          *
-         * **What a player faces in a real game as of 2026-08-09** — see [EngineAiPlayerController].
+         * What a player faced in a real game until [PRODUCTION_CANDIDATE_RACECLOCK] replaced it in
+         * [EngineAiPlayerController]. Kept unchanged as the baseline that promotion was measured
+         * against. (No end date here on purpose — the dates on the four entries above it already run
+         * ahead of the commit clock, and adding a fifth would make the sequence contradict itself.)
          *
          * Promoted on the usual bar, **arena-neutral and a puzzle ahead**, but read the sample size
          * before quoting it. `just arena production-candidate-landseq production-candidate-trickwindow
@@ -435,6 +465,70 @@ data class AiProfile(
             // if that ever takes a `normalMillis`, this line has to carry it too or the promotion
             // run silently measures two changes.
             budgetPolicy = TieredBudgetPolicy(preDamageCombatIsNormal = true),
+        )
+
+        /**
+         * [discountedRaceClock] alone on top of [PRODUCTION], so a puzzle or an arena point that
+         * moves is attributable to it — the same isolation [PRODUCTION_LANDSEQ] gives land
+         * sequencing.
+         *
+         * **The arena says this is a real strength gain, and the puzzle suite says it costs
+         * nothing.** `just arena production production-raceclock 300` measured `production` at
+         * **43.7%, CI [40.0%, 47.7%]**, 131W-169L, 300/300 completed, 0 illegal actions — the whole
+         * interval below parity, which is the first time one of these evaluator fixes has moved the
+         * arena at all rather than merely failing to break it. On the 83-puzzle suite it is level at
+         * 71/83, closing `lastchance-05`, `race-03` and `timing-01` and losing `activate-04`,
+         * `instants-03` and `removal-03`.
+         *
+         * That trade is the second finding, and it is about `BoardPresence` rather than about this
+         * term. All three losses are puzzles that pass today *because* the sentinel is out of scale,
+         * standing in for board-quality the evaluator gets wrong:
+         *  - `activate-04` sends the ping at the opponent's face rather than at a 3/3 only because a
+         *    1-power board makes one point of face damage worth a whole turn of clock. Behind it,
+         *    `BoardPresence.creatureValue` discounts a *damaged* creature by up to half — though
+         *    marked damage wears off at cleanup, which is the exact case the
+         *    `temporaryPTModification` discount five lines above it was written to avoid.
+         *  - `removal-03` kills the Hill Giant rather than the Pacifism'd Craw Wurm only because the
+         *    pacified creature contributes no `attackPotential`, so killing the other one sends the
+         *    opponent to the 99-turn sentinel. Behind it, a creature that cannot attack at all is
+         *    discounted by ×0.85.
+         *
+         * Fix those two and the trade should become a straight gain. Neither belongs in this change:
+         * each is its own flag, its own attribution column and its own arena run.
+         */
+        val PRODUCTION_RACECLOCK = PRODUCTION.copy(
+            id = "production-raceclock",
+            discountedRaceClock = true,
+        )
+
+        /**
+         * [PRODUCTION_CANDIDATE_TRICKWINDOW] plus [discountedRaceClock] — the agent that stops
+         * pricing an empty board as a 99-turn clock.
+         *
+         * **What a player faces in a real game today** — see [EngineAiPlayerController].
+         *
+         * The first promotion here to clear the bar on the *arena* half rather than on the puzzle
+         * half. `just arena production-candidate-trickwindow production-candidate-raceclock 300`
+         * measured the baseline at **45.3%, CI [41.3%, 49.3%]**, 136W-164L, 300/300 completed, 0
+         * illegal actions — the whole interval below parity, with rollouts on both seats. The term
+         * isolated on `production` (`just arena production production-raceclock 300`) says the same
+         * thing more strongly: **43.7%, CI [40.0%, 47.7%]**, 131W-169L. Two independent 300-game
+         * runs, neither CI touching parity.
+         *
+         * On the suite it is level at 76/83, closing `lastchance-05` and `race-03` and losing
+         * `activate-04` and `removal-03` — the two `BoardPresence` weaknesses [PRODUCTION_RACECLOCK]
+         * itemizes, which the old term's sentinel had been masking. Level is normally *below* the
+         * bar; it is a pass here because the arena, which is the scoreboard that matters and the one
+         * these fixes usually cannot move, is unambiguous in both columns.
+         *
+         * If a later run comes back below parity, revert the two call sites
+         * ([EngineAiPlayerController] and [AiProfileSelector]'s fallback) rather than the flag: it
+         * is off for every other profile, so backing the promotion out costs nothing and loses no
+         * measurement.
+         */
+        val PRODUCTION_CANDIDATE_RACECLOCK = PRODUCTION_CANDIDATE_TRICKWINDOW.copy(
+            id = "production-candidate-raceclock",
+            discountedRaceClock = true,
         )
 
         /**
@@ -510,7 +604,7 @@ object AiProfileSelector {
     fun select(
         setCode: String?,
         requested: AiProfile?,
-        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW,
+        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_RACECLOCK,
     ): AiProfile {
         if (requested == null) return fallback
         val restriction = requested.restrictedToSet ?: return requested

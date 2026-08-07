@@ -1320,3 +1320,119 @@ attributable to this change and nothing else.
    rollout-free pair. Price the mechanism against a cheap baseline first (`production` vs
    `production-landdrop` took 103 s and gave the same answer), and spend the expensive run only on
    the gate that actually decides.
+
+---
+
+# Promotion — `production-candidate-raceclock` goes live
+
+**Measured:** 2026-08-07. Flag `AiProfile.discountedRaceClock`, profiles `production-raceclock` and
+`production-candidate-raceclock`. The first evaluator fix in this file whose **arena** result is
+positive rather than merely neutral — and the first promotion carried by the arena half of the bar
+rather than the puzzle half.
+
+## The defect
+
+`ThreatAssessment` scores the race as `(theirClock − ourClock) × 2.0` when we are faster and `× 1.5`
+when we are not, where a clock is `life / attackPower` **in turns**, and a side with no attacker is
+handed the sentinel `99.0`.
+
+The sentinel goes into the subtraction. An empty board facing a single 2/2 scores
+`(99 − 10) × 1.5 = −133.5` raw, **−160 weighted**; one 2/2 against an empty board reads **+178**, a
+6/4 reads **+191**. For scale, in the same evaluator a point of life is worth 1.0 and that 2/2 is
+worth 3.6 of board presence. So on every position where one side has no creature — most of the first
+four turns, every post-sweeper board, most of a puzzle position — this single term decides the move.
+
+The sentinel is the symptom. Measuring the race in **turns** is the cause, and it is wrong twice
+over even where no sentinel is involved:
+
+- **Distance is not discounted.** The gap between dying on turn 10 and turn 20 counts for as much as
+  the gap between dying next turn and the turn after. A great deal happens in ten turns.
+- **It is sublinear in power**, which is backwards. Going from 2 power to 4 halves a 20-life clock
+  from 10 turns to 5 — worth 7.5. Going from 4 to 8 halves it again, 5 turns to 2.5 — worth 3.75.
+  Each step adds the same damage.
+
+`lastchance-05` is the clean demonstration. Unsummon, Murder on the stack targeting our Serra Angel,
+their Grizzly Bears also legal. `Strategist.chooseCommittedTargets` **does** simulate both targets
+and picks the wrong one on the merits: saving the Angel leaves their 2/2 against our empty board
+(−160), throwing it away clears the board (0). Everything else in the evaluator — a 4/4 flier back
+in hand against a 2/2 back in theirs — is worth +3.8 combined.
+
+## The fix
+
+Score the race in **urgency** — `power / life`, the share of a life total removed per turn — rather
+than in turns. Urgency is `1 / turns`, so it discounts a distant clock the way distance should be
+discounted (1 turn → 1.0, three turns → 0.33, ten turns → 0.1), it is linear in power, and a side
+with no creatures is **0.0** with no sentinel and no special case. Same slopes (2.0 ahead, 1.5
+behind), capped at 1.0 because nothing kills you more than dead this turn.
+
+`RACE_URGENCY_SCALE` is **4.0**, swept on the suite against `production`:
+
+| scale | 0 | 2 | 4 | 6 | 10 | 15 | 20 | unbounded (today) |
+|---|---|---|---|---|---|---|---|---|
+| passes | 69 | 70 | **71** | 70 | 68 | 68 | 69 | 71 |
+
+Scale 0 deletes the term; losing two puzzles to it is what says the race is worth scoring at all.
+The value that would *reproduce* the old term at a typical 3-turn race is ~10 (near a symmetric
+clock `T`, urgency is turns divided by `T²`), and 10 measures worse — because the turns form was
+double-counting life that `LifeDifferential` already prices at 1.0 a point and power that
+`BoardPresence` already prices.
+
+## Both scoreboards
+
+| | `production` | live (`production-candidate-trickwindow`) |
+|---|---|---|
+| puzzles, baseline | 71/83 | 76/83 |
+| puzzles, with the fix | 71/83 | 76/83 |
+| closes | `lastchance-05`, `race-03`, `timing-01` | `lastchance-05`, `race-03` |
+| loses | `activate-04`, `instants-03`, `removal-03` | `activate-04`, `removal-03` |
+
+**Arena — both columns, neither CI touching parity:**
+
+| run | baseline win % | CI | record |
+|---|---|---|---|
+| `production` vs `production-raceclock` (isolation) | **43.7%** | [40.0%, 47.7%] | 131W-169L |
+| `production-candidate-trickwindow` vs `production-candidate-raceclock` (**gate**) | **45.3%** | [41.3%, 49.3%] | 136W-164L |
+
+300 games each, 300/300 completed, 0 illegal actions, rollouts on both seats for the gate (2050 s
+wall clock). This is a genuine strength gain, not the usual "cannot resolve a difference at 300
+games" — and it is why a puzzle-*level* result promotes here where the standing bar asks for a
+puzzle ahead. `race-03` closing is the visible half of it: the term is now linear in the power we
+leave unblocked, so keeping a blocker home finally scores.
+
+`EngineAiPlayerController` and `AiProfileSelector`'s fallback now point at
+`production-candidate-raceclock`. To back it out, revert those two call sites rather than the flag.
+
+## The finding: the sentinel was standing in for `BoardPresence`
+
+Every puzzle the fix costs is one that passes today *because* the term is out of scale, and each
+names a real mispricing underneath:
+
+- **`activate-04`** (do not point 1 damage at a 3/3) passes only because with a 1-power board,
+  `d(ourClock)/d(theirLife) = 1`, so one point of face damage moves the clock a whole turn.
+  Underneath, `BoardPresence.creatureValue` discounts a **damaged** creature by up to half —
+  `×(0.5 + 0.5 × healthFraction)` — though marked damage wears off at cleanup. That is exactly the
+  case the `temporaryPTModification` discount five lines above it was written to avoid.
+- **`removal-03`** (kill the Hill Giant, not the Pacifism'd Craw Wurm) passes only because the
+  pacified creature contributes no `attackPotential`, so killing the *other* one sends the opponent
+  to the 99-turn sentinel. Underneath, a creature that cannot attack at all is discounted by ×0.85.
+- **`blocking-02` / `keywords-01`** (do not chump) survive the urgency form but died under every
+  hard cap tried, for the same reason: on the merits the margin is 0.6 — a 2/2's 3.6 of board
+  presence against 3 life — thin enough that any reweighting flips it.
+
+Fix the damaged-creature and cannot-attack prices and this should become a straight gain rather than
+a trade. Each is its own flag, its own attribution column and its own arena run.
+
+## Three shapes that look more principled and measure worse
+
+All bound the sentinel just as well; all were swept and rejected before urgency:
+
+- **Cap each clock at `H` turns, no-clock at `H`** (swept 10–20). Erases the gap between a 1-power
+  and a 2-power board, so the AI chump-blocks — after the chump its own clock reads unchanged.
+- **Cap at `H`, no-clock at `H + 1`** (swept 8–12). Holds the chump-block puzzles and closes
+  `lastchance-05` on `production`, but not on the live agent, whose shallower `concave-hand-2` curve
+  halves the card-advantage margin the race term has to be outvoted by.
+- **Clamp the *difference*, or saturate it through `tanh`** (swept C = 4–6, K = 3–8). Both trade
+  `activate-04` for `race-03` at every setting, because both flatten the gradient a real race runs
+  on while leaving the turns unit — and the sublinearity in power — in place.
+
+The common lesson: bounding the sentinel is not the fix. Changing the unit is.
