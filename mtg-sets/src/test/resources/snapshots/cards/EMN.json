@@ -492,7 +492,8 @@
         "imageUri": "https://cards.scryfall.io/normal/front/5/a/5a7a212e-e0b6-4f12-a95c-173cae023f93.jpg?1782711940"
     },
     "colorIdentityOverride": [],
-    "hasNoManaCost": true
+    "hasNoManaCost": true,
+    "meldResult": true
 }
 
 // Bruna, the Fading Light
@@ -681,7 +682,8 @@
     "colorIdentityOverride": [
         "BLACK"
     ],
-    "hasNoManaCost": true
+    "hasNoManaCost": true,
+    "meldResult": true
 }
 
 // Clear Shot
@@ -2729,7 +2731,8 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/7/671fe14d-0070-4bc7-8983-707b570f4492.jpg?1782711861"
     },
     "colorIdentityOverride": [],
-    "hasNoManaCost": true
+    "hasNoManaCost": true,
+    "meldResult": true
 }
 
 // Harmless Offering

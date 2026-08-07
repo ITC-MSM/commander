@@ -438,21 +438,27 @@ class BoosterGenerator(
         setConfigs.singleOrNull()?.boosterStrategy ?: StandardBooster()
 
     /**
-     * Strip basic lands and non-booster cards (Special Guests / The List / promos), plus any
-     * cards on the tournament host's [bannedCardNames] ban list; strategies operate on the
+     * Strip basic lands, meld results, and non-booster cards (Special Guests / The List / promos),
+     * plus any cards on the tournament host's [bannedCardNames] ban list; strategies operate on the
      * booster pool only. Banned names are matched case-insensitively so a host typo in casing
      * still excludes the card.
+     *
+     * Meld results ([CardDefinition.meldResult]) are dropped here rather than left to
+     * `metadata.inBooster`: Scryfall reports them as `booster: true` — the physical card *is* in
+     * the pack, as the meld parts' back halves — so the product-level flag can't tell a drafter
+     * they're unobtainable. Opening one hands a player a permanent they can never cast.
      */
     private fun boosterPool(
         allCards: List<CardDefinition>,
         bannedCardNames: Set<String> = emptySet(),
     ): List<CardDefinition> {
         if (bannedCardNames.isEmpty()) {
-            return allCards.filter { !it.typeLine.isBasicLand && it.metadata.inBooster }
+            return allCards.filter { it.isBoosterEligible }
         }
         val banned = bannedCardNames.mapTo(HashSet(bannedCardNames.size)) { it.trim().lowercase() }
-        return allCards.filter {
-            !it.typeLine.isBasicLand && it.metadata.inBooster && it.name.trim().lowercase() !in banned
-        }
+        return allCards.filter { it.isBoosterEligible && it.name.trim().lowercase() !in banned }
     }
+
+    private val CardDefinition.isBoosterEligible: Boolean
+        get() = !typeLine.isBasicLand && !meldResult && metadata.inBooster
 }

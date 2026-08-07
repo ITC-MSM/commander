@@ -223,7 +223,25 @@ data class CardDefinition(
      * [ManaCost.ZERO] for other reasons (a printed "{0}" cost parses to a non-empty one-symbol
      * list and leaves this false).
      */
-    val hasNoManaCost: Boolean = false
+    val hasNoManaCost: Boolean = false,
+    /**
+     * True for a **meld result** (CR 701.42) — the single permanent two meld cards combine into,
+     * such as Chittering Host (Graf Rats + Midnight Scavengers) or Brisela, Voice of Nightmares
+     * (Bruna, the Fading Light + Gisela, the Broken Blade).
+     *
+     * A meld result is physically the *back halves* of its two meld parts, not a card of its own:
+     * it is never opened in a booster, never drafted, never picked in limited, and never put in a
+     * deck — the only way it exists is by melding the pair on the battlefield. We nonetheless
+     * define it as a standalone [CardDefinition] so the corpus carries its characteristics for when
+     * meld is supported (today the parts' meld triggers are deliberately unwired).
+     *
+     * That "in the corpus but not a real deck card" split is exactly what this flag exists for:
+     * every pool that answers *"which cards can a player end up owning?"* — booster / draft /
+     * sealed pools, constructed pools, the deckbuilder catalog — filters it out. Scryfall can't be
+     * the source here: it marks meld results `booster: true` and format-legal, because the physical
+     * card they're printed on is in the booster and legal (as the meld *parts*).
+     */
+    val meldResult: Boolean = false,
 ) {
     init {
         if (typeLine.isCreature) {
