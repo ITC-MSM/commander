@@ -3464,7 +3464,34 @@ work for abilities-on-stack (which carry no `CardComponent`).
 
 ## 8. Triggered abilities (`Triggers.*`)
 
-`triggeredAbility { trigger; effect; target?; triggerCondition?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; triggersOnce? }`.
+`triggeredAbility { trigger; effect; target?; triggerZone?/triggerZones?; triggerCondition?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; triggersOnce? }`.
+
+**`triggerZones` — which zones the trigger condition functions in (CR 113.6b).** Defaults to
+`setOf(Zone.BATTLEFIELD)`, which CR 113.6 makes the rule for a permanent card's abilities. It is a
+*set* because CR 113.6k lets one ability function from several zones at once. `triggerZone` is the
+single-zone shorthand (`triggerZone = Zone.GRAVEYARD`) and is what almost every card wants.
+
+`TriggerDetector` scans each declared non-battlefield zone; the card there is *owned*, not
+controlled, so its owner controls any ability it produces. Coverage differs by zone, deliberately:
+
+| Zone | Per-event triggers | Step/phase triggers | Example |
+|---|---|---|---|
+| `BATTLEFIELD` | ✅ | ✅ | the default |
+| `GRAVEYARD` | ✅ | ✅ | Pyre Zombie, Gigapede, Killian's Confidence |
+| `COMMAND` | ✅ | ✅ | *eminence* — Edgar Markov |
+| `EXILE` | — (dedicated paths) | ✅ | suspend, madness, paradigm |
+
+Exile has no general per-event pass on purpose: suspend, madness and paradigm each already have a
+dedicated detector, and a general pass would fire them twice.
+
+**Eminence** (CR 207.2c — an ability word, no rules meaning of its own) is just
+`triggerZones = setOf(Zone.BATTLEFIELD, Zone.COMMAND)`; there is no eminence keyword or engine type.
+The printed "if [this] is in the command zone or on the battlefield" clause is *also* an
+intervening-"if" (CR 603.4), so it is checked again at resolution — and the engine does **not**
+re-check `triggerCondition` at resolution time. Supply that half by gating the effect on the same
+test, `ConditionalEffect(Conditions.SourceInZone(Zone.BATTLEFIELD, Zone.COMMAND), effect)`, which is
+what makes killing Edgar in response to the Vampire spell produce no token. See
+`c17/cards/EdgarMarkov.kt`.
 
 **`oncePerTurn` vs `triggersOnce` — two firing caps.** `oncePerTurn = true` caps the ability to one
 fire per turn ("This ability triggers only once each turn", e.g. Scavenger's Talent), tracked by a
@@ -6848,6 +6875,12 @@ answer it and would silently return `false`.
   entering creature — Leonardo, Sewer Samurai ("creatures you cast from your graveyard enter with a
   finality counter") and Mikey & Don ("creatures you cast from the top of your library enter with an
   extra +1/+1 counter", `WasCastFromZone(Zone.LIBRARY)`).
+- `SourceInZone(vararg zones)` — where the source object is **right now**. A live zone-membership
+  lookup, so unlike `WasCastFromZone` (frozen at cast time) it answers differently once the source
+  moves; it reads identically at resolution and under projection. Its job is CR 603.4's
+  resolution-time re-check for an ability whose printed intervening-"if" is a zone test — *eminence*
+  is `SourceInZone(Zone.BATTLEFIELD, Zone.COMMAND)` gating the effect, so an Edgar Markov killed
+  after the trigger fires makes no token. See §8's `triggerZones`.
 - `WasKicked` — cast with kicker / multikicker / offspring (i.e. an `OptionalAdditionalCost` with `branchesEffect = true` whose extra cost was paid). FlashKicker payments are intentionally invisible to this condition.
 - `WasBargained` — the spell's **bargain** additional cost was declared as it was cast (CR 702.166b, Wilds of Eldraine). A facade over `CastChoiceMade(ChoiceSlot.BARGAINED)`, so bargain needs no condition type of its own. Reads the durable flag on a resolved permanent (an "if it was bargained" enters trigger) *and* the declaration carried on a still-on-the-stack spell (an "if this spell was bargained" rider), and is also the condition a `CostGating.OnlyIf` cost reduction gates on. Never true for a merely kicked spell.
 - `SneakCostWasPaid` — the source was cast for its `Sneak` cost (CR 702.190 — mana + returning an unblocked attacker). Reads the durable `ChoiceSlot.SNEAK` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. Backs riders like Leonardo, Leader in Blue and The Last Ronin's Technique.

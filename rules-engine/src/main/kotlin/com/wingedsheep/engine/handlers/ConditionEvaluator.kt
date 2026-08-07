@@ -90,6 +90,7 @@ import com.wingedsheep.engine.state.components.battlefield.CastForImpendingCompo
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.conditions.WasCast
 import com.wingedsheep.sdk.scripting.conditions.WasCastFromHand
+import com.wingedsheep.sdk.scripting.conditions.SourceInZone
 import com.wingedsheep.sdk.scripting.conditions.WasCastFromZone
 import com.wingedsheep.engine.state.components.battlefield.CastFromGraveyardComponent
 import com.wingedsheep.engine.state.components.battlefield.CastFromLibraryComponent
@@ -204,6 +205,9 @@ class ConditionEvaluator(
             is Compare -> evaluateCompareCtx(state, condition, ctx)
             is NumberMatches -> evaluateNumberMatchesCtx(state, condition, ctx)
             is Exists -> evaluateExistsCtx(state, condition, ctx)
+
+            // Pure zone-membership lookup, so it reads the same in both modes.
+            is SourceInZone -> evaluateSourceInZone(state, condition, ctx)
 
             // CR 805 — "your turn" is the active team's turn for every member of that team.
             is IsYourTurn -> ctx.controllerId?.let { state.isActiveTurnFor(it) } ?: false
@@ -1134,6 +1138,23 @@ class ConditionEvaluator(
         // For permanents (triggered abilities), fall back to battlefield component
         val sourceId = context.sourceId ?: return false
         return state.getEntity(sourceId)?.has<CastFromHandComponent>() == true
+    }
+
+    /**
+     * Where the source object sits *now* (CR 113.6b's zone test, and the resolution-time half of an
+     * eminence ability's intervening-"if" per CR 603.4).
+     *
+     * Scans the zone map by zone *type* rather than reaching for per-zone accessors, because the
+     * shared zones (battlefield, stack, exile) and the per-player ones (command zone, graveyard,
+     * hand) are keyed differently and the condition is parameterized over both.
+     */
+    private fun evaluateSourceInZone(
+        state: GameState,
+        condition: SourceInZone,
+        ctx: ConditionEvaluationContext
+    ): Boolean {
+        val sourceId = ctx.sourceId ?: return false
+        return state.zones.any { (key, ids) -> key.zoneType in condition.zones && sourceId in ids }
     }
 
     private fun evaluateWasCastFromZone(state: GameState, condition: WasCastFromZone, context: EffectContext): Boolean {

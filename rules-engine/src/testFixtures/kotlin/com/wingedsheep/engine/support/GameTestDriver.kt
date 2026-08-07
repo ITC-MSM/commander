@@ -697,14 +697,24 @@ class GameTestDriver {
     }
 
     /**
-     * Put a specific card directly into a player's graveyard (test helper).
-     * Creates a new card entity from the registry and adds it to graveyard.
+     * Mint a fresh card entity for [cardName] owned and controlled by [playerId], register it in
+     * the state, and return its id — *without* placing it in any zone.
+     *
+     * One place builds the hand-rolled [CardComponent] that the zone-placement helpers below all
+     * need, so a newly precomputed printed characteristic added to `CardEntityFactory` has a single
+     * spot to be mirrored into rather than four that silently keep defaulting.
+     *
+     * [decorate] applies `CardEntityFactory.applyDefinitionDecorations`. It is off for the exile
+     * helper only, preserving that helper's long-standing behavior.
      */
-    fun putCardInGraveyard(playerId: EntityId, cardName: String): EntityId {
+    private fun mintCardEntity(
+        playerId: EntityId,
+        cardName: String,
+        decorate: Boolean = true
+    ): EntityId {
         val cardDef = cardRegistry.requireCard(cardName)
         val cardId = EntityId.generate()
 
-        // Create card entity
         val cardComponent = CardComponent(
             cardDefinitionId = cardDef.name,
             name = cardDef.name,
@@ -731,14 +741,21 @@ class GameTestDriver {
             OwnerComponent(playerId),
             ControllerComponent(playerId)
         )
-        container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
+        if (decorate) {
+            container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
+        }
 
         _state = _state.withEntity(cardId, container)
+        return cardId
+    }
 
-        // Add to graveyard
-        val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
-        _state = _state.addToZone(graveyardZone, cardId)
-
+    /**
+     * Put a specific card directly into a player's graveyard (test helper).
+     * Creates a new card entity from the registry and adds it to graveyard.
+     */
+    fun putCardInGraveyard(playerId: EntityId, cardName: String): EntityId {
+        val cardId = mintCardEntity(playerId, cardName)
+        _state = _state.addToZone(ZoneKey(playerId, Zone.GRAVEYARD), cardId)
         return cardId
     }
 
@@ -749,39 +766,23 @@ class GameTestDriver {
      * (so it reads as face-up). Used to set up "a face-up exiled card they own" scenarios.
      */
     fun putCardInExile(playerId: EntityId, cardName: String): EntityId {
-        val cardDef = cardRegistry.requireCard(cardName)
-        val cardId = EntityId.generate()
-
-        val cardComponent = CardComponent(
-            cardDefinitionId = cardDef.name,
-            name = cardDef.name,
-            manaCost = cardDef.manaCost,
-            typeLine = cardDef.typeLine,
-            oracleText = cardDef.oracleText,
-            baseStats = cardDef.creatureStats,
-            baseKeywords = cardDef.keywords,
-            baseFlags = cardDef.flags,
-            colors = cardDef.colors,
-            ownerId = playerId,
-            spellEffect = cardDef.spellEffect,
-            hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
-            hasActivatedAbility = cardDef.hasActivatedAbility,
-            // Keep driver-minted cards in step with CardEntityFactory: precomputed printed
-            // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
-            // CardPredicate.HasAdventure / OriginallyPrintedInSet).
-            hasAdventure = cardDef.isAdventure,
-            originalSetCode = cardDef.setCode,
-        )
-
-        val container = com.wingedsheep.engine.state.ComponentContainer.of(
-            cardComponent,
-            OwnerComponent(playerId),
-            ControllerComponent(playerId)
-        )
-
-        _state = _state.withEntity(cardId, container)
+        val cardId = mintCardEntity(playerId, cardName, decorate = false)
         _state = _state.addToZone(ZoneKey(playerId, Zone.EXILE), cardId)
+        return cardId
+    }
 
+    /**
+     * Put a specific card into a player's command zone (test helper).
+     *
+     * Stands in for the commander a real Commander game starts with, for the abilities that
+     * function from there (CR 113.6b) — an *eminence* trigger such as Edgar Markov's. It only
+     * places the card; tag it with
+     * [com.wingedsheep.engine.state.components.identity.CommanderComponent] and set
+     * `Format.Commander()` as well when the test also needs the commander state-based actions.
+     */
+    fun putCardInCommandZone(playerId: EntityId, cardName: String): EntityId {
+        val cardId = mintCardEntity(playerId, cardName)
+        _state = _state.addToZone(ZoneKey(playerId, Zone.COMMAND), cardId)
         return cardId
     }
 
@@ -790,38 +791,7 @@ class GameTestDriver {
      * Creates a new card entity from the registry and prepends it to the library.
      */
     fun putCardOnTopOfLibrary(playerId: EntityId, cardName: String): EntityId {
-        val cardDef = cardRegistry.requireCard(cardName)
-        val cardId = EntityId.generate()
-
-        val cardComponent = CardComponent(
-            cardDefinitionId = cardDef.name,
-            name = cardDef.name,
-            manaCost = cardDef.manaCost,
-            typeLine = cardDef.typeLine,
-            oracleText = cardDef.oracleText,
-            baseStats = cardDef.creatureStats,
-            baseKeywords = cardDef.keywords,
-            baseFlags = cardDef.flags,
-            colors = cardDef.colors,
-            ownerId = playerId,
-            spellEffect = cardDef.spellEffect,
-            hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
-            hasActivatedAbility = cardDef.hasActivatedAbility,
-            // Keep driver-minted cards in step with CardEntityFactory: precomputed printed
-            // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
-            // CardPredicate.HasAdventure / OriginallyPrintedInSet).
-            hasAdventure = cardDef.isAdventure,
-            originalSetCode = cardDef.setCode,
-        )
-
-        var container = com.wingedsheep.engine.state.ComponentContainer.of(
-            cardComponent,
-            OwnerComponent(playerId),
-            ControllerComponent(playerId)
-        )
-        container = com.wingedsheep.engine.core.CardEntityFactory.applyDefinitionDecorations(container, cardDef)
-
-        _state = _state.withEntity(cardId, container)
+        val cardId = mintCardEntity(playerId, cardName)
 
         // Prepend to library (top = index 0)
         val libraryZone = ZoneKey(playerId, Zone.LIBRARY)

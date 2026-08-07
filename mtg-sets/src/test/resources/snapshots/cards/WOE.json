@@ -13190,7 +13190,9 @@
                         "fromZone": "Graveyard"
                     }
                 },
-                "activeZone": "Graveyard"
+                "activeZones": [
+                    "Graveyard"
+                ]
             }
         ]
     },

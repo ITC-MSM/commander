@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.scripting.conditions.NoManaSpentToCast as NoManaSpent
 import com.wingedsheep.sdk.scripting.conditions.NoManaSpentToCastEntered as NoManaSpentToCastEnteredCondition
 import com.wingedsheep.sdk.scripting.conditions.WasCastFromHand as WasCastFromHandCondition
 import com.wingedsheep.sdk.scripting.conditions.WasCastFromZone as WasCastFromZoneCondition
+import com.wingedsheep.sdk.scripting.conditions.SourceInZone as SourceInZoneCondition
 import com.wingedsheep.sdk.scripting.conditions.WasKicked as WasKickedCondition
 import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid as BlightWasPaidCondition
 import com.wingedsheep.sdk.scripting.conditions.WaterbendWasPaid as WaterbendWasPaidCondition
@@ -808,6 +809,17 @@ object Conditions {
      */
     fun WasCastFromZone(zone: Zone): ConditionInterface =
         WasCastFromZoneCondition(zone)
+
+    /**
+     * If the ability's source is *currently* in one of [zones] — a live lookup, unlike
+     * [WasCastFromZone]'s frozen cast-time answer.
+     *
+     * The eminence shape is `SourceInZone(Zone.BATTLEFIELD, Zone.COMMAND)`, gating the ability's
+     * effect so CR 603.4's resolution-time re-check holds: an Edgar Markov that leaves both zones
+     * after the trigger fires produces nothing.
+     */
+    fun SourceInZone(vararg zones: Zone): ConditionInterface =
+        SourceInZoneCondition(zones.toSet())
 
     /**
      * If this spell was cast from a graveyard.

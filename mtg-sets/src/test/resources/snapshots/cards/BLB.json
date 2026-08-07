@@ -13546,7 +13546,9 @@
                         "placement": "TappedAndAttacking"
                     }
                 },
-                "activeZone": "Graveyard",
+                "activeZones": [
+                    "Graveyard"
+                ],
                 "triggerCondition": {
                     "type": "Compare",
                     "left": {

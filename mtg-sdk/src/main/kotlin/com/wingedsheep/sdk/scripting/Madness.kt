@@ -63,7 +63,7 @@ object Madness {
             to = Zone.EXILE
         ),
         binding = TriggerBinding.SELF,
-        activeZone = Zone.EXILE,
+        activeZones = setOf(Zone.EXILE),
         effect = CompositeEffect(
             listOf(
                 MayEffect(

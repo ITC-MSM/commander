@@ -244,6 +244,35 @@ data object AnyEnteredOrWasCastFromExile : Condition {
 }
 
 /**
+ * Condition: "if this is in [zones]" — where the ability's source object sits *right now*.
+ *
+ * Distinct from [WasCastFromZone], which asks where a spell came *from* at cast time and is frozen
+ * for the rest of the spell's life. This one is a live lookup, so it answers differently before and
+ * after the source moves.
+ *
+ * Its reason for existing is CR 603.4's second half. An eminence ability reads "Whenever you cast
+ * another Vampire spell, **if Edgar is in the command zone or on the battlefield**, …": the zone
+ * test is an intervening-"if", so it is checked both when the trigger fires and again as the ability
+ * resolves, and the official Edgar Markov ruling spells out the consequence — if Edgar leaves that
+ * zone in between, the ability does nothing. Trigger-time is already covered by
+ * [com.wingedsheep.sdk.scripting.TriggeredAbility.activeZones]; gating the effect on this condition
+ * is what supplies the resolution-time half.
+ *
+ * Evaluates identically at resolution and during projection — it reads only zone membership.
+ */
+@SerialName("SourceInZone")
+@Serializable
+data class SourceInZone(val zones: Set<Zone>) : Condition {
+    init {
+        require(zones.isNotEmpty()) { "SourceInZone needs at least one zone" }
+    }
+
+    override val description: String =
+        "this is " + zones.sortedBy { it.ordinal }
+            .joinToString(" or ") { if (it == Zone.BATTLEFIELD) "on the battlefield" else "in ${it.displayName}" }
+}
+
+/**
  * Condition: "If this spell was cast from [zone]"
  * Used for flashback spells and other zone-dependent effects.
  * Checks whether the spell was cast from the specified zone.

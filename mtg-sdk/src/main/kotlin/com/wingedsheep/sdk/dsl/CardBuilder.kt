@@ -1372,8 +1372,26 @@ class TriggeredAbilityBuilder {
     var target: TargetRequirement? = null
     var optional: Boolean = false
     var elseEffect: Effect? = null
-    var triggerZone: Zone = Zone.BATTLEFIELD
-    /** Intervening-if condition (Rule 603.4): checked when trigger would fire AND at resolution. */
+    /**
+     * The zones this ability's trigger condition functions in (CR 113.6b). Defaults to the
+     * battlefield. Use the set form when an ability functions in more than one zone at once — an
+     * *eminence* ability is `setOf(Zone.BATTLEFIELD, Zone.COMMAND)`.
+     */
+    var triggerZones: Set<Zone> = setOf(Zone.BATTLEFIELD)
+
+    /**
+     * Single-zone shorthand for [triggerZones] — `triggerZone = Zone.GRAVEYARD`. Reading it back
+     * yields the first zone, so prefer [triggerZones] for an ability that functions in several.
+     */
+    var triggerZone: Zone
+        get() = triggerZones.first()
+        set(value) { triggerZones = setOf(value) }
+
+    /**
+     * Intervening-if condition (Rule 603.4): checked when the trigger would fire. Note the engine
+     * does not yet re-check it at resolution — an ability that needs the second half of CR 603.4
+     * has to gate its own effect on the same condition (`ConditionalEffect`).
+     */
     var triggerCondition: Condition? = null
     /** When true, the triggered ability is controlled by the triggering entity's controller. */
     var controlledByTriggeringEntityController: Boolean = false
@@ -1417,7 +1435,7 @@ class TriggeredAbilityBuilder {
             targetRequirement = primaryTarget,
             additionalTargetRequirements = additionalTargets,
             elseEffect = elseEffect,
-            activeZone = triggerZone,
+            activeZones = triggerZones,
             triggerCondition = triggerCondition,
             controlledByTriggeringEntityController = controlledByTriggeringEntityController,
             oncePerTurn = oncePerTurn,

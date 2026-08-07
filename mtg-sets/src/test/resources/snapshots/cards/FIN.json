@@ -805,7 +805,9 @@
                         }
                     ]
                 },
-                "activeZone": "Graveyard"
+                "activeZones": [
+                    "Graveyard"
+                ]
             }
         ],
         "staticAbilities": [
@@ -17384,7 +17386,9 @@
                         "destination": "Hand"
                     }
                 },
-                "activeZone": "Graveyard"
+                "activeZones": [
+                    "Graveyard"
+                ]
             }
         ],
         "replacementEffects": [

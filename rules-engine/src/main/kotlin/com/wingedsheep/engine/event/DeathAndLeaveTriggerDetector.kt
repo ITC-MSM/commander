@@ -258,7 +258,7 @@ class DeathAndLeaveTriggerDetector(
             for (ability in entry.abilities) {
                 val trigger = ability.trigger
                 if (trigger !is EventPattern.CreatureDealtDamageBySourceDiesEvent) continue
-                if (ability.activeZone != Zone.BATTLEFIELD) continue
+                if (Zone.BATTLEFIELD !in ability.activeZones) continue
 
                 val sourceFilter = trigger.sourceFilter
                 val fires = if (sourceFilter == null) {

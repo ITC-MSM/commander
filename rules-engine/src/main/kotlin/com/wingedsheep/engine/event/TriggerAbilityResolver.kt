@@ -114,7 +114,7 @@ class TriggerAbilityResolver(
 
     /**
      * Grant [com.wingedsheep.sdk.scripting.Suspend.countdownAbility] to any card carrying the
-     * [SuspendedComponent] marker. The ability functions only in exile (`activeZone == EXILE`),
+     * [SuspendedComponent] marker. The ability functions only in exile (`activeZones == {EXILE}`),
      * so it is inert anywhere else and harmless to return universally.
      */
     private fun getSuspendTriggeredAbilities(entityId: EntityId, state: GameState): List<TriggeredAbility> =
@@ -126,7 +126,7 @@ class TriggerAbilityResolver(
 
     /**
      * Grant [com.wingedsheep.sdk.scripting.Paradigm.recastAbility] to any card carrying the
-     * [ParadigmComponent] marker. The ability functions only in exile (`activeZone == EXILE`), so
+     * [ParadigmComponent] marker. The ability functions only in exile (`activeZones == {EXILE}`), so
      * it is inert anywhere else and harmless to return universally.
      */
     private fun getParadigmTriggeredAbilities(entityId: EntityId, state: GameState): List<TriggeredAbility> =

@@ -6296,7 +6296,9 @@
                         "destination": "Battlefield"
                     }
                 },
-                "activeZone": "Graveyard"
+                "activeZones": [
+                    "Graveyard"
+                ]
             }
         ],
         "staticAbilities": [

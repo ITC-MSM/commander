@@ -129,7 +129,7 @@ class TriggerDetector(
             // Categorize by event types this entity's triggers respond to
             val entityCategories = mutableSetOf<TriggerCategory>()
             for (ability in abilities) {
-                if (ability.activeZone == Zone.BATTLEFIELD) {
+                if (Zone.BATTLEFIELD in ability.activeZones) {
                     entityCategories.addAll(TriggerIndex.triggerToCategories(ability.trigger, ability.binding))
 
                     // Index damage observer triggers
@@ -169,29 +169,28 @@ class TriggerDetector(
             }
         }
 
-        // Phase 3: Index graveyard/exile cards whose abilities function from that zone, but only
-        // for the batch / observer categories that are consumed exclusively by the dedicated
+        // Phase 3: Index cards in the non-battlefield zones whose abilities function from that zone,
+        // but only for the batch / observer categories that are consumed exclusively by the dedicated
         // detectors (see TriggerIndex.NON_BATTLEFIELD_BATCH_CATEGORIES). These shapes are skipped
-        // by the per-event graveyard/exile passes (TriggerMatcher returns false for them), so they
+        // by the per-event zone passes (TriggerMatcher returns false for them), so they
         // would otherwise never fire from outside the battlefield. Enables graveyard-active
-        // recursion triggers like Killian's Confidence.
-        for (zone in listOf(Zone.GRAVEYARD, Zone.EXILE)) {
+        // recursion triggers like Killian's Confidence, and the batch-shaped eminence abilities.
+        for (zone in NON_BATTLEFIELD_ACTIVE_ZONES) {
             for (playerId in state.turnOrder) {
-                val zoneEntities = if (zone == Zone.GRAVEYARD) state.getGraveyard(playerId) else state.getExile(playerId)
-                for (entityId in zoneEntities) {
+                for (entityId in state.getZone(playerId, zone)) {
                     val container = state.getEntity(entityId) ?: continue
                     val cardComponent = container.get<CardComponent>() ?: continue
                     val abilities =
                         abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, statics)
                     if (abilities.isEmpty()) continue
-                    // The controller of a card in the graveyard/exile is its owner.
+                    // The controller of a card outside the battlefield is its owner.
                     val ownerId = cardComponent.ownerId
                         ?: container.get<OwnerComponent>()?.playerId
                         ?: playerId
                     val entry = TriggerIndex.IndexedEntity(entityId, cardComponent, ownerId, abilities)
                     val entityCategories = mutableSetOf<TriggerCategory>()
                     for (ability in abilities) {
-                        if (ability.activeZone != zone) continue
+                        if (zone !in ability.activeZones) continue
                         for (cat in TriggerIndex.triggerToCategories(ability.trigger, ability.binding)) {
                             if (cat in TriggerIndex.NON_BATTLEFIELD_BATCH_CATEGORIES) entityCategories.add(cat)
                         }
@@ -507,7 +506,7 @@ class TriggerDetector(
         // Check battlefield entities with StepEvent triggers
         for (entry in index.getEntitiesForCategory(TriggerCategory.STEP)) {
             for (ability in entry.abilities) {
-                if (ability.activeZone != Zone.BATTLEFIELD) continue
+                if (Zone.BATTLEFIELD !in ability.activeZones) continue
                 if (matcher.matchesStepTrigger(ability.trigger, step, entry.controllerId, state, entry.entityId)) {
                     triggers.add(
                         PendingTrigger(
@@ -529,7 +528,7 @@ class TriggerDetector(
             for (entry in attachments) {
                 for (ability in entry.abilities) {
                     if (ability.binding != TriggerBinding.ATTACHED) continue
-                    if (ability.activeZone != Zone.BATTLEFIELD) continue
+                    if (Zone.BATTLEFIELD !in ability.activeZones) continue
                     val trigger = ability.trigger as? EventPattern.StepEvent ?: continue
                     if (step != trigger.step) continue
                     if (matcher.matchesPlayerForStep(trigger.player, enchantedController, state)) {
@@ -547,58 +546,37 @@ class TriggerDetector(
             }
         }
 
-        // Check graveyard cards for step-based triggers with activeZone == GRAVEYARD
-        for (playerId in state.turnOrder) {
-            for (entityId in state.getGraveyard(playerId)) {
-                val container = state.getEntity(entityId) ?: continue
-                val cardComponent = container.get<CardComponent>() ?: continue
+        // Check the non-battlefield zones a card's abilities can function from for step-based
+        // triggers (CR 113.6b). Graveyard: Gigapede's upkeep return. Exile: suspend's countdown,
+        // paradigm's main-phase offer. Command zone: an *eminence* ability worded as a step trigger
+        // (Arahbo, Roar of the World's beginning-of-combat pump).
+        //
+        // Cards in all three are owned rather than controlled, so the owner is the controller of
+        // any ability they produce.
+        for (zone in NON_BATTLEFIELD_ACTIVE_ZONES) {
+            for (playerId in state.turnOrder) {
+                for (entityId in state.getZone(playerId, zone)) {
+                    val container = state.getEntity(entityId) ?: continue
+                    val cardComponent = container.get<CardComponent>() ?: continue
 
-                val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, index.statics)
+                    val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, index.statics)
 
-                for (ability in abilities) {
-                    if (ability.activeZone != Zone.GRAVEYARD) continue
-                    // Use the card's owner as controller (graveyard cards are owned, not controlled)
-                    val ownerId = cardComponent.ownerId
-                        ?: container.get<OwnerComponent>()?.playerId
-                        ?: continue
-                    if (matcher.matchesStepTrigger(ability.trigger, step, ownerId, state, entityId)) {
-                        triggers.add(
-                            PendingTrigger(
-                                ability = ability,
-                                sourceId = entityId,
-                                sourceName = cardComponent.name,
-                                controllerId = ownerId,
-                                triggerContext = TriggerContext(step = step, triggeringEntityId = activePlayerId)
+                    for (ability in abilities) {
+                        if (zone !in ability.activeZones) continue
+                        val ownerId = cardComponent.ownerId
+                            ?: container.get<OwnerComponent>()?.playerId
+                            ?: continue
+                        if (matcher.matchesStepTrigger(ability.trigger, step, ownerId, state, entityId)) {
+                            triggers.add(
+                                PendingTrigger(
+                                    ability = ability,
+                                    sourceId = entityId,
+                                    sourceName = cardComponent.name,
+                                    controllerId = ownerId,
+                                    triggerContext = TriggerContext(step = step, triggeringEntityId = activePlayerId)
+                                )
                             )
-                        )
-                    }
-                }
-            }
-        }
-
-        // Check exiled cards for step-based triggers with activeZone == EXILE
-        for (playerId in state.turnOrder) {
-            for (entityId in state.getExile(playerId)) {
-                val container = state.getEntity(entityId) ?: continue
-                val cardComponent = container.get<CardComponent>() ?: continue
-
-                val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, index.statics)
-
-                for (ability in abilities) {
-                    if (ability.activeZone != Zone.EXILE) continue
-                    val ownerId = cardComponent.ownerId
-                        ?: container.get<OwnerComponent>()?.playerId
-                        ?: continue
-                    if (matcher.matchesStepTrigger(ability.trigger, step, ownerId, state, entityId)) {
-                        triggers.add(
-                            PendingTrigger(
-                                ability = ability,
-                                sourceId = entityId,
-                                sourceName = cardComponent.name,
-                                controllerId = ownerId,
-                                triggerContext = TriggerContext(step = step, triggeringEntityId = activePlayerId)
-                            )
-                        )
+                        }
                     }
                 }
             }
@@ -1024,7 +1002,7 @@ class TriggerDetector(
             val controllerId = entry.controllerId
 
             for (ability in entry.abilities) {
-                if (ability.activeZone != Zone.BATTLEFIELD) continue
+                if (Zone.BATTLEFIELD !in ability.activeZones) continue
                 if (matcher.matchesTrigger(ability.trigger, ability.binding, event, entityId, controllerId, state)) {
                     // For "whenever a creature attacks" (AttackEvent with ANY binding),
                     // create one trigger per attacking creature (Rule 603.2c)
@@ -1359,41 +1337,52 @@ class TriggerDetector(
             }
         }
 
-        // Check graveyard cards for non-step triggers with activeZone == GRAVEYARD
-        // (e.g., Dragon Shadow: "When a creature with MV 6+ enters, return this from graveyard")
-        for (playerId in state.turnOrder) {
-            for (entityId in state.getGraveyard(playerId)) {
-                val container = state.getEntity(entityId) ?: continue
-                val cardComponent = container.get<CardComponent>() ?: continue
+        // Check the non-battlefield zones a card's abilities can function from for non-step triggers
+        // (CR 113.6b). Graveyard: Dragon Shadow's "when a creature with MV 6+ enters, return this
+        // from graveyard". Command zone: an *eminence* cast trigger — Edgar Markov's "whenever you
+        // cast another Vampire spell" has to fire while Edgar sits in the command zone, which no
+        // battlefield scan reaches.
+        //
+        // Exile is deliberately absent: every exile-active shape today (suspend, madness, paradigm)
+        // already has its own dedicated detection path, and a general exile pass here would fire
+        // those a second time.
+        for (zone in NON_BATTLEFIELD_EVENT_TRIGGER_ZONES) {
+            for (playerId in state.turnOrder) {
+                for (entityId in state.getZone(playerId, zone)) {
+                    val container = state.getEntity(entityId) ?: continue
+                    val cardComponent = container.get<CardComponent>() ?: continue
 
-                // The card's OWN battlefield-exit (its death / leaving) is owned by the dedicated
-                // death and leaves-battlefield detectors below, which resolve the dying entity's
-                // abilities regardless of activeZone. Skipping it here prevents a graveyard-active
-                // dies trigger (triggerZone = GRAVEYARD, e.g. Paramecia Coloniex) from being
-                // detected twice — once here, because the dead card already sits in the graveyard
-                // and its trigger pattern matches its own death event, and once in
-                // detectDeathTriggers. Other graveyard-resident reactions (another creature dying,
-                // entering, etc.) still fall through to the matcher below.
-                if (event is ZoneChangeEvent && event.fromZone == Zone.BATTLEFIELD &&
-                    event.entityId == entityId) continue
+                    // The card's OWN battlefield-exit (its death / leaving) is owned by the dedicated
+                    // death and leaves-battlefield detectors below, which resolve the dying entity's
+                    // abilities regardless of activeZones. Skipping it here prevents a
+                    // graveyard-active dies trigger (triggerZone = GRAVEYARD, e.g. Paramecia
+                    // Coloniex) from being detected twice — once here, because the dead card already
+                    // sits in the graveyard and its trigger pattern matches its own death event, and
+                    // once in detectDeathTriggers. The same guard covers a commander that died and
+                    // went to the command zone instead. Other zone-resident reactions (another
+                    // creature dying, entering, a spell being cast) still fall through to the
+                    // matcher below.
+                    if (event is ZoneChangeEvent && event.fromZone == Zone.BATTLEFIELD &&
+                        event.entityId == entityId) continue
 
-                val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, index.statics)
+                    val abilities = abilityResolver.getTriggeredAbilities(entityId, cardComponent.cardDefinitionId, state, index.statics)
 
-                for (ability in abilities) {
-                    if (ability.activeZone != Zone.GRAVEYARD) continue
-                    val ownerId = cardComponent.ownerId
-                        ?: container.get<OwnerComponent>()?.playerId
-                        ?: continue
-                    if (matcher.matchesTrigger(ability.trigger, ability.binding, event, entityId, ownerId, state)) {
-                        triggers.add(
-                            PendingTrigger(
-                                ability = ability,
-                                sourceId = entityId,
-                                sourceName = cardComponent.name,
-                                controllerId = ownerId,
-                                triggerContext = TriggerContext.fromEvent(event)
+                    for (ability in abilities) {
+                        if (zone !in ability.activeZones) continue
+                        val ownerId = cardComponent.ownerId
+                            ?: container.get<OwnerComponent>()?.playerId
+                            ?: continue
+                        if (matcher.matchesTrigger(ability.trigger, ability.binding, event, entityId, ownerId, state)) {
+                            triggers.add(
+                                PendingTrigger(
+                                    ability = ability,
+                                    sourceId = entityId,
+                                    sourceName = cardComponent.name,
+                                    controllerId = ownerId,
+                                    triggerContext = TriggerContext.fromEvent(event)
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
@@ -1550,7 +1539,7 @@ class TriggerDetector(
             if (ability.trigger !is EventPattern.BecomesUnattachedEvent) continue
             // The ability functioned from the battlefield right up to the moment it left; a
             // graveyard/exile-active ability is a different thing entirely.
-            if (ability.activeZone != Zone.BATTLEFIELD) continue
+            if (Zone.BATTLEFIELD !in ability.activeZones) continue
             if (!matcher.matchesTrigger(
                     ability.trigger, ability.binding, event, attachmentId, event.controllerId, state
                 )
@@ -2299,7 +2288,7 @@ class TriggerDetector(
                     for (ability in abilities) {
                         val trigger = ability.trigger
                         if (trigger !is EventPattern.PermanentsSacrificedEvent) continue
-                        if (ability.activeZone != Zone.BATTLEFIELD) continue
+                        if (Zone.BATTLEFIELD !in ability.activeZones) continue
 
                         if (trigger.perPermanent) {
                             // Per-permanent template ("a/another permanent") where the source is
@@ -3763,5 +3752,21 @@ class TriggerDetector(
                 )
             }
         }
+    }
+
+    private companion object {
+        /**
+         * Every non-battlefield zone an ability can declare in `activeZones` (CR 113.6b). All three
+         * are per-player zones keyed the same way, so one loop covers them. Used by the trigger-index
+         * batch pass and the step-trigger pass, both of which are safe for all three.
+         */
+        val NON_BATTLEFIELD_ACTIVE_ZONES = listOf(Zone.GRAVEYARD, Zone.EXILE, Zone.COMMAND)
+
+        /**
+         * The non-battlefield zones scanned for per-*event* triggers. Exile is excluded on purpose:
+         * suspend, madness and paradigm are the only exile-active shapes, and each already has a
+         * dedicated detection path that a general pass here would duplicate.
+         */
+        val NON_BATTLEFIELD_EVENT_TRIGGER_ZONES = listOf(Zone.GRAVEYARD, Zone.COMMAND)
     }
 }
