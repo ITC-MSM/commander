@@ -58,6 +58,28 @@ data class ActivatedAbility(
      * needed.
      */
     val isExhaust: Boolean = false,
+    /**
+     * True for a *power-up* ability (Marvel Super Heroes; CR 702.193). "Power-up — [cost]: [effect]"
+     * means "[cost]: [effect]. If this permanent entered this turn, this ability's cost is reduced
+     * by this permanent's mana cost. Activate this ability only once."
+     *
+     * Two of those three clauses are carried elsewhere, so this flag is the keyword marker plus the
+     * switch for the third:
+     *  - **"Activate only once"** is an [ActivationRestriction.Once] in [restrictions], which the
+     *    `powerUpAbility(cost) { }` DSL adds automatically — the same arrangement [isExhaust] uses,
+     *    and per CR 400.7 a permanent that leaves and re-enters is a new object whose power-up may
+     *    be activated again, which the per-object `Once` tracker gives for free.
+     *  - **The cost reduction** is the part that needs this flag: the engine reduces the activation
+     *    cost by the source's own printed mana cost, pip-wise per CR 702.193b / 118.7
+     *    ([com.wingedsheep.sdk.core.ManaCost.subtract]), but only while the source entered this
+     *    turn. It is deliberately *not* modelled as [genericCostReduction], which is generic-only
+     *    (CR 118.7a) and so could not express Thanos's `{C}{W}{U}{B}{R}{G}` − `{R}{W}{B}`.
+     *
+     * The flag also lets other cards name the mechanic — Hulk, Gamma Goliath ("power-up abilities of
+     * other creatures you control cost {3} less") and Kang the Conqueror ("power-up abilities can't
+     * be activated") both need to pick power-up abilities out of every other activated ability.
+     */
+    val isPowerUp: Boolean = false,
     /** When true, prevents auto-pass whenever this ability is available.
      *  Used for abilities that interact with transient game state the player would miss,
      *  such as copying a spell on the stack. */
@@ -126,13 +148,22 @@ data class ActivatedAbility(
      * the keyword-action prefixes in printed order: "Exhaust — Waterbend {N}: ...". The legal-action
      * enumerator calls this when a cost reduction means the printed [cost] no longer matches what the
      * player will pay, so the rebuilt label keeps the same prefixes the [description] getter shows.
+     *
+     * Power-up matters here more than the other prefixes: its cost reduction applies on the turn the
+     * permanent entered, so the printed cost and the payable cost differ on exactly the turn the
+     * player is most likely to activate it, and the menu must show the reduced one.
      */
     fun describeWithCost(effectiveCost: AbilityCost): String {
         // A waterbend cost renders as "Waterbend {N}" (the keyword action precedes the cost).
         val base = effectiveCost.description.ifEmpty { "{0}" }
         val costText = if (hasWaterbend) "Waterbend $base" else base
-        // An exhaust ability prefixes "Exhaust — " before the (already waterbend-prefixed) cost.
-        val prefixed = if (isExhaust) "Exhaust — $costText" else costText
+        // An exhaust or power-up ability prefixes its keyword before the (already
+        // waterbend-prefixed) cost. The two never co-occur — both mean "activate only once".
+        val prefixed = when {
+            isExhaust -> "Exhaust — $costText"
+            isPowerUp -> "Power-up — $costText"
+            else -> costText
+        }
         return "$prefixed: ${effect.description}"
     }
 

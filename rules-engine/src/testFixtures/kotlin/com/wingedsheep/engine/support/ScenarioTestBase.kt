@@ -13,6 +13,7 @@ import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
+import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent
@@ -166,6 +167,12 @@ abstract class ScenarioTestBase : FunSpec() {
          * `IsToken` / `IsNontoken` filters and token-only sacrifice costs evaluate correctly.
          * The permanent's stats/types still come from the named (token) card definition, e.g.
          * a predefined token like "Treasure" or a creature-token script.
+         *
+         * Set [enteredThisTurn] to mark the permanent as having entered the battlefield this turn
+         * (adds [EnteredThisTurnComponent]) — what `Conditions.SourceEnteredThisTurn` and power-up's
+         * cost reduction (CR 702.193a) read. Off by default, matching the "it's been there" default
+         * of [summoningSickness]; set it to test the turn-it-entered branch without having to cast
+         * the permanent and juggle the mana that would consume.
          */
         fun withCardOnBattlefield(
             playerNumber: Int,
@@ -173,7 +180,8 @@ abstract class ScenarioTestBase : FunSpec() {
             tapped: Boolean = false,
             summoningSickness: Boolean = false,
             classLevel: Int? = null,
-            isToken: Boolean = false
+            isToken: Boolean = false,
+            enteredThisTurn: Boolean = false
         ): ScenarioBuilder {
             val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
             val cardId = createCard(cardName, playerId)
@@ -195,6 +203,10 @@ abstract class ScenarioTestBase : FunSpec() {
 
             if (isToken) {
                 container = container.with(TokenComponent)
+            }
+
+            if (enteredThisTurn) {
+                container = container.with(EnteredThisTurnComponent)
             }
 
             // Add continuous effects from static abilities (e.g., "Other creatures you control have...")

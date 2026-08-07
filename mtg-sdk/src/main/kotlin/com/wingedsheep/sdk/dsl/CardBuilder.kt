@@ -1484,6 +1484,14 @@ class ActivatedAbilityBuilder {
      * enforcement), so an author only writes `isExhaust = true`. See [ActivatedAbility.isExhaust].
      */
     var isExhaust: Boolean = false
+    /**
+     * When true, this is a *power-up* ability (CR 702.193): "Power-up — [cost]: [effect]" =
+     * "[cost]: [effect]. If this permanent entered this turn, this ability's cost is reduced by this
+     * permanent's mana cost. Activate this ability only once." Setting this renders the
+     * "Power-up — " prefix, automatically adds [ActivationRestriction.Once], and switches on the
+     * engine's pip-wise self cost reduction. See [ActivatedAbility.isPowerUp].
+     */
+    var isPowerUp: Boolean = false
     var holdPriority: Boolean = false
     var genericCostReduction: DynamicAmount? = null
     /** Colors that may be spent on the `{X}` portion of this ability's cost (empty = any). */
@@ -1518,10 +1526,11 @@ class ActivatedAbilityBuilder {
 
     fun build(): ActivatedAbility {
         requireNotNull(effect) { "Activated ability must have an effect" }
-        // An exhaust ability is "Activate only once" (CR 702.177a): ensure the once-per-object
-        // restriction is present so the keyword marker and its enforcement can't drift apart.
+        // Exhaust (CR 702.177a) and power-up (CR 702.193a) both mean "Activate only once": ensure
+        // the once-per-object restriction is present so the keyword marker and its enforcement
+        // can't drift apart.
         val effectiveRestrictions =
-            if (isExhaust && restrictions.none { it == ActivationRestriction.Once })
+            if ((isExhaust || isPowerUp) && restrictions.none { it == ActivationRestriction.Once })
                 restrictions + ActivationRestriction.Once
             else restrictions
         return ActivatedAbility(
@@ -1538,6 +1547,7 @@ class ActivatedAbilityBuilder {
             hasConvoke = hasConvoke,
             hasWaterbend = hasWaterbend,
             isExhaust = isExhaust,
+            isPowerUp = isPowerUp,
             holdPriority = holdPriority,
             genericCostReduction = genericCostReduction,
             xManaRestriction = xManaRestriction,

@@ -118,6 +118,88 @@ data class ManaCost(val symbols: List<ManaSymbol>) {
     }
 
     /**
+     * Reduce this cost by every mana symbol in [reduction], following the general cost-reduction
+     * rules of CR 118.7. This is the operation behind power-up (CR 702.193b) and offering
+     * (CR 702.48c), both of which reduce a cost by another object's whole printed mana cost:
+     * "Generic mana in the permanent's mana cost reduces generic mana in the cost to activate its
+     * power-up ability. Colored and colorless mana in the permanent's mana cost reduces mana of the
+     * same type, and any excess reduces that much generic mana."
+     *
+     * Unlike [reduceGeneric], which is the CR 118.7a generic-only reduction every other reduction
+     * in the engine uses, this one is *pip-wise*: `{5}{W}{W}` − `{3}{W}{W}` = `{2}`, and
+     * `{C}{W}{U}{B}{R}{G}` − `{R}{W}{B}` = `{C}{U}{G}` (Thanos).
+     *
+     * Matching runs in three tiers, so a reduction pip is always spent the most valuable way the
+     * rules allow:
+     *  1. **Exact symbol match** — `{R}` cancels `{R}`, `{C}` cancels `{C}`, `{R/G}` cancels
+     *     `{R/G}` (Abomination: `{5}{R/G}{R/G}` − `{3}{R/G}` = `{2}{R/G}`).
+     *  2. **Relaxed match** — a hybrid reduction pip pays one of its colored halves (CR 118.7e: the
+     *     payer chooses a half as the reduction is applied) and a Phyrexian pip pays its color
+     *     (CR 118.7f); conversely a colored pip may pay a Phyrexian pip of that color, which is a
+     *     requirement for that same color. Deterministic where the rules leave a free choice: the
+     *     first eligible pip in printed order wins. Every such assignment is legal, and the total
+     *     amount reduced is the same either way.
+     *  3. **Spill to generic** — anything still unmatched reduces generic mana instead
+     *     (CR 118.7b/c/d), one per pip, floored at zero. A monocolored hybrid ("twobrid") spills
+     *     its generic half, the larger of its two options.
+     *
+     * `{X}` is inert on both sides: an `{X}` in [reduction] is a permanent's printed `{X}`, whose
+     * value on the battlefield is 0 (CR 202.3b), and an `{X}` in this cost survives untouched so a
+     * variable power-up still asks for X (Stature: `{X}{U}{U}` − `{U}` = `{X}{U}`).
+     */
+    fun subtract(reduction: ManaCost): ManaCost {
+        if (reduction.isEmpty() || isEmpty()) return this
+        // Non-generic symbols in printed order; `{X}` rides along and is never matched, so it
+        // survives into the result exactly as [reduceGeneric] leaves it.
+        val remaining = symbols.filterNot { it is ManaSymbol.Generic }.toMutableList()
+        // CR 118.7a: generic in the reduction only ever reduces generic in the cost.
+        var genericReduction = reduction.genericAmount
+
+        // Tier 1 — exact matches, so an identical pip is never wasted paying something else.
+        val unmatched = mutableListOf<ManaSymbol>()
+        for (symbol in reduction.symbols) {
+            if (symbol is ManaSymbol.Generic || symbol is ManaSymbol.X) continue
+            val index = remaining.indexOfFirst { it == symbol }
+            if (index >= 0) remaining.removeAt(index) else unmatched.add(symbol)
+        }
+
+        // Tier 2 and 3 — relaxed match, else spill into the generic reduction.
+        for (symbol in unmatched) {
+            val index = remaining.indexOfFirst { paysFor(symbol, it) }
+            if (index >= 0) remaining.removeAt(index) else genericReduction += symbol.genericSpill()
+        }
+
+        val newGeneric = (genericAmount - genericReduction).coerceAtLeast(0)
+        val genericList = if (newGeneric > 0) listOf(ManaSymbol.Generic(newGeneric)) else emptyList()
+        return ManaCost(genericList + remaining)
+    }
+
+    /**
+     * Whether a [reductionSymbol] that found no identical pip may still pay [costSymbol] — the
+     * relaxed tier of [subtract]. A hybrid pays either colored half (CR 118.7e) and a Phyrexian
+     * pays its color (CR 118.7f); a colored pip pays a Phyrexian pip of the same color, since that
+     * pip is a requirement for that color. Colorless and generic never relax — they spill to
+     * generic instead (CR 118.7a/d).
+     */
+    private fun paysFor(reductionSymbol: ManaSymbol, costSymbol: ManaSymbol): Boolean =
+        when (reductionSymbol) {
+            is ManaSymbol.Hybrid -> costSymbol is ManaSymbol.Colored &&
+                (costSymbol.color == reductionSymbol.color1 || costSymbol.color == reductionSymbol.color2)
+            is ManaSymbol.Phyrexian -> costSymbol is ManaSymbol.Colored && costSymbol.color == reductionSymbol.color
+            is ManaSymbol.MonocolorHybrid -> costSymbol is ManaSymbol.Colored && costSymbol.color == reductionSymbol.color
+            is ManaSymbol.Colored -> costSymbol is ManaSymbol.Phyrexian && costSymbol.color == reductionSymbol.color
+            else -> false
+        }
+
+    /**
+     * How much generic mana this reduction pip removes when the cost has nothing of its type
+     * (CR 118.7b/c/d): one for any single-mana pip, and for a monocolored hybrid the generic half —
+     * the larger of the two options CR 118.7e lets the payer choose between.
+     */
+    private fun ManaSymbol.genericSpill(): Int =
+        if (this is ManaSymbol.MonocolorHybrid) generic else 1
+
+    /**
      * Reduce this cost by the maximum convoke contribution from the given creatures.
      * Each creature pays for one colored symbol matching its color, or one generic mana.
      * Colored symbols are matched greedily first, then remaining creatures pay generic.

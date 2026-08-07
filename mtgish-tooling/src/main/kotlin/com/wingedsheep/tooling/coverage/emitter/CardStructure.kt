@@ -3905,6 +3905,10 @@ private fun EmitCtx.activatedAbilityStmts(
     // "Exhaust — [cost]: [effect]" (CR 702.177) -> isExhaust = true. The DSL adds the
     // ActivationRestriction.Once enforcement, so the modifier is dropped from the restriction lines.
     if (hasExhaustModifier(rule)) stmts.add(Assign("isExhaust", Lit("true")))
+    // "Power-up — [cost]: [effect]" (CR 702.193) -> isPowerUp = true. Same arrangement as Exhaust:
+    // the DSL adds the ActivationRestriction.Once enforcement and the engine adds the pip-wise
+    // entered-this-turn cost reduction, so the modifier carries no restriction line of its own.
+    if (hasPowerUpModifier(rule)) stmts.add(Assign("isPowerUp", Lit("true")))
     activationRestrictionLines(rule)?.let { lines -> lines.forEach { stmts.add(RawLine(it)) } } ?: return null
     activationCostReductionLines(rule)?.let { lines -> lines.forEach { stmts.add(RawLine(it)) } } ?: return null
     if (tvar != null) stmts.add(targetLocal(tnode!!))
@@ -4156,6 +4160,12 @@ private fun hasSorcerySpeedModifier(rule: JsonObject): Boolean =
 private fun hasExhaustModifier(rule: JsonObject): Boolean =
     activatedModifiers(rule).any { it.strField("_ActivateModifier") == "Exhaust" }
 
+/** True iff the activated rule carries a `PowerUp` modifier ("Power-up — …" — rendered as
+ *  `isPowerUp = true`, which the DSL desugars to ActivationRestriction.Once plus the engine's
+ *  entered-this-turn cost reduction, not a restriction line). */
+private fun hasPowerUpModifier(rule: JsonObject): Boolean =
+    activatedModifiers(rule).any { it.strField("_ActivateModifier") == "PowerUp" }
+
 private fun EmitCtx.activationRestrictionLines(rule: JsonObject): List<String>? {
     if (rule.strField("_Rule") != "ActivatedWithModifiers") return emptyList()
     // ActivateOnlyAsASorcery is a timing rule, not an ActivationRestriction — it's emitted as
@@ -4172,6 +4182,8 @@ private fun EmitCtx.activationRestrictionLines(rule: JsonObject): List<String>? 
         // not a restriction line. Drop it so an ability whose only modifier is Exhaust needs no
         // `restrictions =` line.
         .filter { it.strField("_ActivateModifier") != "Exhaust" }
+        // PowerUp is emitted as `isPowerUp = true` for the same reason (CR 702.193).
+        .filter { it.strField("_ActivateModifier") != "PowerUp" }
     if (nonTimingModifiers.isEmpty()) return emptyList()
     val blob = compact(rule)
     if ("ActivateOnlyIf" in blob && "IsTheirTurn" in blob && "IsBeforeAttackersDeclared" in blob) {

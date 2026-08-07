@@ -150,7 +150,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         context.castPermissionUtils.applyEquipCostReduction(
                             context.castPermissionUtils.applyActivatedAbilityCostReduction(
                                 applyAbilityGenericCostReduction(rawCost, ability, state, entityId, playerId, context),
-                                state, entityId, ability.isExhaust
+                                state, entityId, ability.isExhaust, ability.isPowerUp
                             ),
                             ability, state, playerId, abilitySourceId = entityId
                         ),

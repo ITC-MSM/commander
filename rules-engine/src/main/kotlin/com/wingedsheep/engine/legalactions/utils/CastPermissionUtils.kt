@@ -11,6 +11,7 @@ import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedEverC
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.CastFromTopOfLibraryUsesThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.GraveyardPlayPermissionUsedComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -771,43 +772,98 @@ class CastPermissionUtils(
      * [isExhaustAbility] is the activated ability's `isExhaust` flag (CR 702.177). A static with
      * [ReduceActivatedAbilityCost.exhaustOnly] applies only when it is true — Boom Scholar's "Exhaust
      * abilities of other permanents you control cost {2} less to activate" leaves those permanents'
-     * ordinary activated abilities at full price.
+     * ordinary activated abilities at full price. [isPowerUpAbility] is the same story for `isPowerUp`
+     * (CR 702.193) and [ReduceActivatedAbilityCost.powerUpOnly] (Hulk, Gamma Goliath), and it
+     * additionally switches on power-up's *own* cost reduction — see
+     * [applyPowerUpSelfReduction], which is pip-wise rather than generic-only and so runs as its own
+     * step before the statics above. CR 601.2f lets multiple cost reductions apply in any order.
      */
     fun applyActivatedAbilityCostReduction(
         cost: AbilityCost,
         state: GameState,
         sourceId: EntityId?,
-        isExhaustAbility: Boolean = false
+        isExhaustAbility: Boolean = false,
+        isPowerUpAbility: Boolean = false
     ): AbilityCost {
         if (sourceId == null) return cost
-        val (net, manaFloor) = sumActivatedAbilityCostModifications(state, sourceId, isExhaustAbility)
-        if (net == 0) return cost
+        val reduced =
+            if (isPowerUpAbility) applyPowerUpSelfReduction(cost, state, sourceId) else cost
+        val (net, manaFloor) =
+            sumActivatedAbilityCostModifications(state, sourceId, isExhaustAbility, isPowerUpAbility)
+        if (net == 0) return reduced
         // net > 0 reduces (floored), net < 0 taxes. A reduction can only shrink mana that is
         // already there; a tax applies to *every* activated ability, so a cost with no mana part
         // (`{T}:`, sacrifice, crew) gains one — "{T}:" taxed by {2} becomes "{2}, {T}:".
         val modify: (ManaCost) -> ManaCost =
             if (net > 0) { mana -> mana.reduceGenericWithManaFloor(net, manaFloor) }
             else { mana -> mana.increaseGeneric(-net) }
-        val taxAtom = { AbilityCost.Atom(CostAtom.Mana(modify(ManaCost.ZERO))) }
-        return when (cost) {
-            is AbilityCost.Atom -> cost.manaCostOrNull
-                ?.let { AbilityCost.Atom(CostAtom.Mana(modify(it))) }
-                ?: if (net < 0) AbilityCost.Composite(listOf(taxAtom(), cost)) else cost
-            is AbilityCost.Composite -> {
-                var applied = false
-                val modified = AbilityCost.Composite(cost.costs.map { sub ->
-                    val subMana = sub.manaCostOrNull
-                    if (!applied && subMana != null) {
-                        applied = true
-                        AbilityCost.Atom(CostAtom.Mana(modify(subMana)))
-                    } else sub
-                })
-                if (!applied && net < 0) AbilityCost.Composite(listOf(taxAtom()) + cost.costs) else modified
-            }
-            // Every other shape (Tap, TapAttachedCreature, Loyalty, Craft, …) carries no mana part:
-            // a reduction is a no-op, a tax prepends the mana the player must now also pay.
-            else -> if (net < 0) AbilityCost.Composite(listOf(taxAtom(), cost)) else cost
+        mapFirstManaComponent(reduced, modify)?.let { return it }
+        // No mana part to modify (Tap, TapAttachedCreature, Loyalty, Craft, …): a reduction is a
+        // no-op, while a tax prepends the mana the player must now also pay. The prepend flattens
+        // into an existing Composite rather than nesting one inside it — payment and enumeration
+        // walk `Composite.costs` expecting atoms, not a sub-composite.
+        if (net >= 0) return reduced
+        val taxAtom = AbilityCost.Atom(CostAtom.Mana(modify(ManaCost.ZERO)))
+        return when (reduced) {
+            is AbilityCost.Composite -> AbilityCost.Composite(listOf(taxAtom) + reduced.costs)
+            else -> AbilityCost.Composite(listOf(taxAtom, reduced))
         }
+    }
+
+    /**
+     * Apply power-up's own cost reduction (CR 702.193a): *"If this permanent entered this turn, this
+     * ability's cost is reduced by this permanent's mana cost."*
+     *
+     * Two things make this unlike every other reduction in the engine, and both are load-bearing:
+     *  - **It is pip-wise, not generic-only.** CR 702.193b subtracts the whole printed mana cost,
+     *    colored and colorless pips included, so it goes through [ManaCost.subtract] (CR 118.7)
+     *    rather than [ManaCost.reduceGenericWithManaFloor]. Thanos's `{C}{W}{U}{B}{R}{G}` reduced by
+     *    `{R}{W}{B}` is `{C}{U}{G}`; a generic-only reduction would leave it untouched.
+     *  - **It is conditional on the turn the permanent entered**, which is exactly
+     *    [EnteredThisTurnComponent] — the same marker `Conditions.SourceEnteredThisTurn` reads.
+     *    Note this is "entered", not "you've controlled it since your last turn": a permanent that
+     *    entered under an opponent's control and changed hands this turn still gets the discount.
+     *
+     * The mana cost read is the one on the permanent's [CardComponent], so a permanent that is a
+     * copy of something else is reduced by the *copied* mana cost, and a face-down creature (no mana
+     * cost) gets no reduction at all.
+     */
+    private fun applyPowerUpSelfReduction(
+        cost: AbilityCost,
+        state: GameState,
+        sourceId: EntityId
+    ): AbilityCost {
+        val container = state.getEntity(sourceId) ?: return cost
+        if (!container.has<EnteredThisTurnComponent>()) return cost
+        val printedCost = container.get<CardComponent>()?.manaCost ?: return cost
+        if (printedCost.isEmpty()) return cost
+        return mapFirstManaComponent(cost) { it.subtract(printedCost) } ?: cost
+    }
+
+    /**
+     * Rewrite the first mana component of [cost] through [modify], or return null when the cost has
+     * no mana part at all. Null rather than the unchanged cost so callers can tell "nothing to
+     * reduce" from "reduced to {0}" — a cost increase has to *add* a mana component in the first
+     * case, while a reduction is simply a no-op.
+     */
+    private fun mapFirstManaComponent(
+        cost: AbilityCost,
+        modify: (ManaCost) -> ManaCost
+    ): AbilityCost? = when (cost) {
+        is AbilityCost.Atom ->
+            cost.manaCostOrNull?.let { AbilityCost.Atom(CostAtom.Mana(modify(it))) }
+        is AbilityCost.Composite -> {
+            var applied = false
+            val modified = AbilityCost.Composite(cost.costs.map { sub ->
+                val subMana = sub.manaCostOrNull
+                if (!applied && subMana != null) {
+                    applied = true
+                    AbilityCost.Atom(CostAtom.Mana(modify(subMana)))
+                } else sub
+            })
+            if (applied) modified else null
+        }
+        else -> null
     }
 
     /**
@@ -822,12 +878,14 @@ class CastPermissionUtils(
      * any other (battlefield) scope → the source's base filter matched against [sourceId] under
      * projected state.
      *
-     * An `exhaustOnly` reduction contributes nothing unless [isExhaustAbility] is set.
+     * An `exhaustOnly` reduction contributes nothing unless [isExhaustAbility] is set, and likewise
+     * a `powerUpOnly` one unless [isPowerUpAbility] is set.
      */
     private fun sumActivatedAbilityCostModifications(
         state: GameState,
         sourceId: EntityId,
-        isExhaustAbility: Boolean
+        isExhaustAbility: Boolean,
+        isPowerUpAbility: Boolean
     ): Pair<Int, Int> {
         var net = 0
         var floor = 0
@@ -840,6 +898,7 @@ class CastPermissionUtils(
                 when (ability) {
                     is com.wingedsheep.sdk.scripting.ReduceActivatedAbilityCost -> {
                         if (ability.exhaustOnly && !isExhaustAbility) continue
+                        if (ability.powerUpOnly && !isPowerUpAbility) continue
                         if (!activatedAbilityReductionApplies(state, entityId, ability.filter, sourceId)) continue
                         val owner = controllerId ?: continue
                         net += evaluator.evaluate(

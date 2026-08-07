@@ -5330,7 +5330,12 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   `ReduceActivatedAbilityCost(GroupFilter(GameObjectFilter.Permanent.youControl(), excludeSelf = true), DynamicAmount.Fixed(2), exhaustOnly = true)`.
   Note that `GroupFilter.excludeSelf` (the printed "**other** permanents") is honored by this read
   site directly — the projection layer never sees this static — so a lord never discounts its own
-  abilities.
+  abilities. `powerUpOnly = true` is the same qualifier for power-up abilities (`isPowerUp`,
+  CR 702.193) — Hulk, Gamma Goliath: "Power-up abilities of other creatures you control cost {3} less
+  to activate" →
+  `ReduceActivatedAbilityCost(GroupFilter(GameObjectFilter.Creature.youControl(), excludeSelf = true), DynamicAmount.Fixed(3), powerUpOnly = true)`.
+  It stacks with power-up's own reduction, which is applied first (CR 601.2f lets multiple reductions
+  apply in any order).
 - `IncreaseActivatedAbilityCost(filter, amount)` — the taxing mirror of
   `ReduceActivatedAbilityCost`: activated abilities of sources matching `filter` cost `amount`
   generic mana **more** to activate. The two are summed into a single net delta before either is
@@ -5666,6 +5671,43 @@ apart. No game-scoped tracker is needed — `Once`'s per-object lifetime (above)
 rules semantics, so a permanent re-entering the battlefield may activate its exhaust ability again.
 Compose freely with other restrictions, e.g. `restrictions = listOf(ActivationRestriction.OnlyDuringYourTurn)`
 alongside `isExhaust = true` for "Exhaust — …: … Activate only during your turn." (Bitter Work).
+
+**Power-up** (Marvel Super Heroes; CR 702.193) — like Exhaust, *not a keyword-line keyword* but a
+marker flag on an activated ability. *"Power-up — [cost]: [effect]"* means *"[cost]: [effect]. If this
+permanent entered this turn, this ability's cost is reduced by this permanent's mana cost. Activate
+this ability only once."* Set `isPowerUp = true` in the `activatedAbility { }` block. That does three
+things:
+
+1. renders the *"Power-up — "* prefix on the ability's `description`;
+2. **auto-adds `ActivationRestriction.Once`**, exactly as `isExhaust` does — same per-object lifetime,
+   so a permanent that re-enters the battlefield may power up again (CR 400.7);
+3. switches on the **self cost reduction**, the part that is genuinely new. It is *pip-wise*, not
+   generic-only: CR 702.193b subtracts the permanent's whole printed mana cost, colored and colorless
+   pips included, via `ManaCost.subtract(other)` (below). Gated on the source having
+   `EnteredThisTurnComponent` — the same marker `Conditions.SourceEnteredThisTurn` reads — and applied
+   in `CastPermissionUtils.applyActivatedAbilityCostReduction`, so the enumerator's displayed cost and
+   `ActivateAbilityHandler`'s paid cost stay in lockstep. The mana cost read is the one on the
+   permanent's `CardComponent`, so a permanent that is a copy is reduced by the *copied* cost.
+
+```kotlin
+// Thanos, the Mad Titan — {R}{W}{B}. Power-up — {C}{W}{U}{B}{R}{G} costs {C}{U}{G} the turn he lands.
+activatedAbility {
+    isPowerUp = true
+    cost = Costs.Mana("{C}{W}{U}{B}{R}{G}")
+    effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, EffectTarget.Self)
+}
+```
+
+Do **not** reach for `genericCostReduction` for this: it is generic-only (CR 118.7a) and so cannot
+express any power-up cost whose reduction includes a colored pip — which is most of the cycle.
+
+**`ManaCost.subtract(other)` — pip-wise cost reduction (CR 118.7).** The primitive behind power-up
+(CR 702.193b) and, identically worded, offering (CR 702.48c): generic reduces generic; colored and
+colorless reduce mana of the same type with any excess spilling into generic; hybrid pips cancel
+identical hybrids first, then either colored half (CR 118.7e); Phyrexian pips reduce their color
+(118.7f); `{X}` is inert on both sides. Floored at zero, never negative. Use this — not
+`reduceGeneric` / `reduceGenericWithManaFloor` — whenever a reduction is expressed as *another
+object's mana cost* rather than as an amount of generic mana.
 
 **`minimumXValue` — "X can't be 0".** Set `minimumXValue = 1` in the `activatedAbility { }` block for
 an X-cost ability whose X may not be 0 (**Gogo, Master of Mimicry**: "{X}{X}, {T}: … X can't be 0.").
