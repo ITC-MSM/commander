@@ -177,6 +177,30 @@ class EmergeKeywordTest : FunSpec({
         candidates shouldNotContain lions
     }
 
+    test("enumeration reports the cost each candidate leaves, so the client can show it") {
+        val driver = createDriver()
+        val player = driver.activePlayer!!
+
+        val gryff = driver.putCardInHand(player, "Wretched Gryff")
+        val courser = driver.putCreatureOnBattlefield(player, "Centaur Courser") // mana value 3
+        val angler = driver.putCreatureOnBattlefield(player, "Gurmag Angler") // mana value 7
+        repeat(6) { driver.putLandOnBattlefield(player, "Island") }
+
+        val enumerator = LegalActionEnumerator.create(driver.cardRegistry)
+        val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
+        val emerge = actions.first { la ->
+            (la.action as? CastSpell)?.cardId == gryff &&
+                (la.action as? CastSpell)?.alternativeCostType == AlternativeCostType.EMERGE
+        }
+
+        val costs = emerge.additionalCostInfo!!.costAfterSacrifice
+        // Emerge {5}{U} minus 3 → {2}{U}; minus 7 → the generic is exhausted and {U} survives,
+        // the surplus 4 wasted (CR 702.119a). The client renders these verbatim, so they are the
+        // player-visible contract.
+        costs[courser] shouldBe "{2}{U}"
+        costs[angler] shouldBe "{U}"
+    }
+
     test("no emerge option at all when the reduced cost is unaffordable for every creature") {
         val driver = createDriver()
         val player = driver.activePlayer!!

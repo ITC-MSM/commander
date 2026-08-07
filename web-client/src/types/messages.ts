@@ -1034,6 +1034,14 @@ export interface AdditionalCostInfo {
   readonly costType: string
   readonly validSacrificeTargets?: readonly EntityId[]
   readonly sacrificeCount?: number
+  /**
+   * Emerge (CR 702.119): the mana cost that remains after sacrificing each candidate, keyed by
+   * that candidate. Emerge is the only cost whose mana half depends on which permanent pays its
+   * non-mana half, so `manaCostString` alone can't say what a given choice costs — and the client
+   * must never re-derive it, since the generic-only reduction is a rule. Absent/empty for every
+   * other sacrifice cost, whose mana is fixed regardless of the choice.
+   */
+  readonly costAfterSacrifice?: Readonly<Record<EntityId, string>>
   readonly validTapTargets?: readonly EntityId[]
   readonly tapCount?: number
   /**

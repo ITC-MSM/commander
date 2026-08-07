@@ -120,6 +120,14 @@ export interface TargetingState {
   totalRequirements?: number
   /** Name of the card that initiated this targeting (shown in overlay header) */
   sourceCardName?: string
+  /**
+   * Emerge (CR 702.119): the spell's mana cost before any reduction, and the cost that remains
+   * after sacrificing each candidate (server-computed, keyed by candidate). Set only for a
+   * sacrifice step whose choice changes the mana owed, so the overlay can show
+   * `{5}{U} → {2}{U}` live instead of leaving the player to do the arithmetic.
+   */
+  costBeforeSacrifice?: string
+  costAfterSacrifice?: Readonly<Record<EntityId, string>>
   /** Transient warning shown when the user tries an illegal toggle (e.g. clicking past max
    * on a multi-target step). Cleared on the next successful add/remove. */
   warning?: string | null

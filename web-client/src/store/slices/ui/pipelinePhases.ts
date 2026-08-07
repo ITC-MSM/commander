@@ -706,6 +706,12 @@ export function enterPhase(
           // overlay falls back to hardcoded "creature" wording and misdescribes every
           // non-creature sacrifice cost (Castle Doom's artifact, a land, an enchantment).
           flags.targetDescription = costInfo.description
+          // Emerge (CR 702.119) is the one sacrifice cost where the choice changes the mana owed.
+          // Forward the server's per-candidate costs so the overlay can price each pick.
+          if (costInfo.costAfterSacrifice) {
+            flags.costAfterSacrifice = costInfo.costAfterSacrifice
+            if (actionInfo.manaCostString) flags.costBeforeSacrifice = actionInfo.manaCostString
+          }
           break
         case 'SacrificeForCostReduction':
           validTargets = [...(costInfo.validSacrificeTargets ?? [])]

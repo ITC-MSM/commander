@@ -9,6 +9,8 @@ import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.mechanics.EmergeCasts
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.model.EntityId
 
 /**
  * Enumerates the "cast for its emerge cost" legal action (CR 702.119).
@@ -71,14 +73,18 @@ class EmergeCastEnumerator : ActionEnumerator {
 
             // Only creatures whose mana value leaves the reduced cost payable may be offered.
             // Cheapest-first so the AI's "take the first candidate" pick spends the least valuable
-            // body rather than an arbitrary one.
-            val payableCandidates = candidates
-                .sortedBy { EmergeCasts.manaValueOf(state, it) }
-                .filter { creatureId ->
-                    val reduced = EmergeCasts.reduceForSacrifice(baseCost, state, creatureId)
-                    context.manaSolver.canPay(state, playerId, reduced, precomputedSources = cachedSources)
+            // body rather than an arbitrary one. The surviving cost is kept per candidate and sent
+            // along: it is the *only* way the client can tell the player what a given sacrifice
+            // will actually cost, since the generic-only reduction is a rule, not client math.
+            val costByCandidate = LinkedHashMap<EntityId, ManaCost>()
+            for (creatureId in candidates.sortedBy { EmergeCasts.manaValueOf(state, it) }) {
+                val reduced = EmergeCasts.reduceForSacrifice(baseCost, state, creatureId)
+                if (context.manaSolver.canPay(state, playerId, reduced, precomputedSources = cachedSources)) {
+                    costByCandidate[creatureId] = reduced
                 }
-            if (payableCandidates.isEmpty()) continue
+            }
+            if (costByCandidate.isEmpty()) continue
+            val payableCandidates = costByCandidate.keys.toList()
 
             val targetReqs = buildList {
                 addAll(cardDef.script.targetRequirements)
@@ -98,11 +104,12 @@ class EmergeCastEnumerator : ActionEnumerator {
             val firstReq = targetReqs.firstOrNull()
             val firstReqInfo = targetReqInfos.firstOrNull()
 
-            // Preview the cheapest payable line — the same candidate the client pre-selects and the
-            // AI takes. The real solve happens at execute() against the creature actually chosen.
+            // Preview the line for the first candidate — the one the client pre-selects and the AI
+            // takes. The real solve happens at execute() against the creature actually chosen, and
+            // the client re-prices off `costAfterSacrifice` as soon as the player picks.
             val autoTapPreview = if (context.skipAutoTapPreview) null else {
-                val cheapest = EmergeCasts.reduceForSacrifice(baseCost, state, payableCandidates.first())
-                context.manaSolver.solve(state, playerId, cheapest, precomputedSources = cachedSources)
+                context.manaSolver
+                    .solve(state, playerId, costByCandidate.values.first(), precomputedSources = cachedSources)
                     ?.sources?.map { it.entityId }
             }
 
@@ -127,7 +134,8 @@ class EmergeCastEnumerator : ActionEnumerator {
                         description = "a creature to sacrifice (its mana value reduces the emerge cost)",
                         costType = "SacrificePermanent",
                         validSacrificeTargets = payableCandidates,
-                        sacrificeCount = 1
+                        sacrificeCount = 1,
+                        costAfterSacrifice = costByCandidate.mapValues { (_, cost) -> cost.toString() }
                     ),
                     autoTapPreview = autoTapPreview
                 )

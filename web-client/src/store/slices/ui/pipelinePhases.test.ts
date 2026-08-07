@@ -49,3 +49,43 @@ describe('computePhases — choose-N modal', () => {
     expect(computePhases(info)).toEqual([{ type: 'modalModes' }, { type: 'costPayment' }])
   })
 })
+
+describe('computePhases — emerge sacrifice', () => {
+  function emergeAction(): LegalActionInfo {
+    return castAction({
+      actionType: 'CastWithAlternativeCost',
+      action: {
+        type: 'CastSpell',
+        playerId: 'p1',
+        cardId: 'c1',
+        useAlternativeCost: true,
+        alternativeCostType: 'EMERGE',
+      },
+      manaCostString: '{5}{U}',
+      additionalCostInfo: {
+        costType: 'SacrificePermanent',
+        description: 'a creature to sacrifice (its mana value reduces the emerge cost)',
+        validSacrificeTargets: ['bear', 'ogre'],
+        sacrificeCount: 1,
+        costAfterSacrifice: { bear: '{3}{U}', ogre: '{U}' },
+      },
+      availableManaSources: [{ entityId: 'island', producesColors: ['U'] }],
+    })
+  }
+
+  it('picks the sacrifice BEFORE manual mana-source selection, since it changes the cost owed', () => {
+    // With auto-tap off the mana step would otherwise run first and price the cast against the
+    // un-reduced emerge cost — the player would be asked to tap for {5}{U} and then discover the
+    // sacrifice made it {U}.
+    expect(computePhases(emergeAction(), { autoTapEnabled: false })).toEqual([
+      { type: 'costPayment' },
+      { type: 'manaSource' },
+    ])
+  })
+
+  it('runs the sacrifice step exactly once when auto-tap handles the mana', () => {
+    expect(computePhases(emergeAction(), { autoTapEnabled: true })).toEqual([
+      { type: 'costPayment' },
+    ])
+  })
+})

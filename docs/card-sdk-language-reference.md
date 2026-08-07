@@ -6257,7 +6257,11 @@ composite abilities).
   sacrifices it **after** the mana payment: CR 601.2f–g activate mana abilities before CR 601.2h pays the total cost, so
   the creature may legally be tapped for mana toward its own emerge cost before it dies. The chosen creature rides
   `CastSpell.additionalCostPayment.sacrificedPermanents`, exactly as Sneak's bounce rides `bouncedPermanents`. Printed
-  only — no card grants emerge.
+  only — no card grants emerge. Because emerge is the one cost whose *mana* half depends on which permanent pays its
+  *non-mana* half, the enumerator also sends `AdditionalCostData.costAfterSacrifice` — the surviving mana cost per
+  candidate — so the client can show `{5}{U} → {2}{U}` live as the player picks and price manual mana-source selection
+  off the chosen entry. The client never re-derives the reduction: the generic-only clamp is a rule, and rules stay
+  server-side.
 - `Mayhem(cost)` — `card { mayhem("{cost}") }` builder helper (CR 702.187, Marvel's Spider-Man). A **graveyard**
   alternative cost: *"As long as you discarded this card this turn, you may cast it from your graveyard by paying [cost]
   rather than paying its mana cost."* Grants **no timing permission** (normal timing — sorcery speed unless the card is an
