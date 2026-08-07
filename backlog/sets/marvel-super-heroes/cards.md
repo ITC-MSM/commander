@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 205 / 276
+**Implemented:** 206 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -162,7 +162,7 @@ variants 297+ are excluded)
 - [x] Thor, God of Thunder
 - [x] Truck Toss
 - [x] Vision of Love
-- [ ] Volcanic Villain
+- [x] Volcanic Villain
 - [ ] Wonder Man, Hollywood Hero
 - [x] Ant-Man's Army
 - [x] Call Damage Control

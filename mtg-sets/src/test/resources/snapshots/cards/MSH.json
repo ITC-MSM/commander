@@ -14264,6 +14264,54 @@
     ]
 }
 
+// Volcanic Villain
+{
+    "name": "Volcanic Villain",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Elemental Villain",
+    "oracleText": "Haste\nPower-up — {5}{R}: Put two +1/+1 counters on this creature. (Activate each power-up ability only once. Reduce the cost by its mana cost if it entered this turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "159",
+        "artist": "Nino Is",
+        "flavorText": "\"Get out of my way or get burned.\"\n—Volcana, Marsha Rosenberg",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/f/4f48ba40-9934-40fd-a251-e15a68e772d2.jpg?1783902922"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Wakandan Drone Flock
 {
     "name": "Wakandan Drone Flock",
