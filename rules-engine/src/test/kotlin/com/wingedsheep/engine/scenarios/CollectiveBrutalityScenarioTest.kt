@@ -117,13 +117,13 @@ class CollectiveBrutalityScenarioTest : ScenarioTestBase() {
                     .withCardInHand(1, "Centaur Courser")
                     .withCardInHand(2, "Lightning Bolt") // the only instant/sorcery to take
                     .withCardInHand(2, "Forest")
-                    .withCardOnBattlefield(2, "Runeclaw Bear") // 2/2 — dies to -2/-2
+                    .withCardOnBattlefield(2, "Savannah Lions") // 1/1 — dies to -2/-2
                     .withLandsOnBattlefield(1, "Swamp", 2)
                     .withActivePlayer(1)
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                val bear = game.findPermanent("Runeclaw Bear")!!
+                val lions = game.findPermanent("Savannah Lions")!!
                 val opponentLifeBefore = game.getLifeTotal(2)
                 val lifeBefore = game.getLifeTotal(1)
 
@@ -131,7 +131,7 @@ class CollectiveBrutalityScenarioTest : ScenarioTestBase() {
                     modes = listOf(0, 1, 2),
                     modeTargets = listOf(
                         listOf(ChosenTarget.Player(game.player2Id)),
-                        listOf(ChosenTarget.Permanent(bear)),
+                        listOf(ChosenTarget.Permanent(lions)),
                         listOf(ChosenTarget.Player(game.player2Id)),
                     ),
                     discards = listOf(
@@ -155,7 +155,7 @@ class CollectiveBrutalityScenarioTest : ScenarioTestBase() {
                 withClue("the land was never an eligible choice") {
                     game.isInHand(2, "Forest") shouldBe true
                 }
-                withClue("-2/-2 killed the 2/2") { game.findPermanent("Runeclaw Bear") shouldBe null }
+                withClue("-2/-2 killed the 1/1") { game.findPermanent("Savannah Lions") shouldBe null }
                 game.getLifeTotal(2) shouldBe (opponentLifeBefore - 2)
                 game.getLifeTotal(1) shouldBe (lifeBefore + 2)
             }
