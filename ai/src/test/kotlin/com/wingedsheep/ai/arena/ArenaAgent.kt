@@ -65,6 +65,12 @@ object ArenaAgents {
         // The suite's best zero-regression combination: 63/66 against production's 60/66.
         ArenaAgent("production-horizon-concave-2", AiProfile.PRODUCTION_HORIZON_CONCAVE_2),
         ArenaAgent("production-crackback", AiProfile.PRODUCTION_CRACKBACK),
+        // The land-drop accounting alone, and — since 2026-08-08 — what players actually face.
+        // `just arena production production-landdrop 1000` prices the accounting without paying for
+        // rollouts on either seat; `just arena production-candidate-tuned production-candidate-landdrop`
+        // was the promotion gate.
+        ArenaAgent("production-landdrop", AiProfile.PRODUCTION_LANDDROP),
+        ArenaAgent("production-candidate-landdrop", AiProfile.PRODUCTION_CANDIDATE_LANDDROP),
         ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.

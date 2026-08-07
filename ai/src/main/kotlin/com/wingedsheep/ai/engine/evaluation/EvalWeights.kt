@@ -40,14 +40,17 @@ data class EvaluationWeights(
      */
     val topdeckPenalty: Double = -3.0,
 ) {
-    fun toEvaluator(intents: IntentCatalog = IntentCatalog.NONE): BoardEvaluator = CompositeBoardEvaluator(
+    fun toEvaluator(
+        intents: IntentCatalog = IntentCatalog.NONE,
+        landDropIsNotCardLoss: Boolean = false,
+    ): BoardEvaluator = CompositeBoardEvaluator(
         listOf(
             life to LifeDifferential,
             boardPresence to BoardFeature { state, projected, playerId ->
                 BoardPresence.score(state, projected, playerId, intents)
             },
             cardAdvantage to BoardFeature { state, projected, playerId ->
-                CardAdvantage.score(state, projected, playerId, topdeckPenalty)
+                CardAdvantage.score(state, projected, playerId, topdeckPenalty, landDropIsNotCardLoss)
             },
             threatAssessment to ThreatAssessment,
             tempo to Tempo,
@@ -116,10 +119,19 @@ object EvalWeights {
     fun resolve(id: String): EvaluationWeights =
         resourceWeights[id]?.takeIf(::isFinite) ?: EvaluationWeights.DEFAULT
 
-    fun resolveEvaluator(id: String, intents: IntentCatalog): BoardEvaluator =
+    /**
+     * [landDropIsNotCardLoss] reaches only the composite fallback: the raw Phase 9 vectors price
+     * `myHandSize` linearly, so a land drop already costs them one fitted coefficient with no cliff
+     * to step off, and changing what they count would silently invalidate the fit.
+     */
+    fun resolveEvaluator(
+        id: String,
+        intents: IntentCatalog,
+        landDropIsNotCardLoss: Boolean = false,
+    ): BoardEvaluator =
         apprenticeWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
             ?: rawResourceWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
-            ?: resolve(id).toEvaluator(intents)
+            ?: resolve(id).toEvaluator(intents, landDropIsNotCardLoss)
 
     /** Whether [id] selects a complete, finite raw vector rather than the composite fallback. */
     fun isRawProfile(id: String): Boolean = apprenticeWeights[id]?.isValid() == true || rawResourceWeights[id]?.isValid() == true

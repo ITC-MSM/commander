@@ -43,6 +43,10 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 AiProfile.PRODUCTION_HORIZON_CONCAVE_2,
                 AiProfile.PRODUCTION_CRACKBACK,
                 AiProfile.PRODUCTION_TARGETED,
+                // The land-drop accounting alone, and on top of what is live. `sequencing-02` is the
+                // one verdict that moves in either column, which is what makes it attributable.
+                AiProfile.PRODUCTION_LANDDROP,
+                AiProfile.PRODUCTION_CANDIDATE_LANDDROP,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

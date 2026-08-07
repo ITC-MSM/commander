@@ -207,7 +207,11 @@ class AIPlayer(
             } else {
                 intents
             }
-            val evaluator = EvalWeights.resolveEvaluator(profile.evalWeightsId, evaluationIntents)
+            val evaluator = EvalWeights.resolveEvaluator(
+                profile.evalWeightsId,
+                evaluationIntents,
+                landDropIsNotCardLoss = profile.landDropIsNotCardLoss,
+            )
             val combatAdvisor = CombatAdvisor(
                 simulator, evaluator, cardRegistry, advisorRegistry,
                 priceCrackBackAsLife = profile.priceCrackBackAsLife,
