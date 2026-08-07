@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 224 / 276
+**Implemented:** 225 / 276
 
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
@@ -254,7 +254,7 @@ variants 297+ are excluded)
 - [x] H.E.R.B.I.E. Scout Unit
 - [x] Iron Man Armor
 - [x] S.H.I.E.L.D. Helicarrier
-- [ ] Super-Adaptoid
+- [x] Super-Adaptoid
 - [x] The Ten Rings
 - [x] Ultron, Artificial Malevolence
 - [x] Ultron Drone
