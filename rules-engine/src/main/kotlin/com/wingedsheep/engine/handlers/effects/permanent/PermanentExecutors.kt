@@ -226,6 +226,8 @@ class PermanentExecutors(
         // rooms / doors
         UnlockDoorExecutor(staticAbilityHandler),
         LockDoorExecutor(staticAbilityHandler),
+        // soulbond
+        PairWithSourceExecutor(),
         // phasing
         PhaseOutExecutor(),
         PhaseOutUntilLeavesExecutor(),

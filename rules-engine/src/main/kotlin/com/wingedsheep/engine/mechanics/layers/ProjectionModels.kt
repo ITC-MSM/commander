@@ -122,6 +122,15 @@ sealed interface AffectsFilter {
     }
 
     /**
+     * The source **and** the creature it's soulbond-paired with (CR 702.95b) — "both creatures" /
+     * "each of those creatures" on a soulbond payoff. Empty while the source is unpaired, which is
+     * what makes the payoff's "as long as this creature is paired" clause self-enforcing.
+     */
+    @Serializable
+    data object SoulbondPair : AffectsFilter {
+    }
+
+    /**
      * All creatures that have a specific counter type.
      * Used for Aurification: "Each creature with a gold counter on it..."
      */

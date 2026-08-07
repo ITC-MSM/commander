@@ -172,6 +172,10 @@ internal class AffectsFilterResolver {
                     ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
                 if (attachedTo != null) setOf(attachedTo.targetId) else emptySet()
             }
+            // CR 702.95b: "both creatures" of a soulbond pair. Empty while unpaired, so a payoff
+            // static's "as long as this creature is paired" clause needs no separate gate.
+            is AffectsFilter.SoulbondPair ->
+                com.wingedsheep.engine.mechanics.SoulbondPairing.pairOf(state, sourceId)
             is AffectsFilter.FaceDownCreatures -> {
                 state.getBattlefield().filter { entityId ->
                     state.getEntity(entityId)?.has<FaceDownComponent>() == true
@@ -496,6 +500,11 @@ internal class AffectsFilterResolver {
             val bearer = container.get<com.wingedsheep.engine.state.components.identity.RingBearerComponent>()
             bearer != null && projectedController(state, entityId, projectedValues) == bearer.ownerId
         }
+        // Soulbond pairing (CR 702.95b) — a plain "is this creature paired at all" question, with
+        // no source-relative half, so it goes through the same shared read as PredicateEvaluator.
+        // "Paired *with the source*" is Scope.SoulbondPair / AffectsFilter.SoulbondPair instead.
+        StatePredicate.IsPaired ->
+            com.wingedsheep.engine.mechanics.SoulbondPairing.isPaired(state, entityId)
         StatePredicate.IsEquipped -> {
             val attachments = container.get<AttachmentsComponent>()
             attachments != null && attachments.attachedIds.any { attachId ->

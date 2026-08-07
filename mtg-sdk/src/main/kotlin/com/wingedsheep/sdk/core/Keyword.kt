@@ -295,6 +295,22 @@ enum class Keyword(val displayName: String) {
      * enumerator then surfaces a "Cast (Miracle)" alternative cost at the miracle mana cost.
      */
     MIRACLE("Miracle"),
+
+    /**
+     * Soulbond (CR 702.95, Avacyn Restored). Two triggered abilities that pair this creature with
+     * another unpaired creature you control — "When this creature enters, … you may pair this
+     * creature with another unpaired creature you control" and "Whenever another creature you
+     * control enters, … you may pair that creature with this creature". Both are authored by the
+     * [com.wingedsheep.sdk.dsl.soulbond] builder, which adds this keyword for display plus the
+     * two abilities; the payoff is a separate static ability scoped to
+     * [com.wingedsheep.sdk.scripting.filters.unified.Scope.SoulbondPair] ("as long as this
+     * creature is paired with another creature, both creatures …").
+     *
+     * The pairing itself is engine state, not a keyword behaviour: `PairWithSourceEffect` stamps
+     * a `PairedComponent` on each half, and the CR 702.95e state check breaks the pair when either
+     * half leaves the battlefield, stops being a creature, or changes controller.
+     */
+    SOULBOND("Soulbond"),
     HIDEAWAY("Hideaway"),
 
     /**

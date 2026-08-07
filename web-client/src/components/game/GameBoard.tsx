@@ -11,6 +11,7 @@ import { ManaPool } from '../ui/ManaPool'
 import { ActionMenu } from '../ui/ActionMenu'
 import { CombatArrows } from '../combat/CombatArrows'
 import { TargetingArrows } from '../targeting/TargetingArrows'
+import { SoulbondBonds } from './SoulbondBonds'
 import { DraggedCardOverlay } from './DraggedCardOverlay'
 import { GameLog } from './GameLog'
 import { ActiveYieldsPanel } from './ActiveYieldsPanel'
@@ -1966,6 +1967,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
 
       {/* Targeting arrows for spells on the stack */}
       <TargetingArrows />
+
+      {/* Soulbond pair bonds (CR 702.95b) — ambient, so it sits under the combat/targeting arrows */}
+      <SoulbondBonds />
 
       {/* Dragged card overlay - hidden in spectator mode */}
       {!spectatorMode && <DraggedCardOverlay />}

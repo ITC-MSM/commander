@@ -1240,6 +1240,12 @@ class PredicateEvaluator {
                 bearer != null && projected.getController(entityId) == bearer.ownerId
             }
 
+            // Soulbond pairing (CR 702.95b) — via the shared read, which re-checks the link rather
+            // than trusting the component, so a half that has already left the battlefield counts as
+            // unpaired immediately instead of at the next SBA pass (CR 702.95e).
+            StatePredicate.IsPaired ->
+                com.wingedsheep.engine.mechanics.SoulbondPairing.isPaired(state, entityId)
+
             // Counter state
             is StatePredicate.HasCounter -> {
                 val countersComponent = container.get<CountersComponent>()

@@ -533,6 +533,169 @@
     ]
 }
 
+// Deadeye Navigator
+{
+    "name": "Deadeye Navigator",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)\nAs long as Deadeye Navigator is paired with another creature, each of those creatures has \"{1}{U}: Exile this creature, then return it to the battlefield under your control.\"",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "SOULBOND"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "statePredicates": [
+                                        {
+                                            "type": "StateNot",
+                                            "predicate": "IsPaired"
+                                        }
+                                    ]
+                                },
+                                "player": "You",
+                                "excludeSelf": true
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected1",
+                            "prompt": "You may pair this creature with an unpaired creature you control",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "PairWithSource",
+                            "from": "selected1"
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "StateNot",
+                                "predicate": "IsPaired"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "TriggeringEntity",
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "PairWithSource",
+                            "from": "gathered0"
+                        }
+                    ]
+                },
+                "optional": true,
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "StateNot",
+                                "predicate": "IsPaired"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "You may pair that creature with this creature"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_3",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{1}{U}"
+                        }
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": "Self",
+                                "destination": "Exile"
+                            },
+                            {
+                                "type": "MoveToZone",
+                                "target": "Self",
+                                "destination": "Battlefield"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Exile this creature, then return it to the battlefield under your control"
+                },
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "SoulbondPair"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "rarity": "RARE",
+        "artist": "Tomasz Jedruszek",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa94262b-f740-48fb-a937-75776864c9ee.jpg?1783940723"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Death Wind
 {
     "name": "Death Wind",
@@ -787,6 +950,144 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Lightning Mauler
+{
+    "name": "Lightning Mauler",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Berserker",
+    "oracleText": "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)\nAs long as this creature is paired with another creature, both creatures have haste.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "SOULBOND"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "statePredicates": [
+                                        {
+                                            "type": "StateNot",
+                                            "predicate": "IsPaired"
+                                        }
+                                    ]
+                                },
+                                "player": "You",
+                                "excludeSelf": true
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected1",
+                            "prompt": "You may pair this creature with an unpaired creature you control",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "PairWithSource",
+                            "from": "selected1"
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "StateNot",
+                                "predicate": "IsPaired"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "TriggeringEntity",
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "PairWithSource",
+                            "from": "gathered0"
+                        }
+                    ]
+                },
+                "optional": true,
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "StateNot",
+                                "predicate": "IsPaired"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "You may pair that creature with this creature"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "SoulbondPair"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "rarity": "UNCOMMON",
+        "artist": "Dave Kendall",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/241cc968-b93e-4fe3-a66d-7776d29aa023.jpg?1783940681"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

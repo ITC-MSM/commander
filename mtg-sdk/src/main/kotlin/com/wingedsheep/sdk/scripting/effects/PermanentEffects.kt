@@ -552,3 +552,27 @@ data class EmitExploredEventEffect(
 ) : Effect {
     override val description: String = "${target.description} explored"
 }
+
+/**
+ * Pair the creature(s) in the [from] collection with this effect's source — the resolution half of
+ * soulbond (CR 702.95a). Both halves gain a `PairedComponent` pointing at each other, and a
+ * `CreaturesPairedEvent` is emitted so watchers and animations can react.
+ *
+ * The collection is normally a one-element selection: either the player's pick among unpaired
+ * creatures they control (soulbond's first ability) or the creature that just entered (its second).
+ * An empty collection is a legal no-op — that is how both "you may" declines and "there was nobody
+ * to pair with" land here.
+ *
+ * CR 702.95c is enforced at execution: if either half is no longer a creature, no longer on the
+ * battlefield, or no longer controlled by the ability's controller, *neither* becomes paired.
+ * CR 702.95d likewise — an already-paired half is skipped rather than stealing a partner.
+ *
+ * @property from Collection slot holding the candidate partner (see `PipelineBuilder.pairWithSource`).
+ */
+@SerialName("PairWithSource")
+@Serializable
+data class PairWithSourceEffect(
+    val from: String
+) : Effect {
+    override val description: String = "pair this creature with the chosen creature"
+}

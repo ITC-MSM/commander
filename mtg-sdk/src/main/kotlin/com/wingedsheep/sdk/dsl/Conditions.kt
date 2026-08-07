@@ -1014,6 +1014,17 @@ object Conditions {
     val SourceIsSaddled: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.saddled())
 
+    /** If this creature is soulbond-paired with another creature (CR 702.95b). */
+    val SourceIsPaired: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.paired())
+
+    /**
+     * If this creature is **unpaired** (CR 702.95b) — the intervening-if of soulbond's second
+     * triggered ability, "if you control both that creature and this one and both are unpaired".
+     */
+    val SourceIsUnpaired: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.unpaired())
+
     /**
      * If this creature was declared as an attacker at least once during the current turn.
      * Used by intervening-if triggers like Erg Raiders' "if this creature didn't attack this

@@ -468,6 +468,10 @@ object ZoneMovementUtils {
             .without<AbilityActivatedEverComponent>()
             .without<AttachedToComponent>()
             .without<AttachmentsComponent>()
+            // A creature that leaves the battlefield becomes unpaired (CR 702.95e), and the object
+            // that comes back is a new one (CR 400.7) that must not inherit a stale partner id.
+            // This strips the *leaving* half; SoulbondPairingCheck unpairs the half left behind.
+            .without<com.wingedsheep.engine.state.components.battlefield.PairedComponent>()
             // A blink returns a new object (CR 400.7); it must not carry a stale "host left" marker
             // from a prior attachment, and an Equipment that itself re-enters starts unmarked.
             .without<AttachmentHostLeftComponent>()

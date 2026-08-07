@@ -2907,6 +2907,8 @@ class ActivateAbilityHandler(
                         is Scope.Self -> permanentId == entityId
                         is Scope.Specific -> scope.entityId == entityId
                         is Scope.AttachedTo -> container.get<AttachedToComponent>()?.targetId == entityId
+                        is Scope.SoulbondPair ->
+                            com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, permanentId, entityId)
                         is Scope.Battlefield -> {
                             if (ability.filter.excludeSelf && permanentId == entityId) false
                             else {
@@ -2964,6 +2966,14 @@ class ActivateAbilityHandler(
                     }
                     is Scope.Self -> {
                         if (permanentId == entityId) result.add(ability.ability to permanentId)
+                    }
+                    // Soulbond payoff (CR 702.95b) — must mirror the enumerator's SoulbondPair
+                    // branch in CastPermissionUtils exactly, or the ability shows as a button on the
+                    // paired creature and then fails legality when clicked.
+                    is Scope.SoulbondPair -> {
+                        if (com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, permanentId, entityId)) {
+                            result.add(ability.ability to permanentId)
+                        }
                     }
                     is Scope.Specific -> {
                         if ((ability.filter.scope as Scope.Specific).entityId == entityId) {

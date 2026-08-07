@@ -445,6 +445,22 @@ sealed interface StatePredicate {
         override val description: String = "that's a Ring-bearer"
     }
 
+    /**
+     * Is soulbond-**paired** with another creature (CR 702.95b). Negate with [Not] for the
+     * "unpaired" adjective the soulbond abilities themselves use ("another unpaired creature you
+     * control") — see `GameObjectFilter.paired()` / `.unpaired()`.
+     *
+     * Deliberately not source-relative: this asks whether the candidate is paired *at all*, so it
+     * evaluates the same way in a gather filter, a target filter, and a `Conditions.SourceMatches`
+     * gate. "Paired **with the source** specifically" is a different question, answered by
+     * [com.wingedsheep.sdk.scripting.filters.unified.Scope.SoulbondPair].
+     */
+    @SerialName("IsPaired")
+    @Serializable
+    data object IsPaired : Entity {
+        override val description: String = "paired"
+    }
+
     // =============================================================================
     // Equipment / Auras (Entity)
     // =============================================================================

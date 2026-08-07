@@ -998,6 +998,11 @@ class ClientStateTransformer(
         // enough — a stolen permanent or token copy never falsely carries it.
         val isRingBearer = container.has<com.wingedsheep.engine.state.components.identity.RingBearerComponent>()
 
+        // Soulbond partner (CR 702.95b) — surfaced so the UI can draw the bond between the two
+        // paired battlefield slots. Read through SoulbondPairing so a pair that has broken but not
+        // yet been tidied up by `SoulbondPairingCheck` never surfaces a bond to a departed creature.
+        val pairedWithId = com.wingedsheep.engine.mechanics.SoulbondPairing.partnerOf(state, entityId)
+
         // Get targets for spells/abilities on stack (for targeting arrows)
         val targetsComponent = container.get<TargetsComponent>()
         val targets = targetsComponent?.targets?.mapNotNull { chosenTarget ->
@@ -1296,6 +1301,7 @@ class ClientStateTransformer(
             isToken = isToken,
             isCommander = isCommander,
             isRingBearer = isRingBearer,
+            pairedWithId = pairedWithId,
             zone = zoneKey,
             attachedTo = attachedTo,
             attachments = attachments,

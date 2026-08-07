@@ -17,6 +17,7 @@ class PermanentSbaModule(
         LegendRuleCheck(decisionHandler, cardRegistry),
         CounterAnnihilationCheck(),
         UnattachedAurasCheck(cardRegistry),
+        SoulbondPairingCheck(),
         SagaSacrificeCheck(cardRegistry),
         CommanderZoneChoiceCheck(decisionHandler),
     )
