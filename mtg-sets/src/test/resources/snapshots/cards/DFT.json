@@ -361,7 +361,9 @@
                     "target": "Self",
                     "destination": "Battlefield"
                 },
-                "activeZone": "Graveyard",
+                "activeZones": [
+                    "Graveyard"
+                ],
                 "descriptionOverride": "Whenever you activate an exhaust ability, return this card from your graveyard to the battlefield."
             }
         ],

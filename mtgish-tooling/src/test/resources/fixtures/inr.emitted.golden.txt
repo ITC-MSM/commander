@@ -2992,7 +2992,7 @@ val EdgarMarkov = card("Edgar Markov") {
     power = 4
     toughness = 4
     keywords(Keyword.FIRST_STRIKE, Keyword.HASTE)
-    // STRUCTURE needs human wiring: FromCommandZoneOrBattlefield
+    // STRUCTURE needs human wiring: trigger-shape
     metadata {
         rarity = Rarity.MYTHIC
         collectorNumber = "234"

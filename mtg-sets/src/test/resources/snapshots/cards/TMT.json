@@ -8199,7 +8199,9 @@
                         }
                     ]
                 },
-                "activeZone": "Graveyard",
+                "activeZones": [
+                    "Graveyard"
+                ],
                 "descriptionOverride": "When this creature dies, you may exile it. When you do, put target creature card from your graveyard on top of your library."
             }
         ]

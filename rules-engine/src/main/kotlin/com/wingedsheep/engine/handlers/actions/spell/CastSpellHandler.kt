@@ -3338,7 +3338,7 @@ class CastSpellHandler(
                             trigger = SdkGameEvent.SpellCastEvent(player = Player.You),
                             binding = TriggerBinding.SELF,
                             effect = stormEffect,
-                            activeZone = Zone.STACK,
+                            activeZones = setOf(Zone.STACK),
                             descriptionOverride = "Storm — copy ${cardComponent.name} $stormCount time(s)"
                         )
                         PendingTrigger(
@@ -3374,7 +3374,7 @@ class CastSpellHandler(
                         trigger = SdkGameEvent.SpellCastEvent(player = Player.You),
                         binding = TriggerBinding.SELF,
                         effect = copyEffect,
-                        activeZone = Zone.STACK,
+                        activeZones = setOf(Zone.STACK),
                         descriptionOverride = "Conspire — copy ${cardComponent.name}"
                     )
                     listOf(
@@ -3411,7 +3411,7 @@ class CastSpellHandler(
                         trigger = SdkGameEvent.SpellCastEvent(player = Player.You),
                         binding = TriggerBinding.SELF,
                         effect = copyEffect,
-                        activeZone = Zone.STACK,
+                        activeZones = setOf(Zone.STACK),
                         descriptionOverride = "Casualty — copy ${cardComponent.name}"
                     )
                     listOf(
@@ -4275,7 +4275,7 @@ class CastSpellHandler(
             effect = com.wingedsheep.sdk.scripting.effects.CopyTargetSpellEffect(
                 target = com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity
             ),
-            activeZone = Zone.STACK,
+            activeZones = setOf(Zone.STACK),
             descriptionOverride = "Copy ${cardComponent.name}. You may choose new targets for the copy."
         )
         val pending = PendingTrigger(
@@ -4328,7 +4328,7 @@ class CastSpellHandler(
             trigger = SdkGameEvent.SpellCastEvent(player = Player.You),
             binding = TriggerBinding.SELF,
             effect = com.wingedsheep.sdk.dsl.Patterns.Library.scry(amount),
-            activeZone = Zone.STACK,
+            activeZones = setOf(Zone.STACK),
             descriptionOverride = "Scry $amount"
         )
         val pending = PendingTrigger(

@@ -10023,7 +10023,9 @@
                         "destination": "Hand"
                     }
                 },
-                "activeZone": "Graveyard"
+                "activeZones": [
+                    "Graveyard"
+                ]
             }
         ],
         "activatedAbilities": [
@@ -11237,7 +11239,9 @@
                     },
                     "descriptionOverride": "You may exile this creature. If you do, shuffle all creature cards from your graveyard into your library."
                 },
-                "activeZone": "Graveyard"
+                "activeZones": [
+                    "Graveyard"
+                ]
             }
         ]
     },

@@ -8292,7 +8292,9 @@
                         "destination": "Hand"
                     }
                 },
-                "activeZone": "Graveyard",
+                "activeZones": [
+                    "Graveyard"
+                ],
                 "descriptionOverride": "Whenever one or more creatures you control deal combat damage to a player, you may pay {W/B}. If you do, return this card from your graveyard to your hand."
             }
         ]

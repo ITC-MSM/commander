@@ -5840,7 +5840,9 @@
                         "destination": "Hand"
                     }
                 },
-                "activeZone": "Graveyard",
+                "activeZones": [
+                    "Graveyard"
+                ],
                 "descriptionOverride": "Eerie — Whenever an enchantment you control enters, you may return this card from your graveyard to your hand."
             },
             {
@@ -5856,7 +5858,9 @@
                         "destination": "Hand"
                     }
                 },
-                "activeZone": "Graveyard",
+                "activeZones": [
+                    "Graveyard"
+                ],
                 "descriptionOverride": "Eerie — Whenever you fully unlock a Room, you may return this card from your graveyard to your hand."
             }
         ],

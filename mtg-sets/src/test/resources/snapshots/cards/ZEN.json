@@ -276,7 +276,9 @@
                         "fromZone": "Graveyard"
                     }
                 },
-                "activeZone": "Graveyard",
+                "activeZones": [
+                    "Graveyard"
+                ],
                 "descriptionOverride": "Landfall — Whenever a land you control enters, you may return this card from your graveyard to the battlefield."
             }
         ],

@@ -229,6 +229,12 @@ object Emitter {
                 rname == "AbilitiesTriggerAnAdditionalTime" -> block = ctx.additionalSourceTriggersBlock(rule)
                 rname == "FromAnyZone" -> block = ctx.fromAnyZoneBlock(rule)
                 rname == "FromGraveyard" -> block = ctx.fromGraveyardBlock(rule)
+                // Eminence (C17's commander cycle) — a triggered ability that functions from the
+                // command zone as well as the battlefield.
+                rname == "FromCommandZoneOrBattlefield" -> {
+                    block = ctx.fromCommandZoneOrBattlefieldBlock(rule)
+                    if (block == null) { gap(rname)?.let { return it }; continue }
+                }
                 // "You may cast this from your graveyard if [condition]. If you do, it enters with a +1/+1
                 // counter." (Undead Sprinter) — a conditional self-cast permission + cast-this-way counter
                 // rider. Only the exact MayCastGraveyardCardWithEnterActions(self, [+1/+1]) shape gated by a

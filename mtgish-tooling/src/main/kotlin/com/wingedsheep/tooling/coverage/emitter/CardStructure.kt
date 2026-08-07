@@ -1922,6 +1922,14 @@ internal fun EmitCtx.triggerBlock(
     oncePerTurn: Boolean = false,
     triggerCondition: String? = null,
     triggersOnce: Boolean = false,
+    /** Rendered `triggerZones` rider — the zones the trigger functions in (CR 113.6b). */
+    triggerZones: String? = null,
+    /**
+     * Rendered condition to gate the whole effect on, supplying CR 603.4's resolution-time re-check
+     * for an ability whose intervening-"if" must hold *again* as it resolves. Wraps the effect in a
+     * `ConditionalEffect`, which is what the hand-authored eminence idiom does.
+     */
+    gateEffectOn: String? = null,
 ): List<Stmt>? {
     // A "choose one —" modal triggered ability hosts its modal as a plain effect:
     // `triggeredAbility { trigger = …; effect = ModalEffect.chooseOne(Mode.…, Mode.…) }`. Render the
@@ -2014,13 +2022,21 @@ internal fun EmitCtx.triggerBlock(
     } ?: return null
 
     val stmts = mutableListOf<Stmt>(Assign("trigger", Lit(spec)))
+    if (triggerZones != null) stmts.add(Assign("triggerZones", Lit(triggerZones)))
     val triggerCond = effTriggerCondition ?: condFromIf
     if (triggerCond != null) stmts.add(Assign("triggerCondition", Lit(triggerCond)))
     if (oncePerTurn) stmts.add(Assign("oncePerTurn", Lit("true")))
     if (triggersOnce) stmts.add(Assign("triggersOnce", Lit("true")))
     if (mayWrapped && !selfOptional) stmts.add(Assign("optional", Lit("true")))
     if (tvar != null) stmts.add(targetLocal(tnode!!))
-    stmts.add(Assign("effect", edsl))
+    stmts.add(
+        Assign(
+            "effect",
+            if (gateEffectOn != null) {
+                call("ConditionalEffect", arg("condition", Lit(gateEffectOn)), arg("effect", edsl))
+            } else edsl
+        )
+    )
     return listOf(Sub(Block("triggeredAbility", stmts)))
 }
 
@@ -3756,6 +3772,59 @@ internal fun EmitCtx.fromGraveyardBlock(rule: JsonObject): List<Stmt>? {
         "Activated", "ActivatedWithModifiers" -> activatedBlock(inner, activateFromZone = "Zone.GRAVEYARD")
         else -> { reasons.add("FromGraveyard"); return null }
     }
+}
+
+/**
+ * `FromCommandZoneOrBattlefield(TriggerI(trigger, ThisCardIsInTheCommandZoneOrOnTheBattlefield, actions))`
+ * -> the **eminence** ability word (C17's commander cycle: Edgar Markov, Arahbo, Inalla, Mirri, …).
+ *
+ * "Eminence — Whenever you cast another Vampire spell, if Edgar is in the command zone or on the
+ * battlefield, create a 1/1 black Vampire creature token."
+ * →
+ * ```
+ * triggeredAbility {
+ *     trigger = Triggers.YouCastSubtype(Subtype.VAMPIRE)
+ *     triggerZones = setOf(Zone.BATTLEFIELD, Zone.COMMAND)
+ *     effect = ConditionalEffect(
+ *         condition = Conditions.SourceInZone(Zone.BATTLEFIELD, Zone.COMMAND),
+ *         effect = Effects.CreateToken(…))
+ * }
+ * ```
+ *
+ * Two halves, because the printed zone clause does two jobs. As a CR 113.6b zone statement it makes
+ * the trigger *function* from the command zone — `triggerZones`. As an intervening-"if" (CR 603.4) it
+ * is checked again on resolution, which the engine does not do for `triggerCondition`, so it is also
+ * rendered as a `ConditionalEffect` gate over the body. Dropping either half would be lossy: without
+ * the first the ability never fires from the command zone, and without the second a source that left
+ * both zones still produces its effect.
+ *
+ * Renders only the exact shape above — a lone `TriggerI` whose condition node is
+ * `ThisCardIsInTheCommandZoneOrOnTheBattlefield`. The inner trigger and actions go through the shared
+ * [triggerBlock] path, so anything it can't render whole still declines to SCAFFOLD.
+ */
+internal fun EmitCtx.fromCommandZoneOrBattlefieldBlock(rule: JsonObject): List<Stmt>? {
+    val inner = rule["args"] as? JsonObject
+    if (inner?.strField("_Rule") != "TriggerI") { reasons.add("FromCommandZoneOrBattlefield"); return null }
+
+    val args = inner["args"].asArr ?: run { reasons.add("FromCommandZoneOrBattlefield"); return null }
+    val cond = args.getOrNull(1) as? JsonObject
+    if (cond?.strField("_Condition") != "ThisCardIsInTheCommandZoneOrOnTheBattlefield") {
+        reasons.add("FromCommandZoneOrBattlefield")
+        return null
+    }
+
+    // Re-key [trigger, condition, actions] into the TriggerA-shaped [trigger, actions] the shared
+    // renderer expects; the condition is re-expressed by the two riders below rather than as a
+    // `triggerCondition` (which would only cover the fire-time half).
+    val triggerA = buildJsonObject {
+        put("_Rule", JsonPrimitive("TriggerA"))
+        put("args", JsonArray(listOfNotNull(args.getOrNull(0)) + listOfNotNull(args.getOrNull(2))))
+    }
+    return triggerBlock(
+        triggerA,
+        triggerZones = "setOf(Zone.BATTLEFIELD, Zone.COMMAND)",
+        gateEffectOn = "Conditions.SourceInZone(Zone.BATTLEFIELD, Zone.COMMAND)",
+    )
 }
 
 /**

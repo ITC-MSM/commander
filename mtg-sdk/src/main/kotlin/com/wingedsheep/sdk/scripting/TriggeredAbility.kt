@@ -28,8 +28,24 @@ data class TriggeredAbility(
     /** Additional target requirements for multi-target triggered abilities (e.g., exchange control). */
     val additionalTargetRequirements: List<TargetRequirement> = emptyList(),
     val elseEffect: Effect? = null,
-    val activeZone: Zone = Zone.BATTLEFIELD,
-    /** Intervening-if condition (Rule 603.4): checked when trigger would fire AND at resolution. */
+    /**
+     * The zones this ability's trigger condition functions in (CR 113.6b — "an ability that states
+     * which zones it functions in functions only from those zones"). Defaults to the battlefield,
+     * which CR 113.6 makes the rule for a permanent card's abilities.
+     *
+     * A *set* rather than a single zone because CR 113.6k allows one triggered ability to function
+     * from several zones at once. Two shapes need it today: a graveyard/exile-resident ability
+     * (`{GRAVEYARD}`, `{EXILE}` — Pyre Zombie, suspend, madness) and an *eminence* ability, which
+     * functions from the command zone **and** the battlefield (`{BATTLEFIELD, COMMAND}` — Edgar
+     * Markov). The detector scans each declared zone independently, so a card sitting in exactly
+     * one of them fires exactly once.
+     */
+    val activeZones: Set<Zone> = setOf(Zone.BATTLEFIELD),
+    /**
+     * Intervening-if condition (Rule 603.4): checked when the trigger would fire. The engine does
+     * not re-check it at resolution — an ability that needs CR 603.4's second half gates its own
+     * effect on the same condition instead (see Edgar Markov's eminence ability).
+     */
     val triggerCondition: Condition? = null,
     /** When true, the triggered ability is controlled by the triggering entity's controller
      * instead of the source permanent's controller. Used for cards like Death Match. */
@@ -105,7 +121,7 @@ data class TriggeredAbility(
             targetRequirement: TargetRequirement? = null,
             additionalTargetRequirements: List<TargetRequirement> = emptyList(),
             elseEffect: Effect? = null,
-            activeZone: Zone = Zone.BATTLEFIELD,
+            activeZones: Set<Zone> = setOf(Zone.BATTLEFIELD),
             triggerCondition: Condition? = null,
             controlledByTriggeringEntityController: Boolean = false,
             oncePerTurn: Boolean = false,
@@ -121,7 +137,7 @@ data class TriggeredAbility(
                 targetRequirement = targetRequirement,
                 additionalTargetRequirements = additionalTargetRequirements,
                 elseEffect = elseEffect,
-                activeZone = activeZone,
+                activeZones = activeZones,
                 triggerCondition = triggerCondition,
                 controlledByTriggeringEntityController = controlledByTriggeringEntityController,
                 oncePerTurn = oncePerTurn,
