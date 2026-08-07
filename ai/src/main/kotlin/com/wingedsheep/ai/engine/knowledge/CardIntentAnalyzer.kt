@@ -137,12 +137,16 @@ object CardIntentAnalyzer {
         var removalReach: Int? = null
         var cardsDrawn: Int? = null
         var expiringPump = false
+        var pumpToughness = 0
 
         for (effect in leaves) {
             tags += tagsOf(effect)
             reachOf(effect)?.let { removalReach = maxOf(removalReach ?: 0, it) }
             drawsOf(effect)?.let { cardsDrawn = maxOf(cardsDrawn ?: 0, it) }
-            if (isExpiringPump(effect)) expiringPump = true
+            if (isExpiringPump(effect)) {
+                expiringPump = true
+                pumpToughness = maxOf(pumpToughness, expiringToughnessOf(effect))
+            }
         }
 
         var anthemBonus = 0
@@ -177,6 +181,7 @@ object CardIntentAnalyzer {
             repeatable = repeatable,
             staticPriorValue = CardIntent.UNKNOWN.staticPriorValue,
             anthemBonus = anthemBonus,
+            pumpToughness = pumpToughness,
         )
         return intent.copy(staticPriorValue = priorValueOf(card, intent))
     }
@@ -213,7 +218,7 @@ object CardIntentAnalyzer {
         is ForceSacrificeEffect -> setOf(IntentTag.REMOVAL)
         is SacrificeTargetEffect -> setOf(IntentTag.REMOVAL)
         is GainControlEffect -> setOf(IntentTag.REMOVAL)
-        is FightEffect -> setOf(IntentTag.REMOVAL)
+        is FightEffect -> setOf(IntentTag.REMOVAL, IntentTag.FIGHT)
 
         // Damage to a *player* is a clock, not an answer — a permanent that pings the opponent for
         // 1 each upkeep must not be priced as repeatable removal.
@@ -322,6 +327,10 @@ object CardIntentAnalyzer {
         is ModifyStatsEffect -> fixed(effect.toughnessModifier)?.takeIf { it < 0 }?.let { -it }
         else -> null
     }
+
+    /** How much toughness an [isExpiringPump] effect grants. Zero for a power-only trick. */
+    private fun expiringToughnessOf(effect: Effect): Int =
+        ((effect as? ModifyStatsEffect)?.let { fixed(it.toughnessModifier) } ?: 0).coerceAtLeast(0)
 
     /** A stat boost that goes away at cleanup — the thing a combat trick is made of. */
     private fun isExpiringPump(effect: Effect): Boolean {

@@ -22,6 +22,11 @@ data class CardIntent(
     /**
      * The largest creature this card can answer by damage or -N/-N, or null when it answers by
      * destruction/exile (which has no reach limit) or answers nothing.
+     *
+     * Null is therefore two different claims, and [HoldPolicy] has to tell them apart: "toughness
+     * is no defence" and "we could not read this card". The one case where null means neither is a
+     * fight, whose reach is the *other* creature's power and so cannot be a property of the card —
+     * it carries [IntentTag.FIGHT] to say so.
      */
     val removalReach: Int?,
     /** Cards drawn on a single resolution, or null when the card draws none. */
@@ -57,6 +62,16 @@ data class CardIntent(
      * lord behind five creatures — and `BoardPresence` already has the creature count in hand.
      */
     val anthemBonus: Int,
+    /**
+     * Toughness a single resolution of an *expiring* pump grants one creature — Giant Growth is 3.
+     * Zero for everything else, including an Aura or a +1/+1 counter, whose bonus does not expire
+     * and is therefore not the thing [IntentTag.COMBAT_TRICK] names.
+     *
+     * Separate from the tag because "is this a trick" and "does this trick beat three damage" are
+     * different questions, and [HoldPolicy] needs the second one to decide whether a response
+     * window is real. Power is deliberately absent: nothing outside combat cares.
+     */
+    val pumpToughness: Int = 0,
 ) {
     operator fun contains(tag: IntentTag): Boolean = tag in tags
 
@@ -111,6 +126,15 @@ enum class IntentTag {
 
     /** An instant-speed pump — the thing you hold up for combat. */
     COMBAT_TRICK,
+
+    /**
+     * Removal by fight: two creatures deal damage equal to their power to each other.
+     *
+     * Tagged apart from plain [REMOVAL] because it is the one answer whose reach is not a property
+     * of the card — see [CardIntent.removalReach], whose null a fight would otherwise read as
+     * "destruction, toughness is no defence" when toughness is in fact the whole defence.
+     */
+    FIGHT,
 
     /** Counters a spell. */
     COUNTERSPELL,

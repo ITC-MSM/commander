@@ -88,11 +88,32 @@ class CardIntentAnalyzerTest : ScenarioTestBase() {
             }
         }
 
-        test("an instant pump is a combat trick") {
+        test("an instant pump is a combat trick, and says how much toughness it buys") {
             val intent = intentOf("Giant Growth")
             intent.tags shouldContain IntentTag.PUMP
             intent.tags shouldContain IntentTag.COMBAT_TRICK
             intent.speed shouldBe Speed.INSTANT
+            withClue("`HoldPolicy` compares this against the damage already on the stack") {
+                intent.pumpToughness shouldBe 3
+            }
+        }
+
+        test("a permanent pump is not a combat trick and buys no trick toughness") {
+            val intent = intentOf("Unholy Strength")
+            intent.tags shouldContain IntentTag.PUMP
+            intent.tags shouldNotContain IntentTag.COMBAT_TRICK
+            withClue("an Aura's bonus does not expire, so it is not a response to a deadline") {
+                intent.pumpToughness shouldBe 0
+            }
+        }
+
+        test("a fight is removal whose reach is not on the card") {
+            // `removalReach == null` otherwise means "destruction — toughness is no defence", which
+            // is the opposite of what a fight is. `HoldPolicy` reads the tag to tell them apart.
+            val intent = intentOf("Malamet Battle Glyph")
+            intent.tags shouldContain IntentTag.REMOVAL
+            intent.tags shouldContain IntentTag.FIGHT
+            intent.removalReach shouldBe null
         }
 
         test("a sorcery pump is not a combat trick") {

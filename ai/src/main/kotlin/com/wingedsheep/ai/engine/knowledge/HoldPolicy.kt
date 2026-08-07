@@ -1,6 +1,11 @@
 package com.wingedsheep.ai.engine.knowledge
 
+import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.DamageComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
 
@@ -45,13 +50,13 @@ class HoldPolicy(private val intents: IntentCatalog) {
 
             // A pump wears off at cleanup, so it is worth casting only when something will use it
             // before then: a fight in combat, or a spell on the stack it can save the creature
-            // from. Anywhere else — our own main phase, and specifically the opponent's end step,
-            // where the old blanket `passScore - 1.5` discount actively *encouraged* dumping it —
-            // it buys nothing at all.
+            // from — which is [responseWindowFor]'s question, not "is the stack non-empty".
+            // Anywhere else — our own main phase, and specifically the opponent's end step, where
+            // the old blanket `passScore - 1.5` discount actively *encouraged* dumping it — it buys
+            // nothing at all.
             IntentTag.COMBAT_TRICK in intent.tags -> when {
                 state.step in COMBAT_STEPS -> TimingVerdict.Adjust(COMBAT_WINDOW)
-                stackHasSomething -> TimingVerdict.Adjust(RESPONSE_WINDOW)
-                else -> TimingVerdict.NoWindow
+                else -> responseWindowFor(state, playerId, intent)
             }
 
             // Instant-speed removal: reward the windows that are strictly better than now, and
@@ -76,11 +81,85 @@ class HoldPolicy(private val intents: IntentCatalog) {
         }
     }
 
+    /**
+     * What a spell already on the stack is worth to a pump — the "last chance" window.
+     *
+     * A stack object is not by itself a reason to cast a trick. The bonus was flat for any
+     * non-empty stack, which paid the AI to answer a Murder with Giant Growth (a 5/5 is destroyed
+     * exactly as fast as a 2/2) and to pump a 6/4 that was already walking off a Bolt. Both are
+     * `lastchance` puzzles, and both are the *same* mistake: reading "there is a deadline" as "this
+     * card meets it".
+     *
+     * So the window has to be earned. It is real when something on the stack would kill a creature
+     * we control **by size** — damage, or -N/-N — and the extra toughness carries it out of range.
+     * That is one comparison, and it separates the three positions the suite pairs: Bolt on a 2/2
+     * (dying, +3/+3 saves it → window), Bolt on a 6/4 (not dying → nothing to buy), Murder on
+     * anything (no reach, so no amount of toughness answers it).
+     *
+     * **Silence is not a veto.** [TimingVerdict.NoWindow] floors the candidate below passing, which
+     * is only honest where "does nothing" is structurally certain, so a stack object this policy
+     * cannot read — an unknown card, or a fight, whose reach is the other creature's power and not
+     * a property of the card — keeps the old bonus rather than earning a veto.
+     */
+    private fun responseWindowFor(state: GameState, playerId: EntityId, pump: CardIntent): TimingVerdict {
+        val projected = state.projectedState
+        var unreadable = false
+
+        for (stackId in state.stack) {
+            val container = state.getEntity(stackId) ?: continue
+            val name = container.get<CardComponent>()?.name
+            val threat = name?.let { intents.forName(it) }
+            if (threat == null || IntentTag.FIGHT in threat.tags) {
+                unreadable = true
+                continue
+            }
+
+            // A sweeper names no targets; everything we control is under it.
+            val victims = if (IntentTag.SWEEPER in threat.tags) {
+                projected.getBattlefieldControlledBy(playerId)
+            } else {
+                container.get<TargetsComponent>()?.targets.orEmpty()
+                    .mapNotNull { (it as? ChosenTarget.Permanent)?.entityId }
+                    .filter { projected.getController(it) == playerId }
+            }
+
+            // Null reach on a card we *did* read is destruction, exile or bounce — see
+            // [CardIntent.removalReach]. Toughness is no defence against any of them.
+            val reach = threat.removalReach ?: continue
+            if (victims.any { savedByPump(state, projected, it, reach, pump) }) {
+                return TimingVerdict.Adjust(RESPONSE_WINDOW)
+            }
+        }
+
+        return if (unreadable) TimingVerdict.Adjust(RESPONSE_WINDOW) else TimingVerdict.NoWindow
+    }
+
+    /**
+     * Whether [creature] is dying to [reach] damage and [pump] is enough to change that.
+     *
+     * Both halves are load-bearing: a creature already out of range buys nothing (there is nothing
+     * to save), and neither does one the pump cannot lift out of range (a +1/+0 trick against three
+     * damage). Damage already marked counts, because that is what the state-based action will
+     * compare against (CR 704.5g).
+     */
+    private fun savedByPump(
+        state: GameState,
+        projected: ProjectedState,
+        creature: EntityId,
+        reach: Int,
+        pump: CardIntent,
+    ): Boolean {
+        if (!projected.isCreature(creature)) return false
+        val toughness = projected.getToughness(creature) ?: return false
+        val remaining = toughness - (state.getEntity(creature)?.get<DamageComponent>()?.amount ?: 0)
+        return remaining <= reach && remaining + pump.pumpToughness > reach
+    }
+
     private companion object {
         /** Blockers are in; a trick decides the fight. */
         const val COMBAT_WINDOW = 1.0
 
-        /** Something is on the stack to answer. */
+        /** Something on the stack this card can actually answer — see [responseWindowFor]. */
         const val RESPONSE_WINDOW = 1.0
 
         /**

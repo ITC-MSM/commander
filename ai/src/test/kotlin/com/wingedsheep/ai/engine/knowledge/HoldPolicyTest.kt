@@ -27,6 +27,75 @@ class HoldPolicyTest : ScenarioTestBase() {
                 .shouldBeInstanceOf<TimingVerdict.NoWindow>()
         }
 
+        test("a trick answers damage the creature is dying to") {
+            val game = scenario()
+                .withPlayers()
+                .withActivePlayer(2)
+                .withLandsOnBattlefield(2, "Mountain", 1)
+                .withCardInHand(2, "Lightning Bolt")
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withCardInHand(1, "Giant Growth")
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .build()
+            game.castSpell(2, "Lightning Bolt", game.findPermanent("Grizzly Bears"))
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry))
+
+            policy.verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.Adjust>()
+        }
+
+        test("a trick answers nothing on a creature that already survives the damage") {
+            // Three damage, four toughness: the deadline is real and the card is irrelevant to it.
+            val game = scenario()
+                .withPlayers()
+                .withActivePlayer(2)
+                .withLandsOnBattlefield(2, "Mountain", 1)
+                .withCardInHand(2, "Lightning Bolt")
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withCardInHand(1, "Giant Growth")
+                .withCardOnBattlefield(1, "Craw Wurm")
+                .build()
+            game.castSpell(2, "Lightning Bolt", game.findPermanent("Craw Wurm"))
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry))
+
+            policy.verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.NoWindow>()
+        }
+
+        test("no amount of toughness answers destruction") {
+            val game = scenario()
+                .withPlayers()
+                .withActivePlayer(2)
+                .withLandsOnBattlefield(2, "Swamp", 3)
+                .withCardInHand(2, "Murder")
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withCardInHand(1, "Giant Growth")
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .build()
+            game.castSpell(2, "Murder", game.findPermanent("Grizzly Bears"))
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry))
+
+            policy.verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.NoWindow>()
+        }
+
+        test("a spell on the stack that threatens nothing of ours is not a window") {
+            val game = scenario()
+                .withPlayers()
+                .withActivePlayer(2)
+                .withLandsOnBattlefield(2, "Forest", 4)
+                .withCardInHand(2, "Craw Wurm")
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withCardInHand(1, "Giant Growth")
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .build()
+            game.castSpell(2, "Craw Wurm")
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry))
+
+            policy.verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.NoWindow>()
+        }
+
         test("instant removal is neutral in our own main phase, not penalized") {
             val game = scenario()
                 .withPlayers()
