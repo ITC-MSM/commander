@@ -133,7 +133,7 @@ class HasteMenaceCounterScenarioTest : ScenarioTestBase() {
                 game.declareAttackers(mapOf("Hill Giant" to 2)).error shouldBe null
                 game.passUntilPhase(Phase.COMBAT, Step.DECLARE_BLOCKERS)
 
-                withClue("menace (CR 702.111a) requires two or more blockers") {
+                withClue("menace (CR 702.111b) requires two or more blockers") {
                     game.declareBlockers(mapOf("Grizzly Bears" to listOf("Hill Giant")))
                         .error shouldNotBe null
                 }

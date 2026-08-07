@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.effects
 
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.EffectResult
+import com.wingedsheep.engine.core.consumeShieldCounter
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
@@ -533,7 +534,7 @@ object ZoneMovementUtils {
         // damage, survives "can't be regenerated", and leaves any regeneration shield banked for
         // later. It is *not* regeneration (per the official rulings) — hence its own branch rather
         // than a synthesized regeneration shield.
-        com.wingedsheep.engine.core.consumeShieldCounter(state, entityId)?.let { (shieldedState, event) ->
+        consumeShieldCounter(state, entityId)?.let { (shieldedState, event) ->
             return EffectResult.success(shieldedState, listOf(event))
         }
 

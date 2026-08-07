@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.effects
 
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
+import com.wingedsheep.engine.core.applyShieldCounterToDamage
 import com.wingedsheep.engine.core.DamagePreventedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.LifeChangedEvent
@@ -263,9 +264,7 @@ object DamageUtils {
         // counter intact, which is the ordering that player would always choose.
         var shieldCounterEvents: List<EngineGameEvent> = emptyList()
         if (!isPlayer) {
-            val shielded = com.wingedsheep.engine.core.applyShieldCounterToDamage(
-                newState, targetId, cantBePrevented
-            )
+            val shielded = applyShieldCounterToDamage(newState, targetId, cantBePrevented)
             if (shielded != null) {
                 newState = shielded.state
                 if (shielded.damagePrevented) return EffectResult.success(newState, listOf(shielded.event))

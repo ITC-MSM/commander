@@ -113,14 +113,21 @@ class CaptainAmericaSuperSoldierScenarioTest : ScenarioTestBase() {
                     .withCardOnBattlefield(1, "Captain America, Super-Soldier")
                     .withCardOnBattlefield(1, "Test Hero Sidekick")
                     .withCardInHand(2, "Shock")
-                    .withLandsOnBattlefield(2, "Mountain", 2)
+                    .withCardInHand(2, "Shock")
+                    .withLandsOnBattlefield(2, "Mountain", 4)
                     .withActivePlayer(2)
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                // No counter placed — the conditional static is inert.
-                withClue("the hexproof grant is gated on the counter, not on his presence") {
+                // No counter placed — the conditional statics are inert.
+                withClue("the player half of the grant is gated on the counter, not his presence") {
                     shockAt(game, ChosenTarget.Player(game.player1Id)).error shouldBe null
+                }
+                game.resolveStack()
+
+                withClue("and so is the 'other Heroes' half — a separate conditional static") {
+                    val sidekickId = game.findPermanent("Test Hero Sidekick")!!
+                    shockAt(game, ChosenTarget.Permanent(sidekickId)).error shouldBe null
                 }
             }
 
@@ -131,7 +138,8 @@ class CaptainAmericaSuperSoldierScenarioTest : ScenarioTestBase() {
                     .withCardOnBattlefield(1, "Test Hero Sidekick")
                     .withCardInHand(2, "Shock")
                     .withCardInHand(2, "Shock")
-                    .withLandsOnBattlefield(2, "Mountain", 4)
+                    .withCardInHand(2, "Shock")
+                    .withLandsOnBattlefield(2, "Mountain", 6)
                     .withActivePlayer(2)
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
@@ -150,6 +158,15 @@ class CaptainAmericaSuperSoldierScenarioTest : ScenarioTestBase() {
                 }
                 withClue("with the counter gone, the controller is targetable again") {
                     shockAt(game, ChosenTarget.Player(game.player1Id)).error shouldBe null
+                }
+                game.resolveStack()
+
+                // The two halves are separate statics reached by different machinery — the player
+                // half through the GrantsControllerHexproofComponent marker, the permanents half
+                // through a projected continuous effect — so the sidekick needs its own assertion.
+                withClue("and so are the other Heroes he was shielding") {
+                    val sidekickId = game.findPermanent("Test Hero Sidekick")!!
+                    shockAt(game, ChosenTarget.Permanent(sidekickId)).error shouldBe null
                 }
             }
         }

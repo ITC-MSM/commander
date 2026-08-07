@@ -24,9 +24,9 @@ import io.kotest.matchers.shouldBe
  *  first strike, double strike, deathtouch, indestructible, lifelink, menace, reach, trample, and
  *  vigilance."
  *
- * Covers the characteristic-defining power, the enters/attacks absorption, that only keywords the
- * target actually has are copied, and that a keyword he already has is skipped (the "and
- * Super-Adaptoid doesn't" clause).
+ * Covers the characteristic-defining power, the enters *and* attacks absorption, that only keywords
+ * the target actually has are copied, and that a keyword he already carries as a counter is skipped
+ * rather than doubled (the "and Super-Adaptoid doesn't" clause).
  */
 class SuperAdaptoidScenarioTest : ScenarioTestBase() {
 
@@ -36,6 +36,16 @@ class SuperAdaptoidScenarioTest : ScenarioTestBase() {
         power = 2
         toughness = 2
         keywords(Keyword.FLYING, Keyword.TRAMPLE, Keyword.HASTE)
+    }
+
+    // Overlaps the first donor on flying so the "and Super-Adaptoid doesn't" clause has something
+    // to decline, and adds menace so the attacks trigger has something to take.
+    private val menaceDonor = card("Test Menace Donor") {
+        manaCost = "{2}{U}"
+        typeLine = "Creature — Bird Rogue"
+        power = 2
+        toughness = 2
+        keywords(Keyword.FLYING, Keyword.MENACE)
     }
 
     private val vanilla = card("Test Vanilla Body") {
@@ -58,6 +68,7 @@ class SuperAdaptoidScenarioTest : ScenarioTestBase() {
     init {
         cardRegistry.register(SuperAdaptoid)
         cardRegistry.register(donor)
+        cardRegistry.register(menaceDonor)
         cardRegistry.register(vanilla)
         cardRegistry.register(legend)
 
@@ -126,6 +137,60 @@ class SuperAdaptoidScenarioTest : ScenarioTestBase() {
                 withClue("and the counters actually grant the keywords (CR 122.1b)") {
                     game.state.projectedState.hasKeyword(adaptoid, Keyword.FLYING) shouldBe true
                     game.state.projectedState.hasKeyword(adaptoid, Keyword.HASTE) shouldBe true
+                }
+            }
+
+            test("attacking triggers again, and a keyword he already has is not doubled") {
+                val game = scenario()
+                    .withPlayers()
+                    .withCardInHand(1, "Super-Adaptoid")
+                    .withCardOnBattlefield(1, "Test Keyword Donor")
+                    .withCardOnBattlefield(1, "Test Menace Donor")
+                    .withLandsOnBattlefield(1, "Plains", 2)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val keywordDonor = game.findPermanent("Test Keyword Donor")!!
+                val menaceDonor = game.findPermanent("Test Menace Donor")!!
+
+                game.castSpell(1, "Super-Adaptoid").error shouldBe null
+                game.resolveStack()
+                val adaptoid = game.findPermanent("Super-Adaptoid")!!
+                game.getPendingDecision().shouldNotBeNull()
+                game.selectTargets(listOf(keywordDonor)).error shouldBe null
+                game.resolveStack()
+
+                withClue("the enters trigger took flying, trample and haste off the first donor") {
+                    counters(game, adaptoid, CounterType.FLYING) shouldBe 1
+                    counters(game, adaptoid, CounterType.TRAMPLE) shouldBe 1
+                    counters(game, adaptoid, CounterType.HASTE) shouldBe 1
+                    counters(game, adaptoid, CounterType.MENACE) shouldBe 0
+                }
+
+                // The absorbed haste counter is what lets him attack the turn he landed, which is
+                // also how the printed card reaches its own attacks trigger on turn one.
+                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackers(mapOf("Super-Adaptoid" to 2)).error shouldBe null
+
+                // Point the attacks trigger at a donor sharing flying but adding menace.
+                game.getPendingDecision().shouldNotBeNull()
+                game.selectTargets(listOf(menaceDonor)).error shouldBe null
+                game.resolveStack()
+
+                withClue("the attacks trigger absorbs the keyword he was missing") {
+                    counters(game, adaptoid, CounterType.MENACE) shouldBe 1
+                    game.state.projectedState.hasKeyword(adaptoid, Keyword.MENACE) shouldBe true
+                }
+                withClue(
+                    "\"and Super-Adaptoid doesn't\" — flying is already his via the counter from " +
+                        "the enters trigger, so the second donor's flying adds nothing"
+                ) {
+                    counters(game, adaptoid, CounterType.FLYING) shouldBe 1
+                }
+                withClue("keywords neither donor has are still absent") {
+                    counters(game, adaptoid, CounterType.DEATHTOUCH) shouldBe 0
+                    counters(game, adaptoid, CounterType.VIGILANCE) shouldBe 0
                 }
             }
         }

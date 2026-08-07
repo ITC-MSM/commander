@@ -439,7 +439,7 @@ internal fun counterTypeDsl(counterNode: JsonElement?): String? {
         // StateProjector.KEYWORD_COUNTER_MAP. Adding one is a plain AddCounters (Super-Adaptoid).
         "HasteCounter" -> "Counters.HASTE"
         "MenaceCounter" -> "Counters.MENACE"
-        // Deathtouch counter (CR 122.1c): grants the DEATHTOUCH keyword via the StateProjector's
+        // Deathtouch counter (CR 122.1b): grants the DEATHTOUCH keyword via the StateProjector's
         // keyword-counter projection. Adding one is a plain AddCounters(Counters.DEATHTOUCH, …)
         // (Vraska Joins Up: "put a deathtouch counter on each creature you control").
         "DeathtouchCounter" -> "Counters.DEATHTOUCH"

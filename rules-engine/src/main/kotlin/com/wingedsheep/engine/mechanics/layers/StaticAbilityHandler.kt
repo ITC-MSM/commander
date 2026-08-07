@@ -245,18 +245,11 @@ class StaticAbilityHandler(
         if (allStaticAbilities.any { it is GrantShroudToController }) {
             result = result.with(GrantsControllerShroudComponent)
         }
-        // "You have hexproof", bare or behind an "as long as …" gate. The gate rides along on the
-        // marker so every reader can re-evaluate it — see [ControllerHexproof]. A bare grant wins
-        // over a gated one if a card somehow has both.
-        val hexproofToController = when {
-            allStaticAbilities.any { it is GrantHexproofToController } ->
-                GrantsControllerHexproofComponent()
-            else -> allStaticAbilities.filterIsInstance<ConditionalStaticAbility>()
-                .firstOrNull { it.ability is GrantHexproofToController }
-                ?.let { GrantsControllerHexproofComponent(it.condition) }
-        }
-        if (hexproofToController != null) {
-            result = result.with(hexproofToController)
+        // "You have hexproof", bare or behind an "as long as …" gate (Captain America,
+        // Super-Soldier). The gate rides along on the marker so every reader re-evaluates it
+        // against current state — see [ControllerHexproof].
+        allStaticAbilities.controllerGrant<GrantHexproofToController>()?.let {
+            result = result.with(GrantsControllerHexproofComponent(it.condition))
         }
         val controllerProtectionScopes = allStaticAbilities
             .filterIsInstance<GrantProtectionToController>()
@@ -344,6 +337,40 @@ class StaticAbilityHandler(
 
         return result
     }
+
+    /**
+     * A controller-granting static ability that is present on the permanent, together with the
+     * "as long as …" gate it sits behind ([condition] `null` when the grant is unconditional).
+     */
+    private data class ControllerGrant(val condition: Condition?)
+
+    /**
+     * Find a controller-granting static ability [A], whether written bare or wrapped in a
+     * [ConditionalStaticAbility], returning `null` when the card doesn't have it at all.
+     *
+     * Controller grants ("you have hexproof", "you have shroud", …) are stamped as marker
+     * components once, as the permanent enters, rather than projected each pass — so a gate on one
+     * cannot be resolved at stamp time and has to travel on the marker to be re-evaluated on every
+     * read. Matching only the bare type, as this used to, made a gated grant *silently inert*: the
+     * marker was never stamped and the ability did nothing at all rather than switching on and off.
+     *
+     * A bare grant wins over a gated one if a card somehow carries both, and only the first gated
+     * grant is taken — no printed card has two, and a second would need a different condition to
+     * mean anything.
+     *
+     * Only the hexproof marker carries a condition today. The sibling grants below it
+     * ([GrantShroudToController], [GrantProtectionToController], `OpponentsCantMakeYouSacrifice`,
+     * `GrantCantLoseGame`, …) still match the bare type only, so wrapping one of *those* in a
+     * `ConditionalStaticAbility` reproduces the same silent no-op. Route them through here and give
+     * their marker components a `condition` when a card first needs it.
+     */
+    private inline fun <reified A : StaticAbility> List<StaticAbility>.controllerGrant(): ControllerGrant? =
+        when {
+            any { it is A } -> ControllerGrant(condition = null)
+            else -> filterIsInstance<ConditionalStaticAbility>()
+                .firstOrNull { it.ability is A }
+                ?.let { ControllerGrant(it.condition) }
+        }
 
     /**
      * Add continuous effect component from a list of static abilities directly.

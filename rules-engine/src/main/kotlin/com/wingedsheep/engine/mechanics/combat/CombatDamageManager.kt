@@ -843,6 +843,10 @@ internal class CombatDamageManager(
      * first-strike and regular combat damage steps are separate events, so a shielded creature does
      * spend one counter in each.
      *
+     * Running over the batch is also why this sits *ahead* of the per-assignment replacements in
+     * [applyDamageToCreature] (redirection, Anti-Venom) while `DamageUtils` puts them first — a
+     * legal but different CR 616.1 ordering, recorded on [applyShieldCounterToDamage].
+     *
      * @return the state with counters consumed, the assignments that survive (those whose target's
      *   damage was not prevented), and the [CountersRemovedEvent]s to emit.
      */
@@ -861,9 +865,7 @@ internal class CombatDamageManager(
             val container = state.getEntity(targetId) ?: continue
             val isPlayer = container.get<LifeTotalComponent>() != null && container.get<CardComponent>() == null
             if (isPlayer) continue
-            val shielded = com.wingedsheep.engine.core.applyShieldCounterToDamage(
-                newState, targetId, cantBePrevented
-            ) ?: continue
+            val shielded = applyShieldCounterToDamage(newState, targetId, cantBePrevented) ?: continue
             newState = shielded.state
             events.add(shielded.event)
             if (shielded.damagePrevented) preventedTargets.add(targetId)

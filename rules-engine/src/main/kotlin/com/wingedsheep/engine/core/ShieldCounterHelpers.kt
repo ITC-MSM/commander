@@ -27,13 +27,17 @@ import com.wingedsheep.sdk.model.EntityId
  * official rulings a creature that loses all its abilities is still protected, and shield counters
  * are *not* keyword counters (deliberately absent from `StateProjector.KEYWORD_COUNTER_MAP`).
  *
- * The two chokepoints that call this:
- * - `DamageUtils.dealDamageToTarget` — the prevention half.
- * - `ZoneMovementUtils.destroyPermanent` and `MoveCollectionExecutor`'s `MoveType.Destroy` branch —
- *   the replacement half. Deliberately *not* the lethal-damage state-based action
- *   (`LethalDamageCheck`): 122.1c replaces destruction "as the result of an **effect**", and the
- *   rulings confirm a creature with a shield counter still dies to the SBA when it has lethal
- *   damage marked on it or was dealt unpreventable damage by a deathtouch source.
+ * The four chokepoints that reach this, two per half:
+ * - The **prevention** half, both via [applyShieldCounterToDamage]:
+ *   `DamageUtils.dealDamageToTarget` (noncombat/effect damage) and
+ *   `CombatDamageManager.applyShieldCountersToCombatDamage` (combat damage, which marks itself in
+ *   that class instead of routing through `dealDamageToTarget`).
+ * - The **replacement** half, calling this directly: `ZoneMovementUtils.destroyPermanent` and
+ *   `MoveCollectionExecutor`'s `MoveType.Destroy` branch. Deliberately *not* the lethal-damage
+ *   state-based action (`LethalDamageCheck`): 122.1c replaces destruction "as the result of an
+ *   **effect**", and the rulings confirm a creature with a shield counter still dies to the SBA
+ *   when it has lethal damage marked on it or was dealt unpreventable damage by a deathtouch
+ *   source.
  *
  * @return the updated state paired with the [CountersRemovedEvent] to emit, or `null` when
  *   [entityId] has no shield counter (so callers can fall through to the unreplaced behavior).
@@ -55,10 +59,6 @@ fun consumeShieldCounter(state: GameState, entityId: EntityId): Pair<GameState, 
     return newState to event
 }
 
-/** True if [entityId] currently has at least one shield counter on it (CR 122.1c). */
-fun hasShieldCounter(state: GameState, entityId: EntityId): Boolean =
-    (state.getEntity(entityId)?.get<CountersComponent>()?.getCount(CounterType.SHIELD) ?: 0) > 0
-
 /**
  * Outcome of a shield counter meeting an incoming damage instance — see [applyShieldCounterToDamage].
  *
@@ -79,12 +79,23 @@ data class ShieldedDamage(
  * and remove a shield counter from it."
  *
  * Single home for the rule, shared by the two damage-application paths — `DamageUtils`
- * (noncombat/effect damage) and `CombatDamageManager.applySingleAssignment` (combat damage, which
- * marks damage itself instead of routing through `DamageUtils.dealDamageToTarget`).
+ * (noncombat/effect damage) and `CombatDamageManager.applyShieldCountersToCombatDamage` (combat
+ * damage, which marks damage itself instead of routing through `DamageUtils.dealDamageToTarget`).
  *
  * Note the asymmetry the official rulings require: when damage *can't be prevented*, the damage is
  * still dealt **and** a shield counter is still removed. So the counter is consumed unconditionally
  * once one is present; only [ShieldedDamage.damagePrevented] is gated on [cantBePrevented].
+ *
+ * **Known ordering difference between the two paths.** CR 616.1 lets the affected permanent's
+ * controller order competing replacement/prevention effects, so more than one order is legal — but
+ * the two call sites do not currently pick the *same* one. `DamageUtils` consults redirection
+ * (Glarecaster) and the damage-to-counters self-replacement (Anti-Venom) *before* the shield
+ * counter, whereas the combat path spends the counter first, because it has to run over the whole
+ * simultaneous batch (CR 510.2) before per-assignment replacements are reachable. A permanent
+ * carrying both a shield counter and a Glarecaster shield therefore keeps the counter against a
+ * Shock but spends it against a blocker. Both outcomes are legal orderings; unifying them would
+ * mean giving up either the batch scoping or the redirect-first preference, so the difference is
+ * recorded here rather than papered over.
  *
  * Players never carry shield counters (CR 122.1c is written for permanents), so callers may pass any
  * recipient; a player simply has no counters and gets `null`.

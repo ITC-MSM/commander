@@ -153,10 +153,12 @@ object Counters {
      *
      * Inherent to the counter, not an ability of the permanent — a creature that loses all abilities
      * is still protected. Deliberately **not** a keyword counter, so it is absent from
-     * `StateProjector.KEYWORD_COUNTER_MAP`. Realized by the engine at the two chokepoints that can
-     * consume it: `DamageUtils.dealDamageToTarget` and `ZoneMovementUtils.destroyPermanent` /
-     * `MoveCollectionExecutor`'s destroy branch. Notably it does **not** stop sacrifice, the
-     * lethal-damage state-based action, or 0-toughness death, and it is not regeneration.
+     * `StateProjector.KEYWORD_COUNTER_MAP`. Realized by the engine at the four chokepoints that can
+     * consume it: `DamageUtils.dealDamageToTarget` and `CombatDamageManager` (prevention — combat
+     * damage marks itself rather than routing through `dealDamageToTarget`), plus
+     * `ZoneMovementUtils.destroyPermanent` and `MoveCollectionExecutor`'s destroy branch
+     * (replacement). Notably it does **not** stop sacrifice, the lethal-damage state-based action,
+     * or 0-toughness death, and it is not regeneration.
      */
     const val SHIELD = "shield"
 

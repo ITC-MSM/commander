@@ -43,6 +43,7 @@ import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.imageOverrideFor
+import com.wingedsheep.engine.mechanics.targeting.ControllerHexproof
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.model.CardDefinition
 import kotlinx.serialization.json.JsonArray
@@ -2185,8 +2186,7 @@ class ClientStateTransformer(
         val hasHexproof = !container.has<PlayerHexproofComponent>() && state.getBattlefield().any { entityId ->
             val entityContainer = state.getEntity(entityId) ?: return@any false
             entityContainer.get<ControllerComponent>()?.playerId == playerId &&
-                com.wingedsheep.engine.mechanics.targeting.ControllerHexproof
-                    .isGrantingNow(state, entityId)
+                ControllerHexproof.isGrantingNow(state, entityId)
         }
         if (hasHexproof) {
             effects.add(

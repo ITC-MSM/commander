@@ -33,7 +33,7 @@ import io.kotest.matchers.shouldBe
  * - combat damage covered, and covered **once** for the whole simultaneous batch (CR 510.2);
  * - *not* regeneration — no tap, and the counter is spent instead of a regeneration shield;
  * - sacrifice unaffected;
- * - indestructible leaves the counter unspent (nothing "would be destroyed", CR 701.7b);
+ * - indestructible leaves the counter unspent (nothing "would be destroyed", CR 702.12b);
  * - unpreventable damage is dealt **and** still removes a counter.
  *
  * Backs Captain America, Super-Soldier [MSH 9].
@@ -69,6 +69,16 @@ class ShieldCounterScenarioTest : ScenarioTestBase() {
         typeLine = "Creature — Goblin Rogue"
         power = 2
         toughness = 2
+    }
+
+    // Deals damage in both combat damage steps (CR 702.4b), which is the cheapest way to put two
+    // separate damage events on one blocked attacker without a damage-assignment decision.
+    private val duelist = card("Shield Test Duelist") {
+        manaCost = "{1}{R}"
+        typeLine = "Creature — Human Warrior"
+        power = 1
+        toughness = 1
+        keywords(Keyword.DOUBLE_STRIKE)
     }
 
     // {0} utility spells so the tests never fight the mana system.
@@ -149,6 +159,7 @@ class ShieldCounterScenarioTest : ScenarioTestBase() {
         cardRegistry.register(bulwark)
         cardRegistry.register(biter)
         cardRegistry.register(snapper)
+        cardRegistry.register(duelist)
         cardRegistry.register(shieldUp)
         cardRegistry.register(zap)
         cardRegistry.register(slay)
@@ -316,7 +327,7 @@ class ShieldCounterScenarioTest : ScenarioTestBase() {
                 game.resolveStack()
 
                 withClue(
-                    "an indestructible permanent is never going to be destroyed (CR 701.7b), so the " +
+                    "an indestructible permanent is never going to be destroyed (CR 702.12b), so the " +
                         "shield counter has nothing to replace and stays put"
                 ) {
                     game.findPermanent("Shield Test Bulwark") shouldBe creature
@@ -420,6 +431,50 @@ class ShieldCounterScenarioTest : ScenarioTestBase() {
                 }
                 withClue("and none of the 4 damage was marked") {
                     markedDamage(game, attacker) shouldBe 0
+                }
+            }
+
+            test("the two combat damage steps are separate events and cost a counter each") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Shield Test Bruiser", summoningSickness = false)
+                    .withCardOnBattlefield(2, "Shield Test Duelist", summoningSickness = false)
+                    .withCardInHand(1, "Shield Up")
+                    .withCardInHand(1, "Shield Up")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val attacker = game.findPermanent("Shield Test Bruiser")!!
+                shield(game, attacker, count = 2)
+                shieldCounters(game, attacker) shouldBe 2
+
+                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackers(mapOf("Shield Test Bruiser" to 2)).error shouldBe null
+                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_BLOCKERS)
+                game.declareBlockers(mapOf("Shield Test Duelist" to listOf("Shield Test Bruiser")))
+                    .error shouldBe null
+
+                // Combat damage is dealt as the turn-based action on entering each damage step, so
+                // by the time we are *in* a step its damage has already been applied.
+                game.passUntilPhase(Phase.COMBAT, Step.FIRST_STRIKE_COMBAT_DAMAGE)
+                withClue(
+                    "the double striker's first-strike hit is its own damage event (CR 510.4), so " +
+                        "exactly one counter is gone after the first step — not two, not none"
+                ) {
+                    shieldCounters(game, attacker) shouldBe 1
+                }
+
+                game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
+                withClue("the regular combat damage step is a second event and spends the second") {
+                    shieldCounters(game, attacker) shouldBe 0
+                }
+                withClue("both hits were prevented, so nothing is marked and the attacker lives") {
+                    markedDamage(game, attacker) shouldBe 0
+                    game.findPermanent("Shield Test Bruiser") shouldBe attacker
+                }
+                withClue("the 1/1 duelist still died to the attacker's 3 damage") {
+                    game.findPermanent("Shield Test Duelist") shouldBe null
                 }
             }
         }
