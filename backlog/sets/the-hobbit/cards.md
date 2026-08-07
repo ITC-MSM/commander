@@ -2,7 +2,7 @@
 
 **Set Size:** 193 cards revealed as of 2026-08-04
 **Release Date:** August 14, 2026
-**Implemented:** 71 / 193
+**Implemented:** 76 / 193
 Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. This list covers only cards revealed as of that date.
 
 - [x] 1. Long-Bodied Grey Dog
@@ -31,7 +31,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 24. The Queen of Dale
 - [ ] 25. Roads Go Ever, Ever On
 - [ ] 26. Settle the Wreckage
-- [ ] 27. Stone by Sunlight
+- [x] 27. Stone by Sunlight
 - [x] 28. Thorin's Last Stand
 - [ ] 29. An Unexpected Party
 - [ ] 30. Velvetwing Butterflies
@@ -72,11 +72,11 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 65. Down, Down to Goblin-town
 - [x] 66. Dreaded Bat-Cloud
 - [x] 67. Front Porch Sentries
-- [ ] 68. Gathering of Darkness
+- [x] 68. Gathering of Darkness
 - [x] 69. Gnashing of Teeth
 - [ ] 70. Gollum, Riddle Master
 - [ ] 71. Gollum, Silent Slinker
-- [ ] 72. Gollum the Abandoned
+- [x] 72. Gollum the Abandoned
 - [x] 73. Great Fierce Bee
 - [ ] 74. Great Ugly-Looking Goblin
 - [ ] 75. Head of the Hunt
@@ -121,7 +121,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 114. Thorin, Mountain-king
 - [x] 115. Tidings of War
 - [x] 116. Attercop
-- [ ] 117. Bejeweled Warg
+- [x] 117. Bejeweled Warg
 - [ ] 118. Beorn, Reluctant Host
 - [ ] 119. Beorn the Fierce
 - [ ] 120. Beorn's Hospitality
@@ -153,7 +153,7 @@ Inventory retrieved from Scryfall on 2026-08-04 while the set was in previews. T
 - [ ] 146. Bard's Company
 - [ ] 147. Bifur, Melodic Rider
 - [ ] 148. Bolg of the North
-- [ ] 149. Bolg's Company
+- [x] 149. Bolg's Company
 - [x] 150. The Chief Warg
 - [ ] 151. Chief Warg's Company
 - [ ] 152. Dáin's Company

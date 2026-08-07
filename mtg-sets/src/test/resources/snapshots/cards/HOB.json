@@ -48,6 +48,75 @@
     ]
 }
 
+// Bejeweled Warg
+{
+    "name": "Bejeweled Warg",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "Trample\nWhenever this creature deals combat damage to a player, choose one —\n• Put a +1/+1 counter on target Wolf you control.\n• Create a Treasure token.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature Wolf ctrl:you"
+                                    }
+                                }
+                            ],
+                            "description": "Put a +1/+1 counter on target Wolf you control"
+                        },
+                        {
+                            "effect": {
+                                "type": "CreatePredefinedToken",
+                                "tokenType": "Treasure"
+                            }
+                        }
+                    ],
+                    "countsAsModalSpell": false
+                },
+                "descriptionOverride": "Whenever Bejeweled Warg deals combat damage to a player, choose one — put a +1/+1 counter on target Wolf you control; or create a Treasure token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "RARE",
+        "artist": "John Di Giovanni",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/9/e95eba5c-e0d6-46b4-a0be-8e373b2185ea.jpg?1785496330"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Bilbo's Deadly Slice
 {
     "name": "Bilbo's Deadly Slice",
@@ -82,6 +151,86 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Bolg's Company
+{
+    "name": "Bolg's Company",
+    "manaCost": "{B}{R}",
+    "typeLine": "Creature — Goblin Soldier",
+    "oracleText": "This creature has haste as long as you control another Goblin.\n{T}, Sacrifice another Goblin: Add {B}{R}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature Goblin",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddMana",
+                            "color": "BLACK"
+                        },
+                        {
+                            "type": "AddMana",
+                            "color": "RED"
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}, Sacrifice another Goblin: Add {B}{R}."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature Goblin",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "149",
+        "rarity": "RARE",
+        "artist": "Michele Giorgi",
+        "flavorText": "Tidings they had gathered in secret ways; and in all the mountains there was a forging and an arming.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/a/ea3f5644-f7e3-40de-ada5-cea2e9113cfb.jpg?1785497179"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -1152,6 +1301,58 @@
     ]
 }
 
+// Gathering of Darkness
+{
+    "name": "Gathering of Darkness",
+    "manaCost": "{3}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return up to one target creature card from your graveyard to your hand.\nAmass Goblins 3. (Put three +1/+1 counters on an Army you control. It's also a Goblin. If you don't control an Army, create a 0/0 black Goblin Army creature token first.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature card in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "Amass",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "subtype": "Goblin"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "creature card in your graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "rarity": "UNCOMMON",
+        "artist": "Pavel Kolomeyets",
+        "flavorText": "\"Alas! Bolg of the North is coming!\"\n—Gandalf",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2ce066be-e5ad-4b93-8245-1b5018990d03.jpg?1784733910"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Giant's Boulder
 {
     "name": "Giant's Boulder",
@@ -1407,6 +1608,108 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Gollum the Abandoned
+{
+    "name": "Gollum the Abandoned",
+    "manaCost": "{1}{B}",
+    "typeLine": "Legendary Creature — Halfling Horror",
+    "oracleText": "Gollum can't block.\nWhen Gollum enters, exile up to one target card from an opponent's graveyard. Each opponent loses 2 life.\n{2}, Sacrifice an artifact or creature: Return this card from your graveyard to your hand. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "card in an opponent's graveyard"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "EachOpponent"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "own:opponent",
+                        "zone": "Graveyard"
+                    },
+                    "id": "card in an opponent's graveyard"
+                },
+                "descriptionOverride": "When Gollum the Abandoned enters, exile up to one target card from an opponent's graveyard. Each opponent loses 2 life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature|artifact"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "{2}, Sacrifice an artifact or creature: Return this card from your graveyard to your hand. Activate only as a sorcery."
+            }
+        ],
+        "staticAbilities": [
+            "CantBlock"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "UNCOMMON",
+        "artist": "Andrea Piparo",
+        "flavorText": "\"Where iss it? Losst it is, my precious!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/50d91ef3-6f5d-4255-8d47-be731b5dad30.jpg?1784733916"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -2965,6 +3268,86 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Stone by Sunlight
+{
+    "name": "Stone by Sunlight",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Destroy target creature with power 4 or greater.\n• Until end of turn, target creature becomes an artifact in addition to its other types and gains indestructible.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature pow>=4"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Destroy target creature with power 4 or greater"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "AddCardType",
+                                "cardType": "ARTIFACT",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target"
+                                },
+                                "duration": "EndOfTurn"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "INDESTRUCTIBLE",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Target creature becomes an artifact and gains indestructible until end of turn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "27",
+        "rarity": "UNCOMMON",
+        "artist": "Kamila Szutenberg",
+        "flavorText": "\"Dawn take you all, and be stone to you!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5752731-253c-4b41-bdd8-94c26d715206.jpg?1784631953"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
