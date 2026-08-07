@@ -283,7 +283,10 @@ class SpectatorStateBuilder(
         return ServerMessage.SpectatorCardInfo(
             entityId = cardId.value,
             name = cardComponent.name,
-            imageUri = cardDef?.metadata?.imageUri,
+            // Prefer the entity's own art: CardEntityFactory stamps the printing the player actually
+            // put in their deck onto it, so a reprint matches what the players themselves see. The
+            // definition's canonical metadata is only a fallback for entities with no image stamped.
+            imageUri = cardComponent.imageUri ?: cardDef?.metadata?.imageUri,
             isTapped = tapped,
             power = cardComponent.baseStats?.basePower,
             toughness = cardComponent.baseStats?.baseToughness,

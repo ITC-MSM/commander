@@ -31,6 +31,22 @@ class DecisionEnricher(private val cardRegistry: CardRegistry) {
      * attacker's real name into [DecisionContext.sourceName]; mask it when the viewer isn't its
      * controller. The multi-attacker board already uses a generic "Combat damage" label.
      */
+    /**
+     * The art to display for [entityId].
+     *
+     * Reads the entity's own [CardComponent.imageUri], which `CardEntityFactory` stamps from the
+     * printing the player actually put in their deck. Re-deriving it from the canonical
+     * [com.wingedsheep.sdk.model.CardDefinition] metadata instead (as this used to) shows the
+     * *original* printing's art for every reprint, so a card in a search/reveal prompt didn't match
+     * the same card in hand or on the battlefield — both of which read the component. The definition
+     * lookup remains only as a fallback for entities with no image stamped.
+     */
+    private fun imageUriFor(state: GameState, entityId: EntityId): String? {
+        val cardComponent = state.getEntity(entityId)?.get<CardComponent>() ?: return null
+        return cardComponent.imageUri
+            ?: cardRegistry.getCard(cardComponent.cardDefinitionId)?.metadata?.imageUri
+    }
+
     private fun maskedSourceName(decision: PendingDecision, state: GameState, viewerId: EntityId): String? {
         val sourceName = decision.context.sourceName ?: return null
         if (decision is CombatResolutionDecision) {
@@ -44,58 +60,31 @@ class DecisionEnricher(private val cardRegistry: CardRegistry) {
         return when (decision) {
             is SearchLibraryDecision -> decision.copy(
                 cards = decision.cards.mapValues { (entityId, cardInfo) ->
-                    val cardComponent = state.getEntity(entityId)?.get<CardComponent>()
-                    val imageUri = cardComponent?.cardDefinitionId?.let { defId ->
-                        cardRegistry.getCard(defId)?.metadata?.imageUri
-                    }
-                    cardInfo.copy(imageUri = imageUri)
+                    cardInfo.copy(imageUri = imageUriFor(state, entityId))
                 }
             )
             is ReorderLibraryDecision -> decision.copy(
                 cardInfo = decision.cardInfo.mapValues { (entityId, cardInfo) ->
-                    val cardComponent = state.getEntity(entityId)?.get<CardComponent>()
-                    val imageUri = cardComponent?.cardDefinitionId?.let { defId ->
-                        cardRegistry.getCard(defId)?.metadata?.imageUri
-                    }
-                    cardInfo.copy(imageUri = imageUri)
+                    cardInfo.copy(imageUri = imageUriFor(state, entityId))
                 }
             )
-            is SelectCardsDecision -> {
-                val enrichedCardInfo = decision.cardInfo?.mapValues { (entityId, cardInfo) ->
-                    val cardComponent = state.getEntity(entityId)?.get<CardComponent>()
-                    val imageUri = cardComponent?.cardDefinitionId?.let { defId ->
-                        cardRegistry.getCard(defId)?.metadata?.imageUri
-                    }
-                    cardInfo.copy(imageUri = imageUri)
+            is SelectCardsDecision -> decision.copy(
+                cardInfo = decision.cardInfo?.mapValues { (entityId, cardInfo) ->
+                    cardInfo.copy(imageUri = imageUriFor(state, entityId))
                 }
-                decision.copy(cardInfo = enrichedCardInfo)
-            }
-            is OrderObjectsDecision -> {
-                val enrichedCardInfo = decision.cardInfo?.mapValues { (entityId, cardInfo) ->
-                    val entity = state.getEntity(entityId)
+            )
+            is OrderObjectsDecision -> decision.copy(
+                cardInfo = decision.cardInfo?.mapValues { (entityId, cardInfo) ->
                     // Don't enrich face-down creatures - would leak their identity
-                    if (entity?.has<FaceDownComponent>() == true) {
-                        cardInfo
-                    } else {
-                        val cardComponent = entity?.get<CardComponent>()
-                        val imageUri = cardComponent?.cardDefinitionId?.let { defId ->
-                            cardRegistry.getCard(defId)?.metadata?.imageUri
-                        }
-                        cardInfo.copy(imageUri = imageUri)
-                    }
+                    if (state.getEntity(entityId)?.has<FaceDownComponent>() == true) cardInfo
+                    else cardInfo.copy(imageUri = imageUriFor(state, entityId))
                 }
-                decision.copy(cardInfo = enrichedCardInfo)
-            }
-            is SplitPilesDecision -> {
-                val enrichedCardInfo = decision.cardInfo?.mapValues { (entityId, cardInfo) ->
-                    val cardComponent = state.getEntity(entityId)?.get<CardComponent>()
-                    val imageUri = cardComponent?.cardDefinitionId?.let { defId ->
-                        cardRegistry.getCard(defId)?.metadata?.imageUri
-                    }
-                    cardInfo.copy(imageUri = imageUri)
+            )
+            is SplitPilesDecision -> decision.copy(
+                cardInfo = decision.cardInfo?.mapValues { (entityId, cardInfo) ->
+                    cardInfo.copy(imageUri = imageUriFor(state, entityId))
                 }
-                decision.copy(cardInfo = enrichedCardInfo)
-            }
+            )
             is CombatResolutionDecision -> {
                 // The combat-damage board is shown to every chooser (the attacker assigns its damage,
                 // the defender assigns any blocker damage), so a face-down creature's real name would

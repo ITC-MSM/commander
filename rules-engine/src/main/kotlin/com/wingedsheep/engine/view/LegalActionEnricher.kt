@@ -166,7 +166,12 @@ class LegalActionEnricher(
         if (sources.isEmpty()) return null
         return sources.map { source ->
             val card = state.getEntity(source.entityId)?.get<CardComponent>()
-            val imageUri = card?.let { cardRegistry.getCard(it.cardDefinitionId)?.metadata?.imageUri }
+            // The entity's own imageUri carries the printing the player actually put in their deck
+            // (stamped by CardEntityFactory); the definition lookup is only a fallback for entities
+            // with no image stamped. Deriving it from the definition alone would show the original
+            // printing's art for a reprint, so the mana picker wouldn't match the battlefield.
+            val imageUri = card?.imageUri
+                ?: card?.let { cardRegistry.getCard(it.cardDefinitionId)?.metadata?.imageUri }
             ManaSourceInfo(
                 entityId = source.entityId,
                 name = source.name,

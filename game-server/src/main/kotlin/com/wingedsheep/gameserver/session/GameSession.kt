@@ -703,25 +703,7 @@ class GameSession(
         val hand = getHand(playerId)
         val count = getMulliganCount(playerId)
         val state = gameState
-        val cards = if (state != null) {
-            hand.associateWith { entityId ->
-                val cardComponent = state.getEntity(entityId)?.get<CardComponent>()
-                val imageUri = cardComponent?.cardDefinitionId?.let { defId ->
-                    cardRegistry.getCard(defId)?.metadata?.imageUri
-                }
-                ServerMessage.MulliganCardInfo(
-                    name = cardComponent?.name ?: "Unknown",
-                    imageUri = imageUri,
-                    manaCost = cardComponent?.manaCost?.toString(),
-                    typeLine = cardComponent?.typeLine?.toString(),
-                    power = cardComponent?.baseStats?.basePower,
-                    toughness = cardComponent?.baseStats?.baseToughness,
-                    oracleText = cardComponent?.oracleText?.takeIf { it.isNotBlank() }
-                )
-            }
-        } else {
-            emptyMap()
-        }
+        val cards = mulliganCardInfo(state, hand)
         val isOnThePlay = gameState?.activePlayerId == playerId
         // Cards bottomed if this player keeps now. Reads the component's free-mulligan-aware
         // cardsToBottom (CR 800.6) rather than the raw mulligan count, so a multiplayer first
@@ -745,30 +727,43 @@ class GameSession(
         if (count == 0) return null
         val hand = getHand(playerId)
         val state = gameState
-        val cards = if (state != null) {
-            hand.associateWith { entityId ->
-                val cardComponent = state.getEntity(entityId)?.get<CardComponent>()
-                val imageUri = cardComponent?.cardDefinitionId?.let { defId ->
-                    cardRegistry.getCard(defId)?.metadata?.imageUri
-                }
-                ServerMessage.MulliganCardInfo(
-                    name = cardComponent?.name ?: "Unknown",
-                    imageUri = imageUri,
-                    manaCost = cardComponent?.manaCost?.toString(),
-                    typeLine = cardComponent?.typeLine?.toString(),
-                    power = cardComponent?.baseStats?.basePower,
-                    toughness = cardComponent?.baseStats?.baseToughness,
-                    oracleText = cardComponent?.oracleText?.takeIf { it.isNotBlank() }
-                )
-            }
-        } else {
-            emptyMap()
-        }
         return ServerMessage.ChooseBottomCards(
             hand = hand,
             cardsToPutOnBottom = count,
-            cards = cards
+            cards = mulliganCardInfo(state, hand)
         )
+    }
+
+    /**
+     * Build the per-card display info the mulligan screens render.
+     *
+     * The art comes off the entity's own [CardComponent.imageUri], which [CardEntityFactory]
+     * stamps from the printing the player actually put in their deck. Re-deriving it from the
+     * canonical [CardDefinition] metadata instead (as this used to) shows the *original* printing's
+     * art for every reprint, so the mulligan hand didn't match the same cards once they were in
+     * play. The definition lookup remains only as a fallback for entities with no image stamped.
+     */
+    private fun mulliganCardInfo(
+        state: GameState?,
+        hand: List<EntityId>
+    ): Map<EntityId, ServerMessage.MulliganCardInfo> {
+        if (state == null) return emptyMap()
+        return hand.associateWith { entityId ->
+            val cardComponent = state.getEntity(entityId)?.get<CardComponent>()
+            val imageUri = cardComponent?.imageUri
+                ?: cardComponent?.cardDefinitionId?.let { defId ->
+                    cardRegistry.getCard(defId)?.metadata?.imageUri
+                }
+            ServerMessage.MulliganCardInfo(
+                name = cardComponent?.name ?: "Unknown",
+                imageUri = imageUri,
+                manaCost = cardComponent?.manaCost?.toString(),
+                typeLine = cardComponent?.typeLine?.toString(),
+                power = cardComponent?.baseStats?.basePower,
+                toughness = cardComponent?.baseStats?.baseToughness,
+                oracleText = cardComponent?.oracleText?.takeIf { it.isNotBlank() }
+            )
+        }
     }
 
     sealed interface MulliganActionResult {
