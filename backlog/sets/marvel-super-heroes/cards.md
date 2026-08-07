@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 203 / 276
+**Implemented:** 223 / 276
 
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
@@ -12,10 +12,10 @@ variants 297+ are excluded)
 - [x] Agents of S.H.I.E.L.D.
 - [x] Avengers Assemble!
 - [x] Borough Backup
-- [ ] Brave Brawler
+- [x] Brave Brawler
 - [ ] Captain America, Super-Soldier
 - [x] Captain America, Wings of Freedom
-- [ ] Captain Marvel, Earth's Protector
+- [x] Captain Marvel, Earth's Protector
 - [ ] Captain Mar-Vell, Space-Born
 - [x] Colleen Wing, Street Samurai
 - [x] Crowd of True Believers
@@ -47,12 +47,12 @@ variants 297+ are excluded)
 - [x] Wakandan Drone Flock
 - [x] Web Up
 - [x] White Widow, Free Agent
-- [ ] Aerial Doombot
+- [x] Aerial Doombot
 - [x] A.I.M. Scientists
 - [x] Atlantean Cavalry
 - [ ] Atlantis Attacks
 - [x] Attuma, Atlantean Warlord
-- [ ] Bold Biochemist
+- [x] Bold Biochemist
 - [x] Bruce Banner // The Incredible Hulk
 - [x] Depower
 - [ ] Echo, Perceptive Prodigy
@@ -80,7 +80,7 @@ variants 297+ are excluded)
 - [x] S.H.I.E.L.D. Deployment Drone
 - [x] S.H.I.E.L.D. Flying Car
 - [ ] Shuri, Wakandan Inventor
-- [ ] Stature, Size Shifter
+- [x] Stature, Size Shifter
 - [x] Super Intelligence
 - [x] Super Suit
 - [x] Thirst for Knowledge
@@ -112,7 +112,7 @@ variants 297+ are excluded)
 - [x] The Masters of Evil
 - [x] M.O.D.O.K.
 - [x] Moonstone, Harsh Mistress
-- [ ] Ninja of the Hand
+- [x] Ninja of the Hand
 - [x] Project Deathlok Soldier
 - [x] Red Room Recruit
 - [x] Robot Domination
@@ -123,7 +123,7 @@ variants 297+ are excluded)
 - [x] Swordsman, Sharp Scoundrel
 - [x] Thunderbolts Conspiracy
 - [ ] Too Evil to Stay Dead
-- [ ] Unliving Legionnaire
+- [x] Unliving Legionnaire
 - [x] Visions of Villainy
 - [x] Whiplash, Vengeful Engineer
 - [ ] Widow's Bite
@@ -140,7 +140,7 @@ variants 297+ are excluded)
 - [x] Hex Magic
 - [x] Hire a Crew
 - [ ] HULK SMASH!
-- [ ] Human Torch, Johnny Storm
+- [x] Human Torch, Johnny Storm
 - [x] HYDRA Assault Robot
 - [x] Iron Fist, Living Weapon
 - [x] Jessica Jones, Private Eye
@@ -152,7 +152,7 @@ variants 297+ are excluded)
 - [x] Misty Knight, Hero for Hire
 - [ ] Mjölnir, Hammer of Thor
 - [x] Photon Blast Barrage
-- [ ] Quicksilver, Brash Blur
+- [x] Quicksilver, Brash Blur
 - [x] Red Hulk
 - [ ] Repulsor Blast
 - [ ] The Scarlet Witch
@@ -163,7 +163,7 @@ variants 297+ are excluded)
 - [x] Thor, God of Thunder
 - [x] Truck Toss
 - [x] Vision of Love
-- [ ] Volcanic Villain
+- [x] Volcanic Villain
 - [ ] Wonder Man, Hollywood Hero
 - [x] Ant-Man's Army
 - [x] Call Damage Control
@@ -175,14 +175,14 @@ variants 297+ are excluded)
 - [ ] Go Nuts!
 - [x] Guerrilla Gorilla
 - [x] Hellcat, Undying Vigilante
-- [ ] Hercules, Prince of Power
+- [x] Hercules, Prince of Power
 - [x] Heroic Feast
 - [x] Hulkling, Burgeoning Bruiser
 - [x] Ka-Zar of the Savage Land
 - [x] Knight of Wundagore
 - [x] Mister Hyde, Monster Within
 - [x] Mole Man, Moloid Master
-- [ ] Pet Avengers
+- [x] Pet Avengers
 - [ ] Powerful Broker
 - [x] Punishing Punch
 - [x] Rapid Rescue
@@ -190,9 +190,9 @@ variants 297+ are excluded)
 - [x] Restorative Technique
 - [x] Rick Jones, Destined Sidekick
 - [x] Savage Land Dinosaur
-- [ ] Serpent Specialist
+- [x] Serpent Specialist
 - [ ] Shang-Chi, Master of Kung Fu
-- [ ] She-Hulk, Jade Defender
+- [x] She-Hulk, Jade Defender
 - [x] Super Strength
 - [x] The Thing, Ben Grimm
 - [x] Tigra, Feline Fury
@@ -200,9 +200,9 @@ variants 297+ are excluded)
 - [x] The Unbeatable Squirrel Girl
 - [x] Undercover Skrull
 - [x] Wakandan Royal Guard
-- [ ] White Tiger, Ava Ayala
+- [x] White Tiger, Ava Ayala
 - [ ] World War Hulk
-- [ ] Abomination, Terrifying Titan
+- [x] Abomination, Terrifying Titan
 - [ ] Absorbing Man
 - [x] Alien Invasion
 - [x] Ant-Man, Colony Commander
@@ -219,7 +219,7 @@ variants 297+ are excluded)
 - [x] The Coming of Galactus
 - [x] Daredevil, Man Without Fear
 - [x] Ghost, Spectral Saboteur
-- [ ] Hulk, Gamma Goliath
+- [x] Hulk, Gamma Goliath
 - [x] Iron Man, Master of Machines
 - [x] Kang, Temporal Tyrant
 - [x] Killmonger, Scourge of Wakanda
@@ -237,7 +237,7 @@ variants 297+ are excluded)
 - [ ] Storm, Windrider
 - [x] The Super Hero Civil War
 - [ ] Taskmaster, Mercenary Mimic
-- [ ] Thanos, the Mad Titan
+- [x] Thanos, the Mad Titan
 - [x] Thor Odinson
 - [ ] Titania, Rugged Rumbler
 - [x] U.S.Agent, John Walker
@@ -257,10 +257,10 @@ variants 297+ are excluded)
 - [ ] Super-Adaptoid
 - [x] The Ten Rings
 - [x] Ultron, Artificial Malevolence
-- [ ] Ultron Drone
+- [x] Ultron Drone
 - [x] Vibranium Energy Daggers
 - [x] The Vision
-- [ ] Viv Vision, Teen Synthezoid
+- [x] Viv Vision, Teen Synthezoid
 - [x] A.I.M. Labs
 - [x] Asgardian Citadel
 - [x] Avengers Hangar

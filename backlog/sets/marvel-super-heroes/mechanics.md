@@ -4,10 +4,12 @@ Cards from MSH that **cannot** be implemented with the current engine/SDK, group
 missing mechanic they need. Each mechanic is `add-feature` territory (a new SDK primitive,
 keyword, or engine capability) — not pure card authoring.
 
-Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04.
-**67 of the 276 are blocked**; every other card is buildable from existing primitives.
+Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
+updated 2026-08-07 after **power-up shipped**. **47 of the 276 are blocked**; every other card is
+buildable from existing primitives.
 
-Supported today and *not* a blocker despite looking like one: **harness / ∞ abilities**
+Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
+below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
 (`CounterType.HARNESS` already ships, backing the SPM Infinity Stones — see
 `definitions/spm/cards/TheSoulStone.kt`), the **Hero** and **Villain** creature types
 (`Subtype.HERO`, `Subtype.VILLAIN`), the **Plan** enchantment *subtype* (`Subtype` is a free-form
@@ -17,68 +19,79 @@ documented routine card work — see `docs/card-sdk-language-reference.md` §16)
 
 ---
 
-## Power-up — 24 cards ⛔
+## Power-up — SHIPPED ✅ (20 of 24 cards unblocked)
 
 > Power-up — {4}{W}: Put two +1/+1 counters on this creature. *(Activate each power-up ability
 > only once. Reduce the cost by its mana cost if it entered this turn.)*
 
-The set's marquee mechanic. Nothing named `POWER_UP` exists in `mtg-sdk` or `rules-engine`. Two of
-the three pieces are already solved by existing machinery, so this is well-bounded:
+The set's marquee mechanic, implemented 2026-08-07 against **CR 702.193** (the rules text ships the
+keyword; don't work from the reminder text alone). Authoring is `isPowerUp = true` in an
+`activatedAbility { }` block — the same shape as `isExhaust`, deliberately, since both mean
+"activate only once". See `docs/card-sdk-language-reference.md` → *Power-up*.
 
-1. **Once-only — already solved.** `ActivationRestriction.Once`
-   (`mtg-sdk/.../scripting/ActivationRestriction.kt`) is a per-object lifetime limit, which is
-   exactly "activate each power-up ability only once" (CR 400.7: a re-entering permanent is a new
-   object and may activate again). Reuse it; do not invent a tracker.
-2. **The marker.** `Keyword.POWER_UP` in `mtg-sdk/.../core/Keyword.kt`, an `isPowerUp: Boolean` on
-   `ActivatedAbility` (`mtg-sdk/.../scripting/ActivatedAbility.kt`, copied verbatim from the
-   neighbouring `isExhaust` flag), a `powerUpAbility(cost) { }` builder in `dsl/CardBuilder.kt`
-   emitting the `"Power-up — "` description prefix, and a `card-sdk-language-reference.md` entry.
-   Without a marker, Wonder Man cannot name "each power-up ability of permanents you control", and
-   Kang cannot prohibit them.
-3. **The real gap — a coloured cost reduction.** "Reduce the cost by its mana cost if it entered
-   this turn" subtracts the source's **full printed `ManaCost`, coloured pips included** — Hulk
-   `{6}{R}{G}` − `{3}{R}{G}` = `{3}`; Thanos `{C}{W}{U}{B}{R}{G}` − `{R}{W}{B}` = `{C}{U}{G}`;
-   Unliving Legionnaire `{5}{B}{B}` − `{3}{B}` = `{2}{B}`. Every cost reduction today is
-   **generic-only** (CR 118.7): `ActivatedAbility.genericCostReduction`,
-   `ReduceActivatedAbilityCost` (`mtg-sdk/.../scripting/CostStaticAbilities.kt`), and their shared
-   backing `ManaCost.reduceGenericWithManaFloor`. Needed: a pip-wise `ManaCost.subtract(ManaCost)`
-   in `mtg-sdk/.../core/ManaCost.kt`, plus a branch in
-   `CastPermissionUtils.applyActivatedAbilityCostReduction` gated on the already-existing
-   `Conditions.SourceEnteredThisTurn` — applied at **both** read sites so the enumerator's displayed
-   cost and `ActivateAbilityHandler`'s paid cost stay in lockstep.
+What that flag does:
 
-Two payoff cards need a little more on top:
+1. **"Activate only once"** — the DSL auto-adds `ActivationRestriction.Once`, a per-object lifetime
+   limit. Per CR 400.7 a re-entering permanent is a new object and may power up again; the existing
+   `AbilityActivatedEverComponent` tracker gives that for free.
+2. **The prefix** — `ActivatedAbility.describeWithCost` renders `"Power-up — "`, and the enumerator
+   rebuilds the label from the *effective* cost, so the menu shows the discounted cost on the turn
+   the permanent entered.
+3. **The cost reduction** — `ManaCost.subtract(other)` in `mtg-sdk/.../core/ManaCost.kt` implements
+   the pip-wise reduction of CR 702.193b / 118.7 (generic reduces generic; colored and colorless
+   reduce their own type with excess spilling to generic; hybrids cancel identical hybrids then
+   either half; `{X}` inert on both sides). `CastPermissionUtils.applyPowerUpSelfReduction` applies
+   it gated on `EnteredThisTurnComponent`, from inside `applyActivatedAbilityCostReduction` — so all
+   three read sites (the enumerator and both `ActivateAbilityHandler` sites) stay in lockstep.
+   `ManaCost.subtract` is also exactly what **offering** (CR 702.48c) needs, if that ever comes up.
+
+`ReduceActivatedAbilityCost.powerUpOnly` shipped alongside, mirroring `exhaustOnly`, which unblocks
+**Hulk, Gamma Goliath** [215] ("Power-up abilities of other creatures you control cost {3} less").
+
+Tests: `ManaCostSubtractTest` (every printed MSH power-up cost/mana-cost pair, plus the CR 118.7
+subrules the set doesn't exercise) and `PowerUpKeywordScenarioTest` (once-only, re-entry reset,
+entered-this-turn gating, displayed-vs-paid lockstep, stacking with `powerUpOnly`).
+
+**Now buildable as ordinary card work (20):** Brave Brawler [8] · Captain Marvel, Earth's Protector
+[11] · Aerial Doombot [43] · Bold Biochemist [48] · Stature,
+Size Shifter [76] · Ninja of the Hand [108] · Unliving Legionnaire [119] · Human Torch, Johnny Storm
+[136] · Quicksilver, Brash Blur [148] · Volcanic Villain [159] · Hercules, Prince of Power [171] ·
+Pet Avengers [178] · Serpent Specialist [186] · She-Hulk, Jade Defender [188] · White Tiger, Ava
+Ayala [196] · Abomination, Terrifying Titan [198] · Hulk, Gamma Goliath [215] · Thanos, the Mad Titan
+[233] · Ultron Drone [253] · Viv Vision, Teen Synthezoid [256].
+
+Non-blocking notes for those: Stature's "can't be blocked if her power is 1 or less" is
+`CantBeBlockedWhilePropertyAtMost` (power-only, `GroupFilter.source()`) — **not** a
+`ConditionalStaticAbility` over a power comparison, which would read her printed power and never
+switch off; Quicksilver's opening-hand clause is `mayBeginGameOnBattlefield()`; Thanos's odd/even
+sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
+
+### Still blocked — 4 cards, each needing one more thing ⛔
 
 - **Wonder Man, Hollywood Hero** [160] — "Each power-up ability of permanents you control can be
   activated an additional time" must *raise* the limit. `ActivationRestriction.Once` is a fixed
   `data object`; needs either `ActivationRestriction.MaxPerGame(count: DynamicAmount)` or a
-  `GrantExtraPowerUpActivations(filter, amount)` static consulted at the same site that enforces
-  `Once` / `MaxPerTurn`.
-- **Hulk, Gamma Goliath** [215] — "Power-up abilities of other creatures you control cost {3} less"
-  is a one-line sibling of the existing `exhaustOnly` flag:
-  `ReduceActivatedAbilityCost(filter, amount, powerUpOnly = true)`.
+  `GrantExtraPowerUpActivations(filter, amount)` static consulted where `Once` / `MaxPerTurn` are
+  enforced. `IgnoreExhaustActivationLimit` / `ExhaustActivationWaiver` is the structural precedent,
+  but it *waives* the limit rather than raising it by one.
 - **Kang the Conqueror** [62] — "During that turn, power-up abilities can't be activated" needs a
   turn-scoped flag on `GameState`, read where granted `PreventActivatedAbilities` is read
-  (`CastPermissionUtils.isActivationPrevented`). The extra turn itself is fine
-  (`Effects.TakeExtraTurn`).
-
-Blocked cards: **Brave Brawler** [8] · **Captain Marvel, Earth's Protector** [11] · **Nick Fury,
-Agent of S.H.I.E.L.D.** [25] · **Aerial Doombot** [43] · **Bold Biochemist** [48] · **Kang the
-Conqueror** [62] · **Stature, Size Shifter** [76] · **Ninja of the Hand** [108] · **Unliving
-Legionnaire** [119] · **Human Torch, Johnny Storm** [136] · **Loki Laufeyson** [143] ·
-**Quicksilver, Brash Blur** [148] · **Volcanic Villain** [159] · **Wonder Man, Hollywood Hero**
-[160] · **Hercules, Prince of Power** [171] · **Pet Avengers** [178] · **Serpent Specialist** [186] ·
-**She-Hulk, Jade Defender** [188] · **White Tiger, Ava Ayala** [196] · **Abomination, Terrifying
-Titan** [198] · **Hulk, Gamma Goliath** [215] · **Thanos, the Mad Titan** [233] · **Ultron Drone**
-[253] · **Viv Vision, Teen Synthezoid** [256].
-
-Non-blocking notes: Stature's "can't be blocked if her power is 1 or less" is already a
-`ConditionalStaticAbility`; Quicksilver's opening-hand clause is `mayBeginGameOnBattlefield()`;
-Thanos's odd/even sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal. Loki Laufeyson
-[143] additionally needs a delayed "when you next cast" trigger whose spell filter is
-source-relative (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the
-predicate exists, but nothing evaluates a source-relative dynamic filter inside delayed-trigger
-matching).
+  (`CastPermissionUtils.isActivationPrevented`) and gated on `ActivatedAbility.isPowerUp`, which now
+  exists. The extra turn itself is fine (`Effects.TakeExtraTurn`).
+- **Nick Fury, Agent of S.H.I.E.L.D.** [25] — the power-up and the top-seven dig are both ordinary
+  composition (Gather → Select → Move, Gishath's shape), but *"If it's a double-faced card, you may
+  transform it"* has no faithful modelling: there is no "is a double-faced card" predicate anywhere
+  in the SDK, so the optional transform can only be offered unconditionally — a prompt on a
+  single-faced permanent, where the printed card offers none. Needed: a `StatePredicate.IsDoubleFaced`
+  (the card component already knows its back face; it is the *predicate* and its `PredicateEvaluator`
+  branch that are missing), then wrap the existing `MayEffect(ForEachInCollectionEffect(…,
+  TransformEffect))` in a `ConditionalEffect` over it. Note the transform must stay *post-entry* —
+  the printed order puts the card onto the battlefield first, so its ETB triggers fire on the front
+  face and only then does it flip, which is not the same as entering transformed.
+- **Loki Laufeyson** [143] — the power-up half is done; the *other* ability needs a delayed "when you
+  next cast" trigger whose spell filter is source-relative
+  (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the predicate exists, but
+  nothing evaluates a source-relative dynamic filter inside delayed-trigger matching).
 
 ## Teamwork N — 13 cards ⛔
 

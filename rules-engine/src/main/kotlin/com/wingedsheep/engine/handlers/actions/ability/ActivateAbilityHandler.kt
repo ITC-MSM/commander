@@ -255,7 +255,7 @@ class ActivateAbilityHandler(
                 castPermissionUtils.applyEquipCostReduction(
                     castPermissionUtils.applyActivatedAbilityCostReduction(
                         applyGenericCostReduction(rawCost, ability, state, action.sourceId, action.playerId, action.targets),
-                        state, action.sourceId, ability.isExhaust
+                        state, action.sourceId, ability.isExhaust, ability.isPowerUp
                     ),
                     ability, state, action.playerId, equipTargetIdForCost,
                     abilitySourceId = action.sourceId
@@ -601,7 +601,7 @@ class ActivateAbilityHandler(
                 castPermissionUtils.applyEquipCostReduction(
                     castPermissionUtils.applyActivatedAbilityCostReduction(
                         applyGenericCostReduction(rawCost, ability, state, action.sourceId, action.playerId, action.targets),
-                        state, action.sourceId, ability.isExhaust
+                        state, action.sourceId, ability.isExhaust, ability.isPowerUp
                     ),
                     ability, state, action.playerId, equipTargetIdForCost,
                     abilitySourceId = action.sourceId

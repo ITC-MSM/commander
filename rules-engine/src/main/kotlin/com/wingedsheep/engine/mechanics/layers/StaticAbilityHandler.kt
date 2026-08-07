@@ -2,9 +2,9 @@ package com.wingedsheep.engine.mechanics.layers
 
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
-import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
+import com.wingedsheep.engine.state.components.battlefield.CantBeBlockedWhilePropertyAtMostComponent
 import com.wingedsheep.engine.state.components.battlefield.CantBeTargetedByOpponentAbilitiesComponent
-import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
+import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsCantLoseGameComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsOpponentsCantWinGameComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsCantLoseGameFromLifeComponent
@@ -173,7 +173,8 @@ import com.wingedsheep.sdk.scripting.conditions.NotCondition
 import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.GrantLandwalkOfChosenType
 import com.wingedsheep.sdk.scripting.RemoveKeywordStatic
-import com.wingedsheep.sdk.scripting.GrantCantBeBlockedToSmallCreatures
+import com.wingedsheep.sdk.scripting.CantBeBlockedWhilePropertyAtMost
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
 import com.wingedsheep.sdk.scripting.GrantWard
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
@@ -284,12 +285,26 @@ class StaticAbilityHandler(
             result = result.with(CantBeTargetedByOpponentAbilitiesComponent)
         }
 
-        // Add component for "creatures you control with power or toughness N or less can't be blocked"
-        val smallCreaturesAbility = allStaticAbilities
-            .filterIsInstance<GrantCantBeBlockedToSmallCreatures>()
+        // Add component for the power/toughness-gated evasion (Tetsuko Umezawa's "creatures you
+        // control with power or toughness N or less can't be blocked", Stature, Size Shifter's
+        // self-scoped "if her power is 1 or less"). Kept out of the layer system on purpose — see
+        // CantBeBlockedWhilePropertyAtMost: the gate reads Layer 7 stats, so it is resolved in a
+        // post-layer projector pass rather than as a Layer 6 grant.
+        // One component per permanent, so only the first such ability is carried. No printed card
+        // has two, and a second would have to differ in threshold or scope to matter; widen the
+        // component to a list if one ever ships.
+        val propertyEvasion = allStaticAbilities
+            .filterIsInstance<CantBeBlockedWhilePropertyAtMost>()
             .firstOrNull()
-        if (smallCreaturesAbility != null) {
-            result = result.with(GrantCantBeBlockedToSmallCreaturesComponent(smallCreaturesAbility.maxValue))
+        if (propertyEvasion != null) {
+            result = result.with(
+                CantBeBlockedWhilePropertyAtMostComponent(
+                    maxValue = propertyEvasion.maxValue,
+                    checkPower = EntityNumericProperty.Power in propertyEvasion.properties,
+                    checkToughness = EntityNumericProperty.Toughness in propertyEvasion.properties,
+                    affects = convertGroupFilter(propertyEvasion.filter)
+                )
+            )
         }
 
         // Add component for "creatures matching filter can be targeted as though they didn't have hexproof"
@@ -975,7 +990,7 @@ class StaticAbilityHandler(
             // Stamped as marker components by addContinuousEffectComponent in this
             // handler and read from those components by their subsystems:
             is CantBeTargetedByOpponentAbilities,
-            is GrantCantBeBlockedToSmallCreatures,
+            is CantBeBlockedWhilePropertyAtMost,
             is GrantCantLoseGame,
             is com.wingedsheep.sdk.scripting.GrantOpponentsCantWinGame,
             is com.wingedsheep.sdk.scripting.GrantCantLoseGameFromLife,

@@ -3,9 +3,9 @@ package com.wingedsheep.engine.mechanics.layers
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.CantBeBlockedWhilePropertyAtMostComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DashedComponent
-import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
@@ -359,9 +359,9 @@ class StateProjector(
         effectApplicator.applyCounters(state, projectedValues)
 
         // Post-layer pass: grant CANT_BE_BLOCKED to creatures qualifying via
-        // GrantCantBeBlockedToSmallCreatures (e.g., Tetsuko Umezawa, Fugitive).
+        // CantBeBlockedWhilePropertyAtMost (Tetsuko Umezawa, Fugitive; Stature, Size Shifter).
         // Must happen after all P/T layers so projected power/toughness is final.
-        applyGrantCantBeBlockedToSmallCreatures(state, projectedValues)
+        applyCantBeBlockedWhilePropertyAtMost(state, projectedValues)
 
         // Post-layer pass: enforce the affected-power half of
         // [Duration.WhileSourceTappedAndAffectedPowerAtMostSource] (Old Man of the Sea).
@@ -805,37 +805,37 @@ class StateProjector(
     }
 
     /**
-     * Scan for permanents with GrantCantBeBlockedToSmallCreaturesComponent and
-     * add CANT_BE_BLOCKED to creatures they control whose projected power or
-     * toughness is at most the threshold.
+     * Grant CANT_BE_BLOCKED to every creature a [CantBeBlockedWhilePropertyAtMostComponent] affects
+     * whose projected power (or toughness, per the component's flags) is at most its threshold —
+     * Tetsuko Umezawa, Fugitive across its controller's creatures, Stature, Size Shifter on itself.
+     *
+     * Runs after every P/T layer, which is the whole point: this is a Layer 6-shaped ability whose
+     * gate reads Layer 7 stats, so evaluating it during layer application would read the printed
+     * P/T and the evasion would never switch off when the creature grows. Re-asked on every
+     * projection, so it also comes back if the creature shrinks again.
+     *
+     * The affected set goes through [filterResolver] against the in-progress projection, so "you
+     * control" follows the *projected* controller — a creature stolen this turn evades under its new
+     * controller's Tetsuko, not its old one's.
      */
-    private fun applyGrantCantBeBlockedToSmallCreatures(
+    private fun applyCantBeBlockedWhilePropertyAtMost(
         state: GameState,
         projectedValues: MutableMap<EntityId, MutableProjectedValues>
     ) {
-        // Collect all grant sources: (controllerId, maxValue)
-        val sources = mutableListOf<Pair<EntityId, Int>>()
-        for (entityId in state.getBattlefield()) {
-            val container = state.getEntity(entityId) ?: continue
-            val grant = container.get<GrantCantBeBlockedToSmallCreaturesComponent>() ?: continue
-            val controllerId = projectedValues[entityId]?.controllerId ?: continue
-            sources.add(controllerId to grant.maxValue)
-        }
-        if (sources.isEmpty()) return
-
-        // For each creature on the battlefield, check if any source applies
-        for (entityId in state.getBattlefield()) {
-            val values = projectedValues[entityId] ?: continue
-            if (!values.types.contains("CREATURE")) continue
-            val power = values.power ?: continue
-            val toughness = values.toughness ?: continue
-            val controllerId = values.controllerId ?: continue
-
-            for ((sourceController, maxValue) in sources) {
-                if (sourceController == controllerId && (power <= maxValue || toughness <= maxValue)) {
-                    values.keywords.add(AbilityFlag.CANT_BE_BLOCKED.name)
-                    break
-                }
+        for (sourceId in state.getBattlefield()) {
+            val grant = state.getEntity(sourceId)
+                ?.get<CantBeBlockedWhilePropertyAtMostComponent>() ?: continue
+            val affected = filterResolver.resolveAffectedEntities(
+                state, sourceId, grant.affects, projectedValues
+            )
+            for (entityId in affected) {
+                val values = projectedValues[entityId] ?: continue
+                if (!values.types.contains("CREATURE")) continue
+                val power = values.power
+                val toughness = values.toughness
+                val qualifies = (grant.checkPower && power != null && power <= grant.maxValue) ||
+                    (grant.checkToughness && toughness != null && toughness <= grant.maxValue)
+                if (qualifies) values.keywords.add(AbilityFlag.CANT_BE_BLOCKED.name)
             }
         }
     }

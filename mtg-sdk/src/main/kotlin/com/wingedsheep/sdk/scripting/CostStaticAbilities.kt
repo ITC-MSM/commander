@@ -849,7 +849,9 @@ sealed interface UnlockCostTarget {
  * [exhaustOnly] narrows the reduction to abilities marked `isExhaust` (CR 702.177) — Boom Scholar's
  * "Exhaust abilities of other permanents you control cost {2} less to activate." It gates on the
  * *ability*, not the permanent, so a matching permanent's ordinary activated abilities cost full
- * price while its exhaust ability is discounted.
+ * price while its exhaust ability is discounted. [powerUpOnly] is its sibling for power-up
+ * (CR 702.193) — Hulk, Gamma Goliath's "Power-up abilities of other creatures you control cost {3}
+ * less to activate."
  *
  * @property filter Which permanents' activated abilities are cheaper (matched via projected state;
  *   use [GroupFilter.attachedCreature] for an Aura's enchanted permanent, [GroupFilter.source] for
@@ -857,6 +859,7 @@ sealed interface UnlockCostTarget {
  * @property amount Dynamic generic-mana reduction applied to each matching ability's cost.
  * @property manaFloor Minimum total mana the cost may be reduced to (default 0).
  * @property exhaustOnly When true, only exhaust abilities (`ActivatedAbility.isExhaust`) are reduced.
+ * @property powerUpOnly When true, only power-up abilities (`ActivatedAbility.isPowerUp`) are reduced.
  */
 @SerialName("ReduceActivatedAbilityCost")
 @Serializable
@@ -864,10 +867,15 @@ data class ReduceActivatedAbilityCost(
     val filter: GroupFilter,
     val amount: DynamicAmount,
     val manaFloor: Int = 0,
-    val exhaustOnly: Boolean = false
+    val exhaustOnly: Boolean = false,
+    val powerUpOnly: Boolean = false
 ) : StaticAbility {
     override val description: String = buildString {
-        val abilities = if (exhaustOnly) "exhaust abilities" else "activated abilities"
+        val abilities = when {
+            exhaustOnly -> "exhaust abilities"
+            powerUpOnly -> "power-up abilities"
+            else -> "activated abilities"
+        }
         append(filter.description.replaceFirstChar { it.uppercase() })
         when (amount) {
             is DynamicAmount.Fixed -> append("'s $abilities cost {${amount.amount}} less to activate")

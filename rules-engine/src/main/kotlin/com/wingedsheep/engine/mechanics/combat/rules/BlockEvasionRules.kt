@@ -13,10 +13,11 @@ import com.wingedsheep.sdk.scripting.CantBeBlockedBy
 import com.wingedsheep.sdk.scripting.CantBeBlockedExceptBy
 import com.wingedsheep.sdk.scripting.CantBeBlockedIfCastSpellType
 import com.wingedsheep.sdk.scripting.CantBeBlockedUnlessDefenderSharesCreatureType
-import com.wingedsheep.sdk.scripting.GrantCantBeBlockedToSmallCreatures
+import com.wingedsheep.sdk.scripting.CantBeBlockedWhilePropertyAtMost
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 
 /**
  * Unblockable: Cannot be blocked at all (CANT_BE_BLOCKED flag).
@@ -536,14 +537,16 @@ class CantBeBlockedByCreaturesWithLessPowerRule : BlockEvasionRule {
 }
 
 /**
- * GrantCantBeBlockedToSmallCreatures: Attacker can't be blocked if it has power or toughness
- * at most N and its controller controls a permanent with this static ability
- * (e.g., Tetsuko Umezawa, Fugitive).
+ * CantBeBlockedWhilePropertyAtMost: Attacker can't be blocked while its projected power (or
+ * toughness) is at most N — Tetsuko Umezawa, Fugitive granting it across its controller's
+ * creatures, Stature, Size Shifter granting it only to herself.
  *
- * Scans the attacking player's battlefield for permanents with GrantCantBeBlockedToSmallCreatures,
- * then checks whether the attacker's projected power or toughness meets the threshold.
+ * Scans the attacking player's battlefield for permanents with the ability; a `Scope.Self` filter
+ * narrows that to the attacker being the source itself. `StateProjector` already grants
+ * CANT_BE_BLOCKED for the same condition and [UnblockableRule] runs first, so in practice this rule
+ * exists to name *why* in the rejection message.
  */
-class GrantCantBeBlockedToSmallCreaturesRule : BlockEvasionRule {
+class CantBeBlockedWhilePropertyAtMostRule : BlockEvasionRule {
     override fun check(ctx: BlockCheckContext): String? {
         val attackerController = ctx.projected.getController(ctx.attackerId) ?: return null
         val attackerPower = ctx.projected.getPower(ctx.attackerId) ?: return null
@@ -553,10 +556,15 @@ class GrantCantBeBlockedToSmallCreaturesRule : BlockEvasionRule {
         for (entityId in ctx.projected.getBattlefieldControlledBy(attackerController)) {
             val card = ctx.state.getEntity(entityId)?.get<CardComponent>() ?: continue
             val cardDef = ctx.cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            for (ability in cardDef.staticAbilities.filterIsInstance<GrantCantBeBlockedToSmallCreatures>()) {
-                if (attackerPower <= ability.maxValue || attackerToughness <= ability.maxValue) {
+            for (ability in cardDef.staticAbilities.filterIsInstance<CantBeBlockedWhilePropertyAtMost>()) {
+                if (ability.filter.scope is Scope.Self && entityId != ctx.attackerId) continue
+                val checks = ability.properties
+                val qualifies =
+                    (EntityNumericProperty.Power in checks && attackerPower <= ability.maxValue) ||
+                        (EntityNumericProperty.Toughness in checks && attackerToughness <= ability.maxValue)
+                if (qualifies) {
                     val attackerName = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Creature"
-                    return "$attackerName can't be blocked (power or toughness ${ability.maxValue} or less)"
+                    return "$attackerName can't be blocked (${ability.propertyDescription} ${ability.maxValue} or less)"
                 }
             }
         }
@@ -627,7 +635,7 @@ fun defaultBlockEvasionRules(
     CantBeBlockedByColorRule(),
     CantBeBlockedExceptByRule(predicateEvaluator),
     CantBeBlockedUnlessDefenderSharesCreatureTypeRule(),
-    GrantCantBeBlockedToSmallCreaturesRule(),
+    CantBeBlockedWhilePropertyAtMostRule(),
     CantBeBlockedIfCastSpellTypeRule(predicateEvaluator),
     ProtectionFromColorRule(),
     ProtectionFromSubtypeRule(),

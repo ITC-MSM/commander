@@ -11975,7 +11975,7 @@
     "script": {
         "staticAbilities": [
             {
-                "type": "GrantCantBeBlockedToSmallCreatures",
+                "type": "CantBeBlockedWhilePropertyAtMost",
                 "maxValue": 1
             }
         ]

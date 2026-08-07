@@ -2273,6 +2273,11 @@ object Effects {
      * Create creature tokens.
      * @param controller Who receives the token. Null = spell controller.
      *   Use [EffectTarget.TargetController] to give tokens to the target's controller.
+     * @param name The token's name, for the *named* tokens whose card text calls them out —
+     *   "create The Tiger God, a legendary 4/4 green Cat God creature token" (White Tiger, Ava
+     *   Ayala). Null (the default) names the token after its creature types, which is what an
+     *   ordinary "create a 1/1 white Soldier creature token" wants. Pair it with
+     *   `legendary = true` when the printed token is legendary, so the legend rule applies.
      */
     fun CreateToken(
         power: Int,
@@ -2283,6 +2288,7 @@ object Effects {
         count: Int = 1,
         controller: EffectTarget? = null,
         imageUri: String? = null,
+        name: String? = null,
         legendary: Boolean = false,
         tapped: Boolean = false,
         artifactToken: Boolean = false,
@@ -2291,7 +2297,8 @@ object Effects {
     ): Effect = CreateTokenEffect(
         count = DynamicAmount.Fixed(count), power = power, toughness = toughness,
         colors = colors, creatureTypes = creatureTypes, keywords = keywords,
-        controller = controller, imageUri = imageUri, legendary = legendary, tapped = tapped,
+        controller = controller, imageUri = imageUri, name = name,
+        legendary = legendary, tapped = tapped,
         artifactToken = artifactToken, enchantmentToken = enchantmentToken,
         staticAbilities = staticAbilities
     )

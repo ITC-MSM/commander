@@ -1175,7 +1175,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Tokens & emblems
 
-- `CreateToken(p, t, colors?, creatureTypes, keywords?, count?, controller?, imageUri?, legendary?, tapped?, artifactToken?, enchantmentToken?, staticAbilities?)` — make N creature tokens.
+- `CreateToken(p, t, colors?, creatureTypes, keywords?, count?, controller?, imageUri?, name?, legendary?, tapped?, artifactToken?, enchantmentToken?, staticAbilities?)` — make N creature tokens.
+  `name` is for the *named* tokens a card's text calls out — "create The Tiger God, a legendary 4/4 green
+  Cat God creature token" (White Tiger, Ava Ayala). Omit it and the token is named after its creature
+  types, which is what an ordinary "create a 1/1 white Soldier creature token" wants. Pair it with
+  `legendary = true` when the printed token is legendary: the name is what the legend rule keys on, so
+  without it two copies would each leave a token on the battlefield.
   `artifactToken = true` makes them **artifact** creatures and `enchantmentToken = true` makes them **enchantment**
   creatures (both may be set at once); the extra card type is unioned onto the token's `Creature` type line (e.g.
   Duskmourn's Glimmer cards create a "1/1 white Glimmer enchantment creature token" via `enchantmentToken = true`).
@@ -4798,6 +4803,25 @@ staticAbility {
   (`attachedCreature()`, `source()`) resolve correctly; a `Battlefield`-scope filter matches every
   attacker. No separate "while attacking" gate is needed — must-be-blocked only bites while the
   creature attacks.
+- `CantBeBlockedWhilePropertyAtMost(maxValue, properties = {Power, Toughness}, filter = GroupFilter.AllCreaturesYouControl)`
+  — "creatures … with power or toughness N or less can't be blocked". One ability for both printed
+  scopes: the defaults are **Tetsuko Umezawa, Fugitive** (a lord over its controller's creatures,
+  either stat), and
+  `CantBeBlockedWhilePropertyAtMost(1, setOf(EntityNumericProperty.Power), GroupFilter.source())`
+  is **Stature, Size Shifter** ("can't be blocked if *her* power is 1 or less"). `properties` is an
+  any-of set, so `{Power, Toughness}` is the printed "power **or** toughness"; only `Power` and
+  `Toughness` are meaningful, since no other property is settled in the layers.
+  **Do not reach for `ConditionalStaticAbility(CantBeBlocked(), condition = <power comparison>)` —
+  it silently never switches off.** A `CantBeBlocked` grant is a Layer 6 ability modification, but
+  power is settled in Layer 7; when the Layer 6 effect is applied the projection has no power for
+  the permanent yet and the condition falls back to the *printed* P/T, so the gate answers "yes"
+  forever no matter how big the creature gets. This holds however the condition is spelled —
+  `Conditions.CompareAmounts(DynamicAmounts.sourcePower(), …)` and
+  `Conditions.SourceMatches(GameObjectFilter.Any.powerAtMost(n))` both fail the same way. The
+  ability is therefore resolved in a **post-layer pass** in `StateProjector`
+  (`applyCantBeBlockedWhilePropertyAtMost`) that runs after every P/T layer, so it reads final
+  projected stats and is re-asked each projection — the evasion comes back if the creature shrinks
+  again. The same trap applies to any static whose gate reads a later layer than the static's own.
 - `CantBeBlockedBy(blockerFilter, filter = GroupFilter.source())` — evasion: the affected creature
   can't be blocked by creatures matching `blockerFilter` (Juggernaut's "can't be blocked by Walls",
   Steel Leaf Champion's "power 2 or less"). Resolved by `CantBeBlockedByRule`, which reads three
@@ -5352,7 +5376,12 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   `ReduceActivatedAbilityCost(GroupFilter(GameObjectFilter.Permanent.youControl(), excludeSelf = true), DynamicAmount.Fixed(2), exhaustOnly = true)`.
   Note that `GroupFilter.excludeSelf` (the printed "**other** permanents") is honored by this read
   site directly — the projection layer never sees this static — so a lord never discounts its own
-  abilities.
+  abilities. `powerUpOnly = true` is the same qualifier for power-up abilities (`isPowerUp`,
+  CR 702.193) — Hulk, Gamma Goliath: "Power-up abilities of other creatures you control cost {3} less
+  to activate" →
+  `ReduceActivatedAbilityCost(GroupFilter(GameObjectFilter.Creature.youControl(), excludeSelf = true), DynamicAmount.Fixed(3), powerUpOnly = true)`.
+  It stacks with power-up's own reduction, which is applied first (CR 601.2f lets multiple reductions
+  apply in any order).
 - `IncreaseActivatedAbilityCost(filter, amount)` — the taxing mirror of
   `ReduceActivatedAbilityCost`: activated abilities of sources matching `filter` cost `amount`
   generic mana **more** to activate. The two are summed into a single net delta before either is
@@ -5688,6 +5717,46 @@ apart. No game-scoped tracker is needed — `Once`'s per-object lifetime (above)
 rules semantics, so a permanent re-entering the battlefield may activate its exhaust ability again.
 Compose freely with other restrictions, e.g. `restrictions = listOf(ActivationRestriction.OnlyDuringYourTurn)`
 alongside `isExhaust = true` for "Exhaust — …: … Activate only during your turn." (Bitter Work).
+
+**Power-up** (Marvel Super Heroes; CR 702.193) — like Exhaust, *not a keyword-line keyword* but a
+marker flag on an activated ability. *"Power-up — [cost]: [effect]"* means *"[cost]: [effect]. If this
+permanent entered this turn, this ability's cost is reduced by this permanent's mana cost. Activate
+this ability only once."* Set `isPowerUp = true` in the `activatedAbility { }` block. That does three
+things:
+
+1. renders the *"Power-up — "* prefix on the ability's `description`;
+2. **auto-adds `ActivationRestriction.Once`**, exactly as `isExhaust` does — same per-object lifetime,
+   so a permanent that re-enters the battlefield may power up again (CR 400.7);
+3. switches on the **self cost reduction**, the part that is genuinely new. It is *pip-wise*, not
+   generic-only: CR 702.193b subtracts the permanent's whole printed mana cost, colored and colorless
+   pips included, via `ManaCost.subtract(other)` (below). Gated on the source having
+   `EnteredThisTurnComponent` — the same marker `Conditions.SourceEnteredThisTurn` reads — and applied
+   in `CastPermissionUtils.applyActivatedAbilityCostReduction`, so the enumerator's displayed cost and
+   `ActivateAbilityHandler`'s paid cost stay in lockstep. The mana cost read is the one on the
+   permanent's `CardComponent`, so a permanent that is a copy is reduced by the *copied* cost.
+
+```kotlin
+// Thanos, the Mad Titan — {R}{W}{B}. Power-up — {C}{W}{U}{B}{R}{G} costs {C}{U}{G} the turn he lands.
+activatedAbility {
+    isPowerUp = true
+    cost = Costs.Mana("{C}{W}{U}{B}{R}{G}")
+    effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, EffectTarget.Self)
+}
+```
+
+Do **not** reach for `genericCostReduction` for this: it is generic-only (CR 118.7a) and so cannot
+express any power-up cost whose reduction includes a colored pip — which is most of the cycle.
+
+**`ManaCost.subtract(other)` — pip-wise cost reduction (CR 118.7).** The primitive behind power-up
+(CR 702.193b) and, identically worded, offering (CR 702.48c): generic reduces generic; colored and
+colorless reduce mana of the same type with any excess spilling into generic; hybrid pips cancel
+identical hybrids first, then either colored half (CR 118.7e); Phyrexian pips reduce their color
+(118.7f); `{X}` is inert on both sides. Floored at zero, never negative. Where CR 118.7e leaves the
+payer a choice, the choice taken is whichever reduces the cost *most* — hybrids are assigned by
+maximum matching rather than first-fit (`{W}{U}` − `{W/U}{W/B}` cancels both), and a monocolored
+hybrid takes its generic half when that removes more than one mana (`{3}{W}` − `{2/W}` = `{1}{W}`,
+not `{3}`). Use this — not `reduceGeneric` / `reduceGenericWithManaFloor` — whenever a reduction is
+expressed as *another object's mana cost* rather than as an amount of generic mana.
 
 **`minimumXValue` — "X can't be 0".** Set `minimumXValue = 1` in the `activatedAbility { }` block for
 an X-cost ability whose X may not be 0 (**Gogo, Master of Mimicry**: "{X}{X}, {T}: … X can't be 0.").
