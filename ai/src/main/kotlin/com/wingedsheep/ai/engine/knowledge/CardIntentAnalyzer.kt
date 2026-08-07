@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
 import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.ModifyStats
@@ -117,6 +118,31 @@ object CardIntentAnalyzer {
         faceCache.getOrPut(FaceKey(card.name, face.name)) { compute(card, listOf(face.script)) }
 
     /**
+     * What one [effect] does, with no card behind it — the reading an ability *already on the
+     * stack* needs.
+     *
+     * A triggered or activated ability on the stack is its own object: it carries its effect and
+     * no card (see `StackResolver.putActivatedAbility`), so [analyze] cannot reach it and reading
+     * the source card instead would answer a different question — an Icy Manipulator's tap ability
+     * is not everything Icy Manipulator does. Only the effect-derived half of a [CardIntent] is
+     * knowable here; the rest keeps [CardIntent.UNKNOWN]'s values, and `speed` in particular is
+     * meaningless for something that is already resolving.
+     *
+     * Not memoized, unlike the card readings: an ability on the stack is a fresh object each time
+     * (its effect can be rewritten by text-changing effects and X), so there is no sound key. The
+     * fold is one pass over an effect tree and the only caller walks a stack of at most a few.
+     */
+    fun analyzeEffect(effect: Effect): CardIntent {
+        val tags = mutableSetOf<IntentTag>()
+        var removalReach: Int? = null
+        for (leaf in EffectWalker.leaves(effect)) {
+            tags += tagsOf(leaf)
+            reachOf(leaf)?.let { removalReach = maxOf(removalReach ?: 0, it) }
+        }
+        return CardIntent.UNKNOWN.copy(tags = tags, removalReach = removalReach)
+    }
+
+    /**
      * The intent [scripts] add up to, read as belonging to [card].
      *
      * Every caller passes the scripts that are in force for what it is asking about — the whole
@@ -182,6 +208,7 @@ object CardIntentAnalyzer {
             staticPriorValue = CardIntent.UNKNOWN.staticPriorValue,
             anthemBonus = anthemBonus,
             pumpToughness = pumpToughness,
+            entersTapped = scripts.any(::alwaysEntersTapped),
         )
         return intent.copy(staticPriorValue = priorValueOf(card, intent))
     }
@@ -394,6 +421,18 @@ object CardIntentAnalyzer {
         if (scripts.any { it.staticAbilities.isNotEmpty() } || IntentTag.ANTHEM in tags) return Speed.STATIC
         return Speed.SORCERY
     }
+
+    /**
+     * Whether [script] makes its permanent enter tapped **every time**, with no choice attached.
+     *
+     * `unlessCondition` and `payLifeCost` are both rejected rather than approximated: a shock land
+     * is normally played untapped and a "unless you control two or fewer other lands" land is
+     * untapped exactly on the turns that matter most, so reading either as an unconditional
+     * tapland would price the *better* card as the worse one. See [CardIntent.entersTapped].
+     */
+    private fun alwaysEntersTapped(script: CardScript): Boolean =
+        script.replacementEffects.filterIsInstance<EntersTapped>()
+            .any { it.unlessCondition == null && it.payLifeCost == null }
 
     /**
      * Whether the card's payoff can happen more than once.

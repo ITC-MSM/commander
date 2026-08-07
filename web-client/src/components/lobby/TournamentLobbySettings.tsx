@@ -16,22 +16,12 @@ import type { LobbyState } from '@/store/slices/types'
 import { teamColor } from '@/styles/seatColors'
 import { BanListEditor } from '../ui/BanListEditor'
 import { CubePanel } from './CubePanel'
-import { SetIcon } from '../ui/SetIcon'
-import { SetPickerModal, setProductLabel } from '../ui/SetPickerModal'
+import { SetSelector, nextRandomSetCode } from '../ui/SetSelector'
 import { SettingsLabel } from '../ui/SettingsLabel'
 import { COMMANDER_PRESETS, effectiveCommanderPreset } from './axes'
 import type { UnifiedLobbyView } from './lobbyViewModel'
 import type { GroupId } from './settingsGroups'
 import styles from '../ui/GameUI.module.css'
-
-/**
- * Sentinel set code for a deferred "Random Set" pick. The concrete set stays hidden (shown as
- * "Random Set") until the server rolls it at game start — mirrors `TournamentLobby.RANDOM_SET_CODE`.
- * Multiple random slots use suffixed codes (RANDOM, RANDOM-2, …).
- */
-const RANDOM_SET_CODE = 'RANDOM'
-const isRandomSetCode = (code: string): boolean =>
-  code === RANDOM_SET_CODE || code.startsWith(`${RANDOM_SET_CODE}-`)
 
 /**
  * The tournament-only rows belonging to one settings group.
@@ -63,7 +53,6 @@ export function TournamentLobbySettings({
   lobbyState: LobbyState
 }) {
   const updateLobbySettings = useGameStore((s) => s.updateLobbySettings)
-  const [showSetPicker, setShowSetPicker] = useState(false)
 
   const s = lobbyState.settings
   const format = s.format
@@ -99,38 +88,6 @@ export function TournamentLobbySettings({
   const isPoolPlay = isCube && isSealed && Boolean(s.cubePoolPlay)
 
   const allSets = s.availableSets
-  // A selected-set chip is either a concrete set or a deferred "Random Set" placeholder.
-  type SelectedSetChip = {
-    code: string
-    name: string
-    partial: boolean
-    extensionSet: boolean
-    random: boolean
-    selectedProductLabels: string[]
-  }
-  const selectedSets: SelectedSetChip[] = s.setCodes
-    .map((code): SelectedSetChip | null => {
-      if (isRandomSetCode(code)) return {
-        code,
-        name: 'Random Set',
-        partial: false,
-        extensionSet: false,
-        random: true,
-        selectedProductLabels: [],
-      }
-      const set = allSets.find((x) => x.code === code)
-      return set
-        ? {
-            code,
-            name: set.name,
-            partial: set.partial ?? false,
-            extensionSet: set.extensionSet ?? false,
-            random: false,
-            selectedProductLabels: (s.includedSetProducts[code] ?? []).map(setProductLabel),
-          }
-        : null
-    })
-    .filter((x): x is SelectedSetChip => x != null)
 
   const toggleSet = (code: string) => {
     const removing = s.setCodes.includes(code)
@@ -153,13 +110,9 @@ export function TournamentLobbySettings({
   // "Random Set" in the picker: a deferred slot the server rolls to a complete, non-extension set
   // at game start. Suffixed codes keep multiple random slots distinct.
   const addRandomSet = () => {
-    const existing = s.setCodes.filter(isRandomSetCode).length
-    const code = existing === 0 ? RANDOM_SET_CODE : `${RANDOM_SET_CODE}-${existing + 1}`
-    updateLobbySettings({ setCodes: [...s.setCodes, code] })
+    updateLobbySettings({ setCodes: [...s.setCodes, nextRandomSetCode(s.setCodes)] })
   }
 
-  const hasSelectedSets = s.setCodes.length > 0
-  const hasBaseSet = s.setCodes.some((code) => !allSets.find((a) => a.code === code)?.extensionSet)
   const perSetCounts = s.setCodes.length > 1 && !s.chaosBoosters
   // Booster Draft and Commander Draft count *packs*, capped at 6. Sealed and Winston count
   // boosters, capped at 16 — Winston hands out a shared pile, so it sits with sealed here even
@@ -263,54 +216,15 @@ export function TournamentLobbySettings({
                 updateLobbySettings={updateLobbySettings}
               />
             ) : (
-              <div className={styles.setSelection}>
-                {selectedSets.length > 0 ? (
-                  <div className={styles.setChips}>
-                    {selectedSets.map((set) => (
-                      <span
-                        key={set.code}
-                        className={`${styles.setChip} ${isAnyDraft ? styles.setChipDraft : ''} ${set.partial ? styles.setChipPartial : ''}`}
-                        title={set.selectedProductLabels.length > 0
-                          ? `${set.name} — additions: ${set.selectedProductLabels.join(', ')}`
-                          : set.random
-                          ? 'Random Set — revealed when the game starts'
-                          : set.partial
-                            ? `${set.name} — partial (reduced card pool)`
-                            : set.extensionSet
-                              ? `${set.name} — extension set (needs a regular set alongside)`
-                              : set.name}
-                      >
-                        {set.random
-                          ? <span className={styles.setChipIcon} aria-hidden>🎲</span>
-                          : <SetIcon code={set.code} className={styles.setChipIcon} />}
-                        <span className={styles.setChipName}>{set.name}</span>
-                        {set.selectedProductLabels.length > 0 && (
-                          <span
-                            className={styles.setChipExtras}
-                            aria-label={`Additions: ${set.selectedProductLabels.join(', ')}`}
-                          >+</span>
-                        )}
-                        <button
-                          type="button"
-                          className={styles.setChipRemove}
-                          aria-label={`Remove ${set.name}`}
-                          onClick={() => toggleSet(set.code)}
-                        >×</button>
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <span className={styles.setSelectionEmpty}>No sets selected yet</span>
-                )}
-                {hasSelectedSets && !hasBaseSet && (
-                  <span className={styles.setSelectionEmpty}>
-                    Extension sets need a regular set alongside them.
-                  </span>
-                )}
-                <button type="button" onClick={() => setShowSetPicker(true)} className={styles.addSetsButton}>
-                  + Add sets
-                </button>
-              </div>
+              <SetSelector
+                sets={allSets}
+                selectedCodes={s.setCodes}
+                onToggleSet={toggleSet}
+                onSelectRandom={addRandomSet}
+                selectedProducts={s.includedSetProducts}
+                onToggleProduct={toggleSetProduct}
+                accent={isAnyDraft ? 'draft' : 'sealed'}
+              />
             )}
           </div>
         </div>
@@ -587,17 +501,6 @@ export function TournamentLobbySettings({
       </div>
       )}
 
-      {group === 'CARDS' && showSetPicker && (
-        <SetPickerModal
-          sets={allSets}
-          selectedCodes={s.setCodes}
-          onToggleSet={toggleSet}
-          onSelectRandom={addRandomSet}
-          selectedProducts={s.includedSetProducts}
-          onToggleProduct={toggleSetProduct}
-          onClose={() => setShowSetPicker(false)}
-        />
-      )}
     </>
   )
 }

@@ -1,6 +1,9 @@
 package com.wingedsheep.ai.engine.knowledge
 
+import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.TargetsResponse
 import com.wingedsheep.engine.support.ScenarioTestBase
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
@@ -94,6 +97,56 @@ class HoldPolicyTest : ScenarioTestBase() {
 
             policy.verdictFor(game.state, game.player1Id, "Giant Growth")
                 .shouldBeInstanceOf<TimingVerdict.NoWindow>()
+        }
+
+        test("a triggered ability that threatens nothing of ours is not a window") {
+            // The mistake this pins: a trigger carries no `CardComponent`, so before the policy
+            // could read an ability it fell through as "unreadable" and bought the trick the full
+            // response bonus. Any ETB on the opponent's main phase was enough to make the AI dump
+            // a pump that provably wears off before combat.
+            val game = scenario()
+                .withPlayers()
+                .withActivePlayer(2)
+                .withLandsOnBattlefield(2, "Forest", 2)
+                .withCardInHand(2, "Elvish Visionary")
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withCardInHand(1, "Giant Growth")
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .build()
+            game.castSpell(2, "Elvish Visionary")
+            // One pass each resolves the creature and leaves its draw trigger on the stack.
+            game.passPriority()
+            game.passPriority()
+            game.state.stack.shouldHaveSize(1)
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry))
+
+            policy.verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.NoWindow>()
+        }
+
+        test("a triggered ability that is killing our creature is a window") {
+            // The other half: reading abilities must not turn into a blanket veto on them.
+            val game = scenario()
+                .withPlayers()
+                .withActivePlayer(2)
+                .withLandsOnBattlefield(2, "Mountain", 4)
+                .withCardInHand(2, "Flametongue Kavu")
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withCardInHand(1, "Giant Growth")
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .build()
+            game.castSpell(2, "Flametongue Kavu")
+            game.resolveStack()
+            val targeting = game.state.pendingDecision as? ChooseTargetsDecision
+                ?: error("expected the ETB to ask for a target; got ${game.state.pendingDecision}")
+            game.submitDecision(
+                TargetsResponse(targeting.id, mapOf(0 to listOf(game.findPermanent("Grizzly Bears")!!)))
+            )
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry))
+
+            // Four damage on a 2/2: dying, and +3/+3 carries it out of range.
+            policy.verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.Adjust>()
         }
 
         test("instant removal is neutral in our own main phase, not penalized") {

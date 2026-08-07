@@ -72,6 +72,22 @@ data class CardIntent(
      * window is real. Power is deliberately absent: nothing outside combat cares.
      */
     val pumpToughness: Int = 0,
+    /**
+     * Whether this card **always** enters the battlefield tapped — the Shivan Oasis clause, not the
+     * shock-land one.
+     *
+     * True only for an unconditional `EntersTapped`. A land that enters tapped *unless* you pay 2
+     * life, or *unless* you control two or fewer other lands, has a drawback the AI cannot price
+     * without simulating the choice it is about to be offered, and a false "this costs you a turn"
+     * is worse than no answer — so those read `false` and the consumer keeps its untyped
+     * behaviour. Declining is the call [CardIntentAnalyzer] makes everywhere else it cannot read a
+     * card exactly.
+     *
+     * The one consumer is [com.wingedsheep.ai.engine.evaluation.BoardPresence]'s land-sequencing
+     * term, which needs to know that the land still in hand carries a deferred cost. Nothing else
+     * in the evaluator tells one land from another.
+     */
+    val entersTapped: Boolean = false,
 ) {
     operator fun contains(tag: IntentTag): Boolean = tag in tags
 

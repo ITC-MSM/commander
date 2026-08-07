@@ -13,11 +13,11 @@ import com.wingedsheep.ai.puzzles.advanceToStackResponse
  * aimed at a creature that has an Aura halfway to the battlefield is a two-for-one. Neither play
  * exists a step earlier or a step later.
  *
- * The four positives are paired with two negatives on the same window, because "always respond" is
- * as wrong as "never respond" and a category made only of positives cannot tell them apart. Both
- * negatives are Giant Growth against damage-based and destruction-based removal respectively, which
- * makes the trio 03/04/06 a decision tree in three positions: pump loses to *destroy*, pump beats
- * *damage*, and pump is wasted when the creature was already surviving.
+ * The four positives are paired with three negatives on the same window, because "always respond"
+ * is as wrong as "never respond" and a category made only of positives cannot tell them apart. All
+ * three negatives are Giant Growth, which makes 03/04/06/07 a decision tree in four positions:
+ * pump loses to *destroy*, pump beats *damage*, pump is wasted when the creature was already
+ * surviving, and there is nothing on the stack that threatens a creature at all.
  */
 object LastChancePuzzles {
 
@@ -170,6 +170,36 @@ object LastChancePuzzles {
                     .also { it.castSpell(2, "Lightning Bolt", it.findPermanent("Craw Wurm")) }
                     .advanceToStackResponse(1)
             },
+            check = { shouldNotCast("Giant Growth") },
+        ),
+
+        AiPuzzle(
+            id = "lastchance-07",
+            category = PuzzleCategory.LAST_CHANCE,
+            expectation = "A draw trigger is not a deadline — hold Giant Growth on their main phase",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withActivePlayer(2)
+                    .withLandsOnBattlefield(2, "Forest", 2)
+                    .withCardInHand(2, "Elvish Visionary")
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withCardInHand(1, "Giant Growth")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .build()
+                    .also {
+                        it.castSpell(2, "Elvish Visionary")
+                        // One pass each resolves the creature, leaving its ETB on the stack.
+                        it.passPriority()
+                        it.passPriority()
+                    }
+                    .advanceToStackResponse(1)
+            },
+            // The third negative, and the one a real game hits constantly: 06 says the deadline has
+            // to reach the creature, this says there has to *be* one. An ability on the stack
+            // carries no card, so a policy that only reads spells sees an unreadable object and
+            // hands the trick the full response bonus — which is how a pump ends up cast on the
+            // opponent's main phase, guaranteed to wear off before any combat.
             check = { shouldNotCast("Giant Growth") },
         ),
     )

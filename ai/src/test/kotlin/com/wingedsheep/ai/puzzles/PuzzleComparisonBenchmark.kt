@@ -47,6 +47,10 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // one verdict that moves in either column, which is what makes it attributable.
                 AiProfile.PRODUCTION_LANDDROP,
                 AiProfile.PRODUCTION_CANDIDATE_LANDDROP,
+                // Land order, alone and on top of what is live. `sequencing-07` is the verdict that
+                // should move, with `sequencing-08` — the same board, the opposite answer — held.
+                AiProfile.PRODUCTION_LANDSEQ,
+                AiProfile.PRODUCTION_CANDIDATE_LANDSEQ,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

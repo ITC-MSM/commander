@@ -437,7 +437,7 @@ export function HomeScreen({
               </section>
 
               {/* ── LAB ──────────────────────────────────────────────────
-                  Dev builds only, and the whole tier goes with it. Both entry points drive
+                  Dev builds only, and the whole tier goes with it. Every entry point drives
                   `/api/dev/*`, which exists only when the server runs with GAME_DEV_ENDPOINTS_ENABLED
                   — in a production build they lead somewhere that cannot work, and with Set
                   Completion moved out there is nothing left in the tier to justify rendering it.
@@ -452,6 +452,11 @@ export function HomeScreen({
                     </button>
                     <button onClick={() => navigate('/llm-tournament')} className={styles.secondaryButton}>
                       LLM Tournament
+                    </button>
+                    {/* Bot-vs-bot with nobody in a seat — the way to watch the engine AI play and
+                        see where it goes wrong. */}
+                    <button onClick={() => navigate('/ai-sandbox')} className={styles.secondaryButton}>
+                      AI Sandbox
                     </button>
                   </div>
                   <p className={styles.tierCaption}>

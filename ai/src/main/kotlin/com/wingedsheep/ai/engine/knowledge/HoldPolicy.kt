@@ -1,11 +1,15 @@
 package com.wingedsheep.ai.engine.knowledge
 
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
+import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.stack.AbilityOnStackComponent
+import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
+import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
 
@@ -99,7 +103,9 @@ class HoldPolicy(private val intents: IntentCatalog) {
      * **Silence is not a veto.** [TimingVerdict.NoWindow] floors the candidate below passing, which
      * is only honest where "does nothing" is structurally certain, so a stack object this policy
      * cannot read — an unknown card, or a fight, whose reach is the other creature's power and not
-     * a property of the card — keeps the old bonus rather than earning a veto.
+     * a property of the card — keeps the old bonus rather than earning a veto. Which makes it
+     * load-bearing that [threatOn] reads *abilities* too, since a trigger on the stack is the
+     * commonest stack object there is.
      */
     private fun responseWindowFor(state: GameState, playerId: EntityId, pump: CardIntent): TimingVerdict {
         val projected = state.projectedState
@@ -107,8 +113,7 @@ class HoldPolicy(private val intents: IntentCatalog) {
 
         for (stackId in state.stack) {
             val container = state.getEntity(stackId) ?: continue
-            val name = container.get<CardComponent>()?.name
-            val threat = name?.let { intents.forName(it) }
+            val threat = threatOn(container)
             if (threat == null || IntentTag.FIGHT in threat.tags) {
                 unreadable = true
                 continue
@@ -132,6 +137,27 @@ class HoldPolicy(private val intents: IntentCatalog) {
         }
 
         return if (unreadable) TimingVerdict.Adjust(RESPONSE_WINDOW) else TimingVerdict.NoWindow
+    }
+
+    /**
+     * What the stack object [container] threatens, or null when nothing here can be read.
+     *
+     * A spell is its card. An **ability** is its effect, which the stack object carries itself —
+     * it has no [CardComponent] at all — so it has to be read from there rather than from the
+     * permanent that produced it, which is a different and much broader question.
+     *
+     * Reading abilities is what keeps [responseWindowFor]'s "silence is not a veto" fallback
+     * honest. Without it every ability on the stack fell through as unreadable and bought a trick
+     * the full response bonus, so an ETB token trigger — or a "you may pay {B} to transform this"
+     * on the opponent's own main phase — paid the AI to dump a combat trick in a window where the
+     * pump provably wears off before any combat.
+     */
+    private fun threatOn(container: ComponentContainer): CardIntent? {
+        val ability = container.get<TriggeredAbilityOnStackComponent>()?.effect
+            ?: container.get<ActivatedAbilityOnStackComponent>()?.effect
+            ?: container.get<AbilityOnStackComponent>()?.effect
+        if (ability != null) return intents.forEffect(ability)
+        return container.get<CardComponent>()?.name?.let { intents.forName(it) }
     }
 
     /**

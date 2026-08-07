@@ -1654,11 +1654,26 @@
   max-width: 380px;
 }
 
+/* Left-aligned variant: the settings rows hang their set strip off the right edge, but a set
+ * selector inside a panel (an AI seat, the deck picker's Random tab) reads with the text above it. */
+.setSelectionStart {
+  align-items: flex-start;
+  max-width: none;
+}
+
 .setChips {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 6px;
+}
+
+.setSelectionStart .setChips {
+  justify-content: flex-start;
+}
+
+.setSelectionStart .addSetsButton {
+  align-self: flex-start;
 }
 
 /* Selected-set chip. Orange = sealed-shape pools, blue = draft-shape (matches the format accent). */

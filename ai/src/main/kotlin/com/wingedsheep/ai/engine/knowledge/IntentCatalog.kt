@@ -5,6 +5,7 @@ import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.components.identity.RoomComponent
 import com.wingedsheep.engine.state.components.identity.RoomFaceId
 import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.scripting.effects.Effect
 
 /**
  * Card-name → [CardIntent] lookup, and the switch that turns Phase 6 on.
@@ -82,6 +83,15 @@ class IntentCatalog private constructor(private val registry: CardRegistry?) {
 
     /** The intent of a definition already in hand. Always answers, even on [NONE]. */
     fun forCard(card: CardDefinition): CardIntent = CardIntentAnalyzer.analyze(card)
+
+    /**
+     * The intent of one ability's [effect] — what a triggered or activated ability sitting on the
+     * stack is doing. Always answers, even on [NONE]: an effect needs no registry to read.
+     *
+     * See [CardIntentAnalyzer.analyzeEffect] for why an ability is read from its effect rather
+     * than from the card that produced it.
+     */
+    fun forEffect(effect: Effect): CardIntent = CardIntentAnalyzer.analyzeEffect(effect)
 
     companion object {
         /** The off position: no registry, no answers, pre-Phase-6 behaviour everywhere. */

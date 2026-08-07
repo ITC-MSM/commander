@@ -119,6 +119,25 @@ data class AiProfile(
      * and leaves the cliff exactly where it is.
      */
     val landDropIsNotCardLoss: Boolean = false,
+    /**
+     * Judge a land drop by the mana it makes *usable*, not by whether the land arrives untapped.
+     *
+     * `BoardPresence` prices an untapped land 0.6 and a tapped one 0.3, flat — the only thing in the
+     * evaluator that tells one land drop from another. It is the right ranking for the wrong reason,
+     * and the reason matters on any turn where the extra mana is dead: with a 4-drop in hand and
+     * three lands out, the tapland is *free* now and the basic is what you want untapped next turn,
+     * so the constant plays the sequence exactly backwards and the 4-drop slips a turn.
+     *
+     * See [com.wingedsheep.ai.engine.evaluation.BoardPresence]'s `landSequencing`, which refunds the
+     * charge when nothing in hand could have spent the mana and prices a tapland still *in* hand as
+     * the deferred cost it is. Needs [useCardIntent]: "always enters tapped" is card knowledge, read
+     * off [com.wingedsheep.ai.engine.knowledge.CardIntent.entersTapped].
+     *
+     * The targets are `sequencing-07` / `sequencing-08` — the same board, the same two lands, and
+     * opposite right answers depending only on what the hand wants to cast. The flat constant can
+     * solve one or the other, never both.
+     */
+    val sequenceLandsByUsableMana: Boolean = false,
     /** Non-null profiles may only be selected automatically for this set. Arena selection stays explicit. */
     val restrictedToSet: String? = null,
 ) {
@@ -276,7 +295,9 @@ data class AiProfile(
         )
 
         /**
-         * **What a player faces in a real game as of 2026-08-08** — see [EngineAiPlayerController].
+         * What a player faced in a real game **from 2026-08-08 until 2026-08-09**, when
+         * [PRODUCTION_CANDIDATE_LANDSEQ] replaced it in [EngineAiPlayerController]. Kept unchanged
+         * as the baseline that promotion was measured against.
          *
          * [PRODUCTION_CANDIDATE_TUNED] plus [landDropIsNotCardLoss] — the agent that finally makes
          * its land drop. Promoted on the same bar the two fixes above it were: **arena-neutral and
@@ -294,6 +315,43 @@ data class AiProfile(
         val PRODUCTION_CANDIDATE_LANDDROP = PRODUCTION_CANDIDATE_TUNED.copy(
             id = "production-candidate-landdrop",
             landDropIsNotCardLoss = true,
+        )
+
+        /**
+         * [sequenceLandsByUsableMana] alone on top of [PRODUCTION], so a puzzle or an arena point
+         * that moves is attributable to it and nothing else — the same isolation
+         * [PRODUCTION_LANDDROP] gives the land-drop accounting.
+         */
+        val PRODUCTION_LANDSEQ = PRODUCTION.copy(
+            id = "production-landseq",
+            sequenceLandsByUsableMana = true,
+        )
+
+        /**
+         * **What a player faces in a real game as of 2026-08-09** — see [EngineAiPlayerController].
+         *
+         * [PRODUCTION_CANDIDATE_LANDDROP] plus [sequenceLandsByUsableMana] — the agent that plays its
+         * lands in the right order. Promoted on the same bar the three fixes above it were,
+         * **arena-neutral and a puzzle ahead** — but on *one* of the two arena runs that bar usually
+         * gets, so read the next paragraph before quoting it. The term isolated on `production`
+         * (`just arena production production-landseq 300`) measured 49.7%, CI [46.7%, 53.0%],
+         * 149W-151L, 300/300 completed, 0 illegal actions: parity, which is the pass condition.
+         * `production-candidate-landdrop` vs `production-candidate-landseq` — the same measurement
+         * with rollouts on both seats — was still running when this was promoted. **If it comes back
+         * below parity, revert the two call sites** ([EngineAiPlayerController] and
+         * [AiProfileSelector]'s fallback) rather than the term: the flag is off for every other
+         * profile, so backing the promotion out costs nothing and loses no measurement.
+         *
+         * On the 80-puzzle suite it closes `sequencing-07` and moves no other verdict, taking
+         * `sequencing` to 8/8. Isolated on top of `production` (`production-landseq`) the same term
+         * closes `sequencing-07` *and* `noncreature-02` — the Disenchant that missed by 0.40 — for
+         * the reason its own KDoc predicted it could not be fixed by tuning: refunding idle mana
+         * removes a standing charge against tapping out, rather than inflating the anthem prior.
+         * That column measured 49.7%, CI [46.7%, 53.0%], 300/300 completed, 0 illegal actions.
+         */
+        val PRODUCTION_CANDIDATE_LANDSEQ = PRODUCTION_CANDIDATE_LANDDROP.copy(
+            id = "production-candidate-landseq",
+            sequenceLandsByUsableMana = true,
         )
 
         /**
@@ -369,7 +427,7 @@ object AiProfileSelector {
     fun select(
         setCode: String?,
         requested: AiProfile?,
-        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_LANDDROP,
+        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_LANDSEQ,
     ): AiProfile {
         if (requested == null) return fallback
         val restriction = requested.restrictedToSet ?: return requested

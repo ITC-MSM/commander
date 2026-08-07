@@ -71,6 +71,12 @@ object ArenaAgents {
         // was the promotion gate.
         ArenaAgent("production-landdrop", AiProfile.PRODUCTION_LANDDROP),
         ArenaAgent("production-candidate-landdrop", AiProfile.PRODUCTION_CANDIDATE_LANDDROP),
+        // Land *order* — which of two lands to drop, rather than whether to drop one.
+        // `just arena production production-landseq 1000` prices the term on its own;
+        // `just arena production-candidate-landdrop production-candidate-landseq 300` is its
+        // promotion gate, against what players face today.
+        ArenaAgent("production-landseq", AiProfile.PRODUCTION_LANDSEQ),
+        ArenaAgent("production-candidate-landseq", AiProfile.PRODUCTION_CANDIDATE_LANDSEQ),
         ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.

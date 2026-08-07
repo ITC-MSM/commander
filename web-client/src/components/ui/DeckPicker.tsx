@@ -45,10 +45,8 @@ import {
 } from '@/components/deck/DeckTile'
 import { parseArenaDeckList } from '../deckbuilder/parseArenaDeck'
 import type { CardSummary } from '../deckbuilder/cardFilter'
-import { SetIcon } from './SetIcon'
-import { SetPickerModal } from './SetPickerModal'
+import { SetSelector, rollRandomSet } from './SetSelector'
 import styles from './DeckPicker.module.css'
-import lobbyStyles from './GameUI.module.css'
 
 export type DeckPickerTab = 'saved' | 'examples' | 'paste' | 'random'
 type Tab = DeckPickerTab
@@ -240,8 +238,17 @@ export function DeckPicker({
   const [randomSetCodes, setRandomSetCodes] = useState<readonly string[]>(
     initialSetCodes ?? (initialSetCode ? [initialSetCode] : []),
   )
-  const [showSetPicker, setShowSetPicker] = useState(false)
   const validateAbortRef = useRef<AbortController | null>(null)
+
+  // The Random tab's set choice is both local (it drives the chips) and lifted (the lobby submits it),
+  // so every change goes through one place rather than being duplicated per handler.
+  const commitSetCodes = useCallback(
+    (next: readonly string[]) => {
+      setRandomSetCodes(next)
+      onSetCodesChange?.(next)
+    },
+    [onSetCodesChange],
+  )
 
   // Re-hydrate on initial-set-code change (e.g. server-driven on reconnect).
   useEffect(() => {
@@ -592,60 +599,30 @@ export function DeckPicker({
               <p className={styles.randomBody}>
                 This covers your seat only. Your opponent can still bring a deck of their own.
               </p>
-              {!randomIsConstructed && availableSets.length > 0 && (() => {
-                return (
-                  <div className={styles.randomSetRow}>
-                    <label className={styles.helperText} style={{ flexShrink: 0 }}>Sets</label>
-                    {randomSetCodes.length === 0 ? (
-                      <span className={lobbyStyles.setChip} title="A random set is rolled when the game starts">
-                        <span className={lobbyStyles.setChipIcon} aria-hidden>🎲</span>
-                        <span className={lobbyStyles.setChipName}>Random Set</span>
-                      </span>
-                    ) : randomSetCodes.map((code) => {
-                      const selectedSet = availableSets.find((s) => s.code === code)
-                      return (
-                        <span key={code} className={`${lobbyStyles.setChip} ${selectedSet?.partial ? lobbyStyles.setChipPartial : ''}`}>
-                          <SetIcon code={code} className={lobbyStyles.setChipIcon} />
-                          <span className={lobbyStyles.setChipName}>{selectedSet?.name ?? code}</span>
-                        </span>
+              {!randomIsConstructed && availableSets.length > 0 && (
+                <div className={styles.randomSetRow}>
+                  <label className={styles.helperText} style={{ flexShrink: 0 }}>Sets</label>
+                  <SetSelector
+                    sets={availableSets}
+                    selectedCodes={randomSetCodes}
+                    onToggleSet={(code) => {
+                      commitSetCodes(
+                        randomSetCodes.includes(code)
+                          ? randomSetCodes.filter((selected) => selected !== code)
+                          : [...randomSetCodes, code],
                       )
-                    })}
-                    <button
-                      type="button"
-                      className={lobbyStyles.addSetsButton}
-                      onClick={() => setShowSetPicker(true)}
-                      disabled={disabled}
-                      style={{ marginLeft: 'auto' }}
-                    >
-                      Choose sets
-                    </button>
-                  </div>
-                )
-              })()}
+                    }}
+                    onSelectRandom={() => {
+                      const chosen = rollRandomSet(availableSets, randomSetCodes)
+                      if (chosen) commitSetCodes([...randomSetCodes, chosen.code])
+                    }}
+                    disabled={disabled}
+                    align="start"
+                    emptyMeansRandom
+                  />
+                </div>
+              )}
             </div>
-            {showSetPicker && (
-              <SetPickerModal
-                sets={availableSets}
-                mode="multi"
-                selectedCodes={randomSetCodes}
-                onToggleSet={(code) => {
-                  const next = randomSetCodes.includes(code)
-                    ? randomSetCodes.filter((selected) => selected !== code)
-                    : [...randomSetCodes, code]
-                  setRandomSetCodes(next)
-                  onSetCodesChange?.(next)
-                }}
-                onSelectRandom={() => {
-                  const candidates = availableSets.filter((set) => !set.extensionSet && !randomSetCodes.includes(set.code))
-                  const chosen = candidates[Math.floor(Math.random() * candidates.length)]
-                  const next = chosen ? [...randomSetCodes, chosen.code] : randomSetCodes
-                  setRandomSetCodes(next)
-                  onSetCodesChange?.(next)
-                }}
-                onClose={() => setShowSetPicker(false)}
-                title="Choose sets"
-              />
-            )}
           </>
         )}
       </div>

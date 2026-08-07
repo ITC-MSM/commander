@@ -29,6 +29,9 @@ const ScenarioBuilderPage = lazy(() =>
 const LlmTournamentPage = lazy(() =>
   import('./components/llmTournament/LlmTournamentPage').then(({ LlmTournamentPage }) => ({ default: LlmTournamentPage }))
 )
+const AiSandboxPage = lazy(() =>
+  import('./components/aiSandbox/AiSandboxPage').then(({ AiSandboxPage }) => ({ default: AiSandboxPage }))
+)
 const SetCompletionPage = lazy(() =>
   import('./components/setCompletion/SetCompletionPage').then(({ SetCompletionPage }) => ({ default: SetCompletionPage }))
 )
@@ -80,6 +83,8 @@ createRoot(rootElement).render(
           <Route path="/help/:section" element={<HelpPage />} />
           <Route path="/llm-tournament" element={<LlmTournamentPage />} />
           <Route path="/llm-tournament/:id" element={<LlmTournamentPage />} />
+          <Route path="/ai-sandbox" element={<AiSandboxPage />} />
+          <Route path="/ai-sandbox/:lobbyId" element={<AiSandboxPage />} />
           <Route path="*" element={<App />} />
         </Routes>
       </Suspense>

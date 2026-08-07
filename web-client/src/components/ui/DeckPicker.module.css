@@ -144,14 +144,20 @@
   color: var(--text-muted);
 }
 
+/* Label plus the shared SetSelector. Top-aligned rather than centred because the selector is a
+ * column (chips over its own button) that grows downwards as sets are added. */
 .randomSetRow {
   display: flex;
-  gap: var(--space-2);
-  align-items: center;
+  gap: var(--space-3);
+  align-items: flex-start;
   align-self: stretch;
   margin-top: var(--space-1);
   padding-top: var(--space-3);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.randomSetRow > label {
+  padding-top: 6px;
 }
 
 .nameInput {

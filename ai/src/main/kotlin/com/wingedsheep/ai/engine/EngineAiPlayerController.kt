@@ -21,11 +21,13 @@ private val logger = LoggerFactory.getLogger(EngineAiPlayerController::class.jav
  * AI controller powered by the built-in rules-engine [AIPlayer].
  *
  * Runs entirely locally with no API calls. Uses the engine's ActionProcessor, board evaluator,
- * [Strategist] and [CombatAdvisor] directly, configured by [AiProfile.PRODUCTION_CANDIDATE_LANDDROP]
+ * [Strategist] and [CombatAdvisor] directly, configured by [AiProfile.PRODUCTION_CANDIDATE_LANDSEQ]
  * — rollout candidate evaluation over a determinized state, on a four-tier decision budget, with a
- * land drop priced as the card conversion it is. Each superseded configuration is kept as the
- * baseline its successor was measured against: [AiProfile.PRODUCTION_CANDIDATE_TUNED] ran from
- * 2026-08-07, and the greedy 1-ply [AiProfile.PRODUCTION] before it.
+ * land drop priced as the card conversion it is and land *order* priced by the mana it makes usable.
+ * Each superseded configuration is kept as the baseline its successor was measured against:
+ * [AiProfile.PRODUCTION_CANDIDATE_LANDDROP] ran from 2026-08-08,
+ * [AiProfile.PRODUCTION_CANDIDATE_TUNED] from 2026-08-07, and the greedy 1-ply
+ * [AiProfile.PRODUCTION] before it.
  *
  * Requires a [gameStateProvider] to access the real (unmasked) [GameState] from
  * the [com.wingedsheep.gameserver.session.GameSession]. This allows the engine AI
@@ -43,7 +45,7 @@ class EngineAiPlayerController(
 ) : AiPlayerController {
 
     private val aiPlayer =
-        AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION_CANDIDATE_LANDDROP, insightSink = insightSink)
+        AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION_CANDIDATE_LANDSEQ, insightSink = insightSink)
 
     override fun chooseAction(
         state: ClientGameState,

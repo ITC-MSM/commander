@@ -15,7 +15,7 @@ import com.wingedsheep.ai.puzzles.categories.SequencingPuzzles
 import com.wingedsheep.ai.puzzles.categories.StackResponsePuzzles
 
 /**
- * Every puzzle, in category order. Thirteen categories, six positions each.
+ * Every puzzle, in category order. Thirteen categories, at least six positions each.
  *
  * Adding a puzzle is: write it in its category file, run `just arena-puzzles`, and add its id to
  * [PuzzleSuiteTest.KNOWN_FAILURES] if the AI does not solve it yet.

@@ -94,9 +94,11 @@ object BoardPresence : BoardFeature {
         projected: ProjectedState,
         playerId: EntityId,
         intents: IntentCatalog,
+        sequenceLandsByUsableMana: Boolean = false,
     ): Double {
         val sides = state.sidesFor(playerId) ?: return 0.0
-        val mine = boardValue(state, projected, sides.mine, intents)
+        val mine = boardValue(state, projected, sides.mine, intents) +
+            if (sequenceLandsByUsableMana) landSequencing(state, projected, playerId, intents) else 0.0
         return sides.against(OpponentAggregate.THREAT) { opponent ->
             mine - boardValue(state, projected, opponent, intents)
         }
@@ -118,6 +120,67 @@ object BoardPresence : BoardFeature {
         return total
     }
 
+    /**
+     * The part of a land's worth [permanentValue] cannot see: not *whether* it is tapped, but
+     * whether being tapped is costing anything **this turn**.
+     *
+     * [permanentValue] prices an untapped land [LAND_UNTAPPED] and a tapped one [LAND_TAPPED], flat,
+     * always. That constant is the only thing in the evaluator that tells one land drop from
+     * another, and it is right for the wrong reason: a tapped land is not worth less because it is
+     * tapped — it untaps next turn — it is worth less when the mana it is not producing is mana you
+     * would have spent. Two corrections follow, and they are the same idea seen from each end:
+     *
+     *  1. **Refund the charge when the mana was idle.** If nothing in hand becomes castable by
+     *     untapping those lands, they cost their controller nothing this turn and are worth a full
+     *     land each. This is what makes "play the tapland on the turn you have nothing to cast" fall
+     *     out — and, deliberately, also stops charging the AI for lands it tapped to *cast* something,
+     *     which was a standing tax on spending mana at all.
+     *  2. **Charge the debt while it is still in hand.** A land that always enters tapped
+     *     ([CardIntent.entersTapped]) owes a turn of mana whenever it is finally played. Holding it
+     *     is therefore slightly worse than holding a basic, which is what breaks the tie in 1's
+     *     favour: on a turn where both drops are free, get the tapland out of your hand.
+     *
+     * [TAPLAND_IN_HAND] is deliberately far below [IDLE_MANA_REFUND]: tidying your hand must never
+     * outrank mana you can spend right now. `BoardPresenceLandSequencingTest` pins that ordering.
+     *
+     * **Own seat only, never a side or an opponent.** Both halves read *hand contents* — mana values
+     * and which lands enter tapped — and the AI is only entitled to its own. Reading a teammate's or
+     * an opponent's would be exactly the hidden-information cheat Phase 8's determinizer exists to
+     * remove, bought for a tenth of a point.
+     *
+     * Two approximations, both deliberate. Castability is mana *value* against a land count, not a
+     * real `ManaSolver` run — colours, alternative costs and timing are ignored, because this term
+     * only has to rank two land drops against each other and a solver call per evaluated state is
+     * not affordable. And the untap check counts lands, the same thing [Tempo] counts, not every
+     * permanent that could make mana.
+     */
+    private fun landSequencing(
+        state: GameState,
+        projected: ProjectedState,
+        playerId: EntityId,
+        intents: IntentCatalog,
+    ): Double {
+        // Projection on the battlefield, base state in hand: an animated Mishra's Factory is still a
+        // land and a Dryad Arbor is one from the moment it arrives, and only the projection knows.
+        // A card in hand has no continuous effects on it, so its printed type line is the answer.
+        val lands = projected.getBattlefieldControlledBy(playerId)
+            .filter { projected.hasType(it, "LAND") }
+        val untapped = lands.count { state.getEntity(it)?.has<TappedComponent>() != true }
+        val tapped = lands.size - untapped
+
+        val hand = state.getZone(playerId, Zone.HAND)
+            .mapNotNull { state.getEntity(it)?.get<CardComponent>() }
+
+        var score = 0.0
+        if (tapped > 0 && hand.none { !it.isLand && it.manaValue in (untapped + 1)..lands.size }) {
+            score += tapped * IDLE_MANA_REFUND
+        }
+        score -= TAPLAND_IN_HAND * hand.count {
+            it.isLand && intents.forName(it.name)?.entersTapped == true
+        }
+        return score
+    }
+
     internal fun permanentValue(
         state: GameState,
         projected: ProjectedState,
@@ -133,7 +196,7 @@ object BoardPresence : BoardFeature {
 
         // Non-creature permanents
         if (card.isLand) {
-            return if (container.has<TappedComponent>()) 0.3 else 0.6
+            return if (container.has<TappedComponent>()) LAND_TAPPED else LAND_UNTAPPED
         }
 
         // What the structural analyzer makes of the card, if this agent has card knowledge on.
@@ -332,6 +395,23 @@ object BoardPresence : BoardFeature {
         }
         return powerMod to toughnessMod
     }
+
+    /** What a land is worth on the battlefield. Historical constants; [landSequencing] refines them. */
+    private const val LAND_UNTAPPED = 0.6
+    private const val LAND_TAPPED = 0.3
+
+    /** Exactly the charge [permanentValue] applied, so an idle tapped land nets out to a full land. */
+    private const val IDLE_MANA_REFUND = LAND_UNTAPPED - LAND_TAPPED
+
+    /**
+     * What holding a land that always enters tapped costs, versus holding one that does not.
+     *
+     * Small on purpose, and its size is the whole design: it has to break a tie between two land
+     * drops that are otherwise identical, and it must never come near [IDLE_MANA_REFUND], or the AI
+     * would start dumping taplands on turns where the untapped mana was live — which is the mistake
+     * this term exists to stop, in the opposite direction.
+     */
+    private const val TAPLAND_IN_HAND = 0.1
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

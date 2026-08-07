@@ -36,7 +36,7 @@ class PuzzleSuiteTest : ScenarioTestBase() {
                     PuzzleCatalog.byCategory(category).size shouldBeGreaterThanOrEqual 6
                 }
             }
-            PuzzleCatalog.all.size shouldBe 78
+            PuzzleCatalog.all.size shouldBe 81
         }
 
         test("every KNOWN_FAILURES id names a real puzzle") {
@@ -110,6 +110,22 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // declare-blockers, so the +1/+0 shows up as `attackPotential` on a creature that is
             // already attacking and never as life off the opponent. Phase 7.
             "activate-05",
+
+            // ── Land order ──
+            // The only signal the evaluator has about which land to drop is `BoardPresence`: an
+            // untapped land is worth 0.6, a tapped one 0.3. The basic therefore beats the tapland by
+            // a flat +0.3 in every position — including this one, where the third mana is dead
+            // (Hill Giant is {3}{R}), so the tapland's drawback is free *this* turn and the basic's
+            // untapped-ness is what gets paid for *next* turn. Nothing asks whether the mana being
+            // unlocked is live, and `Tempo`, the one feature that counts lands, ignores tapped state
+            // entirely.
+            //
+            // Its pair, sequencing-08, is the same board with a {2}{R} on top instead, where the
+            // constant happens to be right and the AI passes. Neither the constant nor its opposite
+            // solves both, which is what makes the pair worth keeping: the fix is a term that reads
+            // the hand's curve (or a horizon that reaches next turn's main phase), and it shows up
+            // here as 07 flipping to a pass with 08 still passing.
+            "sequencing-07",
         )
     }
 }

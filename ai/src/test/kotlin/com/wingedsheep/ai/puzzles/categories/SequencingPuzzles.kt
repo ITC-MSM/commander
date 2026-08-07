@@ -113,5 +113,56 @@ object SequencingPuzzles {
             },
             check = { shouldPlayLand("Mountain") },
         ),
+
+        // ── Land *order*. Two lands in hand, one of them tapped; only the order is in question. ──
+        //
+        // These are the first puzzles here whose wrong answer costs a turn rather than a tempo
+        // point, and they are deliberately a pair: the same two lands, the same two-Mountain board,
+        // and opposite correct answers, differing only in the top of the curve. No constant
+        // preference between the two lands solves both — which is the point, because a constant is
+        // exactly what the AI has. `BoardPresence` scores an untapped land 0.6 and a tapped one 0.3,
+        // so the basic wins by a flat +0.3 whether or not the mana it unlocks is live this turn:
+        // 08 passes, 07 fails. Verified order-insensitive — swapping the two lands in hand moves
+        // neither verdict, so this is the evaluator answering, not a tie-break.
+
+        AiPuzzle(
+            id = "sequencing-07",
+            category = PuzzleCategory.SEQUENCING,
+            expectation = "Nothing to cast at three mana: play the tapland now, so the Mountain " +
+                "arrives untapped on the turn the 4-drop needs it",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withLandsOnBattlefield(1, "Mountain", 2)
+                    .withCardInHand(1, "Mountain")
+                    .withCardInHand(1, "Shivan Oasis")
+                    .withCardInHand(1, "Hill Giant")
+                    .build()
+            },
+            // The third mana is dead this turn — Hill Giant is {3}{R} — so the tapland's drawback
+            // costs nothing *now* and everything later. Oasis first: next turn the Mountain enters
+            // untapped and all four lands pay for the Giant. Mountain first: next turn the Oasis
+            // enters tapped, leaving three usable mana, and the Giant slips a whole turn.
+            check = { shouldPlayLand("Shivan Oasis") },
+        ),
+
+        AiPuzzle(
+            id = "sequencing-08",
+            category = PuzzleCategory.SEQUENCING,
+            expectation = "The 3-drop is castable this turn only off the basic — play the Mountain, " +
+                "not the tapland",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withLandsOnBattlefield(1, "Mountain", 2)
+                    .withCardInHand(1, "Mountain")
+                    .withCardInHand(1, "Shivan Oasis")
+                    .withCardInHand(1, "Gray Ogre")
+                    .build()
+            },
+            // sequencing-07 with the curve pulled down one: Gray Ogre is {2}{R}, so the third mana
+            // is live the moment it is untapped. Here the tapland is the turn-losing play.
+            check = { shouldPlayLand("Mountain") },
+        ),
     )
 }

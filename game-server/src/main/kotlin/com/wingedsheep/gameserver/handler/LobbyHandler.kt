@@ -237,9 +237,16 @@ class LobbyHandler(
      * Programmatically create a sealed tournament with AI-only players.
      * Returns the lobby ID for spectating. Used by the dev AI tournament endpoint.
      */
-    fun createAiTournament(setCodes: List<String>, playerCount: Int = 2, models: List<String>? = null, heuristicDeckbuilding: Boolean? = null): String {
+    fun createAiTournament(
+        setCodes: List<String>,
+        playerCount: Int = 2,
+        models: List<String>? = null,
+        heuristicDeckbuilding: Boolean? = null,
+        gamesPerMatch: Int? = null,
+    ): String {
         require(aiGameManager.isEnabled) { "AI opponent is not enabled on this server" }
         require(playerCount in 2..8) { "Player count must be between 2 and 8" }
+        require(gamesPerMatch == null || gamesPerMatch in 1..9) { "Games per match must be between 1 and 9" }
 
         val setConfigs = setCodes.map { code ->
             boosterGenerator.getSetConfig(code)
@@ -256,7 +263,8 @@ class LobbyHandler(
             format = TournamentFormat.SEALED,
             boosterCount = boosterCount,
             boosterDistribution = TournamentLobby.calculateDefaultDistribution(codes, boosterCount),
-            maxPlayers = playerCount
+            maxPlayers = playerCount,
+            gamesPerMatch = gamesPerMatch ?: 3,
         )
 
         // Add AI players

@@ -24,11 +24,17 @@ import { buildJoinUrl } from '@/utils/joinLink'
 import { labelForFormat } from '@/utils/deckLegality'
 import momirVigUrl from '@/assets/momir-vig.svg'
 import { DeckPicker, type DeckPickerTab } from '../ui/DeckPicker'
+import { DeckPickerModal } from '../ui/DeckPickerModal'
 import { FullscreenButton } from '../ui/FullscreenButton'
 import { JoinQrModal } from '../ui/JoinQrModal'
 import { SettingsLabel } from '../ui/SettingsLabel'
-import { QuickAiDeckModal, initialAiSource, type AiDeckSource } from './AiOpponentPanel'
-import { LobbyAiDeckModal, aiDeckSummary } from './LobbyAiDeckModal'
+import {
+  LobbyAiDeckModal,
+  QuickAiDeckModal,
+  aiDeckSummary,
+  initialAiSource,
+  type AiDeckSource,
+} from './AiDeckChooser'
 import {
   CardsAxisBody,
   CardsAxisStrip,
@@ -791,36 +797,6 @@ function QuickGameDeckPicker({
       initialSavedDeckName={initialSavedDeckName}
       onSavedDeckNameChange={onSavedDeckNameChange}
     />
-  )
-}
-
-function DeckPickerModal({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: ReactNode
-}) {
-  return (
-    <div className={styles.confirmBackdrop} role="dialog" aria-modal="true" onClick={onClose}>
-      <div className={styles.deckPickerModal} onClick={(event) => event.stopPropagation()}>
-        <div className={styles.deckPickerModalHeader}>
-          <div>
-            <div className={styles.confirmTitle}>{title}</div>
-            <p className={styles.confirmBody}>Choose the deck for this player seat.</p>
-          </div>
-          <button type="button" onClick={onClose} className={styles.deckPickerModalClose} aria-label="Close deck picker">
-            ×
-          </button>
-        </div>
-        {children}
-        <div className={styles.confirmActions}>
-          <button type="button" onClick={onClose} className={styles.startButton}>Done</button>
-        </div>
-      </div>
-    </div>
   )
 }
 
