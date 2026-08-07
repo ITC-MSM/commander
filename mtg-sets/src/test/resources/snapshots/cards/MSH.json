@@ -15312,6 +15312,78 @@
     ]
 }
 
+// White Tiger, Ava Ayala
+{
+    "name": "White Tiger, Ava Ayala",
+    "manaCost": "{1}{G}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Power-up — {5}{G}: Put a +1/+1 counter on White Tiger and create The Tiger God, a legendary 4/4 green Cat God creature token with \"The Tiger God can't be blocked by more than one creature.\" (Activate each power-up ability only once. Reduce the cost by her mana cost if she entered this turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "CreateToken",
+                            "power": 4,
+                            "toughness": 4,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Cat",
+                                "God"
+                            ],
+                            "name": "The Tiger God",
+                            "imageUri": "https://cards.scryfall.io/normal/front/4/d/4d1ca2ed-c987-4f92-ad7b-991d7a64d145.jpg?1783902800",
+                            "legendary": true,
+                            "staticAbilities": [
+                                {
+                                    "type": "CantBeBlockedByMoreThan",
+                                    "maxBlockers": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put a +1/+1 counter on White Tiger and create The Tiger God, a legendary 4/4 green Cat God creature token with \"The Tiger God can't be blocked by more than one creature.\"",
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "196",
+        "rarity": "UNCOMMON",
+        "artist": "Jennifer Hrabota Lesser",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1589e2e-32a8-48b8-93eb-a9af344e7084.jpg?1783902908"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // White Widow, Free Agent
 {
     "name": "White Widow, Free Agent",

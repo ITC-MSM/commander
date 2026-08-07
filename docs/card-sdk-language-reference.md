@@ -1175,7 +1175,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Tokens & emblems
 
-- `CreateToken(p, t, colors?, creatureTypes, keywords?, count?, controller?, imageUri?, legendary?, tapped?, artifactToken?, enchantmentToken?, staticAbilities?)` — make N creature tokens.
+- `CreateToken(p, t, colors?, creatureTypes, keywords?, count?, controller?, imageUri?, name?, legendary?, tapped?, artifactToken?, enchantmentToken?, staticAbilities?)` — make N creature tokens.
+  `name` is for the *named* tokens a card's text calls out — "create The Tiger God, a legendary 4/4 green
+  Cat God creature token" (White Tiger, Ava Ayala). Omit it and the token is named after its creature
+  types, which is what an ordinary "create a 1/1 white Soldier creature token" wants. Pair it with
+  `legendary = true` when the printed token is legendary: the name is what the legend rule keys on, so
+  without it two copies would each leave a token on the battlefield.
   `artifactToken = true` makes them **artifact** creatures and `enchantmentToken = true` makes them **enchantment**
   creatures (both may be set at once); the extra card type is unioned onto the token's `Creature` type line (e.g.
   Duskmourn's Glimmer cards create a "1/1 white Glimmer enchantment creature token" via `enchantmentToken = true`).
