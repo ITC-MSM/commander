@@ -102,6 +102,23 @@ data class AiProfile(
      * `CombatSeed`, and which the rollouts do not close either.
      */
     val priceCrackBackAsLife: Boolean = false,
+    /**
+     * Stop charging a land drop as card loss. A land moving from hand to battlefield is not a card
+     * spent, it is a card converted to mana — and mana is what [EvaluationWeights.tempo] and
+     * `BoardPresence` already price.
+     *
+     * See [com.wingedsheep.ai.engine.evaluation.CardAdvantage]'s `heldCardCount`. The target is
+     * `sequencing-02` — "on the last card in hand, still make the land drop" — the one puzzle every
+     * profile measured so far fails, `production` and `production-candidate-tuned` included. It is
+     * also the one whose real-game frequency is highest: any turn whose only card in hand is a land
+     * is a turn the AI skips its land drop, and every game reaches several.
+     *
+     * Not the same lever as [EvaluationWeights.topdeckPenalty], which the promotion run reached for
+     * and rejected. Moving the constant to −1.0 also closes this puzzle, but by making an empty hand
+     * cheaper *everywhere* — which is why it cost `respond-02`. This changes what a hand *contains*
+     * and leaves the cliff exactly where it is.
+     */
+    val landDropIsNotCardLoss: Boolean = false,
     /** Non-null profiles may only be selected automatically for this set. Arena selection stays explicit. */
     val restrictedToSet: String? = null,
 ) {
@@ -204,6 +221,12 @@ data class AiProfile(
             priceCrackBackAsLife = true,
         )
 
+        /** The land-drop accounting on its own, so `sequencing-02` moving can be attributed to it. */
+        val PRODUCTION_LANDDROP = PRODUCTION.copy(
+            id = "production-landdrop",
+            landDropIsNotCardLoss = true,
+        )
+
         /** All three targeted fixes. The best the suite can be pushed to without curve-fitting. */
         val PRODUCTION_TARGETED = PRODUCTION.copy(
             id = "production-targeted",
@@ -225,7 +248,10 @@ data class AiProfile(
         )
 
         /**
-         * **What a player faces in a real game as of 2026-08-07** — see [EngineAiPlayerController].
+         * What a player faced in a real game **from 2026-08-07 until 2026-08-08**, when
+         * [PRODUCTION_CANDIDATE_LANDDROP] replaced it in [EngineAiPlayerController]. Kept unchanged
+         * as the baseline that promotion was measured against — the same job [PRODUCTION] does for
+         * this one.
          *
          * [PRODUCTION_CANDIDATE] with the two cheap fixes on top. The two scoreboards turned out
          * to measure nearly orthogonal things, which is why this is a combination rather than a
@@ -247,6 +273,27 @@ data class AiProfile(
             id = "production-candidate-tuned",
             evalWeightsId = "concave-hand-2",
             resolveThroughCombatDamage = true,
+        )
+
+        /**
+         * **What a player faces in a real game as of 2026-08-08** — see [EngineAiPlayerController].
+         *
+         * [PRODUCTION_CANDIDATE_TUNED] plus [landDropIsNotCardLoss] — the agent that finally makes
+         * its land drop. Promoted on the same bar the two fixes above it were: **arena-neutral and
+         * a puzzle ahead**. 300 paired games against `production-candidate-tuned` measured 49.0%,
+         * CI [46.3%, 51.3%], 300/300 completed, 0 illegal actions; the accounting on its own
+         * (`production` vs `production-landdrop`, 400 games) 49.5%, CI [46.8%, 52.3%]. On the
+         * 66-puzzle suite it closes `sequencing-02` — the only puzzle every profile before it
+         * failed — and moves no other verdict, for the live pair and for `production` alike.
+         *
+         * A new id rather than a flag flipped on the live profile, for the reason
+         * [PRODUCTION_CANDIDATE_TUNED]'s own KDoc gives: every arena report already published under
+         * that name refers to that exact agent, and the baseline a promotion is measured against
+         * cannot be the thing being promoted.
+         */
+        val PRODUCTION_CANDIDATE_LANDDROP = PRODUCTION_CANDIDATE_TUNED.copy(
+            id = "production-candidate-landdrop",
+            landDropIsNotCardLoss = true,
         )
 
         /**
@@ -322,7 +369,7 @@ object AiProfileSelector {
     fun select(
         setCode: String?,
         requested: AiProfile?,
-        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_TUNED,
+        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_LANDDROP,
     ): AiProfile {
         if (requested == null) return fallback
         val restriction = requested.restrictedToSet ?: return requested

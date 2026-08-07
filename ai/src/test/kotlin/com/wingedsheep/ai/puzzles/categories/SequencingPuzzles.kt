@@ -43,7 +43,8 @@ object SequencingPuzzles {
             // Deliberately paired with sequencing-04, which is the same decision with one more
             // card in hand. If 04 passes and this fails, the defect is precisely
             // `CardAdvantage.cardValue(0) = -3.0`: emptying your hand reads as a disaster, so the
-            // AI would rather hold a land forever than play it. Land drops are free.
+            // AI would rather hold a land forever than play it. Land drops are free — which is what
+            // `AiProfile.landDropIsNotCardLoss` finally tells the evaluator.
             check = { shouldPlayLand("Forest") },
         ),
 

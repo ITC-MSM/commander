@@ -17,6 +17,7 @@ import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComp
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.player.LandDropsComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
@@ -357,16 +358,53 @@ object CardAdvantage : BoardFeature {
         @Suppress("UNUSED_PARAMETER") projected: ProjectedState,
         playerId: EntityId,
         topdeckPenalty: Double,
+        landDropIsNotCardLoss: Boolean = false,
     ): Double {
         val sides = state.sidesFor(playerId) ?: return 0.0
-        val mine = sideHandValue(state, sides.mine, topdeckPenalty)
+        val mine = sideHandValue(state, sides.mine, topdeckPenalty, landDropIsNotCardLoss)
         return sides.against(OpponentAggregate.FIELD) { opponent ->
-            mine - sideHandValue(state, opponent, topdeckPenalty)
+            mine - sideHandValue(state, opponent, topdeckPenalty, landDropIsNotCardLoss)
         }
     }
 
-    private fun sideHandValue(state: GameState, side: List<EntityId>, topdeckPenalty: Double): Double =
-        side.sumOf { cardValue(state.getZone(it, Zone.HAND).size, topdeckPenalty) }
+    private fun sideHandValue(
+        state: GameState,
+        side: List<EntityId>,
+        topdeckPenalty: Double,
+        landDropIsNotCardLoss: Boolean,
+    ): Double =
+        side.sumOf { cardValue(heldCardCount(state, it, landDropIsNotCardLoss), topdeckPenalty) }
+
+    /**
+     * How many cards in [playerId]'s hand are *cards* rather than mana waiting to be tapped.
+     *
+     * With [landDropIsNotCardLoss] off this is the hand size, which is what every published number
+     * before 2026-08-07 was measured on.
+     *
+     * On, it holds back one land per unused land drop. Playing a land does not spend a card — it
+     * relocates one, from a zone this feature prices to the battlefield that [Tempo] and
+     * [BoardPresence] price. Charging the move as card loss made it a strict debit: the land drop
+     * paid 1.5–3.0 here to buy 2.1 there, and at the empty-hand cliff it did not cover the
+     * difference, which is why the AI would sit on its last land for the rest of the game
+     * (`sequencing-02`). Holding the drop back on *both* sides of the count makes the move exactly
+     * card-neutral, so [Tempo] and [BoardPresence] decide it alone.
+     *
+     * `LandDropsComponent.remaining` rather than the enumerator's `canPlayLand`, which also demands
+     * main phase / empty stack / your turn. Land drops reset for every player at cleanup, so
+     * `remaining` reads 1 for whoever is not the active player too — the earmark is symmetric and
+     * survives a turn boundary instead of flickering on and off within one. It also misses the
+     * `GrantAdditionalLandDrop` statics that `LandDropUtils` adds on top, which needs a
+     * `CardRegistry` this feature does not have: under an Exploration the second drop is still
+     * charged as card loss, which is the old behaviour rather than a new error.
+     */
+    private fun heldCardCount(state: GameState, playerId: EntityId, landDropIsNotCardLoss: Boolean): Int {
+        val hand = state.getZone(playerId, Zone.HAND)
+        if (!landDropIsNotCardLoss) return hand.size
+        val drops = state.getEntity(playerId)?.get<LandDropsComponent>()?.remaining ?: 0
+        if (drops <= 0) return hand.size
+        val lands = hand.count { state.getEntity(it)?.get<CardComponent>()?.isLand == true }
+        return hand.size - minOf(lands, drops)
+    }
 
     private fun cardValue(count: Int, topdeckPenalty: Double): Double = when {
         count <= 0 -> topdeckPenalty

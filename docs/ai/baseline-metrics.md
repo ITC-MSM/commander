@@ -1233,8 +1233,90 @@ closes `sequencing-02` but starts spending the last Counterspell on a 2/2 with s
 
 - **`sequencing-02`** — only reachable by moving the curve to −1.0, at the cost of a negative
   control. The real fix is that a land drop should not be charged as card loss at all; it converts
-  a card to mana rather than spending it.
+  a card to mana rather than spending it. **Closed the next day — see below.**
 - **`race-03`** — needs the crack-back estimated on the *pre*-combat state, or a genuine
   attack-vs-hold model. The rollouts do not close it either.
 - **`respond-05`** — unexplained. `resolveToQuietState` should already resolve the Wrath and see
   the Troll survive, so the recorded explanation does not match the code path.
+
+---
+
+# Promotion — `production-candidate-landdrop` goes live
+
+Measured 2026-08-07, 8-core M1 Pro, BLB, seed 20260727, 0 illegal actions and 100% completed on
+both runs. Reproduce with `just arena production production-landdrop 400`,
+`just arena production-candidate-tuned production-candidate-landdrop 300` and
+`just arena-puzzles-compare`.
+
+This is the item the section above left open: **a land drop is not card loss.**
+
+## The defect, measured on the position rather than argued
+
+`sequencing-02` is one Forest on the battlefield and one Forest in hand. Playing it moves
+`CardAdvantage` from `cardValue(1) = 1.0` to `cardValue(0) = −2.0`:
+
+| feature | Δ playing the land | weight | contribution |
+|---|---:|---:|---:|
+| `CardAdvantage` | −3.0 | 1.0 | **−3.00** |
+| `Tempo` (1 → 2 lands) | +2.0 | 0.6 | +1.20 |
+| `BoardPresence` (untapped land) | +0.6 | 1.5 | +0.90 |
+| | | | **−0.90 → pass** |
+
+The land drop was a strict debit: it paid 1.5–3.0 of card advantage to buy 2.1 of board and tempo,
+and at the empty-hand cliff it did not cover the difference. So the AI sat on its last land — and
+unlike the rest of the suite's failures, that position is not a contrivance. Every game reaches
+several turns whose only card in hand is a land.
+
+## Why not the constant, again
+
+Moving `topdeckPenalty` to −1.0 also closes `sequencing-02`. The promotion run above measured that
+and rejected it, because it makes an empty hand cheaper *everywhere* and cost `respond-02` — the
+negative control that exists for it. `AiProfile.landDropIsNotCardLoss` changes what a hand
+*contains* instead: `CardAdvantage.heldCardCount` holds back one land per unused land drop, so the
+drop is **exactly** card-neutral and the cliff stays where it is. `respond-02`'s verdict does not
+move.
+
+The earmark reads `LandDropsComponent.remaining` rather than the enumerator's `canPlayLand`, which
+also demands main phase / empty stack / your turn. Land drops reset for *every* player at cleanup,
+so `remaining` is 1 for the non-active player too — the earmark is symmetric across the table and
+survives a turn boundary rather than flickering on and off inside one. It misses the
+`GrantAdditionalLandDrop` statics `LandDropUtils` adds, which want a `CardRegistry` the feature does
+not have; under an Exploration the second drop is still charged, which is the old behaviour rather
+than a new error.
+
+## Both scoreboards
+
+| Matchup | Win share for B | Pair CI | Games | Puzzles (B) |
+|---|---:|---:|---:|---:|
+| `production` vs `production-landdrop` | 50.5% | [46.8%, 52.3%] for A | 400 | 61/66 |
+| `production-candidate-tuned` vs `production-candidate-landdrop` | **51.0%** | **[46.3%, 51.3%] for A** | 300 | **61/66** |
+
+Both verdicts are *not distinguishable* — the CI spans parity, which is the same bar
+`production-horizon-concave-2` shipped on. What the puzzles say is unambiguous, and it is one line:
+
+| Agent | Puzzles | Closes | Breaks |
+|---|---:|---|---|
+| `production` | 60/66 | — | — |
+| `production-landdrop` | **61/66** | `sequencing-02` | none |
+| `production-horizon-concave-2` | 63/66 | — | — |
+| `production-horizon-concave-2` + land drop | **64/66** | `sequencing-02` | none |
+| `production-candidate-tuned` (was live) | 60/66 | — | — |
+| `production-candidate-landdrop` (**live**) | **61/66** | `sequencing-02` | none |
+
+`sequencing-02` is the only verdict that moves in any column, which is what makes the delta
+attributable to this change and nothing else.
+
+## Two findings worth carrying forward
+
+1. **The live agent's failing set is not the baseline's.** `production` and
+   `production-candidate-tuned` both score 60/66 and they are *not the same 60*: the rollouts trade
+   `instants-05`, `noncreature-02` and `activate-05` for `instants-02`, `instants-03` and
+   `respond-02`. Two consequences. `respond-02` — the negative control that chose
+   `concave-hand-2` over `concave-hand` — is **already failing on the live agent**, so the argument
+   that pinned that constant no longer describes what ships and the choice deserves re-measuring.
+   And a suite total is not a suite result; only the failing *set* localizes.
+2. **A rollout promotion gate costs 40 minutes, not minutes.** 300 paired games with rollouts on
+   *both* seats ran 2,435 s wall clock at 44 s/game on 8 threads — ~26× the 1.7 s/game of the
+   rollout-free pair. Price the mechanism against a cheap baseline first (`production` vs
+   `production-landdrop` took 103 s and gave the same answer), and spend the expensive run only on
+   the gate that actually decides.

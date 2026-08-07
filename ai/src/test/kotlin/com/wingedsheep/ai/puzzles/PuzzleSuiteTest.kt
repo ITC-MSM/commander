@@ -17,7 +17,7 @@ import io.kotest.matchers.shouldBe
  * exactly the moment you want to notice.
  *
  * The reference profile stays [AiProfile.PRODUCTION] even though
- * [AiProfile.PRODUCTION_CANDIDATE_TUNED] is what players face since 2026-08-07. `KNOWN_FAILURES`
+ * [AiProfile.PRODUCTION_CANDIDATE_LANDDROP] is what players face since 2026-08-08. `KNOWN_FAILURES`
  * is only meaningful if it describes a *fixed* agent — repointing it at whatever is live would
  * make every promotion rewrite the set it is supposed to be checked against, and the rollout
  * evaluator would also put ~66 playout-driven positions into an always-on suite that runs in
@@ -80,8 +80,14 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // Needs the rollout evaluator (Phase 7) to play out the damage step.
             "instants-05",
             // `CardAdvantage.cardValue(0) = -3.0` makes emptying your hand read as a disaster, so
-            // the AI holds its last land rather than playing it. Phase 9 refits these constants;
-            // sequencing-04 is the same decision with one card of slack and passes.
+            // the AI holds its last land rather than playing it. sequencing-04 is the same decision
+            // with one card of slack and passes.
+            //
+            // **Closed by `AiProfile.landDropIsNotCardLoss`**, which stops charging the land drop as
+            // card loss at all, and still fails here only because [AiProfile.PRODUCTION] is the
+            // frozen baseline this set describes. Measured on the 66-puzzle suite: it is the *only*
+            // verdict that moves, for `production`, `production-horizon-concave-2` and the live
+            // `production-candidate-tuned` alike (+1 each, nothing broken).
             "sequencing-02",
             // No model of "keep a blocker home": every attacker is scored on the damage it deals.
             "race-03",
