@@ -50,6 +50,15 @@ data class SpellOnStackComponent(
     val additionalCostBlightAmount: Int = 0,  // For variable blight additional costs (e.g., Soul Immolation)
     val additionalCostPayXLifeAmount: Int? = null,  // For pay-X-life additional costs (e.g., Vicious Rivalry); non-null (incl. 0) marks the spell and is coalesced into xValue at resolution
     val castFromZone: Zone? = null,  // Zone the spell was cast from (e.g., HAND for normal casting)
+    /**
+     * Which alternative casting cost paid for this spell (CR 118.9), or null for a normal cast.
+     * The individual `was*` flags below drive *rules* behaviour (warp exiles, evoke sacrifices,
+     * cleave swaps the effect); this records the player's declared choice as such so the client
+     * view can say how the spell was cast without a flag per mechanic — see
+     * [com.wingedsheep.engine.view.CastProvenance]. Disturb, flashback, harmonize, emerge and
+     * miracle have no `was*` flag at all, which is exactly why the stack could not describe them.
+     */
+    val alternativeCost: com.wingedsheep.engine.core.AlternativeCostType? = null,
     val wasWarped: Boolean = false,  // For warp - permanent is exiled at end step
     val wasDashed: Boolean = false,  // For dash (CR 702.109) - permanent gains haste, returns to hand at next end step
     val wasEvoked: Boolean = false,  // For evoke - permanent is sacrificed on ETB

@@ -345,6 +345,12 @@ export interface ClientCard {
    */
   readonly optionalCostLabel?: string
 
+  /**
+   * How this spell was cast — "Disturb · Graveyard", "Command zone" — or absent for an ordinary
+   * cast from hand. Server-derived label; render verbatim (only on the stack).
+   */
+  readonly castProvenanceLabel?: string
+
   /** Whether this spell promised a gift (Bloomburrow gift mechanic — only present on stack) */
   readonly giftPromised?: boolean
 

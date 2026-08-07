@@ -234,13 +234,22 @@ sealed interface ClientEvent {
         val isYours: Boolean? = null,
         val targetNames: List<String> = emptyList(),
         val xValue: Int? = null,
+        /**
+         * How the spell was cast — `"disturb, from graveyard"`, `"from command zone"` — or null for
+         * an ordinary cast from hand. Folded into [description] below; kept as its own field so the
+         * client can style it separately later without re-deriving it. See [CastProvenance].
+         */
+        val castProvenance: String? = null,
         override val description: String = run {
             val xText = if (xValue != null) " (X=$xValue)" else ""
             val targetText = if (targetNames.isNotEmpty()) " targeting ${targetNames.joinToString(", ")}" else ""
+            // Provenance sits with the card it qualifies, before the targets, so the line reads
+            // "cast Silent Departure (flashback, from graveyard) targeting Grizzly Bears".
+            val provenanceText = if (castProvenance != null) " ($castProvenance)" else ""
             when (isYours) {
-                true -> "You cast $spellName$xText$targetText"
-                false -> "Opponent cast $spellName$xText$targetText"
-                null -> "Cast $spellName$xText$targetText"
+                true -> "You cast $spellName$xText$provenanceText$targetText"
+                false -> "Opponent cast $spellName$xText$provenanceText$targetText"
+                null -> "Cast $spellName$xText$provenanceText$targetText"
             }
         }
     ) : ClientEvent
@@ -991,7 +1000,8 @@ object ClientEventTransformer {
                 casterId = event.casterId,
                 isYours = event.casterId == viewingPlayerId,
                 targetNames = event.targetNames,
-                xValue = event.xValue
+                xValue = event.xValue,
+                castProvenance = CastProvenance.logPhrase(event.alternativeCost, event.castFromZone)
             )
 
             is ResolvedEvent -> ClientEvent.SpellResolved(

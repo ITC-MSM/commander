@@ -3,9 +3,14 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.AlternativeCostType
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.core.SpellCastEvent
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
+import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
+import com.wingedsheep.engine.view.CastProvenance
+import com.wingedsheep.engine.view.ClientEvent
+import com.wingedsheep.engine.view.ClientEventTransformer
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
@@ -290,6 +295,70 @@ class DisturbKeywordTest : FunSpec({
         // disturbed a second time.
         driver.state.getExile(player).shouldContain(geist)
         driver.getGraveyard(player) shouldNotContain geist
+    }
+
+    test("a disturb cast tells the opponent it came from the graveyard, not from hand") {
+        // Regression: the cast carried no origin-zone or alternative-cost information to the client,
+        // so a disturbed spell — wearing its back face's unfamiliar name, with no printed mana cost
+        // of its own, its graveyard card gone — read as though it had been cast from the caster's
+        // hand. The log line and the stack badge both have to say otherwise.
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40), startingLife = 20)
+        val player = driver.activePlayer!!
+        val opponent = driver.getOpponent(player)
+
+        val geist = driver.putCardInGraveyard(player, "Test Geist")
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.giveMana(player, Color.WHITE, 2)
+
+        val result = driver.submit(
+            CastSpell(
+                playerId = player, cardId = geist,
+                useAlternativeCost = true, alternativeCostType = AlternativeCostType.DISTURB,
+                paymentStrategy = PaymentStrategy.FromPool
+            )
+        )
+        io.kotest.assertions.withClue("error=${result.error}") { result.isSuccess shouldBe true }
+
+        val castEvent = result.events.filterIsInstance<SpellCastEvent>().single()
+        castEvent.castFromZone shouldBe Zone.GRAVEYARD
+        castEvent.alternativeCost shouldBe AlternativeCostType.DISTURB
+        // The spell is on the stack back face up, so that is the name it was cast under (CR 712.8c).
+        // It used to be announced under the front face's name, contradicting the stack itself.
+        castEvent.cardName shouldBe "Test Geist Spirit"
+
+        // What the opponent actually reads in the game log.
+        val logged = ClientEventTransformer.transform(result.events, opponent)
+            .filterIsInstance<ClientEvent.SpellCast>()
+            .single()
+        logged.description shouldBe "Opponent cast Test Geist Spirit (disturb, from graveyard)"
+
+        // ...and the badge on the spell while it sits on the stack, from the same recorded facts.
+        val onStack = driver.state.getEntity(geist)?.get<SpellOnStackComponent>()
+        onStack.shouldNotBeNull()
+        CastProvenance.badgeLabel(onStack.alternativeCost, onStack.castFromZone) shouldBe
+            "Disturb · Graveyard"
+    }
+
+    test("a plain cast from hand stays free of provenance noise") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40), startingLife = 20)
+        val player = driver.activePlayer!!
+        val opponent = driver.getOpponent(player)
+
+        val geist = driver.putCardInHand(player, "Test Geist")
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.giveMana(player, Color.WHITE, 1)
+
+        val result = driver.submit(
+            CastSpell(playerId = player, cardId = geist, paymentStrategy = PaymentStrategy.FromPool)
+        )
+        io.kotest.assertions.withClue("error=${result.error}") { result.isSuccess shouldBe true }
+
+        result.events.filterIsInstance<SpellCastEvent>().single().alternativeCost shouldBe null
+        ClientEventTransformer.transform(result.events, opponent)
+            .filterIsInstance<ClientEvent.SpellCast>()
+            .single().description shouldBe "Opponent cast Test Geist"
     }
 
     test("a disturbed creature that dies is exiled, and reverts to its front face on the way out (Rule 712.8a)") {
