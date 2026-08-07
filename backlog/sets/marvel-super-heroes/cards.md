@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 220 / 276
+**Implemented:** 221 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -79,7 +79,7 @@ variants 297+ are excluded)
 - [x] S.H.I.E.L.D. Deployment Drone
 - [x] S.H.I.E.L.D. Flying Car
 - [ ] Shuri, Wakandan Inventor
-- [ ] Stature, Size Shifter
+- [x] Stature, Size Shifter
 - [x] Super Intelligence
 - [x] Super Suit
 - [x] Thirst for Knowledge

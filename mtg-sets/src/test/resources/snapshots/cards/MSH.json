@@ -11405,6 +11405,72 @@
     ]
 }
 
+// Stature, Size Shifter
+{
+    "name": "Stature, Size Shifter",
+    "manaCost": "{U}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Stature can't be blocked if her power is 1 or less.\nPower-up — {X}{U}{U}: Put X +1/+1 counters on Stature. (Activate each power-up ability only once. Reduce the cost by her mana cost if she entered this turn.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{X}{U}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": "XValue",
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put X +1/+1 counters on Stature.",
+                "isPowerUp": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": "CantBeBlocked",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "operator": "LTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "UNCOMMON",
+        "artist": "Mintautas Šukys",
+        "flavorText": "\"Aw, cute! Fun-sized Dooms!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/e/fe692959-64ca-4065-9f9e-1abe590e3d0f.jpg?1783902951"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Stolen Stark Tech
 {
     "name": "Stolen Stark Tech",
