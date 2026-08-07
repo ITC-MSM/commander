@@ -85,6 +85,10 @@ data class GatedEffect(
                 append(". Otherwise, ${otherwise.description.replaceFirstChar { it.lowercase() }}")
             }
         }
+        // The budget gate is invisible in prompt text — the "Do this only once each turn" rider is
+        // rendered once, on the owning TriggeredAbility. Rendering it here too would double it up
+        // inside the enclosing "You may …" prompt.
+        is Gate.OnceEachTurn -> then.description
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
@@ -225,6 +229,39 @@ sealed interface Gate {
     @SerialName("Gate.MayPayX")
     @Serializable
     data object MayPayX : Gate {
+        override fun applyTextReplacement(replacer: TextReplacer): Gate = this
+    }
+
+    /**
+     * Not a decision — a **per-turn effect budget**. Models the printed rider "*Do this only once
+     * each turn*" (Jennifer Walters // The Sensational She-Hulk, Baron Strucker, HYDRA Overlord).
+     *
+     * The gate succeeds iff the source permanent has not already spent this ability's budget this
+     * turn; succeeding *spends* it, so at most one resolution per turn runs [GatedEffect.then].
+     * Check and spend are one atomic step in the executor — there is no window where two
+     * simultaneous instances both see an unspent budget.
+     *
+     * **This is an effect cap, not a trigger cap — the two are different printed templates and
+     * must not be swapped.** "Do this only once each turn" limits how often the *effect* may be
+     * applied: per CR 603.2 the ability still triggers once per matching event, every instance
+     * goes on the stack, and the controller chooses which one to apply. The other wording, "*This
+     * ability triggers only once each turn*", is the trigger cap and is
+     * [com.wingedsheep.sdk.scripting.TriggeredAbility.oncePerTurn] instead.
+     *
+     * Cards never author this gate directly: set
+     * [com.wingedsheep.sdk.scripting.TriggeredAbility.effectOncePerTurn] and the engine lowers it
+     * into this gate at trigger-processing time, placing it *inside* any enclosing consent gate so
+     * that declining a "you may" costs nothing.
+     *
+     * @property abilityId The ability whose budget this gate spends. Budgets are tracked per
+     *   (source permanent, ability), so two different capped abilities on one permanent, or the
+     *   same ability on two permanents, never share a budget.
+     */
+    @SerialName("Gate.OnceEachTurn")
+    @Serializable
+    data class OnceEachTurn(
+        val abilityId: com.wingedsheep.sdk.scripting.AbilityId
+    ) : Gate {
         override fun applyTextReplacement(replacer: TextReplacer): Gate = this
     }
 }

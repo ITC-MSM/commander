@@ -5,8 +5,8 @@ missing mechanic they need. Each mechanic is `add-feature` territory (a new SDK 
 keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
-updated 2026-08-07 after **power-up shipped**. **47 of the 276 are blocked**; every other card is
-buildable from existing primitives.
+updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped. **45 of the 276 are
+blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -409,32 +409,31 @@ damage and damage to creatures. Needed: `StatePredicate.DealtDamageThisTurn` plu
 `HasDealtDamageComponent`, cleared in `CleanupPhaseManager`, and wired into `PredicateEvaluator`,
 `AffectsFilterResolver`, `TriggerMatcher`, `BeginningPhaseManager` and `Serialization`.
 
-### "Do this only once each turn" — an effect cap, not a trigger cap — **Jennifer Walters** [18]
+### "Do this only once each turn" — an effect cap, not a trigger cap — SHIPPED ✅ (2 cards unblocked)
 > Whenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that
 > much damage to any target. **Do this only once each turn.**
 
-Per CR 603.2 the ability triggers **once per damaged creature**; "Do this only once each turn" limits
-how often the *effect* may be applied. So in a multi-block, every damaged creature puts a trigger on
-the stack and the controller declines until the one carrying the biggest damage number — the whole
-point of the card.
+Shipped as `TriggeredAbility.effectOncePerTurn` — a per-turn **effect** budget, not the existing
+`oncePerTurn` **trigger** cap. Per CR 603.2 the ability triggers once per matching event, so in a
+multi-block every damaged creature puts its own instance on the stack and the controller declines
+down the line to the one carrying the number they want; at most one instance may apply.
 
-Modelling it as `oncePerTurn = true` (a **trigger** cap) fires only for the *first* creature dealt
-damage and never offers the rest, so a big hit later in the same combat is unreachable. **Implemented
-then removed from this branch** for that reason; it needs a per-turn *effect* budget — an
-`effectOncePerTurn` flag on `TriggeredAbility` (or a turn-scoped "already applied" marker the effect
-checks and sets) so all instances trigger while at most one resolves its effect.
+`TriggerProcessor` lowers the flag into a `GatedEffect(Gate.OnceEachTurn(abilityId))` placed *inside*
+any enclosing consent gate, so declining a "you may" doesn't spend the budget; `GatedEffectExecutor`
+checks and spends it atomically against a `TriggeredAbilityEffectAppliedThisTurnComponent` on the
+source, cleared in cleanup. Capped abilities are excluded from the batched may-question (one shared
+yes/no would take away the choice of *which* instance applies), and once the budget is spent, later
+instances that turn are dropped rather than prompting for a decision that can't matter. See
+`docs/card-sdk-language-reference.md` §8 → *`effectOncePerTurn`*.
 
 Do not confuse this with the other wording: "**This ability triggers** only once each turn"
 (Crossbones [91], Moon Girl [223], Knight of Wundagore [175], Ant-Man [201]) *is* a trigger cap and is
-correctly `oncePerTurn = true` today.
+correctly `oncePerTurn = true` today. `EffectOncePerTurnTest` pins both behaviours side by side.
 
-**Also removed for the same defect:** **Baron Strucker, HYDRA Overlord** [88] — "Whenever another
-Villain you control enters, you may have it connive. **Do this only once each turn.**" With
-`oncePerTurn = true`, when two Villains enter together only the first triggers, so you cannot pick
-which one connives.
-
-Both cards become implementable the moment the per-turn *effect* budget exists; neither needs
-anything else.
+**Unblocked and implemented (2):** Jennifer Walters // The Sensational She-Hulk [18] ·
+Baron Strucker, HYDRA Overlord [88] ("Whenever another Villain you control enters, you may have it
+connive. Do this only once each turn." — with a trigger cap, two Villains entering together would
+only trigger for the first, so you could not pick which one connives).
 
 ### Power-only dynamic CDA granted for a duration — **Ms. Marvel, Kamala Khan** [67]
 > Embiggen Fist — Whenever you cast a spell that targets a creature you control, draw a card. Until

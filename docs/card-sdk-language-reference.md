@@ -1939,6 +1939,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     `data object` (the {X} cost is implicit). The executor builds a `ChooseNumberDecision` and reuses
     the existing `MayPayXContinuation`/`resumeMayPayX` to auto-tap and bind X. Replaces
     `MayPayXForEffect` (see "Optional & gated" below).
+  - `Gate.OnceEachTurn(abilityId)` — **not a decision, a per-turn *effect* budget.** The lowered form
+    of `TriggeredAbility.effectOncePerTurn` ("Do this only once each turn"). Succeeds iff the source
+    permanent hasn't already spent this ability's budget this turn, and succeeding spends it — check
+    and spend are one atomic step in the executor, so two instances resolving back to back can never
+    both pass. The budget lives on the source as a `TriggeredAbilityEffectAppliedThisTurnComponent`
+    keyed by ability id and is cleared in cleanup. `TriggerProcessor` places the gate **inside** any
+    enclosing consent gate, so declining a "you may" doesn't spend it. **Cards never author this gate
+    directly** — set `effectOncePerTurn = true` on the triggered ability (see §8, and note that it is
+    an *effect* cap, not the `oncePerTurn` *trigger* cap).
   - The multi-player APNAP `AnyPlayerMayPayEffect` stays a **standalone effect**, not a gate — a
     single `decisionMaker` can't express its turn-order loop (see below).
 - `MayEffect(effect, descriptionOverride?, sourceRequiredZone?, inlineOnTrigger?, hint?, decisionMaker?, otherwise?, feasibility?)`
@@ -3540,7 +3549,7 @@ work for abilities-on-stack (which carry no `CardComponent`).
 
 ## 8. Triggered abilities (`Triggers.*`)
 
-`triggeredAbility { trigger; effect; target?; triggerZone?/triggerZones?; triggerCondition?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; triggersOnce? }`.
+`triggeredAbility { trigger; effect; target?; triggerZone?/triggerZones?; triggerCondition?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; effectOncePerTurn?; triggersOnce? }`.
 
 **`triggerZones` — which zones the trigger condition functions in (CR 113.6b).** Defaults to
 `setOf(Zone.BATTLEFIELD)`, which CR 113.6 makes the rule for a permanent card's abilities. It is a
@@ -3577,6 +3586,34 @@ while that permanent stays on the battlefield — tracked by a `TriggeredAbility
 that is **not** cleared at end of turn (it lives on the entity, so re-entering the battlefield as a
 new object — a distinct game object — triggers afresh). Both caps share one detection-time filter and
 collapse simultaneous fires of the same `(source, ability)` to a single instance.
+
+**`effectOncePerTurn` — the *effect* cap, and the one that is easy to get wrong.** Magic prints two
+different "only once each turn" riders and they need two different flags:
+
+| Printed wording | Flag | What is capped |
+|---|---|---|
+| "**This ability triggers** only once each turn" | `oncePerTurn = true` | the *trigger*: later matching events this turn don't trigger at all |
+| "**Do this** only once each turn" | `effectOncePerTurn = true` | the *effect*: the ability still triggers once per matching event, but at most one instance applies |
+
+Per CR 603.2 an ability triggers every time a game event matches its trigger event, so "Do this only
+once each turn" leaves the triggering alone and only limits application. In a multi-block, **every**
+damaged creature puts its own instance of The Sensational She-Hulk's "Whenever a creature you control
+is dealt damage, you may have this deal that much damage to any target" on the stack, and the
+controller declines instance after instance until the one carrying the number they want; likewise
+Baron Strucker's "Whenever another Villain you control enters, you may have it connive" lets you pick
+*which* of two simultaneously-entering Villains connives. Modelling either with `oncePerTurn` fires
+only on the first matching event and makes that choice unreachable — do not reach for it.
+
+Mechanically, `effectOncePerTurn = true` is lowered by `TriggerProcessor` into a
+`GatedEffect(Gate.OnceEachTurn(abilityId), then = …)` placed **inside** any enclosing consent gate
+(`Gate.MayDecide` / `MayPay` / `MayPayX`), so declining a "you may" costs nothing — only an effect
+that actually runs spends the budget. `GatedEffectExecutor` checks and spends the budget in one
+atomic step against a `TriggeredAbilityEffectAppliedThisTurnComponent` on the source permanent, keyed
+by ability id (two capped abilities on one permanent never share a budget), cleared at end of turn by
+`CleanupPhaseManager`. Once the budget is spent, further instances that turn are dropped at
+trigger-processing time rather than prompting for a decision that cannot matter. Such abilities are
+also excluded from the batched may-question — one shared yes/no would take away the choice of *which*
+instance to apply. Cards never author `Gate.OnceEachTurn` directly.
 
 **`optional` = "you may [effect]"; `elseEffect` adds "If you don't, [elseEffect]."** For a
 **targeted** trigger, `optional` lets the player choose 0 targets to decline, and `elseEffect` runs

@@ -15,6 +15,7 @@ import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityEffectAppliedThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
@@ -86,6 +87,15 @@ class GatedEffectExecutor(
                 otherwise != null -> effectExecutor(state, otherwise, context)
                 else -> EffectResult.success(state)
             }
+        }
+
+        // Gate.OnceEachTurn: the per-turn *effect* budget behind "Do this only once each turn".
+        // A synchronous test like WhenCondition, but it also *spends* the budget in the same step —
+        // check and stamp are atomic, so two instances of the ability resolving back to back can
+        // never both pass. Being inside any enclosing consent gate (the engine's lowering puts it
+        // there) is what makes declining a "you may" free.
+        if (gate is Gate.OnceEachTurn) {
+            return executeOnceEachTurn(state, gate, effect, context)
         }
 
         // Gate.DoAction: an action-outcome gate, not a decision. Run `action` (which may pause for
@@ -186,6 +196,7 @@ class GatedEffectExecutor(
             is Gate.WhenCondition -> effect.hint // unreachable: handled by the synchronous branch above
             is Gate.DoAction -> effect.hint // unreachable: handled by the action-drain branch above
             is Gate.MayPayX -> effect.hint // unreachable: handled by the number-chooser branch above
+            is Gate.OnceEachTurn -> effect.hint // unreachable: handled by the budget branch above
         }
 
         // For a pay-gate, label the "yes" button with the concrete cost — a dynamic cost
@@ -390,6 +401,50 @@ class GatedEffectExecutor(
                 )
             )
         )
+    }
+
+    /**
+     * Resolve a [Gate.OnceEachTurn] gate — the per-turn *effect* budget behind the printed rider
+     * "Do this only once each turn" (see [com.wingedsheep.sdk.scripting.TriggeredAbility.effectOncePerTurn]).
+     *
+     * The budget lives on the source permanent as a
+     * [TriggeredAbilityEffectAppliedThisTurnComponent] keyed by ability id, so two capped abilities
+     * on one permanent — or the same ability on two permanents — never share one. Spending it is
+     * part of the same step as the check: the stamped state is what [GatedEffect.then] executes
+     * against, so a second instance resolving immediately afterwards already sees a spent budget.
+     *
+     * A source with no entity in state (it left the battlefield before this resolved) has nowhere
+     * to keep the stamp; the effect still applies, matching how the other per-turn trackers behave
+     * for a departed permanent.
+     */
+    private fun executeOnceEachTurn(
+        state: GameState,
+        gate: Gate.OnceEachTurn,
+        effect: GatedEffect,
+        context: EffectContext
+    ): EffectResult {
+        val sourceId = context.sourceId
+        val alreadyApplied = sourceId
+            ?.let { state.getEntity(it) }
+            ?.get<TriggeredAbilityEffectAppliedThisTurnComponent>()
+            ?.hasApplied(gate.abilityId) == true
+
+        if (alreadyApplied) {
+            return effect.otherwise
+                ?.let { effectExecutor(state, it, context) }
+                ?: EffectResult.success(state)
+        }
+
+        val stamped = if (sourceId != null && state.getEntity(sourceId) != null) {
+            state.updateEntity(sourceId) { container ->
+                val tracker = container.get<TriggeredAbilityEffectAppliedThisTurnComponent>()
+                    ?: TriggeredAbilityEffectAppliedThisTurnComponent()
+                container.with(tracker.withApplied(gate.abilityId))
+            }
+        } else {
+            state
+        }
+        return effectExecutor(stamped, effect.then, context)
     }
 
     /**

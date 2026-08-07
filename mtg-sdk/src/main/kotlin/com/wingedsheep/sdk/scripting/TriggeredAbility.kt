@@ -51,8 +51,28 @@ data class TriggeredAbility(
      * instead of the source permanent's controller. Used for cards like Death Match. */
     val controlledByTriggeringEntityController: Boolean = false,
     /** When true, this triggered ability triggers at most once each turn.
-     * Used for cards like Scavenger's Talent: "This ability triggers only once each turn." */
+     * Used for cards like Scavenger's Talent: "This ability triggers only once each turn."
+     *
+     * This is a **trigger** cap: later matching events in the same turn don't trigger at all.
+     * For the *other* printed rider, "Do this only once each turn", use [effectOncePerTurn]. */
     val oncePerTurn: Boolean = false,
+    /**
+     * When true, this ability triggers normally but its **effect** may be applied at most once
+     * each turn — the printed rider "*Do this only once each turn*" (Jennifer Walters // The
+     * Sensational She-Hulk, Baron Strucker, HYDRA Overlord).
+     *
+     * Per CR 603.2 the ability triggers once per matching event, so in a multi-block every damaged
+     * creature (every Villain entering) puts its own instance on the stack; the controller then
+     * declines the ones they don't want and applies the effect on the one they do. Declining an
+     * optional instance does **not** spend the budget — the engine lowers this flag into a
+     * [com.wingedsheep.sdk.scripting.effects.Gate.OnceEachTurn] gate placed *inside* the consent
+     * gate, so the budget is spent only when the effect actually runs.
+     *
+     * Do not model this wording with [oncePerTurn]: a trigger cap fires only on the *first*
+     * matching event and never offers the rest, which makes "decline down to the biggest damage
+     * number" (or "pick which Villain connives") unreachable.
+     */
+    val effectOncePerTurn: Boolean = false,
     /** When true, this triggered ability triggers at most once over the source permanent's
      * lifetime on the battlefield — a permanent (not per-turn) cap. Used for cards like
      * Acrobatic Cheerleader: "This ability triggers only once." Tracked by a component that,
@@ -84,6 +104,7 @@ data class TriggeredAbility(
                 append(elseEffect.description.replaceFirstChar { it.lowercase() })
             }
             append(".")
+            if (effectOncePerTurn) append(" Do this only once each turn.")
         }
 
     /** Whether this triggered ability requires targets */
@@ -125,6 +146,7 @@ data class TriggeredAbility(
             triggerCondition: Condition? = null,
             controlledByTriggeringEntityController: Boolean = false,
             oncePerTurn: Boolean = false,
+            effectOncePerTurn: Boolean = false,
             triggersOnce: Boolean = false,
             descriptionOverride: String? = null
         ): TriggeredAbility =
@@ -141,6 +163,7 @@ data class TriggeredAbility(
                 triggerCondition = triggerCondition,
                 controlledByTriggeringEntityController = controlledByTriggeringEntityController,
                 oncePerTurn = oncePerTurn,
+                effectOncePerTurn = effectOncePerTurn,
                 triggersOnce = triggersOnce,
                 descriptionOverride = descriptionOverride
             )

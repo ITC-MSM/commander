@@ -7,6 +7,7 @@ import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.modal.ChosenModeMemory
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityEffectAppliedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredEverComponent
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredThisTurnComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
@@ -16,6 +17,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.sdk.dsl.LibraryPatterns
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.FeasibilityCheck
@@ -166,6 +168,11 @@ class TriggerProcessor(
         val ability = trigger.ability
         val targetRequirement = ability.targetRequirement ?: return null
         if (ability.effect.asMayDecide() == null) return null
+        // An `effectOncePerTurn` ability is never batched: its whole point is picking *which* of the
+        // simultaneous instances gets the turn's single application (which damaged creature's number
+        // to mirror, which Villain connives). One shared yes/no would answer for all of them and
+        // take that choice away.
+        if (ability.effectOncePerTurn) return null
         val identity = state.abilityIdentityOf(trigger.sourceId, ability.id) ?: return null
         // Mirror processMayThenTargetTrigger's fizzle guard: a trigger with no legal targets (for a
         // mandatory-target requirement) fizzles without asking, so it must not join a batch.
@@ -276,10 +283,35 @@ class TriggerProcessor(
      * Process a single triggered ability.
      *
      * @param state The current game state
-     * @param trigger The pending trigger to process
+     * @param incomingTrigger The pending trigger to process, before any `effectOncePerTurn` lowering
      * @return ExecutionResult - may be paused if trigger requires targets
      */
-    private fun processSingleTrigger(state: GameState, trigger: PendingTrigger): ExecutionResult {
+    private fun processSingleTrigger(state: GameState, incomingTrigger: PendingTrigger): ExecutionResult {
+        // "Do this only once each turn" (`effectOncePerTurn`) is an *effect* cap, not a trigger cap:
+        // the ability keeps triggering once per matching event (CR 603.2) and every instance goes on
+        // the stack, but at most one of them may apply its effect per turn. Once the budget is spent,
+        // a later instance would resolve doing nothing, so it is dropped here rather than dragged
+        // through a may-question and a target choice that cannot matter — the same shortcut the
+        // engine already takes for a trigger with no legal targets.
+        if (incomingTrigger.ability.effectOncePerTurn &&
+            effectBudgetSpent(state, incomingTrigger.sourceId, incomingTrigger.ability.id)
+        ) {
+            return ExecutionResult.success(
+                state,
+                listOf(
+                    AbilityFizzledEvent(
+                        incomingTrigger.sourceId,
+                        incomingTrigger.ability.description,
+                        "Its effect has already been applied this turn"
+                    )
+                )
+            )
+        }
+        val trigger = if (incomingTrigger.ability.effectOncePerTurn) {
+            incomingTrigger.copy(ability = withEffectBudgetGate(incomingTrigger.ability))
+        } else {
+            incomingTrigger
+        }
         val ability = trigger.ability
         var currentState = state
 
@@ -1446,6 +1478,43 @@ class TriggerProcessor(
         } catch (_: Exception) {
             null
         }
+    }
+
+    /**
+     * Has this source already applied [abilityId]'s "Do this only once each turn" effect this turn?
+     * Read-only mirror of the stamp `GatedEffectExecutor` writes when the budget gate passes.
+     */
+    private fun effectBudgetSpent(state: GameState, sourceId: EntityId, abilityId: AbilityId): Boolean =
+        state.getEntity(sourceId)
+            ?.get<TriggeredAbilityEffectAppliedThisTurnComponent>()
+            ?.hasApplied(abilityId) == true
+
+    /**
+     * Lower `TriggeredAbility.effectOncePerTurn` into a [Gate.OnceEachTurn] budget gate around the
+     * effect that actually runs.
+     *
+     * Placement is the whole point. When the ability's effect already owns a consent gate (a
+     * `Gate.MayDecide` / `MayPay` / `MayPayX` — "**you may** have it connive", "**you may** have
+     * She-Hulk deal that much damage"), the budget gate goes *inside* it, wrapping only the yes
+     * branch. Declining therefore costs nothing: the player can decline instance after instance and
+     * still spend the turn's single application on the one they want. Wrapping the other way round
+     * would burn the budget on a decline, and wrapping it outside a *later* `optional` lowering is
+     * exactly why the outer shape is preserved here — `processSingleTrigger`'s `optional` branch and
+     * `asMayDecide()` / `asOptionalManaPayment()` recognition all still see the gate they expect.
+     *
+     * A mandatory capped ability has no consent gate, so the budget gate simply wraps the effect.
+     */
+    private fun withEffectBudgetGate(ability: TriggeredAbility): TriggeredAbility {
+        val budgetGate = Gate.OnceEachTurn(ability.id)
+        val effect = ability.effect
+        val consentGated = (effect as? GatedEffect)
+            ?.takeIf { it.gate is Gate.MayDecide || it.gate is Gate.MayPay || it.gate is Gate.MayPayX }
+        val newEffect = if (consentGated != null) {
+            consentGated.copy(then = GatedEffect(gate = budgetGate, then = consentGated.then))
+        } else {
+            GatedEffect(gate = budgetGate, then = effect)
+        }
+        return ability.copy(effect = newEffect)
     }
 
     /**

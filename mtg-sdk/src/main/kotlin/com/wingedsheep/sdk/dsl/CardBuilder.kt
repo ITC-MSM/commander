@@ -1411,8 +1411,15 @@ class TriggeredAbilityBuilder {
     var triggerCondition: Condition? = null
     /** When true, the triggered ability is controlled by the triggering entity's controller. */
     var controlledByTriggeringEntityController: Boolean = false
-    /** When true, this triggered ability triggers at most once each turn. */
+    /** When true, this triggered ability triggers at most once each turn ("This ability triggers
+     * only once each turn"). A *trigger* cap — later matching events don't trigger at all. For the
+     * "Do this only once each turn" rider use [effectOncePerTurn] instead. */
     var oncePerTurn: Boolean = false
+    /** When true, this ability triggers normally (once per matching event, CR 603.2) but its
+     * *effect* applies at most once each turn — the "Do this only once each turn" rider. Declining
+     * an optional instance does not spend the budget. See
+     * [com.wingedsheep.sdk.scripting.TriggeredAbility.effectOncePerTurn]. */
+    var effectOncePerTurn: Boolean = false
     /** When true, this triggered ability triggers at most once over the source's lifetime on the
      * battlefield ("This ability triggers only once"). Unlike [oncePerTurn] it is never reset. */
     var triggersOnce: Boolean = false
@@ -1455,6 +1462,7 @@ class TriggeredAbilityBuilder {
             triggerCondition = triggerCondition,
             controlledByTriggeringEntityController = controlledByTriggeringEntityController,
             oncePerTurn = oncePerTurn,
+            effectOncePerTurn = effectOncePerTurn,
             triggersOnce = triggersOnce,
             descriptionOverride = description
         )
