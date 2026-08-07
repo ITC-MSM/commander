@@ -77,11 +77,20 @@ data class ModalContinuation(
 ) : ContinuationFrame
 
 /**
- * One queued (effect, targets, requirements) triple for a choose-N modal spell's
- * cast-time-resolved execution. See [ModalPreChosenContinuation].
+ * One queued (effect, targets, requirements) triple: an effect whose targets were already chosen, to
+ * be executed with a context scoped to *its own* target slice — so its `ContextTarget(0)` means its
+ * first target, not some enclosing spell's.
+ *
+ * Drained in order by
+ * [com.wingedsheep.engine.handlers.effects.composite.processPreTargetedEffectQueue], which two
+ * mechanics feed:
+ *  - a **choose-N modal spell** whose modes and per-mode targets were picked at cast time
+ *    (CR 700.2 / 601.2b–c) — see [ModalPreChosenContinuation]; and
+ *  - the **splice tail** of a spell with cards spliced onto it (CR 702.47b — the spliced cards' text
+ *    happens in the chosen order after the main spell's own effects) — see [SpliceTailContinuation].
  */
 @Serializable
-data class ModalPreChosenEntry(
+data class PreTargetedEffectEntry(
     val effect: @Serializable Effect,
     val targets: List<ChosenTarget>,
     val targetRequirements: List<@Serializable TargetRequirement>
@@ -111,7 +120,31 @@ data class ModalPreChosenContinuation(
     val sourceName: String?,
     val xValue: Int? = null,
     val triggeringEntityId: EntityId? = null,
-    val remainingEntries: List<ModalPreChosenEntry>
+    val remainingEntries: List<PreTargetedEffectEntry>
+) : ContinuationFrame
+
+/**
+ * Auto-resumed continuation that runs the **spliced text** of a spell with cards spliced onto it
+ * (CR 702.47b — "The effects of the main spell must happen first", then each spliced card's text in
+ * the order the caster chose).
+ *
+ * [com.wingedsheep.engine.mechanics.stack.StackResolver] pushes this frame BELOW the main spell's own
+ * effect before executing it, so the splice tail runs whether the main effect completes synchronously
+ * or pauses for a decision of its own (Through the Breach's "put a creature card from your hand onto
+ * the battlefield" is exactly such a pause). Each entry carries its own target slice, so a spliced
+ * card's `ContextTarget(0)` resolves to its own first target.
+ *
+ * [sourceId] is the *spell's* entity, never the spliced card's: the spell gained only the card's rules
+ * text, not its characteristics (CR 702.47c), so spliced damage is dealt by the spell — which is why a
+ * red splice card's damage on a blue Arcane spell can still hit a creature with protection from red.
+ */
+@Serializable
+data class SpliceTailContinuation(
+    override val decisionId: String,
+    val controllerId: EntityId,
+    val sourceId: EntityId?,
+    val sourceName: String?,
+    val remainingEntries: List<PreTargetedEffectEntry>
 ) : ContinuationFrame
 
 /**

@@ -130,6 +130,16 @@ export interface CastSpellAction {
    * cast per opponent; the client just plays the variant the player picked.
    */
   readonly giftRecipient?: EntityId
+  /**
+   * Cards revealed from hand and spliced onto this spell (CR 702.47a), in the order their text is
+   * added. The server emits a `CastWithSplice` variant per splice card in hand whose quality the spell
+   * carries, already priced with that card's splice cost; the client just plays the variant the player
+   * picked and echoes this back. The spliced cards stay in hand — only their text joins the spell.
+   *
+   * A spliced card's own targets are appended after the main spell's in `targets`, so the normal
+   * targeting flow fills them in with no special handling.
+   */
+  readonly splicedCardIds?: readonly EntityId[]
   /** Pre-chosen damage distribution for DividedDamageEffect spells (target ID -> damage amount) */
   readonly damageDistribution?: Record<EntityId, number>
   /**

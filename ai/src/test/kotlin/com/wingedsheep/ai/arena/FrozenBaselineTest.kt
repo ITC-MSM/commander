@@ -83,7 +83,21 @@ class FrozenBaselineTest : FunSpec({
          * every action in it is identical — verified by re-running both turn-numbering schemes with
          * that record's turn count elided: both produced `8ae37a73f24d4e42`. The game itself is
          * unchanged down to the outcome: seat 1 still wins at life -8 / 16, on what is now turn 20.
+         *
+         * Re-blessed 2026-08-08 for the splice keyword adding `CastSpell.splicedCardIds`.
+         * **`LEGACY_V0` did not move.** `TableGameRunner` records each action as its data-class
+         * `toString()`, so a new `CastSpell` field appears in every recorded action — as
+         * `splicedCardIds=[]` — even though no Portal card has splice and the list is empty all game.
+         * Verified the same way as the 2026-07-28 entry: with `", splicedCardIds=[]"` stripped from
+         * the recorded action text, this branch reproduces the previous golden `d7d1bf75e6eb1a33`
+         * exactly, so the stream is identical apart from that insertion. The outcome is untouched:
+         * seat 1 still wins on turn 20 at life -8 / 16.
+         *
+         * Note for whoever hits this next: hashing `GameAction.toString()` means *any* new field on
+         * a cast/action data class moves this hash without the AI having changed. Check the outcome
+         * line in the failure clue first — if turns/winner/life match the values above, you are
+         * almost certainly in this benign case rather than a real behavioural drift.
          */
-        private const val GOLDEN_HASH = "d7d1bf75e6eb1a33"
+        private const val GOLDEN_HASH = "6ff9ded1403d59ac"
     }
 }

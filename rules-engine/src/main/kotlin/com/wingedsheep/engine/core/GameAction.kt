@@ -102,6 +102,18 @@ data class CastSpell(
      * "if the gift was(n't) promised" riders read it via `Conditions.GiftWasPromised`.
      */
     val giftRecipient: EntityId? = null,
+    /**
+     * Cards in the caster's hand revealed and **spliced** onto this spell (CR 702.47a), in the order
+     * their text will be added — the order the effects happen in, after the main spell's own effects
+     * (CR 702.47b). Empty for the overwhelming majority of casts.
+     *
+     * Each id must name a card in the caster's hand that carries
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.Splice] whose `onto` quality the spell being cast
+     * has, and no id may repeat — "you can't splice any one card onto the same spell more than once"
+     * (CR 702.47b). The handler charges each card's splice cost as an additional cost and appends its
+     * `spellEffect` / `targetRequirements` to the spell; the cards themselves stay in hand.
+     */
+    val splicedCardIds: List<EntityId> = emptyList(),
     val damageDistribution: Map<EntityId, Int>? = null,
     val useAlternativeCost: Boolean = false,
     val chosenModes: List<Int> = emptyList(),

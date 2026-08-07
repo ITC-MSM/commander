@@ -147,14 +147,36 @@ class CoreAutoResumerModule(
         },
 
         autoResumer(ModalPreChosenContinuation::class, canResume = { it.remainingEntries.isNotEmpty() }) { state, continuation, events, checkForMore ->
-            val ctx = com.wingedsheep.engine.handlers.effects.composite.ModalPreChosenBaseContext(
+            val ctx = com.wingedsheep.engine.handlers.effects.composite.PreTargetedEffectContext(
                 controllerId = continuation.controllerId,
                 sourceId = continuation.sourceId,
                 sourceName = continuation.sourceName,
                 xValue = continuation.xValue,
                 triggeringEntityId = continuation.triggeringEntityId
             )
-            val result = com.wingedsheep.engine.handlers.effects.composite.processPreChosenModeQueue(
+            val result = com.wingedsheep.engine.handlers.effects.composite.processPreTargetedEffectQueue(
+                state = state,
+                entries = continuation.remainingEntries,
+                ctx = ctx,
+                effectExecutor = { s, e, c -> services.effectExecutorRegistry.execute(s, e, c) },
+                targetValidator = services.targetValidator,
+                accumulatedEvents = emptyList()
+            ).toExecutionResult()
+            mergeAndContinue(result, events, checkForMore)
+        },
+
+        // Splice (CR 702.47b): the main spell's effect paused for a decision of its own, so the spliced
+        // cards' text runs now that the inner chain has resolved — still after the main spell, still in
+        // the caster's chosen splice order.
+        autoResumer(SpliceTailContinuation::class, canResume = { it.remainingEntries.isNotEmpty() }) { state, continuation, events, checkForMore ->
+            val ctx = com.wingedsheep.engine.handlers.effects.composite.PreTargetedEffectContext(
+                controllerId = continuation.controllerId,
+                sourceId = continuation.sourceId,
+                sourceName = continuation.sourceName,
+                xValue = null,
+                triggeringEntityId = null
+            )
+            val result = com.wingedsheep.engine.handlers.effects.composite.processPreTargetedEffectQueue(
                 state = state,
                 entries = continuation.remainingEntries,
                 ctx = ctx,

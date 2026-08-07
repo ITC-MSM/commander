@@ -208,6 +208,7 @@ value class Subtype(val value: String) {
         val SAGA = Subtype("Saga")
 
         // Spell (instant/sorcery) subtypes
+        val ARCANE = Subtype("Arcane")
         val LESSON = Subtype("Lesson")
 
         // Artifact subtypes

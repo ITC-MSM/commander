@@ -11,6 +11,7 @@ import com.wingedsheep.engine.legalactions.ModalLegalEnumeration
 import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.legalactions.utils.SelectionCostPresentation
 import com.wingedsheep.engine.mechanics.EscalateCosts
+import com.wingedsheep.engine.mechanics.SpliceCasts
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
@@ -1386,6 +1387,9 @@ class CastSpellEnumerator : ActionEnumerator {
         // --- Kicker ---
         enumerateKicker(context, hand, result)
 
+        // --- Splice onto [quality] (CR 702.47) ---
+        enumerateSplice(context, hand, result)
+
         // --- Cleave (CR 702.148) ---
         enumerateCleave(context, hand, result)
 
@@ -1778,6 +1782,128 @@ class CastSpellEnumerator : ActionEnumerator {
     /**
      * Enumerates kicked spell actions for cards with Kicker or KickerWithAdditionalCost.
      */
+    /**
+     * Offer **splice onto [quality]** (CR 702.47) as its own cast variant: "You may reveal this card
+     * from your hand as you cast a [quality] spell. If you do, that spell gains the text of this card's
+     * rules text and you pay [cost] as an additional cost to cast that spell."
+     *
+     * Splicing is a choice made *as the spell is cast* (CR 601.2b), and it changes both the total cost
+     * and the set of targets to pick, so it can't be deferred to resolution — it has to be a distinct
+     * cast option. One `CastWithSplice` action is emitted per (eligible spell, splice card in hand)
+     * pair, priced at the spell's cost plus that card's splice cost and target-checked against the
+     * union of both cards' requirements. The plain cast stays alongside: splice is optional.
+     *
+     * Two deliberate bounds, both rules-safe:
+     *  - **One splice card per emitted action.** The engine handles arbitrarily many spliced cards
+     *    (`CastSpell.splicedCardIds` is an ordered list, validated and resolved as such), but
+     *    enumerating every *subset* of splice cards in hand is exponential. Multi-splice is therefore
+     *    representable and legal, just not surfaced as a one-click action.
+     *  - **Normal-cost casts only.** A spliced-onto spell cast for an alternative cost or with a kicker
+     *    would need those variants crossed with every splice card; no printed Arcane spell has either,
+     *    so the cross product buys nothing.
+     *
+     * CR 702.47b's "you can't choose to use a splice ability if you can't make the required choices
+     * (targets, etc.)" is enforced by requiring every merged target requirement to be satisfiable.
+     */
+    private fun enumerateSplice(
+        context: EnumerationContext,
+        hand: List<EntityId>,
+        result: MutableList<LegalAction>
+    ) {
+        val state = context.state
+        val playerId = context.playerId
+
+        for (cardId in hand) {
+            val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: continue
+            if (cardComponent.typeLine.isLand) continue
+            if (context.cantCastSpell(cardId)) continue
+
+            val cardDef = context.cardRegistry.getCard(cardComponent.name) ?: continue
+            val spellSubtypes = cardDef.typeLine.subtypes.map { it.value }
+            if (spellSubtypes.isEmpty()) continue
+
+            // Splice grants no timing permission of its own — the spell is cast at its normal timing.
+            val isInstant = cardComponent.typeLine.isInstant
+            val grantedFlash = cardDef.keywords.contains(Keyword.FLASH) ||
+                context.castPermissionUtils.hasGrantedFlash(state, cardId)
+            if (!isInstant && !grantedFlash && !context.canPlaySorcerySpeed) continue
+
+            val castRestrictions = cardDef.script.castRestrictions
+            if (castRestrictions.isNotEmpty() &&
+                !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)
+            ) continue
+
+            val candidates = SpliceCasts.candidates(
+                state, playerId, cardId, spellSubtypes, context.cardRegistry
+            )
+            if (candidates.isEmpty()) continue
+
+            val baseCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
+            val spellContext = spellPaymentContextFor(cardComponent)
+
+            for (candidate in candidates) {
+                val splicedCost = baseCost + candidate.splice.cost
+                val canAfford = context.manaSolver.canPay(
+                    state, playerId, splicedCost,
+                    spellContext = spellContext,
+                    precomputedSources = context.availableManaSources
+                )
+                val autoTapPreview = if (context.skipAutoTapPreview) null else {
+                    context.manaSolver.solve(
+                        state, playerId, splicedCost,
+                        spellContext = spellContext,
+                        precomputedSources = context.availableManaSources
+                    )?.sources?.map { it.entityId }
+                }
+
+                // The main spell's own requirements first, then the spliced text's (CR 702.47d) — the
+                // same order the cast handler and the stack resolver slice the flat target list by.
+                val targetReqs = buildList {
+                    addAll(cardDef.script.targetRequirements)
+                    cardDef.script.auraTarget?.let { add(it) }
+                    addAll(candidate.definition.script.targetRequirements)
+                }
+                val description = "Cast ${cardComponent.name} (Splice ${candidate.name})"
+                val spliceAction = CastSpell(
+                    playerId, cardId, splicedCardIds = listOf(candidate.cardId)
+                )
+
+                if (targetReqs.isEmpty()) {
+                    result.add(LegalAction(
+                        actionType = "CastWithSplice",
+                        description = description,
+                        action = spliceAction,
+                        affordable = canAfford,
+                        manaCostString = splicedCost.toString(),
+                        autoTapPreview = autoTapPreview
+                    ))
+                    continue
+                }
+
+                val targetReqInfos = context.targetUtils.buildTargetInfos(state, playerId, targetReqs, cardId)
+                // CR 702.47b — no splice at all if the added text's choices can't be made.
+                if (!context.targetUtils.allRequirementsSatisfied(targetReqInfos)) continue
+                val firstReq = targetReqs.first()
+                val firstReqInfo = targetReqInfos.first()
+
+                result.add(LegalAction(
+                    actionType = "CastWithSplice",
+                    description = description,
+                    action = spliceAction,
+                    validTargets = firstReqInfo.validTargets,
+                    requiresTargets = true,
+                    targetCount = firstReqInfo.maxTargets,
+                    minTargets = firstReq.effectiveMinCount,
+                    targetDescription = firstReq.description,
+                    targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
+                    affordable = canAfford,
+                    manaCostString = splicedCost.toString(),
+                    autoTapPreview = autoTapPreview
+                ))
+            }
+        }
+    }
+
     private fun enumerateKicker(
         context: EnumerationContext,
         hand: List<EntityId>,

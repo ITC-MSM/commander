@@ -255,6 +255,25 @@ enum class Keyword(val displayName: String) {
      * at the beginning of your end step" triggered ability. The engine adds the N TIME
      * counters when a spell cast for its impending cost resolves.
      */
+    /**
+     * Splice onto [quality] [cost] (CR 702.47, Champions of Kamigawa).
+     * "You may reveal this card from your hand as you cast a [quality] spell. If you do, that spell
+     * gains the text of this card's rules text and you pay [cost] as an additional cost to cast that
+     * spell." (CR 702.47a)
+     *
+     * Modelled as [KeywordAbility.Splice] — a static ability that functions while the card is in
+     * hand, so the card itself is never cast and never leaves hand (CR 702.47a): it is only
+     * *revealed*, and the spell it is spliced onto gains its rules text. The spliced text is added
+     * as an ordered tail after the main spell's own effects (CR 702.47b) and the spell keeps every
+     * one of its own characteristics — colour, name, types (CR 702.47c) — so the splice is invisible
+     * to protection and to "target Arcane spell" style checks. Splice changes are lost as soon as
+     * the spell leaves the stack (CR 702.47e), which falls out of the choice riding the stack
+     * object.
+     *
+     * Wired by the `splice(cost)` / `splice(onto, cost)` DSL helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder].
+     */
+    SPLICE("Splice"),
     IMPENDING("Impending"),
     CONSPIRE("Conspire"),
 

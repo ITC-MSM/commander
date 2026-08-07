@@ -1580,7 +1580,7 @@ class ModalAndCloneContinuationResumer(
  *
  * Top-level so both the resumer and the [CoreAutoResumerModule] auto-resumer for
  * [ModalChosenModeTailContinuation] can drive it — the resolution-time twin of
- * [com.wingedsheep.engine.handlers.effects.composite.processPreChosenModeQueue].
+ * [com.wingedsheep.engine.handlers.effects.composite.processPreTargetedEffectQueue].
  */
 internal fun processChosenModeQueue(
     services: EngineServices,
@@ -1733,7 +1733,7 @@ internal fun processChosenModeQueue(
  * ON TOP and the tail frame sits beneath — the [CoreAutoResumerModule] auto-resumer then
  * drains [tail] once the inner chain finishes. On synchronous success the pre-pushed
  * frame is popped and the tail drains immediately. Mirrors
- * [com.wingedsheep.engine.handlers.effects.composite.processPreChosenModeQueue]'s
+ * [com.wingedsheep.engine.handlers.effects.composite.processPreTargetedEffectQueue]'s
  * pre-push-tail discipline.
  */
 private fun executeChosenModeWithTail(
