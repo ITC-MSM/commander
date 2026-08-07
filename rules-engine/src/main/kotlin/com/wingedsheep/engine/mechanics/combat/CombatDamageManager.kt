@@ -254,9 +254,17 @@ internal class CombatDamageManager(
             finalAssignments = modifier.modify(state, projected, finalAssignments)
         }
 
-        // Phase 3: Apply
+        // Phase 2b: Shield counters (CR 122.1c). Consumes one counter per shielded permanent for
+        // the whole simultaneous batch and drops the assignments whose damage it prevents, so the
+        // downstream steps (redirect consumption, lifelink) never see prevented damage.
         var newState = state
         val events = mutableListOf<GameEvent>()
+        val shieldResult = applyShieldCountersToCombatDamage(newState, finalAssignments)
+        newState = shieldResult.first
+        finalAssignments = shieldResult.second
+        events.addAll(shieldResult.third)
+
+        // Phase 3: Apply
         for (assignment in finalAssignments) {
             newState = applySingleAssignment(newState, assignment, events)
         }
@@ -819,6 +827,52 @@ internal class CombatDamageManager(
             isPlaneswalker -> applyDamageToPlaneswalker(state, assignment.sourceId, assignment.targetId, amplifiedAmount, events)
             else -> applyDamageToCreature(state, assignment.sourceId, assignment.targetId, amplifiedAmount, events)
         }
+    }
+
+    /**
+     * CR 122.1c shield counters, applied to the whole combat-damage batch.
+     *
+     * Combat damage marks itself in this class rather than routing through
+     * `DamageUtils.dealDamageToTarget`, so the rule needs its own call site here — otherwise a
+     * shielded creature would survive a Shock but not a blocker.
+     *
+     * It runs over the batch, not per assignment, because all combat damage in a step is dealt
+     * simultaneously as a single event (CR 510.2). A shielded creature blocking two attackers is
+     * dealt damage *once*, so it spends exactly **one** shield counter and all of that damage is
+     * prevented — applying the rule per assignment would wrongly burn one counter per attacker. The
+     * first-strike and regular combat damage steps are separate events, so a shielded creature does
+     * spend one counter in each.
+     *
+     * Running over the batch is also why this sits *ahead* of the per-assignment replacements in
+     * [applyDamageToCreature] (redirection, Anti-Venom) while `DamageUtils` puts them first — a
+     * legal but different CR 616.1 ordering, recorded on [applyShieldCounterToDamage].
+     *
+     * @return the state with counters consumed, the assignments that survive (those whose target's
+     *   damage was not prevented), and the [CountersRemovedEvent]s to emit.
+     */
+    private fun applyShieldCountersToCombatDamage(
+        state: GameState,
+        assignments: List<CombatDamageAssignment>,
+    ): Triple<GameState, List<CombatDamageAssignment>, List<GameEvent>> {
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+        val preventedTargets = mutableSetOf<EntityId>()
+        // Unpreventable damage (Leyline of Punishment) is still dealt, but per the official rulings
+        // the shield counter is still removed.
+        val cantBePrevented = DamageUtils.isDamagePreventionDisabled(state)
+
+        for (targetId in assignments.map { it.targetId }.distinct()) {
+            val container = state.getEntity(targetId) ?: continue
+            val isPlayer = container.get<LifeTotalComponent>() != null && container.get<CardComponent>() == null
+            if (isPlayer) continue
+            val shielded = applyShieldCounterToDamage(newState, targetId, cantBePrevented) ?: continue
+            newState = shielded.state
+            events.add(shielded.event)
+            if (shielded.damagePrevented) preventedTargets.add(targetId)
+        }
+
+        if (preventedTargets.isEmpty()) return Triple(newState, assignments, events)
+        return Triple(newState, assignments.filterNot { it.targetId in preventedTargets }, events)
     }
 
     private fun applyDamageToPlayer(

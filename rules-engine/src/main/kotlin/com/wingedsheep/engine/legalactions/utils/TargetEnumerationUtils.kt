@@ -5,16 +5,15 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.legalactions.TargetInfo
+import com.wingedsheep.engine.mechanics.targeting.ControllerHexproof
 import com.wingedsheep.engine.mechanics.targeting.HexproofSuppression
 import com.wingedsheep.engine.mechanics.targeting.PlayerTargetRestriction
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
-import com.wingedsheep.engine.state.components.battlefield.GrantsControllerHexproofComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
-import com.wingedsheep.engine.state.components.player.PlayerHexproofComponent
 import com.wingedsheep.engine.state.components.player.PlayerShroudComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
@@ -425,16 +424,8 @@ class TargetEnumerationUtils(
         }
     }
 
-    fun playerHasHexproof(state: GameState, playerId: EntityId): Boolean {
-        val playerEntity = state.getEntity(playerId)
-        if (playerEntity?.has<PlayerHexproofComponent>() == true) return true
-
-        return state.getBattlefield().any { entityId ->
-            val container = state.getEntity(entityId) ?: return@any false
-            container.get<GrantsControllerHexproofComponent>() != null &&
-                container.get<ControllerComponent>()?.playerId == playerId
-        }
-    }
+    fun playerHasHexproof(state: GameState, playerId: EntityId): Boolean =
+        ControllerHexproof.appliesTo(state, playerId)
 
     fun playerHasHexproofAgainst(state: GameState, playerId: EntityId, controllerId: EntityId): Boolean {
         return playerId != controllerId && playerHasHexproof(state, playerId)

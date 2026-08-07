@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.effects
 
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
+import com.wingedsheep.engine.core.applyShieldCounterToDamage
 import com.wingedsheep.engine.core.DamagePreventedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.LifeChangedEvent
@@ -249,6 +250,28 @@ object DamageUtils {
             if (counterResult != null) return counterResult
         }
 
+        // CR 122.1c: "If damage would be dealt to this permanent, prevent that damage and remove a
+        // shield counter from it." One counter is consumed per damage event however many are on the
+        // permanent, and however large the damage is.
+        //
+        // Deliberately outside the `cantBePrevented` guard below: per the official rulings, a
+        // permanent with a shield counter that is dealt *unpreventable* damage takes that damage AND
+        // still loses a shield counter. Only the prevention half is skipped.
+        //
+        // Placed after protection (CR 702.16) and the damage-replacement effects above: both are
+        // prevention/replacement effects competing for the same event, and CR 616.1 lets the
+        // affected permanent's controller order them. Letting protection win first leaves the shield
+        // counter intact, which is the ordering that player would always choose.
+        var shieldCounterEvents: List<EngineGameEvent> = emptyList()
+        if (!isPlayer) {
+            val shielded = applyShieldCounterToDamage(newState, targetId, cantBePrevented)
+            if (shielded != null) {
+                newState = shielded.state
+                if (shielded.damagePrevented) return EffectResult.success(newState, listOf(shielded.event))
+                shieldCounterEvents = listOf(shielded.event)
+            }
+        }
+
         // Events from a reflect shield (Eye for an Eye) that fired but let the damage proceed.
         var reflectEvents: List<EngineGameEvent> = emptyList()
         if (!cantBePrevented) {
@@ -272,9 +295,10 @@ object DamageUtils {
             newState = shieldState
             effectiveAmount = reducedAmount
         }
-        if (effectiveAmount <= 0) return EffectResult.success(newState, reflectEvents)
+        if (effectiveAmount <= 0) return EffectResult.success(newState, shieldCounterEvents + reflectEvents)
 
         val events = mutableListOf<EngineGameEvent>()
+        events.addAll(shieldCounterEvents)
         events.addAll(reflectEvents)
         // Excess damage (CR 120.4a) is only computed below for the non-wither creature
         // branch — planeswalker (above loyalty), battle (above defense), and wither (damage

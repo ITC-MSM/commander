@@ -2545,6 +2545,84 @@
     "colorIdentityOverride": []
 }
 
+// Captain America, Super-Soldier
+{
+    "name": "Captain America, Super-Soldier",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Legendary Creature — Human Soldier Hero",
+    "oracleText": "First strike\nCaptain America enters with a shield counter on him. (If he would be dealt damage or destroyed, remove a shield counter from him instead.)\nAs long as Captain America has a shield counter on him, you and other Heroes you control have hexproof.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": "GrantHexproofToController",
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "SHIELD"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "filter": {
+                        "baseFilter": "creature Hero ctrl:you",
+                        "excludeSelf": true
+                    }
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "SHIELD"
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "shield"
+                },
+                "count": 1,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "rarity": "MYTHIC",
+        "artist": "Anna Podedworna",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33631d6c-c584-42ff-afe5-2647b5fb321f.jpg?1783902981"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Captain America, Wings of Freedom
 {
     "name": "Captain America, Wings of Freedom",
@@ -11980,6 +12058,806 @@
     "colorIdentityOverride": [
         "WHITE"
     ]
+}
+
+// Super-Adaptoid
+{
+    "name": "Super-Adaptoid",
+    "manaCost": "{2}",
+    "typeLine": "Legendary Artifact Creature — Robot Villain",
+    "oracleText": "Super-Adaptoid's power is equal to the number of legendary creatures you control.\nWhenever Super-Adaptoid enters or attacks, choose another target creature. If that creature has haste and Super-Adaptoid doesn't, put a haste counter on Super-Adaptoid. Do the same for flying, first strike, double strike, deathtouch, indestructible, lifelink, menace, reach, trample, and vigilance.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        "IsLegendary"
+                    ]
+                }
+            }
+        },
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:haste"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:haste"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "haste",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:flying"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:flying"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "flying",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:first_strike"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:first_strike"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "first strike",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:double_strike"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:double_strike"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "double strike",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:deathtouch"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:deathtouch"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "deathtouch",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:indestructible"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:indestructible"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "indestructible",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:lifelink"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:lifelink"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "lifelink",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:menace"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:menace"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "menace",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:reach"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:reach"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "reach",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:trample"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:trample"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "trample",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:vigilance"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:vigilance"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "vigilance",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "another target creature"
+                },
+                "descriptionOverride": "Whenever Super-Adaptoid enters, choose another target creature. If that creature has haste and Super-Adaptoid doesn't, put a haste counter on Super-Adaptoid. Do the same for flying, first strike, double strike, deathtouch, indestructible, lifelink, menace, reach, trample, and vigilance."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:haste"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:haste"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "haste",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:flying"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:flying"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "flying",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:first_strike"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:first_strike"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "first strike",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:double_strike"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:double_strike"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "double strike",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:deathtouch"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:deathtouch"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "deathtouch",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:indestructible"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:indestructible"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "indestructible",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:lifelink"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:lifelink"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "lifelink",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:menace"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:menace"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "menace",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:reach"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:reach"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "reach",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:trample"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:trample"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "trample",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
+                                            "filter": "kw:vigilance"
+                                        },
+                                        {
+                                            "type": "Not",
+                                            "condition": {
+                                                "type": "EntityMatches",
+                                                "entity": "Self",
+                                                "filter": "kw:vigilance"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "vigilance",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "another target creature"
+                },
+                "descriptionOverride": "Whenever Super-Adaptoid attacks, choose another target creature. If that creature has haste and Super-Adaptoid doesn't, put a haste counter on Super-Adaptoid. Do the same for flying, first strike, double strike, deathtouch, indestructible, lifelink, menace, reach, trample, and vigilance."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "250",
+        "rarity": "RARE",
+        "artist": "John Tyler Christopher",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbbd8609-5a00-4188-96fe-77251579b88d.jpg?1783902890"
+    },
+    "colorIdentityOverride": []
 }
 
 // Super-Skrull

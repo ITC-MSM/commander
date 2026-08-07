@@ -753,6 +753,31 @@ export function getDecayedCounters(card: ClientCard): number {
 }
 
 /**
+ * Get the number of shield counters on a card (CR 122.1c). One or more shield counters prevent the
+ * next damage dealt to the permanent, or replace the next destruction by an effect, consuming one
+ * counter each time.
+ */
+export function getShieldCounters(card: ClientCard): number {
+  return card.counters[CounterType.SHIELD] ?? 0
+}
+
+/**
+ * Get the number of haste counters on a card. Keyword counter (CR 122.1b) — the permanent has haste
+ * for as long as it has one.
+ */
+export function getHasteCounters(card: ClientCard): number {
+  return card.counters[CounterType.HASTE] ?? 0
+}
+
+/**
+ * Get the number of menace counters on a card. Keyword counter (CR 122.1b) — the permanent has
+ * menace for as long as it has one.
+ */
+export function getMenaceCounters(card: ClientCard): number {
+  return card.counters[CounterType.MENACE] ?? 0
+}
+
+/**
  * Get the number of counters of a given type on a card.
  */
 export function getCounterCount(card: ClientCard, type: CounterType): number {

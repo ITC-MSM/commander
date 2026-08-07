@@ -25,6 +25,7 @@ import {
   getCardFallbackColor,
   getLoreCounters,
   getStunCounters,
+  getShieldCounters,
   getFinalityCounters,
   getSupplyCounters,
   getStashCounters,
@@ -35,6 +36,8 @@ import {
   getDeathtouchCounters,
   getLifelinkCounters,
   getReachCounters,
+  getHasteCounters,
+  getMenaceCounters,
   getBlightCounters,
   getDecayedCounters,
   getFloodCounters,
@@ -1793,6 +1796,20 @@ function GameCardImpl({
         </div>
       )}
 
+      {/* Shield counter badge (CR 122.1c) */}
+      {battlefield && getShieldCounters(card) > 0 && (
+        <div style={{
+          ...styles.shieldCounterBadge,
+          fontSize: responsive.badges.counterTextFontSize,
+          padding: responsive.badges.badgePadding,
+        }}>
+          <i className={`ms ms-${counterManaClass.SHIELD}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
+          <span style={{ fontWeight: 700 }}>
+            {getShieldCounters(card)}
+          </span>
+        </div>
+      )}
+
       {/* Finality counter badge */}
       {battlefield && getFinalityCounters(card) > 0 && (
         <div style={{
@@ -2109,6 +2126,34 @@ function GameCardImpl({
           <i className={`ms ms-${counterManaClass.REACH}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
           <span style={{ fontWeight: 700 }}>
             {getReachCounters(card)}
+          </span>
+        </div>
+      )}
+
+      {/* Haste counter badge */}
+      {battlefield && getHasteCounters(card) > 0 && (
+        <div style={{
+          ...styles.hasteCounterBadge,
+          fontSize: responsive.badges.counterTextFontSize,
+          padding: responsive.badges.badgePadding,
+        }}>
+          <i className={`ms ms-${counterManaClass.HASTE}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
+          <span style={{ fontWeight: 700 }}>
+            {getHasteCounters(card)}
+          </span>
+        </div>
+      )}
+
+      {/* Menace counter badge */}
+      {battlefield && getMenaceCounters(card) > 0 && (
+        <div style={{
+          ...styles.menaceCounterBadge,
+          fontSize: responsive.badges.counterTextFontSize,
+          padding: responsive.badges.badgePadding,
+        }}>
+          <i className={`ms ms-${counterManaClass.MENACE}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
+          <span style={{ fontWeight: 700 }}>
+            {getMenaceCounters(card)}
           </span>
         </div>
       )}

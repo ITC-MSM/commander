@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.effects
 
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.EffectResult
+import com.wingedsheep.engine.core.consumeShieldCounter
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
@@ -520,6 +521,21 @@ object ZoneMovementUtils {
         // Check for indestructible - indestructible permanents can't be destroyed
         if (state.projectedState.hasKeyword(entityId, Keyword.INDESTRUCTIBLE)) {
             return EffectResult.success(state)
+        }
+
+        // CR 122.1c: "If this permanent would be destroyed as the result of an effect, instead
+        // remove a shield counter from it." This is that destruction-by-effect chokepoint; the
+        // lethal-damage state-based action deliberately does not consult shield counters (see
+        // [consumeShieldCounter]).
+        //
+        // Checked before regeneration because CR 616.1 lets the permanent's controller order the
+        // applicable replacement effects, and the shield counter is strictly the better one to spend
+        // first: it costs no tap, doesn't remove the permanent from combat, doesn't clear marked
+        // damage, survives "can't be regenerated", and leaves any regeneration shield banked for
+        // later. It is *not* regeneration (per the official rulings) — hence its own branch rather
+        // than a synthesized regeneration shield.
+        consumeShieldCounter(state, entityId)?.let { (shieldedState, event) ->
+            return EffectResult.success(shieldedState, listOf(event))
         }
 
         // Check for regeneration shields
