@@ -333,6 +333,14 @@ object Emitter {
                 rname == "Emerge" -> block = manaKeywordCost(rule)?.let {
                     listOf(Eval(call("emerge", arg("\"$it\""))))
                 }
+                // Splice onto [quality] [cost] (CR 702.47) -> the `splice("{cost}")` CardBuilder helper.
+                // Same trap as Madness/Emerge/Ward: `Keyword.SPLICE` exists, so falling through to the
+                // bare-keyword case would print the word while dropping the cost the whole mechanic keys
+                // off. The `onto` quality defaults to Arcane, which is every printed splice card, so only
+                // the cost has to be rendered; a non-mana splice cost (none printed) declines -> scaffold.
+                rname == "Splice" -> block = manaKeywordCost(rule)?.let {
+                    listOf(Eval(call("splice", arg("\"$it\""))))
+                }
                 // Affinity for <group> (cost-reduction keyword, CR 702.41) — "this spell costs {1} less
                 // to cast for each <filter> you control." The engine has no Keyword.AFFINITY card-keyword
                 // path for arbitrary group affinity, so render a self-cast ModifySpellCost whose

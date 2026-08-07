@@ -122,7 +122,7 @@ class PlayoutPolicy(
 
         var score = when (action.actionType) {
             "PlayLand" -> LAND_SCORE
-            "CastSpell", "CastWithKicker" -> BASE_CAST_SCORE
+            "CastSpell", "CastWithKicker", "CastWithSplice" -> BASE_CAST_SCORE
             else -> BASE_ACTIVATION_SCORE
         }
 

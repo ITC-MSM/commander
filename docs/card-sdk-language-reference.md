@@ -6472,6 +6472,32 @@ composite abilities).
   `DoubleFacedComponent` on the back face, and re-registering the back face's statics, replacements and self-redirects —
   before it becomes a spell, so resolution, targeting and the client view need no special case. Rule 712.8a still turns
   the card back over as it leaves the battlefield or stack for any other zone.
+- `Splice(cost, onto = Subtype.ARCANE)` — `card { splice("{2}{R}{R}") }` builder helper (CR 702.47, Champions of
+  Kamigawa). A static ability functioning while the card is **in hand**: *"You may reveal this card from your hand as you
+  cast a [quality] spell. If you do, that spell gains the text of this card's rules text and you pay [cost] as an
+  additional cost to cast that spell."* Every printed splice card reads "splice onto Arcane", hence the `onto` default;
+  it is matched against the spell's **subtypes**. Unique among the cost-carrying keywords in that **the card never moves**
+  — it is only *revealed*, so it stays castable later, splice-able onto a later spell, and (per the CR's own example) can
+  even be discarded to pay a discard cost of the very spell it was spliced onto.
+  **The card needs no extra authoring**: its ordinary `spell { }` script *is* the text that gets spliced, targets
+  included. All behavior is in the engine, keyed off the `KeywordAbility.Splice` entry and centralized in
+  `SpliceCasts` (candidates in hand, quality match, cost addition, target-requirement tail):
+  `CastSpellEnumerator.enumerateSplice` surfaces one `CastWithSplice` per (eligible spell, splice card in hand) pair,
+  priced at the spell's cost **plus** the splice cost (an *additional* cost — CR 601.2b/f–h, so it survives a free cast or
+  an alternative cost) and target-checked against the union of both cards' requirements, which is how CR 702.47b's
+  *"you can't choose to use a splice ability if you can't make the required choices"* is enforced; `CastSpellHandler`
+  re-validates every leg (card in **hand**, has splice, quality matches, no card spliced twice), appends the spliced
+  cards' `targetRequirements` after the main spell's, and reveals them via `CardsRevealedEvent`; `StackResolver` records
+  the choice on `SpellOnStackComponent.splicedCardNames` / `splicedTargetsOrdered` and, at resolution, runs the main
+  spell's effect first and then each spliced card's as a `PreTargetedEffectEntry` queue (CR 702.47b) — the same
+  `processPreTargetedEffectQueue` drain a choose-N modal spell uses, so each spliced card resolves against **its own**
+  target slice and its `ContextTarget(0)` means its own first target.
+  Two consequences worth knowing: the spliced effect's `sourceId` is the **spell**, never the spliced card, so the spell
+  keeps all its own characteristics (CR 702.47c) and a red splice card's damage on a blue Arcane spell can still be dealt
+  to a creature with protection from red; and because the whole choice rides the stack object, *"the spell loses any
+  splice changes once it leaves the stack"* (CR 702.47e) needs no cleanup code. The engine handles **arbitrarily many**
+  spliced cards (`CastSpell.splicedCardIds` is an ordered list), but the enumerator deliberately surfaces one splice card
+  per action — every subset would be exponential. *Through the Breach* (CHK, reprinted in INR).
 - `Madness(cost)` — `card { madness("{cost}") }` builder helper (CR 702.35). One keyword, **two abilities**
   (CR 702.35a): a *static* one functioning in **hand** — *"if a player would discard this card, that player discards it,
   but exiles it instead of putting it into their graveyard"* — and a *triggered* one functioning on that exile —
@@ -9243,6 +9269,7 @@ Card authors rarely reference these directly; they are created/updated by the ma
 - **Evoke** — `evoke = "{U}"`; pay alt cost, sacrifice on ETB.
 - **Sneak** — `sneak("{1}{U}")`; declare-blockers-step alt cost (pay mana + return an unblocked attacker you control to hand); a resolving permanent enters tapped and attacking the same defender. `Conditions.SneakCostWasPaid` reads the rider flag.
 - **Ninjutsu** — `ninjutsu("{1}{U}{B}")`; the canonical CR 702.49 keyword that **Sneak** reflavors. Same declare-blockers alt cost and tapped-and-attacking entry, shared via `KeywordAbility.ninjutsuStyleCost`. *Kaito, Bane of Nightmares* (DSK).
+- **Splice** — `splice("{2}{R}{R}")` (CR 702.47); reveal from hand as you cast an Arcane spell, pay the splice cost as an *additional* cost, and that spell gains this card's rules text — the card itself stays in hand. The spell keeps its own characteristics (702.47c); the spliced text resolves after the main spell's (702.47b) with its own targets. *Through the Breach* (CHK / INR).
 - **Earthbend** — `Effects.Earthbend(amount, target)` composes AnimateLand + GrantKeyword + AddCounters + granted
   self-triggers (no fake keyword). `amount` is an `Int` for "Earthbend N" (Earthbending Lesson) or a `DynamicAmount`
   for "Earthbend X, where X is …" (Rockalanche — X = the number of Forests you control), which counts X at resolution

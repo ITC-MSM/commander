@@ -849,6 +849,42 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Splice
+    // =========================================================================
+
+    /**
+     * Splice onto [onto] [cost] (CR 702.47, Champions of Kamigawa).
+     * "You may reveal this card from your hand as you cast a [onto] spell. If you do, that spell
+     * gains the text of this card's rules text and you pay [cost] as an additional cost to cast that
+     * spell." (CR 702.47a)
+     *
+     * Unlike every other cost-carrying keyword here, splice never casts or moves the card it is
+     * printed on: it is a static ability functioning **in hand**, and the card stays there — free to
+     * be cast normally later, or spliced onto a different spell (CR 702.47a). What the splice cost
+     * buys is that the *spell being cast* gains this card's rules text.
+     *
+     * [onto] is the "[quality]" of the rules text, matched against the spell's subtypes; every
+     * printed splice card so far reads "splice onto Arcane", which is why that is the default.
+     *
+     * The engine surfaces one `CastWithSplice` legal-action variant per splice card in hand while an
+     * eligible spell is castable, charges [cost] as an additional cost (CR 601.2b / 601.2f–h),
+     * reveals the card, and appends this card's own spell effect and target requirements to the
+     * spell on the stack — after the main spell's effects (CR 702.47b) and without granting the
+     * spell any of this card's other characteristics (CR 702.47c).
+     *
+     * Attach via the `splice("{cost}")` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+     */
+    @SerialName("Splice")
+    @Serializable
+    data class Splice(
+        val cost: ManaCost,
+        val onto: Subtype = Subtype.ARCANE,
+    ) : KeywordAbility {
+        override val keyword: Keyword = Keyword.SPLICE
+        override val description: String = "Splice onto $onto $cost"
+    }
+
+    // =========================================================================
     // Impending
     // =========================================================================
 
@@ -1274,6 +1310,13 @@ sealed interface KeywordAbility {
          * [com.wingedsheep.sdk.dsl.CardBuilder].
          */
         fun ninjutsu(cost: String): KeywordAbility = Ninjutsu(ManaCost.parse(cost))
+
+        /**
+         * Create Splice onto [onto] with a splice cost from string (CR 702.47). Prefer the
+         * `splice(cost)` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder].
+         */
+        fun splice(cost: String, onto: Subtype = Subtype.ARCANE): KeywordAbility =
+            Splice(ManaCost.parse(cost), onto)
 
         /**
          * Create Impending with a time-counter count and an impending mana cost.

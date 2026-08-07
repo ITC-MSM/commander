@@ -37,6 +37,26 @@ data class SpellOnStackComponent(
      * "if the gift was(n't) promised" riders can read it — see StackResolver.
      */
     val giftRecipient: EntityId? = null,
+    /**
+     * Card-definition names of the cards revealed from hand and **spliced** onto this spell
+     * (CR 702.47a), in the order their text was added. Each one's `spellEffect` is executed after the
+     * main spell's own effects when the spell resolves (CR 702.47b), with its own target slice from
+     * [splicedTargetsOrdered].
+     *
+     * Names rather than entity ids: the spliced card never leaves hand, so what the spell gained is
+     * its *text*, not a reference to the object — and the spell must keep resolving that text even if
+     * the card is later discarded or exiled. The spliced text lives here, on the stack object, which
+     * is exactly why "the spell loses any splice changes once it leaves the stack" (CR 702.47e) needs
+     * no cleanup code.
+     */
+    val splicedCardNames: List<String> = emptyList(),
+    /**
+     * Targets chosen for each spliced card's own text (CR 702.47d), aligned 1:1 with
+     * [splicedCardNames]. Sliced out of the flat cast-time target list, whose requirements are the
+     * main spell's followed by each spliced card's — so the main spell's effects still see only their
+     * own targets and a spliced card's `ContextTarget(0)` means its own first target.
+     */
+    val splicedTargetsOrdered: List<List<ChosenTarget>> = emptyList(),
     val chosenModes: List<Int> = emptyList(),  // For modal spells (700.2). Ordered; same index may repeat when allowRepeat.
     val modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),  // Per-mode chosen targets, aligned 1:1 with chosenModes
     val modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),  // Per-mode TargetRequirements for 608.2b re-validation at resolution

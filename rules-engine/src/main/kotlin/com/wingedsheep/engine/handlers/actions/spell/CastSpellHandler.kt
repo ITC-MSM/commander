@@ -23,6 +23,7 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.mechanics.DisturbCasts
 import com.wingedsheep.engine.mechanics.EmergeCasts
+import com.wingedsheep.engine.mechanics.SpliceCasts
 import com.wingedsheep.engine.mechanics.EscalateCosts
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
@@ -597,6 +598,14 @@ class CastSpellHandler(
             if (casualtyError != null) return casualtyError
         }
 
+        // Validate splice (CR 702.47). Each revealed card must be in the caster's hand, carry splice,
+        // splice onto a quality this spell actually has, and appear at most once. Checked before the
+        // cost is computed, because each splice cost is folded into the total cost below (CR 601.2b/f).
+        if (action.splicedCardIds.isNotEmpty()) {
+            val spliceError = validateSplice(state, action, cardDef, cardComponent, disturbFace)
+            if (spliceError != null) return spliceError
+        }
+
         // Calculate effective cost (free if PlayWithoutPayingCostComponent is present, or if a
         // MayCastWithoutPayingManaCost battlefield source (e.g. Weftwalking) is the chosen alt).
         val playForFreeFromComponent = zoneResolver.hasPlayWithoutPayingCost(state, action.playerId, action.cardId)
@@ -656,6 +665,10 @@ class CastSpellHandler(
             val targetRequirements = buildList {
                 addAll(baseTargetReqs)
                 (disturbFace ?: cardDef).script.auraTarget?.let { add(it) }
+                // Splice (CR 702.47d): targets for the added text are chosen normally, as part of
+                // casting this spell. They sit after the main spell's own requirements, so the flat
+                // target list splits into the main slice followed by one slice per spliced card.
+                addAll(SpliceCasts.targetRequirementsFor(state, action.splicedCardIds, cardRegistry))
             }
             if (targetRequirements.isNotEmpty()) {
                 // Reject casting if spell requires targets but none were provided
@@ -1073,6 +1086,14 @@ class CastSpellHandler(
             }
         }
 
+        // Splice (CR 702.47a): every revealed splice card's cost is an *additional* cost, so it lands
+        // on top of whatever is paying for the spell itself — a free cast and an alternative cost both
+        // waive only the mana cost, never the additional costs (CR 601.2f–h). Added after the airbend
+        // branch above, which *replaces* effectiveCost outright and would otherwise wipe it.
+        if (action.splicedCardIds.isNotEmpty()) {
+            effectiveCost = SpliceCasts.addSpliceCosts(effectiveCost, state, action.splicedCardIds, cardRegistry)
+        }
+
         // Apply sacrifice-for-cost-reduction before validating payment
         if (cardDef != null && action.additionalCostPayment != null) {
             for (cost in cardDef.script.additionalCosts) {
@@ -1327,6 +1348,65 @@ class CastSpellHandler(
         if (!projected.isCreature(creatureId)) return "Casualty requires a creature"
         val power = projected.getPower(creatureId) ?: 0
         if (power < threshold) return "Casualty creature must have power $threshold or greater"
+        return null
+    }
+
+    /**
+     * Validate the splice declarations on this cast (CR 702.47).
+     *
+     * [GameAction] is client-supplied, so every leg of "you may reveal this card from your hand as you
+     * cast a [quality] spell" is re-checked here rather than trusted: the card is still in the caster's
+     * *hand* (it is revealed, never cast — CR 702.47a), it actually has splice, the quality it splices
+     * onto is one this spell has, and no card is spliced onto the same spell twice (CR 702.47b).
+     *
+     * Also enforces CR 702.47b's "you can't choose to use a splice ability if you can't make the
+     * required choices (targets, etc.) for that card's rules text" — a splice card whose text needs a
+     * target has nothing to point at if no legal target exists, so it can't be spliced at all. The
+     * target *validity* check itself runs with the rest of the cast's targets below.
+     */
+    private fun validateSplice(
+        state: GameState,
+        action: CastSpell,
+        cardDef: com.wingedsheep.sdk.model.CardDefinition?,
+        cardComponent: CardComponent,
+        disturbFace: com.wingedsheep.sdk.model.CardDefinition?,
+    ): String? {
+        // The quality is read off the face actually being cast (CR 702.47a checks the spell), so an
+        // adventure / split / disturb cast is measured by the half on the stack, not the whole card.
+        val castFace = action.faceIndex?.let { cardDef?.cardFaces?.getOrNull(it) }
+        val spellSubtypes = when {
+            castFace != null -> castFace.typeLine.subtypes.map { it.value }
+            disturbFace != null -> disturbFace.typeLine.subtypes.map { it.value }
+            cardDef != null -> cardDef.typeLine.subtypes.map { it.value }
+            else -> cardComponent.typeLine.subtypes.map { it.value }
+        }
+
+        if (action.splicedCardIds.size != action.splicedCardIds.distinct().size) {
+            return "Cannot splice the same card onto a spell more than once"
+        }
+
+        val hand = state.getZone(ZoneKey(action.playerId, Zone.HAND))
+        for (splicedId in action.splicedCardIds) {
+            if (splicedId == action.cardId) {
+                return "Cannot splice a spell onto itself"
+            }
+            if (splicedId !in hand) {
+                return "Spliced card is not in your hand"
+            }
+            val splicedDef = SpliceCasts.definitionOf(state, splicedId, cardRegistry)
+                ?: return "Spliced card definition not found"
+            val splice = SpliceCasts.printedSplice(splicedDef)
+                ?: return "${splicedDef.name} does not have splice"
+            if (!SpliceCasts.qualityMatches(splice, spellSubtypes)) {
+                return "${splicedDef.name} can only be spliced onto a ${splice.onto} spell"
+            }
+            // CR 702.47b — the splice is illegal outright when its own text couldn't be given the
+            // targets it demands.
+            val requiredTargets = splicedDef.script.targetRequirements.sumOf { it.effectiveMinCount }
+            if (requiredTargets > 0 && action.targets.size < requiredTargets) {
+                return "${splicedDef.name} needs targets for its spliced text"
+            }
+        }
         return null
     }
 
@@ -2912,6 +2992,11 @@ class CastSpellHandler(
             buildList {
                 addAll(baseTargetReqs)
                 (disturbFace ?: cardDef).script.auraTarget?.let { add(it) }
+                // Splice (CR 702.47d): the spliced text's own requirements, appended in splice order.
+                // They must be here and not only in validate(): this list becomes the spell's
+                // TargetsComponent, which drives resolution-time 608.2b re-validation and the tail that
+                // StackResolver slices off to hand each spliced card its own targets.
+                addAll(SpliceCasts.targetRequirementsFor(state, action.splicedCardIds, cardRegistry))
             }
         } else {
             emptyList()
@@ -3133,6 +3218,28 @@ class CastSpellHandler(
                 state, action.playerId, action.cardId, cardComponent, action.graveyardCastRider
             )
 
+        // Splice (CR 702.47a): reveal each spliced card from hand. The reveal is public — it is how
+        // opponents learn what text the spell gained — but the caster picked the cards, so it doesn't
+        // get an overlay of its own choice. The cards are *not* moved: they stay in hand, castable
+        // later or splice-able onto a later spell, and can even be discarded to pay a discard cost of
+        // the very spell they were spliced onto.
+        val splicedCardNames = action.splicedCardIds.mapNotNull { splicedId ->
+            currentState.getEntity(splicedId)?.get<CardComponent>()?.name
+        }
+        if (splicedCardNames.isNotEmpty()) {
+            events.add(
+                CardsRevealedEvent(
+                    revealingPlayerId = action.playerId,
+                    cardIds = action.splicedCardIds,
+                    cardNames = splicedCardNames,
+                    source = "Splice",
+                    revealToSelf = false,
+                    fromZone = Zone.HAND,
+                    toZone = Zone.HAND
+                )
+            )
+        }
+
         val castResult = stackResolver.castSpell(
             currentState,
             action.cardId,
@@ -3169,6 +3276,9 @@ class CastSpellHandler(
             modeTargetsOrdered = effectiveModeTargetsOrdered,
             modeTargetRequirements = perModeTargetRequirements,
             modeDamageDistribution = action.modeDamageDistribution,
+            // Splice (CR 702.47a): the *text* the spell gained, recorded by card name. The cards
+            // themselves stay in hand — nothing about splicing moves them.
+            splicedCardNames = splicedCardNames,
             totalManaSpent = manaSpentThisCast,
             beheldCards = beheldCards,
             discardedAsCostCards = discardedAsCostCards,

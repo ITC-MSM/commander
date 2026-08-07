@@ -139,6 +139,17 @@ internal fun BridgeBuilder.keywords() {
     // The emitter's `rname == "Emerge"` branch renders the builder call for the pure-mana shape
     // (every printed emerge); anything else declines -> SCAFFOLD.
     supported("Emerge", "keyword ability: Emerge [cost] -> emerge(\"{cost}\") builder (CR 702.119)")
+    // Splice onto [quality] [cost] (CR 702.47) — a PARAMETERIZED keyword ability, so `supported` rather
+    // than `keyword`: `Keyword.SPLICE` exists, so PascalCase→enum auto-resolve would stamp a bare
+    // `keywords(Keyword.SPLICE)` and drop the cost — the Ward/Saddle/Madness/Emerge trap. Modelled as
+    // `splice("{cost}")`; the engine owns the whole mechanic (the `CastWithSplice` cast variant, the
+    // additional cost, the reveal that leaves the card in hand, and appending the card's own spell
+    // effect + targets to the spell on the stack after its own effects).
+    // The card needs no other authoring: whatever `spell { }` script it would use when cast normally
+    // *is* the text that gets spliced, so a splice card renders exactly like the plain spell plus this
+    // one line. The emitter's `rname == "Splice"` branch renders the builder call for the pure-mana
+    // shape (every printed splice cost); anything else declines -> SCAFFOLD.
+    supported("Splice", "keyword ability: Splice onto Arcane [cost] -> splice(\"{cost}\") builder (CR 702.47)")
 
     composed("Landwalk", "specific *WALK keywords (SWAMPWALK, FORESTWALK, ...)")
     // Equip is a keyword ability, but the engine has no `Keyword.EQUIP` enum member: `equipAbility(cost)`

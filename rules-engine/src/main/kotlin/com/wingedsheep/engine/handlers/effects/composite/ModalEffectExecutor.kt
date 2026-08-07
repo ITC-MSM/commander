@@ -182,14 +182,14 @@ class ModalEffectExecutor(
             modeTargetRequirements = context.modeTargetRequirements
         )
         val sourceName = context.sourceId?.let { id -> state.getEntity(id)?.get<CardComponent>()?.name }
-        val baseCtx = ModalPreChosenBaseContext(
+        val baseCtx = PreTargetedEffectContext(
             controllerId = context.controllerId,
             sourceId = context.sourceId,
             sourceName = sourceName,
             xValue = context.xValue,
             triggeringEntityId = context.triggeringEntityId
         )
-        return processPreChosenModeQueue(state, entries, baseCtx, effectExecutor, targetValidator, emptyList())
+        return processPreTargetedEffectQueue(state, entries, baseCtx, effectExecutor, targetValidator, emptyList())
     }
 
     companion object {
@@ -205,14 +205,14 @@ class ModalEffectExecutor(
             chosenModes: List<Int>,
             modeTargetsOrdered: List<List<com.wingedsheep.engine.state.components.stack.ChosenTarget>>,
             modeTargetRequirements: Map<Int, List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>>
-        ): List<ModalPreChosenEntry> {
+        ): List<PreTargetedEffectEntry> {
             return chosenModes.mapIndexed { ordinal, modeIndex ->
                 val mode = effect.modes.getOrNull(modeIndex)
                 val targets = modeTargetsOrdered.getOrNull(ordinal) ?: emptyList()
                 val reqs = modeTargetRequirements[modeIndex]
                     ?: mode?.targetRequirements
                     ?: emptyList()
-                ModalPreChosenEntry(
+                PreTargetedEffectEntry(
                     effect = mode?.effect ?: error("Invalid pre-chosen mode index: $modeIndex"),
                     targets = targets,
                     targetRequirements = reqs
@@ -221,7 +221,7 @@ class ModalEffectExecutor(
         }
 
         /** Convenience overload reading from a [SpellOnStackComponent]. */
-        fun buildModeEntries(effect: ModalEffect, spellOnStack: SpellOnStackComponent): List<ModalPreChosenEntry> =
+        fun buildModeEntries(effect: ModalEffect, spellOnStack: SpellOnStackComponent): List<PreTargetedEffectEntry> =
             buildModeEntries(
                 effect,
                 spellOnStack.chosenModes,
@@ -232,7 +232,7 @@ class ModalEffectExecutor(
 }
 
 /** Base fields needed to build per-mode [EffectContext]s during pre-chosen mode drainage. */
-internal data class ModalPreChosenBaseContext(
+internal data class PreTargetedEffectContext(
     val controllerId: com.wingedsheep.sdk.model.EntityId,
     val sourceId: com.wingedsheep.sdk.model.EntityId?,
     val sourceName: String?,
@@ -252,10 +252,10 @@ internal data class ModalPreChosenBaseContext(
  * Shared between [ModalEffectExecutor] (initial entry) and the auto-resumer for
  * [ModalPreChosenContinuation].
  */
-internal fun processPreChosenModeQueue(
+internal fun processPreTargetedEffectQueue(
     state: GameState,
-    entries: List<ModalPreChosenEntry>,
-    ctx: ModalPreChosenBaseContext,
+    entries: List<PreTargetedEffectEntry>,
+    ctx: PreTargetedEffectContext,
     effectExecutor: (GameState, Effect, EffectContext) -> EffectResult,
     targetValidator: TargetValidator,
     accumulatedEvents: List<GameEvent>
@@ -286,7 +286,7 @@ internal fun processPreChosenModeQueue(
 
     if (validationError != null) {
         // Skip this mode; drain the rest.
-        return processPreChosenModeQueue(state, tail, ctx, effectExecutor, targetValidator, accumulatedEvents)
+        return processPreTargetedEffectQueue(state, tail, ctx, effectExecutor, targetValidator, accumulatedEvents)
     }
 
     val effectContext = EffectContext(
@@ -332,5 +332,5 @@ internal fun processPreChosenModeQueue(
         afterPop
     } else result.state
 
-    return processPreChosenModeQueue(nextState, tail, ctx, effectExecutor, targetValidator, nextEvents)
+    return processPreTargetedEffectQueue(nextState, tail, ctx, effectExecutor, targetValidator, nextEvents)
 }

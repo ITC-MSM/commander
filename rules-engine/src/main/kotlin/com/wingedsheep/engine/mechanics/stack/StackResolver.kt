@@ -5,8 +5,12 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.EffectHandler
+import com.wingedsheep.engine.handlers.effects.composite.PreTargetedEffectContext
+import com.wingedsheep.engine.handlers.effects.composite.processPreTargetedEffectQueue
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
+import com.wingedsheep.engine.mechanics.SpliceCasts
+import com.wingedsheep.engine.mechanics.targeting.TargetValidator
 import com.wingedsheep.engine.mechanics.daynight.DayNightService
 import com.wingedsheep.engine.mechanics.layers.ContinuousEffectSourceComponent
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
@@ -93,6 +97,31 @@ class StackResolver(
     private val predicateEvaluator: PredicateEvaluator = PredicateEvaluator()
 ) {
 
+    /**
+     * Re-validates a spliced card's own targets as the spell resolves (CR 608.2b via 702.47d): the
+     * spliced text is skipped when its targets have become illegal, exactly as a modal spell's
+     * pre-chosen mode is.
+     */
+    private val spliceTargetValidator = TargetValidator()
+
+    /**
+     * The spliced text of [spellComponent]'s spell as a drain queue (CR 702.47b) — one entry per
+     * spliced card, in the caster's chosen order, each carrying its own target slice and requirements.
+     *
+     * A spliced card contributes its *rules text*, so what is queued is its `spellEffect`; a splice
+     * card with no spell effect (nothing splice-able) simply drops out.
+     */
+    private fun buildSpliceEntries(spellComponent: SpellOnStackComponent): List<PreTargetedEffectEntry> =
+        spellComponent.splicedCardNames.mapIndexedNotNull { index, name ->
+            val splicedDef = cardRegistry.getCard(name) ?: return@mapIndexedNotNull null
+            val effect = splicedDef.script.spellEffect ?: return@mapIndexedNotNull null
+            PreTargetedEffectEntry(
+                effect = effect,
+                targets = spellComponent.splicedTargetsOrdered.getOrNull(index) ?: emptyList(),
+                targetRequirements = splicedDef.script.targetRequirements
+            )
+        }
+
     // =========================================================================
     // Casting Spells
     // =========================================================================
@@ -142,6 +171,8 @@ class StackResolver(
         modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),
         modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),
         modeDamageDistribution: Map<Int, Map<EntityId, Int>> = emptyMap(),
+        /** Card-definition names spliced onto this spell, in splice order (CR 702.47a). */
+        splicedCardNames: List<String> = emptyList(),
         totalManaSpent: Int = 0,
         beheldCards: List<EntityId> = emptyList(),
         discardedAsCostCards: List<EntityId> = emptyList(),
@@ -221,6 +252,17 @@ class StackResolver(
             targetRequirements
         }
 
+        // Splice (CR 702.47d): the cast's flat target list runs main-spell targets first, then one
+        // group per spliced card in splice order. Slice the tail off now so resolution can hand each
+        // spliced card its own targets — its `ContextTarget(0)` means its own first target, not the
+        // main spell's. TargetsComponent keeps the flat union, so target arrows and the 608.2b
+        // re-validation pass keep working unchanged.
+        val splicedTargetsOrdered: List<List<ChosenTarget>> = if (splicedCardNames.isEmpty()) {
+            emptyList()
+        } else {
+            SpliceCasts.sliceSplicedTargets(effectiveTargets, splicedCardNames, cardRegistry)
+        }
+
         // Add spell components
         newState = newState.updateEntity(cardId) { c ->
             var updated = c.with(SpellOnStackComponent(
@@ -230,6 +272,8 @@ class StackResolver(
                 wasBlightPaid = wasBlightPaid,
                 wasWaterbendPaid = wasWaterbendPaid,
                 giftRecipient = giftRecipient,
+                splicedCardNames = splicedCardNames,
+                splicedTargetsOrdered = splicedTargetsOrdered,
                 chosenModes = chosenModes,
                 modeTargetsOrdered = modeTargetsOrdered,
                 modeTargetRequirements = modeTargetRequirements,
@@ -1876,16 +1920,42 @@ class StackResolver(
         } else {
             rawSpellEffect
         }
+        // Splice (CR 702.47): the spliced cards' text is a tail that runs after the main spell's own
+        // effects (CR 702.47b). Its targets were appended to the end of the flat list at cast time, so
+        // the same tail is peeled off here — the main spell must see only its own targets, or an effect
+        // that consumes "all targets" would swallow the spliced card's as well.
+        // A spell with no effect of its own can't be a splice host in practice (a splice card is
+        // spliced onto a spell that has text), so the tail lives inside the `spellEffect != null` guard.
+        val spliceEntries = buildSpliceEntries(spellComponent)
+        val splicedRequirementCount = spellComponent.splicedCardNames.sumOf { name ->
+            cardRegistry.getCard(name)?.script?.targetRequirements?.size ?: 0
+        }
+        val splicedSlotCount = SpliceCasts
+            .splicedTargetSlotCounts(spellComponent.splicedCardNames, cardRegistry).sum()
+
         if (spellEffect != null) {
-            val targetRequirements = state.getEntity(spellId)?.get<TargetsComponent>()?.targetRequirements ?: emptyList()
+            val allTargetRequirements = state.getEntity(spellId)?.get<TargetsComponent>()?.targetRequirements ?: emptyList()
+            // Requirements are never filtered, so the tail comes straight off the end.
+            val targetRequirements = allTargetRequirements.dropLast(splicedRequirementCount)
+            // The tail is dropped from `alignedTargets`, NOT from `targets`: only the aligned list is
+            // position-preserving (null wherever 608.2b dropped a target), so it is the one whose last
+            // `splicedSlotCount` entries are reliably the spliced cards'. `targets` is the already-
+            // filtered, shorter list — dropping from *it* would eat a main-spell target whenever any
+            // target had been dropped, silently shifting positional references like ContextTarget(n).
+            // The main spell's own live targets are then just its aligned slots that survived.
+            // Both expressions are deliberately identity when nothing was spliced.
+            val mainAlignedTargets =
+                if (splicedSlotCount == 0) alignedTargets else alignedTargets.dropLast(splicedSlotCount)
+            val mainTargets =
+                if (splicedSlotCount == 0) targets else mainAlignedTargets.filterNotNull()
             val context = EffectContext(
                 sourceId = spellId,
                 controllerId = spellComponent.casterId,
-                targets = targets,
+                targets = mainTargets,
                 // Position-preserving view (null in slots dropped by 608.2b) so positional
                 // references — ContextTarget(n), EntityReference.Target(n), ContextPlayer(n) —
                 // resolve by ORIGINAL slot and don't shift onto a later still-valid target.
-                alignedTargets = alignedTargets,
+                alignedTargets = mainAlignedTargets,
                 // A pay-X-life additional cost (AdditionalCost.PayXLife, e.g. Vicious Rivalry) feeds
                 // its declared X through the same X slot read by DynamicAmount.XValue and the
                 // ManaValue*X predicates. Such a card never also carries an {X} mana cost, so
@@ -1916,12 +1986,48 @@ class StackResolver(
                     // Use the positionally-aligned validated list so a sub-effect that
                     // references a target dropped by 608.2b through its BoundVariable id
                     // resolves to null and fizzles (CR 608.2b).
-                    namedTargets = EffectContext.buildNamedTargets(targetRequirements, alignedTargets),
+                    namedTargets = EffectContext.buildNamedTargets(targetRequirements, mainAlignedTargets),
                     storedCollections = buildBeheldStoredCollections(spellComponent.beheldCards, resolvedCardDef)
                 )
             )
 
-            val effectResult = effectHandler.execute(newState, spellEffect, context)
+            // Pre-push the splice tail so it runs whether the main spell's effect finishes here or
+            // pauses for a decision of its own — the frame sits beneath the inner decision's frames
+            // and auto-resumes once they finish (CR 702.47b: main spell first, then the spliced text).
+            val stateForMainEffect = if (spliceEntries.isNotEmpty()) {
+                newState.pushContinuation(
+                    SpliceTailContinuation(
+                        decisionId = "splice-tail-${java.util.UUID.randomUUID()}",
+                        controllerId = spellComponent.casterId,
+                        sourceId = spellId,
+                        sourceName = cardComponent?.name,
+                        remainingEntries = spliceEntries
+                    )
+                )
+            } else newState
+
+            var effectResult = effectHandler.execute(stateForMainEffect, spellEffect, context)
+
+            // Main spell done and nothing paused — pop the pre-pushed frame and run the spliced text
+            // inline, so the whole resolution stays one ExecutionResult.
+            if (spliceEntries.isNotEmpty() && !effectResult.isPaused && effectResult.error == null) {
+                val (_, afterPop) = effectResult.state.popContinuation()
+                val tail = processPreTargetedEffectQueue(
+                    state = afterPop,
+                    entries = spliceEntries,
+                    ctx = PreTargetedEffectContext(
+                        controllerId = spellComponent.casterId,
+                        sourceId = spellId,
+                        sourceName = cardComponent?.name,
+                        xValue = null,
+                        triggeringEntityId = null
+                    ),
+                    effectExecutor = { s, e, c -> effectHandler.execute(s, e, c) },
+                    targetValidator = spliceTargetValidator,
+                    accumulatedEvents = effectResult.events
+                )
+                effectResult = tail
+            }
 
             // If effect is paused awaiting a decision, we still need to move the spell
             // to graveyard/exile (it has already resolved from the stack). The decision only

@@ -108,6 +108,9 @@ object MeaningfulActionFilter {
         "CastWithKicker",
         // Gift (CR 702.174a) — the "promise a gift" twin of a normal cast.
         "CastWithGift",
+        // Splice (CR 702.47a) — the "reveal a card from hand and add its text" twin of a normal cast.
+        // An Arcane instant spliced onto at instant speed is exactly the window auto-pass must not skip.
+        "CastWithSplice",
         "CastWithConspire",
         "CastWithoutPayingManaCost",
         "CastFaceDown",
