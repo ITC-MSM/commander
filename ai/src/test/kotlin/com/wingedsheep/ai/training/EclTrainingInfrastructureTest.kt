@@ -51,7 +51,7 @@ class EclTrainingInfrastructureTest : FunSpec({
         AiProfileSelector.select("ECL", AiProfile.ECL_APPRENTICE) shouldBe AiProfile.ECL_APPRENTICE
         // Whatever is live, not a fixed profile: this pins that a set-scoped request falls back to
         // the production agent, so it moves with every promotion.
-        AiProfileSelector.select("BLB", AiProfile.ECL_APPRENTICE) shouldBe AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW
+        AiProfileSelector.select("BLB", AiProfile.ECL_APPRENTICE) shouldBe AiProfile.PRODUCTION_CANDIDATE_RACECLOCK
         AiProfileSelector.select("BLB", AiProfile.CURRENT) shouldBe AiProfile.CURRENT
     }
 

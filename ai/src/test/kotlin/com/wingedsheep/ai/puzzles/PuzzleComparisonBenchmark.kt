@@ -57,6 +57,11 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // spending the trick needs the budget half, which needs tiers.
                 AiProfile.PRODUCTION_TRICKWINDOW,
                 AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW,
+                // The race-clock bound, alone and on top of what is live. `lastchance-05` is the
+                // verdict that should move. This one touches every position with an empty board,
+                // so the column is read for what it *costs* as much as for what it closes.
+                AiProfile.PRODUCTION_RACECLOCK,
+                AiProfile.PRODUCTION_CANDIDATE_RACECLOCK,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

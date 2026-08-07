@@ -44,6 +44,7 @@ data class EvaluationWeights(
         intents: IntentCatalog = IntentCatalog.NONE,
         landDropIsNotCardLoss: Boolean = false,
         sequenceLandsByUsableMana: Boolean = false,
+        discountedRaceClock: Boolean = false,
     ): BoardEvaluator = CompositeBoardEvaluator(
         listOf(
             life to LifeDifferential,
@@ -53,7 +54,9 @@ data class EvaluationWeights(
             cardAdvantage to BoardFeature { state, projected, playerId ->
                 CardAdvantage.score(state, projected, playerId, topdeckPenalty, landDropIsNotCardLoss)
             },
-            threatAssessment to ThreatAssessment,
+            threatAssessment to BoardFeature { state, projected, playerId ->
+                ThreatAssessment.score(state, projected, playerId, discountedRaceClock)
+            },
             tempo to Tempo,
         )
     )
@@ -121,20 +124,23 @@ object EvalWeights {
         resourceWeights[id]?.takeIf(::isFinite) ?: EvaluationWeights.DEFAULT
 
     /**
-     * [landDropIsNotCardLoss] and [sequenceLandsByUsableMana] reach only the composite fallback: the
-     * raw Phase 9 vectors price `myHandSize` linearly, so a land drop already costs them one fitted
-     * coefficient with no cliff to step off, and changing what any of them count would silently
-     * invalidate the fit.
+     * [landDropIsNotCardLoss], [sequenceLandsByUsableMana] and [discountedRaceClock] reach only the
+     * composite fallback: the raw Phase 9 vectors price `myHandSize` linearly, so a land drop
+     * already costs them one fitted coefficient with no cliff to step off, and changing what any of
+     * them count would silently invalidate the fit.
      */
     fun resolveEvaluator(
         id: String,
         intents: IntentCatalog,
         landDropIsNotCardLoss: Boolean = false,
         sequenceLandsByUsableMana: Boolean = false,
+        discountedRaceClock: Boolean = false,
     ): BoardEvaluator =
         apprenticeWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
             ?: rawResourceWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
-            ?: resolve(id).toEvaluator(intents, landDropIsNotCardLoss, sequenceLandsByUsableMana)
+            ?: resolve(id).toEvaluator(
+                intents, landDropIsNotCardLoss, sequenceLandsByUsableMana, discountedRaceClock,
+            )
 
     /** Whether [id] selects a complete, finite raw vector rather than the composite fallback. */
     fun isRawProfile(id: String): Boolean = apprenticeWeights[id]?.isValid() == true || rawResourceWeights[id]?.isValid() == true
