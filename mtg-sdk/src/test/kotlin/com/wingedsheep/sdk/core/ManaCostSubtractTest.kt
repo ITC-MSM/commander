@@ -94,11 +94,28 @@ class ManaCostSubtractTest : StringSpec({
         // to the {R}. Matching colored-half-first would waste a pip and leave {R/G} behind.
         check("{R}{R/G}", "{R/G}{R/G}", "")
     }
+    "hybrids are assigned to cancel as many pips as possible, not first-fit" {
+        // {W/U} taking the {W} would strand {W/B} on a generic spill. The assignment that reduces
+        // most is {W/U} -> {U} and {W/B} -> {W}, which cancels the whole cost.
+        check("{W}{U}", "{W/U}{W/B}", "")
+    }
     "a hybrid with neither half present spills one generic" { check("{3}{W}", "{R/G}", "{2}{W}") }
     "a Phyrexian reduction pays a pip of its color (CR 118.7f)" { check("{2}{G}", "{G/P}", "{2}") }
     "a colored reduction pays a Phyrexian pip of the same color" { check("{2}{G/P}", "{G}", "{2}") }
     "a monocolored hybrid with no pip of its color spills its generic half" {
         check("{4}{W}", "{2/B}", "{2}{W}")
+    }
+    "a monocolored hybrid takes its generic half when that half reduces more (CR 118.7e)" {
+        // The colored half would remove one mana and leave {3}; the generic half removes two.
+        check("{3}{W}", "{2/W}", "{1}{W}")
+    }
+    "a monocolored hybrid takes its colored half when the generic half can't be spent in full" {
+        // Only one generic to remove, so both halves are worth one mana — take the colored half,
+        // which also clears the color requirement.
+        check("{1}{W}", "{2/W}", "{1}")
+    }
+    "a monocolored hybrid takes its colored half when the cost has no generic at all" {
+        check("{W}{U}", "{2/W}", "{U}")
     }
 
     // ── {X} is inert on both sides ────────────────────────────────────────────────────────
