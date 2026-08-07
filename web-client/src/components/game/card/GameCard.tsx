@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useHasLegalActions } from '@/store/selectors.ts'
 import type { ClientCard, EntityId } from '@/types'
@@ -2357,15 +2356,14 @@ function GameCardImpl({
         </div>
       )}
 
-      {/* Original-card preview portalled to <body> so it escapes the card's
-          overflow:hidden / transform containing block (tapped cards rotate). */}
-      {!faceDown && card.copyOf && copyBadgeHoverPos && createPortal(
+      {/* Original-card preview. HoverCardPreview portals itself to <body>, so it escapes the
+          card's overflow:hidden / transform containing block (tapped cards rotate). */}
+      {!faceDown && card.copyOf && copyBadgeHoverPos && (
         <HoverCardPreview
           name={card.copyOf}
           imageUri={null}
           pos={copyBadgeHoverPos}
-        />,
-        document.body,
+        />
       )}
 
       {/* Active effect badges (evasion, type/color change, etc.) — sized off the battlefield
