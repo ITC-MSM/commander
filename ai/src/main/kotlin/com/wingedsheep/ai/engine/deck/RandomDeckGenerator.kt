@@ -63,9 +63,10 @@ class RandomDeckGenerator(
         // Step 1: Pick 1-2 colors randomly
         val colors = pickColors()
 
-        // Step 2: Filter card pool to matching colors (non-lands)
+        // Step 2: Filter card pool to matching colors (non-lands). Meld results are in the pool as
+        // corpus entries but are never cards a player owns, so they can't go in a deck.
         val availableSpells = cardPool.filter { card ->
-            !card.isLand && cardMatchesColors(card, colors)
+            !card.isLand && !card.meldResult && cardMatchesColors(card, colors)
         }
 
         // Step 3: Select spells with good mana curve

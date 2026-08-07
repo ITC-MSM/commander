@@ -14510,7 +14510,8 @@
         "BLACK",
         "GREEN"
     ],
-    "hasNoManaCost": true
+    "hasNoManaCost": true,
+    "meldResult": true
 }
 
 // Random Encounter

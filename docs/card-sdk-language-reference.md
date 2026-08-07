@@ -115,6 +115,14 @@ section; do not let SDK additions land without a corresponding doc update.
 - `cantBeCopied: Boolean` — spell can't be copied (CR 707.10); copy effects that name it create no copy (Display of Power).
 - `conditionalFlash: Condition?` — gains flash while condition holds.
 - `layout: CardLayout` — physical layout shape (see §2).
+- `meldResult: Boolean` — this card is the permanent a **meld pair** combines into (CR 701.42) — Chittering Host,
+  Brisela, Voice of Nightmares, Hanweir, the Writhing Township, Ragnarok, Divine Deliverance. Set it on the *result*,
+  never on the meld parts (those are ordinary cards). A meld result is physically the two parts' back halves, so it is
+  never opened, drafted, or put in a deck: the flag drops it from the booster/sealed pool (`BoosterGenerator`), the
+  constructed pool (`FormatCardPool`), and random AI decks. Scryfall can't be the source — it reports meld results as
+  `booster: true` and format-legal, because the card they're printed on is. The result is still authored as a normal
+  card so the corpus carries its characteristics (meld itself is not modelled; the parts' meld triggers are unwired),
+  and scenario tests can still put it directly onto the battlefield.
 
 **Ability blocks inside `card { ... }`**
 
@@ -209,6 +217,8 @@ section; do not let SDK additions land without a corresponding doc update.
 - `releaseDate: String?` — `YYYY-MM-DD`.
 - `inBooster: Boolean` — part of the draft/sealed product (default `true`; `false` for Special Guests / starter
   exclusives). Gates both the booster pool and the basic-land variants offered during limited deck building.
+  It mirrors Scryfall's product-level `booster` flag, so it is *not* the lever for meld results (Scryfall marks
+  those `true`) — use the card-level `meldResult` flag in §1 for those.
 - `oracleTextOverride: String?` — bypass auto-generated oracle text.
 
 **Reprints** — add a `Printing` row in the new set's `Reprints.kt` and wire it into `MtgSet.printings`. Never duplicate

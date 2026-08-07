@@ -44,6 +44,10 @@ class FormatCardPool(
             // (custom/unreleased content). Excluding it keeps the deck honestly format-legal
             // rather than silently smuggling unknowns in.
             .filter { format in it.legalFormats }
+            // A meld result is format-legal on Scryfall (the meld *parts* are the legal card) but
+            // is never a card you own — building it into a deck just deals a permanent that can't
+            // be cast.
+            .filterNot { it.meldResult }
     }
 
     /**

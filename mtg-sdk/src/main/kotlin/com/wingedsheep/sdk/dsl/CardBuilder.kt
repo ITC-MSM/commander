@@ -345,6 +345,14 @@ class CardBuilder(private val name: String) {
      */
     var mayStartOnBattlefield: Boolean = false
 
+    /**
+     * Meld-result marker (CR 701.42). Set on the permanent two meld cards combine into —
+     * Chittering Host, Brisela, Voice of Nightmares, Hanweir, the Writhing Township — never on the
+     * meld parts, which are ordinary cards. A flagged card is defined for the corpus but kept out
+     * of every pool a player can draw a deck from; see [CardDefinition.meldResult].
+     */
+    var meldResult: Boolean = false
+
     // The `mayBeginGameOnBattlefield()` helper lives in `dsl/mechanics/BeginGameOnBattlefieldDsl.kt`; it sets this flag.
 
     // =========================================================================
@@ -912,7 +920,8 @@ class CardBuilder(private val name: String) {
             // Lands are never *cast* at all (CR 305 — they're played), so a blank mana cost
             // there carries none of CR 202.1b/118.6's "can't be cast normally" implication;
             // scoping the flag to non-lands keeps every land's golden snapshot untouched.
-            hasNoManaCost = manaCost.isBlank() && !parsedTypeLine.isLand
+            hasNoManaCost = manaCost.isBlank() && !parsedTypeLine.isLand,
+            meldResult = meldResult
         )
     }
 }
