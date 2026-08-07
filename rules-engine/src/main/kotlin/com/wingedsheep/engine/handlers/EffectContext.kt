@@ -4,6 +4,7 @@ import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.EntitySnapshot
+import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -486,5 +487,74 @@ data class EffectContext(
             }
             return result
         }
+
+        /**
+         * Build the execution context for a triggered ability sitting on the stack.
+         *
+         * Shared by the two places that need to evaluate the ability's own text against the game
+         * state: [com.wingedsheep.engine.mechanics.stack.StackResolver] when the ability resolves,
+         * and [com.wingedsheep.engine.event.TriggerProcessor] when it resolves a modal
+         * `dynamicChooseCount` as the ability goes onto the stack (CR 603.3c). Both must see the
+         * same trigger payload — an `xValue`, a `MODES_CHOSEN_ON_TRIGGERING_SPELL` count or a
+         * carried pipeline collection that only one of them populated would read as zero/absent.
+         */
+        fun forTriggeredAbility(
+            ability: TriggeredAbilityOnStackComponent,
+            targets: List<ChosenTarget> = emptyList(),
+            targetRequirements: List<TargetRequirement> = emptyList()
+        ): EffectContext = EffectContext(
+            sourceId = ability.sourceId,
+            controllerId = ability.controllerId,
+            granterId = ability.granterId,
+            abilityIdentity = ability.abilityIdentity,
+            targets = targets,
+            triggerDamageAmount = ability.triggerDamageAmount,
+            triggerCounterCount = ability.triggerCounterCount,
+            triggerTotalCounterCount = ability.triggerTotalCounterCount,
+            triggerLastKnownCounters = ability.triggerLastKnownCounters,
+            triggerLastKnownDamageDealtByPlayers = ability.triggerLastKnownDamageDealtByPlayers,
+            triggerLastKnownBlockingOrBlockedByIds = ability.triggerLastKnownBlockingOrBlockedByIds,
+            triggeringEntityId = ability.triggeringEntityId,
+            triggeringPlayerId = ability.triggeringPlayerId,
+            targetingSourceEntityId = ability.targetingSourceEntityId,
+            triggerUnattachedFromEntityId = ability.triggerUnattachedFromEntityId,
+            triggerLastKnownPower = ability.lastKnownPower,
+            triggerLastKnownToughness = ability.lastKnownToughness,
+            triggerDiedBatchTotalPower = ability.diedBatchTotalPower,
+            enchantedCreatureLastKnownPower = ability.enchantedCreatureLastKnownPower,
+            triggerModesChosenCount = ability.triggerModesChosenCount,
+            triggerScryCount = ability.triggerScryCount,
+            triggerDiscardCount = ability.triggerDiscardCount,
+            triggerDiscoverValue = ability.triggerDiscoverValue,
+            triggerExcessDamageAmount = ability.triggerExcessDamageAmount,
+            triggerRecipientToughness = ability.triggerRecipientToughness,
+            triggerManaSpentOnTriggeringSpell = ability.triggerManaSpentOnTriggeringSpell,
+            triggerColorsSpentOnTriggeringSpell = ability.triggerColorsSpentOnTriggeringSpell,
+            triggerManaValueOfTriggeringSpell = ability.triggerManaValueOfTriggeringSpell,
+            triggerXValueOfTriggeringSpell = ability.triggerXValueOfTriggeringSpell,
+            xValue = ability.xValue,
+            damageDistribution = ability.damageDistribution,
+            chosenModes = ability.chosenModes,
+            modeTargetsOrdered = ability.modeTargetsOrdered,
+            modeTargetRequirements = ability.modeTargetRequirements,
+            pipeline = PipelineState(
+                namedTargets = buildNamedTargets(targetRequirements, targets) +
+                    (ability.carriedPipeline?.namedTargets ?: emptyMap()),
+                // Expose a batch trigger's captured permanents (the matching members of a
+                // PermanentsEnteredEvent batch) so a ForEachInCollectionEffect payoff can iterate
+                // them — "for each of them, create a tapped copy of it" (Kambal). The copy executor
+                // reads each entity at resolution, so any that left the battlefield meanwhile no-op.
+                storedCollections = (if (ability.capturedEntityIds.isNotEmpty()) {
+                    mapOf(PipelineState.TRIGGER_CAPTURED_COLLECTION to ability.capturedEntityIds)
+                } else emptyMap()) + (ability.carriedPipeline?.storedCollections ?: emptyMap()),
+                // A `ReflexiveTriggerEffect`'s action half (e.g. `Amass`, a discard) may have stashed
+                // subtype groups or scalar values the reflexive effect reads (CR 603.12) — carried
+                // across the stack round-trip since this ability builds a fresh context on resolve.
+                storedSubtypeGroups = ability.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
+                chosenValues = ability.carriedPipeline?.chosenValues ?: emptyMap(),
+                storedNumbers = ability.carriedPipeline?.storedNumbers ?: emptyMap(),
+                storedStringLists = ability.carriedPipeline?.storedStringLists ?: emptyMap()
+            )
+        )
     }
 }

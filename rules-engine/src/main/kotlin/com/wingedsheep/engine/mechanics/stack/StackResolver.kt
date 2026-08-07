@@ -2477,59 +2477,10 @@ class StackResolver(
         // Execute the effect
         val resolvedTargets2 = targetsComponent?.targets ?: emptyList()
         val targetReqs = targetsComponent?.targetRequirements ?: emptyList()
-        val context = EffectContext(
-            sourceId = abilityComponent.sourceId,
-            controllerId = abilityComponent.controllerId,
-            granterId = abilityComponent.granterId,
-            abilityIdentity = abilityComponent.abilityIdentity,
+        val context = EffectContext.forTriggeredAbility(
+            abilityComponent,
             targets = resolvedTargets2,
-            triggerDamageAmount = abilityComponent.triggerDamageAmount,
-            triggerCounterCount = abilityComponent.triggerCounterCount,
-            triggerTotalCounterCount = abilityComponent.triggerTotalCounterCount,
-            triggerLastKnownCounters = abilityComponent.triggerLastKnownCounters,
-            triggerLastKnownDamageDealtByPlayers = abilityComponent.triggerLastKnownDamageDealtByPlayers,
-            triggerLastKnownBlockingOrBlockedByIds = abilityComponent.triggerLastKnownBlockingOrBlockedByIds,
-            triggeringEntityId = abilityComponent.triggeringEntityId,
-            triggeringPlayerId = abilityComponent.triggeringPlayerId,
-            targetingSourceEntityId = abilityComponent.targetingSourceEntityId,
-            triggerUnattachedFromEntityId = abilityComponent.triggerUnattachedFromEntityId,
-            triggerLastKnownPower = abilityComponent.lastKnownPower,
-            triggerLastKnownToughness = abilityComponent.lastKnownToughness,
-            triggerDiedBatchTotalPower = abilityComponent.diedBatchTotalPower,
-            enchantedCreatureLastKnownPower = abilityComponent.enchantedCreatureLastKnownPower,
-            triggerModesChosenCount = abilityComponent.triggerModesChosenCount,
-            triggerScryCount = abilityComponent.triggerScryCount,
-            triggerDiscardCount = abilityComponent.triggerDiscardCount,
-            triggerDiscoverValue = abilityComponent.triggerDiscoverValue,
-            triggerExcessDamageAmount = abilityComponent.triggerExcessDamageAmount,
-            triggerRecipientToughness = abilityComponent.triggerRecipientToughness,
-            triggerManaSpentOnTriggeringSpell = abilityComponent.triggerManaSpentOnTriggeringSpell,
-            triggerColorsSpentOnTriggeringSpell = abilityComponent.triggerColorsSpentOnTriggeringSpell,
-            triggerManaValueOfTriggeringSpell = abilityComponent.triggerManaValueOfTriggeringSpell,
-            triggerXValueOfTriggeringSpell = abilityComponent.triggerXValueOfTriggeringSpell,
-            xValue = abilityComponent.xValue,
-            damageDistribution = abilityComponent.damageDistribution,
-            chosenModes = abilityComponent.chosenModes,
-            modeTargetsOrdered = abilityComponent.modeTargetsOrdered,
-            modeTargetRequirements = abilityComponent.modeTargetRequirements,
-            pipeline = PipelineState(
-                namedTargets = EffectContext.buildNamedTargets(targetReqs, resolvedTargets2) +
-                    (abilityComponent.carriedPipeline?.namedTargets ?: emptyMap()),
-                // Expose a batch trigger's captured permanents (the matching members of a
-                // PermanentsEnteredEvent batch) so a ForEachInCollectionEffect payoff can iterate
-                // them — "for each of them, create a tapped copy of it" (Kambal). The copy executor
-                // reads each entity at resolution, so any that left the battlefield meanwhile no-op.
-                storedCollections = (if (abilityComponent.capturedEntityIds.isNotEmpty()) {
-                    mapOf(PipelineState.TRIGGER_CAPTURED_COLLECTION to abilityComponent.capturedEntityIds)
-                } else emptyMap()) + (abilityComponent.carriedPipeline?.storedCollections ?: emptyMap()),
-                // A `ReflexiveTriggerEffect`'s action half (e.g. `Amass`, a discard) may have stashed
-                // subtype groups or scalar values the reflexive effect reads (CR 603.12) — carried
-                // across the stack round-trip since this ability builds a fresh context on resolve.
-                storedSubtypeGroups = abilityComponent.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
-                chosenValues = abilityComponent.carriedPipeline?.chosenValues ?: emptyMap(),
-                storedNumbers = abilityComponent.carriedPipeline?.storedNumbers ?: emptyMap(),
-                storedStringLists = abilityComponent.carriedPipeline?.storedStringLists ?: emptyMap()
-            )
+            targetRequirements = targetReqs
         )
 
         val effectResult = effectHandler.execute(state, abilityComponent.effect, context)

@@ -31,6 +31,13 @@ class LordSkittersButcherScenarioTest : ScenarioTestBase() {
                 .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                 .build()
 
+            /**
+             * Cast the Butcher, answer the ETB's mode question, then let the ability resolve.
+             *
+             * The mode is picked as the trigger goes on the stack (CR 603.3c), so answering it only
+             * gets the ability *onto* the stack — the trailing `resolveStack` is what runs the chosen
+             * mode, and it stops early if that mode needs a decision of its own.
+             */
             fun ScenarioTestBase.TestGame.castAndChooseMode(index: Int) {
                 castSpell(1, "Lord Skitter's Butcher").error shouldBe null
                 if (getPendingDecision() is SelectManaSourcesDecision) submitManaSourcesAutoPay()
@@ -38,12 +45,12 @@ class LordSkittersButcherScenarioTest : ScenarioTestBase() {
                 val modeDecision = getPendingDecision() as? ChooseOptionDecision
                     ?: error("expected a ChooseOptionDecision for the ETB; got ${getPendingDecision()}")
                 submitDecision(OptionChosenResponse(modeDecision.id, optionIndex = index))
+                resolveStack()
             }
 
             test("mode 0 creates a Rat token") {
                 val game = butcherGame()
                 game.castAndChooseMode(0)
-                game.resolveStack()
 
                 game.findAllPermanents("Rat Token").size shouldBe 1
             }
@@ -99,7 +106,6 @@ class LordSkittersButcherScenarioTest : ScenarioTestBase() {
             test("mode 2 gives your creatures menace until end of turn") {
                 val game = butcherGame()
                 game.castAndChooseMode(2)
-                game.resolveStack()
 
                 val bears = game.findPermanent("Grizzly Bears")!!
                 game.state.projectedState.hasKeyword(bears, Keyword.MENACE) shouldBe true

@@ -7944,9 +7944,10 @@ spell {
 `ModalEffect.chooseOne { mode(...) }` and `ModalEffect.chooseN(n) { ... }` for explicit modal effects.
 
 **Dynamic "choose up to X"** — `ModalEffect.chooseUpToDynamic(dynamicMax, *modes, allowRepeat = false)`
-caps the pick count by a `DynamicAmount` evaluated at resolution time. `minChooseCount` is
+caps the pick count by a `DynamicAmount`, evaluated as the ability goes onto the stack for a
+triggered ability and at resolution for an activated one. `minChooseCount` is
 forced to `0` (the player may always decline); `chooseCount` becomes `min(eval, modes.size)`.
-If the evaluated cap is `0` the effect resolves as a no-op. Used by Riku of Many Paths,
+If the evaluated cap is `0` no mode is chosen and nothing happens. Used by Riku of Many Paths,
 where the cap is `ContextProperty(MODES_CHOSEN_ON_TRIGGERING_SPELL)`. Equivalent raw shape:
 `ModalEffect(modes, chooseCount = modes.size, minChooseCount = 0, dynamicChooseCount = …)`.
 The cap is any `DynamicAmount` — e.g. **Bumi, King of Three Trials** uses
@@ -8044,21 +8045,36 @@ modal(
 ) { /* modes */ }
 ```
 
-**Modal triggered abilities (CR 603.3c).** A modal *triggered* ability with at least one
-**targeting** mode picks its mode **and** that mode's targets as the ability is put onto the
-stack — same moment a modal spell's caster does — not while it resolves. This is what makes the
-choice observable: the chosen targets only "become targets" once the ability is on the stack, and
-that is what ward (CR 702.21), "whenever this becomes the target of a spell or ability", and
-shroud/hexproof checks all key on. Two consequences for authoring and testing:
+**Modal triggered abilities (CR 603.3c / 700.2b).** *Every* modal triggered ability picks its
+mode — and each chosen mode's targets, CR 603.3d — as the ability is put onto the stack, the same
+moment a modal spell's caster does, never while it resolves. Two things depend on that timing:
+
+- The opponent responds to a **known** mode. The ability reaches the stack with `chosenModes`
+  populated, so its chosen mode text and per-mode targets are already in the client view
+  (`ClientCard.chosenModeDescriptions` / `perModeTargets`) while there is still priority to act on.
+- The chosen targets only "become targets" once the ability is on the stack, which is what ward
+  (CR 702.21), "whenever this becomes the target of a spell or ability", and shroud/hexproof key on.
+
+Consequences for authoring and testing:
 
 - A mode whose mandatory target has no legal choice **isn't offered at all** — e.g. Hullbreaker
-  Horror's "target spell you don't control" is absent when the only spell on the stack is your own.
-  If no mode can be chosen, the ability is removed from the stack (both CR 603.3c).
-- In a scenario test the mode / target decisions surface *before* the ability resolves, so the
-  chosen mode's effect needs a further `resolveStack()`.
+  Horror's "target spell you don't control" is absent when the only spell on the stack is your own,
+  and Silent Hallcreeper's "another target creature you control" is absent when it is your only
+  creature. If no mode is chosen, the ability is removed from the stack (CR 603.3c).
+- A `chooseUpToDynamic` cap is evaluated **once**, against the state the ability goes onto the stack
+  in, and then can't drift between picks (CR 601.2c via 603.3d). A cap of `0` means no mode is
+  chosen, so the ability never reaches the stack.
+- The per-source memory of `chooseOneNotYetChosen` / `chooseOneNotYetChosenThisTurn` is written when
+  the ability goes onto the stack, not when it resolves. That is what makes two simultaneous triggers
+  of the same source pick *different* modes (Breeches, Eager Pillager: both attack triggers announce
+  their modes before either resolves).
+- In a scenario test the mode / target decisions surface *before* the ability resolves, so the chosen
+  mode's effect needs a further `resolveStack()`. The decision carries
+  `DecisionPhase.TRIGGER`, not `RESOLUTION`.
 
-Modal triggers whose modes never target keep the simpler resolution-time pick, as do
-`chooseUpToDynamic` (the cap needs the resolving state) and `chooseOneNotYetChosen`.
+`ModalEffectExecutor`'s resolution-time picker still serves modal **activated** abilities and a
+`ModalEffect` **nested inside** another effect (a gated effect, a reflexive trigger, a pipeline step),
+where the mode question isn't the ability's own. See `ModalTriggeredAbilityOnStackTest`.
 
 **"Choose one that hasn't been chosen"** — `ModalEffect.chooseOneNotYetChosen(*modes)` for a
 repeatable modal *ability* whose source remembers which modes it has already chosen across the
@@ -8066,7 +8082,8 @@ game and never offers them again (Gandalf the Grey). Equivalent raw shape:
 `ModalEffect(modes, chooseCount = 1, excludePreviouslyChosenModes = true, countsAsModalSpell =
 false)`. The engine records each chosen mode index in a per-source
 `ChosenModesEverComponent` and excludes it from every later presentation of the effect; once all
-modes have been chosen the ability has no legal mode and resolves as a no-op. The memory is keyed
+modes have been chosen the ability has no legal mode (a triggered ability is removed from the stack,
+CR 603.3c; an activated one resolves as a no-op). The memory is keyed
 to the source object and persists while it remains the same object on the battlefield (CR 700.4) —
 it resets if the permanent leaves and returns as a new object. Intended for triggered/activated
 abilities on a persistent source, not one-shot modal spells.

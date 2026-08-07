@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
+import com.wingedsheep.engine.mechanics.modal.ChosenModeMemory
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
@@ -79,15 +80,11 @@ class ModalAndCloneContinuationResumer(
         // on the source so later triggers exclude it. Persists for the source's lifetime.
         // Turn-scoped sibling (Breeches, Eager Pillager): record on a component cleared at end
         // of turn instead, so the exclusion resets next turn.
-        var stateAfterRecord = state
-        if (continuation.sourceId != null) {
-            if (continuation.recordChosenModesOnSource) {
-                stateAfterRecord = recordChosenMode(stateAfterRecord, continuation.sourceId, originalModeIndex)
-            }
-            if (continuation.recordChosenModesThisTurn) {
-                stateAfterRecord = recordChosenModeThisTurn(stateAfterRecord, continuation.sourceId, originalModeIndex)
-            }
-        }
+        val stateAfterRecord = ChosenModeMemory.record(
+            state, continuation.sourceId, originalModeIndex,
+            ever = continuation.recordChosenModesOnSource,
+            thisTurn = continuation.recordChosenModesThisTurn
+        )
 
         // More modes still need to be picked — present the next ChooseOptionDecision.
         if (newSelectedIndices.size < continuation.chooseCount && newAvailableIndices.isNotEmpty()) {
@@ -132,35 +129,6 @@ class ModalAndCloneContinuationResumer(
         }
 
         return resolveChosenModes(stateAfterRecord, continuation, newSelectedIndices, checkForMore)
-    }
-
-    /**
-     * Record a chosen mode index on the source's
-     * [com.wingedsheep.engine.state.components.battlefield.ChosenModesEverComponent]
-     * for "choose one that hasn't been chosen" effects (Gandalf the Grey).
-     */
-    private fun recordChosenMode(state: GameState, sourceId: EntityId, modeIndex: Int): GameState {
-        if (state.getEntity(sourceId) == null) return state
-        return state.updateEntity(sourceId) { c ->
-            val existing = c.get<com.wingedsheep.engine.state.components.battlefield.ChosenModesEverComponent>()
-                ?: com.wingedsheep.engine.state.components.battlefield.ChosenModesEverComponent()
-            c.with(existing.withChosen(modeIndex))
-        }
-    }
-
-    /**
-     * Record a chosen mode index on the source's
-     * [com.wingedsheep.engine.state.components.battlefield.ChosenModesThisTurnComponent]
-     * for "choose one that hasn't been chosen this turn" effects (Breeches, Eager Pillager).
-     * The component is cleared at end of turn by CleanupPhaseManager.
-     */
-    private fun recordChosenModeThisTurn(state: GameState, sourceId: EntityId, modeIndex: Int): GameState {
-        if (state.getEntity(sourceId) == null) return state
-        return state.updateEntity(sourceId) { c ->
-            val existing = c.get<com.wingedsheep.engine.state.components.battlefield.ChosenModesThisTurnComponent>()
-                ?: com.wingedsheep.engine.state.components.battlefield.ChosenModesThisTurnComponent()
-            c.with(existing.withChosen(modeIndex))
-        }
     }
 
     /**

@@ -29,10 +29,9 @@ class BejeweledWargScenarioTest : ScenarioTestBase() {
     /**
      * Push through blockers and combat damage until the trigger's mode decision surfaces.
      *
-     * Note the engine picks the mode of a modal *ability* at resolution
-     * ([ChooseOptionDecision], `phase = RESOLUTION`) rather than as the ability is put onto the
-     * stack. That is the shared behaviour of every modal triggered ability here (Kutzil's Flanker,
-     * Breeches), not something this card introduces.
+     * The mode arrives as the ability is put onto the stack (CR 603.3c), so the
+     * [ChooseOptionDecision] carries `phase = TRIGGER` and the ability is not on the stack yet when
+     * it is answered — see `ModalTriggeredAbilityOnStackTest` for the guarantee itself.
      */
     private fun advanceToModeDecision(game: TestGame): ChooseOptionDecision {
         var blockersDeclared = false
