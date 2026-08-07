@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.PairedComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
@@ -63,9 +64,11 @@ class DeadeyeNavigatorScenarioTest : ScenarioTestBase() {
                     .withPlayers()
                     .withCardOnBattlefield(1, "Deadeye Navigator")
                     .withCardInHand(1, "Grizzly Bears")
-                    // Two Forests to cast the {1}{G} Bears, two Islands for the granted {1}{U} blink.
+                    // Two Forests for the {1}{G} Bears, and four Islands so there is still {1}{U}
+                    // spare *after* the blink — otherwise "the ability is gone" and "the mana is
+                    // gone" would be indistinguishable in the final assertions.
                     .withLandsOnBattlefield(1, "Forest", 2)
-                    .withLandsOnBattlefield(1, "Island", 2)
+                    .withLandsOnBattlefield(1, "Island", 4)
                     .build()
 
                 val cast = game.castSpell(1, "Grizzly Bears")
@@ -108,6 +111,10 @@ class DeadeyeNavigatorScenarioTest : ScenarioTestBase() {
                     game.state.getEntity(bears)?.get<EnteredThisTurnComponent>() shouldNotBe null
                 }
                 withClue("the blink broke the pair (CR 702.95e), and the re-pair was declined") {
+                    // Assert the pairing state itself, not just the absence of the ability — with
+                    // spare Islands still untapped, "no ability" now genuinely means "not paired".
+                    game.state.getEntity(navigator)?.get<PairedComponent>() shouldBe null
+                    game.state.getEntity(bears)?.get<PairedComponent>() shouldBe null
                     canActivateOn(game, 1, navigator) shouldBe false
                     canActivateOn(game, 1, bears) shouldBe false
                 }

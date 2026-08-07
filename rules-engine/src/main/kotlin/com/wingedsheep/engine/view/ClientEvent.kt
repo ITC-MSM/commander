@@ -343,9 +343,10 @@ sealed interface ClientEvent {
     ) : ClientEvent
 
     /**
-     * Two creatures became soulbond-paired (CR 702.95b). The client draws the pair bond between the
-     * two battlefield slots off the resulting `pairedWithId` on each card, and plays a one-shot
-     * "bond forming" flourish off this event.
+     * Two creatures became soulbond-paired (CR 702.95b). This is the **game-log** line; the visual is
+     * driven off the resulting `pairedWithId` on each card instead (`SoulbondBonds` derives both the
+     * persistent bond and its forming flourish from when a pair first appears in the card map), so
+     * that a reconnect or a mid-game spectator join renders existing pairs without replaying events.
      */
     @Serializable
     @SerialName("creaturesPaired")
