@@ -9250,6 +9250,67 @@
     ]
 }
 
+// Quicksilver, Brash Blur
+{
+    "name": "Quicksilver, Brash Blur",
+    "manaCost": "{R}",
+    "typeLine": "Legendary Creature — Mutant Hero",
+    "oracleText": "If Quicksilver, Brash Blur is in your opening hand, you may begin the game with him on the battlefield.\nHaste\nPower-up — {4}{R}: Put a +1/+1 counter and a double strike counter on Quicksilver. (Activate each power-up ability only once. Reduce the cost by his mana cost if he entered this turn.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "double strike",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put a +1/+1 counter and a double strike counter on Quicksilver.",
+                "isPowerUp": true
+            }
+        ],
+        "mayStartOnBattlefield": true
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "RARE",
+        "artist": "Michael MacRae",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2d5819ca-165d-4f4c-9500-3ac206994880.jpg?1783902925"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Raft Security Officer
 {
     "name": "Raft Security Officer",

@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 210 / 276
+**Implemented:** 211 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -151,7 +151,7 @@ variants 297+ are excluded)
 - [x] Misty Knight, Hero for Hire
 - [ ] Mjölnir, Hammer of Thor
 - [x] Photon Blast Barrage
-- [ ] Quicksilver, Brash Blur
+- [x] Quicksilver, Brash Blur
 - [x] Red Hulk
 - [ ] Repulsor Blast
 - [ ] The Scarlet Witch
