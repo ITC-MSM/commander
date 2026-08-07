@@ -679,7 +679,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'advanced',
     title: 'Lab tools',
     summary:
-      'Debugging and content tools, not part of normal play: the Scenario Builder (start a game from a hand-authored board state) and the LLM Tournament runner. They only appear in dev builds, because both need server endpoints a production deployment does not expose.',
+      'Debugging and content tools, not part of normal play: the Scenario Builder (start a game from a hand-authored board state), the LLM Tournament runner, and the AI Sandbox (a table of bots playing each other, so you can watch the built-in AI and spot where it goes wrong). They only appear in dev builds, because they all need server endpoints a production deployment does not expose.',
     related: ['replays', 'set-completion'],
   },
 ]
