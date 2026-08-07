@@ -1657,6 +1657,20 @@ class TriggerMatcher(
         SpellCastPredicate.HasXInCost ->
             state.getEntity(event.spellEntityId)?.get<CardComponent>()?.manaCost?.hasX == true
         SpellCastPredicate.TargetsSource -> castTargetEntities(event, state).contains(sourceId)
+        // "targets only this" (Zada, Hedron Grinder; Mirrorwing Dragon). Every instance of the word
+        // "target" on the spell must point at the source, so this reads the raw chosen-target list
+        // rather than castTargetEntities — that helper drops player targets, and a spell aimed at
+        // both this creature and a player targets more than only this creature.
+        SpellCastPredicate.TargetsOnlySource -> {
+            val chosen = state.getEntity(event.spellEntityId)
+                ?.get<com.wingedsheep.engine.state.components.stack.TargetsComponent>()
+                ?.targets
+                ?: emptyList()
+            chosen.isNotEmpty() && chosen.all {
+                it is com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent &&
+                    it.entityId == sourceId
+            }
+        }
         is SpellCastPredicate.TargetsMatching -> {
             val predicateEvaluator = PredicateEvaluator()
             val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(

@@ -3480,6 +3480,29 @@ object Effects {
         )
 
     /**
+     * Copy [spell] once for each **other** object matching [candidates] that it could target,
+     * giving each copy a distinct one of those objects as its target (CR 707.10d). No retarget
+     * decision is made — the copies and their targets both fall out of the board.
+     *
+     * Models the Zada family: "copy it for each other creature you control that the spell could
+     * target" (Zada, Hedron Grinder) and "that player copies that spell for each other creature they
+     * control that the spell could target" (Mirrorwing Dragon). [candidates] and control of the copies
+     * are both resolved against the **copied spell's controller**, so `Creature.youControl()` reads
+     * as "creature the caster controls" under either wording.
+     *
+     * Contrast [CopyTargetSpell] with `copies`, which is the 707.10c "you may choose new targets"
+     * shape and pauses for a decision per copy.
+     */
+    fun CopySpellForEachOtherPossibleTarget(
+        candidates: GameObjectFilter,
+        spell: EffectTarget = EffectTarget.TriggeringEntity
+    ): Effect =
+        com.wingedsheep.sdk.scripting.effects.CopySpellForEachOtherPossibleTargetEffect(
+            spell = spell,
+            candidates = candidates
+        )
+
+    /**
      * Grant a keyword to a spell or ability on the stack (e.g., wither, lifelink).
      * Lasts while the spell remains on the stack. Used for "that spell gains X"
      * effects on triggered abilities like Spinerock Tyrant.

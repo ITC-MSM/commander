@@ -2336,6 +2336,7 @@ val DawnhartDisciple = card("Dawnhart Disciple") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
@@ -2355,7 +2356,8 @@ val DeadeyeNavigator = card("Deadeye Navigator") {
     oracleText = "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)\nAs long as Deadeye Navigator is paired with another creature, each of those creatures has \"{1}{U}: Exile this creature, then return it to the battlefield under your control.\""
     power = 5
     toughness = 5
-    // STRUCTURE needs human wiring: Soulbond
+    keywords(Keyword.SOULBOND)
+    // STRUCTURE needs human wiring: If
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "59"
@@ -5740,6 +5742,7 @@ val LightningAxe = card("Lightning Axe") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
@@ -5759,7 +5762,8 @@ val LightningMauler = card("Lightning Mauler") {
     oracleText = "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)\nAs long as this creature is paired with another creature, both creatures have haste."
     power = 2
     toughness = 1
-    // STRUCTURE needs human wiring: Soulbond
+    keywords(Keyword.SOULBOND)
+    // STRUCTURE needs human wiring: If
     metadata {
         rarity = Rarity.UNCOMMON
         collectorNumber = "163"

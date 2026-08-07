@@ -1870,6 +1870,308 @@
     "colorIdentityOverride": []
 }
 
+// Garruk Relentless
+{
+    "name": "Garruk Relentless",
+    "manaCost": "{3}{G}",
+    "typeLine": "Legendary Planeswalker — Garruk",
+    "oracleText": "When Garruk has two or fewer loyalty counters on him, transform him.\n0: Garruk deals 3 damage to target creature. That creature deals damage equal to its power to him.\n0: Create a 2/2 green Wolf creature token.",
+    "script": {
+        "stateTriggeredAbilities": [
+            {
+                "id": "ability_1",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "loyalty"
+                            }
+                        }
+                    },
+                    "operator": "LTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "effect": "Transform",
+                "descriptionOverride": "When Garruk has two or fewer loyalty counters on him, transform him."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 0
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Target",
+                                "numericProperty": "Power"
+                            },
+                            "target": "Self",
+                            "damageSource": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Garruk deals 3 damage to target creature. That creature deals damage equal to its power to him."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 0
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Wolf"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/8/9/89b89a55-3ea2-4186-b946-06831bc16169.jpg?1783907965"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Create a 2/2 green Wolf creature token."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Garruk, the Veil-Cursed",
+        "manaCost": "",
+        "typeLine": "Legendary Planeswalker — Garruk",
+        "oracleText": "+1: Create a 1/1 black Wolf creature token with deathtouch.\n−1: Sacrifice a creature. If you do, search your library for a creature card, reveal it, put it into your hand, then shuffle.\n−3: Creatures you control gain trample and get +X/+X until end of turn, where X is the number of creature cards in your graveyard.",
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_4",
+                    "cost": {
+                        "type": "CostLoyalty",
+                        "change": 1
+                    },
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "BLACK"
+                        ],
+                        "creatureTypes": [
+                            "Wolf"
+                        ],
+                        "keywords": [
+                            "DEATHTOUCH"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/6/8/6884b4a4-b1f8-4d3d-8b0a-0e1c04e9b0f9.jpg"
+                    },
+                    "timing": "SorcerySpeed",
+                    "isPlaneswalkerAbility": true,
+                    "descriptionOverride": "Create a 1/1 black Wolf creature token with deathtouch."
+                },
+                {
+                    "id": "ability_5",
+                    "cost": {
+                        "type": "CostLoyalty",
+                        "change": -1
+                    },
+                    "effect": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.DoAction",
+                            "action": {
+                                "type": "ForceSacrifice",
+                                "filter": "creature",
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "You"
+                                }
+                            },
+                            "successCriterion": "SuccessCriterion.PermanentsSacrificed"
+                        },
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Library",
+                                        "filter": "creature"
+                                    },
+                                    "storeAs": "searchable"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "searchable",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "found"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "found",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Hand"
+                                    },
+                                    "revealed": true
+                                },
+                                "ShuffleLibrary",
+                                "EmitLibrarySearchedEvent"
+                            ]
+                        }
+                    },
+                    "timing": "SorcerySpeed",
+                    "isPlaneswalkerAbility": true,
+                    "descriptionOverride": "Sacrifice a creature. If you do, search your library for a creature card, reveal it, put it into your hand, then shuffle."
+                },
+                {
+                    "id": "ability_6",
+                    "cost": {
+                        "type": "CostLoyalty",
+                        "change": -3
+                    },
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Count",
+                                        "player": "You",
+                                        "zone": "Graveyard",
+                                        "filter": "creature"
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Count",
+                                        "player": "You",
+                                        "zone": "Graveyard",
+                                        "filter": "creature"
+                                    },
+                                    "target": "Self"
+                                },
+                                {
+                                    "type": "GrantKeyword",
+                                    "keyword": "TRAMPLE",
+                                    "target": "Self"
+                                }
+                            ]
+                        }
+                    },
+                    "timing": "SorcerySpeed",
+                    "isPlaneswalkerAbility": true,
+                    "descriptionOverride": "Creatures you control gain trample and get +X/+X until end of turn, where X is the number of creature cards in your graveyard."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "181",
+            "rarity": "MYTHIC",
+            "artist": "Eric Deschamps",
+            "imageUri": "https://cards.scryfall.io/normal/back/b/4/b4160322-ff40-41a4-887a-73cd6b85ae45.jpg?1783940925"
+        },
+        "colorIdentityOverride": [
+            "BLACK",
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "BLACK",
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "181",
+        "rarity": "MYTHIC",
+        "artist": "Eric Deschamps",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b4160322-ff40-41a4-887a-73cd6b85ae45.jpg?1783940925",
+        "rulings": [
+            {
+                "date": "2011-09-22",
+                "text": "Garruk Relentless's first ability is a state-triggered ability. It triggers once Garruk has two or fewer loyalty counters on him and it can't retrigger while that ability is on the stack."
+            },
+            {
+                "date": "2011-09-22",
+                "text": "You don't add or remove loyalty counters from Garruk Relentless when he transforms into Garruk, the Veil-Cursed. In most cases, he'll have one or two loyalty counters on him."
+            },
+            {
+                "date": "2011-09-22",
+                "text": "You can't activate a loyalty ability of Garruk Relentless and later that turn after he transforms activate a loyalty ability of Garruk, the Veil-Cursed."
+            },
+            {
+                "date": "2011-09-22",
+                "text": "The second ability of Garruk, the Veil-Cursed doesn't target a creature. However, when that ability resolves, you must sacrifice a creature if you control one."
+            },
+            {
+                "date": "2011-09-22",
+                "text": "The number of creature cards in your graveyard is counted when the third ability of Garruk, the Veil-Cursed resolves. Once the ability resolves, the bonus doesn't change if that number changes later in the turn."
+            },
+            {
+                "date": "2011-09-22",
+                "text": "Only creatures you control when the third ability of Garruk, the Veil-Cursed resolves will receive the bonus. Creatures that enter or that you gain control of later in the turn won't be affected."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Geistcatcher's Rig
 {
     "name": "Geistcatcher's Rig",

@@ -753,6 +753,49 @@ data class CopyTargetSpellEffect(
 }
 
 /**
+ * Copy a spell once **for each other object it could target** (CR 707.10d), auto-assigning every
+ * copy a distinct one of those objects as its target. Models the Zada family:
+ *
+ *  - Zada, Hedron Grinder — "copy it for each other creature you control that the spell could target"
+ *  - Mirrorwing Dragon — "that player copies that spell for each other creature they control that
+ *    the spell could target"
+ *
+ * This is the 707.10d shape, not the 707.10c one: **no player decision is involved.** Contrast
+ * [CopyTargetSpellEffect] with a `copies` count, which makes N copies and pauses so the controller
+ * *may choose* new targets for each — here both the number of copies and each copy's target fall out
+ * of the board, so the copies go straight onto the stack.
+ *
+ * The candidate set is every object matching [candidates] that is a legal target for **every**
+ * instance of the word "target" on the copied spell (707.10d: "if that player or object isn't a legal
+ * target for each instance of the word *target*, a copy isn't created for that player or object"),
+ * minus the objects the spell already targets — the "each **other** …" in the card text. Each copy is
+ * put onto the stack with its object filling all of the spell's target slots.
+ *
+ * **Both [candidates] and control of the copies belong to the copied spell's controller, not to this
+ * ability's controller.** That is what lets one effect express both wordings: Zada says "you control"
+ * on a trigger only its own controller's casts fire, while Mirrorwing Dragon watches every seat and
+ * says "**they** control" / "**that player** copies". So `candidates` written as
+ * `GameObjectFilter.Creature.youControl()` reads as "creature the caster controls".
+ *
+ * A spell flagged "can't be copied" yields no copies.
+ *
+ * @property spell The spell to copy — [EffectTarget.TriggeringEntity] for the "copy that spell" wording.
+ * @property candidates Which objects the copies are distributed over, one copy each.
+ */
+@SerialName("CopySpellForEachOtherPossibleTarget")
+@Serializable
+data class CopySpellForEachOtherPossibleTargetEffect(
+    val spell: EffectTarget = EffectTarget.TriggeringEntity,
+    val candidates: GameObjectFilter
+) : Effect {
+    override val description: String =
+        "Copy that spell for each other ${candidates.description} it could target"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect =
+        copy(candidates = candidates.applyTextReplacement(replacer))
+}
+
+/**
  * Copy each spell targeted by this effect (CR 707.10). One copy is created per
  * targeted spell on the stack; for each copy the controller may choose new targets.
  *

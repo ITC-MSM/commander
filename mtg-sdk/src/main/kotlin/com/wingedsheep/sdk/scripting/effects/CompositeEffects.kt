@@ -507,6 +507,23 @@ sealed interface SuccessCriterion {
     @SerialName("SuccessCriterion.CountersRemoved")
     @Serializable
     data object CountersRemoved : SuccessCriterion
+
+    /**
+     * Action succeeded iff the gated action actually *sacrificed a permanent* — at least one
+     * `PermanentsSacrificedEvent` carrying a non-empty permanent list was emitted during the action.
+     * Use for the "Sacrifice a [permanent]. If you do, …" shape: a sacrifice is a zone move, but which
+     * permanent (and so whose graveyard) isn't known until the chooser decides at resolution, so
+     * [Auto] can't infer it, and [Always] would wrongly fire the payoff for a player who controls
+     * nothing to sacrifice.
+     *
+     * Garruk, the Veil-Cursed: "−1: Sacrifice a creature. If you do, search your library for a
+     * creature card, reveal it, put it into your hand, then shuffle." Per the 2011-09-22 ruling the
+     * ability doesn't target and "you must sacrifice a creature **if you control one**" — so an empty
+     * board means no sacrifice and no search.
+     */
+    @SerialName("SuccessCriterion.PermanentsSacrificed")
+    @Serializable
+    data object PermanentsSacrificed : SuccessCriterion
 }
 
 /**

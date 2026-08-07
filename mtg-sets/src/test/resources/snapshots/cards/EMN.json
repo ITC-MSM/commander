@@ -3158,6 +3158,100 @@
     ]
 }
 
+// Mirrorwing Dragon
+{
+    "name": "Mirrorwing Dragon",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying\nWhenever a player casts an instant or sorcery spell that targets only this creature, that player copies that spell for each other creature they control that the spell could target. Each copy targets a different one of those creatures.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    },
+                    "player": "Each",
+                    "requires": [
+                        "SpellTargetsOnlySource"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CopySpellForEachOtherPossibleTarget",
+                    "candidates": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                },
+                "descriptionOverride": "That player copies that spell for each other creature they control that the spell could target. Each copy targets a different one of those creatures."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "MYTHIC",
+        "artist": "Min Yum",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/b/4b7e33a8-765b-4909-a5c6-5fe8f8774a51.jpg?1783937458",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "The ability triggers whenever a player casts an instant or sorcery spell that targets only Mirrorwing Dragon and no other object or player."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If the spell that's copied is modal (that is, it says \"Choose one —\" or the like), the copies will have the same mode. A different mode cannot be chosen."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "The copies that the ability creates are created on the stack, so they're not cast. Abilities that trigger when a player casts a spell (like Mirrorwing Dragon's ability itself) won't trigger."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If a player casts an instant or sorcery spell that has multiple targets and Mirrorwing Dragon is chosen as the target in each instance, Mirrorwing Dragon's ability will trigger. Each of the copies will similarly be targeting only one of the player's other creatures."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "The copies are only created targeting creatures that the spell's controller controls. Copies are not created for all creatures on the battlefield, and the affected creatures may be controlled by a different player than the controller of Mirrorwing Dragon. Notably, if you cast Murder targeting your opponent's Mirrorwing Dragon, your creatures will each get a Murder, not your opponent's."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If the spell that's copied has an X whose value was determined as it was cast (like Burn from Within does), the copies have the same value of X."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "Any creature the player controls that couldn't be targeted by the original spell (due to shroud, protection abilities, targeting restrictions, or any other reason) is just ignored by Mirrorwing Dragon's ability. If the spell has multiple targets, a given creature must be a legal target for all of them or else a copy won't be created for that creature."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "The player who cast the original spell controls all the copies. That player chooses the order the copies are put onto the stack. The original spell will be on the stack beneath those copies and will resolve last."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Nebelgast Herald
 {
     "name": "Nebelgast Herald",
