@@ -10733,6 +10733,81 @@
     ]
 }
 
+// She-Hulk, Jade Defender
+{
+    "name": "She-Hulk, Jade Defender",
+    "manaCost": "{3}{G}",
+    "typeLine": "Legendary Creature — Gamma Hero",
+    "oracleText": "Reach, trample\nPower-up — {4}{G}{G}: Destroy up to one target artifact or enchantment. Put a +1/+1 counter on She-Hulk. (Activate each power-up ability only once. Reduce the cost by her mana cost if she entered this turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH",
+        "TRAMPLE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{G}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target artifact or enchantment"
+                            },
+                            "destination": "Graveyard",
+                            "byDestruction": true
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "artifact|enchantment"
+                        },
+                        "id": "up to one target artifact or enchantment"
+                    }
+                ],
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Destroy up to one target artifact or enchantment. Put a +1/+1 counter on She-Hulk.",
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "188",
+        "rarity": "UNCOMMON",
+        "artist": "Tyler Walpole",
+        "flavorText": "\"Buddy, you blew through the wrong stop sign.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/2/d22a8d02-023c-4f71-a771-16b5aa2a05d7.jpg?1783902911"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Speed, Young Avenger
 {
     "name": "Speed, Young Avenger",

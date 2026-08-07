@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 213 / 276
+**Implemented:** 214 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -191,7 +191,7 @@ variants 297+ are excluded)
 - [x] Savage Land Dinosaur
 - [x] Serpent Specialist
 - [ ] Shang-Chi, Master of Kung Fu
-- [ ] She-Hulk, Jade Defender
+- [x] She-Hulk, Jade Defender
 - [x] Super Strength
 - [x] The Thing, Ben Grimm
 - [x] Tigra, Feline Fury
