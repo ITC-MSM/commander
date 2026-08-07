@@ -16,8 +16,13 @@ import io.kotest.matchers.shouldBe
  * AI solve `noncreature-04`, this test fails until the id is deleted from the set, which is
  * exactly the moment you want to notice.
  *
- * The reference profile is [AiProfile.PRODUCTION] — what a player actually faces, card advisors
- * included. `PuzzleComparisonBenchmark` runs the same suite across profiles.
+ * The reference profile stays [AiProfile.PRODUCTION] even though
+ * [AiProfile.PRODUCTION_CANDIDATE_TUNED] is what players face since 2026-08-07. `KNOWN_FAILURES`
+ * is only meaningful if it describes a *fixed* agent — repointing it at whatever is live would
+ * make every promotion rewrite the set it is supposed to be checked against, and the rollout
+ * evaluator would also put ~66 playout-driven positions into an always-on suite that runs in
+ * seconds today. `PuzzleComparisonBenchmark` is where the live profile is scored, alongside every
+ * other one.
  */
 class PuzzleSuiteTest : ScenarioTestBase() {
 

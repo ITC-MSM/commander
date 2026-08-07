@@ -47,7 +47,12 @@ object LifeDifferential : BoardFeature {
     private fun sideLifeValue(state: GameState, side: List<EntityId>): Double =
         state.lifePoolsOf(side).sumOf { lifeValue(it) }
 
-    private fun lifeValue(life: Int): Double = when {
+    /**
+     * Public so a consumer that wants to price *anticipated* life loss can charge it at exactly
+     * the rate the evaluator charges life already, instead of inventing a second constant.
+     * [com.wingedsheep.ai.engine.CombatAdvisor]'s crack-back estimate is the caller.
+     */
+    fun lifeValue(life: Int): Double = when {
         life <= 0 -> -100.0
         life <= 3 -> life * 3.0
         life <= 7 -> 9.0 + (life - 3) * 2.0
@@ -341,19 +346,30 @@ object BoardPresence : BoardFeature {
  * — two teammates in topdeck mode really is twice the disaster.
  */
 object CardAdvantage : BoardFeature {
-    override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double {
+    /** The historical empty-hand value. See [EvaluationWeights.topdeckPenalty] for why it moves. */
+    const val LEGACY_TOPDECK_PENALTY = -3.0
+
+    override fun score(state: GameState, projected: ProjectedState, playerId: EntityId): Double =
+        score(state, projected, playerId, LEGACY_TOPDECK_PENALTY)
+
+    fun score(
+        state: GameState,
+        @Suppress("UNUSED_PARAMETER") projected: ProjectedState,
+        playerId: EntityId,
+        topdeckPenalty: Double,
+    ): Double {
         val sides = state.sidesFor(playerId) ?: return 0.0
-        val mine = sideHandValue(state, sides.mine)
+        val mine = sideHandValue(state, sides.mine, topdeckPenalty)
         return sides.against(OpponentAggregate.FIELD) { opponent ->
-            mine - sideHandValue(state, opponent)
+            mine - sideHandValue(state, opponent, topdeckPenalty)
         }
     }
 
-    private fun sideHandValue(state: GameState, side: List<EntityId>): Double =
-        side.sumOf { cardValue(state.getZone(it, Zone.HAND).size) }
+    private fun sideHandValue(state: GameState, side: List<EntityId>, topdeckPenalty: Double): Double =
+        side.sumOf { cardValue(state.getZone(it, Zone.HAND).size, topdeckPenalty) }
 
-    private fun cardValue(count: Int): Double = when {
-        count <= 0 -> -3.0
+    private fun cardValue(count: Int, topdeckPenalty: Double): Double = when {
+        count <= 0 -> topdeckPenalty
         count == 1 -> 1.0
         count <= 3 -> 1.0 + (count - 1) * 1.5
         count <= 7 -> 4.0 + (count - 3) * 0.8

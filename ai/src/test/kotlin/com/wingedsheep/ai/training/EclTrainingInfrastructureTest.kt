@@ -49,7 +49,7 @@ class EclTrainingInfrastructureTest : FunSpec({
 
     test("ECL profile selection cannot leak to another set") {
         AiProfileSelector.select("ECL", AiProfile.ECL_APPRENTICE) shouldBe AiProfile.ECL_APPRENTICE
-        AiProfileSelector.select("BLB", AiProfile.ECL_APPRENTICE) shouldBe AiProfile.PRODUCTION
+        AiProfileSelector.select("BLB", AiProfile.ECL_APPRENTICE) shouldBe AiProfile.PRODUCTION_CANDIDATE_TUNED
         AiProfileSelector.select("BLB", AiProfile.CURRENT) shouldBe AiProfile.CURRENT
     }
 

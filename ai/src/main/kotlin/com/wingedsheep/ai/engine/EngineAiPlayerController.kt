@@ -21,7 +21,9 @@ private val logger = LoggerFactory.getLogger(EngineAiPlayerController::class.jav
  * AI controller powered by the built-in rules-engine [AIPlayer].
  *
  * Runs entirely locally with no API calls. Uses the engine's ActionProcessor, board evaluator,
- * greedy 1-ply [Strategist] and [CombatAdvisor] directly, configured by [AiProfile.PRODUCTION].
+ * [Strategist] and [CombatAdvisor] directly, configured by [AiProfile.PRODUCTION_CANDIDATE_TUNED]
+ * — rollout candidate evaluation over a determinized state, on a four-tier decision budget. The
+ * pre-2026-08-07 greedy 1-ply configuration is [AiProfile.PRODUCTION], kept as the arena baseline.
  *
  * Requires a [gameStateProvider] to access the real (unmasked) [GameState] from
  * the [com.wingedsheep.gameserver.session.GameSession]. This allows the engine AI
@@ -38,7 +40,8 @@ class EngineAiPlayerController(
     insightSink: AiInsightSink? = null,
 ) : AiPlayerController {
 
-    private val aiPlayer = AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION, insightSink = insightSink)
+    private val aiPlayer =
+        AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION_CANDIDATE_TUNED, insightSink = insightSink)
 
     override fun chooseAction(
         state: ClientGameState,

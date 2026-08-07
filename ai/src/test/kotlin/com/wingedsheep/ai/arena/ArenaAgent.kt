@@ -49,6 +49,23 @@ object ArenaAgents {
         ArenaAgent("current", AiProfile.CURRENT),
         // What a player actually faces in a real game: BLB + ONS card advisors.
         ArenaAgent("production", AiProfile.PRODUCTION),
+        // The same, plus everything Phases 4, 7 and 8 built and left switched off. The promotion
+        // gate is `just arena production production-candidate` — not against `v0`, which has
+        // neither the advisors nor `CardIntent` that already shipped.
+        ArenaAgent("production-candidate", AiProfile.PRODUCTION_CANDIDATE),
+        // The cheap targeted fixes — combat-damage horizon + concave hand curve — without and
+        // with rollouts. `just arena production production-tuned` prices them on their own.
+        ArenaAgent("production-tuned", AiProfile.PRODUCTION_TUNED),
+        ArenaAgent("production-candidate-tuned", AiProfile.PRODUCTION_CANDIDATE_TUNED),
+        // One variable each, so an arena delta can be attributed the same way a puzzle delta is.
+        ArenaAgent("production-horizon", AiProfile.PRODUCTION_HORIZON),
+        ArenaAgent("production-concave", AiProfile.PRODUCTION_CONCAVE),
+        ArenaAgent("production-concave-2", AiProfile.PRODUCTION_CONCAVE_2),
+        ArenaAgent("production-horizon-concave", AiProfile.PRODUCTION_HORIZON_CONCAVE),
+        // The suite's best zero-regression combination: 63/66 against production's 60/66.
+        ArenaAgent("production-horizon-concave-2", AiProfile.PRODUCTION_HORIZON_CONCAVE_2),
+        ArenaAgent("production-crackback", AiProfile.PRODUCTION_CRACKBACK),
+        ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.
         ArenaAgent("ecl-apprentice", AiProfile.ECL_APPRENTICE),
