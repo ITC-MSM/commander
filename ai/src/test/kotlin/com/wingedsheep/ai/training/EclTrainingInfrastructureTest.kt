@@ -49,7 +49,9 @@ class EclTrainingInfrastructureTest : FunSpec({
 
     test("ECL profile selection cannot leak to another set") {
         AiProfileSelector.select("ECL", AiProfile.ECL_APPRENTICE) shouldBe AiProfile.ECL_APPRENTICE
-        AiProfileSelector.select("BLB", AiProfile.ECL_APPRENTICE) shouldBe AiProfile.PRODUCTION_CANDIDATE_LANDDROP
+        // Whatever is live, not a fixed profile: this pins that a set-scoped request falls back to
+        // the production agent, so it moves with every promotion.
+        AiProfileSelector.select("BLB", AiProfile.ECL_APPRENTICE) shouldBe AiProfile.PRODUCTION_CANDIDATE_LANDSEQ
         AiProfileSelector.select("BLB", AiProfile.CURRENT) shouldBe AiProfile.CURRENT
     }
 
