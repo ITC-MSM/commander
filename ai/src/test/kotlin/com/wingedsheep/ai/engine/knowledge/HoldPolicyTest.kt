@@ -1,8 +1,11 @@
 package com.wingedsheep.ai.engine.knowledge
 
+import com.wingedsheep.ai.puzzles.advanceToDeclaration
+import com.wingedsheep.ai.puzzles.advanceToPriority
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.TargetsResponse
 import com.wingedsheep.engine.support.ScenarioTestBase
+import com.wingedsheep.sdk.core.Step
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -146,6 +149,50 @@ class HoldPolicyTest : ScenarioTestBase() {
 
             // Four damage on a 2/2: dying, and +3/+3 carries it out of range.
             policy.verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.Adjust>()
+        }
+
+        test("a trick before blockers is a window by default, and not once tricks wait for blocks") {
+            // `DECLARE_ATTACKERS` is inside combat but before blocks. Casting there telegraphs the
+            // pump: the 1/1 that declines to trade with a 2/2 will happily chump a 5/5.
+            val game = scenario()
+                .withPlayers()
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withCardInHand(1, "Giant Growth")
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .withCardOnBattlefield(2, "Llanowar Elves")
+                .build()
+                .advanceToDeclaration(1, Step.DECLARE_ATTACKERS)
+                .also { it.declareAttackers(mapOf("Grizzly Bears" to 2)) }
+                .advanceToPriority(1, Step.DECLARE_ATTACKERS)
+
+            HoldPolicy(IntentCatalog.of(cardRegistry))
+                .verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.Adjust>()
+
+            HoldPolicy(IntentCatalog.of(cardRegistry), tricksWaitForBlocks = true)
+                .verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.NoWindow>()
+        }
+
+        test("blocks being in is a window under either reading") {
+            val game = scenario()
+                .withPlayers()
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withCardInHand(1, "Giant Growth")
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .withCardOnBattlefield(2, "Llanowar Elves")
+                .build()
+                .advanceToDeclaration(1, Step.DECLARE_ATTACKERS)
+                .also { it.declareAttackers(mapOf("Grizzly Bears" to 2)) }
+                .advanceToDeclaration(2, Step.DECLARE_BLOCKERS)
+                .also { it.declareBlockers(emptyMap()) }
+                .advanceToPriority(1, Step.DECLARE_BLOCKERS)
+
+            // Narrowing the window must not cost the window the trick is actually *for* — an
+            // unblocked attacker is exactly where the pump converts.
+            HoldPolicy(IntentCatalog.of(cardRegistry), tricksWaitForBlocks = true)
+                .verdictFor(game.state, game.player1Id, "Giant Growth")
                 .shouldBeInstanceOf<TimingVerdict.Adjust>()
         }
 

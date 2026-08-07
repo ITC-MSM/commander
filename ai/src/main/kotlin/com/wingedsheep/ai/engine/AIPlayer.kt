@@ -243,6 +243,7 @@ class AIPlayer(
                     useMeaningfulFilter = profile.useMeaningfulFilter,
                     budgetPolicy = profile.budgetPolicy,
                     intents = intents,
+                    combatTricksWaitForBlocks = profile.combatTricksWaitForBlocks,
                     candidateEvaluator = candidateEvaluatorFor(
                         cardRegistry, profile, evaluator, advisorRegistry, intents,
                         EvalWeights.winProbabilityScale(profile.evalWeightsId),

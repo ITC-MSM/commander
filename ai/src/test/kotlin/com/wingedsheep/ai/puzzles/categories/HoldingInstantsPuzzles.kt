@@ -133,5 +133,58 @@ object HoldingInstantsPuzzles {
             // pump wears off in cleanup, so spending it here throws the card away for nothing.
             check = { shouldNotCast("Giant Growth") },
         ),
+
+        AiPuzzle(
+            id = "instants-07",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "They took the 2/2 unblocked at 5 life — Giant Growth is exactly lethal",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withLifeTotal(2, 5)
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withCardInHand(1, "Giant Growth")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    // The blocker they declined to use. It is also a second legal target for the
+                    // trick, which is the whole difficulty: with only one creature on the board the
+                    // AI finds this line on every profile ever measured.
+                    .withCardOnBattlefield(2, "Llanowar Elves")
+                    .build()
+                    .advanceToDeclaration(1, Step.DECLARE_ATTACKERS)
+                    .also { it.declareAttackers(mapOf("Grizzly Bears" to 2)) }
+                    .advanceToDeclaration(2, Step.DECLARE_BLOCKERS)
+                    .also { it.declareBlockers(emptyMap()) }
+                    .advanceToPriority(1, Step.DECLARE_BLOCKERS)
+            },
+            check = {
+                shouldCast("Giant Growth")
+                shouldTarget("Grizzly Bears")
+            },
+        ),
+
+        AiPuzzle(
+            id = "instants-08",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "Do not pump before blockers — a visible 5/5 gets chump-blocked by the 1/1",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withLifeTotal(2, 5)
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withCardInHand(1, "Giant Growth")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withCardOnBattlefield(2, "Llanowar Elves")
+                    .build()
+                    .advanceToDeclaration(1, Step.DECLARE_ATTACKERS)
+                    .also { it.declareAttackers(mapOf("Grizzly Bears" to 2)) }
+                    .advanceToPriority(1, Step.DECLARE_ATTACKERS)
+            },
+            // The negative control for 07: the same board, the same lethal trick, one priority
+            // window earlier. Casting now is not merely premature, it *loses* the kill — blocking
+            // a 2/2 with a 1/1 is a bad trade the defender declines, and chump-blocking a 5/5 to
+            // live is one they take. No board evaluation can see that, because the information the
+            // cast leaks is not on the board.
+            check = { shouldNotCast("Giant Growth") },
+        ),
     )
 }

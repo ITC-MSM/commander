@@ -77,6 +77,13 @@ object ArenaAgents {
         // promotion gate, against what players face today.
         ArenaAgent("production-landseq", AiProfile.PRODUCTION_LANDSEQ),
         ArenaAgent("production-candidate-landseq", AiProfile.PRODUCTION_CANDIDATE_LANDSEQ),
+        // The combat trick window: hold it until blocks are in, and give the pre-damage window the
+        // budget to spend it. `just arena production production-trickwindow 1000` prices the
+        // holding half on its own (the budget half is a no-op without tiers);
+        // `just arena production-candidate-landseq production-candidate-trickwindow 300` is the
+        // promotion gate, against what players face today.
+        ArenaAgent("production-trickwindow", AiProfile.PRODUCTION_TRICKWINDOW),
+        ArenaAgent("production-candidate-trickwindow", AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW),
         ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.

@@ -36,7 +36,7 @@ class PuzzleSuiteTest : ScenarioTestBase() {
                     PuzzleCatalog.byCategory(category).size shouldBeGreaterThanOrEqual 6
                 }
             }
-            PuzzleCatalog.all.size shouldBe 81
+            PuzzleCatalog.all.size shouldBe 83
         }
 
         test("every KNOWN_FAILURES id names a real puzzle") {
@@ -71,7 +71,8 @@ class PuzzleSuiteTest : ScenarioTestBase() {
          *
          * Baselined 2026-07-27 against `AiProfile.PRODUCTION` at 39/48; **44/48 since Phase 6**
          * (`CardIntent`), which closed noncreature-01/03/04 and instants-01/06; **60/66 since Phase
-         * 2b** added the respond / activate / keywords categories. Per-category rates are in
+         * 2b** added the respond / activate / keywords categories; **71/83** today, after Phase 2c's
+         * timing / lastchance categories and the combat trick window pair. Per-category rates are in
          * `docs/ai/baseline-metrics.md`.
          */
         val KNOWN_FAILURES: Set<String> = setOf(
@@ -126,6 +127,56 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // the hand's curve (or a horizon that reaches next turn's main phase), and it shows up
             // here as 07 flipping to a pass with 08 still passing.
             "sequencing-07",
+
+            // ── Phase 2c: timing ──
+            // b904bc8 added these two categories and deferred this list, so the four below have
+            // been failing undeclared since. They are recorded here with what each actually does,
+            // rather than as bare ids: an unexplained entry is indistinguishable from a regression
+            // nobody noticed.
+            //
+            // Holding removal with five lands and three cards across the table. The evaluator sees
+            // one thing — an opposing 2/2 is gone — and there is no term for the option the Murder
+            // *was*. This is the exact case `HoldPolicy` declines on purpose: its KDoc records that
+            // the symmetric "our main phase is the wrong window" penalty was built, measured and
+            // removed, because holding removal is a preference between two futures rather than a
+            // provable loss, and no constant prices "a better target may show up". Phase 7.
+            "timing-01",
+            // The same shape one step further out: Hill Giant is {3}{R} into exactly four lands, so
+            // casting it blanks the Counterspell for a whole turn. What is spent is *held mana as
+            // options*, and nothing in the evaluator carries that either — `Tempo` counts lands,
+            // not what leaving them up would buy. Same fix as timing-01.
+            "timing-03",
+            // Phase 6 traded this one away and nothing replaced it. `Strategist`'s blanket
+            // `passScore - 1.5` at the opponent's end step is what used to make the AI cash a
+            // cantrip there, and it is switched off for every agent with card knowledge — correctly,
+            // since it also paid for dumping a pump that expires in cleanup. But `HoldPolicy` only
+            // ever hands back an end-step window to REMOVAL, so a DRAW-tagged instant now gets
+            // nothing at all, and a cantrip's own board value is ~0 (a card drawn against a card
+            // spent). Its pair is instants-06, which asserts the opposite about the same window.
+            // The fix is a cantrip window in `HoldPolicy`, not a constant.
+            "timing-05",
+
+            // ── Phase 2c: last chance ──
+            // Not a "does it respond" failure — the AI casts the Unsummon. It aims it at the
+            // opponent's 2/2 instead of at its own Serra Angel, which is dying to the Murder on the
+            // stack. So the miss is in target *polarity*, and the puzzle is built to catch exactly
+            // that (the second legal target is there on purpose). Where in target selection it goes
+            // wrong is not yet diagnosed, and this entry deliberately does not guess.
+            "lastchance-05",
+
+            // ── The combat trick window ──
+            // `HoldPolicy.COMBAT_STEPS` pays a trick its combat bonus in every step of combat,
+            // `BEGIN_COMBAT` and `DECLARE_ATTACKERS` included — both of which are *before* blocks.
+            // So the AI fires the pump in the window where it telegraphs, and the defender who
+            // would have taken 2 from a 2/2 chump-blocks the 5/5 instead.
+            //
+            // Its pair, instants-07, is the same board one priority window later, where casting is
+            // right — and `production` passes it, because a greedy agent with no budget tiers still
+            // refines the trick's target by simulation. What makes the pair worth keeping is that
+            // the live agent failed 07 for a *different* reason: the pre-damage window is graded
+            // ROUTINE, which is below the threshold where targets are picked by simulation at all.
+            // One fix does not close both — see `AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW`.
+            "instants-08",
         )
     }
 }

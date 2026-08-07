@@ -43,6 +43,20 @@ class BudgetPolicyTest : FunSpec({
 
     val policy = TieredBudgetPolicy()
 
+    /**
+     * One Bear attacking a player on 5, blocks declined — `instants-07`'s board. Two power against
+     * five life, so the attack is *not* lethal as it stands; a trick is what would make it so.
+     */
+    fun attackingIntoLethal(): GameTestDriver = driver().apply {
+        passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val attacker = putCreatureOnBattlefield(player1, "Grizzly Bears")
+            .also { removeSummoningSickness(it) }
+        replaceState(state.withLifeTotal(player2, 5))
+        passPriorityUntil(Step.DECLARE_ATTACKERS)
+        declareAttackers(player1, listOf(attacker), player2)
+        passPriorityUntil(Step.DECLARE_BLOCKERS)
+    }
+
     test("nothing meaningful to choose between is TRIVIAL") {
         val d = driver()
         policy.tierFor(d.state, d.player1, emptyList()) shouldBe BudgetTier.TRIVIAL
@@ -80,6 +94,25 @@ class BudgetPolicyTest : FunSpec({
         }
         d.replaceState(d.state.withLifeTotal(d.player2, 8)) // 4 x 2 power >= 8 life
         policy.tierFor(d.state, d.player2, listOf(castAction(d.player2))) shouldBe BudgetTier.CRITICAL
+    }
+
+    test("blocks in and damage next is ROUTINE by default") {
+        // Declarations are spent, and `someoneIsInLethalRange` cannot fire: attacking taps the
+        // creature (CR 508.1f), so the attacking side reads as zero power — and a trick's whole
+        // job is to make lethal an attack that is not lethal yet. So the window where an instant
+        // converts an attack falls through to the same tier as a quiet upkeep.
+        val d = attackingIntoLethal()
+        policy.tierFor(d.state, d.player1, listOf(castAction(d.player1))) shouldBe BudgetTier.ROUTINE
+    }
+
+    test("grading the pre-damage window NORMAL is what restores the refined target pick") {
+        val d = attackingIntoLethal()
+        val graded = TieredBudgetPolicy(preDamageCombatIsNormal = true)
+        graded.tierFor(d.state, d.player1, listOf(castAction(d.player1))) shouldBe BudgetTier.NORMAL
+        // The threshold that actually matters — below NORMAL_MILLIS a spell's target is whatever
+        // the heuristic names first, which is the mechanism `instants-07` fails on.
+        graded.budgetFor(d.state, d.player1, listOf(castAction(d.player1)))
+            .allowances.refineTargetsBySimulation shouldBe true
     }
 
     test("the legacy policy never tiers at all") {
