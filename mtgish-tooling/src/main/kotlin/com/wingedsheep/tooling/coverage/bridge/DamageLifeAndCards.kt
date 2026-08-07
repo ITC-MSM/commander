@@ -95,8 +95,12 @@ internal fun BridgeBuilder.damageLifeAndCards() {
     // (Impractical Joke); other game effects scaffold in the emitter.
     effect("CreateGameEffect", "DamageCantBePreventedThisTurn")
     effect("Shuffle", "ShuffleLibrary")
-    // Investigate (CR 701.36) — create a Clue token (Effects.Investigate() / Effects.CreateClue()).
-    effect("Investigate", "Investigate")
+    // Investigate (CR 701.36) — create a Clue token. `Effects.Investigate(n)` is a NAMED FACADE, not
+    // its own Effect type: it returns `CreatePredefinedTokenEffect("Clue", n)`, so the leaf SerialName
+    // is `CreatePredefinedToken`. The entry used to name a SerialName "Investigate" that has never
+    // existed, which the registry validation correctly reported as a MISSING gap — blocking every
+    // investigate card in the corpus rather than scoring the capability we do have.
+    effect("Investigate", "CreatePredefinedToken", "investigate -> Effects.Investigate(n) = a Clue predefined token (CR 701.36)")
     effect("RevealHand", "RevealHand")
     effect("LookAtPlayersHand", "LookAtTargetHand")
 
