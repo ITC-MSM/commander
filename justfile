@@ -200,6 +200,15 @@ coverage *ARGS: _coverage-tool
 coverage-dashboard *ARGS: _coverage-tool
     @mtgish-tooling/build/install/mtgish-tooling/bin/mtgish-tooling dashboard {{ARGS}}
 
+# Cross-set capability index, non-interactively — the same ranking as the dashboard's `c` view
+# ("what engine work unlocks the most cards everywhere"), printed as a plain table so it can be
+# piped, diffed, or pasted into a backlog doc. Use the TUI when you want to DRILL into the cards.
+#   just coverage-cross              # every capability, ranked by blocked cards it would unlock
+#   just coverage-cross --top 50     # just the head of the ranking
+[group: 'build']
+coverage-cross *ARGS: _coverage-tool
+    @mtgish-tooling/build/install/mtgish-tooling/bin/mtgish-tooling dashboard --cross {{ARGS}}
+
 # Generation fidelity — could we AUTO-AUTHOR a card from mtgish? Diffs the bridge's output
 # against each card's compiled golden snapshot, tiering AUTO / SCAFFOLD / MISS.
 # Whole set:  just coverage-fidelity --set POR
