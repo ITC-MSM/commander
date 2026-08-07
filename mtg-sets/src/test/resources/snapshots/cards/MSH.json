@@ -191,6 +191,54 @@
     "colorIdentityOverride": []
 }
 
+// Aerial Doombot
+{
+    "name": "Aerial Doombot",
+    "manaCost": "{U}",
+    "typeLine": "Artifact Creature — Robot Villain",
+    "oracleText": "Flying\nPower-up — {5}{U}: Put three +1/+1 counters on this creature. (Activate each power-up ability only once. Reduce the cost by its mana cost if it entered this turn.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 3,
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "43",
+        "artist": "Michael MacRae",
+        "flavorText": "\"I have seen your rightful place. Beneath me.\"\n—Doctor Doom",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e727ec1c-dc3b-4f1a-8a62-18549f118b89.jpg?1783902963"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Agent 13, Sharon Carter
 {
     "name": "Agent 13, Sharon Carter",
