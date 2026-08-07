@@ -477,6 +477,11 @@ class BeginningPhaseManager(
                 counterType != null && countersComponent.getCount(counterType) > 0
             }
         }
+        // Soulbond pairing (CR 702.95b) is plain per-entity state, so unlike the fail-open group
+        // below it can be answered exactly here — an "untap each paired creature" filter must not
+        // silently untap everything.
+        StatePredicate.IsPaired ->
+            container.has<com.wingedsheep.engine.state.components.battlefield.PairedComponent>()
         is StatePredicate.Or -> predicate.predicates.any { matchesStatePredicateForUntap(it, container) }
         is StatePredicate.And -> predicate.predicates.all { matchesStatePredicateForUntap(it, container) }
         is StatePredicate.Not -> !matchesStatePredicateForUntap(predicate.predicate, container)

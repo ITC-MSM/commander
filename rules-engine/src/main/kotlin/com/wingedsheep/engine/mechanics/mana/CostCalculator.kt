@@ -288,6 +288,8 @@ class CostCalculator(
                         ?.targetId
                     attached != null && targetId == attached
                 }
+                is Scope.SoulbondPair ->
+                    com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, sourceId, targetId)
                 is Scope.Battlefield ->
                     predicateEvaluator.matches(state, projected, targetId, targetFilter.baseFilter, context)
             }

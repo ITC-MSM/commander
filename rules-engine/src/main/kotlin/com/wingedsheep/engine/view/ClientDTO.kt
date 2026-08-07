@@ -292,6 +292,13 @@ data class ClientCard(
      */
     val isRingBearer: Boolean = false,
 
+    /**
+     * The creature this one is soulbond-paired with (CR 702.95b), or `null` when unpaired.
+     * Battlefield only, and always symmetric — if A names B then B names A — which is what lets the
+     * client draw one bond between the two slots rather than two overlapping halves.
+     */
+    val pairedWithId: EntityId? = null,
+
     /** Zone this card is currently in */
     val zone: ZoneKey?,
 

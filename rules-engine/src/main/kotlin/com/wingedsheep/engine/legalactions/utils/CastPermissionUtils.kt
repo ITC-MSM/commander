@@ -1144,6 +1144,8 @@ class CastPermissionUtils(
                         is com.wingedsheep.sdk.scripting.filters.unified.Scope.Specific -> scope.entityId == entityId
                         is com.wingedsheep.sdk.scripting.filters.unified.Scope.AttachedTo ->
                             container.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()?.targetId == entityId
+                        is com.wingedsheep.sdk.scripting.filters.unified.Scope.SoulbondPair ->
+                            com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, permanentId, entityId)
                         is com.wingedsheep.sdk.scripting.filters.unified.Scope.Battlefield -> {
                             if (ability.filter.excludeSelf && permanentId == entityId) false
                             else {
@@ -1199,6 +1201,16 @@ class CastPermissionUtils(
                     }
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Self -> {
                         if (permanentId == entityId) result.add(StaticGrantedAbility(ability.ability, permanentId))
+                    }
+                    // Soulbond payoff (CR 702.95b): "each of those creatures has …" hands the
+                    // ability to both halves of the granter's pair — Deadeye Navigator's blink
+                    // ability appears on the Navigator and on the creature it's paired with. The
+                    // granter stays the Navigator, so the ability's cost and controller are read
+                    // from it, while `{T}` / self-references bind to the receiver.
+                    is com.wingedsheep.sdk.scripting.filters.unified.Scope.SoulbondPair -> {
+                        if (com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, permanentId, entityId)) {
+                            result.add(StaticGrantedAbility(ability.ability, permanentId))
+                        }
                     }
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Specific -> {
                         if (scope.entityId == entityId) result.add(StaticGrantedAbility(ability.ability, permanentId))
@@ -1269,6 +1281,11 @@ class CastPermissionUtils(
                 is Scope.Self -> {
                     if (granterId == entityId) result.add(StaticGrantedAbility(grantAbility.ability, granterId))
                 }
+                is Scope.SoulbondPair -> {
+                    if (com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, granterId, entityId)) {
+                        result.add(StaticGrantedAbility(grantAbility.ability, granterId))
+                    }
+                }
                 is Scope.Specific -> {
                     if (scope.entityId == entityId) result.add(StaticGrantedAbility(grantAbility.ability, granterId))
                 }
@@ -1306,6 +1323,8 @@ class CastPermissionUtils(
                 val gainsAbilities = when (val scope = gain.grantedTo.scope) {
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Self -> granterId == entityId
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Specific -> scope.entityId == entityId
+                    is com.wingedsheep.sdk.scripting.filters.unified.Scope.SoulbondPair ->
+                        com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, granterId, entityId)
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.AttachedTo ->
                         granter.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()?.targetId == entityId
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Battlefield -> {
@@ -1364,6 +1383,8 @@ class CastPermissionUtils(
                 val applies = when (val scope = any.filter.scope) {
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Self -> granterId == sourceId
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Specific -> scope.entityId == sourceId
+                    is com.wingedsheep.sdk.scripting.filters.unified.Scope.SoulbondPair ->
+                        com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, granterId, sourceId)
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.AttachedTo ->
                         granter.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()?.targetId == sourceId
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Battlefield -> {

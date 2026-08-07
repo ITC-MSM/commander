@@ -1083,6 +1083,33 @@ data class UntappedEvent(
 ) : GameEvent
 
 /**
+ * Two creatures became soulbond-paired (CR 702.95b). Emitted once for the pair, not once per half.
+ */
+@Serializable
+@SerialName("CreaturesPairedEvent")
+data class CreaturesPairedEvent(
+    val firstId: EntityId,
+    val firstName: String,
+    val secondId: EntityId,
+    val secondName: String,
+    val controllerId: EntityId
+) : GameEvent
+
+/**
+ * A soulbond pair was broken (CR 702.95e) — one half left the battlefield, stopped being a
+ * creature, or changed controller. Emitted once per pair by `SoulbondPairingCheck`, naming the half
+ * that is still around ([entityId]) and the one it was paired with ([formerPartnerId]), which may
+ * already be gone.
+ */
+@Serializable
+@SerialName("CreaturesUnpairedEvent")
+data class CreaturesUnpairedEvent(
+    val entityId: EntityId,
+    val entityName: String,
+    val formerPartnerId: EntityId
+) : GameEvent
+
+/**
  * A permanent phased out (Rule 702.26).
  */
 @Serializable

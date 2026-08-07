@@ -2336,6 +2336,7 @@ with cards):
 | `filter(from, filter)` / `filterSplit(…)` → `(matching, rest)` / `exclude(from, minus)` (set difference via `CollectionFilter.ExcludeOtherCollection`) | `FilterCollectionEffect` |
 | `chooseOnePerCategory(from, categories)` | `ChooseOnePerCategoryEffect` |
 | `move(from, destination, …)` / `moveTracked(…)` / sugar `destroy`, `sacrifice`, `exile`, `toHand`, `toGraveyard`, `toLibraryTop`, `toLibraryBottom` | `MoveCollectionEffect` |
+| `pairWithSource(from)` (soulbond, CR 702.95a — empty `from` is a legal no-op, i.e. a declined "you may pair") | `PairWithSourceEffect` |
 | `reveal(from, …)` | `RevealCollectionEffect` |
 | `captureControllers(from)` | `CaptureControllersEffect` |
 | `forEachCaptured(collection, original, controllers) { count -> … }` | `ForEachCapturedControllerEffect` |
@@ -3146,6 +3147,19 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
 - Chained: `.withColor`, `.withoutColor`, `.withKeyword`, `.withoutKeyword`, `.withSubtype`, `.withoutSubtype`,
   `.minPower`, `.maxPower`, `.power`.
 
+**Source-relative scopes** (`Scope`) short-circuit the battlefield scan and name specific permanents
+relative to the static's source; `baseFilter` / `excludeSelf` are ignored for these.
+
+- `GroupFilter.source()` (`Scope.Self`) — "this creature/permanent".
+- `GroupFilter.attachedCreature()` (`Scope.AttachedTo`) — "enchanted/equipped creature". On a card that
+  is not an Aura or Equipment this matches nothing, silently — `CardLinter` flags it.
+- `GroupFilter.soulbondPair()` (`Scope.SoulbondPair`) — "both creatures" / "each of those creatures" of a
+  soulbond pair (CR 702.95b): the source **and** the creature it's paired with. Resolves to the **empty
+  set** while the source is unpaired, so a payoff's "as long as this creature is paired with another
+  creature" clause is self-enforcing and needs no `condition =` gate — and the bonus switches off the
+  instant CR 702.95e breaks the pair (Lightning Mauler's haste, Deadeye Navigator's granted blink).
+- `GroupFilter.specific(entityId)` (`Scope.Specific`) — a pre-bound entity.
+
 ### Stack-object predicates
 
 These `CardPredicate`s evaluate against entities in the `Zone.STACK` (spells and activated/triggered
@@ -3325,6 +3339,14 @@ work for abilities-on-stack (which carry no `CardComponent`).
   player-level Ring-bearer conditions via `Conditions.YouControl(Creature.ringBearer(), negate = …)`
   (Dúnedain Rangers: "if you don't control a Ring-bearer"). For the source-relative "this creature is
   your Ring-bearer" use the existing `Conditions.SourceIsRingBearer`.
+- `IsPaired` (filter builders `paired()` / `unpaired()`) — the creature is soulbond-paired with another
+  creature (CR 702.95b: has `PairedComponent`). Deliberately **not** source-relative, so it evaluates
+  the same way in a gather filter, a target filter, and a `Conditions.SourceMatches` gate — that's what
+  backs `Conditions.SourceIsPaired` / `SourceIsUnpaired`, and what soulbond's own "another **unpaired**
+  creature you control" candidate filter uses (`GameObjectFilter.Creature.unpaired()`). For the
+  source-relative "paired **with this creature**" — the affected set of a soulbond payoff — use
+  `GroupFilter.soulbondPair()` (`Scope.SoulbondPair`) instead; a plain predicate can't express it,
+  because group-static projection has no per-recipient source.
 - `IsFaceDown` — currently face-down.
 - `HasCounter(type)` — has at least one counter of `type`.
 - `IsEquipped` (filter builder `equipped()`) — has at least one Equipment attached.
@@ -5849,7 +5871,7 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Defender, Indestructible, Hexproof, Shroud, Haste,
 Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Emerge, Storm, Flashback, Harmonize, Mayhem, Disturb, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
-Offspring, Persist, Undying, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
+Offspring, Persist, Undying, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Soulbond, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
 composite abilities).
 
 **Parameterized `KeywordAbility.*`**
@@ -6138,6 +6160,36 @@ composite abilities).
   scan handles the exploiter-still-present case, and a battlefield-presence guard keeps the two from double-firing.
   `EmitExploitedEventEffect` is an internal `data object` (no player-facing text) and should not be used directly — it is
   wired into `exploit()`. See `EventPattern.ExploitedEvent` under Sacrifice triggers for the watcher form.
+- `Soulbond` — "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain
+  paired for as long as you control both of them.)" (CR 702.95, Avacyn Restored; reprinted MM3/INR). Display-only keyword;
+  wire the behavior with the `card { soulbond() }` builder helper. It adds the keyword plus the **two** triggered
+  abilities CR 702.95a defines, both composed from existing primitives — the only soulbond-specific vocabulary is
+  `PairWithSourceEffect`:
+  - **"When this creature enters, … you may pair this creature with another unpaired creature you control"** — a
+    `Effects.Pipeline { }` of `gather(GameObjectFilter.Creature.unpaired(), player = Player.You, excludeSelf = true)` →
+    `chooseUpTo(1, useTargetingUI = true)` → `pairWithSource(…)`. The `upTo` *is* the "you may" (selecting nothing
+    declines), and an empty gather prompts nothing, which is also how the intervening-if's "if you control … another
+    creature" comes out right. `useTargetingUI` puts the choice on the battlefield rather than in an overlay.
+  - **"Whenever another creature you control enters, … you may pair that creature with this creature"** —
+    `Triggers.OtherCreatureEnters` (which already carries the "another creature **you control**" clause) with
+    `optional = true` for a plain yes/no, `triggerCondition = Conditions.SourceIsUnpaired` for the rest of the
+    intervening-if (a creature that just entered can never already be paired), and a
+    `Pipeline { gather(CardSource.TriggeringEntity); pairWithSource(…) }` body.
+  The **payoff** clause is an ordinary static ability whose `GroupFilter` is `GroupFilter.soulbondPair()`
+  (`Scope.SoulbondPair`) — "both creatures" / "each of those creatures". That scope resolves to `{source, partner}` while
+  paired and to the **empty set** while unpaired, so "as long as this creature is paired with another creature" is
+  self-enforcing and needs no `condition =` gate: Lightning Mauler is just
+  `GrantKeyword(Keyword.HASTE, GroupFilter.soulbondPair())`, and Deadeye Navigator is
+  `GrantActivatedAbility(<{1}{U}: blink self>, GroupFilter.soulbondPair())` — a granted ability's `EffectTarget.Self`
+  binds to the permanent that *has* it (CR 113.7), so activating it on the partner blinks the partner.
+  Pairing state lives in the engine, not the SDK: `PairWithSourceExecutor` stamps a symmetric `PairedComponent` on both
+  halves (enforcing CR 702.95c — either half no longer a creature, off the battlefield, or under another controller and
+  *neither* becomes paired — and CR 702.95d's one-partner limit), `SoulbondPairingCheck` (`SbaOrder.SOULBOND_UNPAIRING`)
+  breaks the pair the moment CR 702.95e applies, `ZoneMovementUtils.stripBattlefieldComponents` clears the leaving half,
+  and `CreaturesPairedEvent` / `CreaturesUnpairedEvent` surface it to the client as `pairedWithId` (which the
+  `SoulbondBonds` overlay draws as a bond between the two battlefield slots). Query pairing from a filter or condition
+  with `GameObjectFilter.paired()` / `.unpaired()` (`StatePredicate.IsPaired`) and `Conditions.SourceIsPaired` /
+  `SourceIsUnpaired`.
 - `Training` — "Training (Whenever this creature and at least one other creature with power greater than this creature's
   power attack, put a +1/+1 counter on this creature.)" (CR 702.149, Innistrad: Midnight Hunt; also WHO, SLD). Display-only
   keyword; wire the behavior with the `card { training() }` builder helper. It adds the keyword plus one attack-triggered

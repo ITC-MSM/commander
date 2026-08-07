@@ -219,6 +219,8 @@ class CantBeBlockedByRule(
                     is Scope.AttachedTo -> container.get<AttachedToComponent>()?.targetId == ctx.attackerId
                     is Scope.Specific -> scope.entityId == ctx.attackerId
                     is Scope.Battlefield -> true
+                    is Scope.SoulbondPair ->
+                        com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(ctx.state, hostId, ctx.attackerId)
                     is Scope.Self -> false // already covered by the attacker's own printed read
                 }
                 if (!scopeMatches) continue

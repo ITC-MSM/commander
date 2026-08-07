@@ -975,6 +975,16 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.IsRingBearer
     )
 
+    /** Must be soulbond-paired with another creature (CR 702.95b). */
+    fun paired() = copy(
+        statePredicates = statePredicates + StatePredicate.IsPaired
+    )
+
+    /** Must **not** be soulbond-paired — the "unpaired creature" of CR 702.95b. */
+    fun unpaired() = copy(
+        statePredicates = statePredicates + StatePredicate.Not(StatePredicate.IsPaired)
+    )
+
     /** Must have blocked, or been blocked by, a legendary creature this turn (You Cannot Pass!). */
     fun blockedOrWasBlockedByLegendaryThisTurn() = copy(
         statePredicates = statePredicates + StatePredicate.BlockedOrWasBlockedByLegendaryThisTurn

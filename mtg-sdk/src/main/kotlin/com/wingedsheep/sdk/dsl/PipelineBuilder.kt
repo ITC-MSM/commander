@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.MoveType
 import com.wingedsheep.sdk.scripting.effects.NoteCreatureTypeEffect
 import com.wingedsheep.sdk.scripting.effects.OptionType
+import com.wingedsheep.sdk.scripting.effects.PairWithSourceEffect
 import com.wingedsheep.sdk.scripting.effects.RevealCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectTargetEffect
@@ -714,6 +715,14 @@ class PipelineBuilder private constructor(private val shared: Shared) {
     /** Sacrifice the permanents in [from] (owners' graveyards, [MoveType.Sacrifice]). */
     fun sacrifice(from: CollectionSlot) =
         move(from, CardDestination.ToZone(Zone.GRAVEYARD), moveType = MoveType.Sacrifice)
+
+    /**
+     * Soulbond-pair the creature in [from] with the pipeline's source (CR 702.95a). An empty
+     * [from] is a no-op, so this is also the landing spot for a declined "you may pair".
+     */
+    fun pairWithSource(from: CollectionSlot) {
+        steps += PairWithSourceEffect(from = from.key)
+    }
 
     /** Exile the cards in [from]. */
     fun exile(

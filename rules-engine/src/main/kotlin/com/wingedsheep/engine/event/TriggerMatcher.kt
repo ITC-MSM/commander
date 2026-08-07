@@ -1896,6 +1896,10 @@ class TriggerMatcher(
             val entity = state.getEntity(entityId) ?: return false
             entity.has<FaceDownComponent>()
         }
+        // Soulbond pairing (CR 702.95b) — plain per-entity state, evaluable here, so a
+        // "whenever a paired creature …" trigger filter gates correctly instead of failing open.
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsPaired ->
+            com.wingedsheep.engine.mechanics.SoulbondPairing.isPaired(state, entityId)
         // Graveyard-zone-only predicates; trigger gating never sees a stamped entity here.
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardThisTurn -> false
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false

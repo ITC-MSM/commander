@@ -342,6 +342,30 @@ sealed interface ClientEvent {
         override val description: String = "Untapped $permanentName"
     ) : ClientEvent
 
+    /**
+     * Two creatures became soulbond-paired (CR 702.95b). The client draws the pair bond between the
+     * two battlefield slots off the resulting `pairedWithId` on each card, and plays a one-shot
+     * "bond forming" flourish off this event.
+     */
+    @Serializable
+    @SerialName("creaturesPaired")
+    data class CreaturesPaired(
+        val firstId: EntityId,
+        val firstName: String,
+        val secondId: EntityId,
+        val secondName: String,
+        override val description: String = "$firstName paired with $secondName"
+    ) : ClientEvent
+
+    /** A soulbond pair was broken (CR 702.95e). */
+    @Serializable
+    @SerialName("creaturesUnpaired")
+    data class CreaturesUnpaired(
+        val permanentId: EntityId,
+        val permanentName: String,
+        override val description: String = "$permanentName is no longer paired"
+    ) : ClientEvent
+
     @Serializable
     @SerialName("permanentPhasedOut")
     data class PermanentPhasedOut(
@@ -1027,6 +1051,18 @@ object ClientEventTransformer {
             )
 
             is UntappedEvent -> ClientEvent.PermanentUntapped(
+                permanentId = event.entityId,
+                permanentName = event.entityName
+            )
+
+            is CreaturesPairedEvent -> ClientEvent.CreaturesPaired(
+                firstId = event.firstId,
+                firstName = event.firstName,
+                secondId = event.secondId,
+                secondName = event.secondName
+            )
+
+            is CreaturesUnpairedEvent -> ClientEvent.CreaturesUnpaired(
                 permanentId = event.entityId,
                 permanentName = event.entityName
             )

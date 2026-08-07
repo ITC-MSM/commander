@@ -123,6 +123,9 @@ export function computeCardGroupKey(card: ClientCard): string {
   if (card.isSuspected) parts.push('suspected')
   if (card.isRingBearer) parts.push('ringbearer')
   if (card.isCommander) parts.push('commander')
+  // A soulbond pair anchors a drawn bond to one specific slot, so a paired creature must never
+  // merge with an identical unpaired twin — nor with a creature paired to somebody else.
+  if (card.pairedWithId) parts.push(`paired:${card.pairedWithId}`)
 
   // Copy provenance is badged and shown in details, so a token copy doesn't merge with the original.
   if (card.copyOf) parts.push(`copy:${card.copyOf}`)

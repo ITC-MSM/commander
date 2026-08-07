@@ -258,6 +258,13 @@ export interface ClientCard {
    */
   readonly isRingBearer?: boolean
 
+  /**
+   * The creature this one is soulbond-paired with (CR 702.95b), or absent while unpaired.
+   * Battlefield only, and always symmetric — the server drops both halves together the moment the
+   * pair breaks — so `SoulbondBonds` can dedupe on the id pair and draw one bond per pair.
+   */
+  readonly pairedWithId?: EntityId | null
+
   /** Zone this card is currently in */
   readonly zone: ZoneId | null
 
