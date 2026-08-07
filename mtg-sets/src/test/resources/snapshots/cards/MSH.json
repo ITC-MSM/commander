@@ -5427,6 +5427,73 @@
     ]
 }
 
+// Hercules, Prince of Power
+{
+    "name": "Hercules, Prince of Power",
+    "manaCost": "{2}{G}",
+    "typeLine": "Legendary Creature — Demigod Warrior Hero",
+    "oracleText": "Power-up — {4}{G}: Put a +1/+1 counter on Hercules. He gains vigilance, indestructible, and haste until end of turn. (Activate each power-up ability only once. Reduce the cost by his mana cost if he entered this turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "VIGILANCE",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "INDESTRUCTIBLE",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put a +1/+1 counter on Hercules. He gains vigilance, indestructible, and haste until end of turn.",
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "rarity": "UNCOMMON",
+        "artist": "David Talaski",
+        "flavorText": "\"No need to avert your eyes, mortal admirers! Nay, I say feast them!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d610d9fe-f8ae-473f-9325-e2f28f7e8a69.jpg?1783902916"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hero in Training
 {
     "name": "Hero in Training",
