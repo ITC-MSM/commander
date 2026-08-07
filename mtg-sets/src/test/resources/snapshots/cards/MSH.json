@@ -191,6 +191,80 @@
     "colorIdentityOverride": []
 }
 
+// Abomination, Terrifying Titan
+{
+    "name": "Abomination, Terrifying Titan",
+    "manaCost": "{3}{R/G}",
+    "typeLine": "Legendary Creature — Gamma Villain",
+    "oracleText": "Trample\nPower-up — {5}{R/G}{R/G}: Put a +1/+1 counter on Abomination. He fights up to one target creature an opponent controls. (Activate each power-up ability only once. Reduce the cost by his mana cost if he entered this turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{R/G}{R/G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Fight",
+                            "target1": "Self",
+                            "target2": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature an opponent controls"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        },
+                        "id": "up to one target creature an opponent controls"
+                    }
+                ],
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put a +1/+1 counter on Abomination. He fights up to one target creature an opponent controls.",
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "198",
+        "rarity": "UNCOMMON",
+        "artist": "Piotr Dura",
+        "flavorText": "\"Stop me? Puny fools. Stop me how?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2c6ab9bb-dba2-4b5b-a4d9-54735f65ac21.jpg?1783902908"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Aerial Doombot
 {
     "name": "Aerial Doombot",
