@@ -159,6 +159,17 @@ export function StackDisplay() {
             ? { boxShadow: '0 0 8px 2px rgba(60, 140, 255, 0.5)', borderRadius: 6 }
             : {}
 
+    // Badges sharing the top-left corner stack downwards in a fixed order, so adding one never
+    // silently parks it on top of another. `topOf` returns the row a badge occupies, given which
+    // of the ones above it are showing.
+    const topLeftBadges = [
+      card.castProvenanceLabel ? 'provenance' : null,
+      card.optionalCostLabel ? 'optionalCost' : null,
+      card.giftPromised ? 'gift' : null,
+      card.wasBlightPaid ? 'blight' : null,
+    ].filter((b): b is string => b !== null)
+    const topOf = (badge: string) => 4 + Math.max(0, topLeftBadges.indexOf(badge)) * 22
+
     return (
       <div
         key={opts.domKey}
@@ -247,19 +258,25 @@ export function StackDisplay() {
             X={card.chosenX}
           </div>
         )}
+        {/* Show how the spell was cast — "Disturb · Graveyard" — for anything but a plain hand cast */}
+        {card.castProvenanceLabel && (
+          <div
+            style={{ ...styles.stackCastProvenanceBadge, top: topOf('provenance') }}
+            title={`Cast: ${card.castProvenanceLabel}`}
+          >
+            {card.castProvenanceLabel}
+          </div>
+        )}
         {/* Show the declared optional additional cost — Kicked / Bargained / Offspring */}
         {card.optionalCostLabel && (
-          <div style={styles.stackKickedBadge}>
+          <div style={{ ...styles.stackKickedBadge, top: topOf('optionalCost') }}>
             {card.optionalCostLabel}
           </div>
         )}
         {/* Show gift badge when the caster promised a gift (Bloomburrow) */}
         {card.giftPromised && (
           <div
-            style={{
-              ...styles.stackGiftBadge,
-              top: card.optionalCostLabel ? 26 : 4,
-            }}
+            style={{ ...styles.stackGiftBadge, top: topOf('gift') }}
             title="Gift promised"
           >
             <i className="ms ms-ability-gift" style={{ fontSize: 12 }} />
@@ -269,10 +286,7 @@ export function StackDisplay() {
         {/* Show blight-paid badge when the optional Blight additional cost was paid (Lorwyn Eclipsed) */}
         {card.wasBlightPaid && (
           <div
-            style={{
-              ...styles.stackBlightPaidBadge,
-              top: 4 + (card.optionalCostLabel ? 22 : 0) + (card.giftPromised ? 22 : 0),
-            }}
+            style={{ ...styles.stackBlightPaidBadge, top: topOf('blight') }}
             title="Blight cost paid"
           >
             <i className="ms ms-counter-minus" style={{ fontSize: 12 }} />

@@ -156,7 +156,8 @@ class StackResolver(
         faceIndex: Int? = null,
         spentManaProvenance: com.wingedsheep.engine.mechanics.mana.SpentManaProvenance =
             com.wingedsheep.engine.mechanics.mana.SpentManaProvenance(),
-        castTimeFlags: Set<String> = emptySet()
+        castTimeFlags: Set<String> = emptySet(),
+        alternativeCost: com.wingedsheep.engine.core.AlternativeCostType? = null
     ): ExecutionResult {
         val container = state.getEntity(cardId)
             ?: return ExecutionResult.error(state, "Card not found: $cardId")
@@ -242,6 +243,7 @@ class StackResolver(
                 additionalCostBlightAmount = additionalCostBlightAmount,
                 additionalCostPayXLifeAmount = additionalCostPayXLifeAmount,
                 castFromZone = castFromZone,
+                alternativeCost = alternativeCost,
                 wasWarped = wasWarped,
                 wasDashed = wasDashed,
                 wasEvoked = wasEvoked,
@@ -364,8 +366,19 @@ class StackResolver(
             newState = newState.removeMayPlayPermissionsForCard(cardId)
         }
 
+        // A cast-transformed spell is on the stack back face up (CR 712.8c), so its *name* is the
+        // back face's — `cardComponent` was captured before the face swap above and still holds the
+        // front face's. The log used to announce a disturb cast as "cast Covetous Castaway" while
+        // the stack showed Ghostly Castigator. Only the name moves to the back face here: the mana
+        // value below deliberately stays the front face's (CR 712.8c again), and every card-definition
+        // lookup keeps using `cardComponent.cardDefinitionId`, which addresses the whole card.
+        val spellName = if (castTransformed) {
+            newState.getEntity(cardId)?.get<CardComponent>()?.name ?: cardComponent.name
+        } else {
+            cardComponent.name
+        }
         // For face-down creatures, use a generic name in the event
-        val eventName = if (castFaceDown) "Face-down creature" else cardComponent.name
+        val eventName = if (castFaceDown) "Face-down creature" else spellName
 
         // Collect target names for the cast event log
         val targetNames = effectiveTargets.mapNotNull { target ->
@@ -406,7 +419,9 @@ class StackResolver(
                 spentManaSubtypes = spentManaProvenance.spentSubtypes,
                 spentManaSourceIds = spentManaProvenance.sourceIds,
                 chosenModesCount = reportedChosenModesCount,
-                manaValue = cardComponent.manaValue
+                manaValue = cardComponent.manaValue,
+                castFromZone = castFromZone,
+                alternativeCost = alternativeCost
             )
         )
 

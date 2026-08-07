@@ -551,7 +551,21 @@ data class SpellCastEvent(
      * off "a spell with equal or lesser mana value" (Kellan, the Kid) read the printed value of
      * the spell that fired the trigger, not the mana spent on it.
      */
-    val manaValue: Int = 0
+    val manaValue: Int = 0,
+    /**
+     * The zone this spell was cast from (CR 601.2a), or null when it couldn't be resolved. Purely
+     * descriptive — triggers that care about the origin zone read
+     * [com.wingedsheep.engine.state.CastSpellRecord] — but it is what lets the client say *where*
+     * a spell came from instead of leaving every cast looking like a cast out of hand. See
+     * [com.wingedsheep.engine.view.CastProvenance].
+     */
+    val castFromZone: Zone? = null,
+    /**
+     * Which alternative casting cost paid for this spell (CR 118.9), or null for a normal cast.
+     * Mirrors [com.wingedsheep.engine.state.components.stack.SpellOnStackComponent.alternativeCost];
+     * also descriptive only.
+     */
+    val alternativeCost: AlternativeCostType? = null
 ) : GameEvent
 
 /**

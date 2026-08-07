@@ -387,6 +387,15 @@ data class ClientCard(
      */
     val optionalCostLabel: String? = null,
 
+    /**
+     * How this spell was cast — "Disturb · Graveyard", "Command zone" — or null for an ordinary
+     * cast from hand. Only present on the stack; rendered verbatim as a badge, like
+     * [optionalCostLabel], so the naming decision stays server-side. Without it a graveyard cast is
+     * indistinguishable from a cast out of hand, which is most misleading for the disturb cycle:
+     * the spell wears its back face's unfamiliar name and has no printed mana cost of its own.
+     */
+    val castProvenanceLabel: String? = null,
+
     /** Whether this spell promised a gift (Bloomburrow gift mechanic — only present on stack) */
     val giftPromised: Boolean = false,
 

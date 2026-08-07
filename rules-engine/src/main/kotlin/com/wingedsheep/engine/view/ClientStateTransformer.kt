@@ -1055,6 +1055,12 @@ class ClientStateTransformer(
             }
         }
 
+        // Name how the spell got onto the stack ("Disturb · Graveyard") so a cast from anywhere but
+        // hand doesn't read as a cast out of hand. Same server-side-naming rule as the label above.
+        val castProvenanceLabel = spellOnStack?.let {
+            CastProvenance.badgeLabel(it.alternativeCost, it.castFromZone)
+        }
+
         // Surface whether the optional Blight additional cost was paid (Lorwyn Eclipsed)
         // so opponents can see at a glance that a stronger effect is incoming on resolution.
         val wasBlightPaid = spellOnStack?.wasBlightPaid ?: false
@@ -1331,6 +1337,7 @@ class ClientStateTransformer(
                 ClientRuling(date = it.date, text = it.text)
             } ?: emptyList(),
             optionalCostLabel = optionalCostLabel,
+            castProvenanceLabel = castProvenanceLabel,
             giftPromised = giftPromised,
             wasBlightPaid = wasBlightPaid,
             chosenX = chosenX,

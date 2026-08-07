@@ -187,6 +187,12 @@ export interface SpellCastEvent {
   readonly spellId: EntityId
   readonly spellName: string
   readonly casterId: EntityId
+  /**
+   * How the spell was cast — "disturb, from graveyard", "from command zone" — or absent for an
+   * ordinary cast from hand. Already folded into {@link description}; present separately so the
+   * log could style it without re-deriving it.
+   */
+  readonly castProvenance?: string
   readonly description: string
 }
 
