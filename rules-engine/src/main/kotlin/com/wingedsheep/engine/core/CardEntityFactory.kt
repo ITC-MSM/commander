@@ -136,8 +136,24 @@ object CardEntityFactory {
         val protectionSupertypes = protections.mapNotNull {
             (it.scope as? ProtectionScope.Supertype)?.supertype
         }.toSet()
-        if (protectionColors.isNotEmpty() || protectionSubtypes.isNotEmpty() || protectionSupertypes.isNotEmpty()) {
-            result = result.with(ProtectionComponent(protectionColors, protectionSubtypes, protectionSupertypes))
+        // "Protection from instants" (Emrakul, the Promised End). Normalized to the uppercase card
+        // type name here so the projector can emit `PROTECTION_FROM_CARDTYPE_<TYPE>` — the same
+        // keyword the *granted* card-type protections (Sword of Wealth and Power, Pippin) project,
+        // so every consumer downstream already honors it.
+        val protectionCardTypes = protections.mapNotNull {
+            (it.scope as? ProtectionScope.CardType)?.cardType?.uppercase()
+        }.toSet()
+        if (protectionColors.isNotEmpty() || protectionSubtypes.isNotEmpty() ||
+            protectionSupertypes.isNotEmpty() || protectionCardTypes.isNotEmpty()
+        ) {
+            result = result.with(
+                ProtectionComponent(
+                    protectionColors,
+                    protectionSubtypes,
+                    protectionSupertypes,
+                    protectionCardTypes
+                )
+            )
         }
 
         // Card-intrinsic "would be put into [zone] from anywhere → redirect instead" self-replacements

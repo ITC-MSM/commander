@@ -5034,7 +5034,12 @@ staticAbility {
   `YourSpeed` (the casting player's speed, 0–4, CR 702.179 — Samut, the Driving Force's "Noncreature
   spells you cast cost {X} less to cast, where X is your speed"; "no speed" reads as 0 per CR
   702.179f, so a player who never started their engines simply gets no reduction),
-  `CardsInGraveyardMatchingFilter`, `FixedIfAnyTargetMatches`,
+  `CardsInGraveyardMatchingFilter`,
+  `CardTypesInYourGraveyard(amountPerType = 1)` (the number of *card types* among cards in your
+  graveyard — Emrakul, the Promised End. Distinct types (CR 205.2a), never supertypes or subtypes,
+  so nine creature cards shave only {1}; the counting sibling of `CardsInGraveyardMatchingFilter`,
+  which totals cards. Same aggregation as `Conditions.Delirium` over the same zone, capped by the
+  number of card types — {9} for Emrakul), `FixedIfAnyTargetMatches`,
   `FixedIfCreatureDiedThisTurn(amount)` (the morbid discount — "costs {N} less to cast if a creature
   died this turn", Dreaded Bat-Cloud. Reads the same per-player `CreaturesDiedThisTurnComponent`
   tallies as `Conditions.CreatureDiedThisTurn`, summed across the table, so an opponent's creature
@@ -6033,6 +6038,14 @@ composite abilities).
 - `Protection(color)` — protection from a single color.
 - `ProtectionFrom(set)` — protection from a set of colors/types.
 - `Protection(ProtectionScope.Supertype("Legendary"))` / `KeywordAbility.protectionFromSupertype("Legendary")` — protection from a supertype, e.g. "protection from legendary creatures" (Tsabo Tavoc). Enforced across targeting, blocking, and combat damage via projected `PROTECTION_FROM_SUPERTYPE_<X>` keywords.
+- `Protection(ProtectionScope.CardType("Instant"))` — protection from a card type, e.g. "protection from
+  instants" (Emrakul, the Promised End). Projected as `PROTECTION_FROM_CARDTYPE_<TYPE>` — the same keyword
+  the *granted* card-type protections emit ([`GrantProtectionFromCardType`](#14-static-abilities) on Sword of
+  Wealth and Power, `GrantProtectionFromChosenCardType` on Pippin), so targeting (`TargetValidator`,
+  `StackResolver`), damage prevention (`DamageUtils`, `CombatDamagePipeline`, `CombatDamageManager`), and
+  block evasion (`BlockEvasionRules`) all honour it with no per-card wiring. Protection only functions on
+  the battlefield (CR 702.16), so a spell that targets the permanent while it is still on the stack is
+  unaffected. Rides on the card entity as `ProtectionComponent.cardTypes`.
 - `Hexproof(ProtectionScope.Color(Color.WHITE))` — "hexproof from white" (Knight of Malice). Projected as
   `HEXPROOF_FROM_<COLOR>`.
 - `Hexproof(ProtectionScope.CardType("Instant"))` — "hexproof from instants" (Elenda, Saint of Dusk).
@@ -6041,8 +6054,9 @@ composite abilities).
   validation (`TargetValidator`), and the resolution-time fizzle check (`StackResolver`). Like every
   hexproof it only stops **opponents** — the permanent's controller can still target it — and it honours
   hexproof-suppressing effects. The printed keyword rides on the card entity as `HexproofFromComponent`
-  (attached by `CardEntityFactory.applyDefinitionDecorations`); other `ProtectionScope`s format the oracle
-  text but have no targeting wiring yet and are deliberately not projected.
+  (attached by `CardEntityFactory.applyDefinitionDecorations`); the remaining `ProtectionScope`s in the
+  *hexproof* namespace format the oracle text but have no targeting wiring yet and are deliberately not
+  projected.
 - `Affinity(filter)` — cost reduction per matching permanent.
 - `Amplify(n)` — ETB reveal-creatures-for-counters.
 - `Devour(multiplier, sacrificeFilter, variant)` — "As this enters, you may sacrifice any number of [sacrificeFilter]. It enters with [multiplier] × that many +1/+1 counters." Plain Devour uses `sacrificeFilter = Creature` and `variant = ""`; the Edge of Eternities variant "Devour land N" uses `KeywordAbility.devourLand(n)` (`sacrificeFilter = Land`, `variant = "land"`). The keyword surfaces the rules text; pair with [`EntersWithDevour`](#15-replacement-effects) for the mechanical behavior.

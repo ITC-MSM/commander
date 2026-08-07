@@ -1858,6 +1858,123 @@
     ]
 }
 
+// Emrakul, the Promised End
+{
+    "name": "Emrakul, the Promised End",
+    "manaCost": "{13}",
+    "typeLine": "Legendary Creature — Eldrazi",
+    "oracleText": "This spell costs {1} less to cast for each card type among cards in your graveyard.\nWhen you cast this spell, you gain control of target opponent during that player's next turn. After that turn, that player takes an extra turn.\nFlying, trample, protection from instants",
+    "creatureStats": {
+        "power": 13,
+        "toughness": 13
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.CardType",
+                "cardType": "Instant"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CastThisSpellEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "HijackNextTurn",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target opponent"
+                            }
+                        },
+                        {
+                            "type": "TakeExtraTurn",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target opponent"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When you cast this spell, you gain control of target opponent during that player's next turn. After that turn, that player takes an extra turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": "CardTypesInYourGraveyard"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "MYTHIC",
+        "artist": "Jaime Jones",
+        "flavorText": "An enigma as vexing as life itself.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d74a469-c71d-4773-99d3-5456b31df424.jpg?1783937526",
+        "rulings": [
+            {
+                "date": "2025-01-24",
+                "text": "The card types that could appear in your graveyard are artifact, battle, creature, enchantment, instant, kindred, land, planeswalker, and sorcery. Supertypes (such as legendary and basic) and subtypes (such as Human and Equipment) are not counted. The maximum discount that Emrakul's own ability can provide is {9}."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Protection from instants means that Emrakul can't be the target of instant spells or activated or triggered abilities from instant cards, and damage that would be dealt to it by instant spells or cards is prevented. Instant spells may still affect it in other ways; for example, it would still receive the bonus from Rally the Peasants."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "Protection abilities only apply while the object with the ability is on the battlefield. Notably, Emrakul may be the target of a spell that targets it while on the stack, such as Syncopate."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "An ability that triggers when a player casts a spell resolves before the spell that caused it to trigger. It resolves even if that spell is countered or otherwise leaves the stack without resolving."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "The player you're controlling is still the active player during that turn."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "You only control the player. You don't control any of that player's permanents, spells, or abilities."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "While controlling another player, you make all choices and decisions that player is allowed to make or is told to make during that turn. This includes choices about what spells to cast or what abilities to activate, as well as any decisions called for by triggered abilities or for any other reason."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "You can use only the affected player's resources (cards, mana, and so on) to pay costs for that player; you can't use your own. Similarly, you can use the affected player's resources only to pay that player's costs; you can't spend them on your costs."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "While controlling another player, you can see all cards in the game that player can see. This includes cards in that player's hand, face-down cards that player controls, and any cards in that player's library the player may look at."
+            },
+            {
+                "date": "2025-01-24",
+                "text": "If the targeted player skips their next turn, you'll control the next turn the affected player actually takes, and the extra turn the player takes will be after that turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Faith Unbroken
 {
     "name": "Faith Unbroken",
