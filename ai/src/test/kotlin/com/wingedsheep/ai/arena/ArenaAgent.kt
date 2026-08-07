@@ -97,6 +97,19 @@ object ArenaAgents {
         // promotion gate, against what players face today.
         ArenaAgent("production-patience", AiProfile.PRODUCTION_PATIENCE),
         ArenaAgent("production-candidate-patience", AiProfile.PRODUCTION_CANDIDATE_PATIENCE),
+        // The two `BoardPresence.creatureValue` corrections the race-clock trade exposed: marked
+        // damage is not progress, and "can't attack" costs the power rather than 15% of everything.
+        // `just arena production production-damagefades 300` and `… production-pacified 300` price
+        // each term on its own; `just arena production-candidate-patience
+        // production-candidate-boardvalue 300` is the promotion gate, against what players face today.
+        ArenaAgent("production-damagefades", AiProfile.PRODUCTION_DAMAGEFADES),
+        ArenaAgent("production-pacified", AiProfile.PRODUCTION_PACIFIED),
+        ArenaAgent("production-candidate-boardvalue", AiProfile.PRODUCTION_CANDIDATE_BOARDVALUE),
+        // The cantrip end-step window. `just arena production production-cantrip 300` prices the
+        // term on its own; `just arena production-candidate-boardvalue production-candidate-cantrip
+        // 300` is the promotion gate.
+        ArenaAgent("production-cantrip", AiProfile.PRODUCTION_CANTRIP),
+        ArenaAgent("production-candidate-cantrip", AiProfile.PRODUCTION_CANDIDATE_CANTRIP),
         ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.

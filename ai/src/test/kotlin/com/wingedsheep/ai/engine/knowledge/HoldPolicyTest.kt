@@ -221,6 +221,58 @@ class HoldPolicyTest : ScenarioTestBase() {
             policy.verdictFor(game.state, game.player1Id, "Wrath of God") shouldBe TimingVerdict.Neutral
         }
 
+        // ── The cantrip window (`AiProfile.cashCantripsInTheEndStep`) ──
+
+        /** Two Islands and an Opt, at the opponent's end step unless [ourTurn]. */
+        fun cantripAt(ourTurn: Boolean) = scenario().withPlayers()
+            .let { if (ourTurn) it else it.withActivePlayer(2) }
+            .withLandsOnBattlefield(1, "Island", 2)
+            .withCardInHand(1, "Opt")
+            .build()
+            .let { if (ourTurn) it else it.advanceToPriority(1, Step.END) }
+
+        test("off, a cantrip has no window anywhere — which is why it is never cast") {
+            val game = cantripAt(ourTurn = false)
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry))
+
+            policy.verdictFor(game.state, game.player1Id, "Opt") shouldBe TimingVerdict.Neutral
+        }
+
+        test("on, the opponent's end step is a window") {
+            val game = cantripAt(ourTurn = false)
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry), cashCantripsInTheEndStep = true)
+
+            policy.verdictFor(game.state, game.player1Id, "Opt")
+                .shouldBeInstanceOf<TimingVerdict.Adjust>()
+        }
+
+        test("on, our own main phase is still neutral rather than penalized") {
+            // Same reason the removal branch gives: rewarding the better window is a comparison,
+            // charging the worse one is a preference, and a constant cannot price one.
+            val game = cantripAt(ourTurn = true)
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry), cashCantripsInTheEndStep = true)
+
+            policy.verdictFor(game.state, game.player1Id, "Opt") shouldBe TimingVerdict.Neutral
+        }
+
+        test("on, a pump in the same window is still thrown away — instants-06 holds") {
+            // The negative control the whole flag rests on. `Strategist`'s old blanket
+            // `passScore - 1.5` at this step passed the cantrip case and failed this one; a window
+            // on the tag has to pass both, or nothing was learned since Phase 6.
+            val game = scenario()
+                .withPlayers()
+                .withActivePlayer(2)
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withCardInHand(1, "Giant Growth")
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .build()
+                .advanceToPriority(1, Step.END)
+            val policy = HoldPolicy(IntentCatalog.of(cardRegistry), cashCantripsInTheEndStep = true)
+
+            policy.verdictFor(game.state, game.player1Id, "Giant Growth")
+                .shouldBeInstanceOf<TimingVerdict.NoWindow>()
+        }
+
         test("a policy with no catalog says nothing about anything") {
             val game = scenario()
                 .withPlayers()

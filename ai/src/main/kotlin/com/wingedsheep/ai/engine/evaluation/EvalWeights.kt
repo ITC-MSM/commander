@@ -45,11 +45,14 @@ data class EvaluationWeights(
         landDropIsNotCardLoss: Boolean = false,
         sequenceLandsByUsableMana: Boolean = false,
         discountedRaceClock: Boolean = false,
+        creatureValuation: CreatureValuation = CreatureValuation.LEGACY,
     ): BoardEvaluator = CompositeBoardEvaluator(
         listOf(
             life to LifeDifferential,
             boardPresence to BoardFeature { state, projected, playerId ->
-                BoardPresence.score(state, projected, playerId, intents, sequenceLandsByUsableMana)
+                BoardPresence.score(
+                    state, projected, playerId, intents, sequenceLandsByUsableMana, creatureValuation,
+                )
             },
             cardAdvantage to BoardFeature { state, projected, playerId ->
                 CardAdvantage.score(state, projected, playerId, topdeckPenalty, landDropIsNotCardLoss)
@@ -124,10 +127,10 @@ object EvalWeights {
         resourceWeights[id]?.takeIf(::isFinite) ?: EvaluationWeights.DEFAULT
 
     /**
-     * [landDropIsNotCardLoss], [sequenceLandsByUsableMana] and [discountedRaceClock] reach only the
-     * composite fallback: the raw Phase 9 vectors price `myHandSize` linearly, so a land drop
-     * already costs them one fitted coefficient with no cliff to step off, and changing what any of
-     * them count would silently invalidate the fit.
+     * [landDropIsNotCardLoss], [sequenceLandsByUsableMana], [discountedRaceClock] and
+     * [creatureValuation] reach only the composite fallback: the raw Phase 9 vectors price
+     * `myHandSize` linearly, so a land drop already costs them one fitted coefficient with no cliff
+     * to step off, and changing what any of them count would silently invalidate the fit.
      */
     fun resolveEvaluator(
         id: String,
@@ -135,11 +138,13 @@ object EvalWeights {
         landDropIsNotCardLoss: Boolean = false,
         sequenceLandsByUsableMana: Boolean = false,
         discountedRaceClock: Boolean = false,
+        creatureValuation: CreatureValuation = CreatureValuation.LEGACY,
     ): BoardEvaluator =
         apprenticeWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
             ?: rawResourceWeights[id]?.takeIf(RawEvaluationWeights::isValid)?.toEvaluator(intents)
             ?: resolve(id).toEvaluator(
                 intents, landDropIsNotCardLoss, sequenceLandsByUsableMana, discountedRaceClock,
+                creatureValuation,
             )
 
     /** Whether [id] selects a complete, finite raw vector rather than the composite fallback. */

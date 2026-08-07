@@ -1643,3 +1643,113 @@ so backing the promotion out costs nothing and loses no measurement.
 The honest one-line summary: the AI is **tactically better** at two positions it used to get wrong,
 with nothing traded on the other 85, and its **strength is unmeasured and probably unmeasurable at
 this sample size**.
+
+---
+
+# Creature valuation — the two terms the race clock exposed
+
+**Measured:** 2026-08-07. Same hardware, same harness.
+`AiProfile.creatureValuation`, promoted as `production-candidate-boardvalue`.
+
+`PRODUCTION_RACECLOCK`'s KDoc closed with a prediction: its arena win came with a puzzle trade, both
+losses were `BoardPresence.creatureValue` weaknesses the old `99.0` no-attacker sentinel had been
+masking, and "fix those two and the trade should become a straight gain." This is that measurement.
+Both terms were wrong in **shape**, not in size, which is why neither was reachable by tuning:
+
+- **Marked damage.** `value *= 0.5 + 0.5 × healthFraction` made one point on a 3/3 read as 0.7 of
+  board progress (4.2 → 3.5). Damage wears off at cleanup — the exact case the
+  `temporaryPTModification` subtraction five lines above it exists to avoid, arrived at from the
+  other end. That is `activate-04`: a Prodigal Sorcerer spending its turn pinging a creature it
+  cannot kill.
+- **"Can't attack."** A flat `×0.85`, where the *same restriction* spelled `DEFENDER` cost
+  `power × 0.8` — a factor of four between two spellings of one thing. A Pacifism'd Craw Wurm kept
+  5.49 of a 7.6 body and so outranked an untouched Hill Giant at 4.2, which is `removal-03`. The
+  multiplicative form is wrong in shape as well as size: it scales *toughness* down too, so it takes
+  more off a creature that can still block, and it lands hardest on the big creatures where the
+  restriction is worth most. Subtracting the power leaves the body a pacified 6/4 still walls a 3/3
+  with.
+
+## Puzzles — 87 positions
+
+| | `production` | live (`production-candidate-patience`) |
+|---|---|---|
+| baseline | 74/87 | 81/87 |
+| `markedDamageFadesAtCleanup` alone | 74/87 | — |
+| `cantAttackCostsPower` alone | 74/87 | — |
+| both (`production-candidate-boardvalue`) | — | **83/87** |
+| closes | — | `activate-04`, `removal-03` |
+| loses | — | — |
+
+The candidate's failing set is a **strict subset** of the live agent's, so nothing was traded.
+
+Both attribution columns are deliberately *empty*: each term leaves `production`'s failing set
+**identical**, id for id. Neither can close its own puzzle on a baseline that still scores the race
+in turns — that is the point of the prediction being about an interaction — and neither costs
+anything across the other 86 positions. A term that moves nothing on the agent it cannot help is the
+cheapest evidence available that it is not quietly taxing every creature in the suite.
+
+## The arena half — the largest margin in the sequence
+
+```
+just arena production-candidate-patience production-candidate-boardvalue 300
+```
+
+| | value |
+|---|---|
+| Baseline (`production-candidate-patience`) win % | **45.3%**, CI [42.0%, 48.7%] |
+| Pair score | −0.093, CI [−0.160, −0.027] |
+| Record | 136W-164L-0D |
+| Completed / illegal actions | 300/300, 0 |
+| Seat 0 wins | 152/300 (50.7%) — first-player advantage, cancelled by pairing |
+| Wall clock | 3,149 s on 8 threads |
+
+The whole interval sits below parity, so this did not merely clear the standing "arena-neutral and a
+puzzle ahead" bar — it cleared the arena half outright, which only `discountedRaceClock` had managed
+before it. Note the contrast with the run above: the patience promotion returned a degenerate
+50.0% CI [50.0%, 50.0%] with **zero** decisive pairs, because that term fires about once a game.
+These two fire on every board that has a damaged or restricted creature on it, which is most boards
+after the first combat, and the pair distribution reflects it.
+
+## Promotion status
+
+`EngineAiPlayerController` and `AiProfileSelector`'s fallback point at
+`production-candidate-boardvalue`. To back it out, revert those two call sites rather than the
+flags: both are off for every other profile, so backing the promotion out costs nothing and loses no
+measurement.
+
+Four puzzles remain unsolved by the live agent, and each names a subsystem rather than a constant:
+`respond-02` (spends the only Counterspell on a 2/2 — the counterspell twin of `RemovalPatience`),
+`respond-05` (a regeneration shield bought before the destruction it answers), `timing-03` (taps out
+for a Hill Giant while holding a Counterspell — held mana as options, which nothing prices), and
+`timing-05` (a cantrip left uncast at the opponent's end step).
+
+## A term that is right and still does nothing: the cantrip window
+
+`AiProfile.cashCantripsInTheEndStep`, measured alongside the above and **not promoted**.
+
+`HoldPolicy` only ever handed the opponent's end step back to `REMOVAL`, so a DRAW-tagged instant
+got nothing at all and a cantrip — board value ≈ 0, a card drawn against a card spent — lost to
+passing at every window through to cleanup. `KNOWN_FAILURES` has carried that diagnosis since Phase
+2c. The fix is a window on the **tag**, not a discount on the **step**, which is what keeps
+`instants-06` answered: an expiring pump is `COMBAT_TRICK` and is caught by the branch above it.
+That distinction is the whole reason `Strategist`'s old blanket `passScore - 1.5` had to go.
+
+| | `production` | live (`production-candidate-boardvalue`) |
+|---|---|---|
+| baseline | 74/87 | 83/87 |
+| with the flag | **75/87** | 83/87 |
+| closes | `timing-05` | — |
+| loses | — | — |
+
+**The term works and the agent that ships it does not use it.** `production-cantrip` closes
+`timing-05` and only `timing-05`, with `instants-06` held, and `HoldPolicyTest` pins the verdict at
+the window directly — so the policy's reading is not what fails. On the live agent the same flag
+moves no verdict at all, and the two differ by rollouts and budget tiers. Either the rollout
+mixture's scale swamps a 1.5-point static adjustment, or the opponent's end step grades below the
+tier at which the candidate gets searched.
+
+The second possibility has a precedent: `PRODUCTION_CANDIDATE_TRICKWINDOW` found exactly that shape
+— "the missing search looks exactly like a missing evaluation until you vary the tier" — and needed
+its evaluation half and its budget half together before either did anything. Both profiles are left
+registered, unpromoted, as the attribution pair that will tell the two apart. No arena run was spent
+on a candidate whose puzzle column is identical to its baseline's.

@@ -69,6 +69,20 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // penalty used to veto) are the negative controls: both must stay passing.
                 AiProfile.PRODUCTION_PATIENCE,
                 AiProfile.PRODUCTION_CANDIDATE_PATIENCE,
+                // The two creature-valuation corrections, each alone and both on top of what is
+                // live. `activate-04` and `removal-03` are the verdicts that should move — the two
+                // the race clock traded away — and only the candidate column can move `removal-03`,
+                // since on `production` it passes for the sentinel's reason rather than the Wurm's.
+                // `removal-01` / `-02` and `keywords` are the negative controls: raw creature value
+                // still has to rank a 6/4 over a 2/2 and read a Wall as a Wall.
+                AiProfile.PRODUCTION_DAMAGEFADES,
+                AiProfile.PRODUCTION_PACIFIED,
+                AiProfile.PRODUCTION_CANDIDATE_BOARDVALUE,
+                // The cantrip end-step window, alone and on top of what is live. `timing-05` is the
+                // verdict that should move, with `instants-06` — the same window, the opposite
+                // answer — held. A column that moves both has broken the control.
+                AiProfile.PRODUCTION_CANTRIP,
+                AiProfile.PRODUCTION_CANDIDATE_CANTRIP,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

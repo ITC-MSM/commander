@@ -47,6 +47,11 @@ class HoldPolicy(
      */
     private val holdRemovalForBetterTargets: Boolean = false,
     /**
+     * [AiProfile.cashCantripsInTheEndStep][com.wingedsheep.ai.engine.AiProfile.cashCantripsInTheEndStep]
+     * — hand an instant-speed draw spell the end-step window this policy already hands removal.
+     */
+    private val cashCantripsInTheEndStep: Boolean = false,
+    /**
      * The profile's `EvaluationWeights.boardPresence`, so [RemovalPatience] can quote its discount
      * in the same currency as the board value it compares against. The default is the compiled
      * fallback's, which is what every profile that does not opt in would have used anyway.
@@ -140,15 +145,39 @@ class HoldPolicy(
             // at all. It is applied outside this `when`, to sorcery-speed removal too.
             intent.tags.any { it in REMOVAL_TAGS } -> when {
                 stackHasSomething -> TimingVerdict.Adjust(RESPONSE_WINDOW)
-                state.activePlayerId != playerId && state.step == Step.END ->
-                    TimingVerdict.Adjust(END_STEP_WINDOW)
+                isOpponentEndStep(state, playerId) -> TimingVerdict.Adjust(END_STEP_WINDOW)
 
                 else -> TimingVerdict.Neutral
             }
 
+            // The same end-step window, for the other card that is strictly better cast there.
+            //
+            // A cantrip's own board value is about zero — a card drawn against a card spent — so on
+            // a tie the AI passes, and it passed *every* window, right through to cleanup, where the
+            // mana it was saving evaporates. Casting at the opponent's end step costs nothing this
+            // spell was going to use and buys a turn of extra information about what to keep.
+            //
+            // Phase 6 used to get this for free from `Strategist`'s blanket `passScore - 1.5` at the
+            // end step, and correctly switched it off for every agent with card knowledge: the same
+            // constant also paid for dumping a pump that expires in cleanup. That is `instants-06`,
+            // and it stays answered — an expiring pump is [IntentTag.COMBAT_TRICK] and is caught by
+            // the branch above this one, whatever else it draws. What is restored here is only the
+            // half of the old constant that was right, which is why this is a window on a tag rather
+            // than a discount on a step.
+            //
+            // No symmetric penalty for casting a cantrip in our own main phase, for the reason the
+            // removal branch gives at length: rewarding the better window is a comparison, and
+            // charging the worse one is a preference a constant cannot price.
+            cashCantripsInTheEndStep && IntentTag.DRAW in intent.tags &&
+                isOpponentEndStep(state, playerId) -> TimingVerdict.Adjust(END_STEP_WINDOW)
+
             else -> TimingVerdict.Neutral
         }
     }
+
+    /** The last window before our own turn — the deadline every "hold it" argument runs out at. */
+    private fun isOpponentEndStep(state: GameState, playerId: EntityId): Boolean =
+        state.activePlayerId != playerId && state.step == Step.END
 
     /**
      * What a spell already on the stack is worth to a pump — the "last chance" window.

@@ -93,6 +93,8 @@ class Strategist(
      * hands it to [com.wingedsheep.ai.engine.knowledge.RemovalPatience].
      */
     private val holdRemovalForBetterTargets: Boolean = false,
+    /** [AiProfile.cashCantripsInTheEndStep] — passed straight through to [HoldPolicy]. */
+    private val cashCantripsInTheEndStep: Boolean = false,
     /**
      * The profile's `EvaluationWeights.boardPresence`. Only [HoldPolicy] reads it, to quote a
      * patience discount in the same units the leaf score prices board value in.
@@ -113,7 +115,11 @@ class Strategist(
     private val insightSink: AiInsightSink? = null,
 ) {
     private val holdPolicy = HoldPolicy(
-        intents, combatTricksWaitForBlocks, holdRemovalForBetterTargets, boardPresenceWeight,
+        intents,
+        tricksWaitForBlocks = combatTricksWaitForBlocks,
+        holdRemovalForBetterTargets = holdRemovalForBetterTargets,
+        cashCantripsInTheEndStep = cashCantripsInTheEndStep,
+        boardPresenceWeight = boardPresenceWeight,
     )
 
     /**

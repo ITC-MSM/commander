@@ -67,6 +67,63 @@ object LifeDifferential : BoardFeature {
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
+ * The two corrections to `BoardPresence.creatureValue` that
+ * [com.wingedsheep.ai.engine.AiProfile.PRODUCTION_RACECLOCK]'s KDoc itemized as the reason its
+ * arena win was a trade rather than a straight gain. Both were masked while the race clock's
+ * `99.0` no-attacker sentinel was out of scale, and both surfaced the moment it stopped being.
+ *
+ * One carrier rather than two boolean parameters because they travel the same path
+ * ([BoardPresence.score] → `permanentValue` → `creatureValue`) and every intermediate signature
+ * would otherwise grow twice. They stay two independent fields, each with its own
+ * [com.wingedsheep.ai.engine.AiProfile] flag and its own attribution column, so either can be
+ * backed out alone.
+ *
+ * **Only the evaluator passes one of these.** The other `permanentValue` callers — `TargetSelection`'s
+ * heuristic rank, `CombatMath`, `DecisionResponder`, `RemovalPatience`'s fair-trade bar — keep
+ * [LEGACY] on purpose, the same seam every profile flag here sits behind. `RemovalPatience` is the
+ * one worth naming: its `FAIR_TRADE_VALUE_PER_MANA` is calibrated against *vanilla* creatures, which
+ * neither correction touches, so moving it would change the bar's meaning rather than its inputs.
+ */
+data class CreatureValuation(
+    /**
+     * Stop discounting a creature for damage marked on it.
+     *
+     * Marked damage wears off at cleanup (CR 514.2), so a 3/3 with one damage on it is a 3/3 next
+     * turn — exactly the case the `temporaryPTModification` subtraction a few lines above it exists
+     * to avoid, arrived at from the other direction. The old `0.5 + 0.5 × healthFraction` made
+     * *pinging* the opponent's 3/3 look like 0.7 of board progress, which is `activate-04`: one
+     * damage at a creature it cannot kill, bought with the Sorcerer's whole turn.
+     *
+     * Off, one point of damage on a 3/3 costs it a sixth of its value; on, it costs nothing. There
+     * is a real case in between — a creature already damaged *is* cheaper to finish off — but it is
+     * a fact about a line, not about a leaf, and a one-ply evaluator that prices it ends up paying
+     * for the first half of a two-card plan it will not remember to complete.
+     */
+    val markedDamageFadesAtCleanup: Boolean = false,
+    /**
+     * Price a projected "can't attack" the way DEFENDER is already priced — as the loss of the
+     * power — instead of as a flat ×0.85.
+     *
+     * The two spellings of the same restriction disagreed by a factor of four. A Pacifism'd Craw
+     * Wurm kept 0.85 of a 6/4 (and 0.72 once the can't-block multiplier landed too), so at 5.5 it
+     * still outranked an untouched Hill Giant at 4.2 and drew the Murder — `removal-03`. A 6/4 with
+     * DEFENDER printed on it, which can do exactly as much, scored 2.8.
+     *
+     * The multiplicative form is wrong in shape and not merely in size: it scales toughness down as
+     * well, so it takes *more* value off a creature that can still block than off one that cannot,
+     * and it lands hardest on the big creatures where the restriction is worth the most. Subtracting
+     * the power leaves the body — a pacified 6/4 still walls a 3/3 — which is the thing the AI
+     * actually gets to keep using.
+     */
+    val cantAttackCostsPower: Boolean = false,
+) {
+    companion object {
+        /** Neither correction: what every number published before 2026-08-10 was measured on. */
+        val LEGACY = CreatureValuation()
+    }
+}
+
+/**
  * Total effective board value. Creatures are scored by combat stats + keywords.
  * Non-creature permanents get type-appropriate values. Enchantments and artifacts
  * that aren't auras get a flat bonus (they're doing something even without P/T).
@@ -95,12 +152,13 @@ object BoardPresence : BoardFeature {
         playerId: EntityId,
         intents: IntentCatalog,
         sequenceLandsByUsableMana: Boolean = false,
+        creatureValuation: CreatureValuation = CreatureValuation.LEGACY,
     ): Double {
         val sides = state.sidesFor(playerId) ?: return 0.0
-        val mine = boardValue(state, projected, sides.mine, intents) +
+        val mine = boardValue(state, projected, sides.mine, intents, creatureValuation) +
             if (sequenceLandsByUsableMana) landSequencing(state, projected, playerId, intents) else 0.0
         return sides.against(OpponentAggregate.THREAT) { opponent ->
-            mine - boardValue(state, projected, opponent, intents)
+            mine - boardValue(state, projected, opponent, intents, creatureValuation)
         }
     }
 
@@ -109,12 +167,13 @@ object BoardPresence : BoardFeature {
         projected: ProjectedState,
         side: List<EntityId>,
         intents: IntentCatalog,
+        creatureValuation: CreatureValuation,
     ): Double {
         var total = 0.0
         for (playerId in side) {
             for (entityId in projected.getBattlefieldControlledBy(playerId)) {
                 val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
-                total += permanentValue(state, projected, entityId, card, intents)
+                total += permanentValue(state, projected, entityId, card, intents, creatureValuation)
             }
         }
         return total
@@ -187,11 +246,12 @@ object BoardPresence : BoardFeature {
         entityId: EntityId,
         card: CardComponent,
         intents: IntentCatalog = IntentCatalog.NONE,
+        creatureValuation: CreatureValuation = CreatureValuation.LEGACY,
     ): Double {
         val container = state.getEntity(entityId) ?: return 0.0
 
         if (projected.isCreature(entityId)) {
-            return creatureValue(state, projected, entityId, container)
+            return creatureValue(state, projected, entityId, container, creatureValuation)
         }
 
         // Non-creature permanents
@@ -292,7 +352,8 @@ object BoardPresence : BoardFeature {
         state: GameState,
         projected: ProjectedState,
         entityId: EntityId,
-        container: ComponentContainer
+        container: ComponentContainer,
+        valuation: CreatureValuation = CreatureValuation.LEGACY,
     ): Double {
         val power = projected.getPower(entityId) ?: 0
         val toughness = projected.getToughness(entityId) ?: 0
@@ -336,7 +397,14 @@ object BoardPresence : BoardFeature {
         if (Keyword.PROTECTION.name in keywords) value += 1.0
 
         // ── Drawbacks ──
-        if (Keyword.DEFENDER.name in keywords) value -= power * 0.8 // can't attack, power mostly wasted
+        // "Can't attack", whether printed as DEFENDER or hung on the creature by a Pacifism, takes
+        // away the same thing: the power. [CreatureValuation.cantAttackCostsPower] is what makes the
+        // two spellings agree — see its KDoc for why the flat multiplier they used to disagree over
+        // is the wrong shape.
+        val cantAttack = Keyword.DEFENDER.name in keywords || projected.cantAttack(entityId)
+        if (Keyword.DEFENDER.name in keywords || (valuation.cantAttackCostsPower && cantAttack)) {
+            value -= power * 0.8 // can't attack, power mostly wasted
+        }
 
         // ── Combat restrictions (Pacifism, "can't block this turn", etc.) ──
         // A creature that can't block has lost its defensive value; one that can't attack can't
@@ -345,7 +413,12 @@ object BoardPresence : BoardFeature {
         // fresh target strictly lowers the opponent's board value, re-hitting a restricted one
         // does not. (DEFENDER's can't-attack is already priced just above — don't double-count.)
         if (projected.cantBlock(entityId)) value *= 0.85
-        if (projected.cantAttack(entityId) && Keyword.DEFENDER.name !in keywords) value *= 0.85
+        if (!valuation.cantAttackCostsPower &&
+            projected.cantAttack(entityId) &&
+            Keyword.DEFENDER.name !in keywords
+        ) {
+            value *= 0.85
+        }
 
         // ── Speed ──
         if (Keyword.HASTE.name in keywords && container.has<SummoningSicknessComponent>()) {
@@ -367,9 +440,10 @@ object BoardPresence : BoardFeature {
             value *= 0.9
         }
 
-        // Damaged creatures are closer to dying
+        // Damaged creatures are closer to dying — but only until cleanup, which is why
+        // [CreatureValuation.markedDamageFadesAtCleanup] switches this off.
         val damage = container.get<DamageComponent>()?.amount ?: 0
-        if (damage > 0 && toughness > 0) {
+        if (!valuation.markedDamageFadesAtCleanup && damage > 0 && toughness > 0) {
             val healthFraction = (toughness - damage).toDouble() / toughness
             value *= (0.5 + 0.5 * healthFraction) // half value at 1 toughness remaining
         }

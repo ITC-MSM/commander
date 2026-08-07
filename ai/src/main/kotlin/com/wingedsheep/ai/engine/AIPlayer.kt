@@ -213,6 +213,7 @@ class AIPlayer(
                 landDropIsNotCardLoss = profile.landDropIsNotCardLoss,
                 sequenceLandsByUsableMana = profile.sequenceLandsByUsableMana,
                 discountedRaceClock = profile.discountedRaceClock,
+                creatureValuation = profile.creatureValuation,
             )
             val combatAdvisor = CombatAdvisor(
                 simulator, evaluator, cardRegistry, advisorRegistry,
@@ -246,6 +247,7 @@ class AIPlayer(
                     intents = intents,
                     combatTricksWaitForBlocks = profile.combatTricksWaitForBlocks,
                     holdRemovalForBetterTargets = profile.holdRemovalForBetterTargets,
+                    cashCantripsInTheEndStep = profile.cashCantripsInTheEndStep,
                     // Same seam as `CombatAdvisor`'s `lifeWeight`: a raw Phase 9 profile resolves
                     // to the compiled fallback here, which is the right answer for a policy that
                     // only needs to know what a point of board value trades against.

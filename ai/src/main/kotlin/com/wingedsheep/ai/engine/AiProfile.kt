@@ -6,6 +6,7 @@ import com.wingedsheep.ai.engine.advisor.modules.OnslaughtAdvisorModule
 import com.wingedsheep.ai.engine.budget.BudgetPolicy
 import com.wingedsheep.ai.engine.budget.LegacyBudgetPolicy
 import com.wingedsheep.ai.engine.budget.TieredBudgetPolicy
+import com.wingedsheep.ai.engine.evaluation.CreatureValuation
 import com.wingedsheep.ai.engine.evaluation.EvalWeights
 import com.wingedsheep.ai.engine.rollout.RolloutSettings
 
@@ -220,6 +221,35 @@ data class AiProfile(
      * therefore expected to be quiet there, and [PRODUCTION_CANDIDATE_PATIENCE]'s is not.
      */
     val holdRemovalForBetterTargets: Boolean = false,
+    /**
+     * Hand an instant-speed draw spell the opponent's-end-step window
+     * [com.wingedsheep.ai.engine.knowledge.HoldPolicy] already hands instant-speed removal.
+     *
+     * The target is `timing-05` — two Islands, an Opt, the opponent's end step, and an AI that
+     * passes to cleanup with the mana unspent. `KNOWN_FAILURES` has recorded the diagnosis since
+     * Phase 2c: Phase 6 correctly switched off `Strategist`'s blanket `passScore - 1.5` at that
+     * window, because the same constant also paid for dumping a pump that expires in cleanup, and
+     * nothing replaced the half of it that was right. `HoldPolicy` only ever hands the end step back
+     * to REMOVAL, so a DRAW-tagged instant gets nothing, and a cantrip's own board value is about
+     * zero — a card drawn against a card spent — so it loses to passing at every window there is.
+     *
+     * Its pair is `instants-06`, which asserts the *opposite* about the same step: a Giant Growth
+     * cast at the opponent's end step is thrown away. That stays answered without a second rule,
+     * because an expiring pump is [com.wingedsheep.ai.engine.knowledge.IntentTag.COMBAT_TRICK] and
+     * the trick branch runs first — which is the whole reason this is a window on a *tag* rather
+     * than a discount on a *step*. Needs [useCardIntent], like everything else the policy reads.
+     */
+    val cashCantripsInTheEndStep: Boolean = false,
+    /**
+     * The two `BoardPresence.creatureValue` corrections [PRODUCTION_RACECLOCK]'s KDoc named as the
+     * reason its arena win came with a puzzle trade — the damaged-creature discount and the flat
+     * multiplier on "can't attack". Both are off by default; see
+     * [com.wingedsheep.ai.engine.evaluation.CreatureValuation] for what each one is and why the old
+     * number was wrong in shape rather than in size.
+     *
+     * Reaches only the composite evaluator, like every other flag here.
+     */
+    val creatureValuation: CreatureValuation = CreatureValuation.LEGACY,
     /** Non-null profiles may only be selected automatically for this set. Arena selection stays explicit. */
     val restrictedToSet: String? = null,
 ) {
@@ -600,7 +630,9 @@ data class AiProfile(
          * `removal-09` — the same board with a full hand and on turn twenty — stay passing, which
          * is what says the AI is weighing a trade rather than refusing to spend removal.
          *
-         * **What a player faces in a real game today** — see [EngineAiPlayerController].
+         * What a player faced in a real game until [PRODUCTION_CANDIDATE_BOARDVALUE] replaced it in
+         * [EngineAiPlayerController]. Kept unchanged as the baseline that promotion was measured
+         * against.
          *
          * **Promoted on the puzzle half; the arena half came back null rather than neutral.**
          * `just arena production-candidate-raceclock production-candidate-patience 100` measured
@@ -627,6 +659,119 @@ data class AiProfile(
         val PRODUCTION_CANDIDATE_PATIENCE = PRODUCTION_CANDIDATE_RACECLOCK.copy(
             id = "production-candidate-patience",
             holdRemovalForBetterTargets = true,
+        )
+
+        /**
+         * [CreatureValuation.markedDamageFadesAtCleanup] alone on top of [PRODUCTION], so a puzzle
+         * or an arena point that moves is attributable to it — the same isolation
+         * [PRODUCTION_LANDSEQ] gives land sequencing.
+         */
+        val PRODUCTION_DAMAGEFADES = PRODUCTION.copy(
+            id = "production-damagefades",
+            creatureValuation = CreatureValuation(markedDamageFadesAtCleanup = true),
+        )
+
+        /**
+         * [CreatureValuation.cantAttackCostsPower] alone on top of [PRODUCTION], same isolation.
+         *
+         * Expected to be quiet on the puzzle it exists for. `removal-03` passes on [PRODUCTION] for
+         * the wrong reason — the turns-form race sentinel, not the pacified Wurm's board value — so
+         * this column says what the term *costs* across the other 86 positions, and
+         * [PRODUCTION_CANDIDATE_BOARDVALUE] is where it can actually close anything. Same shape as
+         * [PRODUCTION_PATIENCE]'s column.
+         */
+        val PRODUCTION_PACIFIED = PRODUCTION.copy(
+            id = "production-pacified",
+            creatureValuation = CreatureValuation(cantAttackCostsPower = true),
+        )
+
+        /**
+         * The promotion candidate: [PRODUCTION_CANDIDATE_PATIENCE] plus both halves of
+         * [CreatureValuation] — the agent that stops calling one point of damage progress and stops
+         * paying full price for a creature that cannot attack.
+         *
+         * Two flags in one candidate because they are one finding. [PRODUCTION_RACECLOCK]'s KDoc
+         * itemized both, in the same paragraph, as the reason its arena win came with a trade:
+         * `activate-04` and `removal-03` both regressed when the `99.0` no-attacker sentinel stopped
+         * masking them, and "fix those two and the trade should become a straight gain" is the
+         * prediction this profile tests. They stay separate fields so either can be reverted alone,
+         * and each has its own attribution column above.
+         *
+         * **What a player faces in a real game today** — see [EngineAiPlayerController].
+         *
+         * **The prediction held, on both halves.** On the 87-puzzle suite it takes the live pair
+         * from **81/87 to 83/87**, closing exactly the two the race clock had traded, with a failing
+         * set that is a **strict subset** of `production-candidate-patience`'s. And the arena, for
+         * the second time in this sequence and by the largest margin yet:
+         * `just arena production-candidate-patience production-candidate-boardvalue 300` measured
+         * the baseline at **45.3%, CI [42.0%, 48.7%]**, 136W-164L, 300/300 completed, 0 illegal
+         * actions — the whole interval below parity. This did not merely clear the "arena-neutral
+         * and a puzzle ahead" bar, it cleared the arena half outright.
+         *
+         * The attribution columns are the other half of the evidence, and they are deliberately
+         * *empty*: [PRODUCTION_DAMAGEFADES] and [PRODUCTION_PACIFIED] each leave `production`'s
+         * failing set **identical**, at 74/87. Neither term can close its own puzzle on a baseline
+         * that still scores the race in turns, and neither costs anything across the other 86
+         * positions — which is the cheapest available evidence that what moved here is the
+         * interaction the KDoc predicted rather than two independent nudges.
+         *
+         * If a later run comes back below parity, revert the two call sites
+         * ([EngineAiPlayerController] and [AiProfileSelector]'s fallback) rather than the flags:
+         * both are off for every other profile, so backing the promotion out costs nothing and
+         * loses no measurement.
+         */
+        val PRODUCTION_CANDIDATE_BOARDVALUE = PRODUCTION_CANDIDATE_PATIENCE.copy(
+            id = "production-candidate-boardvalue",
+            creatureValuation = CreatureValuation(
+                markedDamageFadesAtCleanup = true,
+                cantAttackCostsPower = true,
+            ),
+        )
+
+        /**
+         * [cashCantripsInTheEndStep] alone on top of [PRODUCTION], so a puzzle or an arena point
+         * that moves is attributable to it — the same isolation [PRODUCTION_LANDSEQ] gives land
+         * sequencing.
+         *
+         * Unlike [PRODUCTION_PATIENCE]'s and [PRODUCTION_PACIFIED]'s columns, this one *can* close
+         * its puzzle here: `timing-05` needs nothing from the race clock, so it moves wherever
+         * [useCardIntent] is on. Read it for `instants-06` as much as for `timing-05` — the pair is
+         * the point, and a column that closes both has broken the negative control rather than
+         * fixed anything.
+         *
+         * **Measured, and it does exactly that: 74/87 → 75/87, closing `timing-05` and nothing
+         * else, with `instants-06` held.** Which makes this column the interesting one in the pair,
+         * because [PRODUCTION_CANDIDATE_CANTRIP] — the same flag on the live agent — does *not*
+         * close it. See there.
+         */
+        val PRODUCTION_CANTRIP = PRODUCTION.copy(
+            id = "production-cantrip",
+            cashCantripsInTheEndStep = true,
+        )
+
+        /**
+         * The cantrip window on top of what is live — **not promoted, and not for want of an arena
+         * run.** It is level with [PRODUCTION_CANDIDATE_BOARDVALUE] at 83/87 with an *identical*
+         * failing set: `timing-05` still fails here, on the exact flag that closes it one column
+         * over.
+         *
+         * That gap is the finding, and it is worth more than the puzzle would have been. The term
+         * itself is demonstrably right — [PRODUCTION_CANTRIP] closes `timing-05` and only
+         * `timing-05`, `HoldPolicyTest` pins the verdict at the window and the `instants-06`
+         * control beside it, so what fails here is not the policy's reading. Something between the
+         * verdict and the decision is absorbing it, and the two candidates differ by rollouts and
+         * budget tiers: either the rollout mixture's scale swamps a 1.5-point static adjustment, or
+         * the opponent's end step is graded below the tier where the candidate is searched at all.
+         *
+         * The second is the same shape as the bug [PRODUCTION_CANDIDATE_TRICKWINDOW] found — a
+         * missing search looking exactly like a missing evaluation until you vary the tier — and
+         * that one needed **both** halves before either worked. This is left standing as the
+         * attribution pair that will identify which, rather than deleted or promoted on a puzzle it
+         * does not actually close.
+         */
+        val PRODUCTION_CANDIDATE_CANTRIP = PRODUCTION_CANDIDATE_BOARDVALUE.copy(
+            id = "production-candidate-cantrip",
+            cashCantripsInTheEndStep = true,
         )
 
         /**
@@ -702,7 +847,7 @@ object AiProfileSelector {
     fun select(
         setCode: String?,
         requested: AiProfile?,
-        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_PATIENCE,
+        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_BOARDVALUE,
     ): AiProfile {
         if (requested == null) return fallback
         val restriction = requested.restrictedToSet ?: return requested
