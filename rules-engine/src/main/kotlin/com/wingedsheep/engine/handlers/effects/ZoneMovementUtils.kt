@@ -142,38 +142,39 @@ object ZoneMovementUtils {
     }
 
     /**
-     * Apply planeswalker entry setup to an entity entering the battlefield (CR 306.5b): a
-     * planeswalker has the intrinsic ability "This permanent enters with a number of loyalty
-     * counters on it equal to its printed loyalty number," which is a replacement effect
-     * (CR 614.1c) and therefore applies to *every* way it enters — not just a resolving spell.
-     * Without this, a planeswalker put onto the battlefield from any non-stack zone (returned by
-     * an O-Ring style "until this leaves" exile, reanimated, tutored straight into play) would
-     * enter with 0 loyalty and be put into its owner's graveyard by state-based actions
-     * (CR 704.5i) the moment it arrived.
+     * Apply the *intrinsic* enters-with-counters ability of an entity entering the battlefield —
+     * a planeswalker's loyalty (CR 306.5b) or a battle's defense (CR 310.4b). Both are worded the
+     * same way ("this permanent enters with a number of X counters on it equal to its printed X
+     * number") and both are replacement effects (CR 614.1c), so they apply to *every* way the
+     * permanent enters, not just a resolving spell. Without this, a planeswalker or battle put onto
+     * the battlefield from any non-stack zone (returned by an O-Ring style "until this leaves"
+     * exile, reanimated, tutored straight into play) would enter with 0 counters and be put into
+     * its owner's graveyard by state-based actions (CR 704.5i / 704.5v) the moment it arrived.
      *
      * Called from both battlefield-entry pipelines, exactly like [applySagaEntryIfNeeded]:
      * [ZoneTransitionService.moveToZone] for every zone-change entry, and the ad-hoc
-     * [BattlefieldEntry.place] token-minting paths for a token copy of a planeswalker (loyalty is a
-     * copiable value per CR 707.2, so the token has one to place). The cast pipeline reaches the
-     * same counters through [EntersWithReplacements.placeEntryCounters] while the permanent is
-     * still on the stack (see [com.wingedsheep.engine.mechanics.stack.StackResolver]), so no entry
-     * gets them twice.
+     * [BattlefieldEntry.place] token-minting paths for a token copy (printed loyalty and printed
+     * defense are copiable values per CR 707.2, so the token has one to place). The cast pipeline
+     * reaches the same counters through [EntersWithReplacements.placeEntryCounters] while the
+     * permanent is still on the stack (see
+     * [com.wingedsheep.engine.mechanics.stack.StackResolver]), so no entry gets them twice.
      *
-     * The loyalty number is read from the *current* [CardComponent]'s definition, so a
-     * double-faced card returning transformed onto its planeswalker back face gets the back
-     * face's printed loyalty (its `cardDefinitionId` has already been flipped by then).
+     * The number is read from the *current* [CardComponent]'s definition, so a double-faced card
+     * returning transformed onto its planeswalker back face gets the back face's printed loyalty
+     * (its `cardDefinitionId` has already been flipped by then).
      *
      * Face-down entries are skipped: a face-down permanent is a nameless 2/2 creature with no
-     * printed loyalty (CR 708.2a). The check lives here rather than at the call sites so every
-     * caller inherits it.
+     * printed loyalty or defense (CR 708.2a). The check lives here rather than at the call sites so
+     * every caller inherits it.
      *
      * Routed through [EntersWithReplacements.placeEntryCounters] so counter-placement modifiers
      * (Doubling Season, Vorinclex, Pir) and the "a counter was placed this turn" tracker behave
      * exactly as they do for a printed "enters with counters".
      *
-     * @return Pair of (updated state, events to emit) — empty events if not a planeswalker
+     * @return Pair of (updated state, events to emit) — empty events if the permanent has no
+     *   intrinsic entry counters
      */
-    fun applyPlaneswalkerEntryIfNeeded(
+    fun applyIntrinsicEntryCountersIfNeeded(
         state: GameState,
         entityId: EntityId,
         controllerId: EntityId,
@@ -182,14 +183,17 @@ object ZoneMovementUtils {
         val container = state.getEntity(entityId) ?: return state to emptyList()
         if (container.has<FaceDownComponent>()) return state to emptyList()
         val cardComponent = container.get<CardComponent>() ?: return state to emptyList()
-        if (!cardComponent.isPlaneswalker) return state to emptyList()
-
-        val startingLoyalty = cardRegistry.getCard(cardComponent.cardDefinitionId)?.startingLoyalty
-            ?: return state to emptyList()
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        val (filter, amount) = when {
+            cardComponent.isPlaneswalker -> CounterTypeFilter.Loyalty to cardDef?.startingLoyalty
+            cardComponent.isBattle ->
+                com.wingedsheep.engine.mechanics.battle.Battles.DEFENSE_COUNTER to cardDef?.startingDefense
+            else -> return state to emptyList()
+        }
+        if (amount == null) return state to emptyList()
 
         return EntersWithReplacements.placeEntryCounters(
-            state, entityId, CounterTypeFilter.Loyalty, startingLoyalty, controllerId,
-            cardComponent.name
+            state, entityId, filter, amount, controllerId, cardComponent.name
         )
     }
 
@@ -461,6 +465,10 @@ object ZoneMovementUtils {
             .without<HasDealtDamageComponent>()
             .without<HasDealtCombatDamageToPlayerComponent>()
             .without<CountersComponent>()
+            // A battle's protector is a designation on the battlefield object (CR 310.8); the
+            // object that leaves takes it with it, and one that comes back is a new object
+            // (CR 400.7) whose protector is chosen afresh by the CR 704.5w state-based action.
+            .without<com.wingedsheep.engine.state.components.battlefield.ProtectorComponent>()
             // "Activate only once" memory (CR 702.177 Exhaust, and any `ActivationRestriction.Once`
             // ability) is tracked per object. A permanent that leaves and re-enters the battlefield
             // is a new object with no memory (CR 400.7 / 403.4), so the once-ever record must reset —

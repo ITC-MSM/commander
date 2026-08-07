@@ -218,6 +218,9 @@ value class Subtype(val value: String) {
         val TREASURE = Subtype("Treasure")
         val VEHICLE = Subtype("Vehicle")
 
+        // Battle subtypes (CR 205.3q). Every printed battle is a Siege (CR 310.11).
+        val SIEGE = Subtype("Siege")
+
         // Planeswalker subtypes
         val AJANI = Subtype("Ajani")
         val JACE = Subtype("Jace")

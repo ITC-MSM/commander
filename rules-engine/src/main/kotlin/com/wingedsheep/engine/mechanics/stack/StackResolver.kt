@@ -1646,18 +1646,28 @@ class StackResolver(
             counterEvents.addAll(riderEvents)
         }
 
-        // Handle planeswalker starting loyalty (Rule 306.5b). This is the cast pipeline's entry
-        // point for the intrinsic entry replacement — it runs here, while the permanent is still
-        // on the stack, because resolution places permanents via addToZone rather than
+        // Handle the intrinsic entry counters of a planeswalker (starting loyalty, CR 306.5b) or a
+        // battle (printed defense, CR 310.4b). This is the cast pipeline's entry point for those
+        // intrinsic entry replacements — it runs here, while the permanent is still on the stack,
+        // because resolution places permanents via addToZone rather than
         // ZoneTransitionService.moveToZone. Every other entry reaches the same shared
-        // placeEntryCounters call through ZoneMovementUtils.applyPlaneswalkerEntryIfNeeded.
-        if (cardDef != null && !spellComponent.castFaceDown && cardDef.startingLoyalty != null) {
-            val (loyaltyState, loyaltyEvents) = EntersWithReplacements.placeEntryCounters(
-                newState, spellId, CounterTypeFilter.Loyalty, cardDef.startingLoyalty!!,
+        // placeEntryCounters call through ZoneMovementUtils.applyIntrinsicEntryCountersIfNeeded.
+        val intrinsicEntryCounters = if (cardDef != null && !spellComponent.castFaceDown) {
+            when {
+                cardDef.startingLoyalty != null ->
+                    CounterTypeFilter.Loyalty to cardDef.startingLoyalty!!
+                cardDef.startingDefense != null ->
+                    com.wingedsheep.engine.mechanics.battle.Battles.DEFENSE_COUNTER to cardDef.startingDefense!!
+                else -> null
+            }
+        } else null
+        if (intrinsicEntryCounters != null) {
+            val (entryCounterState, entryCounterEvents) = EntersWithReplacements.placeEntryCounters(
+                newState, spellId, intrinsicEntryCounters.first, intrinsicEntryCounters.second,
                 controllerId, cardComponent?.name ?: ""
             )
-            newState = loyaltyState
-            counterEvents.addAll(loyaltyEvents)
+            newState = entryCounterState
+            counterEvents.addAll(entryCounterEvents)
         }
 
         // Handle Class entering the battlefield (Rule 716)

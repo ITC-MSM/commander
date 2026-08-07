@@ -238,6 +238,14 @@ export interface ClientCard {
   /** Controller (who controls it now) */
   readonly controllerId: EntityId
 
+  /**
+   * For a battle (CR 310): the player designated as its protector — the one who defends it, may
+   * never attack it, and is the only player who may block creatures attacking it. Usually *not*
+   * the controller: a Siege is protected by an opponent of the player who cast it. Absent on every
+   * non-battle permanent. The battle's defense is its `defense` counter count, not a field.
+   */
+  readonly protectorId?: EntityId | null
+
   /** Owner (who started with it in their deck) */
   readonly ownerId: EntityId
 

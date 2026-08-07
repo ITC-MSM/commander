@@ -471,8 +471,11 @@ internal class CombatDamageManager(
                 projected.isPlaneswalker(defenderId) -> ResolutionDefender(defenderId, ResolutionTargetKind.PLANESWALKER,
                     container.get<CardComponent>()?.name ?: "Planeswalker",
                     container.get<CountersComponent>()?.getCount(CounterType.LOYALTY))
+                // A battle's remaining "life" is its defense — its defense-counter count
+                // (CR 310.4c) — so the damage-division UI can show how much is left to remove.
                 else -> ResolutionDefender(defenderId, ResolutionTargetKind.BATTLE,
-                    container.get<CardComponent>()?.name ?: "Battle", null)
+                    container.get<CardComponent>()?.name ?: "Battle",
+                    container.get<CountersComponent>()?.getCount(CounterType.DEFENSE))
             }
         }
 
@@ -817,6 +820,7 @@ internal class CombatDamageManager(
                        targetContainer.get<CardComponent>() == null
         val projected = state.projectedState
         val isPlaneswalker = !isPlayer && projected.isPlaneswalker(assignment.targetId)
+        val isBattle = !isPlayer && !isPlaneswalker && projected.isBattle(assignment.targetId)
 
         val amplifiedAmount = DamageUtils.applyStaticDamageAmplification(
             state, assignment.targetId, assignment.amount, assignment.sourceId, isCombatDamage = true
@@ -824,7 +828,14 @@ internal class CombatDamageManager(
 
         return when {
             isPlayer -> applyDamageToPlayer(state, assignment.sourceId, assignment.targetId, amplifiedAmount, assignment.amount, events)
-            isPlaneswalker -> applyDamageToPlaneswalker(state, assignment.sourceId, assignment.targetId, amplifiedAmount, events)
+            isPlaneswalker -> applyDamageByRemovingCounters(
+                state, assignment.sourceId, assignment.targetId, amplifiedAmount,
+                com.wingedsheep.sdk.core.CounterType.LOYALTY, events
+            )
+            isBattle -> applyDamageByRemovingCounters(
+                state, assignment.sourceId, assignment.targetId, amplifiedAmount,
+                com.wingedsheep.sdk.core.CounterType.DEFENSE, events
+            )
             else -> applyDamageToCreature(state, assignment.sourceId, assignment.targetId, amplifiedAmount, events)
         }
     }
@@ -1010,14 +1021,21 @@ internal class CombatDamageManager(
     }
 
     /**
-     * Apply combat damage to a planeswalker by removing loyalty counters (Rule 120.3c).
-     * SBA will handle putting it into graveyard if loyalty reaches 0.
+     * Apply combat damage to a permanent whose "life" is a counter stack: a planeswalker's loyalty
+     * (CR 120.3c) or a battle's defense (CR 120.3h). Damage removes that many counters and never
+     * destroys the permanent itself (CR 120.5) — state-based actions put it into its owner's
+     * graveyard once the stack is empty (CR 704.5i / 704.5v).
+     *
+     * @param counterType [com.wingedsheep.sdk.core.CounterType.LOYALTY] or
+     *   [com.wingedsheep.sdk.core.CounterType.DEFENSE]; also selects which change event is emitted,
+     *   since the client reads a planeswalker's loyalty off a dedicated event.
      */
-    private fun applyDamageToPlaneswalker(
+    private fun applyDamageByRemovingCounters(
         state: GameState,
         sourceId: EntityId,
         targetId: EntityId,
         amplifiedAmount: Int,
+        counterType: com.wingedsheep.sdk.core.CounterType,
         events: MutableList<GameEvent>
     ): GameState {
         if (targetId !in state.getBattlefield()) return state
@@ -1031,14 +1049,30 @@ internal class CombatDamageManager(
         newState = shieldState
         if (effectiveAmount <= 0) return newState
 
-        // Remove loyalty counters equal to damage dealt
+        return removeCountersForDamage(newState, sourceId, targetId, effectiveAmount, counterType, events)
+    }
+
+    /**
+     * The unmodifiable tail of [applyDamageByRemovingCounters]: take the counters off, mark the
+     * source as having dealt damage, and emit the damage plus counter-change events. Split out so
+     * [dealFinalDamage] — which by contract applies no further modification — shares one
+     * implementation with the prevention-aware path instead of open-coding a second copy.
+     */
+    private fun removeCountersForDamage(
+        state: GameState,
+        sourceId: EntityId,
+        targetId: EntityId,
+        amount: Int,
+        counterType: com.wingedsheep.sdk.core.CounterType,
+        events: MutableList<GameEvent>
+    ): GameState {
+        var newState = state
         val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
-        val currentLoyalty = counters.getCount(com.wingedsheep.sdk.core.CounterType.LOYALTY)
+        val currentCount = counters.getCount(counterType)
         newState = newState.updateEntity(targetId) { container ->
-            container.with(counters.withRemoved(com.wingedsheep.sdk.core.CounterType.LOYALTY, effectiveAmount))
+            container.with(counters.withRemoved(counterType, amount))
         }
 
-        // Track that source dealt damage
         if (sourceId in newState.getBattlefield()) {
             newState = newState.updateEntity(sourceId) { container ->
                 container.with(HasDealtDamageComponent)
@@ -1046,11 +1080,20 @@ internal class CombatDamageManager(
         }
 
         val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
-        val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Planeswalker"
-        events.add(DamageDealtEvent(sourceId, targetId, effectiveAmount, true,
+        val defaultName = if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) "Planeswalker" else "Battle"
+        val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: defaultName
+        events.add(DamageDealtEvent(sourceId, targetId, amount, true,
             sourceName = sourceName, targetName = targetName, targetIsPlayer = false))
-        val newLoyalty = (currentLoyalty - effectiveAmount).coerceAtLeast(0)
-        events.add(LoyaltyChangedEvent(targetId, targetName, -(effectiveAmount.coerceAtMost(currentLoyalty))))
+        val removed = amount.coerceAtMost(currentCount)
+        if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) {
+            events.add(LoyaltyChangedEvent(targetId, targetName, -removed))
+        } else if (removed > 0) {
+            events.add(
+                com.wingedsheep.engine.core.CountersRemovedEvent(
+                    targetId, counterType.name, removed, targetName
+                )
+            )
+        }
 
         return newState
     }
@@ -1120,6 +1163,7 @@ internal class CombatDamageManager(
                        targetContainer.get<CardComponent>() == null
         val projected = newState.projectedState
         val isPlaneswalker = !isPlayer && projected.isPlaneswalker(targetId)
+        val isBattle = !isPlayer && !isPlaneswalker && projected.isBattle(targetId)
 
         if (isPlayer) {
             // CR 810.9 — applies to the team's shared total (isPlayer already guards presence).
@@ -1165,24 +1209,11 @@ internal class CombatDamageManager(
                 }
                 events.add(CountersAddedEvent(targetId, CounterType.POISON.name, toxicAmount, "Player"))
             }
-        } else if (isPlaneswalker) {
+        } else if (isPlaneswalker || isBattle) {
             if (targetId !in newState.getBattlefield()) return newState
-            val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
-            val currentLoyalty = counters.getCount(com.wingedsheep.sdk.core.CounterType.LOYALTY)
-            newState = newState.updateEntity(targetId) { container ->
-                container.with(counters.withRemoved(com.wingedsheep.sdk.core.CounterType.LOYALTY, amount))
-            }
-            // Track that source dealt damage
-            if (sourceId in newState.getBattlefield()) {
-                newState = newState.updateEntity(sourceId) { container ->
-                    container.with(HasDealtDamageComponent)
-                }
-            }
-            val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
-            val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Planeswalker"
-            events.add(DamageDealtEvent(sourceId, targetId, amount, true,
-                sourceName = sourceName, targetName = targetName, targetIsPlayer = false))
-            events.add(LoyaltyChangedEvent(targetId, targetName, -(amount.coerceAtMost(currentLoyalty))))
+            val counterType = if (isPlaneswalker) com.wingedsheep.sdk.core.CounterType.LOYALTY
+            else com.wingedsheep.sdk.core.CounterType.DEFENSE
+            newState = removeCountersForDamage(newState, sourceId, targetId, amount, counterType, events)
         } else {
             if (targetId !in newState.getBattlefield()) return newState
             val projected = newState.projectedState

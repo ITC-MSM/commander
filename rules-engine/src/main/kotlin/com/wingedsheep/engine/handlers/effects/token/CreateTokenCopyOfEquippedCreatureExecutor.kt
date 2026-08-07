@@ -168,7 +168,7 @@ class CreateTokenCopyOfEquippedCreatureExecutor(
         // values, CR 707.2) but not the animation, so it needs its loyalty counters or state-based
         // actions (CR 704.5i) bin it on arrival. No-op for non-planeswalkers.
         val (loyaltyState, loyaltyEvents) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-            .applyPlaneswalkerEntryIfNeeded(sagaState, tokenId, controllerId, cardRegistry)
+            .applyIntrinsicEntryCountersIfNeeded(sagaState, tokenId, controllerId, cardRegistry)
 
         return EffectResult.success(loyaltyState, events + sagaEvents + loyaltyEvents)
     }

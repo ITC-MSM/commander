@@ -201,7 +201,7 @@ class CreateTokenCopyOfChosenPermanentExecutor(
             // arrival. No-op for non-planeswalkers.
             val (loyaltyState, loyaltyEvents) = cardRegistry?.let { registry ->
                 com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-                    .applyPlaneswalkerEntryIfNeeded(sagaState, tokenId, controllerId, registry)
+                    .applyIntrinsicEntryCountersIfNeeded(sagaState, tokenId, controllerId, registry)
             } ?: (sagaState to emptyList())
 
             return EffectResult.success(

@@ -17,6 +17,8 @@ object SbaOrder {
     const val ZERO_TOUGHNESS = 300          // 704.5f
     const val LETHAL_DAMAGE = 400           // 704.5g/h
     const val PLANESWALKER_LOYALTY = 500    // 704.5i
+    const val BATTLE_DEFENSE = 550          // 704.5v (a battle at 0 defense)
+    const val BATTLE_PROTECTOR = 560        // 704.5w/x (a battle with no legal protector)
     const val LEGEND_RULE = 600             // 704.5j
     const val COUNTER_ANNIHILATION = 700    // 704.5q
     const val UNATTACHED_AURAS = 800        // 704.5m/n/p

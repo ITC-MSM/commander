@@ -249,6 +249,12 @@ class CardBuilder(private val name: String) {
     var startingLoyalty: Int? = null
 
     /**
+     * Printed defense (for battles) — the number in the card's lower right corner (CR 310.4a).
+     * The battle enters with that many defense counters (CR 310.4b).
+     */
+    var startingDefense: Int? = null
+
+    /**
      * Oracle text (rules text).
      */
     var oracleText: String = ""
@@ -912,6 +918,7 @@ class CardBuilder(private val name: String) {
             script = script,
             equipCost = equipCost,
             startingLoyalty = startingLoyalty,
+            startingDefense = startingDefense,
             metadata = metadata,
             colorIdentityOverride = parsedColorIdentity,
             colorIndicator = parsedColorIndicator,

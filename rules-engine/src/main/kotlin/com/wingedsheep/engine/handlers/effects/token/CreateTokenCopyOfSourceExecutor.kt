@@ -214,7 +214,7 @@ class CreateTokenCopyOfSourceExecutor(
             // loyalty (a copiable value, CR 707.2), or state-based actions (CR 704.5i) bin it on
             // arrival. No-op for non-planeswalkers.
             val (loyaltyState, loyaltyEvents) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-                .applyPlaneswalkerEntryIfNeeded(newState, tokenId, controllerId, cardRegistry)
+                .applyIntrinsicEntryCountersIfNeeded(newState, tokenId, controllerId, cardRegistry)
             newState = loyaltyState
             events.addAll(loyaltyEvents)
 

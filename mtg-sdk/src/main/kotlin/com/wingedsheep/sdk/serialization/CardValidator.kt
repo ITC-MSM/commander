@@ -29,7 +29,7 @@ object CardValidator {
         validateCreatureStats(card, errors)
         validateAuraConsistency(card, errors)
         validateEquipmentConsistency(card, errors)
-        validatePlaneswalkerLoyalty(card, errors)
+        validateEntryCounterNumbers(card, errors)
         validateGiftKeyword(card, errors)
         validateSuccessCriteria(card, errors)
         errors.addAll(CardLinter.lint(card))
@@ -127,12 +127,26 @@ object CardValidator {
         }
     }
 
-    private fun validatePlaneswalkerLoyalty(card: CardDefinition, errors: MutableList<CardValidationError>) {
+    /**
+     * A planeswalker and a battle each have an intrinsic "enters with this many counters" ability
+     * keyed off a number printed on the card — loyalty (CR 306.5b) and defense (CR 310.4b). Omitting
+     * the number is silently fatal in the same way for both: the permanent enters with zero counters
+     * and state-based actions bin it immediately (CR 704.5i / 704.5v), so both are checked here.
+     */
+    private fun validateEntryCounterNumbers(card: CardDefinition, errors: MutableList<CardValidationError>) {
         if (card.isPlaneswalker && card.startingLoyalty == null) {
             errors.add(
                 CardValidationError.MissingPlaneswalkerLoyalty(
                     cardName = card.name,
                     message = "Planeswalker '${card.name}' is missing startingLoyalty"
+                )
+            )
+        }
+        if (card.isBattle && card.startingDefense == null) {
+            errors.add(
+                CardValidationError.MissingBattleDefense(
+                    cardName = card.name,
+                    message = "Battle '${card.name}' is missing startingDefense"
                 )
             )
         }
@@ -204,6 +218,11 @@ sealed interface CardValidationError {
     ) : CardValidationError
 
     data class MissingPlaneswalkerLoyalty(
+        override val cardName: String,
+        override val message: String
+    ) : CardValidationError
+
+    data class MissingBattleDefense(
         override val cardName: String,
         override val message: String
     ) : CardValidationError

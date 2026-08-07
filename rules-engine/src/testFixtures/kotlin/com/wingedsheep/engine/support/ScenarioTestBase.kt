@@ -235,6 +235,21 @@ abstract class ScenarioTestBase : FunSpec() {
                     )
                 }
 
+                // A battle enters with its printed defense as defense counters (CR 310.4b), and its
+                // defense *is* that count (CR 310.4c). Same reasoning as loyalty above, but with a
+                // sharper failure: a battle seeded at 0 defense is put into its owner's graveyard by
+                // the very next state-based action check (CR 704.5v).
+                //
+                // No protector is seeded — that is the CR 704.5w state-based action's job, and
+                // letting it run is what a scenario should be exercising.
+                cardDef.startingDefense?.let { defense ->
+                    val counters = container.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
+                        ?: com.wingedsheep.engine.state.components.battlefield.CountersComponent()
+                    container = container.with(
+                        counters.withAdded(com.wingedsheep.sdk.core.CounterType.DEFENSE, defense)
+                    )
+                }
+
                 // Rule 712.8a: if placing a DFC back face directly on the battlefield, add
                 // DoubleFacedComponent with the saved front-face card so ZoneTransitionService
                 // can restore it when the entity leaves.
@@ -532,6 +547,24 @@ abstract class ScenarioTestBase : FunSpec() {
         private val actionProcessor: ActionProcessor,
         private val stateTransformer: ClientStateTransformer
     ) {
+        /**
+         * Run one full state-based action pass (CR 704) against the current state.
+         *
+         * A scenario built with [ScenarioBuilder] seeds permanents directly onto the battlefield
+         * without ever giving a player priority, so SBAs have not run yet. Call this when the
+         * scenario depends on an SBA having fired — e.g. a battle's protector, which is designated
+         * by the CR 704.5w state-based action rather than at entry. Pauses (an SBA that needs a
+         * player decision) surface as `pendingDecision`, exactly as in a real game.
+         */
+        fun checkStateBasedActions(): ExecutionResult {
+            val result = com.wingedsheep.engine.mechanics.StateBasedActionChecker(cardRegistry = cardRegistry)
+                .checkAndApply(state)
+            if (result.error == null) {
+                state = result.state
+            }
+            return result
+        }
+
         /**
          * Execute an action and update the state.
          */
@@ -1306,13 +1339,13 @@ abstract class ScenarioTestBase : FunSpec() {
         }
 
         /**
-         * Declare attackers with some attacking a planeswalker by name.
+         * Declare attackers with some attacking a permanent — a planeswalker or a battle — by name.
          * @param playerAttackers Map of creature names to player number being attacked
-         * @param planeswalkerAttackers Map of creature names to planeswalker names being attacked
+         * @param permanentAttackers Map of creature names to the attacked permanent's name
          */
-        fun declareAttackersWithPlaneswalkerTargets(
+        fun declareAttackersWithPermanentTargets(
             playerAttackers: Map<String, Int> = emptyMap(),
-            planeswalkerAttackers: Map<String, String> = emptyMap()
+            permanentAttackers: Map<String, String> = emptyMap()
         ): ExecutionResult {
             val attackingPlayer = state.activePlayerId!!
             val attackerMap = mutableMapOf<EntityId, EntityId>()
@@ -1322,7 +1355,7 @@ abstract class ScenarioTestBase : FunSpec() {
                 val targetPlayerId = if (targetPlayerNum == 1) player1Id else player2Id
                 attackerMap[attackerId] = targetPlayerId
             }
-            for ((name, planeswalkerName) in planeswalkerAttackers) {
+            for ((name, planeswalkerName) in permanentAttackers) {
                 val attackerId = findPermanent(name) ?: continue
                 val targetId = findPermanent(planeswalkerName) ?: continue
                 attackerMap[attackerId] = targetId

@@ -369,7 +369,7 @@ class CreateTokenCopyOfTargetExecutor(
             // bin the token the instant it enters. No-op for non-planeswalkers.
             cardRegistry?.let { registry ->
                 val (loyaltyState, loyaltyEvents) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-                    .applyPlaneswalkerEntryIfNeeded(newState, tokenId, controllerId, registry)
+                    .applyIntrinsicEntryCountersIfNeeded(newState, tokenId, controllerId, registry)
                 newState = loyaltyState
                 events.addAll(loyaltyEvents)
             }

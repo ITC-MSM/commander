@@ -410,7 +410,7 @@ object TokenCreationReplacementHelper {
                 // permanent may be one — it enters with the copied printed loyalty (a copiable
                 // value, CR 707.2) or state-based actions (CR 704.5i) bin it on arrival.
                 val (afterLoyalty, loyaltyEvents) = com.wingedsheep.engine.handlers.effects
-                    .ZoneMovementUtils.applyPlaneswalkerEntryIfNeeded(
+                    .ZoneMovementUtils.applyIntrinsicEntryCountersIfNeeded(
                         newState, tokenId, controllerId, cardRegistry
                     )
                 newState = afterLoyalty

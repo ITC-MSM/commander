@@ -85,8 +85,8 @@ class OviyaAutomechArtisanScenarioTest : ScenarioTestBase() {
                     .inPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
                     .build()
 
-                game.declareAttackersWithPlaneswalkerTargets(
-                    planeswalkerAttackers = mapOf("Grizzly Bears" to "Chandra, Flameshaper")
+                game.declareAttackersWithPermanentTargets(
+                    permanentAttackers = mapOf("Grizzly Bears" to "Chandra, Flameshaper")
                 ).error shouldBe null
 
                 val bears = game.findPermanent("Grizzly Bears")!!

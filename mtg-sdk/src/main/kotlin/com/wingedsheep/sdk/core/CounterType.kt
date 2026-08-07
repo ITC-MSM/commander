@@ -14,6 +14,14 @@ enum class CounterType {
     MINUS_ONE_MINUS_ZERO,
     MINUS_ZERO_MINUS_ONE,
     LOYALTY,
+
+    /**
+     * Defense counter (CR 310.4). A battle's defense *is* its number of defense counters
+     * (CR 310.4c): it enters with as many as its printed defense number, damage removes that
+     * many (CR 120.3h), and a battle at 0 is put into its owner's graveyard (CR 704.5v). The
+     * battle analogue of [LOYALTY].
+     */
+    DEFENSE,
     CHARGE,
     GEM,
     POISON,
@@ -129,6 +137,7 @@ object Counters {
     const val MINUS_ONE_MINUS_ZERO = "-1/-0"
     const val MINUS_ZERO_MINUS_ONE = "-0/-1"
     const val LOYALTY = "loyalty"
+    const val DEFENSE = "defense"
     const val CHARGE = "charge"
     const val GEM = "gem"
     const val POISON = "poison"
