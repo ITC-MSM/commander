@@ -689,7 +689,20 @@ class GatedEffectExecutor(
             is SuccessCriterion.DamageDealt -> evaluateDamageDealt(criterion, effectContext, priorEvents)
             is SuccessCriterion.ControlChanged -> evaluateControlChanged(priorEvents)
             is SuccessCriterion.CountersRemoved -> evaluateCountersRemoved(priorEvents)
+            is SuccessCriterion.PermanentsSacrificed -> evaluatePermanentsSacrificed(priorEvents)
         }
+
+        /**
+         * Did the gated action actually sacrifice something? Scans the action's own events for a
+         * [PermanentsSacrificedEvent] with a non-empty permanent list. A player who controls nothing
+         * the filter matches sacrifices nothing and emits no such event — exactly the "you didn't do
+         * it" case the gate must catch (Garruk, the Veil-Cursed's −1 on an empty board).
+         */
+        private fun evaluatePermanentsSacrificed(priorEvents: List<GameEvent>): Boolean =
+            priorEvents.any { event ->
+                event is com.wingedsheep.engine.core.PermanentsSacrificedEvent &&
+                    event.permanentIds.isNotEmpty()
+            }
 
         /**
          * Did the gated action actually change control of a permanent? Scans the action's events for

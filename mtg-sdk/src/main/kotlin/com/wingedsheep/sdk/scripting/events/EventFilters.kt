@@ -519,6 +519,24 @@ sealed interface SpellCastPredicate {
     }
 
     /**
+     * The spell was cast targeting the trigger's own source permanent and **nothing else** — every
+     * instance of the word "target" on the spell points at the source ("a spell that targets only
+     * [this creature]" — Zada, Hedron Grinder; Mirrorwing Dragon).
+     *
+     * Strictly narrower than [TargetsSource], which is satisfied as soon as the source is among the
+     * chosen targets: a spell targeting both the source and another permanent satisfies
+     * [TargetsSource] but not this. A spell with **no** targets never satisfies it either. A spell
+     * with several instances of "target" all pointed at the source does — the copies made by
+     * [com.wingedsheep.sdk.scripting.effects.CopySpellForEachOtherPossibleTargetEffect] then have to
+     * be legal for each of those instances (CR 707.10d).
+     */
+    @SerialName("SpellTargetsOnlySource")
+    @Serializable
+    data object TargetsOnlySource : SpellCastPredicate {
+        override val description = "that targets only this"
+    }
+
+    /**
      * The spell was cast with at least one chosen target matching [filter]
      * ("a spell that targets a creature you don't control" — Legolas, Master Archer).
      * The filter is evaluated against each chosen target relative to the trigger
