@@ -1988,6 +1988,54 @@
     ]
 }
 
+// Brave Brawler
+{
+    "name": "Brave Brawler",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Warrior Hero",
+    "oracleText": "Lifelink\nPower-up — {4}{W}: Put two +1/+1 counters on this creature. (Activate each power-up ability only once. Reduce the cost by its mana cost if it entered this turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Lee Woo-chul",
+        "flavorText": "\"You guys want a taste, eh? Knuckle sandwiches for everyone!\"\n—D-Man, Dennis Dunphy",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/2242b5c3-42ef-4be0-a61f-65c93e56fcab.jpg?1783902978"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Bruce Banner
 {
     "name": "Bruce Banner",
