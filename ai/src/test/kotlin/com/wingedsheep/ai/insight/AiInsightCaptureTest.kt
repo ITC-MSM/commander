@@ -170,6 +170,24 @@ class AiInsightCaptureTest : FunSpec({
         chosen.label shouldBe insight.chosenLabel
         val declared = (action as DeclareAttackers).attackers
         chosen.label shouldBe AiInsightLabels.describeAttackPlan(driver.state, declared)
+
+        // One plan, one row: the search re-visits the same assignment across its passes, and the
+        // panel must not show it twice.
+        val labels = insight.options.map { it.label }
+        labels.distinct().size shouldBe labels.size
+    }
+
+    test("a plan recorded from a map that is mutated afterwards stays one row") {
+        val trace = CombatPlanTrace()
+        // What local search actually does: record the seed plan off its live map, drop the plan,
+        // then re-visit the same assignment as a mutation of the empty plan.
+        val livePlan = mutableMapOf(EntityId("attacker") to EntityId("defender"))
+        trace.recordAttack(livePlan, -6.0)
+        livePlan.clear()
+        trace.recordAttack(livePlan, 187.0)
+        trace.recordAttack(mapOf(EntityId("attacker") to EntityId("defender")), -6.0)
+
+        trace.plans.size shouldBe 2
     }
 
     test("the sink sees the position the decision was made from, not a later one") {

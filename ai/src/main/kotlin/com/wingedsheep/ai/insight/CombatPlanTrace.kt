@@ -19,7 +19,11 @@ class CombatPlanTrace {
     val plans: List<CombatPlan> get() = entries.values.toList()
 
     fun recordAttack(attackers: Map<EntityId, EntityId>, score: Double) {
-        entries.putIfAbsent(attackers, CombatPlan.Attack(attackers.toMap(), score))
+        // Snapshot before keying: local search hands us its live plan map and then mutates it, and a
+        // key that changes after insertion no longer matches itself — the same plan would come back
+        // as a second, identical row.
+        val snapshot = attackers.toMap()
+        entries.putIfAbsent(snapshot, CombatPlan.Attack(snapshot, score))
     }
 
     fun recordBlock(blockers: Map<EntityId, List<EntityId>>, score: Double) {
