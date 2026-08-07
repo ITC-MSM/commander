@@ -2,6 +2,7 @@ package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Counters
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
@@ -47,7 +48,7 @@ val WhiteTigerAvaAyala = card("White Tiger, Ava Ayala") {
                 power = 4,
                 toughness = 4,
                 colors = setOf(Color.GREEN),
-                creatureTypes = setOf("Cat", "God"),
+                creatureTypes = setOf(Subtype.CAT.value, Subtype.GOD.value),
                 name = "The Tiger God",
                 legendary = true,
                 staticAbilities = listOf(CantBeBlockedByMoreThan(maxBlockers = 1)),

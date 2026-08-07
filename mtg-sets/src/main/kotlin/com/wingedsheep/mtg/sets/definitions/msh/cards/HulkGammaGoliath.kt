@@ -27,9 +27,10 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * full price while its power-up is {3} cheaper.
  *
  * Two reductions can apply to the same ability, and they stack — CR 601.2f lets multiple cost
- * reductions be applied in any order. Serpent Specialist's `{3}{G}` becomes `{G}` the turn it
- * lands alongside Hulk: `{3}{G}` − `{G}` (its own mana cost) − `{3}` (Hulk) floors the generic at
- * zero and leaves the colored pip.
+ * reductions be applied in any order. She-Hulk, Jade Defender's `{4}{G}{G}` becomes `{G}` the turn
+ * she lands alongside Hulk: `{4}{G}{G}` − `{3}{G}` (her own mana cost) = `{1}{G}`, then − `{3}`
+ * (Hulk) floors the generic at zero and leaves the colored pip. A cheaper power-up bottoms out
+ * entirely: Serpent Specialist's `{3}{G}` − `{G}` = `{3}`, then − `{3}` = `{0}`, free.
  *
  * `excludeSelf` carries the printed "**other** creatures you control", so Hulk's own `{6}{R}{G}`
  * is never discounted by his static — only by his own power-up reduction, `{6}{R}{G}` −

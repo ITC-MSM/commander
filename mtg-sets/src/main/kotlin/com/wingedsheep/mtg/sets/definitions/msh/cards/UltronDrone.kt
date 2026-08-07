@@ -40,7 +40,7 @@ val UltronDrone = card("Ultron Drone") {
             Effects.CreateToken(
                 power = 2,
                 toughness = 2,
-                creatureTypes = setOf("Robot", Subtype.VILLAIN.value),
+                creatureTypes = setOf(Subtype.ROBOT.value, Subtype.VILLAIN.value),
                 artifactToken = true,
                 imageUri = "https://cards.scryfall.io/normal/front/8/e/8eb1de03-fc45-45bd-bd1f-5b164104426e.jpg?1783902799"
             )

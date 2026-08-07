@@ -4,6 +4,7 @@
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
 **Implemented:** 223 / 276
+
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas

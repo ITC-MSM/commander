@@ -18,10 +18,11 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * (Activate each power-up ability only once. Reduce the cost by her mana cost if she entered
  * this turn.)
  *
- * Flash and power-up are a deliberate pair: she can be cast on the opponent's end step and, since
- * "entered this turn" is about the *turn* rather than your turn, the discount is still live when
- * you untap — `{5}{W}{W}` − `{3}{W}{W}` = `{2}`. Ambush blocker into a two-mana indestructible
- * 6/5.
+ * Flash and power-up are a deliberate pair, but only within a single turn: "entered this turn" is
+ * about the turn, not about whose turn it is, so flashing her in during the opponent's turn lets
+ * you power up for `{5}{W}{W}` − `{3}{W}{W}` = `{2}` *that same turn* — ambush blocker into a
+ * two-mana indestructible 6/5. Waiting until you untap does not work: that is a new turn, she did
+ * not enter during it, and the ability costs the printed `{5}{W}{W}`.
  *
  * The indestructible counter is [Counters.INDESTRUCTIBLE], a keyword counter (CR 122.1d) rather
  * than a granted static ability: it rides on the permanent, so it survives losing abilities and

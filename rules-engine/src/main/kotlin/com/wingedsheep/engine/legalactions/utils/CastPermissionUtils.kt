@@ -824,9 +824,11 @@ class CastPermissionUtils(
      *    Note this is "entered", not "you've controlled it since your last turn": a permanent that
      *    entered under an opponent's control and changed hands this turn still gets the discount.
      *
-     * The mana cost read is the one on the permanent's [CardComponent], so a permanent that is a
-     * copy of something else is reduced by the *copied* mana cost, and a face-down creature (no mana
-     * cost) gets no reduction at all.
+     * The mana cost read is the one on the permanent's [CardComponent], which a copy effect
+     * replaces outright (keeping the original in `CopyOfComponent`), so a permanent that is a copy
+     * of something else is reduced by the *copied* mana cost. Face-down permanents never reach here
+     * at all: turning face down doesn't touch [CardComponent], but a face-down permanent has no
+     * abilities (CR 708.2), so it has no power-up to activate.
      */
     private fun applyPowerUpSelfReduction(
         cost: AbilityCost,
