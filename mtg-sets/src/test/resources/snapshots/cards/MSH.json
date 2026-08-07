@@ -10340,6 +10340,54 @@
     ]
 }
 
+// Serpent Specialist
+{
+    "name": "Serpent Specialist",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Human Snake Villain",
+    "oracleText": "Deathtouch\nPower-up — {3}{G}: Put two +1/+1 counters on this creature. (Activate each power-up ability only once. Reduce the cost by its mana cost if it entered this turn.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "186",
+        "artist": "Daniel Landerman",
+        "flavorText": "\"A wonderful score, my pet. I can't wait to see what we slither away with tomorrow.\"\n—Princess Python, Zelda DuBois",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72727c2a-08a9-47bc-a5eb-cda52e21684b.jpg?1783902912"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Speed, Young Avenger
 {
     "name": "Speed, Young Avenger",
