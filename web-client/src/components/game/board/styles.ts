@@ -2026,11 +2026,14 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   INCUBATION: { bg: 'rgba(20, 45, 65, 0.95)', border: 'rgba(110, 190, 220, 0.65)', color: '#a0d4e8', glow: 'rgba(110, 190, 220, 0.5)' },
   FELLOWSHIP: { bg: 'rgba(58, 44, 20, 0.95)', border: 'rgba(214, 178, 96, 0.65)', color: '#e8d3a0', glow: 'rgba(214, 178, 96, 0.5)' },
   BAIT: { bg: 'rgba(18, 48, 62, 0.95)', border: 'rgba(96, 186, 214, 0.65)', color: '#9ed4e8', glow: 'rgba(96, 186, 214, 0.5)' },
+  BORE: { bg: 'rgba(44, 40, 34, 0.95)', border: 'rgba(190, 172, 140, 0.7)', color: '#ddd0b8', glow: 'rgba(190, 172, 140, 0.5)' },
   POINT: { bg: 'rgba(20, 55, 35, 0.95)', border: 'rgba(110, 210, 150, 0.7)', color: '#9ce0b8', glow: 'rgba(110, 210, 150, 0.55)' },
   WISH: { bg: 'rgba(35, 22, 48, 0.95)', border: 'rgba(170, 130, 210, 0.7)', color: '#c8a8e0', glow: 'rgba(170, 130, 210, 0.55)' },
   REVIVAL: { bg: 'rgba(22, 34, 30, 0.95)', border: 'rgba(120, 205, 165, 0.7)', color: '#9ee0c0', glow: 'rgba(120, 205, 165, 0.55)' },
+  INGENUITY: { bg: 'rgba(52, 20, 42, 0.95)', border: 'rgba(230, 120, 190, 0.7)', color: '#f0a8d4', glow: 'rgba(230, 120, 190, 0.55)' },
   FILM: { bg: 'rgba(28, 28, 32, 0.95)', border: 'rgba(180, 185, 195, 0.7)', color: '#d0d4dc', glow: 'rgba(180, 185, 195, 0.5)' },
   ICE: { bg: 'rgba(18, 42, 58, 0.95)', border: 'rgba(140, 210, 240, 0.7)', color: '#b8e4f5', glow: 'rgba(140, 210, 240, 0.55)' },
+  OMEN: { bg: 'rgba(26, 30, 50, 0.95)', border: 'rgba(190, 200, 245, 0.75)', color: '#dfe4ff', glow: 'rgba(190, 200, 245, 0.65)' },
   HARNESS: { bg: 'rgba(48, 26, 12, 0.95)', border: 'rgba(240, 180, 80, 0.8)', color: '#ffc860', glow: 'rgba(240, 180, 80, 0.7)' },
   PLAN: { bg: 'rgba(24, 40, 62, 0.95)', border: 'rgba(120, 175, 230, 0.7)', color: '#a8cdee', glow: 'rgba(120, 175, 230, 0.55)' },
   INVASION: { bg: 'rgba(52, 22, 20, 0.95)', border: 'rgba(230, 110, 90, 0.7)', color: '#f0a090', glow: 'rgba(230, 110, 90, 0.55)' },
@@ -2040,7 +2043,12 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   MINUS_ZERO_MINUS_ONE: { bg: 'rgba(60, 20, 20, 0.95)', border: 'rgba(220, 120, 120, 0.7)', color: '#e09c9c' },
 }
 
-const fallbackCounterPalette: CounterBadgePalette = { bg: 'rgba(40, 40, 40, 0.95)', border: 'rgba(180, 180, 180, 0.6)', color: '#e0e0e0' }
+/**
+ * Anonymous grey used when a counter type has no palette row. Exported so the passive-counter
+ * wiring test can assert that no counter we actually render falls through to it — a new passive
+ * counter is easy to add to `PASSIVE_COUNTER_TYPES` while forgetting its colors.
+ */
+export const fallbackCounterPalette: CounterBadgePalette = { bg: 'rgba(40, 40, 40, 0.95)', border: 'rgba(180, 180, 180, 0.6)', color: '#e0e0e0' }
 
 /**
  * Build the badge style for an LTR passive counter from its palette. These counters
