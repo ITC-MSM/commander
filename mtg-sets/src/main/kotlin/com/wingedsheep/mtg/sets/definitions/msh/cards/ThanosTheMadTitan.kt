@@ -71,8 +71,6 @@ val ThanosTheMadTitan = card("Thanos, the Mad Titan") {
                 chooseCount = 1
             )
         )
-        description = "Put two +1/+1 counters on Thanos. Choose odd or even. Destroy each other " +
-            "creature with mana value of the chosen quality."
     }
 
     metadata {

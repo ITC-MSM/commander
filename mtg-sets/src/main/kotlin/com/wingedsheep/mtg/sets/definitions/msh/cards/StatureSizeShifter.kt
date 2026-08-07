@@ -60,7 +60,6 @@ val StatureSizeShifter = card("Stature, Size Shifter") {
             DynamicAmount.XValue,
             EffectTarget.Self
         )
-        description = "Put X +1/+1 counters on Stature."
     }
 
     metadata {

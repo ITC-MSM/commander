@@ -247,7 +247,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put a +1/+1 counter on Abomination. He fights up to one target creature an opponent controls.",
                 "isPowerUp": true
             }
         ]
@@ -2102,7 +2101,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put a +1/+1 counter on this creature and draw two cards.",
                 "isPowerUp": true
             }
         ]
@@ -2662,7 +2660,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put a +1/+1 counter and an indestructible counter on Captain Marvel.",
                 "isPowerUp": true
             }
         ]
@@ -5551,7 +5548,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put a +1/+1 counter on Hercules. He gains vigilance, indestructible, and haste until end of turn.",
                 "isPowerUp": true
             }
         ]
@@ -8860,7 +8856,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Each opponent discards a card. Put a +1/+1 counter on this creature.",
                 "isPowerUp": true
             }
         ]
@@ -9245,7 +9240,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put a +1/+1 counter on this creature and create a 3/2 white Hero creature token with vigilance.",
                 "isPowerUp": true
             }
         ]
@@ -9758,7 +9752,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put a +1/+1 counter and a double strike counter on Quicksilver.",
                 "isPowerUp": true
             }
         ],
@@ -11186,7 +11179,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Destroy up to one target artifact or enchantment. Put a +1/+1 counter on She-Hulk.",
                 "isPowerUp": true
             }
         ]
@@ -11614,7 +11606,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put X +1/+1 counters on Stature.",
                 "isPowerUp": true
             }
         ],
@@ -12661,7 +12652,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put two +1/+1 counters on Thanos. Choose odd or even. Destroy each other creature with mana value of the chosen quality.",
                 "isPowerUp": true
             }
         ]
@@ -14792,7 +14782,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put two +1/+1 counters on this creature and create a 2/2 colorless Robot Villain artifact creature token.",
                 "isPowerUp": true
             }
         ]
@@ -15006,7 +14995,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Return up to one target creature card from your graveyard to your hand. Put two +1/+1 counters on this creature.",
                 "isPowerUp": true
             }
         ]
@@ -15903,7 +15891,6 @@
                 "restrictions": [
                     "Once"
                 ],
-                "descriptionOverride": "Put a +1/+1 counter on White Tiger and create The Tiger God, a legendary 4/4 green Cat God creature token with \"The Tiger God can't be blocked by more than one creature.\"",
                 "isPowerUp": true
             }
         ]

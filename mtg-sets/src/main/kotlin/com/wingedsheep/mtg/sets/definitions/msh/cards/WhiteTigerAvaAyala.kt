@@ -54,9 +54,6 @@ val WhiteTigerAvaAyala = card("White Tiger, Ava Ayala") {
                 imageUri = "https://cards.scryfall.io/normal/front/4/d/4d1ca2ed-c987-4f92-ad7b-991d7a64d145.jpg?1783902800"
             )
         )
-        description = "Put a +1/+1 counter on White Tiger and create The Tiger God, a legendary " +
-            "4/4 green Cat God creature token with \"The Tiger God can't be blocked by more than " +
-            "one creature.\""
     }
 
     metadata {

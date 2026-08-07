@@ -52,8 +52,6 @@ val PetAvengers = card("Pet Avengers") {
                 imageUri = "https://cards.scryfall.io/normal/front/e/4/e4a64831-eec5-4fc9-8904-19523af3ca42.jpg?1783902804"
             )
         )
-        description = "Put a +1/+1 counter on this creature and create a 3/2 white Hero creature " +
-            "token with vigilance."
     }
 
     metadata {

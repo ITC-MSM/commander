@@ -49,8 +49,6 @@ val UnlivingLegionnaire = card("Unliving Legionnaire") {
             Effects.ReturnToHand(corpse),
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, EffectTarget.Self)
         )
-        description = "Return up to one target creature card from your graveyard to your hand. " +
-            "Put two +1/+1 counters on this creature."
     }
 
     metadata {

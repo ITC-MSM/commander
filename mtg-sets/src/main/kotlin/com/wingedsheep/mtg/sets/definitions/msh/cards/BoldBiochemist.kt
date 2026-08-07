@@ -35,7 +35,6 @@ val BoldBiochemist = card("Bold Biochemist") {
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self),
             Effects.DrawCards(2)
         )
-        description = "Put a +1/+1 counter on this creature and draw two cards."
     }
 
     metadata {

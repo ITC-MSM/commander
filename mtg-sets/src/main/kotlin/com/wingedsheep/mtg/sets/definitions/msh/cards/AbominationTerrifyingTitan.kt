@@ -52,8 +52,6 @@ val AbominationTerrifyingTitan = card("Abomination, Terrifying Titan") {
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self),
             Effects.Fight(EffectTarget.Self, foe)
         )
-        description = "Put a +1/+1 counter on Abomination. He fights up to one target creature an " +
-            "opponent controls."
     }
 
     metadata {

@@ -52,7 +52,6 @@ val SheHulkJadeDefender = card("She-Hulk, Jade Defender") {
             Effects.Destroy(victim),
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         )
-        description = "Destroy up to one target artifact or enchantment. Put a +1/+1 counter on She-Hulk."
     }
 
     metadata {

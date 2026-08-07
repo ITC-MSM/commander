@@ -45,8 +45,6 @@ val UltronDrone = card("Ultron Drone") {
                 imageUri = "https://cards.scryfall.io/normal/front/8/e/8eb1de03-fc45-45bd-bd1f-5b164104426e.jpg?1783902799"
             )
         )
-        description = "Put two +1/+1 counters on this creature and create a 2/2 colorless Robot " +
-            "Villain artifact creature token."
     }
 
     metadata {

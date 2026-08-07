@@ -44,8 +44,6 @@ val HerculesPrinceOfPower = card("Hercules, Prince of Power") {
             Effects.GrantKeyword(Keyword.INDESTRUCTIBLE, EffectTarget.Self),
             Effects.GrantKeyword(Keyword.HASTE, EffectTarget.Self)
         )
-        description = "Put a +1/+1 counter on Hercules. He gains vigilance, indestructible, and " +
-            "haste until end of turn."
     }
 
     metadata {

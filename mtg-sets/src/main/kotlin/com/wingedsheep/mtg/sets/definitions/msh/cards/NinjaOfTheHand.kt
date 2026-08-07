@@ -42,7 +42,6 @@ val NinjaOfTheHand = card("Ninja of the Hand") {
             Effects.EachOpponentDiscards(1),
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         )
-        description = "Each opponent discards a card. Put a +1/+1 counter on this creature."
     }
 
     metadata {

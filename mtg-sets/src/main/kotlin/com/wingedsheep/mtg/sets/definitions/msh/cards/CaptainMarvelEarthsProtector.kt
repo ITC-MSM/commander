@@ -48,7 +48,6 @@ val CaptainMarvelEarthsProtector = card("Captain Marvel, Earth's Protector") {
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self),
             Effects.AddCounters(Counters.INDESTRUCTIBLE, 1, EffectTarget.Self)
         )
-        description = "Put a +1/+1 counter and an indestructible counter on Captain Marvel."
     }
 
     metadata {

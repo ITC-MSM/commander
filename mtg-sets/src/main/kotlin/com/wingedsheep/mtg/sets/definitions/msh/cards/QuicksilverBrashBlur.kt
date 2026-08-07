@@ -52,7 +52,6 @@ val QuicksilverBrashBlur = card("Quicksilver, Brash Blur") {
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self),
             Effects.AddCounters(Counters.DOUBLE_STRIKE, 1, EffectTarget.Self)
         )
-        description = "Put a +1/+1 counter and a double strike counter on Quicksilver."
     }
 
     metadata {

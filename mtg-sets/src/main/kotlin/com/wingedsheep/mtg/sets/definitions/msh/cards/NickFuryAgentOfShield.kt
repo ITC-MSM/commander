@@ -11,7 +11,6 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.CardSource
-import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachInCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
@@ -73,40 +72,38 @@ val NickFuryAgentOfShield = card("Nick Fury, Agent of S.H.I.E.L.D.") {
     activatedAbility {
         isPowerUp = true
         cost = Costs.Mana("{W}{U}{B}{R}{G}")
-        effect = CompositeEffect(
-            listOf(
-                Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, EffectTarget.Self),
-                GatherCardsEffect(
-                    source = CardSource.TopOfLibrary(DynamicAmount.Fixed(7)),
-                    storeAs = "fury_looked"
-                ),
-                SelectFromCollectionEffect(
-                    from = "fury_looked",
-                    selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
-                    filter = GameObjectFilter.Any.withSubtype(Subtype.HERO.value) or
-                        GameObjectFilter.Any.withSubtype("Equipment") or
-                        GameObjectFilter.Any.withSubtype("Vehicle"),
-                    showAllCards = true,
-                    storeSelected = "fury_toBattlefield",
-                    storeRemainder = "fury_toBottom",
-                    prompt = "You may put a Hero, Equipment, or Vehicle card onto the battlefield",
-                    selectedLabel = "Put onto the battlefield",
-                    remainderLabel = "Put on the bottom of your library"
-                ),
-                MoveCollectionEffect(
-                    from = "fury_toBattlefield",
-                    destination = CardDestination.ToZone(Zone.BATTLEFIELD, Player.You),
-                    storeMovedAs = "fury_entered"
-                ),
-                MayEffect(
-                    ForEachInCollectionEffect("fury_entered", TransformEffect(EffectTarget.Self)),
-                    descriptionOverride = "transform it"
-                ),
-                MoveCollectionEffect(
-                    from = "fury_toBottom",
-                    destination = CardDestination.ToZone(Zone.LIBRARY, Player.You, ZonePlacement.Bottom),
-                    order = CardOrder.Random
-                )
+        effect = Effects.Composite(
+            Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, EffectTarget.Self),
+            GatherCardsEffect(
+                source = CardSource.TopOfLibrary(DynamicAmount.Fixed(7)),
+                storeAs = "fury_looked"
+            ),
+            SelectFromCollectionEffect(
+                from = "fury_looked",
+                selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+                filter = GameObjectFilter.Any.withSubtype(Subtype.HERO.value) or
+                    GameObjectFilter.Any.withSubtype("Equipment") or
+                    GameObjectFilter.Any.withSubtype("Vehicle"),
+                showAllCards = true,
+                storeSelected = "fury_toBattlefield",
+                storeRemainder = "fury_toBottom",
+                prompt = "You may put a Hero, Equipment, or Vehicle card onto the battlefield",
+                selectedLabel = "Put onto the battlefield",
+                remainderLabel = "Put on the bottom of your library"
+            ),
+            MoveCollectionEffect(
+                from = "fury_toBattlefield",
+                destination = CardDestination.ToZone(Zone.BATTLEFIELD, Player.You),
+                storeMovedAs = "fury_entered"
+            ),
+            MayEffect(
+                ForEachInCollectionEffect("fury_entered", TransformEffect(EffectTarget.Self)),
+                descriptionOverride = "transform it"
+            ),
+            MoveCollectionEffect(
+                from = "fury_toBottom",
+                destination = CardDestination.ToZone(Zone.LIBRARY, Player.You, ZonePlacement.Bottom),
+                order = CardOrder.Random
             )
         )
     }
