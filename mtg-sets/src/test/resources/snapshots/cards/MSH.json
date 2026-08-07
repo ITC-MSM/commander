@@ -14003,6 +14003,66 @@
     ]
 }
 
+// Ultron Drone
+{
+    "name": "Ultron Drone",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Robot Villain",
+    "oracleText": "Power-up — {6}: Put two +1/+1 counters on this creature and create a 2/2 colorless Robot Villain artifact creature token. (Activate each power-up ability only once. Reduce the cost by its mana cost if it entered this turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{6}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 2,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [],
+                            "creatureTypes": [
+                                "Robot",
+                                "Villain"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/8/e/8eb1de03-fc45-45bd-bd1f-5b164104426e.jpg?1783902799",
+                            "artifactToken": true
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put two +1/+1 counters on this creature and create a 2/2 colorless Robot Villain artifact creature token.",
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "253",
+        "artist": "Rafater",
+        "flavorText": "Many eyes. Many hands. One mind.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/149a0a3b-c470-414c-a7de-d773b8b4cc82.jpg?1783902888"
+    }
+}
+
 // Ultron, Artificial Malevolence
 {
     "name": "Ultron, Artificial Malevolence",
