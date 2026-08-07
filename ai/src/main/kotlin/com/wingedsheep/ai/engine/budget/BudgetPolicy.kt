@@ -5,6 +5,7 @@ import com.wingedsheep.ai.engine.sidesFor
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
 
@@ -104,6 +105,30 @@ class RolloutBudgetPolicy(private val playouts: Int) : BudgetPolicy {
  */
 class TieredBudgetPolicy(
     val normalMillis: Long = BudgetTier.NORMAL.millis,
+    /**
+     * Grade the window between "blockers are declared" and "damage is dealt" as
+     * [BudgetTier.NORMAL] rather than [BudgetTier.ROUTINE].
+     *
+     * That window falls to ROUTINE today, and it is the one where an instant converts an attack
+     * into a kill. Two facts put it there and neither is about how much the decision is worth:
+     * combat declarations are already spent (the `DeclareAttackers`/`DeclareBlockers` branch above
+     * has passed), and [someoneIsInLethalRange] does not fire, because attacking **taps** the
+     * creature (CR 508.1f) so the attacking side reads as zero power — and even counting attackers
+     * would not fire it, since the proxy compares power that exists *now* against life, and a
+     * trick's whole job is to make an attack lethal that currently is not.
+     *
+     * ROUTINE is 200 ms, below `SearchAllowances.NORMAL_MILLIS`, and that threshold is the one
+     * that matters: below it `refineTargetsBySimulation` is off and `targetCandidates` drops to 1,
+     * so a spell's target is whatever the heuristic names first. On the board `instants-07` pins —
+     * an unblocked 2/2, Giant Growth, opponent at 5 — that pick is bad enough to score below
+     * passing, and the AI passes on exact lethal. Restoring NORMAL restores the simulation-refined
+     * pick, which is the whole of the fix; the tier is deliberately not CRITICAL, since nothing
+     * measured here needs the extra playouts and combat already pays for a 5 s tier twice.
+     *
+     * The window is [GameSimulator.isPreDamageCombatState]'s, and the two are kept the same shape
+     * on purpose: this is the tier for the window that simulator was taught to see through.
+     */
+    val preDamageCombatIsNormal: Boolean = false,
 ) : BudgetPolicy {
 
     override fun budgetFor(
@@ -147,6 +172,9 @@ class TieredBudgetPolicy(
 
         if (someoneIsInLethalRange(state, playerId)) return BudgetTier.CRITICAL
 
+        // Blocks are in and damage is next — the window an instant converts an attack in.
+        if (preDamageCombatIsNormal && isPreDamageCombat(state)) return BudgetTier.NORMAL
+
         // Something is on the stack and we are choosing whether to answer it.
         if (state.stack.isNotEmpty()) return BudgetTier.NORMAL
 
@@ -158,7 +186,10 @@ class TieredBudgetPolicy(
         return BudgetTier.ROUTINE
     }
 
-    override fun toString(): String = "tiered(${normalMillis}ms)"
+    // The suffix is conditional so every arena report already published under `tiered(2000ms)`
+    // still names the agent it named.
+    override fun toString(): String =
+        "tiered(${normalMillis}ms" + (if (preDamageCombatIsNormal) ", pre-damage=normal)" else ")")
 
     /**
      * Is either side one combat step away from dying?
@@ -188,5 +219,20 @@ class TieredBudgetPolicy(
                 (projected.getPower(entityId) ?: 0).coerceAtLeast(0)
             }
         }
+    }
+
+    /**
+     * Blocks are in and damage has not been dealt — see [preDamageCombatIsNormal].
+     *
+     * The same shape as `GameSimulator.isPreDamageCombatState`: those two steps, and only when
+     * something is actually attacking. The attacker check is belt-and-braces rather than a case
+     * that arises — the engine skips both steps outright when nothing attacks (CR 508.8), which is
+     * also why it has no test: the state cannot be reached by playing the game.
+     */
+    private fun isPreDamageCombat(state: GameState): Boolean {
+        if (state.step != Step.DECLARE_BLOCKERS && state.step != Step.FIRST_STRIKE_COMBAT_DAMAGE) {
+            return false
+        }
+        return state.getBattlefield().any { state.getEntity(it)?.has<AttackingComponent>() == true }
     }
 }

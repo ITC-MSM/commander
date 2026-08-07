@@ -51,6 +51,12 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // should move, with `sequencing-08` — the same board, the opposite answer — held.
                 AiProfile.PRODUCTION_LANDSEQ,
                 AiProfile.PRODUCTION_CANDIDATE_LANDSEQ,
+                // The combat trick window, alone and on top of what is live. `instants-08` is the
+                // verdict that should move, with `instants-07` — the same board one step later,
+                // the opposite answer — held. Only the candidate column can move `instants-07`:
+                // spending the trick needs the budget half, which needs tiers.
+                AiProfile.PRODUCTION_TRICKWINDOW,
+                AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

@@ -31,7 +31,14 @@ import com.wingedsheep.sdk.model.EntityId
  * A [TimingVerdict.Adjust] is in the board score's own units, so a point here is a point of board
  * value. A [TimingVerdict.NoWindow] is a different kind of claim; see there.
  */
-class HoldPolicy(private val intents: IntentCatalog) {
+class HoldPolicy(
+    private val intents: IntentCatalog,
+    /**
+     * [AiProfile.combatTricksWaitForBlocks][com.wingedsheep.ai.engine.AiProfile.combatTricksWaitForBlocks]
+     * — narrow the combat window to the steps where blocks are already in.
+     */
+    private val tricksWaitForBlocks: Boolean = false,
+) {
 
     /** Whether this policy can say anything. False when the agent has no card knowledge. */
     val isEnabled: Boolean get() = intents.isEnabled
@@ -59,7 +66,7 @@ class HoldPolicy(private val intents: IntentCatalog) {
             // the old blanket `passScore - 1.5` discount actively *encouraged* dumping it — it buys
             // nothing at all.
             IntentTag.COMBAT_TRICK in intent.tags -> when {
-                state.step in COMBAT_STEPS -> TimingVerdict.Adjust(COMBAT_WINDOW)
+                state.step in combatWindow -> TimingVerdict.Adjust(COMBAT_WINDOW)
                 else -> responseWindowFor(state, playerId, intent)
             }
 
@@ -181,6 +188,24 @@ class HoldPolicy(private val intents: IntentCatalog) {
         return remaining <= reach && remaining + pump.pumpToughness > reach
     }
 
+    /**
+     * The steps where a combat trick is worth its bonus.
+     *
+     * [COMBAT_STEPS] is the historical answer and it is one window too wide: it pays the trick in
+     * `BEGIN_COMBAT` and `DECLARE_ATTACKERS`, both of which are *before* blocks. Spending a trick
+     * there is worse than spending it late for a reason no board evaluation can see — it hands the
+     * defender the information. A 2/2 that would have gone unblocked gets chump-blocked once it is
+     * visibly a 5/5, and the pump that was exactly lethal buys nothing.
+     *
+     * [BLOCKS_IN_STEPS] is the constant matching [COMBAT_WINDOW]'s own comment. Every step in it is
+     * one where blocks are already declared, whichever side we are on: on our turn we only receive
+     * priority in `DECLARE_BLOCKERS` after the defender has declared, and on theirs we are the one
+     * who just declared. Before that a trick falls through to [responseWindowFor], which pays it
+     * only for something on the stack it can actually answer — so "hold it until blocks are in"
+     * costs the AI no legitimate response.
+     */
+    private val combatWindow: Set<Step> get() = if (tricksWaitForBlocks) BLOCKS_IN_STEPS else COMBAT_STEPS
+
     private companion object {
         /** Blockers are in; a trick decides the fight. */
         const val COMBAT_WINDOW = 1.0
@@ -197,6 +222,11 @@ class HoldPolicy(private val intents: IntentCatalog) {
         val COMBAT_STEPS = setOf(
             Step.BEGIN_COMBAT, Step.DECLARE_ATTACKERS, Step.DECLARE_BLOCKERS,
             Step.FIRST_STRIKE_COMBAT_DAMAGE, Step.COMBAT_DAMAGE,
+        )
+
+        /** [COMBAT_STEPS] minus the two windows that come before blocks are declared. */
+        val BLOCKS_IN_STEPS = setOf(
+            Step.DECLARE_BLOCKERS, Step.FIRST_STRIKE_COMBAT_DAMAGE, Step.COMBAT_DAMAGE,
         )
 
         val REMOVAL_TAGS = setOf(IntentTag.REMOVAL, IntentTag.EXILE_REMOVAL, IntentTag.SWEEPER)

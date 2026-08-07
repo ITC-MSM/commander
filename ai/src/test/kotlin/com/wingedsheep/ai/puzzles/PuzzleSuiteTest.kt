@@ -36,7 +36,7 @@ class PuzzleSuiteTest : ScenarioTestBase() {
                     PuzzleCatalog.byCategory(category).size shouldBeGreaterThanOrEqual 6
                 }
             }
-            PuzzleCatalog.all.size shouldBe 81
+            PuzzleCatalog.all.size shouldBe 83
         }
 
         test("every KNOWN_FAILURES id names a real puzzle") {
@@ -126,6 +126,20 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // the hand's curve (or a horizon that reaches next turn's main phase), and it shows up
             // here as 07 flipping to a pass with 08 still passing.
             "sequencing-07",
+
+            // ── The combat trick window ──
+            // `HoldPolicy.COMBAT_STEPS` pays a trick its combat bonus in every step of combat,
+            // `BEGIN_COMBAT` and `DECLARE_ATTACKERS` included — both of which are *before* blocks.
+            // So the AI fires the pump in the window where it telegraphs, and the defender who
+            // would have taken 2 from a 2/2 chump-blocks the 5/5 instead.
+            //
+            // Its pair, instants-07, is the same board one priority window later, where casting is
+            // right — and `production` passes it, because a greedy agent with no budget tiers still
+            // refines the trick's target by simulation. What makes the pair worth keeping is that
+            // the live agent failed 07 for a *different* reason: the pre-damage window is graded
+            // ROUTINE, which is below the threshold where targets are picked by simulation at all.
+            // One fix does not close both — see `AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW`.
+            "instants-08",
         )
     }
 }

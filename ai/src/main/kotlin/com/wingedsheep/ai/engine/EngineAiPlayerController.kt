@@ -21,11 +21,13 @@ private val logger = LoggerFactory.getLogger(EngineAiPlayerController::class.jav
  * AI controller powered by the built-in rules-engine [AIPlayer].
  *
  * Runs entirely locally with no API calls. Uses the engine's ActionProcessor, board evaluator,
- * [Strategist] and [CombatAdvisor] directly, configured by [AiProfile.PRODUCTION_CANDIDATE_LANDSEQ]
+ * [Strategist] and [CombatAdvisor] directly, configured by [AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW]
  * — rollout candidate evaluation over a determinized state, on a four-tier decision budget, with a
- * land drop priced as the card conversion it is and land *order* priced by the mana it makes usable.
+ * land drop priced as the card conversion it is, land *order* priced by the mana it makes usable,
+ * and a combat trick held until blocks are in and searched properly once they are.
  * Each superseded configuration is kept as the baseline its successor was measured against:
- * [AiProfile.PRODUCTION_CANDIDATE_LANDDROP] ran from 2026-08-08,
+ * [AiProfile.PRODUCTION_CANDIDATE_LANDSEQ] ran from 2026-08-09,
+ * [AiProfile.PRODUCTION_CANDIDATE_LANDDROP] from 2026-08-08,
  * [AiProfile.PRODUCTION_CANDIDATE_TUNED] from 2026-08-07, and the greedy 1-ply
  * [AiProfile.PRODUCTION] before it.
  *
@@ -45,7 +47,7 @@ class EngineAiPlayerController(
 ) : AiPlayerController {
 
     private val aiPlayer =
-        AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION_CANDIDATE_LANDSEQ, insightSink = insightSink)
+        AIPlayer.create(cardRegistry, playerId, AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW, insightSink = insightSink)
 
     override fun chooseAction(
         state: ClientGameState,

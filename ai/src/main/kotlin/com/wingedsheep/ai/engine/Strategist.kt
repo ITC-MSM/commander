@@ -85,6 +85,8 @@ class Strategist(
      * behaviour.
      */
     private val intents: IntentCatalog = IntentCatalog.NONE,
+    /** [AiProfile.combatTricksWaitForBlocks] — passed straight through to [HoldPolicy]. */
+    private val combatTricksWaitForBlocks: Boolean = false,
     /**
      * Phase 7: how a candidate's post-action state is scored. Defaults to the pre-Phase-7 leaf, so
      * a caller that doesn't opt in gets the greedy 1-ply AI unchanged.
@@ -99,7 +101,7 @@ class Strategist(
      */
     private val insightSink: AiInsightSink? = null,
 ) {
-    private val holdPolicy = HoldPolicy(intents)
+    private val holdPolicy = HoldPolicy(intents, combatTricksWaitForBlocks)
 
     /**
      * Positions this player has already taken a non-pass action from, oldest first.

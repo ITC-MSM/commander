@@ -138,6 +138,25 @@ data class AiProfile(
      * solve one or the other, never both.
      */
     val sequenceLandsByUsableMana: Boolean = false,
+    /**
+     * A combat trick's window is the one where blocks are already in — not any step of combat.
+     *
+     * [com.wingedsheep.ai.engine.knowledge.HoldPolicy] pays a trick its combat bonus in every
+     * combat step, `BEGIN_COMBAT` and `DECLARE_ATTACKERS` included. Both are *before* blocks, and
+     * spending a trick there is worse than spending it late for a reason no board evaluation can
+     * see: it hands the defender the information. The 2/2 that would have gone unblocked gets
+     * chump-blocked once it is visibly a 5/5, and the pump that was exactly lethal buys nothing.
+     *
+     * The targets are `instants-07` / `instants-08` — the same board and the same trick one step
+     * apart, cast it after no blocks, hold it before them. Needs [useCardIntent], which is what
+     * `HoldPolicy` runs on at all.
+     *
+     * Pairs with [com.wingedsheep.ai.engine.budget.TieredBudgetPolicy.preDamageCombatIsNormal],
+     * and the pair is not separable in either direction: this one alone teaches the AI to wait for
+     * a window it then cannot spend, and that one alone teaches it to convert in a window it
+     * should not have reached.
+     */
+    val combatTricksWaitForBlocks: Boolean = false,
     /** Non-null profiles may only be selected automatically for this set. Arena selection stays explicit. */
     val restrictedToSet: String? = null,
 ) {
@@ -328,7 +347,9 @@ data class AiProfile(
         )
 
         /**
-         * **What a player faces in a real game as of 2026-08-09** — see [EngineAiPlayerController].
+         * What a player faced in a real game **on 2026-08-09**, until
+         * [PRODUCTION_CANDIDATE_TRICKWINDOW] replaced it in [EngineAiPlayerController]. Kept
+         * unchanged as the baseline that promotion was measured against.
          *
          * [PRODUCTION_CANDIDATE_LANDDROP] plus [sequenceLandsByUsableMana] — the agent that plays its
          * lands in the right order. Promoted on the same bar the three fixes above it were,
@@ -352,6 +373,68 @@ data class AiProfile(
         val PRODUCTION_CANDIDATE_LANDSEQ = PRODUCTION_CANDIDATE_LANDDROP.copy(
             id = "production-candidate-landseq",
             sequenceLandsByUsableMana = true,
+        )
+
+        /**
+         * [combatTricksWaitForBlocks] alone on top of [PRODUCTION], so a puzzle that moves is
+         * attributable to it — the same isolation [PRODUCTION_LANDSEQ] gives land sequencing.
+         *
+         * Only *half* the pair is expressible here, and that is not an oversight:
+         * [PRODUCTION] runs on [LegacyBudgetPolicy], which has no tiers, so
+         * [com.wingedsheep.ai.engine.budget.TieredBudgetPolicy.preDamageCombatIsNormal] is a
+         * no-op on it and its own attribution column would be empty. The budget half only exists on
+         * an agent that tiers its search, which is why its isolation is
+         * [PRODUCTION_CANDIDATE_TRICKWINDOW] rather than a `production-*` twin.
+         */
+        val PRODUCTION_TRICKWINDOW = PRODUCTION.copy(
+            id = "production-trickwindow",
+            combatTricksWaitForBlocks = true,
+        )
+
+        /**
+         * The promotion candidate: [PRODUCTION_CANDIDATE_LANDSEQ] plus both halves of the combat
+         * trick window — hold the trick until blocks are in, and give the pre-damage window enough
+         * budget to spend it.
+         *
+         * The two flags are one change and must be measured as one. Measured on the same board (an
+         * unblocked 2/2, Giant Growth, opponent at 5) `production-candidate-landseq` **passes** —
+         * the window is graded `ROUTINE`, and at 200 ms that drops the simulation-refined target
+         * pick that would have found the kill. Fixing that alone makes the same agent cast the
+         * trick in `DECLARE_ATTACKERS` instead, which is the telegraph [combatTricksWaitForBlocks]
+         * exists to stop. Either flag on its own trades one mistake for the other.
+         *
+         * On the 83-puzzle suite it takes the live pair from **73/83 to 76/83**, and the three it
+         * closes are every combat-trick conversion the agent was missing — `instants-02` (pump the
+         * blocked attacker), `instants-03` (pump the blocker) and the new `instants-07` (pump for
+         * exact lethal). Its failing set is a strict subset of `production-candidate-landseq`'s, so
+         * nothing was traded for them. Both come from the budget half: two of the three predate
+         * this work and were never diagnosed, because the missing search looks exactly like a
+         * missing evaluation until you vary the tier.
+         *
+         * **What a player faces in a real game as of 2026-08-09** — see [EngineAiPlayerController].
+         *
+         * Promoted on the usual bar, **arena-neutral and a puzzle ahead**, but read the sample size
+         * before quoting it. `just arena production-candidate-landseq production-candidate-trickwindow
+         * 100` measured the baseline at **47.0%, CI [43.0%, 50.0%]**, 47W-53L, 100/100 completed —
+         * so the interval spans parity (at its upper edge) and the point estimate favours this
+         * agent. That is a pass, and it is **100 games, not the 300** the three promotions above it
+         * were held to: enough to rule out a large regression, not enough to resolve a small one.
+         * The puzzle side is where the evidence is, at +3 with nothing traded.
+         *
+         * If a later run comes back below parity, revert the two call sites
+         * ([EngineAiPlayerController] and [AiProfileSelector]'s fallback) rather than the flags:
+         * both are off for every other profile, so backing the promotion out costs nothing and
+         * loses no measurement.
+         */
+        val PRODUCTION_CANDIDATE_TRICKWINDOW = PRODUCTION_CANDIDATE_LANDSEQ.copy(
+            id = "production-candidate-trickwindow",
+            combatTricksWaitForBlocks = true,
+            // A fresh policy rather than a derived one, because `budgetPolicy` is typed as the
+            // interface and there is nothing to copy from. Sound only while the inherited policy is
+            // `TieredBudgetPolicy()` at its default size — which it is, on [PRODUCTION_CANDIDATE];
+            // if that ever takes a `normalMillis`, this line has to carry it too or the promotion
+            // run silently measures two changes.
+            budgetPolicy = TieredBudgetPolicy(preDamageCombatIsNormal = true),
         )
 
         /**
@@ -427,7 +510,7 @@ object AiProfileSelector {
     fun select(
         setCode: String?,
         requested: AiProfile?,
-        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_LANDSEQ,
+        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_TRICKWINDOW,
     ): AiProfile {
         if (requested == null) return fallback
         val restriction = requested.restrictedToSet ?: return requested
