@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 218 / 276
+**Implemented:** 219 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -139,7 +139,7 @@ variants 297+ are excluded)
 - [x] Hex Magic
 - [x] Hire a Crew
 - [ ] HULK SMASH!
-- [ ] Human Torch, Johnny Storm
+- [x] Human Torch, Johnny Storm
 - [x] HYDRA Assault Robot
 - [x] Iron Fist, Living Weapon
 - [x] Jessica Jones, Private Eye

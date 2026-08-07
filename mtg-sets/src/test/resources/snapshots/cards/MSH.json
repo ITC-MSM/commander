@@ -6018,6 +6018,81 @@
     ]
 }
 
+// Human Torch, Johnny Storm
+{
+    "name": "Human Torch, Johnny Storm",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Flying\nWhenever you draw a card, if you control another Hero, Human Torch deals 1 damage to target opponent.\nPower-up — {6}{R}: Put three +1/+1 counters on Human Torch. (Activate each power-up ability only once. Reduce the cost by his mana cost if he entered this turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DrawEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirement": "TargetOpponent",
+                "triggerCondition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "Hero",
+                    "excludeSelf": true
+                },
+                "descriptionOverride": "Whenever you draw a card, if you control another Hero, Human Torch deals 1 damage to target opponent."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{6}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 3,
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "UNCOMMON",
+        "artist": "Alexander Skripnikov",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f8659f6-a793-4edc-8401-d9126840c1c2.jpg?1783902929"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hydraulic Helper
 {
     "name": "Hydraulic Helper",
