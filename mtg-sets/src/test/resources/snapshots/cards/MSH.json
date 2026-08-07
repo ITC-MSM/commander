@@ -11496,8 +11496,15 @@
         ],
         "staticAbilities": [
             {
-                "type": "CantBeBlockedIfPowerAtMost",
-                "maxPower": 1
+                "type": "CantBeBlockedWhilePropertyAtMost",
+                "maxValue": 1,
+                "properties": [
+                    "Power"
+                ],
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                }
             }
         ]
     },

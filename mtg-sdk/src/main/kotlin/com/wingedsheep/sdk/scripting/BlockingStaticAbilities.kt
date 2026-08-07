@@ -1,7 +1,9 @@
 package com.wingedsheep.sdk.scripting
 
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
+import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -155,50 +157,50 @@ data class CantBeBlockedByMoreThan(
 }
 
 /**
- * Creatures you control with power or toughness N or less can't be blocked.
- * Used for Tetsuko Umezawa, Fugitive: "Creatures you control with power or
- * toughness 1 or less can't be blocked."
+ * Creatures matching [filter] can't be blocked while every stat in [properties] is at most
+ * [maxValue] — the "small creatures slip through" evasion, in both the scopes it is printed in:
  *
- * This is implemented as a blocking restriction checked at declare blockers,
- * using fully projected power/toughness values. The check scans the attacking
- * player's battlefield for permanents with this ability.
+ * - **Tetsuko Umezawa, Fugitive** — "Creatures you control with power or toughness 1 or less can't
+ *   be blocked": `CantBeBlockedWhilePropertyAtMost(1)`, the defaults.
+ * - **Stature, Size Shifter** — "Stature can't be blocked if her power is 1 or less":
+ *   `CantBeBlockedWhilePropertyAtMost(1, setOf(EntityNumericProperty.Power), GroupFilter.source())`.
  *
- * @property maxValue The maximum power or toughness value for the evasion
+ * **Do not spell this as `ConditionalStaticAbility(CantBeBlocked(), <power comparison>)`** — it
+ * silently never switches off. A `CantBeBlocked` grant is a Layer 6 ability modification, but power
+ * is settled in Layer 7; at the moment the Layer 6 effect is applied the projection has no power for
+ * the permanent yet and the condition falls back to its *printed* P/T, so the gate answers "yes"
+ * forever however big the creature gets. This ability is instead resolved in a post-layer pass in
+ * `StateProjector` that runs after every P/T layer, so it reads final projected stats and is re-asked
+ * on each projection — the evasion comes back if the creature shrinks again.
+ *
+ * @property maxValue The highest value at which the evasion still applies
+ * @property properties Which stats to test; the evasion applies when *any* of them is at most
+ *   [maxValue] ("power **or** toughness"). Only [EntityNumericProperty.Power] and
+ *   [EntityNumericProperty.Toughness] are meaningful — no other property is settled in the layers.
+ * @property filter Whose creatures it applies to. Defaults to the ability's controller's creatures
+ *   (a lord); use [GroupFilter.source] for a creature that only grants it to itself. [description]
+ *   renders those two printed shapes; a third filter would need a wording branch here.
  */
-@SerialName("GrantCantBeBlockedToSmallCreatures")
+@SerialName("CantBeBlockedWhilePropertyAtMost")
 @Serializable
-data class GrantCantBeBlockedToSmallCreatures(
-    val maxValue: Int
+data class CantBeBlockedWhilePropertyAtMost(
+    val maxValue: Int,
+    val properties: Set<EntityNumericProperty> =
+        setOf(EntityNumericProperty.Power, EntityNumericProperty.Toughness),
+    val filter: GroupFilter = GroupFilter.AllCreaturesYouControl
 ) : StaticAbility {
-    override val description: String =
-        "Creatures you control with power or toughness $maxValue or less can't be blocked"
-}
+    /** "power", "toughness", or "power or toughness" — always in that printed order. */
+    val propertyDescription: String
+        get() = listOfNotNull(
+            EntityNumericProperty.Power.description.takeIf { EntityNumericProperty.Power in properties },
+            EntityNumericProperty.Toughness.description.takeIf { EntityNumericProperty.Toughness in properties }
+        ).joinToString(" or ")
 
-/**
- * This creature can't be blocked as long as *its own* power is at most [maxPower].
- * Stature, Size Shifter: "Stature can't be blocked if her power is 1 or less."
- *
- * The self-scoped sibling of [GrantCantBeBlockedToSmallCreatures], and it exists for the same
- * reason: the gate reads **projected** power, so it cannot be a `ConditionalStaticAbility` whose
- * condition compares power. A `CantBeBlocked` grant is a Layer 6 ability modification, but power
- * is settled in Layer 7 — at the moment the Layer 6 effect is applied the projection has no power
- * for the permanent yet and falls back to its printed value, so the gate would answer against the
- * base P/T and never switch off. Like its sibling this is applied in a post-layer pass over final
- * projected power instead.
- *
- * Deliberately power-only (not "power or toughness" like [GrantCantBeBlockedToSmallCreatures]) and
- * self-only, because that is what the printed card says: growing the creature — including with its
- * own power-up — is what takes the evasion away.
- *
- * @property maxPower The highest own-power at which the evasion still applies
- */
-@SerialName("CantBeBlockedIfPowerAtMost")
-@Serializable
-data class CantBeBlockedIfPowerAtMost(
-    val maxPower: Int
-) : StaticAbility {
     override val description: String =
-        "This creature can't be blocked if its power is $maxPower or less"
+        if (filter.scope is Scope.Self)
+            "This creature can't be blocked if its $propertyDescription is $maxValue or less"
+        else
+            "Creatures you control with $propertyDescription $maxValue or less can't be blocked"
 }
 
 /**

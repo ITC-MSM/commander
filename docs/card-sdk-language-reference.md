@@ -4781,22 +4781,25 @@ staticAbility {
   (`attachedCreature()`, `source()`) resolve correctly; a `Battlefield`-scope filter matches every
   attacker. No separate "while attacking" gate is needed — must-be-blocked only bites while the
   creature attacks.
-- `CantBeBlockedIfPowerAtMost(maxPower)` — "this creature can't be blocked if its power is N or
-  less" (**Stature, Size Shifter**). Self-scoped and **power-only**, unlike its controller-scoped
-  sibling `GrantCantBeBlockedToSmallCreatures(maxValue)` (Tetsuko Umezawa: "creatures you control
-  with power *or toughness* N or less can't be blocked"), which is a lord.
+- `CantBeBlockedWhilePropertyAtMost(maxValue, properties = {Power, Toughness}, filter = GroupFilter.AllCreaturesYouControl)`
+  — "creatures … with power or toughness N or less can't be blocked". One ability for both printed
+  scopes: the defaults are **Tetsuko Umezawa, Fugitive** (a lord over its controller's creatures,
+  either stat), and
+  `CantBeBlockedWhilePropertyAtMost(1, setOf(EntityNumericProperty.Power), GroupFilter.source())`
+  is **Stature, Size Shifter** ("can't be blocked if *her* power is 1 or less"). `properties` is an
+  any-of set, so `{Power, Toughness}` is the printed "power **or** toughness"; only `Power` and
+  `Toughness` are meaningful, since no other property is settled in the layers.
   **Do not reach for `ConditionalStaticAbility(CantBeBlocked(), condition = <power comparison>)` —
   it silently never switches off.** A `CantBeBlocked` grant is a Layer 6 ability modification, but
   power is settled in Layer 7; when the Layer 6 effect is applied the projection has no power for
   the permanent yet and the condition falls back to the *printed* P/T, so the gate answers "yes"
   forever no matter how big the creature gets. This holds however the condition is spelled —
   `Conditions.CompareAmounts(DynamicAmounts.sourcePower(), …)` and
-  `Conditions.SourceMatches(GameObjectFilter.Any.powerAtMost(n))` both fail the same way. Both
-  power-gated evasions are therefore resolved in **post-layer passes** in `StateProjector`
-  (`applyCantBeBlockedIfPowerAtMost` / `applyGrantCantBeBlockedToSmallCreatures`) that run after
-  every P/T layer, so they read final projected power and are re-asked each projection — the
-  evasion comes back if the creature shrinks again. The same trap applies to any static whose gate
-  reads a later layer than the static's own.
+  `Conditions.SourceMatches(GameObjectFilter.Any.powerAtMost(n))` both fail the same way. The
+  ability is therefore resolved in a **post-layer pass** in `StateProjector`
+  (`applyCantBeBlockedWhilePropertyAtMost`) that runs after every P/T layer, so it reads final
+  projected stats and is re-asked each projection — the evasion comes back if the creature shrinks
+  again. The same trap applies to any static whose gate reads a later layer than the static's own.
 - `CantBeBlockedBy(blockerFilter, filter = GroupFilter.source())` — evasion: the affected creature
   can't be blocked by creatures matching `blockerFilter` (Juggernaut's "can't be blocked by Walls",
   Steel Leaf Champion's "power 2 or less"). Resolved by `CantBeBlockedByRule`, which reads three
@@ -5726,9 +5729,12 @@ express any power-up cost whose reduction includes a colored pip — which is mo
 (CR 702.193b) and, identically worded, offering (CR 702.48c): generic reduces generic; colored and
 colorless reduce mana of the same type with any excess spilling into generic; hybrid pips cancel
 identical hybrids first, then either colored half (CR 118.7e); Phyrexian pips reduce their color
-(118.7f); `{X}` is inert on both sides. Floored at zero, never negative. Use this — not
-`reduceGeneric` / `reduceGenericWithManaFloor` — whenever a reduction is expressed as *another
-object's mana cost* rather than as an amount of generic mana.
+(118.7f); `{X}` is inert on both sides. Floored at zero, never negative. Where CR 118.7e leaves the
+payer a choice, the choice taken is whichever reduces the cost *most* — hybrids are assigned by
+maximum matching rather than first-fit (`{W}{U}` − `{W/U}{W/B}` cancels both), and a monocolored
+hybrid takes its generic half when that removes more than one mana (`{3}{W}` − `{2/W}` = `{1}{W}`,
+not `{3}`). Use this — not `reduceGeneric` / `reduceGenericWithManaFloor` — whenever a reduction is
+expressed as *another object's mana cost* rather than as an amount of generic mana.
 
 **`minimumXValue` — "X can't be 0".** Set `minimumXValue = 1` in the `activatedAbility { }` block for
 an X-cost ability whose X may not be 0 (**Gogo, Master of Mimicry**: "{X}{X}, {T}: … X can't be 0.").

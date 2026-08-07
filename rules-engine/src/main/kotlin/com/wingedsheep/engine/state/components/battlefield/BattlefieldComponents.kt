@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.state.components.battlefield
 
+import com.wingedsheep.engine.mechanics.layers.AffectsFilter
 import com.wingedsheep.engine.state.Component
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.model.EntityId
@@ -904,20 +905,23 @@ data object GrantsStationUsingToughnessComponent : Component
 data object CantBeTargetedByOpponentAbilitiesComponent : Component
 
 /**
- * Marks a permanent as granting "can't be blocked" to creatures its controller
- * controls with power or toughness at most [maxValue].
- * Used for Tetsuko Umezawa, Fugitive.
+ * Marks a permanent as granting "can't be blocked" to the creatures [affects] resolves to, while
+ * their **projected** power (if [checkPower]) or toughness (if [checkToughness]) is at most
+ * [maxValue]. Tetsuko Umezawa, Fugitive grants it to its controller's creatures on either stat;
+ * Stature, Size Shifter grants it only to itself and only on power.
+ *
+ * Read by StateProjector's post-layer pass, which runs after every P/T layer so the gate sees final
+ * stats rather than printed ones. [affects] is the [AffectsFilter] that
+ * `StaticAbilityHandler.convertGroupFilter` produced from the ability's `GroupFilter`, so the pass
+ * can reuse the layer system's own resolver rather than hand-rolling a controller comparison.
  */
 @Serializable
-data class GrantCantBeBlockedToSmallCreaturesComponent(val maxValue: Int) : Component
-
-/**
- * Marks a permanent whose own evasion is power-gated: it can't be blocked while its **projected**
- * power is at most [maxPower] (Stature, Size Shifter). Read by StateProjector's post-layer pass,
- * which runs after every P/T layer so the gate sees final power rather than the printed value.
- */
-@Serializable
-data class CantBeBlockedIfPowerAtMostComponent(val maxPower: Int) : Component
+data class CantBeBlockedWhilePropertyAtMostComponent(
+    val maxValue: Int,
+    val checkPower: Boolean,
+    val checkToughness: Boolean,
+    val affects: AffectsFilter
+) : Component
 
 /**
  * Marks a permanent as suppressing hexproof for creatures matching any of [filters].

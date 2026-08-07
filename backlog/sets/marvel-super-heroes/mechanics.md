@@ -60,9 +60,11 @@ Pet Avengers [178] · Serpent Specialist [186] · She-Hulk, Jade Defender [188] 
 Ayala [196] · Abomination, Terrifying Titan [198] · Hulk, Gamma Goliath [215] · Thanos, the Mad Titan
 [233] · Ultron Drone [253] · Viv Vision, Teen Synthezoid [256].
 
-Non-blocking notes for those: Stature's "can't be blocked if her power is 1 or less" is a
-`ConditionalStaticAbility`; Quicksilver's opening-hand clause is `mayBeginGameOnBattlefield()`;
-Thanos's odd/even sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
+Non-blocking notes for those: Stature's "can't be blocked if her power is 1 or less" is
+`CantBeBlockedWhilePropertyAtMost` (power-only, `GroupFilter.source()`) — **not** a
+`ConditionalStaticAbility` over a power comparison, which would read her printed power and never
+switch off; Quicksilver's opening-hand clause is `mayBeginGameOnBattlefield()`; Thanos's odd/even
+sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
 
 ### Still blocked — 4 cards, each needing one more thing ⛔
 

@@ -16,9 +16,11 @@ import io.kotest.matchers.shouldBe
  *
  * The evasion is *conditional on her own current power*, so it has to switch off the moment she
  * grows — including from her own power-up, which is the tension the card is built around. That
- * makes this a projection-layer claim, not a resolution-time one: the condition is re-asked every
- * time state is projected, and it must read her **projected** power (counters, lords, pumps
- * included), not her printed 1.
+ * makes this a projection-layer claim, not a resolution-time one: `CantBeBlockedWhilePropertyAtMost`
+ * is re-asked in a post-layer pass every time state is projected, and it must read her
+ * **projected** power (counters, lords, pumps included), not her printed 1. A
+ * `ConditionalStaticAbility` over a power comparison would read the printed value and latch on
+ * forever, which is exactly what these tests are here to catch.
  */
 class StatureSizeShifterScenarioTest : ScenarioTestBase() {
 
@@ -57,7 +59,7 @@ class StatureSizeShifterScenarioTest : ScenarioTestBase() {
                 withClue("a 2/2 Stature is past the 'power 1 or less' gate") {
                     game.state.projectedState.getPower(stature) shouldBe 2
                 }
-                withClue("the conditional static must re-evaluate against projected power") {
+                withClue("the evasion must re-evaluate against projected power") {
                     game.state.projectedState.hasKeyword(stature, AbilityFlag.CANT_BE_BLOCKED) shouldBe false
                 }
             }
@@ -78,7 +80,7 @@ class StatureSizeShifterScenarioTest : ScenarioTestBase() {
                 withClue("back to base 1/1 with no counters") {
                     game.state.projectedState.getPower(stature) shouldBe 1
                 }
-                withClue("a conditional static is re-asked, not latched: the evasion returns") {
+                withClue("the post-layer pass is re-asked, not latched: the evasion returns") {
                     game.state.projectedState.hasKeyword(stature, AbilityFlag.CANT_BE_BLOCKED) shouldBe true
                 }
             }

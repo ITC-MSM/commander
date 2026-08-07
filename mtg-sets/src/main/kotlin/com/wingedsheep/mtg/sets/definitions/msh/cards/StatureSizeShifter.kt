@@ -5,9 +5,11 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.CantBeBlockedIfPowerAtMost
+import com.wingedsheep.sdk.scripting.CantBeBlockedWhilePropertyAtMost
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 
 /**
  * Stature, Size Shifter — Marvel Super Heroes #76 (uncommon)
@@ -18,9 +20,12 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * once. Reduce the cost by her mana cost if she entered this turn.)
  *
  * The card is a deliberate tension and both halves have to be modelled exactly for it to read
- * right: growing her with her own power-up is what *turns off* her evasion. So the "can't be
- * blocked" clause is a [ConditionalStaticAbility] re-asked every projection — it comes back if she
- * shrinks again — and never a one-shot grant.
+ * right: growing her with her own power-up is what *turns off* her evasion. That rules out the
+ * obvious spelling — a `ConditionalStaticAbility` wrapping `CantBeBlocked` would read her *printed*
+ * power and never switch off, because the grant is Layer 6 and power is settled in Layer 7. It is
+ * [CantBeBlockedWhilePropertyAtMost] instead, which the projector resolves in a post-layer pass over
+ * final power and re-asks on every projection, so the evasion also comes back if she shrinks again.
+ * Same ability as Tetsuko Umezawa, Fugitive, narrowed to power-only and to herself.
  *
  * The only `{X}` power-up in the set. Cost reduction never touches `{X}` (CR 601.2f applies
  * reductions to the total cost after X is announced, and the reduction here has no generic
@@ -38,7 +43,11 @@ val StatureSizeShifter = card("Stature, Size Shifter") {
     toughness = 1
 
     staticAbility {
-        ability = CantBeBlockedIfPowerAtMost(maxPower = 1)
+        ability = CantBeBlockedWhilePropertyAtMost(
+            maxValue = 1,
+            properties = setOf(EntityNumericProperty.Power),
+            filter = GroupFilter.source()
+        )
     }
 
     activatedAbility {
