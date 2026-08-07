@@ -129,6 +129,13 @@ data class Mode(
  *           (rules 700.2d — Escalate/Spree-style).
  * @property additionalManaCostPerExtraMode Additional cost paid for each chosen mode beyond the
  *           first. Models escalate without assigning a cost to any particular printed mode.
+ * @property additionalCostPerExtraMode The non-mana sibling of [additionalManaCostPerExtraMode] —
+ *           escalate whose cost is a payable thing rather than mana ("Escalate—Discard a card",
+ *           Collective Brutality; "Escalate—Tap an untapped creature you control", Collective
+ *           Effort). Paid once for each mode chosen beyond the first, so with three modes chosen
+ *           the caster discards two cards. The engine charges it as a single scaled cost
+ *           (`atom.repeated(extraModes)`), which is what the flat payment channels can validate.
+ *           A card may carry both this and [additionalManaCostPerExtraMode]; no printed card does.
  */
 @SerialName("Modal")
 @Serializable
@@ -138,6 +145,7 @@ data class ModalEffect(
     val minChooseCount: Int = chooseCount,
     val allowRepeat: Boolean = false,
     val additionalManaCostPerExtraMode: String? = null,
+    val additionalCostPerExtraMode: com.wingedsheep.sdk.scripting.costs.CostAtom? = null,
     /**
      * If true, when this spell's `AdditionalCost.BlightOrPay` cost was paid via the
      * blight path, the effective number of modes the player must choose becomes

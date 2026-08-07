@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.GameAction
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.legalactions.ModalLegalEnumeration
 import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -15,6 +16,7 @@ import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 
 /**
  * Picking targets for a spell or ability without simulating anything.
@@ -167,11 +169,56 @@ object TargetSelection {
             }
             orderedTargets += chosen
         }
-        return cast.copy(
+        val withModes = cast.copy(
             chosenModes = modes.map { it.index },
             modeTargetsOrdered = orderedTargets,
             targets = orderedTargets.flatten(),
         )
+        return payEscalateCost(state, withModes, modal, modes.size)
+    }
+
+    /**
+     * Pay a non-mana escalate cost (CR 702.120a) for the modes just chosen — one cost per mode
+     * beyond the first, so three modes on Collective Brutality discard two cards.
+     *
+     * The enumeration's cost data is for **one** extra mode; the cast handler validates the scaled
+     * total, so the count has to be multiplied here. `modalEnumeration.chooseCount` is already
+     * capped by what the caster can pay, so the candidate pool always covers the picks.
+     */
+    private fun payEscalateCost(
+        state: GameState,
+        cast: CastSpell,
+        modal: ModalLegalEnumeration,
+        chosenModeCount: Int,
+    ): CastSpell {
+        val info = modal.additionalCostPerExtraMode ?: return cast
+        val extraModes = chosenModeCount - 1
+        if (extraModes <= 0) return cast
+        val existing = cast.additionalCostPayment ?: AdditionalCostPayment()
+        val payment = when (info.costType) {
+            // Prefer lands as discard fodder, mirroring the activated-ability discard heuristic.
+            "DiscardCard" -> existing.copy(
+                discardedCards = info.validDiscardTargets
+                    .sortedByDescending { state.getEntity(it)?.get<CardComponent>()?.isLand == true }
+                    .take(info.discardCount * extraModes)
+            )
+            "TapPermanents" -> existing.copy(
+                tappedPermanents = info.validTapTargets.take(info.tapCount * extraModes)
+            )
+            "SacrificePermanent" -> existing.copy(
+                sacrificedPermanents = info.validSacrificeTargets.take(info.sacrificeCount * extraModes)
+            )
+            "BouncePermanent" -> existing.copy(
+                bouncedPermanents = info.validBounceTargets.take(info.bounceCount * extraModes)
+            )
+            "ExileFromGraveyard" -> existing.copy(
+                exiledCards = info.validExileTargets.take(info.exileMinCount * extraModes)
+            )
+            // A cost shape with no picker never reaches here: the enumerator caps chooseCount at 1
+            // for one, so extraModes is 0.
+            else -> return cast
+        }
+        return cast.copy(additionalCostPayment = payment)
     }
 
     /**

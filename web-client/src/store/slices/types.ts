@@ -778,6 +778,13 @@ export type PipelinePhase =
   | { type: 'harmonize' }
   | { type: 'manaSource' }
   | { type: 'costPayment' }
+  /**
+   * Non-mana escalate (CR 702.120a): pay the escalate cost once for each mode chosen beyond the
+   * first. Its own phase rather than a plain `costPayment` because the cost and its count come
+   * from `modalEnumeration.additionalCostPerExtraMode` scaled by the modes just picked, not from
+   * the action's card-level `additionalCostInfo`. Injected after `modalModes` resolves.
+   */
+  | { type: 'escalateCost' }
   | { type: 'blightVariable' }
   | { type: 'payXLife' }
   | { type: 'manaColorChoice' }

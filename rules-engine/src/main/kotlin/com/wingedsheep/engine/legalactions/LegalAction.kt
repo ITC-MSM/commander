@@ -185,6 +185,10 @@ data class LegalAction(
  *           "choose one or both" / "choose one or more").
  * @property allowRepeat When true, the same mode index may be chosen more than
  *           once (rules 700.2d — Escalate / Spree).
+ * @property additionalCostPerExtraMode Non-mana escalate (CR 702.120a — Collective Brutality's
+ *           "discard a card"): the cost of **one** extra mode. The client scales it by the number
+ *           of modes chosen beyond the first and drives the matching picker. [chooseCount] is
+ *           already capped by what the caster can pay, so the picker can never run dry.
  * @property modes One entry per declared mode, in printed order.
  * @property unavailableIndices Convenience list of mode indices flagged
  *           unavailable. Equal to `modes.filterNot { it.available }.map { it.index }`.
@@ -194,6 +198,7 @@ data class ModalLegalEnumeration(
     val minChooseCount: Int,
     val allowRepeat: Boolean,
     val additionalManaCostPerExtraMode: String? = null,
+    val additionalCostPerExtraMode: AdditionalCostData? = null,
     val modes: List<ModalEnumerationMode>,
     val unavailableIndices: List<Int>
 )

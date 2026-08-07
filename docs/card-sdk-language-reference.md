@@ -7989,6 +7989,33 @@ spell {
 }
 ```
 
+**Escalate with a non-mana cost.** *"Escalate—Discard a card"* (Collective Brutality),
+*"Escalate—Tap an untapped creature you control"* (Collective Effort). Pass the payable thing as a
+`CostAtom` to `additionalCostPerExtraMode` instead:
+
+```kotlin
+spell {
+    modal(chooseCount = 3, minChooseCount = 1, additionalCostPerExtraMode = CostAtom.Discard(1)) {
+        mode("First mode") { effect = firstEffect }
+        …
+    }
+}
+```
+
+The engine charges it as **one scaled cost** — `atom.repeated(chosenModes.size - 1)`, so three modes
+owe `Discard(2)` — because every additional-cost payment channel is a flat list and two `Discard(1)`
+entries would both be satisfied by the same card. `CostAtom.repeated(times)` is the general
+"pay this cost N times over" operation (`scripting/costs/CostAtoms.kt`); it is exhaustive over the
+atom vocabulary, so a new atom is a compile error rather than a silent no-op.
+
+The cast surface follows: `CastSpellEnumerator` caps the offered `chooseCount` at
+`1 + (candidates / per-mode selection)` — one spare card in hand means at most two modes — and puts
+the per-extra-mode cost on `modalEnumeration.additionalCostPerExtraMode`. The client's mode panel
+names it, then an injected `escalateCost` pipeline phase opens the ordinary picker for that cost
+type with the count scaled by the modes just chosen. Supported cost shapes are the selection-bearing
+ones (`SelectionCostPresentation`): sacrifice, discard, tap, bounce, exile from graveyard; any other
+atom caps the spell at one mode rather than offering a mode that can never be paid for.
+
 **Tiered (CR 702.183) — `spell { tiered { } }`.** *"Tiered (Choose one additional cost.)"* is a
 choose-**one** modal spell where each tier carries its own additional mana cost, paid as you cast
 the spell (702.183a: *"Choose one. As an additional cost to cast this spell, pay the cost associated

@@ -953,6 +953,12 @@ export interface ModalLegalEnumerationInfo {
   readonly allowRepeat: boolean
   /** Additional mana paid for every selected mode beyond the first (Escalate). */
   readonly additionalManaCostPerExtraMode?: string
+  /**
+   * Non-mana escalate (CR 702.120a — Collective Brutality's "discard a card"): the cost of **one**
+   * extra mode. Its counts are per extra mode, so the picker multiplies them by
+   * `chosenModes.length - 1`. `chooseCount` is already capped by what the caster can pay.
+   */
+  readonly additionalCostPerExtraMode?: AdditionalCostInfo
   /** One entry per declared mode, in printed order. */
   readonly modes: readonly ModalEnumerationModeInfo[]
   /** Mode indices that cannot currently be chosen (no legal target / unaffordable). */
