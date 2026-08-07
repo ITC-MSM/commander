@@ -181,20 +181,22 @@ describe('modeMatrix', () => {
     expect(seatCap('SOLO', cards, 'FREE_FOR_ALL')).toBeGreaterThanOrEqual(2)
   })
 
-  it('starts solo tournament lobbies with a useful roster instead of filling their capacity', () => {
+  it('starts solo lobbies with one opponent instead of filling their capacity', () => {
     const deck = defaultCardsAxis('BRING_A_DECK')
     const draft = defaultCardsAxis('DRAFT')
     const sealed = defaultCardsAxis('SEALED')
 
-    expect(defaultSoloAiSeats(deck, 'FREE_FOR_ALL')).toBe(3) // four-player table
-    expect(defaultSoloAiSeats(draft, 'FREE_FOR_ALL')).toBe(3)
-    expect(defaultSoloAiSeats(deck, 'TWO_HEADED_GIANT')).toBe(3) // exact four-player table
-    expect(defaultSoloAiSeats(deck, 'TEAM_VS_TEAM')).toBe(3)
-    expect(defaultSoloAiSeats(draft, 'BRACKET')).toBe(5) // six-player limited event
-    expect(defaultSoloAiSeats(sealed, 'BRACKET')).toBe(5)
-    expect(defaultSoloAiSeats(deck, 'BRACKET')).toBe(3) // four-player constructed event
+    expect(defaultSoloAiSeats(deck, 'FREE_FOR_ALL')).toBe(1)
+    expect(defaultSoloAiSeats(draft, 'FREE_FOR_ALL')).toBe(1)
+    expect(defaultSoloAiSeats(draft, 'BRACKET')).toBe(1)
+    expect(defaultSoloAiSeats(sealed, 'BRACKET')).toBe(1)
+    expect(defaultSoloAiSeats(deck, 'BRACKET')).toBe(1)
 
-    // The lobby remains expandable after its sensible initial roster is created.
+    // The shapes whose seat count the server forces keep it: one opponent could not start either.
+    expect(defaultSoloAiSeats(deck, 'TWO_HEADED_GIANT')).toBe(3) // exact four-player table
+    expect(defaultSoloAiSeats(deck, 'TEAM_VS_TEAM')).toBe(3) // two even teams, four minimum
+
+    // The lobby remains expandable after its initial roster is created.
     expect(defaultSoloAiSeats(draft, 'BRACKET')).toBeLessThan(seatCap('SOLO', draft, 'BRACKET') - 1)
   })
 })

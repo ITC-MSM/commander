@@ -94,16 +94,23 @@ describe('recipeFromSelection', () => {
     }
   })
 
-  it('seeds a useful AI roster only for a solo tournament lobby', () => {
+  it('seeds a single AI opponent for a solo tournament lobby, leaving the rest to Add AI', () => {
     const soloDraft = recipeFromSelection({
       roster: 'SOLO', cards: { kind: 'DRAFT', shape: 'BOOSTER' }, shape: 'BRACKET',
     })
-    expect(soloDraft.aiSeats).toBe(5)
+    expect(soloDraft.aiSeats).toBe(1)
 
     const soloFreeForAll = recipeFromSelection({
       roster: 'SOLO', cards: { kind: 'BRING_A_DECK', legality: null }, shape: 'FREE_FOR_ALL',
     })
-    expect(soloFreeForAll.aiSeats).toBe(3)
+    expect(soloFreeForAll.aiSeats).toBe(1)
+
+    // Two-Headed Giant is the exception: the server seats exactly four, so one opponent would open a
+    // lobby that cannot start.
+    const soloTwoHeaded = recipeFromSelection({
+      roster: 'SOLO', cards: { kind: 'BRING_A_DECK', legality: null }, shape: 'TWO_HEADED_GIANT',
+    })
+    expect(soloTwoHeaded.aiSeats).toBe(3)
 
     const soloOneGame = recipeFromSelection({
       roster: 'SOLO', cards: { kind: 'BRING_A_DECK', legality: null }, shape: 'ONE_GAME',

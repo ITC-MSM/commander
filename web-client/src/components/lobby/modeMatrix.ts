@@ -374,21 +374,26 @@ export function seatCap(roster: Roster, cards: CardsAxis, shape: ShapeId): numbe
 }
 
 /**
- * A useful starting roster for a solo tournament lobby, deliberately separate from its capacity.
+ * The starting roster for a solo tournament lobby, deliberately separate from its capacity.
  *
- * Capacity answers how far the host may grow the lobby. Filling every one of those seats with AI
- * made an eight-seat lobby feel mandatory and forced the host to delete opponents before playing.
- * These defaults make a representative table/event immediately playable while leaving Add AI
- * available up to {@link seatCap}.
+ * Capacity answers how far the host may grow the lobby. Opening with a full table made an eight-seat
+ * lobby feel mandatory and forced the host to delete opponents before playing; opening with a
+ * *representative* table still guessed, and a draft that started with five bots had to be trimmed by
+ * anyone who wanted a shorter event. So the lobby opens with one opponent and Add AI does the rest,
+ * up to {@link seatCap} — the smallest playable table is the one nobody has to undo.
+ *
+ * The two shapes whose count the server forces are the exception: Two-Headed Giant is exactly four
+ * seats and Team vs. Team needs two even teams of at least four, so a single opponent would open a
+ * lobby that cannot start.
  */
 export function defaultSoloAiSeats(cards: CardsAxis, shape: ShapeId): number {
   const totalPlayers = (() => {
     switch (shape) {
-      case 'ONE_GAME': return 2
       case 'TWO_HEADED_GIANT': return 4
-      case 'FREE_FOR_ALL': return 4
       case 'TEAM_VS_TEAM': return 4
-      case 'BRACKET': return cards.kind === 'DRAFT' || cards.kind === 'SEALED' ? 6 : 4
+      case 'ONE_GAME':
+      case 'FREE_FOR_ALL':
+      case 'BRACKET': return 2
     }
   })()
   return Math.max(0, Math.min(totalPlayers, seatCap('SOLO', cards, shape)) - 1)
