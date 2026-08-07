@@ -1986,6 +1986,64 @@
     ]
 }
 
+// Bold Biochemist
+{
+    "name": "Bold Biochemist",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Scientist",
+    "oracleText": "Power-up — {5}{U}: Put a +1/+1 counter on this creature and draw two cards. (Activate each power-up ability only once. Reduce the cost by its mana cost if it entered this turn.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put a +1/+1 counter on this creature and draw two cards.",
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Marco Turini",
+        "flavorText": "\"Dr. Pym always told me I was meant for big things. Turns out, he was right.\"\n—Dr. Bill Foster",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/10644127-3da0-484e-9afc-de26d9c34390.jpg?1783902964"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Borough Backup
 {
     "name": "Borough Backup",
