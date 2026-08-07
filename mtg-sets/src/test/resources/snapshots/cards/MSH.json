@@ -8797,6 +8797,75 @@
     ]
 }
 
+// Pet Avengers
+{
+    "name": "Pet Avengers",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Dragon Cat Dog Bird Frog Hero",
+    "oracleText": "Reach\nPower-up — {6}{G}: Put a +1/+1 counter on this creature and create a 3/2 white Hero creature token with vigilance. (Activate each power-up ability only once. Reduce the cost by its mana cost if it entered this turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{6}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "CreateToken",
+                            "power": 3,
+                            "toughness": 2,
+                            "colors": [
+                                "WHITE"
+                            ],
+                            "creatureTypes": [
+                                "Hero"
+                            ],
+                            "keywords": [
+                                "VIGILANCE"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4a64831-eec5-4fc9-8904-19523af3ca42.jpg?1783902804"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "descriptionOverride": "Put a +1/+1 counter on this creature and create a 3/2 white Hero creature token with vigilance.",
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "artist": "Leesha Hannigan",
+        "flavorText": "\"Lockheed! Hairball! Lockjaw! Redwing! To me!\"\n—Throg",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/108a0b92-2134-4776-a2f7-da92050f1b21.jpg?1783902915"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Photon Blast Barrage
 {
     "name": "Photon Blast Barrage",
