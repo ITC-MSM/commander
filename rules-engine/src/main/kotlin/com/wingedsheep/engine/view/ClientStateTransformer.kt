@@ -1304,6 +1304,9 @@ class ClientStateTransformer(
             attackingTarget = attackingTarget,
             blockingTarget = blockingTarget,
             controllerId = controllerId,
+            // A battle's protector (CR 310.8). Absent on every other permanent.
+            protectorId = container.get<com.wingedsheep.engine.state.components.battlefield.ProtectorComponent>()
+                ?.playerId,
             ownerId = ownerId,
             isToken = isToken,
             isCommander = isCommander,

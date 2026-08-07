@@ -529,6 +529,23 @@ data class CommanderZoneChoiceContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after a battle's controller picks its protector for the CR 704.5w/x state-based action
+ * (see [com.wingedsheep.engine.mechanics.sba.permanent.BattleProtectorCheck]). Only raised when
+ * two or more players are eligible — a forced choice is applied without a prompt.
+ *
+ * @property battleId The battle awaiting a protector.
+ * @property candidateIds The eligible players, positionally aligned with the decision's options,
+ *   captured at prompt time so the resumer maps the chosen index back to a player even if the
+ *   board changes while the prompt is open.
+ */
+@Serializable
+data class BattleProtectorChoiceContinuation(
+    override val decisionId: String,
+    val battleId: EntityId,
+    val candidateIds: List<EntityId>
+) : ContinuationFrame
+
+/**
  * Resume after a player picks X for an activated ability with an X-variable cost
  * (currently [com.wingedsheep.sdk.scripting.AbilityCost.TapXPermanents]).
  *

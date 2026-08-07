@@ -506,15 +506,16 @@ object ZoneTransitionService {
                 val (sagaState, sagaEvents) = applySagaEntryIfNeeded(newState, entityId)
                 newState = sagaState
                 events.addAll(sagaEvents)
-                // Handle a planeswalker entering the battlefield (CR 306.5b). The helper skips
-                // face-down entries itself — a face-down permanent is a nameless 2/2 creature with
-                // no printed loyalty (CR 708.2a).
+                // Handle the intrinsic entry counters of a planeswalker (loyalty, CR 306.5b) or a
+                // battle (defense, CR 310.4b). The helper skips face-down entries itself — a
+                // face-down permanent is a nameless 2/2 creature with no printed loyalty or
+                // defense (CR 708.2a).
                 if (::cardRegistry.isInitialized) {
-                    val (loyaltyState, loyaltyEvents) = applyPlaneswalkerEntryIfNeeded(
+                    val (entryCounterState, entryCounterEvents) = applyIntrinsicEntryCountersIfNeeded(
                         newState, entityId, destControllerId, cardRegistry
                     )
-                    newState = loyaltyState
-                    events.addAll(loyaltyEvents)
+                    newState = entryCounterState
+                    events.addAll(entryCounterEvents)
                 }
             }
             Zone.LIBRARY -> {
@@ -1165,15 +1166,16 @@ object ZoneTransitionService {
     }
 
     /**
-     * Place a planeswalker's printed loyalty counters as it enters the battlefield (CR 306.5b).
+     * Place a permanent's intrinsic entry counters as it enters the battlefield — a planeswalker's
+     * printed loyalty (CR 306.5b) or a battle's printed defense (CR 310.4b).
      */
-    private fun applyPlaneswalkerEntryIfNeeded(
+    private fun applyIntrinsicEntryCountersIfNeeded(
         state: GameState,
         entityId: EntityId,
         controllerId: EntityId,
         registry: CardRegistry
     ): Pair<GameState, List<EngineGameEvent>> {
-        return ZoneMovementUtils.applyPlaneswalkerEntryIfNeeded(state, entityId, controllerId, registry)
+        return ZoneMovementUtils.applyIntrinsicEntryCountersIfNeeded(state, entityId, controllerId, registry)
     }
 
     /**

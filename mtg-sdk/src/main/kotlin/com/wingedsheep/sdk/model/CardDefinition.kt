@@ -209,6 +209,13 @@ data class CardDefinition(
     val backFace: CardDefinition? = null,  // For double-faced cards
     val metadata: ScryfallMetadata = ScryfallMetadata(),  // Scryfall metadata for web client
     val startingLoyalty: Int? = null,  // For planeswalkers
+    /**
+     * The number printed in a battle's lower right corner (CR 310.4a). A battle has the intrinsic
+     * ability "this permanent enters with this many defense counters on it" (CR 310.4b), so on the
+     * battlefield its defense is its defense-counter count (CR 310.4c) rather than this field. The
+     * battle analogue of [startingLoyalty]; null for every other card type.
+     */
+    val startingDefense: Int? = null,
     val legalFormats: Set<DeckFormat> = emptySet(),  // Formats in which the card is legal (Scryfall-sourced)
     val colorIdentityOverride: Set<Color>? = null,  // Authoritative Scryfall color identity; null = derive from heuristic
     val colorIndicator: Set<Color>? = null,  // Explicit color indicator (CR 204); null = no indicator, color comes from mana cost
@@ -367,6 +374,8 @@ data class CardDefinition(
     val isRoom: Boolean
         get() = isSplit && cardFaces.any { it.typeLine.isRoom }
     val isPlaneswalker: Boolean get() = CardType.PLANESWALKER in typeLine.cardTypes
+    val isBattle: Boolean get() = typeLine.isBattle
+    val isSiege: Boolean get() = typeLine.isSiege
     val isClass: Boolean get() = typeLine.isClass
     val isSaga: Boolean get() = typeLine.isSaga
 

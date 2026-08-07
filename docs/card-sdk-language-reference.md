@@ -84,6 +84,11 @@ section; do not let SDK additions land without a corresponding doc update.
   engine's intrinsic enters-with replacement (CR 306.5b) on *every* battlefield entry — resolving from
   the stack, reanimation, an "exile until this leaves" return, any other put-onto-the-battlefield
   effect, and token copies (loyalty is a copiable value, CR 707.2). Card definitions never place them.
+- `startingDefense: Int?` — printed defense for **battles** (`typeLine = "Battle — Siege"`), the number
+  in the card's lower right corner (CR 310.4a). Placed as defense counters by the same intrinsic
+  enters-with replacement as `startingLoyalty` (CR 310.4b), on every battlefield entry. A battle's
+  defense on the battlefield *is* its defense-counter count (CR 310.4c), so nothing reads this field
+  once it is in play. See the **Battles** section below; `CardValidator` rejects a battle without it.
 - `colorIdentity: String?` — override (normally auto-detected). Treated as authoritative in this repo.
 - `colorIndicator: String?` — explicit color indicator (CR 204), e.g. `"B"`. `null` (default) = no
   indicator; the card's color is its mana-cost colors alone. Set it on a face printed with a color
@@ -139,6 +144,47 @@ section; do not let SDK additions land without a corresponding doc update.
   bottoming resolve, the engine walks each player in turn order from the active player and presents a yes/no
   decision per such card in their opening hand; a "yes" routes the card to the battlefield through the standard
   zone-change pipeline before the first turn begins, a "no" leaves it in hand.
+
+### Battles (CR 310)
+
+A **battle** is a permanent that gets *attacked* rather than one that attacks. It is a card type
+(`CardType.BATTLE`), not a keyword, and everything about it is intrinsic — a battle card declares only
+its type line and its printed defense:
+
+```kotlin
+val invasionOfSomewhere = card("Invasion of Somewhere") {
+    manaCost = "{2}{B}{B}"
+    typeLine = "Battle — Siege"
+    startingDefense = 5
+    // triggered/activated abilities as usual
+}
+```
+
+The engine supplies the rest; **do not** write any of it onto the card:
+
+- **Defense is counters.** The battle enters with `startingDefense` defense counters (CR 310.4b) via the
+  same intrinsic enters-with replacement that places planeswalker loyalty, so it applies to every entry
+  path. On the battlefield its defense *is* that count (CR 310.4c), and damage dealt to it removes that
+  many counters (CR 120.3h) rather than being marked. A battle at 0 defense is put into its owner's
+  graveyard as a state-based action (CR 704.5v).
+- **A protector defends it.** Every battle has a player designated as its protector (CR 310.8), stored in
+  `ProtectorComponent` and assigned by the CR 704.5w / 704.5x state-based actions — silently when only one
+  player is eligible (every two-player game), otherwise by prompting the battle's controller. A **Siege**'s
+  protector must be an opponent of its controller (CR 310.11a); a battle with no battle types is protected
+  by its own controller (CR 310.8a). If no player qualifies, the battle is put into its owner's graveyard.
+- **Its protector, not its controller, is the defending player** for every rule and effect while it is
+  being attacked (CR 310.8d). That asymmetry is the point of a Siege: you cast it, an opponent protects it,
+  and *you* attack it. Its protector can never attack it (CR 310.8b) and is the only player who may block
+  creatures attacking it (CR 310.8c).
+
+Engine-side helpers all live on `com.wingedsheep.engine.mechanics.battle.Battles` (`protectorOf`,
+`defenseOf`, `eligibleProtectors`, `canBeAttackedBy`); `ProjectedState.isBattle(entityId)` is the type
+check. The client receives a battle's defense in the ordinary `counters` map and its protector as
+`ClientCard.protectorId`.
+
+Not implemented yet (tracked as follow-up work): the Siege defeat trigger — "when the last defense counter
+is removed from this permanent, exile it, then you may cast it transformed without paying its mana cost"
+(CR 310.11b). Until it lands, a defeated Siege goes to its owner's graveyard under CR 704.5v.
 
 ---
 

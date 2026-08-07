@@ -300,8 +300,8 @@ object DamageUtils {
         val events = mutableListOf<EngineGameEvent>()
         events.addAll(shieldCounterEvents)
         events.addAll(reflectEvents)
-        // Excess damage (CR 120.4a) is only computed below for the non-wither creature
-        // branch — planeswalker (above loyalty), battle (above defense), and wither (damage
+        // Excess damage (CR 120.4a) is only computed below for the non-wither creature and the
+        // battle branch (above its defense) — planeswalker (above loyalty) and wither (damage
         // dealt as -1/-1 counters) paths are not yet modelled and stay at 0 here.
         var creatureExcessDamage = 0
 
@@ -331,6 +331,26 @@ object DamageUtils {
             }
             val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Planeswalker"
             events.add(LoyaltyChangedEvent(targetId, targetName, -(effectiveAmount.coerceAtMost(currentLoyalty))))
+        } else if (projected.isBattle(targetId)) {
+            // CR 120.3h — damage dealt to a battle removes that many defense counters from it. The
+            // battle isn't destroyed by the damage; state-based actions bin it once its defense
+            // reaches 0 (CR 120.5 / 704.5v). Excess damage is the amount above its defense
+            // (CR 120.4a / 120.10), computed before the counters come off.
+            val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
+            val currentDefense = counters.getCount(CounterType.DEFENSE)
+            creatureExcessDamage = (effectiveAmount - currentDefense).coerceAtLeast(0)
+            val removed = effectiveAmount.coerceAtMost(currentDefense)
+            newState = newState.updateEntity(targetId) { container ->
+                container.with(counters.withRemoved(CounterType.DEFENSE, effectiveAmount))
+            }
+            val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Battle"
+            if (removed > 0) {
+                events.add(
+                    com.wingedsheep.engine.core.CountersRemovedEvent(
+                        targetId, CounterType.DEFENSE.name, removed, targetName
+                    )
+                )
+            }
         } else {
             // It's a creature - mark damage (or place -1/-1 counters if source has wither)
             val hasWither = sourceId != null && (

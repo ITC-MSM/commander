@@ -67,6 +67,7 @@ data class CardComponent(
     val isPermanent: Boolean get() = typeLine.isPermanent
     val isAura: Boolean get() = typeLine.isAura
     val isPlaneswalker: Boolean get() = CardType.PLANESWALKER in typeLine.cardTypes
+    val isBattle: Boolean get() = typeLine.isBattle
     val manaValue: Int get() = manaCost.cmc
 }
 

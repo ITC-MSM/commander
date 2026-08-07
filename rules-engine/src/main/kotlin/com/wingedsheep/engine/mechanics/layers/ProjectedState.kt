@@ -163,6 +163,9 @@ class ProjectedState(
 
     fun isPlaneswalker(entityId: EntityId): Boolean = hasType(entityId, "PLANESWALKER")
 
+    /** CR 310 — a battle: it has defense counters, a protector, and can be attacked. */
+    fun isBattle(entityId: EntityId): Boolean = hasType(entityId, "BATTLE")
+
     fun isLegendary(entityId: EntityId): Boolean = hasType(entityId, "LEGENDARY")
 
     fun getSubtypes(entityId: EntityId): Set<String> = projectedValues[entityId]?.subtypes ?: emptySet()
