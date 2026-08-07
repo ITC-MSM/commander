@@ -143,6 +143,7 @@ class LegalActionEnricher(
         minChooseCount = minChooseCount,
         allowRepeat = allowRepeat,
         additionalManaCostPerExtraMode = additionalManaCostPerExtraMode,
+        additionalCostPerExtraMode = additionalCostPerExtraMode?.toDto(),
         modes = modes.map { it.toDto() },
         unavailableIndices = unavailableIndices
     )

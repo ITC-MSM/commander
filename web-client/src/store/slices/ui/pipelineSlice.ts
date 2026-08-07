@@ -211,6 +211,17 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
       nextPhases = [{ type: 'costPayment' }, ...nextPhases]
     }
 
+    // Dynamic phase injection: a non-mana escalate cost (CR 702.120a) is owed once per mode
+    // chosen beyond the first, so how much there is to pay — and whether anything is owed at
+    // all — is only known once the modal panel has confirmed its picks.
+    if (
+      result.type === 'modalModes' &&
+      actionInfo.modalEnumeration?.additionalCostPerExtraMode &&
+      result.chosenModes.length > 1
+    ) {
+      nextPhases = [{ type: 'escalateCost' }, ...nextPhases]
+    }
+
     // Dynamic phase injection: damage distribution after targeting with >1 targets
     if (
       result.type === 'targeting' &&

@@ -686,6 +686,66 @@ export function enterPhase(
       break
     }
 
+    // Escalate (CR 702.120a) with a non-mana cost: pay it once per mode chosen beyond the first.
+    // The enumeration advertises one extra mode's cost, so the counts scale by the modes picked in
+    // the preceding modalModes phase; the server capped chooseCount at what the caster can pay, so
+    // the candidate pool always covers them.
+    case 'escalateCost': {
+      const costInfo = actionInfo.modalEnumeration?.additionalCostPerExtraMode
+      const extraModes =
+        action.type === 'CastSpell' ? Math.max(0, (action.chosenModes?.length ?? 0) - 1) : 0
+      if (!costInfo || extraModes === 0) return
+
+      const scaled = (perMode: number | undefined) => (perMode ?? 1) * extraModes
+      const flags: Partial<TargetingState> = { targetDescription: costInfo.description }
+      let validTargets: EntityId[]
+      let count: number
+
+      switch (costInfo.costType) {
+        case 'DiscardCard':
+          validTargets = [...costInfo.validDiscardTargets!]
+          count = scaled(costInfo.discardCount)
+          flags.isSacrificeSelection = true
+          flags.isDiscardSelection = true
+          break
+        case 'TapPermanents':
+          validTargets = [...costInfo.validTapTargets!]
+          count = scaled(costInfo.tapCount)
+          flags.isSacrificeSelection = true
+          flags.isTapPermanentSelection = true
+          break
+        case 'SacrificePermanent':
+          validTargets = [...costInfo.validSacrificeTargets!]
+          count = scaled(costInfo.sacrificeCount)
+          flags.isSacrificeSelection = true
+          break
+        case 'BouncePermanent':
+          validTargets = [...costInfo.validBounceTargets!]
+          count = scaled(costInfo.bounceCount)
+          flags.isSacrificeSelection = true
+          flags.isBounceSelection = true
+          break
+        case 'ExileFromGraveyard':
+          validTargets = [...costInfo.validExileTargets!]
+          count = scaled(costInfo.exileMinCount)
+          flags.isSacrificeSelection = true
+          flags.targetZone = 'Graveyard'
+          break
+        default:
+          return
+      }
+
+      store.startTargeting({
+        action,
+        validTargets,
+        selectedTargets: [],
+        minTargets: count,
+        maxTargets: count,
+        ...flags,
+      })
+      break
+    }
+
     case 'costPayment': {
       const costInfo = actionInfo.additionalCostInfo!
       const costType = costInfo.costType!

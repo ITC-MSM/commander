@@ -9,6 +9,8 @@ import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.ModalEnumerationMode
 import com.wingedsheep.engine.legalactions.ModalLegalEnumeration
 import com.wingedsheep.engine.legalactions.TargetInfo
+import com.wingedsheep.engine.legalactions.utils.SelectionCostPresentation
+import com.wingedsheep.engine.mechanics.EscalateCosts
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
@@ -350,7 +352,9 @@ class CastSpellEnumerator : ActionEnumerator {
                         // Always payable: the player can always choose the "pay mana" path.
                         // Surface the candidates for the leg path, whichever cost it carries.
                         orPayCost = cost
-                        orPayTargets = orPayLegCandidates(context, playerId, cardId, cost.cost)
+                        orPayTargets = SelectionCostPresentation.candidates(
+                            state, playerId, cardId, cost.cost, context.costUtils, context.predicateEvaluator
+                        )
                     }
                     is AdditionalCost.ChooseEntity -> {
                         // Search each (zone, filter) pair in `cost.zoneFilters`. Battlefield
@@ -559,7 +563,7 @@ class CastSpellEnumerator : ActionEnumerator {
             // enough candidates for the leg cost's own selection — permanents to sacrifice, cards to
             // discard/exile/behold, …).
             val canAffordOrPayPath = if (orPayCost != null &&
-                orPayTargets.size >= orPayLegSelectionCount(orPayCost.cost)
+                orPayTargets.size >= SelectionCostPresentation.selectionCount(orPayCost.cost)
             ) {
                 context.manaSolver.canPay(state, playerId, orPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
             } else false
@@ -631,7 +635,7 @@ class CastSpellEnumerator : ActionEnumerator {
             // "Behold", …), so a plain sacrifice/discard/exile/behold cost and the or-pay variant
             // drive the exact same selection UI.
             val orPayPathInfo = if (canAffordOrPayPath && orPayCost != null) {
-                orPayLegCostData(orPayCost.cost, orPayTargets)?.let { (label, legCostInfo) ->
+                SelectionCostPresentation.costData(orPayCost.cost, orPayTargets)?.let { (label, legCostInfo) ->
                     orPayPath(label = label, baseCost = orPayBaseCost, legCostInfo = legCostInfo)
                 }
             } else null
@@ -969,6 +973,17 @@ class CastSpellEnumerator : ActionEnumerator {
                         .filterNot { it.available }
                         .map { it.index }
 
+                    // Escalate with a non-mana cost (CR 702.120a): the caster can only reach as
+                    // many modes as they can pay for — three modes on Collective Brutality wants
+                    // two cards in hand to discard. Cap the offered maximum the same way the mana
+                    // escalate is capped by [canPayModeSelection], and hand the client the cost
+                    // data so it can prompt for one extra mode's payment per mode chosen.
+                    val escalatePayability = EscalateCosts.payability(
+                        state, playerId, cardId, variantEffect, context.costUtils, context.predicateEvaluator
+                    )
+                    val effectiveChooseCount = if (escalatePayability == null) variantEffect.chooseCount
+                        else minOf(variantEffect.chooseCount, 1 + escalatePayability.maxExtraModes)
+
                     // If every mode is unavailable, the spell can't legally be cast —
                     // drop the action entirely rather than offering an unplayable UI.
                     val hasAnyAvailable = enumerationModes.any { it.available }
@@ -988,10 +1003,11 @@ class CastSpellEnumerator : ActionEnumerator {
                             manaCostString = variant.manaCostString,
                             autoTapPreview = variant.autoTapPreview,
                             modalEnumeration = ModalLegalEnumeration(
-                                chooseCount = variantEffect.chooseCount,
-                                minChooseCount = variantEffect.minChooseCount,
+                                chooseCount = effectiveChooseCount,
+                                minChooseCount = minOf(variantEffect.minChooseCount, effectiveChooseCount),
                                 allowRepeat = variantEffect.allowRepeat,
                                 additionalManaCostPerExtraMode = variantEffect.additionalManaCostPerExtraMode,
+                                additionalCostPerExtraMode = escalatePayability?.costData,
                                 modes = enumerationModes,
                                 unavailableIndices = unavailableIndices
                             )
@@ -2246,123 +2262,6 @@ class CastSpellEnumerator : ActionEnumerator {
         val autoTapPreview: List<EntityId>?,
         val costInfo: AdditionalCostData,
     )
-
-    /**
-     * Candidates the caster could pick to pay [leg] as the non-mana leg of an
-     * [AdditionalCost.OrPay], excluding the spell being cast ([cardId]) — it is on the stack, not in
-     * the zone the cost draws from.
-     *
-     * Covers exactly the selection-carrying costs the cast-time payment machinery can tell apart by
-     * payment field (see [AdditionalCost.OrPay]); anything else returns no candidates, so only the
-     * pay path is offered.
-     */
-    private fun orPayLegCandidates(
-        context: EnumerationContext,
-        playerId: EntityId,
-        cardId: EntityId,
-        leg: AdditionalCost,
-    ): List<EntityId> {
-        val state = context.state
-        val predicateContext = PredicateContext(controllerId = playerId)
-        return when (leg) {
-            // Behold spans battlefield *and* hand in one candidate pool.
-            is AdditionalCost.Behold -> {
-                val projected = state.projectedState
-                val battlefieldMatches = projected.getBattlefieldControlledBy(playerId).filter { permId ->
-                    context.predicateEvaluator.matches(state, projected, permId, leg.filter, predicateContext)
-                }
-                val handMatches = state.getZone(ZoneKey(playerId, Zone.HAND))
-                    .filter { it != cardId }
-                    .filter { context.predicateEvaluator.matches(state, projected, it, leg.filter, predicateContext) }
-                battlefieldMatches + handMatches
-            }
-            is AdditionalCost.Atom -> when (val atom = leg.atom) {
-                is CostAtom.Sacrifice -> context.costUtils.findSacrificeTargets(state, playerId, atom)
-                is CostAtom.ExileFrom -> context.costUtils.findExileTargets(state, playerId, atom.filter, atom.zone)
-                    .filter { it != cardId }
-                is CostAtom.Discard -> {
-                    val handCards = state.getZone(ZoneKey(playerId, Zone.HAND)).filter { it != cardId }
-                    if (atom.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) handCards
-                    else handCards.filter {
-                        context.predicateEvaluator.matches(state, state.projectedState, it, atom.filter, predicateContext)
-                    }
-                }
-                is CostAtom.TapPermanents -> context.costUtils.findAbilityTapTargets(state, playerId, atom.filter)
-                    .let { if (atom.excludeSelf) it.filter { id -> id != cardId } else it }
-                is CostAtom.ReturnToHand -> context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
-                else -> emptyList()
-            }
-            else -> emptyList()
-        }
-    }
-
-    /** How many entities the caster must pick to pay [leg] — 0 when it carries no selection. */
-    private fun orPayLegSelectionCount(leg: AdditionalCost): Int = when (leg) {
-        is AdditionalCost.Behold -> leg.count
-        is AdditionalCost.Atom -> leg.atom.selectionCount
-        else -> 0
-    }
-
-    /**
-     * The action-description label and client cost data for paying [leg] as an or-pay leg, or null
-     * when [leg] carries no selection the client could drive (so the leg isn't offered).
-     *
-     * Deliberately reuses the same `costType`s the leg cost emits when it stands alone, so the
-     * or-pay leg drives the existing pickers with no client-side changes. `"ExileFromGraveyard"`
-     * pins the client's picker to the graveyard, so a non-graveyard exile leg is declined rather
-     * than shown against the wrong zone.
-     */
-    private fun orPayLegCostData(
-        leg: AdditionalCost,
-        candidates: List<EntityId>,
-    ): Pair<String, AdditionalCostData>? = when (leg) {
-        is AdditionalCost.Behold -> "Behold" to AdditionalCostData(
-            description = leg.description,
-            costType = "Behold",
-            validBeholdTargets = candidates,
-            beholdCount = leg.count,
-        )
-        is AdditionalCost.Atom -> {
-            val description = leg.description
-            when (val atom = leg.atom) {
-                is CostAtom.Sacrifice -> "Sacrifice" to AdditionalCostData(
-                    description = description,
-                    costType = "SacrificePermanent",
-                    validSacrificeTargets = candidates,
-                    sacrificeCount = atom.count,
-                )
-                is CostAtom.Discard -> "Discard" to AdditionalCostData(
-                    description = description,
-                    costType = "DiscardCard",
-                    validDiscardTargets = candidates,
-                    discardCount = atom.count,
-                )
-                is CostAtom.ExileFrom -> if (atom.zone != Zone.GRAVEYARD) null else {
-                    "Exile from graveyard" to AdditionalCostData(
-                        description = description,
-                        costType = "ExileFromGraveyard",
-                        validExileTargets = candidates,
-                        exileMinCount = atom.count,
-                        exileMaxCount = atom.count,
-                    )
-                }
-                is CostAtom.TapPermanents -> "Tap" to AdditionalCostData(
-                    description = description,
-                    costType = "TapPermanents",
-                    validTapTargets = candidates,
-                    tapCount = atom.count,
-                )
-                is CostAtom.ReturnToHand -> "Return to hand" to AdditionalCostData(
-                    description = description,
-                    costType = "BouncePermanent",
-                    validBounceTargets = candidates,
-                    bounceCount = atom.count,
-                )
-                else -> null
-            }
-        }
-        else -> null
-    }
 
     /**
      * Internal data holder for self-alternative cost computation results.

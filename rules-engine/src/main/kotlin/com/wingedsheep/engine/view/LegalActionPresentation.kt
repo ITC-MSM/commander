@@ -160,6 +160,9 @@ data class ModalLegalEnumerationInfo(
     val minChooseCount: Int,
     val allowRepeat: Boolean,
     val additionalManaCostPerExtraMode: String? = null,
+    /** Non-mana escalate (CR 702.120a): the cost of one extra mode — see
+     *  [com.wingedsheep.engine.legalactions.ModalLegalEnumeration.additionalCostPerExtraMode]. */
+    val additionalCostPerExtraMode: AdditionalCostInfo? = null,
     val modes: List<ModalEnumerationModeInfo>,
     val unavailableIndices: List<Int>
 )

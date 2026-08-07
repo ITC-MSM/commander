@@ -23,6 +23,7 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.mechanics.DisturbCasts
 import com.wingedsheep.engine.mechanics.EmergeCasts
+import com.wingedsheep.engine.mechanics.EscalateCosts
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.MayhemGrants
@@ -1487,6 +1488,11 @@ class CastSpellHandler(
         return payment.distributedCounterRemovals
     }
 
+    /**
+     * The additional costs a modal spell owes for the modes it chose: per-mode overrides where the
+     * chosen modes declare them (rule 700.2h — they stack), card-level costs otherwise, plus the
+     * non-mana escalate cost when the card has one ([EscalateCosts.additionalCostFor]).
+     */
     private fun resolveAdditionalCostsForMode(
         cardDef: com.wingedsheep.sdk.model.CardDefinition,
         action: CastSpell
@@ -1497,8 +1503,9 @@ class CastSpellHandler(
         val perModeOverrides = action.chosenModes.mapNotNull { modeIndex ->
             modalEffect.modes.getOrNull(modeIndex)?.additionalCosts
         }
-        if (perModeOverrides.isEmpty()) return cardDef.script.additionalCosts
-        return perModeOverrides.flatten()
+        val base = if (perModeOverrides.isEmpty()) cardDef.script.additionalCosts else perModeOverrides.flatten()
+        val escalate = EscalateCosts.additionalCostFor(modalEffect, action.chosenModes.size)
+        return if (escalate == null) base else base + escalate
     }
 
     /**
@@ -3712,6 +3719,18 @@ class CastSpellHandler(
         modalEffect: ModalEffect,
         chosenIndices: List<Int>
     ): Boolean {
+        // Escalate with a non-mana cost (CR 702.120a): each mode beyond the first owes another
+        // discard / tap / …, so a pick can run the caster out of cards to pay with just as it can
+        // run them out of mana.
+        val escalatePayability = EscalateCosts.payability(
+            state, action.playerId, action.cardId, modalEffect, costEnumerationUtils, predicateEvaluator
+        )
+        if (escalatePayability != null &&
+            (chosenIndices.size - 1).coerceAtLeast(0) > escalatePayability.maxExtraModes
+        ) {
+            return false
+        }
+
         val extraCosts = buildList {
             addAll(chosenIndices.mapNotNull { modalEffect.modes.getOrNull(it)?.additionalManaCost })
             modalEffect.additionalManaCostPerExtraMode?.let { perExtraMode ->

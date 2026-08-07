@@ -756,6 +756,176 @@
     ]
 }
 
+// Collective Brutality
+{
+    "name": "Collective Brutality",
+    "manaCost": "{1}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Escalate—Discard a card. (Pay this cost for each mode chosen beyond the first.)\nChoose one or more —\n• Target opponent reveals their hand. You choose an instant or sorcery card from it. That player discards that card.\n• Target creature gets -2/-2 until end of turn.\n• Target opponent loses 2 life and you gain 2 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "RevealHand",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "reveal opponent"
+                                }
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "opponentHand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "opponentHand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "filter": "instant|sorcery",
+                                "storeSelected": "toDiscard",
+                                "prompt": "Choose an instant or sorcery card to discard",
+                                "showAllCards": true,
+                                "alwaysPrompt": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "toDiscard",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetOpponent",
+                            "id": "reveal opponent"
+                        }
+                    ],
+                    "description": "Target opponent reveals their hand. You choose an instant or sorcery card from it. That player discards that card."
+                },
+                {
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": -2
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "weakened creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "weakened creature"
+                        }
+                    ],
+                    "description": "Target creature gets -2/-2 until end of turn."
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "drained opponent"
+                                }
+                            },
+                            {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetOpponent",
+                            "id": "drained opponent"
+                        }
+                    ],
+                    "description": "Target opponent loses 2 life and you gain 2 life."
+                }
+            ],
+            "chooseCount": 3,
+            "minChooseCount": 1,
+            "additionalCostPerExtraMode": "AtomDiscard"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "rarity": "RARE",
+        "artist": "Johann Bodin",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cb94a02f-4660-45b6-8a39-941b710cf8f3.jpg?1783937489",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "You choose all of your modes at once. You can't wait to perform one mode's actions and then decide to choose more modes."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "You can't choose any one mode multiple times."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If one target of an escalate spell becomes illegal, the other targets will still be affected. If all of the targets become illegal, the spell won't resolve."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "Effects that reduce the cost of spells reduce the total cost, including any escalate costs added."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "If an effect allows you to cast a spell that has escalate without paying its mana cost, you pay escalate costs for that spell if you choose more than one mode."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Collective Defiance
 {
     "name": "Collective Defiance",

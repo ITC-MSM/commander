@@ -56,7 +56,14 @@ function ModalModePanel({ state }: { state: ModalModeSelectionState }) {
   const responsive = useResponsive()
 
   const { enumeration, cardName, baseManaCost } = state
-  const { modes, minChooseCount, chooseCount, allowRepeat, additionalManaCostPerExtraMode } = enumeration
+  const {
+    modes,
+    minChooseCount,
+    chooseCount,
+    allowRepeat,
+    additionalManaCostPerExtraMode,
+    additionalCostPerExtraMode,
+  } = enumeration
 
   const [counts, setCounts] = useState<number[]>(() => new Array(modes.length).fill(0) as number[])
   const [minimized, setMinimized] = useState(false)
@@ -85,6 +92,14 @@ function ModalModePanel({ state }: { state: ModalModeSelectionState }) {
     ),
   ])
   const totalCost = combineManaCosts([baseManaCost, additionalCost])
+
+  // Non-mana escalate is paid after this panel closes, so name what the current selection owes.
+  const extraModes = Math.max(0, totalChosen - 1)
+  const escalateCostLabel = additionalCostPerExtraMode
+    ? extraModes > 0
+      ? `${additionalCostPerExtraMode.description} ×${extraModes}`
+      : `${additionalCostPerExtraMode.description} for each mode beyond the first`
+    : null
 
   const withinRange = totalChosen >= minChooseCount && totalChosen <= chooseCount
   const rangeLabel = minChooseCount === chooseCount
@@ -120,7 +135,10 @@ function ModalModePanel({ state }: { state: ModalModeSelectionState }) {
 
       <h2 className={decisionStyles.title}>{cardName}</h2>
       <p className={decisionStyles.sourceLabel}>
-        {rangeLabel}{additionalManaCostPerExtraMode ? ' — escalate for each mode beyond the first' : ' — pay for each chosen mode'}
+        {rangeLabel}
+        {additionalManaCostPerExtraMode || additionalCostPerExtraMode
+          ? ' — escalate for each mode beyond the first'
+          : ' — pay for each chosen mode'}
       </p>
 
       {/* Mode list */}
@@ -208,6 +226,14 @@ function ModalModePanel({ state }: { state: ModalModeSelectionState }) {
           Total: <ManaCost cost={totalCost} size={15} />
         </span>
       </div>
+
+      {/* Non-mana escalate (Collective Brutality's "discard a card"): say up front what confirming
+          will ask for, since the picker only opens afterwards. */}
+      {additionalCostPerExtraMode && escalateCostLabel && (
+        <p style={{ margin: 0, fontSize: 'var(--font-sm)', color: 'var(--text-secondary)' }}>
+          Escalate: {escalateCostLabel}
+        </p>
+      )}
 
       {isHoveringSource && !responsive.isMobile && (
         <DecisionCardPreview cardName={cardName} imageUri={sourceCard?.imageUri} />
