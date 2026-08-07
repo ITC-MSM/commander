@@ -188,10 +188,10 @@ export function DeckPicker({
   const showPaste = tabs.includes('paste')
   const showRandom = tabs.includes('random')
 
-  // Under a constructed format the server builds a 60-card format-legal deck from the whole legal
-  // pool — the same thing the AI seat's Auto gets — so the set choice drops out: the format defines
-  // the pool, not the boosters. Only limited (and the not-yet-buildable commander shapes) still
-  // open eight boosters from one set.
+  // Under a constructed format the server builds a 60-card format-legal deck rather than opening
+  // boosters; commander shapes build a singleton deck and pick a commander. Which builder runs is
+  // what this decides — *not* whether the set choice matters, which it does either way (see
+  // `randomDescription`).
   const randomIsConstructed = format !== null && !COMMANDER_SHAPES.includes(format.toUpperCase())
   const formatLabel = format?.replace('_', ' ').toLowerCase() ?? ''
 
@@ -249,6 +249,39 @@ export function DeckPicker({
     },
     [onSetCodesChange],
   )
+
+  /**
+   * What the server will actually do, given the lobby's format *and* the sets you picked.
+   *
+   * The set choice used to be hidden here whenever a constructed format was set, on the reasoning
+   * that "the format defines the pool, not the boosters". That was only half true: the server passes
+   * a human Random seat's `setCodes` straight into `ConstructedDeckGenerator.generate(setCodes,
+   * format)` / `CommanderDeckGenerator.generate(setCodes, …)`, both of which narrow their pool to
+   * those sets. So the capability was there and only the control was missing — which is why the AI
+   * seat could be told "build a Pauper deck out of Innistrad" and you could not. Now both seats can,
+   * and this sentence is what makes the difference visible rather than something you infer.
+   */
+  const pinnedSets = randomSetCodes.length > 0
+  const setsPhrase = randomSetCodes
+    .map((code) => availableSets.find((s) => s.code === code)?.name ?? code)
+    .join(', ')
+  const randomDescription = randomIsConstructed
+    ? pinnedSets
+      ? `A 60-card ${formatLabel}-legal deck, auto-built the moment the game starts from the
+         ${formatLabel}-legal cards in ${setsPhrase}. Nothing to submit — just ready up.`
+      : `A 60-card ${formatLabel}-legal deck, auto-built from the whole legal card pool the moment
+         the game starts. Pick sets below to build it out of those instead.`
+    : format !== null
+      ? pinnedSets
+        ? `A commander and a singleton deck in its colours, drawn from ${setsPhrase} the moment the
+           game starts. Nothing to submit — just ready up.`
+        : `A commander and a singleton deck in its colours, drawn from the whole legal card pool.
+           Pick sets below to draw from those instead.`
+      : pinnedSets
+        ? `Eight boosters across ${setsPhrase}, auto-built into a 40-card deck the moment the game
+           starts. Nothing else to submit — just ready up.`
+        : `Eight boosters from one set chosen for you, auto-built into a 40-card deck the moment the
+           game starts. Pick sets below to choose which.`
 
   // Re-hydrate on initial-set-code change (e.g. server-driven on reconnect).
   useEffect(() => {
@@ -589,17 +622,11 @@ export function DeckPicker({
             <div className={styles.randomCard} data-testid="random-pool-panel">
               <span className={styles.randomDie} aria-hidden>🎲</span>
               <h3 className={styles.randomTitle}>The server builds your deck</h3>
-              <p className={styles.randomBody}>
-                {randomIsConstructed
-                  ? `A 60-card ${formatLabel}-legal deck, auto-built from the whole legal card pool
-                     the moment the game starts. Nothing to pick, nothing to submit — just ready up.`
-                  : `Eight boosters across the sets you choose (or one set chosen for you), auto-built
-                     into a 40-card deck the moment the game starts. Nothing else to submit — just ready up.`}
-              </p>
+              <p className={styles.randomBody}>{randomDescription}</p>
               <p className={styles.randomBody}>
                 This covers your seat only. Your opponent can still bring a deck of their own.
               </p>
-              {!randomIsConstructed && availableSets.length > 0 && (
+              {availableSets.length > 0 && (
                 <div className={styles.randomSetRow}>
                   <label className={styles.helperText} style={{ flexShrink: 0 }}>Sets</label>
                   <SetSelector
@@ -618,7 +645,8 @@ export function DeckPicker({
                     }}
                     disabled={disabled}
                     align="start"
-                    emptyMeansRandom
+                    emptyMeansRandom={!randomIsConstructed}
+                    emptyLabel="Every set — the whole legal card pool"
                   />
                 </div>
               )}

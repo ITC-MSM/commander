@@ -175,7 +175,6 @@ export function AiDeckChooser({
                 selectedCodes={setCodes}
                 onToggleSet={toggleSet}
                 disabled={disabled}
-                align="start"
                 title="Sets for the AI's deck"
                 emptyLabel="No sets chosen — the AI falls back to Auto"
                 onSelectRandom={() => {

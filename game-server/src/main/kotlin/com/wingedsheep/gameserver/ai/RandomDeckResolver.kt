@@ -23,11 +23,13 @@ import org.springframework.stereotype.Component
  * | AI [AiDeckSpec.Auto]  | sealed pool, human's set | 60-card legal deck, whole card base | singleton deck + commander, whole card base |
  * | AI [AiDeckSpec.Sets]  | sealed pool, chosen sets | 60-card legal deck, chosen sets | singleton deck + commander, chosen sets |
  * | AI [AiDeckSpec.Fixed] | the submitted list       | the submitted list (validated on submit) | the submitted list and its commander |
- * | human "Random"        | sealed pool, their set   | 60-card legal deck, whole card base | singleton deck + commander, whole card base |
+ * | human "Random", no sets | sealed pool, rolled set | 60-card legal deck, whole card base | singleton deck + commander, whole card base |
+ * | human "Random", sets    | sealed pool, chosen sets | 60-card legal deck, chosen sets | singleton deck + commander, chosen sets |
  *
- * A seat's *set* choice is a limited-pool concept: it says which boosters to open. Under a
- * constructed format the format defines the pool instead, so the set choice drops out — for the
- * human exactly as it already did for the AI's Auto.
+ * A seat's *set* choice narrows the pool on every path, not just the limited one: it picks which
+ * boosters to open under no format, and which sets the constructed / commander builders may draw
+ * from under one. So the human's two rows are the AI's [AiDeckSpec.Auto] and [AiDeckSpec.Sets], and
+ * a human on Random has the same reach over their own seat as the host has over the AI's.
  *
  * Every path returns a [GeneratedDeck] rather than a bare decklist, because a commander-shape lobby
  * has *two* answers to "what does this seat play" and they have to be decided together. Before
