@@ -1751,10 +1751,13 @@ chain — `resolveThroughCombatDamage`, `concave-hand-2`, the rollouts, the budg
 number at all.
 
 The mechanism: `PuzzleRunner.stockLibraries` filled every puzzle library with 30 `Forest`, on the
-reasoning that "a land is the most inert card in Magic". `landDropIsNotCardLoss` makes a land in hand
-*deliberately not a card* — it is mana waiting to be tapped. So the card Opt draws is a Forest, a lone
-land earmarked against an unused land drop counts as an **empty hand**, and the cantrip's own draw
-steps off the topdeck cliff. Four points of pure harness, against a 1.5-point window.
+reasoning that "a land is the most inert card in Magic". `landDropIsNotCardLoss` stops *counting* one
+land per unused land drop. So the card Opt draws is a Forest, a lone earmarked land counts as an
+**empty hand**, and the cantrip's own draw steps off the topdeck cliff. Four points of pure harness,
+against a 1.5-point window.
+
+That zeroing is itself a simplification worth its own entry, below: a land in hand **is** a card with
+value, and this feature prices it at nothing.
 
 Swapping the filler to `Craw Wurm` — inert to the *evaluator* rather than inert in Magic — restores
 `-0.45` on every profile and the live agent casts the Opt.
@@ -1784,3 +1787,85 @@ isolation column and does nothing on the live agent is a signal to go and read t
 two obvious hypotheses here — the rollout mixture swamping a static adjustment, and the window
 grading below its budget tier — were both wrong, and one insight-sink dump settled it faster than
 either could have been argued.
+
+### A related modelling flaw, found on the way — and fixed
+
+`landDropIsNotCardLoss` bought land-drop neutrality by subtracting the earmarked land from the hand
+count outright. The transition is then genuinely neutral — `sequencing-02` is the proof — but **both
+sides of it are priced as the empty-hand disaster rather than as a resource in hand**. At
+`concave-hand-2`'s `-2.0`:
+
+| hand (land drop unused) | held count | card advantage |
+|---|---|---|
+| `[]` | 0 | **-2.0** |
+| `[Forest]` | 0 | **-2.0** |
+| `[Grizzly Bears]` | 1 | +1.0 |
+| `[Forest, Grizzly Bears]` | 1 | +1.0 |
+
+The earmarked land contributed exactly zero, always. Shortest proof that this is wrong: an opponent
+handed the choice of which card to strip would take that land, and the feature priced the Duress at
+**zero**.
+
+---
+
+# Lands priced as mana
+
+**Measured:** 2026-08-08. `AiProfile.priceLandsInHandAsMana`, as `production-candidate-manalands`.
+
+The model, in one sentence: **a land on the battlefield is worth more than a land in your hand, a
+land in your hand is still worth something, and it is worth more when you are short of mana than
+when you are already rich.**
+
+That makes the land drop positive *by construction*, so it **supersedes** `landDropIsNotCardLoss`
+rather than stacking with it — the earmark existed only to force neutrality, and nothing needs
+forcing once the two zones are priced honestly. The hand curve goes back to pricing **business**;
+lands are priced beside it on their own schedule.
+
+The schedule is `Tempo`'s curve read one zone earlier rather than a new guess, and each land in hand
+is priced at the count it would actually *arrive* at — the first at today's land count, the second as
+if the first had been played. That is what makes a hand of seven lands score as the flood it is
+without a second rule about hand contents.
+
+| lands already available | land in hand | same land on the battlefield | drop is |
+|---|---|---|---|
+| 0-2 | 0.9 | +2.1 (`BoardPresence` 0.9 + `Tempo` 1.2) | +1.2 |
+| 3-5 | 0.5 | +1.62 | +1.12 |
+| 6+ | 0.2 | +1.14 | +0.94 |
+
+Every rung sits below the field value at the same rung, so playing a land is a gain at every stage;
+`CardAdvantageLandDropTest` pins that against `Tempo.landValueAt` directly rather than against
+remembered constants.
+
+## What it fixes that the earmark could not
+
+| hand | old (earmark) | new |
+|---|---|---|
+| `[Forest]` vs `[]` — the Duress | identical | **+0.9** |
+| 7 lands vs 7 spells | 8.4 vs 9.2 — within one card | **4.4 vs 9.2** |
+
+The second row is the one to care about: **the AI could not see flood at all.** Past the one
+earmarked land the old model counted lands as full cards, so a hand of seven lands scored within a
+card of a hand full of business.
+
+## Puzzles — 87 positions
+
+| | `production` | live (`production-candidate-cantrip`) |
+|---|---|---|
+| baseline | 74/87 | 84/87 |
+| with the model | **75/87** | 84/87 |
+| closes | `sequencing-02` | — |
+| loses | — | — |
+
+The isolation column closing `sequencing-02` is the result that mattered: that is the puzzle the
+earmark was built for, and pricing the land honestly closes it *without* the earmark. The model does
+everything the mechanism it replaces did. Level on the live agent is expected — that agent already
+closes `sequencing-02` the old way.
+
+## The arena half
+
+Unlike the four promotions before it, this one is **expected to move the arena rather than sit at
+parity**, and should be read that way. Every other term in the sequence fires on a specific shape — a
+pacified creature, a cantrip at an end step, removal aimed at a 1/1 — and the two that returned
+degenerate null CIs did so because those shapes are rare. This one changes what *every hand
+containing a land* is worth, on every evaluation, inside every rollout. A null result here would
+itself be surprising.

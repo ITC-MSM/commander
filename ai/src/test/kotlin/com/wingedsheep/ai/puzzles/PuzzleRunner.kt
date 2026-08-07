@@ -98,11 +98,12 @@ class PuzzleRunner(
      * **A vanilla six-drop, and emphatically not a basic land.** The original filler was `Forest`,
      * on the reasoning that "a land is the most inert card in Magic, so a stocked library adds a
      * clock and nothing else". That stopped being true the day
-     * [com.wingedsheep.ai.engine.AiProfile.landDropIsNotCardLoss] shipped, which makes a land in
-     * hand *deliberately* not a card: with an all-Forest library, drawing a card draws a land, and a
-     * lone land earmarked against an unused land drop counts as an **empty hand**. So every card the
-     * AI drew inside a simulation stepped straight off the topdeck cliff, and any spell that drew
-     * one was charged for it. Measured on `timing-05`: casting Opt scored −0.45 against passing on
+     * [com.wingedsheep.ai.engine.AiProfile.landDropIsNotCardLoss] shipped, which stops *counting*
+     * one land per unused land drop — a simplification, and a land in hand is of course a card with
+     * value (`CardAdvantage.heldCardCount` now records the limitation). With an all-Forest library
+     * the consequence is total: drawing a card draws a land, and a lone earmarked land counts as an
+     * **empty hand**. So every card the AI drew inside a simulation stepped straight off the topdeck
+     * cliff, and any spell that drew one was charged for it. Measured on `timing-05`: casting Opt scored −0.45 against passing on
      * `production` and **−4.45** on the same agent with nothing changed but that flag, which is four
      * points of pure harness. Its `cashCantripsInTheEndStep` window covers 1.5 of that and so looked
      * like a term that did not work.

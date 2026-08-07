@@ -250,6 +250,31 @@ data class AiProfile(
      * Reaches only the composite evaluator, like every other flag here.
      */
     val creatureValuation: CreatureValuation = CreatureValuation.LEGACY,
+    /**
+     * Price the hand curve on **business** and lands separately and lower, instead of counting a
+     * land as a card and then deleting one to make the land drop balance.
+     *
+     * The model in one line: *a land on the battlefield is worth more than a land in your hand, and
+     * a land in your hand is still worth something.* That makes the land drop positive by
+     * construction — the field side already pays 2.1 early and 1.14 late, the hand side gives up
+     * [com.wingedsheep.ai.engine.evaluation.CardAdvantage.LAND_IN_HAND] — so it **supersedes**
+     * [landDropIsNotCardLoss] rather than stacking with it. With this on, the earmark is not
+     * consulted at all.
+     *
+     * What the earmark got wrong is not its arithmetic but which end it balanced at. It bought
+     * neutrality by subtracting the land outright, so a hand of one Forest scored *exactly* what an
+     * empty hand scored and 3.0 below a hand of one Grizzly Bears, and `[Forest, Bears]` scored what
+     * `[Bears]` scored alone. The land contributed zero, always. An opponent handed the choice of
+     * what to strip would take that land — a Duress priced at zero is the shortest proof the number
+     * is wrong.
+     *
+     * The larger prize is **flood**, which the AI cannot currently see at all. Past the one earmarked
+     * land the old model counts lands as full cards, so seven lands in hand score `cardValue(6)` =
+     * 6.4 — a flooded hand reads as an excellent one. Here the same hand is `cardValue(0) + 7 × 0.5`
+     * = 1.5. That is a large behavioural change on every hand containing a land, which is every
+     * hand, and it is why this gets a real arena run rather than a puzzle column.
+     */
+    val priceLandsInHandAsMana: Boolean = false,
     /** Non-null profiles may only be selected automatically for this set. Arena selection stays explicit. */
     val restrictedToSet: String? = null,
 ) {
@@ -697,7 +722,9 @@ data class AiProfile(
          * prediction this profile tests. They stay separate fields so either can be reverted alone,
          * and each has its own attribution column above.
          *
-         * **What a player faces in a real game today** — see [EngineAiPlayerController].
+         * What a player faced in a real game until [PRODUCTION_CANDIDATE_CANTRIP] replaced it in
+         * [EngineAiPlayerController]. Kept unchanged as the baseline that promotion was measured
+         * against.
          *
          * **The prediction held, on both halves.** On the 87-puzzle suite it takes the live pair
          * from **81/87 to 83/87**, closing exactly the two the race clock had traded, with a failing
@@ -757,8 +784,9 @@ data class AiProfile(
          * exact flag that closes it one column over, and the reason is worth more than the puzzle
          * was: it was the **harness**, not the agent. `PuzzleRunner` stocked every puzzle library
          * with basic lands, so the card an Opt draws was a Forest — and [landDropIsNotCardLoss],
-         * live since 2026-08-08, deliberately does not count a land held against an unused land
-         * drop as a card. Drawing one therefore read as drawing *nothing* and stepped off the
+         * live since 2026-08-08, stops counting one land held against an unused land drop. That is a
+         * simplification rather than a truth about lands, and a costly one here: drawing a Forest
+         * therefore read as drawing *nothing* and stepped off the
          * topdeck cliff, which priced casting the cantrip at −4.45 against passing where the same
          * agent without that one flag said −0.45. A 1.5-point window cannot cover four points of
          * measurement error, and the term looked broken.
@@ -769,10 +797,60 @@ data class AiProfile(
          * signal to go and look at the leaf**, not to argue about rollout scale or budget tiers —
          * both of which were the wrong first guesses here. `PuzzleRunner.stockLibraries` carries the
          * fix and the general rule.
+         *
+         * **What a player faces in a real game today** — see [EngineAiPlayerController].
+         *
+         * Promoted on the puzzle half, with the arena half returning the same **degenerate null**
+         * the patience promotion did: `just arena production-candidate-boardvalue
+         * production-candidate-cantrip 100` measured **50.0%, CI [50.0%, 50.0%]**, 50W-50L,
+         * 100/100 completed, 0 illegal actions — and all 50 pairs at 1-1-0. Read that as "this term
+         * changes the outcome of a real sealed game rarely", which is what the mechanism predicts:
+         * it fires on turns where the AI holds an instant-speed cantrip and nothing better at
+         * exactly the opponent's end step. A CI spanning parity is a pass by the standing bar, and
+         * the evidence here is the puzzle side, at +1 with nothing traded.
+         *
+         * If a later run comes back below parity, revert the two call sites
+         * ([EngineAiPlayerController] and [AiProfileSelector]'s fallback) rather than the flag.
          */
         val PRODUCTION_CANDIDATE_CANTRIP = PRODUCTION_CANDIDATE_BOARDVALUE.copy(
             id = "production-candidate-cantrip",
             cashCantripsInTheEndStep = true,
+        )
+
+        /**
+         * [priceLandsInHandAsMana] alone on top of [PRODUCTION], so a puzzle or an arena point that
+         * moves is attributable to it — the same isolation [PRODUCTION_LANDSEQ] gives land
+         * sequencing.
+         *
+         * This is the column to read for what the *model* does, uncontaminated by
+         * [landDropIsNotCardLoss], which it supersedes and which `PRODUCTION` does not carry.
+         * `sequencing-02` is the verdict that should move: it is the puzzle the earmark was built
+         * for, and if pricing a land honestly does not also close it, the model is wrong on the one
+         * case it has to get right.
+         */
+        val PRODUCTION_MANALANDS = PRODUCTION.copy(
+            id = "production-manalands",
+            priceLandsInHandAsMana = true,
+        )
+
+        /**
+         * [PRODUCTION_CANDIDATE_CANTRIP] plus [priceLandsInHandAsMana] — the agent that stops
+         * pricing the land in its hand at nothing.
+         *
+         * Unlike the four promotions before it, this one is **expected to move the arena in one
+         * direction or the other rather than sit at parity**, and should be read that way. Every
+         * other term in this sequence fires on a specific shape — a pacified creature, a cantrip at
+         * an end step, removal aimed at a 1/1 — and the two that returned degenerate null CIs did so
+         * because those shapes are rare. This one changes what *every hand containing a land* is
+         * worth, on every evaluation, including inside every rollout. A null result here would
+         * itself be surprising and would mean something is not wired.
+         *
+         * [landDropIsNotCardLoss] stays set on this profile and is simply not read, so the diff
+         * against its baseline is one flag and reverting is one line.
+         */
+        val PRODUCTION_CANDIDATE_MANALANDS = PRODUCTION_CANDIDATE_CANTRIP.copy(
+            id = "production-candidate-manalands",
+            priceLandsInHandAsMana = true,
         )
 
         /**
@@ -848,7 +926,7 @@ object AiProfileSelector {
     fun select(
         setCode: String?,
         requested: AiProfile?,
-        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_BOARDVALUE,
+        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_CANTRIP,
     ): AiProfile {
         if (requested == null) return fallback
         val restriction = requested.restrictedToSet ?: return requested

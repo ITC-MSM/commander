@@ -509,25 +509,112 @@ object CardAdvantage : BoardFeature {
 
     fun score(
         state: GameState,
-        @Suppress("UNUSED_PARAMETER") projected: ProjectedState,
+        projected: ProjectedState,
         playerId: EntityId,
         topdeckPenalty: Double,
         landDropIsNotCardLoss: Boolean = false,
+        priceLandsInHandAsMana: Boolean = false,
     ): Double {
         val sides = state.sidesFor(playerId) ?: return 0.0
-        val mine = sideHandValue(state, sides.mine, topdeckPenalty, landDropIsNotCardLoss)
+        val mine = sideHandValue(
+            state, projected, sides.mine, topdeckPenalty, landDropIsNotCardLoss, priceLandsInHandAsMana,
+        )
         return sides.against(OpponentAggregate.FIELD) { opponent ->
-            mine - sideHandValue(state, opponent, topdeckPenalty, landDropIsNotCardLoss)
+            mine - sideHandValue(
+                state, projected, opponent, topdeckPenalty, landDropIsNotCardLoss, priceLandsInHandAsMana,
+            )
         }
     }
 
     private fun sideHandValue(
         state: GameState,
+        projected: ProjectedState,
         side: List<EntityId>,
         topdeckPenalty: Double,
         landDropIsNotCardLoss: Boolean,
+        priceLandsInHandAsMana: Boolean,
     ): Double =
-        side.sumOf { cardValue(heldCardCount(state, it, landDropIsNotCardLoss), topdeckPenalty) }
+        side.sumOf {
+            handValue(state, projected, it, topdeckPenalty, landDropIsNotCardLoss, priceLandsInHandAsMana)
+        }
+
+    /**
+     * What one player's hand is worth.
+     *
+     * Two models, and [priceLandsInHandAsMana] picks between them. Off, the historical one:
+     * [cardValue] over a count, with [heldCardCount]'s earmark subtracting one land per land drop.
+     * On, the curve prices **business** and lands are priced separately and lower — see
+     * [priceLandsInHandAsMana]'s own KDoc on `AiProfile` for why that is the better shape.
+     *
+     * On, [landDropIsNotCardLoss] is not consulted at all. The earmark exists only to force the land
+     * drop to be card-neutral, and under this model it does not need forcing: a land is simply worth
+     * less in hand than on the battlefield, so playing it is positive by construction. Two mechanisms
+     * for one fact would be one too many, and the newer one subsumes the older.
+     */
+    private fun handValue(
+        state: GameState,
+        projected: ProjectedState,
+        playerId: EntityId,
+        topdeckPenalty: Double,
+        landDropIsNotCardLoss: Boolean,
+        priceLandsInHandAsMana: Boolean,
+    ): Double {
+        if (!priceLandsInHandAsMana) {
+            return cardValue(heldCardCount(state, playerId, landDropIsNotCardLoss), topdeckPenalty)
+        }
+        val hand = state.getZone(playerId, Zone.HAND)
+        val lands = hand.count { state.getEntity(it)?.get<CardComponent>()?.isLand == true }
+        return cardValue(hand.size - lands, topdeckPenalty) +
+            landsInHandValue(landsInPlay(state, projected, playerId), lands)
+    }
+
+    /**
+     * What the lands in a hand are worth, given how much mana their controller already has.
+     *
+     * A land is not worth a fixed amount: **it is worth a lot when you are short of mana and almost
+     * nothing when you are already rich.** The second land of the game makes every card in your hand
+     * castable a turn sooner; the eleventh is a card you would happily pitch. That is the same shape
+     * [Tempo] already prices on the battlefield side (2.0 a land through the third, 1.2 through the
+     * sixth, 0.4 after), so this schedule is that curve read one zone earlier rather than a new
+     * guess.
+     *
+     * Each land in hand is priced at the count it would actually arrive at — the first at today's
+     * land count, the second as if the first had been played, and so on. That is what makes a hand of
+     * seven lands on turn one score as the flood it is instead of seven times the first one's value,
+     * without needing a second rule about hand contents.
+     */
+    private fun landsInHandValue(landsInPlay: Int, landsInHand: Int): Double =
+        (0 until landsInHand).sumOf { landInHandValue(landsInPlay + it) }
+
+    /**
+     * What one more land is worth to a player who already has [landsAvailable] of them.
+     *
+     * Bounded, at every rung, by numbers already in the evaluator rather than chosen freely — which
+     * is what makes a schedule defensible where a single constant was not:
+     *
+     *  - **Always below what the same land is worth on the battlefield**, so playing it is a gain at
+     *    every stage and never needs [landDropIsNotCardLoss] to force it. A land drop pays
+     *    `BoardPresence` 0.6 × 1.5 = 0.9 plus a [Tempo] marginal of 0.6 × the numbers above:
+     *    **+2.1 early, +1.62 mid, +1.14 once mana-rich**, against 0.9 / 0.5 / 0.2 here.
+     *  - **Below a real card's marginal on [cardValue]**, whose working band is 0.8–1.5, so even the
+     *    top rung never lets a land pass for business.
+     *
+     * Deliberately *not* zero at any rung, which is what the earmark made the next land drop. A land
+     * in hand is a card: it is a guaranteed drop next turn, and an opponent choosing what to strip
+     * would take it — a Duress that costs its victim nothing is not a model anyone would defend.
+     */
+    private fun landInHandValue(landsAvailable: Int): Double = when {
+        landsAvailable <= 2 -> 0.9 // still hitting drops; the next land is most of the game
+        landsAvailable <= 5 -> 0.5 // curve filled out, more mana still buys turns
+        else -> 0.2 // mana-rich: a card you would pitch, but not one worth nothing
+    }
+
+    /** Projected, per the battlefield-filter rule: an animated Mishra's Factory is still a land. */
+    private fun landsInPlay(state: GameState, projected: ProjectedState, playerId: EntityId): Int =
+        projected.getBattlefieldControlledBy(playerId).count { projected.hasType(it, "LAND") }
+
+    /** The top rung, exposed for the test that pins the schedule against [Tempo]'s own curve. */
+    internal fun landInHandValueAt(landsAvailable: Int): Double = landInHandValue(landsAvailable)
 
     /**
      * How many cards in [playerId]'s hand are *cards* rather than mana waiting to be tapped.
@@ -550,6 +637,25 @@ object CardAdvantage : BoardFeature {
      * `GrantAdditionalLandDrop` statics that `LandDropUtils` adds on top, which needs a
      * `CardRegistry` this feature does not have: under an Exploration the second drop is still
      * charged as card loss, which is the old behaviour rather than a new error.
+     *
+     * ## Known limitation: the earmarked land is priced at zero, and it is not worth zero
+     *
+     * Subtracting it outright buys land-drop neutrality at the wrong end. The transition really is
+     * neutral — that is the fix, and it works — but both sides of it are priced as the *empty-hand
+     * disaster* rather than as "a resource in hand". So at `concave-hand-2`'s `-2.0`, a hand of one
+     * Forest with the drop unused scores `-2.0`, exactly what an empty hand scores and 3.0 below a
+     * hand holding one Grizzly Bears; `[Forest, Bears]` scores the same as `[Bears]` alone.
+     *
+     * A land in hand is a card and has value. The sharpest statement of that: an opponent handed the
+     * choice of what to strip would happily take it, and this feature prices that Duress at **zero**.
+     * The same zero is what made every card *drawn* inside a simulation free when the library was all
+     * basic lands — see `PuzzleRunner.stockLibraries` for the day that cost.
+     *
+     * Only **one** land is affected (`minOf(lands, drops)`), so a hand full of lands is still counted;
+     * this is not "lands are worthless", it is "the next land drop is worthless while it is still in
+     * hand". Fixing it means restoring neutrality at the land's *realized* value rather than at zero,
+     * and that is a new flag with its own attribution column and arena run — not an edit to a term
+     * that has already shipped and been measured.
      */
     private fun heldCardCount(state: GameState, playerId: EntityId, landDropIsNotCardLoss: Boolean): Int {
         val hand = state.getZone(playerId, Zone.HAND)
@@ -830,6 +936,12 @@ object Tempo : BoardFeature {
             card?.isLand == true
         }
     }
+
+    /**
+     * Exposed so `CardAdvantageLandDropTest` can pin `CardAdvantage`'s land-in-hand schedule against
+     * this curve directly, rather than against remembered copies of these numbers.
+     */
+    internal fun landValueAt(count: Int): Double = landValue(count)
 
     private fun landValue(count: Int): Double = when {
         count <= 0 -> -5.0  // no mana is terrible

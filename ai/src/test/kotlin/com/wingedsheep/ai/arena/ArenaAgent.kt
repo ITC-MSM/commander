@@ -110,6 +110,12 @@ object ArenaAgents {
         // 300` is the promotion gate.
         ArenaAgent("production-cantrip", AiProfile.PRODUCTION_CANTRIP),
         ArenaAgent("production-candidate-cantrip", AiProfile.PRODUCTION_CANDIDATE_CANTRIP),
+        // A land in hand is a card worth less than a spell and less than the same land on the
+        // battlefield. `just arena production production-manalands 300` prices the model on its own;
+        // `just arena production-candidate-cantrip production-candidate-manalands 300` is the
+        // promotion gate. Expect this one to *move*, unlike the four before it.
+        ArenaAgent("production-manalands", AiProfile.PRODUCTION_MANALANDS),
+        ArenaAgent("production-candidate-manalands", AiProfile.PRODUCTION_CANDIDATE_MANALANDS),
         ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.

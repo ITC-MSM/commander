@@ -83,6 +83,11 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // answer — held. A column that moves both has broken the control.
                 AiProfile.PRODUCTION_CANTRIP,
                 AiProfile.PRODUCTION_CANDIDATE_CANTRIP,
+                // Lands priced as mana, alone and on top of what is live. `sequencing-02` is the
+                // verdict that should move on the isolation column — it is the puzzle the earmark
+                // this model supersedes was built for.
+                AiProfile.PRODUCTION_MANALANDS,
+                AiProfile.PRODUCTION_CANDIDATE_MANALANDS,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

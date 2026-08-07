@@ -214,6 +214,7 @@ class AIPlayer(
                 sequenceLandsByUsableMana = profile.sequenceLandsByUsableMana,
                 discountedRaceClock = profile.discountedRaceClock,
                 creatureValuation = profile.creatureValuation,
+                priceLandsInHandAsMana = profile.priceLandsInHandAsMana,
             )
             val combatAdvisor = CombatAdvisor(
                 simulator, evaluator, cardRegistry, advisorRegistry,
