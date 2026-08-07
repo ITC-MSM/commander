@@ -13,7 +13,10 @@ class EvalWeightsTest : StringSpec({
 
     "bundled profiles are selectable without recompiling" {
         EvalWeights.resolve("blind") shouldBe EvaluationWeights.BLIND
-        EvalWeights.ids shouldBe setOf("default", "blind")
+        // `concave-hand*` differ from `default` only in `topdeckPenalty`: -1.0 and -2.0 against
+        // the historical -3.0. Both are arena-measured; -2.0 is the one production takes, because
+        // -1.0 also starts spending the last card on `respond-02`'s negative control.
+        EvalWeights.ids shouldBe setOf("default", "blind", "concave-hand", "concave-hand-2")
     }
 
     "unknown profile safely uses the compiled fallback" {

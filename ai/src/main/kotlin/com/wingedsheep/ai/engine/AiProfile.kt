@@ -78,6 +78,30 @@ data class AiProfile(
      * Off preserves the historical full-information agents used as arena controls.
      */
     val determinizeHiddenInformation: Boolean = false,
+    /**
+     * Carry a candidate simulation through the combat damage step once blockers are declared,
+     * instead of stopping at the empty stack that sits one step before it.
+     *
+     * The cheap half of what Phase 7's rollouts were bought for. Three of the suite's six
+     * remaining failures pay mana now for a payoff that only lands at damage — a Fog, a
+     * regeneration shield, a firebreathing pump — and a one-ply evaluator that stops at the empty
+     * stack sees only the cost. Unlike a rollout this adds no sampling and no horizon *beyond*
+     * combat, so it cannot manufacture the tempo blindness that made `v0-rollout` lose
+     * `respond-02`.
+     *
+     * See [GameSimulator]'s constructor for why it starts at declare-blockers rather than
+     * declare-attackers.
+     */
+    val resolveThroughCombatDamage: Boolean = false,
+    /**
+     * Charge an attack plan's estimated crack-back as the life it would actually cost, rather
+     * than a flat −3.0 that only fires when the crack-back is exactly lethal.
+     *
+     * See [CombatAdvisor]'s constructor. The target is `race-03` — "keep the ground creature home
+     * to block the 3/3" — which is the one attack-vs-hold position the evaluator owns rather than
+     * `CombatSeed`, and which the rollouts do not close either.
+     */
+    val priceCrackBackAsLife: Boolean = false,
     /** Non-null profiles may only be selected automatically for this set. Arena selection stays explicit. */
     val restrictedToSet: String? = null,
 ) {
@@ -96,18 +120,133 @@ data class AiProfile(
         val CURRENT = AiProfile(id = "current")
 
         /**
-         * What a player actually faces in a real game — see [EngineAiPlayerController]. Naming it
-         * here makes the production configuration arena-runnable instead of a literal buried in a
-         * controller constructor.
+         * What a player faced in a real game **up to 2026-08-07**, when
+         * [PRODUCTION_CANDIDATE_TUNED] replaced it in [EngineAiPlayerController].
          *
-         * Card intent is **on** here: Phase 6's exit criterion is measured on this profile (it is
-         * what `PuzzleSuiteTest` runs), and shipping the analyzer to everything except the AI
-         * players actually face would be pointless.
+         * Kept, unchanged, as the baseline every promotion is measured against — the same job
+         * [LEGACY_V0] does for the plan's phases, one level up. A candidate has to beat *this*,
+         * not `v0`, because `v0` carries neither the card advisors nor `CardIntent` that shipped
+         * long ago. It is still what `PuzzleSuiteTest` runs, so `KNOWN_FAILURES` keeps describing
+         * a fixed agent rather than drifting with whatever is live.
          */
         val PRODUCTION = AiProfile(
             id = "production",
             advisorModules = listOf(BloomburrowAdvisorModule(), OnslaughtAdvisorModule()),
             useCardIntent = true,
+        )
+
+        /**
+         * What [PRODUCTION] would become if Phases 4, 7 and 8 were switched on for real players:
+         * the shipped card advisors and `CardIntent`, plus the meaningful-action filter, the
+         * four-tier budget, the rollout evaluator and fair play. The arena agent
+         * `production-candidate`.
+         *
+         * **This is the only profile that answers the promotion question**, and until it existed
+         * nothing did. Every number the plan publishes is quoted against [LEGACY_V0], which carries
+         * neither advisors nor `CardIntent` — so "the rollouts are worth +6%" is a statement about
+         * an agent nobody plays against. The gate is `just arena production production-candidate`;
+         * the compounding check is `just arena v0 production-candidate`.
+         *
+         * [TieredBudgetPolicy] is not optional here, unlike in the phase-isolating profiles.
+         * [LegacyBudgetPolicy] has no global deadline, so rollouts under it are a search a real
+         * player waits on with nothing to stop it — acceptable in an arena that spends its budget
+         * as a simulation count, not in a session with a human on the other end.
+         */
+        val PRODUCTION_CANDIDATE = PRODUCTION.copy(
+            id = "production-candidate",
+            useMeaningfulFilter = true,
+            budgetPolicy = TieredBudgetPolicy(),
+            rollouts = RolloutSettings.DEFAULT,
+            determinizeHiddenInformation = true,
+        )
+
+        /**
+         * The two targeted fixes for the suite's remaining failures, without rollouts:
+         * the combat-damage horizon and the concave hand curve, on top of what already ships.
+         *
+         * Between them they aim at four of `PuzzleSuiteTest.KNOWN_FAILURES` — `instants-05` and
+         * `activate-05` from the horizon, `sequencing-02` and `noncreature-02` from the curve —
+         * and they cost essentially nothing: one extra step of simulation inside combat, and a
+         * different constant. That makes this the control that says whether
+         * [PRODUCTION_CANDIDATE]'s rollouts are still paying for themselves once the cheap fixes
+         * are in, rather than being credited for what a constant would have bought.
+         */
+        val PRODUCTION_TUNED = PRODUCTION.copy(
+            id = "production-tuned",
+            useMeaningfulFilter = true,
+            budgetPolicy = TieredBudgetPolicy(),
+            evalWeightsId = "concave-hand",
+            resolveThroughCombatDamage = true,
+        )
+
+        /**
+         * Attribution controls for [PRODUCTION_TUNED], which moves four things at once. Each of
+         * these moves exactly one, so a puzzle that changes can be blamed on something.
+         */
+        val PRODUCTION_HORIZON = PRODUCTION.copy(
+            id = "production-horizon",
+            resolveThroughCombatDamage = true,
+        )
+        val PRODUCTION_CONCAVE = PRODUCTION.copy(
+            id = "production-concave",
+            evalWeightsId = "concave-hand",
+        )
+
+        /** The same curve fix at half strength: empty hand at −2.0 rather than −1.0. */
+        val PRODUCTION_CONCAVE_2 = PRODUCTION.copy(
+            id = "production-concave-2",
+            evalWeightsId = "concave-hand-2",
+        )
+
+        /** The crack-back pricing on its own, so `race-03` moving can be attributed to it. */
+        val PRODUCTION_CRACKBACK = PRODUCTION.copy(
+            id = "production-crackback",
+            priceCrackBackAsLife = true,
+        )
+
+        /** All three targeted fixes. The best the suite can be pushed to without curve-fitting. */
+        val PRODUCTION_TARGETED = PRODUCTION.copy(
+            id = "production-targeted",
+            evalWeightsId = "concave-hand-2",
+            resolveThroughCombatDamage = true,
+            priceCrackBackAsLife = true,
+        )
+
+        /** Horizon plus each curve value, to pick the pair that costs nothing. */
+        val PRODUCTION_HORIZON_CONCAVE = PRODUCTION.copy(
+            id = "production-horizon-concave",
+            evalWeightsId = "concave-hand",
+            resolveThroughCombatDamage = true,
+        )
+        val PRODUCTION_HORIZON_CONCAVE_2 = PRODUCTION.copy(
+            id = "production-horizon-concave-2",
+            evalWeightsId = "concave-hand-2",
+            resolveThroughCombatDamage = true,
+        )
+
+        /**
+         * **What a player faces in a real game as of 2026-08-07** — see [EngineAiPlayerController].
+         *
+         * [PRODUCTION_CANDIDATE] with the two cheap fixes on top. The two scoreboards turned out
+         * to measure nearly orthogonal things, which is why this is a combination rather than a
+         * choice. The rollouts win the arena (**+7.3%** against `production` over 300 paired
+         * games) and *cost* four puzzles; the combat-damage horizon and the concave hand curve win
+         * three puzzles and are arena-neutral (49.7%, CI [48.7%, 50.7%]). Neither result argues
+         * against the other, so this takes both — measured together at **+6.7%**
+         * (`production` 43.3%, CI [39.3%, 47.0%]) and 60/66 on the suite, level with `production`.
+         *
+         * `concave-hand-2` rather than `concave-hand`: −1.0 also closes `sequencing-02`, but it
+         * starts spending the last Counterspell on a 2/2 with seven lands open, and `respond-02`
+         * is the negative control that exists to catch exactly that.
+         *
+         * The id stays `production-candidate-tuned` after promotion on purpose — every arena
+         * report and CSV row already published under that name refers to this exact agent, and
+         * renaming it to match its new status would break that.
+         */
+        val PRODUCTION_CANDIDATE_TUNED = PRODUCTION_CANDIDATE.copy(
+            id = "production-candidate-tuned",
+            evalWeightsId = "concave-hand-2",
+            resolveThroughCombatDamage = true,
         )
 
         /**
@@ -180,7 +319,11 @@ data class AiProfile(
 
 /** The only automatic promotion seam: a set-scoped profile cannot leak into another format. */
 object AiProfileSelector {
-    fun select(setCode: String?, requested: AiProfile?, fallback: AiProfile = AiProfile.PRODUCTION): AiProfile {
+    fun select(
+        setCode: String?,
+        requested: AiProfile?,
+        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_TUNED,
+    ): AiProfile {
         if (requested == null) return fallback
         val restriction = requested.restrictedToSet ?: return requested
         return if (setCode?.uppercase() == restriction.uppercase()) requested else fallback

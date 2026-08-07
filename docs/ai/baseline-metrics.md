@@ -1154,3 +1154,87 @@ publication-quality measurement.
 The run reported three `CastSpell: Not enough mana to cast this spell` rejections, all on one paired
 seed and present in both seat orientations. That is the same pre-existing enumerator/processor
 disagreement Phase 7 records above, not a new error class introduced by determinization.
+
+---
+
+# Promotion — `production-candidate-tuned` goes live
+
+Measured 2026-08-07, 8-core M1 Pro, BLB, seed 20260727. Every arena run is 300 paired games,
+100% completed, 0 illegal actions. Reproduce with `just arena production <agent> 300` and
+`just arena-puzzles-compare`.
+
+Phases 4, 7 and 8 shipped as code and were never switched on: `AiProfile.PRODUCTION` set only the
+card advisors and `useCardIntent`, and `EngineAiPlayerController` hardcoded it. This is the run
+that promoted them, plus two targeted fixes built here.
+
+## The gate nobody had run
+
+Every number above is quoted against `v0`, which carries neither the card advisors nor `CardIntent`
+— so "the rollouts are worth +6%" was a statement about an agent nobody plays against. The
+promotion gate is against **`production`**, and it needed a profile that did not exist.
+
+| Matchup | Win share for B | Pair CI | Puzzles (B) |
+|---|---:|---:|---:|
+| `production` vs `production-candidate` | **57.3%** | [53.3%, 61.7%] | 56/66 |
+| `production` vs `production-horizon-concave-2` | 50.3% | [49.3%, 51.3%] | **63/66** |
+| **`production` vs `production-candidate-tuned`** | **56.7%** | **[53.0%, 60.7%]** | 60/66 |
+
+`production` itself scores 60/66.
+
+**The two scoreboards measure nearly orthogonal things here, and the result is a combination rather
+than a choice.** The rollouts win +7.3% and *cost* four puzzles; the two cheap fixes win three
+puzzles and are arena-neutral. Layering both keeps the win rate intact (+6.7%, statistically the
+same as +7.3%) and returns the suite to parity with what shipped.
+
+Latency, which was listed as an unrecorded Phase 4b deliverable: 25.0 s per game over ~504 actions
+with rollouts on one seat, so ~100 ms per candidate decision — an order of magnitude inside the
+2 s NORMAL tier and far under the server's 500 ms `thinkingDelayMs`.
+
+## Two targeted fixes, each isolated
+
+| Agent | Puzzles | Closes | Breaks |
+|---|---:|---|---|
+| `production` | 60/66 | — | — |
+| `production-horizon` | **62/66** | `instants-05`, `activate-05` | none |
+| `production-concave` (−1.0) | 61/66 | `sequencing-02`, `noncreature-02` | `respond-02` |
+| `production-concave-2` (−2.0) | 61/66 | `noncreature-02` | none |
+| `production-horizon-concave-2` | **63/66** | all three above | none |
+
+**1. `resolveThroughCombatDamage`.** A quiet state is "the stack is empty", which inside combat is
+*before damage*. Fog, a regeneration shield and a firebreathing pump therefore read as pure cost.
+Carrying the simulation one step further — only once blockers are declared, since before that the
+outcome still depends on blocks nothing here would declare — closes `instants-05`, the Fog puzzle
+Phase 2 explicitly assigned to Phase 7's rollouts, for one extra step instead of 16 playouts.
+
+**2. `EvaluationWeights.topdeckPenalty`.** `CardAdvantage`'s marginal card value ran 4.0 / 1.5 /
+1.5 / 0.8 — the first card broke concavity by nearly 3×, which is why holding the last card beat
+casting a spell that puts a 2/2 on the board. −2.0 makes the curve concave everywhere. −1.0 also
+closes `sequencing-02` but starts spending the last Counterspell on a 2/2 with seven lands open;
+`respond-02` is the negative control that exists to catch exactly that, so −2.0 is what ships.
+
+## Three findings worth carrying forward
+
+1. **The card advisors are not tactically neutral.** Three prior measurements (arena, pod, puzzles)
+   agreed they were worth nothing, and on win rate they are. But `production` scores 60/66 against
+   `v0-phase4-intent`'s 58/66 — on tactics they are worth +2.
+2. **Phase 4 costs two puzzles.** `production-tuned` (which adds `useMeaningfulFilter` +
+   `TieredBudgetPolicy` on top of the two fixes) scores 61/66 rather than 63/66, losing
+   `instants-02` and `instants-03` — combat tricks, i.e. the budget cutting combat simulations.
+   Neutral in the arena, so it ships, but the nominal tier sizes deserve their own look.
+3. **`priceCrackBackAsLife` is a no-op and `race-03`'s diagnosis was wrong.** Replacing
+   `evaluateAttackPlan`'s flat −3.0-at-lethal with the life actually lost changes nothing on the
+   suite: `incomingNextTurnDamage` is computed on the **post-combat** state, and in `race-03` the
+   blocker has already traded away by then, so there is no crack-back left to price. The cliff it
+   removes is real (at 5 life, 4 damage was free and 5 cost −3.0) but unmeasured. Shipped **off**.
+
+## What the suite still cannot solve
+
+`production-horizon-concave-2` leaves three, and none is a constant away:
+
+- **`sequencing-02`** — only reachable by moving the curve to −1.0, at the cost of a negative
+  control. The real fix is that a land drop should not be charged as card loss at all; it converts
+  a card to mana rather than spending it.
+- **`race-03`** — needs the crack-back estimated on the *pre*-combat state, or a genuine
+  attack-vs-hold model. The rollouts do not close it either.
+- **`respond-05`** — unexplained. `resolveToQuietState` should already resolve the Wrath and see
+  the Troll survive, so the recorded explanation does not match the code path.

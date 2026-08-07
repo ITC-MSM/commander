@@ -26,6 +26,23 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
             val profiles = listOf(
                 AiProfile.LEGACY_V0,
                 AiProfile.PRODUCTION,
+                // The promotion pair. `production` is what ships today and `production-candidate`
+                // is what flipping Phases 4/7/8 on would ship, so this is the only column pair on
+                // the suite that prices the decision actually in front of us.
+                AiProfile.PRODUCTION_CANDIDATE,
+                // The two cheap targeted fixes, with and without the rollouts on top. If
+                // `production-tuned` matches `production-candidate-tuned` on the suite, the
+                // rollouts are not what is closing these puzzles.
+                AiProfile.PRODUCTION_TUNED,
+                AiProfile.PRODUCTION_CANDIDATE_TUNED,
+                // One variable each, so a puzzle that moves can be attributed.
+                AiProfile.PRODUCTION_HORIZON,
+                AiProfile.PRODUCTION_CONCAVE,
+                AiProfile.PRODUCTION_CONCAVE_2,
+                AiProfile.PRODUCTION_HORIZON_CONCAVE,
+                AiProfile.PRODUCTION_HORIZON_CONCAVE_2,
+                AiProfile.PRODUCTION_CRACKBACK,
+                AiProfile.PRODUCTION_TARGETED,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

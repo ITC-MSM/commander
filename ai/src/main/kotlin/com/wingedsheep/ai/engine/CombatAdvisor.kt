@@ -3,6 +3,7 @@ package com.wingedsheep.ai.engine
 import com.wingedsheep.ai.engine.advisor.CardAdvisorRegistry
 import com.wingedsheep.ai.engine.budget.DecisionBudget
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
+import com.wingedsheep.ai.engine.evaluation.LifeDifferential
 import com.wingedsheep.ai.insight.CombatPlanTrace
 import com.wingedsheep.engine.core.DeclareAttackers
 import com.wingedsheep.engine.core.DeclareBlockers
@@ -30,7 +31,25 @@ class CombatAdvisor(
     private val simulator: GameSimulator,
     private val evaluator: BoardEvaluator,
     private val cardRegistry: CardRegistry? = null,
-    private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry()
+    private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry(),
+    /**
+     * Price the estimated crack-back as life actually lost, instead of a flat penalty that only
+     * fires when it is exactly lethal.
+     *
+     * The old rule is a cliff: at 5 life, four incoming damage costs **nothing** and five costs
+     * 3.0. Everything between "free" and "dead" reads as free, so an attack plan that empties the
+     * board of blockers is scored purely on the damage it deals — which is `race-03`, where the
+     * AI sends the ground creature that was the only answer to the crack-back.
+     *
+     * When on, the penalty is `lifeValue(now) - lifeValue(now - incoming)` scaled by the
+     * evaluator's own life weight. That is not a new guess: it is the same curve
+     * [com.wingedsheep.ai.engine.evaluation.LifeDifferential] already uses, so anticipated damage
+     * is charged at exactly the rate real damage is. It is continuous by construction, and still
+     * dominant at lethal because `lifeValue` prices death at −100.
+     */
+    private val priceCrackBackAsLife: Boolean = false,
+    /** The composite evaluator's `life` coefficient, so the two are in the same units. */
+    private val lifeWeight: Double = 1.0,
 ) {
     companion object {
         /**
@@ -930,10 +949,12 @@ class CombatAdvisor(
         val nextTurnDamage = incomingNextTurnDamage(postCombat, postProjected, playerId, myBlockers)
         val myLife = postCombat.lifeTotal(playerId)
 
-        // Light penalty for plans that leave us dead to the crack-back.
-        // Keep this small — the base evaluator already scores life totals and threats.
-        // This just nudges the AI to prefer attack plans that don't leave us wide open.
-        val crackBackPenalty = if (nextTurnDamage >= myLife) {
+        // Penalty for plans that hand the opponent a crack-back. See [priceCrackBackAsLife] for
+        // why the flat version is a cliff and what replaces it.
+        val crackBackPenalty = if (priceCrackBackAsLife) {
+            val after = myLife - nextTurnDamage
+            -(LifeDifferential.lifeValue(myLife) - LifeDifferential.lifeValue(after)) * lifeWeight
+        } else if (nextTurnDamage >= myLife) {
             -3.0
         } else {
             0.0

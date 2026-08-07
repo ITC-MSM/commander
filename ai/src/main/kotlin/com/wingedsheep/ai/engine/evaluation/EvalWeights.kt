@@ -21,6 +21,24 @@ data class EvaluationWeights(
     val cardAdvantage: Double = 1.0,
     val threatAssessment: Double = 1.2,
     val tempo: Double = 0.6,
+    /**
+     * What an empty hand is worth, in the same units as [CardAdvantage]'s curve.
+     *
+     * A constant rather than a coefficient, and the one place the hand curve is not concave.
+     * Marginal value runs 1st card **4.0**, 2nd 1.5, 3rd 1.5, 4th 0.8 — every card after the first
+     * is worth less than the one before it, and then the first breaks the pattern by a factor of
+     * nearly three. That spike is measurable as wrong play: it makes holding the last card beat
+     * casting a spell that would put a 2/2 on the board, which is `sequencing-02` (never plays the
+     * last land) and `noncreature-02` (declines a Disenchant that gains 3.6 against a 4.0 charge,
+     * missing by 0.40).
+     *
+     * `-3.0` is the historical value and the default, because [AiProfile.LEGACY_V0] is the frozen
+     * reference every published number is quoted against. A vector that sets this to `-1.0` makes
+     * the curve concave everywhere — the first card still leads at 2.0 — without touching a single
+     * board-side constant, which is the distinction between fixing the guess that is wrong and
+     * inflating a second guess until the two cancel.
+     */
+    val topdeckPenalty: Double = -3.0,
 ) {
     fun toEvaluator(intents: IntentCatalog = IntentCatalog.NONE): BoardEvaluator = CompositeBoardEvaluator(
         listOf(
@@ -28,7 +46,9 @@ data class EvaluationWeights(
             boardPresence to BoardFeature { state, projected, playerId ->
                 BoardPresence.score(state, projected, playerId, intents)
             },
-            cardAdvantage to CardAdvantage,
+            cardAdvantage to BoardFeature { state, projected, playerId ->
+                CardAdvantage.score(state, projected, playerId, topdeckPenalty)
+            },
             threatAssessment to ThreatAssessment,
             tempo to Tempo,
         )

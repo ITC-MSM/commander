@@ -194,7 +194,10 @@ class AIPlayer(
             // pre-Phase-6 behaviour — so a profile that doesn't opt in is untouched.
             val intents = if (profile.useCardIntent) IntentCatalog.of(cardRegistry) else IntentCatalog.NONE
 
-            val simulator = GameSimulator(cardRegistry)
+            val simulator = GameSimulator(
+                cardRegistry,
+                resolveThroughCombatDamage = profile.resolveThroughCombatDamage,
+            )
             // Raw Phase 9 vectors contain CardIntent-derived facts even when the surrounding
             // legacy-based arena profile deliberately keeps Phase 6 timing/targeting behavior off.
             // Give only the evaluator the full catalog so the fitted training schema and runtime
@@ -205,7 +208,11 @@ class AIPlayer(
                 intents
             }
             val evaluator = EvalWeights.resolveEvaluator(profile.evalWeightsId, evaluationIntents)
-            val combatAdvisor = CombatAdvisor(simulator, evaluator, cardRegistry, advisorRegistry)
+            val combatAdvisor = CombatAdvisor(
+                simulator, evaluator, cardRegistry, advisorRegistry,
+                priceCrackBackAsLife = profile.priceCrackBackAsLife,
+                lifeWeight = EvalWeights.resolve(profile.evalWeightsId).life,
+            )
             val responder = DecisionResponder(
                 simulator, evaluator,
                 advisorRegistry = advisorRegistry,
