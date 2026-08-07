@@ -17,6 +17,7 @@ export interface PlayerConfig {
   battlefield?: BattlefieldCardConfig[]
   graveyard?: string[]
   library?: string[]
+  exile?: string[]
 }
 
 export interface ScenarioRequest {

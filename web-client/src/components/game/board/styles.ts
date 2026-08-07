@@ -1109,11 +1109,14 @@ export const styles: Record<string, React.CSSProperties> = {
     zIndex: 12,
   } as React.CSSProperties,
   // Card preview styles
+  // Mobile fullscreen card preview. On the tooltip layer, and portalled to <body> by its
+  // renderer — the spectator/replay shells wrap the board in a z-index:1500 stacking context,
+  // which would otherwise clamp it below the <body>-portalled zone browsers.
   cardPreviewOverlay: {
     position: 'fixed',
     top: 20,
     left: 20,
-    zIndex: 2500,
+    zIndex: 'var(--z-tooltip)' as unknown as number,
     pointerEvents: 'none',
   } as React.CSSProperties,
   cardPreviewContainer: {

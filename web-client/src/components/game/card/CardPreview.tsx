@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useGameStore } from '@/store/gameStore.ts'
 import { selectGameState, selectViewingPlayerId, useCardLegalActions } from '@/store/selectors.ts'
 import { ZoneType, zoneIdEquals } from '@/types'
@@ -368,7 +369,10 @@ function MobileCardPreview({ card }: { card: import('@/types').ClientCard }) {
   const previewWidth = 200
   const previewHeight = Math.round(previewWidth * 1.4)
 
-  return (
+  // Portalled to <body> for the same reason HoverCardPreview is: the spectator/replay shells
+  // wrap the board in their own stacking context, and the zone browsers (graveyard/exile/deck)
+  // portal to <body> — an in-tree preview lands underneath them.
+  return createPortal(
     <div style={{
       ...styles.cardPreviewOverlay,
       top: 0, left: 0, right: 0, bottom: 0,
@@ -436,6 +440,7 @@ function MobileCardPreview({ card }: { card: import('@/types').ClientCard }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
