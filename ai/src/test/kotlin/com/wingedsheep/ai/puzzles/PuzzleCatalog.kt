@@ -5,15 +5,17 @@ import com.wingedsheep.ai.puzzles.categories.BlockingPuzzles
 import com.wingedsheep.ai.puzzles.categories.BoardWipeTimingPuzzles
 import com.wingedsheep.ai.puzzles.categories.CombatKeywordPuzzles
 import com.wingedsheep.ai.puzzles.categories.HoldingInstantsPuzzles
+import com.wingedsheep.ai.puzzles.categories.LastChancePuzzles
 import com.wingedsheep.ai.puzzles.categories.LethalDetectionPuzzles
 import com.wingedsheep.ai.puzzles.categories.NonCreatureValuationPuzzles
+import com.wingedsheep.ai.puzzles.categories.PriorityTimingPuzzles
 import com.wingedsheep.ai.puzzles.categories.RaceMathPuzzles
 import com.wingedsheep.ai.puzzles.categories.RemovalTargetingPuzzles
 import com.wingedsheep.ai.puzzles.categories.SequencingPuzzles
 import com.wingedsheep.ai.puzzles.categories.StackResponsePuzzles
 
 /**
- * Every puzzle, in category order. Eleven categories, six positions each.
+ * Every puzzle, in category order. Thirteen categories, six positions each.
  *
  * Adding a puzzle is: write it in its category file, run `just arena-puzzles`, and add its id to
  * [PuzzleSuiteTest.KNOWN_FAILURES] if the AI does not solve it yet.
@@ -33,6 +35,9 @@ object PuzzleCatalog {
         StackResponsePuzzles.all(),
         ActivatedAbilityPuzzles.all(),
         CombatKeywordPuzzles.all(),
+        // Phase 2c — timing.
+        PriorityTimingPuzzles.all(),
+        LastChancePuzzles.all(),
     ).flatten()
 
     fun byCategory(category: PuzzleCategory): List<AiPuzzle> = all.filter { it.category == category }

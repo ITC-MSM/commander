@@ -25,6 +25,13 @@ import com.wingedsheep.sdk.model.EntityId
  * puzzle asserted on an [ActivateAbility] even though [PuzzleMove] already spoke it, and combat
  * coverage stopped at flying / deathtouch / first strike / vigilance.
  *
+ * The last two are Phase 2c's, and they are the *timing* half of tactics — the question of which
+ * window a play belongs in, which the first eleven only ever ask inside combat. Everything before
+ * them is answerable from a board: this position, these cards, best move. `timing` and `lastchance`
+ * are not, because the same cast is right at the opponent's end step and wrong in our own main, and
+ * because a spell on the stack is a deadline that makes plays correct which are wrong a step
+ * earlier.
+ *
  * See `backlog/engine-ai-improvement.md` § "How we measure" and § Phase 2b.
  */
 enum class PuzzleCategory(val id: String, val catches: String) {
@@ -39,6 +46,8 @@ enum class PuzzleCategory(val id: String, val catches: String) {
     STACK_RESPONSE("respond", "Never answering a spell that is already on the stack"),
     ACTIVATED_ABILITIES("activate", "Pingers, tappers and pump abilities left unused"),
     COMBAT_KEYWORDS("keywords", "Trample / menace / reach / indestructible read as ordinary stats"),
+    PRIORITY_TIMING("timing", "The right play in the wrong window — tapping out, or spending an instant on our own turn"),
+    LAST_CHANCE("lastchance", "Deadlines on the stack: abilities unused under removal, two-for-ones missed"),
 }
 
 /**
