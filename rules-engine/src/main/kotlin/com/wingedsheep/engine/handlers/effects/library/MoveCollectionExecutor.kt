@@ -633,6 +633,16 @@ class MoveCollectionExecutor(
                 if (newState.projectedState.hasKeyword(cardId, Keyword.INDESTRUCTIBLE)) {
                     continue
                 }
+                // CR 122.1c — a shield counter replaces destruction by an effect, one counter per
+                // destruction. A board wipe destroys each permanent as a separate destruction event,
+                // so each shielded permanent spends exactly one counter and survives. Ordered ahead
+                // of regeneration for the reason given in `ZoneMovementUtils.destroyPermanent`.
+                val shielded = com.wingedsheep.engine.core.consumeShieldCounter(newState, cardId)
+                if (shielded != null) {
+                    newState = shielded.first
+                    events.add(shielded.second)
+                    continue
+                }
                 if (!noRegenerate) {
                     val (shieldState, wasRegenerated) = ZoneMovementUtils.applyRegenerationShields(newState, cardId)
                     if (wasRegenerated) {

@@ -245,8 +245,18 @@ class StaticAbilityHandler(
         if (allStaticAbilities.any { it is GrantShroudToController }) {
             result = result.with(GrantsControllerShroudComponent)
         }
-        if (allStaticAbilities.any { it is GrantHexproofToController }) {
-            result = result.with(GrantsControllerHexproofComponent)
+        // "You have hexproof", bare or behind an "as long as …" gate. The gate rides along on the
+        // marker so every reader can re-evaluate it — see [ControllerHexproof]. A bare grant wins
+        // over a gated one if a card somehow has both.
+        val hexproofToController = when {
+            allStaticAbilities.any { it is GrantHexproofToController } ->
+                GrantsControllerHexproofComponent()
+            else -> allStaticAbilities.filterIsInstance<ConditionalStaticAbility>()
+                .firstOrNull { it.ability is GrantHexproofToController }
+                ?.let { GrantsControllerHexproofComponent(it.condition) }
+        }
+        if (hexproofToController != null) {
+            result = result.with(hexproofToController)
         }
         val controllerProtectionScopes = allStaticAbilities
             .filterIsInstance<GrantProtectionToController>()

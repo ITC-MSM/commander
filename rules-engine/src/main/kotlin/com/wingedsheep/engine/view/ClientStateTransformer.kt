@@ -2184,8 +2184,9 @@ class ClientStateTransformer(
         // Check for permanent-based player hexproof (e.g., Shalai, Voice of Plenty)
         val hasHexproof = !container.has<PlayerHexproofComponent>() && state.getBattlefield().any { entityId ->
             val entityContainer = state.getEntity(entityId) ?: return@any false
-            entityContainer.get<GrantsControllerHexproofComponent>() != null &&
-                entityContainer.get<ControllerComponent>()?.playerId == playerId
+            entityContainer.get<ControllerComponent>()?.playerId == playerId &&
+                com.wingedsheep.engine.mechanics.targeting.ControllerHexproof
+                    .isGrantingNow(state, entityId)
         }
         if (hasHexproof) {
             effects.add(

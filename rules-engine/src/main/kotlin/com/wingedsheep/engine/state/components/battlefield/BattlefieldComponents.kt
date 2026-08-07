@@ -827,9 +827,19 @@ data object GrantsControllerShroudComponent : Component
  * Used for Shalai, Voice of Plenty: "You ... have hexproof."
  * Unlike shroud, the controller can still target themselves.
  * When the permanent leaves the battlefield, the component goes with it — no cleanup needed.
+ *
+ * [condition] is set when the grant is gated behind a
+ * [com.wingedsheep.sdk.scripting.ConditionalStaticAbility] ("As long as Captain America has a
+ * shield counter on him, you … have hexproof"). The marker is stamped once, as the permanent
+ * enters, so the gate **must** be re-evaluated on every read rather than baked in here — otherwise
+ * the grant would freeze at whatever the condition said on entry. Every reader goes through
+ * [com.wingedsheep.engine.mechanics.targeting.ControllerHexproof], which does exactly that; `null`
+ * means an unconditional grant.
  */
 @Serializable
-data object GrantsControllerHexproofComponent : Component
+data class GrantsControllerHexproofComponent(
+    val condition: com.wingedsheep.sdk.scripting.conditions.Condition? = null
+) : Component
 
 /**
  * Marks a permanent as granting its controller player-level protection from one or more

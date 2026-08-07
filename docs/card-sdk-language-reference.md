@@ -8831,7 +8831,7 @@ substitution.
 
 - `+1/+1`, `-1/-1` — power/toughness counters.
 - `loyalty` — planeswalker loyalty.
-- `charge`, `time`, `level`, `quest`, `shield`, `fade`, `vanishing`, `experience`, `age`, `velocity`, `awakening`,
+- `charge`, `time`, `level`, `quest`, `fade`, `vanishing`, `experience`, `age`, `velocity`, `awakening`,
   `blood`, `cage`, `doom`, `storage`, `divinity` (`Counters.DIVINITY`, a passive counter used by the Myojin
   cycle), `charm`, `music`, `crumble`, `corpse`, `germ`, `ink`, `growth`,
   `hour`, `energy`, `scry`, `aura`, `chapter`, `citation`, `rune`, `scar`, `crux`, `omen`, `secret`, `feather`,
@@ -8915,12 +8915,29 @@ substitution.
   instead remove a stun counter from it." Engine-wired through `untapOrConsumeStun` (`rules-engine/core/UntapHelpers.kt`),
   which is invoked from the untap step (`BeginningPhaseManager`), from `TapUntapExecutor`'s untap branch, and from the
   sacrifice/pay continuation resumer. Adding stun counters is done by `AddCounters(Counters.STUN, n, target)`.
+- `shield` — CR 122.1c, a built-in replacement **and** prevention effect: "If this permanent would be destroyed
+  as the result of an effect, instead remove a shield counter from it" and "If damage would be dealt to this
+  permanent, prevent that damage and remove a shield counter from it." One or more counters create a *single*
+  effect of each kind, so exactly **one** counter is consumed per damage or destruction event however many are on
+  the permanent and however large the damage. Add via `AddCounters(Counters.SHIELD, n, target)` or an
+  `EntersWithCounters` replacement (Captain America, Super-Soldier); read the presence back with
+  `Conditions.SourceHasCounter` / `.withCounter(Counters.SHIELD)`.
+  Engine-wired at the four chokepoints in `rules-engine/core/ShieldCounterHelpers.kt`'s KDoc:
+  `DamageUtils.dealDamageToTarget` and `CombatDamageManager` (prevention; combat damage applies it once for the
+  whole simultaneous batch per CR 510.2, so a creature blocked by three creatures still spends one counter), and
+  `ZoneMovementUtils.destroyPermanent` + `MoveCollectionExecutor`'s destroy branch (replacement).
+  What it deliberately does **not** stop, per the official rulings: sacrifice; the lethal-damage/deathtouch
+  state-based action (CR 122.1c replaces destruction "as the result of an **effect**"); 0-toughness death. It is
+  not regeneration (no tap, no removal from combat, marked damage untouched) and it is not a keyword counter, so
+  losing all abilities doesn't switch it off. Unpreventable damage (Leyline of Punishment) is still dealt — but
+  still removes a counter. An indestructible permanent never "would be destroyed", so its counter stays unspent.
 - **Keyword counters** (Rule 122.1b) — `flying`, `first strike`, `double strike`, `vigilance`, `lifelink`,
-  `indestructible`, `deathtouch`, `trample`, `hexproof`, `reach`. `StateProjector` grants the matching `Keyword`
+  `indestructible`, `deathtouch`, `trample`, `hexproof`, `reach`, `haste`, `menace`. `StateProjector` grants the matching `Keyword`
   to any permanent carrying one (mapped in `KEYWORD_COUNTER_MAP`, re-applied after Layer 6 so "loses all abilities"
   can't wipe a counter-granted keyword). Add via `AddCounters(Counters.DEATHTOUCH, ...)` etc.; no static ability needed.
   (`reach`: Sagu Pummeler's renew payoff puts a reach counter on a creature. `vigilance`: Aragorn, Company Leader.
-  `double strike`: Mai, Jaded Edge's exhaust ability.)
+  `double strike`: Mai, Jaded Edge's exhaust ability. `haste` / `menace`: Super-Adaptoid, which copies keywords
+  off another creature as counters.)
 - **Ability counters beyond single keywords** — `decayed` (`Counters.DECAYED`, CR 702.147a, Tarkir: Dragonstorm) grants
   the whole **Decayed** ability (a "can't block" static **and** an attack-triggered end-of-combat sacrifice) to any
   creature that bears one. `StateProjector` projects the `DECAYED` keyword + `cantBlock = true` (initial pass and the

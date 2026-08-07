@@ -26,6 +26,7 @@ enum class CounterType {
     LORE,
     AIM,
     STUN,
+    SHIELD,
     FINALITY,
     SUPPLY,
     FLYING,
@@ -38,6 +39,8 @@ enum class CounterType {
     TRAMPLE,
     HEXPROOF,
     REACH,
+    HASTE,
+    MENACE,
     STASH,
     BLIGHT,
     COIN,
@@ -138,6 +141,25 @@ object Counters {
     const val LORE = "lore"
     const val AIM = "aim"
     const val STUN = "stun"
+
+    /**
+     * Shield counter (SNC onward; MSH — Captain America, Super-Soldier). CR 122.1c: one *or more*
+     * shield counters on a permanent create a **single** replacement effect and a **single**
+     * prevention effect — "if this permanent would be destroyed as the result of an effect, instead
+     * remove a shield counter from it" and "if damage would be dealt to this permanent, prevent that
+     * damage and remove a shield counter from it". Both consume exactly one counter per event, so a
+     * permanent with three shield counters survives three separate damage/destroy events, not one
+     * event three times over.
+     *
+     * Inherent to the counter, not an ability of the permanent — a creature that loses all abilities
+     * is still protected. Deliberately **not** a keyword counter, so it is absent from
+     * `StateProjector.KEYWORD_COUNTER_MAP`. Realized by the engine at the two chokepoints that can
+     * consume it: `DamageUtils.dealDamageToTarget` and `ZoneMovementUtils.destroyPermanent` /
+     * `MoveCollectionExecutor`'s destroy branch. Notably it does **not** stop sacrifice, the
+     * lethal-damage state-based action, or 0-toughness death, and it is not regeneration.
+     */
+    const val SHIELD = "shield"
+
     const val FINALITY = "finality"
     const val SUPPLY = "supply"
     const val FLYING = "flying"
@@ -150,6 +172,18 @@ object Counters {
     const val TRAMPLE = "trample"
     const val HEXPROOF = "hexproof"
     const val REACH = "reach"
+
+    /**
+     * Haste counter (MSH — Super-Adaptoid). Keyword counter (CR 122.1b / 613.1f): the permanent
+     * gains haste for as long as it has one. Wired through `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val HASTE = "haste"
+
+    /**
+     * Menace counter (MSH — Super-Adaptoid). Keyword counter (CR 122.1b / 613.1f): the permanent
+     * gains menace for as long as it has one. Wired through `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val MENACE = "menace"
     const val STASH = "stash"
     const val BLIGHT = "blight"
     const val COIN = "coin"
