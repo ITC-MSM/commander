@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.mechanics.modal.ChosenModeMemory
 import com.wingedsheep.engine.mechanics.targeting.TargetValidator
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -31,12 +32,18 @@ import kotlin.reflect.KClass
  *   Per-mode Rule 608.2b re-validation is applied against
  *   [SpellOnStackComponent.modeTargetRequirements].
  *
- * - **Resolution-time mode picking** (modal triggered / activated abilities, rule 603.3c):
- *   triggered abilities like Manifold Mouse's BeginCombat trigger and Warren Warleader's
- *   attack trigger don't go through the cast pipeline, so they arrive here with
- *   `chosenModes` empty. The executor presents a [ChooseOptionDecision] inline, pushes
- *   [ModalContinuation], and the modal-and-clone resumer drives target selection via
- *   `processChosenModeQueue`.
+ * - **Resolution-time mode picking**: whatever arrives here with `chosenModes` empty. The executor
+ *   presents a [ChooseOptionDecision] inline, pushes [ModalContinuation], and the modal-and-clone
+ *   resumer drives target selection via `processChosenModeQueue`. Two populations still take this
+ *   path:
+ *   - modal **activated** abilities, which don't go through the cast pipeline; and
+ *   - a [ModalEffect] **nested inside another effect** — inside a gated effect, a reflexive
+ *     trigger, a pipeline step — where the mode question isn't the spell's or ability's own.
+ *
+ *   Modal *triggered* abilities do **not**: their top-level modes and per-mode targets are picked
+ *   as the ability is put onto the stack (CR 603.3c / 700.2b, and 603.3d for the targets) by
+ *   [com.wingedsheep.engine.event.TriggerProcessor], so they reach this executor pre-chosen just
+ *   like a cast spell.
  *
  * @param effectExecutor Function to execute a sub-effect (provided by registry)
  */
@@ -91,16 +98,7 @@ class ModalEffectExecutor(
         // (Breeches, Eager Pillager — turn-scoped): exclude any mode this source has already
         // chosen, recorded in a per-source memory component. If every mode has been chosen, the
         // ability has no legal mode and does nothing.
-        val sourceEntity = context.sourceId?.let { state.getEntity(it) }
-        val alreadyChosenEver: Set<Int> = if (effect.excludePreviouslyChosenModes) {
-            sourceEntity?.get<com.wingedsheep.engine.state.components.battlefield.ChosenModesEverComponent>()
-                ?.modeIndices ?: emptySet()
-        } else emptySet()
-        val alreadyChosenThisTurn: Set<Int> = if (effect.excludeModesChosenThisTurn) {
-            sourceEntity?.get<com.wingedsheep.engine.state.components.battlefield.ChosenModesThisTurnComponent>()
-                ?.modeIndices ?: emptySet()
-        } else emptySet()
-        val alreadyChosen: Set<Int> = alreadyChosenEver + alreadyChosenThisTurn
+        val alreadyChosen = ChosenModeMemory.excludedFor(state, context.sourceId, effect)
 
         val availableIndices = effect.modes.indices.filter { it !in alreadyChosen }
         if (availableIndices.isEmpty()) {

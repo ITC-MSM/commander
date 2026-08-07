@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.mechanics.modal.ChosenModeMemory
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredEverComponent
@@ -829,11 +830,18 @@ class TriggerProcessor(
         val causedByAttack = isAttackCausedTrigger(trigger)
         val outerRequirements = listOfNotNull(ability.targetRequirement)
 
-        // CR 603.3c — a modal triggered ability's modes and targets are chosen as the ability is
-        // put onto the stack, not while it resolves. Pause here so the choices are locked in
-        // before the ability hits the stack; only then do the chosen targets actually *become*
-        // targets, which is what ward (CR 702.21) and "becomes the target" triggers key on.
-        modalNeedingPutOnStackSelection(abilityComponent.effect)?.let { modal ->
+        // CR 603.3c / 700.2b — a modal triggered ability's modes are announced as the ability is
+        // put onto the stack, and CR 603.3d says its targets follow the same way (601.2c–d). Pause
+        // here so both are locked in *before* the ability hits the stack: that is what lets an
+        // opponent see the chosen mode while the ability is still responded-to, and only then do
+        // the chosen targets actually *become* targets, which is what ward (CR 702.21) and
+        // "becomes the target" triggers key on.
+        //
+        // Only a *top-level* ModalEffect is caught here. A modal nested inside another effect (a
+        // gated effect, a reflexive trigger, a pipeline) isn't the ability's own mode question, so
+        // it stays with the resolution-time picker in
+        // [com.wingedsheep.engine.handlers.effects.composite.ModalEffectExecutor].
+        (abilityComponent.effect as? ModalEffect)?.let { modal ->
             return presentTriggerModalModeDecision(
                 state = state,
                 ability = abilityComponent,
@@ -854,28 +862,43 @@ class TriggerProcessor(
     }
 
     /**
-     * The top-level [ModalEffect] whose modes must be picked *before* the trigger reaches the
-     * stack, or null when the effect can keep the simpler resolution-time mode picking.
+     * How many modes this trigger's controller picks, and the minimum they must pick.
      *
-     * Only modal effects with at least one *targeting* mode need the earlier pick: those are the
-     * ones where a resolution-time choice would silently skip the "becomes the target" step. Modes
-     * that only affect the controller's own board carry no such observable, so they stay on the
-     * resolution-time path ([com.wingedsheep.engine.handlers.effects.composite.ModalEffectExecutor]).
-     *
-     * Three shapes are deliberately excluded because they need state that only exists at resolution:
-     * a `dynamicChooseCount` (evaluated against the resolving game state),
-     * `excludePreviouslyChosenModes` (Gandalf the Grey's per-source memory) and
-     * `excludeModesChosenThisTurn` (Breeches, Eager Pillager's turn-scoped per-source memory),
-     * both recorded by the resolution-time continuation.
+     * A [ModalEffect.dynamicChooseCount] ("choose up to X") is evaluated here, once, against the
+     * state the ability is going onto the stack in — CR 601.2c (reached via 603.3d) fixes the count
+     * at that moment, so it can't drift as the picks are made. The floor drops to 0 because "up to"
+     * always permits picking none; that mirrors the resolution-time evaluation in
+     * [com.wingedsheep.engine.handlers.effects.composite.ModalEffectExecutor], which still serves
+     * modal *activated* abilities and nested modals.
      */
-    private fun modalNeedingPutOnStackSelection(effect: Effect): ModalEffect? {
-        val modal = effect as? ModalEffect ?: return null
-        if (modal.dynamicChooseCount != null) return null
-        if (modal.excludePreviouslyChosenModes) return null
-        if (modal.excludeModesChosenThisTurn) return null
-        if (modal.modes.none { it.targetRequirements.isNotEmpty() }) return null
-        return modal
+    private fun effectiveChooseCounts(
+        state: GameState,
+        ability: TriggeredAbilityOnStackComponent,
+        modal: ModalEffect
+    ): Pair<Int, Int> {
+        val dynamic = modal.dynamicChooseCount
+            ?: return modal.chooseCount to modal.minChooseCount
+        val evaluated = DynamicAmountEvaluator().evaluate(
+            state,
+            dynamic,
+            EffectContext.forTriggeredAbility(ability)
+        )
+        return evaluated.coerceIn(0, modal.modes.size) to 0
     }
+
+    /**
+     * CR 603.3c — "If no mode is chosen, the ability is removed from the stack." Reached when every
+     * mode would be illegal, when a "choose up to X" cap evaluated to 0, and when the player
+     * declined every optional pick.
+     */
+    private fun modalTriggerRemovedFromStack(
+        state: GameState,
+        ability: TriggeredAbilityOnStackComponent,
+        reason: String
+    ): ExecutionResult = ExecutionResult.success(
+        state,
+        listOf(AbilityFizzledEvent(ability.sourceId, ability.description, reason))
+    )
 
     /**
      * Build the next mode-pick decision for a modal triggered ability going on the stack, or move
@@ -895,34 +918,36 @@ class TriggerProcessor(
         availableIndices: List<Int>?,
         causedByAttack: Boolean
     ): ExecutionResult {
-        val candidateIndices = availableIndices ?: modal.modes.indices.toList()
+        val (chooseCount, minChooseCount) = effectiveChooseCounts(state, ability, modal)
+
+        // "Choose one that hasn't been chosen (this turn)" — the source's own memory narrows the
+        // pool before the first pick. Later picks arrive with `availableIndices` already narrowed by
+        // the resumer, so re-applying the memory is a no-op there.
+        val remembered = ChosenModeMemory.excludedFor(state, ability.sourceId, modal)
+        val candidateIndices = (availableIndices ?: modal.modes.indices.toList())
+            .filter { it !in remembered }
         val offerIndices = candidateIndices.filter { index ->
             modeHasLegalTargets(state, ability, modal.modes[index])
         }
 
-        if (offerIndices.isEmpty() && selectedModeIndices.size < modal.minChooseCount) {
-            // No mode can legally be chosen — the ability is removed from the stack (CR 603.3c).
-            return ExecutionResult.success(
-                state,
-                listOf(
-                    AbilityFizzledEvent(
-                        ability.sourceId,
-                        ability.description,
-                        "No legal targets available"
-                    )
+        if (offerIndices.isEmpty() || selectedModeIndices.size >= chooseCount) {
+            if (offerIndices.isEmpty() && selectedModeIndices.size < minChooseCount) {
+                // Every remaining mode is unselectable — no legal target, or already spent by
+                // "…that hasn't been chosen (this turn)".
+                return modalTriggerRemovedFromStack(
+                    state, ability, "No legal mode could be chosen"
                 )
-            )
-        }
-
-        if (offerIndices.isEmpty()) {
+            }
             return presentTriggerModalTargetDecision(
                 state, ability, outerTargets, outerTargetRequirements,
-                modal.modes, selectedModeIndices, emptyList(), currentOrdinal = 0, causedByAttack
+                modal.modes, selectedModeIndices, emptyList(), currentOrdinal = 0, causedByAttack,
+                recordChosenModesOnSource = modal.excludePreviouslyChosenModes,
+                recordChosenModesThisTurn = modal.excludeModesChosenThisTurn
             )
         }
 
-        val doneOffered = selectedModeIndices.size >= modal.minChooseCount &&
-            selectedModeIndices.size < modal.chooseCount
+        val doneOffered = selectedModeIndices.size >= minChooseCount &&
+            selectedModeIndices.size < chooseCount
         // Same decline label the resolution-time modal path uses, so clients (and tests) can
         // recognise "choose up to one"'s opt-out wherever the mode question is raised.
         val optionLabels = offerIndices.map { modal.modes[it].description } +
@@ -934,8 +959,8 @@ class TriggerProcessor(
             "\nAlready picked: ${selectedModeIndices.joinToString("; ") { modal.modes[it].description }}"
         }
         val basePrompt = "Choose a mode for ${ability.sourceName}"
-        val prompt = if (modal.chooseCount > 1) {
-            "$basePrompt ($pickNumber of ${modal.chooseCount})$alreadyPicked"
+        val prompt = if (chooseCount > 1) {
+            "$basePrompt ($pickNumber of $chooseCount)$alreadyPicked"
         } else basePrompt
 
         val decision = ChooseOptionDecision(
@@ -945,9 +970,9 @@ class TriggerProcessor(
             context = DecisionContext(
                 sourceId = ability.sourceId,
                 sourceName = ability.sourceName,
-                // The ability isn't on the stack yet, but from the player's seat this is the
-                // trigger going on the stack, not a spell being cast.
-                phase = DecisionPhase.RESOLUTION
+                // Not a resolution-time question: the ability is on its way to the stack and this
+                // pick is part of putting it there (CR 603.3c).
+                phase = DecisionPhase.TRIGGER
             ),
             options = optionLabels
         )
@@ -958,14 +983,17 @@ class TriggerProcessor(
             outerTargets = outerTargets,
             outerTargetRequirements = outerTargetRequirements,
             modes = modal.modes,
-            chooseCount = modal.chooseCount,
-            minChooseCount = modal.minChooseCount,
+            // The effective counts, so a resolved `dynamicChooseCount` isn't re-evaluated per pick.
+            chooseCount = chooseCount,
+            minChooseCount = minChooseCount,
             allowRepeat = modal.allowRepeat,
             offeredIndices = offerIndices,
-            availableIndices = availableIndices,
+            availableIndices = candidateIndices,
             selectedModeIndices = selectedModeIndices,
             doneOptionOffered = doneOffered,
-            causedByAttack = causedByAttack
+            causedByAttack = causedByAttack,
+            recordChosenModesOnSource = modal.excludePreviouslyChosenModes,
+            recordChosenModesThisTurn = modal.excludeModesChosenThisTurn
         )
 
         return ExecutionResult.paused(
@@ -997,7 +1025,9 @@ class TriggerProcessor(
         chosenModeIndices: List<Int>,
         resolvedModeTargets: List<List<com.wingedsheep.engine.state.components.stack.ChosenTarget>>,
         currentOrdinal: Int,
-        causedByAttack: Boolean
+        causedByAttack: Boolean,
+        recordChosenModesOnSource: Boolean,
+        recordChosenModesThisTurn: Boolean
     ): ExecutionResult {
         var ordinal = currentOrdinal
         var targetsAccum = resolvedModeTargets
@@ -1047,7 +1077,8 @@ class TriggerProcessor(
                 context = DecisionContext(
                     sourceId = ability.sourceId,
                     sourceName = ability.sourceName,
-                    phase = DecisionPhase.RESOLUTION,
+                    // Part of putting the ability on the stack, not of resolving it (CR 603.3d).
+                    phase = DecisionPhase.TRIGGER,
                     effectHint = mode.description
                 ),
                 targetRequirements = requirementInfos,
@@ -1063,7 +1094,9 @@ class TriggerProcessor(
                 chosenModeIndices = chosenModeIndices,
                 resolvedModeTargets = targetsAccum,
                 currentOrdinal = ordinal,
-                causedByAttack = causedByAttack
+                causedByAttack = causedByAttack,
+                recordChosenModesOnSource = recordChosenModesOnSource,
+                recordChosenModesThisTurn = recordChosenModesThisTurn
             )
 
             return ExecutionResult.paused(
@@ -1082,7 +1115,8 @@ class TriggerProcessor(
 
         return finalizeModalTrigger(
             state, ability, outerTargets, outerTargetRequirements,
-            modes, chosenModeIndices, targetsAccum, causedByAttack
+            modes, chosenModeIndices, targetsAccum, causedByAttack,
+            recordChosenModesOnSource, recordChosenModesThisTurn
         )
     }
 
@@ -1101,8 +1135,27 @@ class TriggerProcessor(
         modes: List<com.wingedsheep.sdk.scripting.effects.Mode>,
         chosenModeIndices: List<Int>,
         resolvedModeTargets: List<List<com.wingedsheep.engine.state.components.stack.ChosenTarget>>,
-        causedByAttack: Boolean
+        causedByAttack: Boolean,
+        recordChosenModesOnSource: Boolean,
+        recordChosenModesThisTurn: Boolean
     ): ExecutionResult {
+        if (chosenModeIndices.isEmpty()) {
+            // CR 603.3c — no mode was chosen, so the ability never reaches the stack. Either every
+            // mode was illegal, a "choose up to X" cap evaluated to 0, or the player declined all
+            // of an optional set of picks.
+            return modalTriggerRemovedFromStack(state, ability, "No mode was chosen")
+        }
+
+        // "…that hasn't been chosen (this turn)": commit the picks to the source's memory now that
+        // they're final, so the next trigger of this same object offers what's left.
+        val stateWithMemory = chosenModeIndices.fold(state) { acc, modeIndex ->
+            ChosenModeMemory.record(
+                acc, ability.sourceId, modeIndex,
+                ever = recordChosenModesOnSource,
+                thisTurn = recordChosenModesThisTurn
+            )
+        }
+
         val component = ability.copy(
             chosenModes = chosenModeIndices,
             modeTargetsOrdered = resolvedModeTargets,
@@ -1113,7 +1166,7 @@ class TriggerProcessor(
             chosenModeIndices.flatMap { modes[it].targetRequirements }
 
         return stackResolver.putTriggeredAbility(
-            state, component, flatTargets,
+            stateWithMemory, component, flatTargets,
             targetRequirements = flatRequirements,
             causedByAttack = causedByAttack
         )

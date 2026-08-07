@@ -35,7 +35,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    time an ETB trigger resolves. `CastX` is the durable, object-scoped reading that rides the
  *    spell's entity onto the battlefield, so the counters and the mode budget are guaranteed to
  *    agree on the same announced X.
- *  - **"Choose up to X"** with a resolution-time cap is [ModalEffect.chooseUpToDynamic] (Riku of
+ *  - **"Choose up to X"** with a runtime cap is [ModalEffect.chooseUpToDynamic] (Riku of
  *    Many Paths / Bumi, King of Three Trials): the minimum is 0, so X = 0 legally chooses nothing
  *    and the Crew simply enters as a 2/2; the effective maximum is `min(X, 4)` since modes can't
  *    repeat (`allowRepeat = false`, matching the printed card's lack of a "you may choose the same

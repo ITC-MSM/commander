@@ -58,7 +58,10 @@ class SilentHallcreeperScenarioTest : FunSpec({
         }
         val choice = driver.pendingDecision as? ChooseOptionDecision
             ?: error("expected ChooseOptionDecision for the modal trigger; got ${driver.pendingDecision}")
-        choice.options.size shouldBe 3
+        // Only two of the three modes are offered: the Hallcreeper is the sole creature its
+        // controller has, so "another target creature you control" has no legal target and CR 603.3c
+        // forbids choosing that mode as the ability goes on the stack.
+        choice.options.size shouldBe 2
 
         val counterMode = "Put two +1/+1 counters on this creature"
         choice.options shouldContain counterMode

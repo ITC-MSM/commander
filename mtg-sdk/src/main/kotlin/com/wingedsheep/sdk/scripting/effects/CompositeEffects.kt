@@ -152,10 +152,12 @@ data class ModalEffect(
      * result as the effective maximum, clamped to `modes.size`. Two evaluation sites with
      * different floor semantics:
      *
-     * - **Resolution-time** (modal triggered/activated abilities, `ModalEffectExecutor`):
-     *   [minChooseCount] is treated as `0` (always "choose up to"); [chooseCount] is ignored.
-     *   Used for "choose up to X" where X depends on resolution-time data (Riku of Many
-     *   Paths — X is the number of modes the cast modal spell chose). See
+     * - **Put-on-stack / resolution-time** (modal abilities): [minChooseCount] is treated as `0`
+     *   (always "choose up to"); [chooseCount] is ignored. A modal *triggered* ability evaluates it
+     *   as the ability goes onto the stack (CR 603.3c, `TriggerProcessor`) and the result is then
+     *   fixed; a modal *activated* ability evaluates it on resolution (`ModalEffectExecutor`). Used
+     *   for "choose up to X" where X depends on game state rather than the cast (Riku of Many
+     *   Paths — X is the number of modes the triggering modal spell chose). See
      *   [chooseUpToDynamic].
      * - **Cast-time** (modal *spells*, `CastSpellHandler.effectiveModalChooseCounts`): the
      *   [minChooseCount] floor is preserved, so the effective range is
@@ -307,8 +309,9 @@ data class ModalEffect(
             ModalEffect(modes.toList(), 2)
 
         /**
-         * Create a "choose up to X" modal effect where X is evaluated at resolution
-         * time from a [com.wingedsheep.sdk.scripting.values.DynamicAmount]. The player
+         * Create a "choose up to X" modal effect where X is evaluated from a
+         * [com.wingedsheep.sdk.scripting.values.DynamicAmount] — as the ability goes onto the stack
+         * for a triggered ability (CR 603.3c), on resolution for an activated one. The player
          * may decline (pick 0) and may pick at most `min(X, modes.size)` total modes.
          * Mode repetition is not allowed by default (per CR-compliant "choose up to N")
          * — pass `allowRepeat = true` for Spree-style behavior.
