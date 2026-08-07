@@ -463,8 +463,27 @@ class CostCalculator(
                 state.permanentsSacrificedThisTurn * source.amountPerPermanent
             is CostReductionSource.CreaturesThatAttackedThisTurn ->
                 countCreaturesThatAttackedThisTurn(state) * source.amountPerCreature
+            is CostReductionSource.CardTypesInYourGraveyard ->
+                countGraveyardCardTypes(state, playerId) * source.amountPerType
         }
     }
+
+    /**
+     * The number of distinct card types (CR 205.2a) among the cards in [playerId]'s graveyard —
+     * Emrakul, the Promised End. Supertypes and subtypes never count, and a type shared by several
+     * cards counts once, so this is bounded by the number of card types rather than the graveyard's
+     * size.
+     *
+     * The graveyard is not the battlefield, so the printed type line is authoritative and no
+     * projection is needed (continuous effects don't change the types of cards in a graveyard).
+     * Mirrors `Aggregation.DISTINCT_TYPES` in `DynamicAmountEvaluator`, which backs
+     * `Conditions.Delirium` over the same zone.
+     */
+    private fun countGraveyardCardTypes(state: GameState, playerId: EntityId): Int =
+        state.getGraveyard(playerId)
+            .mapNotNull { state.getEntity(it)?.get<CardComponent>()?.typeLine?.cardTypes }
+            .flatMapTo(mutableSetOf()) { it }
+            .size
 
     /**
      * The number of creatures declared as attackers this turn by any player, across every combat

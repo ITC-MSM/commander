@@ -108,6 +108,7 @@ class StateProjector(
                         (container.get<ProtectionComponent>()?.colors?.map { "PROTECTION_FROM_${it.name}" } ?: emptyList()) +
                         (container.get<ProtectionComponent>()?.subtypes?.map { "PROTECTION_FROM_SUBTYPE_${it.uppercase()}" } ?: emptyList()) +
             (container.get<ProtectionComponent>()?.supertypes?.map { "PROTECTION_FROM_SUPERTYPE_${it.uppercase()}" } ?: emptyList()) +
+                        (container.get<ProtectionComponent>()?.cardTypes?.map { "PROTECTION_FROM_CARDTYPE_$it" } ?: emptyList()) +
                         (container.get<HexproofFromComponent>()?.colors?.map { "HEXPROOF_FROM_${it.name}" } ?: emptyList()) +
                         (container.get<HexproofFromComponent>()?.cardTypes?.map { "HEXPROOF_FROM_CARDTYPE_$it" } ?: emptyList()) +
                         (container.get<ToxicComponent>()?.let { listOf("TOXIC_${it.amount}") } ?: emptyList()) +

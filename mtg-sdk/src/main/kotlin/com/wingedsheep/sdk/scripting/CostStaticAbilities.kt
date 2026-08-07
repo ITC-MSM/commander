@@ -710,6 +710,30 @@ sealed interface CostReductionSource {
     ) : CostReductionSource {
         override val description: String = "the number of creatures that attacked this turn"
     }
+
+    /**
+     * Reduces cost by [amountPerType] for each *card type* among the cards in the caster's
+     * graveyard — Emrakul, the Promised End ("This spell costs {1} less to cast for each card type
+     * among cards in your graveyard").
+     *
+     * Counts distinct card types (CR 205.2a: artifact, battle, creature, enchantment, instant,
+     * kindred, land, planeswalker, sorcery), never supertypes or subtypes. A single card with
+     * several types (an artifact creature) contributes each of its types once, and the same type
+     * across many cards still counts once — so the cap is the number of card types in the game,
+     * not the graveyard's size.
+     *
+     * The counting sibling of [CardsInGraveyardMatchingFilter], which totals *cards*: nine
+     * creature cards reduce by nine there and by one here. Uses the same aggregation as
+     * `Conditions.Delirium` (`Aggregation.DISTINCT_TYPES` over the graveyard), so a card that
+     * satisfies delirium sees a matching reduction.
+     */
+    @SerialName("CardTypesInYourGraveyard")
+    @Serializable
+    data class CardTypesInYourGraveyard(
+        val amountPerType: Int = 1
+    ) : CostReductionSource {
+        override val description: String = "the number of card types among cards in your graveyard"
+    }
 }
 
 /**
