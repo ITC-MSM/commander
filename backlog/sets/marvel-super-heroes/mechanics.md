@@ -94,7 +94,7 @@ sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
   (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the predicate exists, but
   nothing evaluates a source-relative dynamic filter inside delayed-trigger matching).
 
-## Teamwork N — SHIPPED ✅ (3 of 13 cards implemented, 9 now unblocked, 1 still blocked)
+## Teamwork N — SHIPPED ✅ (8 of 13 cards implemented, 4 now unblocked, 1 still blocked)
 
 > Teamwork 4 *(As an additional cost to cast this spell, you may tap any number of creatures you
 > control with total power 4 or more.)*
@@ -156,12 +156,12 @@ summoning sickness, the durable flag on a resolving permanent, teamwork-vs-kicke
 advertised legal action, the modal "Teamwork Orders" cases, and the CR 702.194c "Teamwork Rally"
 cases) plus one scenario test per implemented card.
 
-**Implemented (3):** Helicarrier Strike [15] · Repulsor Blast [150] · Team Tactics [155].
+**Implemented (8):** Helicarrier Strike [15] · Murdock's Crusade [24] · Atlantis Attacks [46] ·
+Widow's Bite [122] · HULK SMASH! [135] · Repulsor Blast [150] · Team Tactics [155] · Go Nuts! [168].
+The last five are the "choose both instead" modal shape, all on `dynamicChooseCount` as above.
 
-**Now buildable as ordinary card work (9):** Murdock's Crusade [24] · Atlantis Attacks [46] · We Say
-Thee Nay! [82] · Cruel Alliance [92] · Too Evil to Stay Dead [118] · Widow's Bite [122] ·
-HULK SMASH! [135] · Earth's Mightiest Heroes [165] · Go Nuts! [168]. The modal ones use
-`dynamicChooseCount` as above.
+**Now buildable as ordinary card work (4):** We Say Thee Nay! [82] · Cruel Alliance [92] · Too Evil
+to Stay Dead [118] · Earth's Mightiest Heroes [165].
 
 ### Still blocked — 1 card ⛔
 
