@@ -358,6 +358,11 @@ function GameCardImpl({
   const isSelectedTarget = targetingState?.selectedTargets.includes(card.id) ?? false
   const isBeingCast = isInTargetingMode && targetingState?.action != null &&
     'cardId' in targetingState.action && targetingState.action.cardId === card.id
+  // Emerge (CR 702.119a): while the sacrifice is being picked, the server has priced *every*
+  // candidate — the reduction is that creature's mana value off the generic part of the emerge cost.
+  // Showing each candidate's resulting cost on the card itself makes the choice comparable before
+  // the click; the overlay banner only ever shows the one already selected.
+  const costIfSacrificed = targetingState?.costAfterSacrifice?.[card.id]
 
   // Check if this card is a valid target in a pending ChooseTargetsDecision (single-requirement only)
   const isChooseTargetsDecision = pendingDecision?.type === 'ChooseTargetsDecision'
@@ -1638,6 +1643,35 @@ function GameCardImpl({
           actually care about delirium. The exact count lives in the tooltip. */}
       {card.deliriumInfo && (
         <DeliriumBadge info={card.deliriumInfo} pip={responsive.badges.counterIconFontSize} />
+      )}
+
+      {/* What the spell being cast would cost if *this* creature is the one sacrificed (emerge —
+          CR 702.119a). Only while it's a live candidate; green once picked, matching the selected
+          highlight so the chip and the ring tell the same story. */}
+      {costIfSacrificed && (isValidTarget || isSelectedTarget) && (
+        <div
+          title={`Sacrifice ${card.name}: this spell then costs ${costIfSacrificed}`}
+          style={{
+            position: 'absolute',
+            bottom: 2,
+            left: '50%',
+            // Badges rotate with the card, so a tapped candidate's chip needs the same
+            // counter-rotation the other in-card labels use to stay upright and readable.
+            transform: `translateX(-50%)${totalRotateDeg ? ` rotate(${-totalRotateDeg}deg)` : ''}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            padding: '1px 5px',
+            borderRadius: 8,
+            background: isSelectedTarget ? 'rgba(0, 90, 40, 0.92)' : 'rgba(12, 14, 20, 0.9)',
+            border: `1px solid ${isSelectedTarget ? 'rgba(0, 255, 100, 0.9)' : 'rgba(255, 200, 0, 0.85)'}`,
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.55)',
+            pointerEvents: 'none',
+            zIndex: 4,
+          }}
+        >
+          <ManaCost cost={costIfSacrificed} size={responsive.badges.counterIconFontSize} gap={1} />
+        </div>
       )}
 
       {/* Banding (CR 702.22): band-membership badge, color-coded per band */}

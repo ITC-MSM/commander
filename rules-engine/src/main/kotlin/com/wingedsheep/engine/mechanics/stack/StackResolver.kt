@@ -465,7 +465,10 @@ class StackResolver(
                 chosenModesCount = reportedChosenModesCount,
                 manaValue = cardComponent.manaValue,
                 castFromZone = castFromZone,
-                alternativeCost = alternativeCost
+                alternativeCost = alternativeCost,
+                // Last-known names of the bodies the cost ate, so an emerge cast's reduced
+                // `totalManaSpent` reads as a consequence rather than a mystery (CR 702.119a).
+                sacrificedAsCostNames = sacrificedPermanents.mapNotNull { it.name }
             )
         )
 

@@ -116,7 +116,11 @@ class EmergeCastEnumerator : ActionEnumerator {
             result.add(
                 LegalAction(
                     actionType = "CastWithAlternativeCost",
-                    description = "Emerge ${cardComponent.name} ($baseCost minus the sacrificed creature's mana value)",
+                    // The reduction is not spelled out here on purpose: `manaCostString` +
+                    // `additionalCostInfo.costAfterSacrifice` let the client render it as live
+                    // arithmetic ("{5}{U} → as low as {2}{U}"), which a sentence inside the button
+                    // label can only restate less clearly.
+                    description = "Emerge ${cardComponent.name}",
                     action = CastSpell(
                         playerId = playerId,
                         cardId = cardId,

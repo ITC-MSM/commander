@@ -565,7 +565,15 @@ data class SpellCastEvent(
      * Mirrors [com.wingedsheep.engine.state.components.stack.SpellOnStackComponent.alternativeCost];
      * also descriptive only.
      */
-    val alternativeCost: AlternativeCostType? = null
+    val alternativeCost: AlternativeCostType? = null,
+    /**
+     * Names of the permanents sacrificed to pay this cast's cost, as last known before they left
+     * (CR 608.2h). Descriptive only, and only meaningful alongside [alternativeCost]: emerge
+     * (CR 702.119a) prices itself off the sacrificed creature's mana value, so the log line has to
+     * name the body or the reduced [totalManaSpent] looks arbitrary. See
+     * [com.wingedsheep.engine.view.CastProvenance.logPhrase].
+     */
+    val sacrificedAsCostNames: List<String> = emptyList()
 ) : GameEvent
 
 /**

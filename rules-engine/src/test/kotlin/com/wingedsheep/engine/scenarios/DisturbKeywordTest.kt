@@ -327,11 +327,13 @@ class DisturbKeywordTest : FunSpec({
         // It used to be announced under the front face's name, contradicting the stack itself.
         castEvent.cardName shouldBe "Test Geist Spirit"
 
-        // What the opponent actually reads in the game log.
+        // What the opponent actually reads in the game log. The mana is part of it because an
+        // alternative cost replaces the printed one: the card on the stack shows `{2}{W}` while
+        // disturb charged `{1}{W}`, so the amount is only knowable if the log says it.
         val logged = ClientEventTransformer.transform(result.events, opponent)
             .filterIsInstance<ClientEvent.SpellCast>()
             .single()
-        logged.description shouldBe "Opponent cast Test Geist Spirit (disturb, from graveyard)"
+        logged.description shouldBe "Opponent cast Test Geist Spirit (disturb, from graveyard, paid 2 mana)"
 
         // ...and the badge on the spell while it sits on the stack, from the same recorded facts.
         val onStack = driver.state.getEntity(geist)?.get<SpellOnStackComponent>()

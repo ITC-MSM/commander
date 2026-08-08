@@ -359,6 +359,19 @@ export interface ClientCard {
    */
   readonly castProvenanceLabel?: string
 
+  /**
+   * What this spell's alternative cost consumed — "Sacrificed Niblis of the Urn" — or absent when it
+   * consumed nothing. Server-derived label; render verbatim (only on the stack). Emerge
+   * (CR 702.119a) needs it: the sacrifice is what made the spell cheap.
+   */
+  readonly costSacrificeLabel?: string
+
+  /**
+   * The mana actually spent on this cast ("{W}{W}{W}{U}"), or absent for a normal cast. Only sent for
+   * alternative-cost casts, whose printed cost says nothing about what was paid (only on the stack).
+   */
+  readonly manaPaidCost?: string
+
   /** Whether this spell promised a gift (Bloomburrow gift mechanic — only present on stack) */
   readonly giftPromised?: boolean
 

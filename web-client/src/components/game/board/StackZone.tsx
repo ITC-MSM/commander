@@ -7,7 +7,7 @@ import type { EntityId } from '@/types'
 import type { ClientAbilityIdentity, ClientCard } from '@/types/gameState'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
 import { ActiveEffectBadges } from '../card/CardOverlays'
-import { AbilityText } from '../../ui/ManaSymbols'
+import { AbilityText, ManaCost } from '../../ui/ManaSymbols'
 import { useResponsiveContext, handleImageError } from './shared'
 import { styles } from './styles'
 import { groupStackCards, type StackGroup } from './stackGrouping'
@@ -169,6 +169,7 @@ export function StackDisplay() {
     // of the ones above it are showing.
     const topLeftBadges = [
       card.castProvenanceLabel ? 'provenance' : null,
+      card.costSacrificeLabel ? 'costSacrifice' : null,
       card.optionalCostLabel ? 'optionalCost' : null,
       card.giftPromised ? 'gift' : null,
       card.wasBlightPaid ? 'blight' : null,
@@ -286,13 +287,47 @@ export function StackDisplay() {
             X={card.chosenX}
           </div>
         )}
-        {/* Show how the spell was cast — "Disturb · Graveyard" — for anything but a plain hand cast */}
+        {/* Show how the spell was cast — "Disturb · Graveyard" — for anything but a plain hand cast.
+            The tooltip carries the whole story, since a spell with something on top of it is clipped
+            to its first badge row. */}
         {card.castProvenanceLabel && (
           <div
             style={{ ...styles.stackCastProvenanceBadge, top: topOf('provenance') }}
-            title={`Cast: ${card.castProvenanceLabel}`}
+            title={[
+              `Cast: ${card.castProvenanceLabel}`,
+              card.costSacrificeLabel,
+              card.manaPaidCost && `Paid ${card.manaPaidCost}`,
+            ].filter(Boolean).join(' · ')}
           >
             {card.castProvenanceLabel}
+          </div>
+        )}
+        {/* The mana that actually paid, for any alternative-cost cast — the printed pips on the card
+            were never what was spent. Top-*right*, so it shares the one badge row that stays visible
+            when a cast trigger (or any later spell) covers the rest of this card. Shifted left when
+            an X badge already owns that corner. */}
+        {card.manaPaidCost && (
+          <div
+            style={{
+              ...styles.stackManaPaidBadge,
+              top: topOf('provenance'),
+              right: card.chosenX != null ? 44 : 4,
+            }}
+            title={`Paid ${card.manaPaidCost}`}
+          >
+            <span style={{ opacity: 0.75 }}>Paid</span>
+            <ManaCost cost={card.manaPaidCost} size={9} gap={1} />
+          </div>
+        )}
+        {/* What the alternative cost ate — "Sacrificed Niblis of the Urn". Emerge (CR 702.119a)
+            prices itself off that creature's mana value, so without this the cheap cast has no
+            visible cause from the other seat. */}
+        {card.costSacrificeLabel && (
+          <div
+            style={{ ...styles.stackCostSacrificeBadge, top: topOf('costSacrifice') }}
+            title={card.costSacrificeLabel}
+          >
+            {card.costSacrificeLabel}
           </div>
         )}
         {/* Show the declared optional additional cost — Kicked / Bargained / Offspring */}

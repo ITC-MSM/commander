@@ -13,22 +13,40 @@ import com.wingedsheep.sdk.core.Zone
  * Castigator" reads as though the card materialised in their hand. Flashback, harmonize, mayhem and
  * commander casts have the same blind spot in milder form.
  *
- * Both renderings live here so the naming table exists once: [logPhrase] for the game log line and
- * [badgeLabel] for the badge on the stack card. A plain cast from hand has no provenance worth
- * showing and every entry point returns null for it.
+ * An alternative cost also hides *how much* was actually paid, and emerge (CR 702.119a) hides *what
+ * was eaten to make it cheaper*: a `{7}` Eldrazi resolving while its controller had four lands looks
+ * like a bug from the other seat unless the sacrifice and the mana are both named. So the same
+ * (method, origin) pair is joined here by two more facts — [sacrificeLabel] for the body an
+ * alternative cost consumed, and [paidManaCost] for the mana that actually left the pool.
+ *
+ * Every rendering lives here so the naming table exists once: [logPhrase] for the game log line,
+ * [badgeLabel] / [sacrificeLabel] / [paidManaCost] for the badges on the stack card. A plain cast
+ * from hand has no provenance worth showing and every entry point returns null for it.
  */
 object CastProvenance {
 
     /**
-     * The game log's phrase, e.g. `"disturb, from graveyard"`, or null when the cast was an
-     * ordinary one from hand. The caller parenthesises it, so the cast line still reads normally
-     * on its own.
+     * The game log's phrase, e.g. `"disturb, from graveyard"` or
+     * `"emerge, sacrificed Niblis of the Urn, paid 4 mana"`, or null when the cast was an ordinary
+     * one from hand. The caller parenthesises it, so the cast line still reads normally on its own.
+     *
+     * [sacrificedNames] and [manaSpent] only ever *extend* a phrase — a plain hand cast stays silent
+     * even when it sacrificed something for an additional cost, because its printed cost is already
+     * on the card and `PermanentsSacrificedEvent` already logs the sacrifice on its own line. It is
+     * the alternative-cost casts, where neither number is visible anywhere, that need them.
      */
-    fun logPhrase(alternativeCost: AlternativeCostType?, castFromZone: Zone?): String? {
+    fun logPhrase(
+        alternativeCost: AlternativeCostType?,
+        castFromZone: Zone?,
+        sacrificedNames: List<String> = emptyList(),
+        manaSpent: Int? = null,
+    ): String? {
         val method = alternativeCost?.let(::methodName)
         val origin = castFromZone?.let(::originName)?.let { "from $it" }
-        val parts = listOfNotNull(method, origin)
-        return parts.ifEmpty { null }?.joinToString(", ")
+        if (method == null && origin == null) return null
+        val sacrifice = sacrificedPhrase(sacrificedNames)
+        val paid = manaSpent?.takeIf { it > 0 }?.let { "paid $it mana" }
+        return listOfNotNull(method, sacrifice, origin, paid).joinToString(", ")
     }
 
     /**
@@ -42,6 +60,38 @@ object CastProvenance {
         val parts = listOfNotNull(method, origin).map { it.replaceFirstChar(Char::uppercase) }
         return parts.ifEmpty { null }?.joinToString(" · ")
     }
+
+    /**
+     * The stack card's badge for what an alternative cost consumed — `"Sacrificed Niblis of the
+     * Urn"` — or null when it consumed nothing. Its own badge rather than a suffix on [badgeLabel]
+     * so each row of the stack card carries exactly one fact.
+     */
+    fun sacrificeLabel(sacrificedNames: List<String>): String? =
+        sacrificedPhrase(sacrificedNames)?.replaceFirstChar(Char::uppercase)
+
+    /**
+     * The mana that actually paid for this cast, as a mana-cost string the client renders as pips
+     * (`"{W}{W}{W}{U}"`), or null when no mana was spent (a free cast, or one paid entirely with an
+     * alternative payment). Colors are listed in WUBRG order followed by colorless, which is the
+     * order costs are printed in; the *count* is what matters — this is what was spent, not a cost
+     * to pay again, so generic mana appears as whatever colors happened to pay it.
+     */
+    fun paidManaCost(
+        white: Int,
+        blue: Int,
+        black: Int,
+        red: Int,
+        green: Int,
+        colorless: Int,
+    ): String? {
+        val pips = listOf("W" to white, "U" to blue, "B" to black, "R" to red, "G" to green, "C" to colorless)
+        val rendered = pips.joinToString("") { (symbol, count) -> "{$symbol}".repeat(count.coerceAtLeast(0)) }
+        return rendered.ifEmpty { null }
+    }
+
+    /** `"sacrificed Niblis of the Urn"` / `"sacrificed a Spirit, Grizzly Bears"`, or null for none. */
+    private fun sacrificedPhrase(sacrificedNames: List<String>): String? =
+        sacrificedNames.ifEmpty { null }?.let { "sacrificed ${it.joinToString(", ")}" }
 
     /**
      * The zone worth naming in a cast description, or null when it isn't. Hand is the assumed

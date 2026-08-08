@@ -2904,8 +2904,11 @@ class CastSpellHandler(
         ) {
             val emergeSacrifice = action.additionalCostPayment?.sacrificedPermanents?.firstOrNull()
             if (emergeSacrifice != null && currentState.getEntity(emergeSacrifice) != null) {
+                // The [GameState] overload: besides last-known P/T it freezes the creature's *name*,
+                // which is what lets the stack card and the game log say which body paid for this
+                // cast once it is gone (a sacrificed token leaves no entity to read a name off).
                 sacrificedSnapshots.addAll(
-                    captureEntitySnapshots(listOf(emergeSacrifice), currentState.projectedState)
+                    captureEntitySnapshots(listOf(emergeSacrifice), currentState)
                 )
                 currentState = sacrificePermanentAsCost(currentState, emergeSacrifice, action.playerId, events)
             }
