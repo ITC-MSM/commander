@@ -525,6 +525,7 @@ class BeginningPhaseManager(
         StatePredicate.IsEnchanted,
         StatePredicate.IsModified,
         StatePredicate.IsSaddled,
+        StatePredicate.IsSuspected,
         StatePredicate.HasLockedDoor,
         StatePredicate.CrewedOrSaddledSourceThisTurn,
         StatePredicate.CrewedOrSaddledBySourceThisTurn,

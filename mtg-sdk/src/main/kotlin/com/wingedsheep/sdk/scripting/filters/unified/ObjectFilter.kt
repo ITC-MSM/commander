@@ -919,6 +919,11 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.IsSaddled
     )
 
+    /** Must be suspected (CR 701.60a) — see [StatePredicate.IsSuspected]. */
+    fun suspected() = copy(
+        statePredicates = statePredicates + StatePredicate.IsSuspected
+    )
+
     /**
      * Must have crewed (CR 702.122) or saddled (CR 702.171) the effect's source permanent this
      * turn. Source-relative — see [StatePredicate.CrewedOrSaddledSourceThisTurn].

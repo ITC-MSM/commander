@@ -574,6 +574,30 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
+    // Suspect (Entity)
+    // =============================================================================
+
+    /**
+     * Permanent that is currently suspected (CR 701.60a, Murders at Karlov Manor). A named
+     * designation applied by `Effects.Suspect`; unlike saddled it has **no duration** — a
+     * suspected permanent stays suspected until it loses the designation or changes zones.
+     *
+     * Projected, not component-backed: the designation rides a Layer-ability floating effect
+     * (`SerializableModification.SetSuspected`) and surfaces as `ProjectedState.isSuspected`,
+     * so evaluators must read the projection rather than probing for a component.
+     *
+     * Menace and "can't block" are separate sub-effects of the same composite, so this predicate
+     * asks specifically "is it suspected", not "does it have menace" — which is what cards that
+     * read the designation back need ("if it's not suspected", "target suspected creature you
+     * control", "if the sacrificed creature was suspected").
+     */
+    @SerialName("IsSuspected")
+    @Serializable
+    data object IsSuspected : Entity {
+        override val description: String = "suspected"
+    }
+
+    // =============================================================================
     // Saddle (Entity)
     // =============================================================================
 

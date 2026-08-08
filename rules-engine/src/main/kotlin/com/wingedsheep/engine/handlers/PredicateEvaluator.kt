@@ -1385,6 +1385,10 @@ class PredicateEvaluator {
             // (CR 702.171b). Cleared at end-of-turn cleanup or when the permanent leaves play.
             StatePredicate.IsSaddled -> container.has<SaddledComponent>()
 
+            // Suspected designation (CR 701.60a) — a Layer-ability floating effect, so the answer
+            // lives in the projection rather than on a component. Unlike saddled it never expires.
+            StatePredicate.IsSuspected -> projected.isSuspected(entityId)
+
             // Zone-specific marker — set by WarpExileExecutor when a warped
             // permanent is exiled at end of turn (CR 702.185b).
             StatePredicate.IsWarpExiled ->

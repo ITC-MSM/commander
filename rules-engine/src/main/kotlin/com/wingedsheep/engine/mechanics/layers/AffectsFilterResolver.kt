@@ -558,6 +558,10 @@ internal class AffectsFilterResolver {
         }
         StatePredicate.IsSaddled ->
             container.has<com.wingedsheep.engine.state.components.battlefield.SaddledComponent>()
+        // Suspected (CR 701.60a) is itself a Layer-ability modification, so it is read off the
+        // values accumulated so far in this projection pass — the same source `ProjectedState`
+        // exposes as `isSuspected`, and the same self-referential caveat as IsModified above.
+        StatePredicate.IsSuspected -> projectedValues[entityId]?.isSuspected == true
         StatePredicate.IsWarpExiled ->
             container.has<com.wingedsheep.engine.state.components.identity.WarpExiledComponent>()
         StatePredicate.WasCastForWarp ->
