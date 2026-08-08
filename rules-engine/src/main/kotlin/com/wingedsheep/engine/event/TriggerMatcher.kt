@@ -1946,6 +1946,10 @@ class TriggerMatcher(
             val entity = state.getEntity(entityId) ?: return false
             entity.has<FaceDownComponent>()
         }
+        // Suspected (CR 701.60a) reads off the floating-effect list, which is available here, so a
+        // "whenever a suspected creature …" trigger filter gates exactly instead of failing open.
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsSuspected ->
+            com.wingedsheep.engine.handlers.predicates.isSuspected(state, entityId)
         // Soulbond pairing (CR 702.95b) — plain per-entity state, evaluable here, so a
         // "whenever a paired creature …" trigger filter gates correctly instead of failing open.
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsPaired ->

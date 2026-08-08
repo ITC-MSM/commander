@@ -260,6 +260,63 @@
     ]
 }
 
+// Curious Cadaver
+{
+    "name": "Curious Cadaver",
+    "manaCost": "{2}{U}{B}",
+    "typeLine": "Creature — Zombie Detective",
+    "oracleText": "Flying\nWhen you sacrifice a Clue, return this card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "artifact Clue",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "activeZones": [
+                    "Graveyard"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "194",
+        "rarity": "UNCOMMON",
+        "artist": "Peter Polach",
+        "flavorText": "\"When you said I could learn a lot from a corpse, I have to admit I wasn't expecting it to lecture me on forensic procedure.\"\n—Kellan, to Ezrim",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/2893aef8-835d-4935-b532-d8670585e489.jpg?1783912854",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Some abilities trigger \"whenever you sacrifice a Clue\". Those abilities trigger whenever you sacrifice a Clue for any reason, not just to activate a Clue's activated ability."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If an effect refers to a Clue, it means any Clue artifact, not just a Clue artifact token. For example, you can sacrifice Wrench to pay for Alquist Proft, Master Sleuth's activated ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Curious Inquiry
 {
     "name": "Curious Inquiry",
@@ -340,6 +397,50 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Demand Answers
+{
+    "name": "Demand Answers",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, sacrifice an artifact or discard a card.\nDraw two cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        },
+        "additionalCosts": [
+            {
+                "type": "ChoiceCost",
+                "options": [
+                    {
+                        "type": "AdditionalAtom",
+                        "atom": {
+                            "type": "AtomSacrifice",
+                            "filter": "artifact"
+                        }
+                    },
+                    {
+                        "type": "AdditionalAtom",
+                        "atom": "AtomDiscard"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "artist": "Justyna Dura",
+        "flavorText": "After the attempt on Aurelia's life, she gave the Agency an ultimatum: solve the case in twenty-four hours, or the Boros Legion would declare war on the Cult of Rakdos.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/eca092fc-7c67-4a73-989e-5297bbaaea76.jpg?1783912883"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -1895,6 +1996,86 @@
     ]
 }
 
+// Person of Interest
+{
+    "name": "Person of Interest",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "When this creature enters, suspect it. Create a 2/2 white and blue Detective creature token. (A suspected creature has menace and can't block.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "SetSuspected",
+                                    "target": "Self"
+                                },
+                                {
+                                    "type": "GrantKeyword",
+                                    "keyword": "MENACE",
+                                    "target": "Self",
+                                    "duration": "Permanent"
+                                },
+                                {
+                                    "type": "CantBlockTargetCreatures",
+                                    "target": "Self",
+                                    "duration": "Permanent"
+                                }
+                            ],
+                            "descriptionOverride": "this creature becomes suspected"
+                        },
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [
+                                "WHITE",
+                                "BLUE"
+                            ],
+                            "creatureTypes": [
+                                "Detective"
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "artist": "Justyna Dura",
+        "flavorText": "\"Maybe they're following someone else,\" Alvis thought to himself, despite mounting evidence to the contrary.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d56ebff-67c8-4bc7-a533-ddde4ce0c2af.jpg?1783912876",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If Person of Interest is no longer on the battlefield when its triggered ability resolves, you'll still create a Detective token."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "When an effect suspects a creature, it becomes suspected. It gains menace and \"This creature can't block\" for as long as it's suspected. It stays suspected until it leaves the battlefield or another effect causes it to no longer be suspected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Pick Your Poison
 {
     "name": "Pick Your Poison",
@@ -2104,6 +2285,88 @@
         "artist": "Iris Compiet",
         "flavorText": "\"Thopters are but one option in our suite of autonomous surveillance solutions.\"\n—Kylox",
         "imageUri": "https://cards.scryfall.io/normal/front/6/c/6c137a44-9ab6-4e59-8324-34d9dca8f5a6.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Rubblebelt Braggart
+{
+    "name": "Rubblebelt Braggart",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Lizard Warrior",
+    "oracleText": "Whenever this creature attacks, if it's not suspected, you may suspect it. (A suspected creature has menace and can't block.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetSuspected",
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "MENACE",
+                                "target": "Self",
+                                "duration": "Permanent"
+                            },
+                            {
+                                "type": "CantBlockTargetCreatures",
+                                "target": "Self",
+                                "duration": "Permanent"
+                            }
+                        ],
+                        "descriptionOverride": "this creature becomes suspected"
+                    },
+                    "descriptionOverride": "Suspect Rubblebelt Braggart? (It gains menace but can't block.)"
+                },
+                "triggerCondition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "EntityMatches",
+                        "entity": "Self",
+                        "filter": {
+                            "statePredicates": [
+                                "IsSuspected"
+                            ]
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever this creature attacks, if it's not suspected, you may suspect it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "Leonardo Santanna",
+        "flavorText": "\"I did it! Double—no, triple homicide! In a building I set on fire. Yep, all me.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f90f8691-210a-4bf0-9fc2-fb2efcf057fb.jpg?1783912875",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If a creature is already suspected, suspecting it again won't have any effect."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a suspected creature loses all abilities, it will lose menace and \"This creature can't block\", but it won't stop being suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Being suspected isn't a copiable value. If a permanent becomes a copy of a suspected creature, it won't be suspected."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "RED"
@@ -2513,6 +2776,59 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Toxin Analysis
+{
+    "name": "Toxin Analysis",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gains deathtouch and lifelink until end of turn. Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "DEATHTOUCH",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "artist": "Irina Nordsol",
+        "flavorText": "\"Poison this deadly is only used by the Ochran. Either the Golgari are behind this, or someone wants us to think they are.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0eda1aff-c1f4-4171-a800-605396cc8168.jpg?1783912889"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

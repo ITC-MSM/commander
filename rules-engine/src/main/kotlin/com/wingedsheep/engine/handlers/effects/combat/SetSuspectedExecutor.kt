@@ -39,11 +39,7 @@ class SetSuspectedExecutor : EffectExecutor<SetSuspectedEffect> {
         state.getEntity(entityId)?.get<CardComponent>()
             ?: return EffectResult.success(state)
 
-        val alreadySuspected = state.floatingEffects.any { fx ->
-            fx.effect.modification is SerializableModification.SetSuspected
-                && entityId in fx.effect.affectedEntities
-        }
-        if (alreadySuspected) {
+        if (com.wingedsheep.engine.handlers.predicates.isSuspected(state, entityId)) {
             return EffectResult.success(state)
         }
 

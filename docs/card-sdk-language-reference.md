@@ -3298,6 +3298,14 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   doesn't matter who controlled the permanent when the damage landed, or whether it was on the battlefield
   then. Same lifetime and source-relative caveats as its mirror.
 - `.saddled()` — permanent is saddled (CR 702.171b); backed by `StatePredicate.IsSaddled`.
+- `.suspected()` — permanent is suspected (CR 701.60a); backed by `StatePredicate.IsSuspected`. Unlike
+  saddled it has **no duration** — a suspected permanent stays suspected until it changes zones. The
+  designation is a Layer-ability floating effect (`SerializableModification.SetSuspected`) surfaced as
+  `ProjectedState.isSuspected`, not a component, so it is read from the projection; trigger gating and
+  `SetSuspectedExecutor`'s CR 701.60d dedup share the raw-state reading in
+  `handlers/predicates/SuspectedPredicate.kt`. Asks specifically "is it suspected", not "does it have
+  menace" — the menace and can't-block halves of `Effects.Suspect` are separate sub-effects, so a
+  creature given menace some other way does not match.
 - `.crewedOrSaddledSourceThisTurn()` — source-relative: creature crewed (CR 702.122) or saddled
   (CR 702.171) the effect's source permanent this turn; backed by
   `StatePredicate.CrewedOrSaddledSourceThisTurn` (see Object-state predicates). For
@@ -7283,6 +7291,11 @@ that works in both resolution and static-ability (projection) contexts.
 - `SourceEnteredThisTurn` — source entered the battlefield this turn.
 - `SourceIsSaddled` — source is saddled (CR 702.171b). Gates Mount payoffs on "while saddled" /
   "as long as it's saddled"; evaluates identically at resolution and during projection.
+- `SourceIsSuspected` — source is suspected (CR 701.60a). Wrap in `Conditions.Not(…)` for the
+  "if it's **not** suspected" intervening-if on MKM's self-suspecting attack triggers
+  (**Rubblebelt Braggart**) — because a suspected permanent can't become suspected again
+  (CR 701.60d), the check is what stops the trigger going on the stack, rather than letting the
+  player click through a "may" that could never do anything.
 - `SourceAttackedThisTurn` — source was declared as an attacker at least once during the
   current turn (per-creature, derived from the controller's `PlayerAttackersThisTurnComponent`).
   Negate via `Conditions.Not(...)` for Erg Raiders-style "if it didn't attack this turn".

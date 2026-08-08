@@ -1052,6 +1052,15 @@ object Conditions {
     val SourceIsSaddled: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.saddled())
 
+    /**
+     * If this permanent is suspected (CR 701.60a). Negate it with [Not] for the "if it's **not**
+     * suspected" intervening-if that guards MKM's self-suspecting attack triggers (Rubblebelt
+     * Braggart) — a suspected permanent can't become suspected again (CR 701.60d), so the check
+     * is what stops the trigger from going on the stack at all.
+     */
+    val SourceIsSuspected: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.suspected())
+
     /** If this creature is soulbond-paired with another creature (CR 702.95b). */
     val SourceIsPaired: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.paired())
