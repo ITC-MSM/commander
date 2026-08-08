@@ -117,6 +117,61 @@
     ]
 }
 
+// Bilbo Baggins, Burglar
+{
+    "name": "Bilbo Baggins, Burglar",
+    "manaCost": "{2}{U}",
+    "typeLine": "Legendary Creature — Halfling Rogue",
+    "oracleText": "When Bilbo Baggins enters, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "When Bilbo Baggins enters, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "artist": "Kieran Yanner",
+        "flavorText": "\"Now it is the burglar's turn. You must go on and find out if all is perfectly safe and canny.\"\n—Thorin",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6a109b3e-9f5b-4625-abb7-6b992c10530b.jpg?1785323194"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Take a Glance",
+            "manaCost": "{U}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Scry 2. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Scry",
+                    "count": 2
+                }
+            }
+        }
+    ]
+}
+
 // Bilbo's Deadly Slice
 {
     "name": "Bilbo's Deadly Slice",
@@ -2242,6 +2297,80 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Gollum, Silent Slinker
+{
+    "name": "Gollum, Silent Slinker",
+    "manaCost": "{3}{B}",
+    "typeLine": "Legendary Creature — Halfling Horror",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "metadata": {
+        "collectorNumber": "71",
+        "artist": "Miklós Ligeti",
+        "flavorText": "He rowed about quietly on the lake. Never a ripple did he make, not he.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/c/6cfaa182-3fec-4907-8814-b4d29c33cec3.jpg?1785323234"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Meager Meal",
+            "manaCost": "{B}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Put a +1/+1 counter on up to one target creature. Target player gains 2 life. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "player"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "player"
+                    },
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "creature"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -4430,6 +4559,60 @@
     ]
 }
 
+// Smaug, the Great Calamity
+{
+    "name": "Smaug, the Great Calamity",
+    "manaCost": "{5}{R}{R}",
+    "typeLine": "Legendary Creature — Dragon",
+    "oracleText": "Flying",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "109",
+        "artist": "Chris Cold",
+        "flavorText": "\"My armor is like tenfold shields, my teeth are swords, my wings a hurricane, and my breath death!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/419ca9e5-8413-4378-a4ef-eda5a1024218.jpg?1785497136"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Spew Flame",
+            "manaCost": "{4}{R}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Spew Flame deals 5 damage to target creature. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Snowslope Hunter
 {
     "name": "Snowslope Hunter",
@@ -4816,6 +4999,121 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// The Black Arrow
+{
+    "name": "The Black Arrow",
+    "manaCost": "{3}",
+    "typeLine": "Legendary Artifact — Equipment",
+    "oracleText": "Flash\nWhen The Black Arrow enters, it deals 1 damage to any target. If a Dragon is dealt damage this way, destroy it.\nEquipped creature gets +1/+1 and has reach.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": "Dragon"
+                                }
+                            },
+                            "then": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "descriptionOverride": "When The Black Arrow enters, it deals 1 damage to any target. If a Dragon is dealt damage this way, destroy it."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "REACH"
+            }
+        ]
+    },
+    "equipCost": "{1}",
+    "metadata": {
+        "collectorNumber": "171",
+        "rarity": "UNCOMMON",
+        "artist": "Kevin Sidharta",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/ab181190-d53d-4972-8cd5-8e54b45f2276.jpg?1785496386"
+    },
+    "colorIdentityOverride": []
 }
 
 // The Chief Warg
@@ -5625,6 +5923,116 @@
                 ]
             }
         }
+    ]
+}
+
+// Vow to Erebor
+{
+    "name": "Vow to Erebor",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Untap target creature you control. It gets +2/+2 until end of turn. If it's a Dwarf, you may attach an Equipment you control to it.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "tap": false
+                },
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": "creature Dwarf"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "artifact Equipment",
+                                    "player": "You",
+                                    "includeAttachments": true
+                                },
+                                "storeAs": "gathered0"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "gathered0",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "selected1",
+                                "prompt": "You may attach an Equipment you control to the Dwarf",
+                                "selectedLabel": "Attach",
+                                "useTargetingUI": true
+                            },
+                            {
+                                "type": "AttachTargetEquipmentToCreature",
+                                "equipmentTarget": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "selected1"
+                                },
+                                "creatureTarget": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "artist": "Andreia Ugrai",
+        "flavorText": "\"We shall soon, before the break of day, start on our long journey—a journey from which some of us, or perhaps all of us, may never return.\"\n—Thorin",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d4f3eb5-fedf-45d6-8bd8-aacbe0ce33b2.jpg?1785497034"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
