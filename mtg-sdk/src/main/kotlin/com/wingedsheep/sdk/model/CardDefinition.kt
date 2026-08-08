@@ -373,6 +373,21 @@ data class CardDefinition(
      */
     val isRoom: Boolean
         get() = isSplit && cardFaces.any { it.typeLine.isRoom }
+    /**
+     * True if this face is **printed sideways** — its card image is an ordinary portrait file
+     * containing a card lying on its side, so every surface that draws it has to rotate it 90° and
+     * give it a landscape footprint.
+     *
+     * The single place that decides what "landscape" means. Two families qualify today: split
+     * layouts (CR 709 — Pain // Suffering, and Rooms) and battles (CR 310). A future landscape card
+     * type is one clause here and nothing else: the game view (`ClientCard.isLandscapeFace`), the
+     * sealed/draft view (`SealedCardInfo.isLandscape`), and every renderer downstream read this
+     * rather than re-deriving orientation from layouts and type lines.
+     *
+     * A property of the *face*, not the card — a transforming double-faced card can be landscape on
+     * one side and portrait on the other (Invasion of Innistrad // Deluge of the Dead).
+     */
+    val isLandscapePrint: Boolean get() = isSplit || isBattle
     val isPlaneswalker: Boolean get() = CardType.PLANESWALKER in typeLine.cardTypes
     val isBattle: Boolean get() = typeLine.isBattle
     val isSiege: Boolean get() = typeLine.isSiege

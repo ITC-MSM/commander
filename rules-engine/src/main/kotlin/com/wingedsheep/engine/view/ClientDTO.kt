@@ -591,9 +591,14 @@ data class ClientCard(
     val isRoom: Boolean = false,
 
     /**
-     * Whether the face currently being shown is printed **landscape** — a battle (CR 310), whose
-     * Scryfall image is a portrait file containing a card lying on its side, exactly like a Room's.
-     * Drives the 90° rotation and the landscape footprint in every place the card is drawn.
+     * Whether the face currently being shown is printed **landscape** — its image is a portrait
+     * file containing a card lying on its side. Drives the 90° rotation and the landscape footprint
+     * everywhere the card is drawn: battlefield, stack, and hover previews.
+     *
+     * Which cards those are is decided in exactly one place,
+     * [com.wingedsheep.sdk.model.CardDefinition.isLandscapePrint] (split layouts including Rooms,
+     * and battles) — renderers must read this flag rather than re-deriving orientation from
+     * `isRoom` / `cardFaces` / type lines, which is how battles ended up rendering sideways.
      *
      * Keyed to the *displayed* face, not the card: Invasion of Innistrad is landscape, but the
      * Deluge of the Dead face it becomes is an ordinary portrait enchantment, so the same card
@@ -602,6 +607,14 @@ data class ClientCard(
      * doesn't reprint its art sideways.
      */
     val isLandscapeFace: Boolean = false,
+
+    /**
+     * [isLandscapeFace] for the card's *other* face — what a hover preview shows when the player
+     * flips it. Needed because flipping swaps which image is on screen in both directions: peeking
+     * at a Siege's portrait back face must not rotate, and peeking at the landscape front of a
+     * permanent that has already transformed must.
+     */
+    val backFaceIsLandscape: Boolean = false,
 
     /**
      * For split-layout cards (currently Rooms): one entry per face with that face's name, mana

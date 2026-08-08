@@ -123,6 +123,11 @@ export function StackDisplay() {
     : null
   const stackImageWidth = responsive.isMobile ? 55 : 140
   const stackImageHeight = responsive.isMobile ? 77 : 196
+  // Pre-rotation dimensions for a sideways-printed card, chosen so that after `rotate(90deg)` the
+  // image occupies the full column width and proportional height: the rotation swaps the axes, so
+  // the element's *height* becomes its on-screen width.
+  const landscapeStackImageHeight = stackImageWidth
+  const landscapeStackImageWidth = Math.round(stackImageWidth * stackImageWidth / stackImageHeight)
 
   /**
    * Render one card slot in the fanned pile. `renderIndex` is the slot's position across the whole
@@ -186,22 +191,45 @@ export function StackDisplay() {
         onMouseEnter={(e) => hoverCard(card.id, { x: e.clientX, y: e.clientY })}
         onMouseLeave={() => hoverCard(null)}
       >
-        <img
-          src={getCardImageUrl(card.name, card.imageUri, 'small')}
-          alt={card.name}
-          style={{
-            ...styles.stackItemImage,
-            width: stackImageWidth,
-            height: stackImageHeight,
-            cursor: isValidTarget || opts.onClick ? 'pointer' : 'default',
-            ...(card.sourceZone === 'GRAVEYARD' ? {
-              opacity: 0.7,
-              filter: 'saturate(0.6)',
-            } : {}),
-          }}
-          title={card.name}
-          onError={(e) => handleImageError(e, card.name, 'small')}
-        />
+        {(() => {
+          // A sideways-printed card (split layout, Room, battle) reads landscape only once rotated
+          // 90°. The slot keeps its portrait footprint — the pile's overlap maths assumes a uniform
+          // item height — so the rotated card is scaled to the column width and centred inside it,
+          // costing a little dead space above and below and nothing else.
+          const isLandscape = card.isLandscapeFace === true
+          const dimmed = card.sourceZone === 'GRAVEYARD'
+            ? { opacity: 0.7, filter: 'saturate(0.6)' }
+            : {}
+          const image = (
+            <img
+              src={getCardImageUrl(card.name, card.imageUri, 'small')}
+              alt={card.name}
+              style={{
+                ...styles.stackItemImage,
+                ...(isLandscape
+                  ? {
+                      position: 'absolute' as const,
+                      top: '50%',
+                      left: '50%',
+                      width: landscapeStackImageWidth,
+                      height: landscapeStackImageHeight,
+                      transform: 'translate(-50%, -50%) rotate(90deg)',
+                    }
+                  : { width: stackImageWidth, height: stackImageHeight }),
+                cursor: isValidTarget || opts.onClick ? 'pointer' : 'default',
+                ...dimmed,
+              }}
+              title={card.name}
+              onError={(e) => handleImageError(e, card.name, 'small')}
+            />
+          )
+          if (!isLandscape) return image
+          return (
+            <div style={{ position: 'relative', width: stackImageWidth, height: stackImageHeight }}>
+              {image}
+            </div>
+          )
+        })()}
         {/* Collapsed-pile count pip */}
         {opts.countBadge != null && (
           <div style={styles.stackCountBadge} title={`${opts.countBadge} identical items`}>

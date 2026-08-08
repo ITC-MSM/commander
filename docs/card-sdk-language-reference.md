@@ -192,10 +192,18 @@ Engine-side helpers all live on `com.wingedsheep.engine.mechanics.battle.Battles
 `defenseOf`, `eligibleProtectors`, `canBeAttackedBy`); `ProjectedState.isBattle(entityId)` is the type
 check. The client receives a battle's defense in the ordinary `counters` map and its protector as
 `ClientCard.protectorId`. A battle is a legal choice for "any target" (CR 115.4) alongside creatures,
-players and planeswalkers. Battles are printed **landscape** — the Scryfall image is a portrait file
-holding a sideways card, as a Room's is — so `ClientCard.isLandscapeFace` drives the 90° rotation
-and the landscape footprint everywhere the card is drawn. It is per *face*: a Siege reports true and
-the portrait back face it becomes when defeated reports false.
+players and planeswalkers.
+
+Battles are printed **landscape** — the image is a portrait file holding a sideways card, as a
+Room's is. **`CardDefinition.isLandscapePrint` is the single place that decides what counts as
+printed sideways** (split layouts including Rooms, plus battles); a future landscape card type is
+one clause there and nothing else. It reaches the client as `ClientCard.isLandscapeFace` (in-game:
+battlefield, stack, hover preview) and `SealedCardInfo.isLandscape` (sealed / draft / deckbuilder /
+cube previews, via the one `landscapeImageRotateDeg` helper). Renderers read the flag rather than
+re-deriving orientation from `isRoom` / `cardFaces` / type lines — doing that in three different
+ways is exactly how battles ended up rendering sideways. The flag is per *face*: a Siege reports
+true, the portrait back face it becomes when defeated reports false, and `backFaceIsLandscape`
+carries the other side for the hover preview's flip toggle.
 
 ---
 

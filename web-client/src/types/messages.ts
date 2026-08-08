@@ -1213,11 +1213,17 @@ export interface SealedCardInfo {
   readonly setCode?: string | null
   readonly collectorNumber?: string | null
   /**
-   * Printed layout code ('NORMAL', 'SPLIT', 'ADVENTURE', …). Split cards (Pain // Suffering,
-   * Rooms like Unholy Annex // Ritual Chamber) are 'SPLIT' — the deckbuilder rotates their
-   * hover preview 90° to landscape since the single image is printed sideways.
+   * Printed layout code ('NORMAL', 'SPLIT', 'ADVENTURE', …). Kept for anything needing the raw
+   * layout; orientation is {@link isLandscape}'s job.
    */
   readonly layout?: string
+
+  /**
+   * True when this card's image is printed sideways and the hover preview must rotate it 90°.
+   * Straight from `CardDefinition.isLandscapePrint` — split layouts and battles (CR 310), the
+   * latter being `TRANSFORM` and so invisible to a `layout === 'SPLIT'` check.
+   */
+  readonly isLandscape?: boolean
 }
 
 /**

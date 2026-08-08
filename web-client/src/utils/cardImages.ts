@@ -19,26 +19,27 @@ export const MANIFEST_FACE_DOWN_IMAGE_URL = 'https://cards.scryfall.io/normal/fr
 export const CARD_BACK_IMAGE_URL = 'https://backs.scryfall.io/normal/2/2/222b7a3b-2321-4d4c-af19-19338b134971.jpg?1677416389'
 
 /**
- * Degrees to rotate a card's hover preview image. Two families of cards are printed sideways, so
- * their single portrait image has to be rotated 90° to read landscape:
+ * Degrees to rotate a card's hover preview image: 90° for a card that is **printed sideways**,
+ * 0 otherwise.
  *
- * - **Split layouts** (Pain // Suffering, Rooms like Unholy Annex // Ritual Chamber — CR 709.5).
- * - **Battles** (CR 310) — a transforming double-faced card, so `layout` is `TRANSFORM`, not
- *   `SPLIT`; only the type line identifies them. The *front* face is the landscape one, which is
- *   also the face these previews show, so reading the card's own type line is correct here.
- *
- * Everything else stays upright.
+ * Which cards those are is decided server-side, in `CardDefinition.isLandscapePrint` — split
+ * layouts (Rooms, Pain // Suffering) and battles (CR 310). Prefer the `isLandscape` flag the
+ * server sends; the `layout` / `typeLine` derivation below is only a fallback for card shapes that
+ * predate the flag, and exists so no surface silently reverts to upright.
  */
 export function landscapeImageRotateDeg(
-  card: { layout?: string; typeLine?: string | null } | null | undefined
+  card: { isLandscape?: boolean; layout?: string; typeLine?: string | null } | null | undefined
 ): 0 | 90 {
-  if (card?.layout === 'SPLIT') return 90
-  return isBattleTypeLine(card?.typeLine) ? 90 : 0
+  if (!card) return 0
+  if (card.isLandscape !== undefined) return card.isLandscape ? 90 : 0
+  if (card.layout === 'SPLIT') return 90
+  return isBattleTypeLine(card.typeLine) ? 90 : 0
 }
 
 /**
  * Whether a printed type line names the Battle card type (CR 310). Only the types half of the line
  * is examined — everything before the em dash — so a subtype or a card name can never match.
+ * Fallback only: prefer the server's `isLandscape` flag.
  */
 export function isBattleTypeLine(typeLine: string | null | undefined): boolean {
   if (!typeLine) return false
